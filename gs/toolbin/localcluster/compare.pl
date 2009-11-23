@@ -45,6 +45,7 @@ my @allErrors;
 my @brokePrevious;
 my @repairedPrevious;
 my @differencePrevious;
+my @differencePreviousPdfwrite;
 my @archiveMatch;
 
 my $t2;
@@ -134,7 +135,11 @@ foreach my $t (sort keys %previous) {
             }
           }
           if (!$match) {
-            push @differencePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
+	    if ($currentProduct{$t} =~ m/pdfwrite/) {
+              push @differencePreviousPdfwrite,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
+	    } else {
+              push @differencePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
+	    }
           }
         }
       }
@@ -146,6 +151,9 @@ foreach my $t (sort keys %previous) {
 
 #print Dumper(\@archiveMatch);
 
+my $pdfwriteTestCount=0;
+my $notPdfwriteTestCount=0;
+
 foreach my $t (sort keys %current) {
   if (!exists $previous{$t}) {
     push @filesAdded,"$t $currentProduct{$t}";
@@ -154,18 +162,33 @@ foreach my $t (sort keys %current) {
       push @brokePrevious,"$t $currentMachine{$t} $currentError{$t}";
     }
   }
+  if ($currentProduct{$t} =~ m/pdfwrite/) {
+    $pdfwriteTestCount++;
+  } else {
+    $notPdfwriteTestCount++;
+  }
 }
 
 print "ran ".scalar(keys %current)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 
 if (@differencePrevious) {
-  print "Differences in ".scalar(@differencePrevious)." of ".scalar(keys %current)." test(s):\n";
+  print "Differences in ".scalar(@differencePrevious)." of $notPdfwriteTestCount non-pdfwrite test(s):\n";
   while(my $t=shift @differencePrevious) {
     print "$t\n";
   }
   print "\n";
 } else {
-  print "No differences in ".scalar(keys %current)." tests\n\n";
+  print "No differences in $notPdfwriteTestCount non-pdfwrite tests\n\n";
+}
+
+if (@differencePreviousPdfwrite) {
+  print "Differences in ".scalar(@differencePreviousPdfwrite)." of $pdfwriteTestCount pdfwrite test(s):\n";
+  while(my $t=shift @differencePreviousPdfwrite) {
+    print "$t\n";
+  }
+  print "\n";
+} else {
+  print "No differences in $pdfwriteTestCount pdfwrite tests\n\n";
 }
 
 if (@brokePrevious) {

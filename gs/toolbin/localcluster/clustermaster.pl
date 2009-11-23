@@ -140,7 +140,7 @@ my %rules=(
 my $currentRev1=`/usr/local/bin/svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
 my $currentRev2=`/usr/local/bin/svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
 
-$footer.="\nupdated files:\n";
+$footer.="\nChanged files:\n";
 my $a=`/usr/local/bin/svn update ghostpdl`;
 #print "$a";
 my @a=split '\n',$a;
@@ -176,7 +176,7 @@ foreach my $i (keys %tests) {
 }
 print "$product\n" if (length($product) && $verbose);
 
-$footer.="\nproducts to be tested: $product\n";
+$footer.="\nProducts tested: $product\n";
 
 # $product="gs pcl xps svg";
 
@@ -286,6 +286,7 @@ if ($normalRegression==1 || $userRegression ne "") {
 #     $product="gs pcl xps svg"; # always test everything for users
       $product=$a[1];
       print "userName=$userName product=$product\n" if ($verbose);
+      $footer="\n\nUser regression options: $product\n";
     }
     `./build.pl $product >jobs`;
     if ($? != 0) {
@@ -396,7 +397,7 @@ if ($normalRegression==1 || $userRegression ne "") {
 print "totalSpeed=$totalSpeed totalTime=$totalTime\n" if ($verbose);
     foreach (keys %machines) {
 printf "%s %f %f %f ",$_,($machineSpeeds{$_}/$totalSpeed),(($doneTime{$_}-$startTime)/$totalTime),$machineSpeeds{$_} if ($verbose);
-      $machineSpeeds{$_}=($machineSpeeds{$_}/$totalSpeed)/(($doneTime{$_}-$startTime)/$totalTime);
+      $machineSpeeds{$_}=(($machineSpeeds{$_}/$totalSpeed)/(($doneTime{$_}-$startTime)/$totalTime)+$machineSpeeds{$_})/2;
 printf "%f\n",$machineSpeeds{$_} if ($verbose);
       $max=$machineSpeeds{$_} if ($max<$machineSpeeds{$_});
     }
@@ -516,14 +517,14 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
 	`tail -100 $machine.log >temp.log`;
         open(F2,"<temp.log");
         while(<F2>) {
-          print F $machine;
+          print F $_;
         }
         close(F2);
         print F "\n\n$machine stdout:\n\n";
 	`tail -100 $machine.out >temp.out`;
         open(F2,"<temp.out");
         while(<F2>) {
-          print F $machine;
+          print F $_;
         }
         close(F2);
       }

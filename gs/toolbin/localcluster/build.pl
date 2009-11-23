@@ -222,9 +222,9 @@ sub build($$$$) {
 
   $cmd  .= " true";
 
-  $cmd .= " ; echo \"$product\" >>$logFilename ";
 
   if ($a[0] eq 'pdf') {
+    $cmd .= " ; echo \"$product pdfwrite\" >>$logFilename ";
 
     $outputFilename="$temp/$tempname.$options.pdf";
     if ($product eq 'gs') {
@@ -291,6 +291,7 @@ sub build($$$$) {
     $outputFilenames.="$inputFilename ";
 
   } else {
+    $cmd .= " ; echo \"$product\" >>$logFilename ";
     $outputFilename="$temp/$filename.$options";
     if ($product eq 'gs') {
       $cmd2.=" nice $gsBin";
@@ -367,7 +368,7 @@ if (scalar keys %products>0) {
 }
 while (scalar(@commands)) {
   my $n=rand(scalar @commands);
-  $n=0;
+# $n=0;
   my $command=$commands[$n];  splice(@commands,$n,1);
   my $filename=$filenames[$n];  splice(@filenames,$n,1);
   print "$filename\t$command\n";
