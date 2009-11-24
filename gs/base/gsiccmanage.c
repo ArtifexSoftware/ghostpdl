@@ -568,6 +568,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
         icc_profile->default_match = defaulttype;
 
         icc_profile->num_comps = gscms_get_channel_count(icc_profile->profile_handle);
+        icc_profile->pcs_num_comps = gscms_get_pcs_channel_count(icc_profile->profile_handle);
         icc_profile->data_cs = gscms_get_profile_data_space(icc_profile->profile_handle);
 
         /* Initialize the range to default values */
@@ -633,6 +634,7 @@ gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem)
         result->default_match = DEFAULT_NONE;
 
         result->num_comps = gscms_get_channel_count(result->profile_handle);
+        result->pcs_num_comps = gscms_get_pcs_channel_count(result->profile_handle);
         result->data_cs = gscms_get_profile_data_space(result->profile_handle);
 
         /* Initialize the range to default values */
@@ -825,6 +827,7 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, gs_memo
                 /* Get the number of channels in the output profile */
 
                 icc_profile->num_comps = gscms_get_channel_count(icc_profile->profile_handle);
+                icc_profile->pcs_num_comps = gscms_get_pcs_channel_count(icc_profile->profile_handle);
                 icc_profile->data_cs = gscms_get_profile_data_space(icc_profile->profile_handle);
 
             } else {

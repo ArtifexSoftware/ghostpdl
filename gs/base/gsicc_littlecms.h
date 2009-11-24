@@ -44,6 +44,7 @@ void gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *inp
 
 int gscms_get_channel_count(gcmmhprofile_t profile);
 
+int gscms_get_pcs_channel_count(gcmmhprofile_t profile);
 
 char* gscms_get_clrtname(gcmmhprofile_t profile, int colorcount);
 

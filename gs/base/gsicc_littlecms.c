@@ -20,7 +20,8 @@
 #define LCMS_BYTES_MASK 0x7
 
 
-/* Get the number of channels for the profile */
+/* Get the number of channels for the profile.
+  Input count */
 
 int
 gscms_get_channel_count(gcmmhprofile_t profile)
@@ -29,6 +30,19 @@ gscms_get_channel_count(gcmmhprofile_t profile)
     icColorSpaceSignature colorspace;
 
     colorspace = cmsGetColorSpace(profile);
+    return(_cmsChannelsOf(colorspace));
+
+}
+
+/* Get the number of output channels for the profile */
+
+int
+gscms_get_pcs_channel_count(gcmmhprofile_t profile)
+{
+
+    icColorSpaceSignature colorspace;
+
+    colorspace = cmsGetPCS(profile);
     return(_cmsChannelsOf(colorspace));
 
 }
