@@ -305,33 +305,48 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     int src_nChannels,des_nChannels;
     int lcms_src_color_space, lcms_des_color_space;
 
-/* Get the data types */
+    /* Check for case of request for a transfrom from a device link profile 
+       in that case, the destination profile is NULL */
+
+   /* First handle all the source stuff */
 
     src_color_space  = cmsGetColorSpace(lcms_srchandle); 
-    des_color_space  = cmsGetColorSpace(lcms_deshandle);
-
     lcms_src_color_space = _cmsLCMScolorSpace(src_color_space);
-    lcms_des_color_space = _cmsLCMScolorSpace(des_color_space);
 
     /* littlecms returns -1 for types it does not (but should) understand */
     if (lcms_src_color_space < 0) lcms_src_color_space = 0;
-    if (lcms_des_color_space < 0) lcms_des_color_space = 0;
 
     src_nChannels = _cmsChannelsOf(src_color_space);
-    des_nChannels = _cmsChannelsOf(des_color_space);
 
-       /* For now, just do single byte data, interleaved.  We can change this when we
+    /* For now, just do single byte data, interleaved.  We can change this when we
        use the transformation. */
+    src_data_type = (COLORSPACE_SH(lcms_src_color_space)|CHANNELS_SH(src_nChannels)|BYTES_SH(1));
 
-     src_data_type = (COLORSPACE_SH(lcms_src_color_space)|CHANNELS_SH(src_nChannels)|BYTES_SH(1));
-     des_data_type = (COLORSPACE_SH(lcms_des_color_space)|CHANNELS_SH(des_nChannels)|BYTES_SH(1));
-
-         /* endian */
-    #if arch_is_big_endian
+#if arch_is_big_endian
     src_data_type = src_data_type | ENDIAN16_SH(1);
-    des_data_type = des_data_type | ENDIAN16_SH(1);
-    #endif
+#endif
 
+    if (lcms_deshandle != NULL) {
+
+        des_color_space  = cmsGetColorSpace(lcms_deshandle);
+
+    } else {
+
+        /* We must have a device link profile. */
+
+        des_color_space = cmsGetPCS(lcms_deshandle);
+
+    }
+
+    lcms_des_color_space = _cmsLCMScolorSpace(des_color_space);
+    if (lcms_des_color_space < 0) lcms_des_color_space = 0;
+    des_nChannels = _cmsChannelsOf(des_color_space);
+    des_data_type = (COLORSPACE_SH(lcms_des_color_space)|CHANNELS_SH(des_nChannels)|BYTES_SH(1));
+
+    /* endian */
+#if arch_is_big_endian
+        des_data_type = des_data_type | ENDIAN16_SH(1);
+#endif
 
 /* Create the link */
 
