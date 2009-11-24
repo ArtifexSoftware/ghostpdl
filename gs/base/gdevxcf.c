@@ -52,6 +52,7 @@
 
 /* The device descriptor */
 static dev_proc_get_params(xcf_get_params);
+static dev_proc_close_device(xcf_prn_close);
 static dev_proc_put_params(xcf_put_params);
 static dev_proc_print_page(xcf_print_page);
 static dev_proc_map_color_rgb(xcf_map_color_rgb);
@@ -153,7 +154,7 @@ typedef struct xcf_device_s {
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
 	gdev_prn_output_page,		/* output_page */\
-	gdev_prn_close,			/* close */\
+	xcf_prn_close,			/* close */\
 	NULL,				/* map_rgb_color - not used */\
 	xcf_map_color_rgb,		/* map_color_rgb */\
 	NULL,				/* fill_rectangle */\
@@ -850,6 +851,33 @@ xcf_set_color_model(xcf_device *xdev, xcf_color_model color_model)
     }
 
     return 0;
+}
+
+/*
+ * Close device and clean up ICC structures.
+ */
+
+static int
+xcf_prn_close(gx_device *dev)
+{
+    xcf_device * const xdev = (xcf_device *) dev;
+
+    if (xdev->cmyk_icc_link != NULL) {
+        gscms_release_link(xdev->cmyk_icc_link);
+        rc_decrement(xdev->cmyk_profile, "xcf_prn_close");
+    }
+
+    if (xdev->rgb_icc_link != NULL) {
+        gscms_release_link(xdev->rgb_icc_link);
+        rc_decrement(xdev->rgb_profile, "xcf_prn_close");
+    }
+
+    if (xdev->output_icc_link != NULL) {
+        gscms_release_link(xdev->output_icc_link);
+        rc_decrement(xdev->output_profile, "xcf_prn_close");
+    }
+
+    return gdev_prn_close(dev);
 }
 
 /* Set parameters.  We allow setting the number of bits per component. */
