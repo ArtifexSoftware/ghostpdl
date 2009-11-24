@@ -99,6 +99,8 @@ int gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
 /*
  * Initialize a stack-allocated pseudo-path for computing a bbox
  * for a dynamic path.
+ *
+ * Note: This bbox will always contain the origin.
  */
 void gx_path_init_bbox_accumulator(gx_path * ppath);
 
