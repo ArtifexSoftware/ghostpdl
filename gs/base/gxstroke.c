@@ -1441,7 +1441,7 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
                 return code;
             moveto_first = false;
         } else {
-            if ((npoints = cap_points(pgs_lp->cap, &plp->o, points)) < 0)
+            if ((npoints = cap_points(cap, &plp->o, points)) < 0)
                 return npoints;
             moveto_first = true;
         }
