@@ -705,7 +705,7 @@ $(DD)rinkj.dev : $(DEVS_MAK) $(rinkj_) $(GLD)page.dev
 
 $(GLOBJ)gdevrinkj.$(OBJ) : $(GLSRC)gdevrinkj.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
- $(gxdcconv_h)
+ $(gxdcconv_h) $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gdevrinkj.$(OBJ) $(C_) $(GLSRC)gdevrinkj.c
 
 
