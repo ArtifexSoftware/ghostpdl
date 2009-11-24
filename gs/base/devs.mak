@@ -1268,8 +1268,8 @@ $(DD)xcfcmyk.dev : $(DEVS_MAK) $(xcf_) $(GLD)page.dev
 
 $(GLOBJ)gdevxcf.$(OBJ) : $(GLSRC)gdevxcf.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
- $(gxdcconv_h)
-	$(GLCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
+ $(gxdcconv_h) $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
+ 	$(GLCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
 
 ### --------------------------- The PSD device ------------------------- ###
 

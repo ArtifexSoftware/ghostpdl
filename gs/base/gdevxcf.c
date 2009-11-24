@@ -23,6 +23,20 @@
 #include "gdevdcrd.h"
 #include "gstypes.h"
 #include "gxdcconv.h"
+#include "gscms.h"
+#include "gsicccache.h"
+#include "gsiccmanage.h"
+
+#ifndef cmm_gcmmhlink_DEFINED
+    #define cmm_gcmmhlink_DEFINED
+    typedef void* gcmmhlink_t;
+#endif
+
+#ifndef cmm_gcmmhprofile_DEFINED
+    #define cmm_gcmmhprofile_DEFINED
+    typedef void* gcmmhprofile_t;
+#endif
+
 
 #ifndef MAX_CHAN
 #   define MAX_CHAN 8
@@ -109,18 +123,26 @@ typedef struct xcf_device_s {
      */
     gs_separation_names separation_order;
 
-    /* ICC color profile objects, for color conversion. */
-    /* MJV to fix this */
+    /* ICC color profile objects, for color conversion. 
+       These are all device link profiles.  At least that
+       is how it appears looking at how this code
+       was written to work with the old icclib.  Just
+       doing minimal updates here so that it works
+       with the new CMM API.  I would be interested
+       to hear how people are using this. */
+
     char profile_rgb_fn[256];
-  /*  icmLuBase *lu_rgb; */
-    int lu_rgb_outn;
+    cmm_profile_t *rgb_profile;
+    gcmmhlink_t rgb_icc_link;
 
     char profile_cmyk_fn[256];
- /*   icmLuBase *lu_cmyk; */
-    int lu_cmyk_outn;
+    cmm_profile_t *cmyk_profile;
+    gcmmhlink_t cmyk_icc_link;
 
     char profile_out_fn[256];
- /*   icmLuBase *lu_out; */
+    cmm_profile_t *output_profile;
+    gcmmhlink_t output_icc_link;
+
 } xcf_device;
 
 /*
@@ -343,24 +365,28 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     xcf_device *xdev = (xcf_device *)dev;
     int n = xdev->separation_names.num_names;
-  /*  icmLuBase *luo = xdev->lu_cmyk;  MJV TO FIX */
-    void *luo = NULL;
+
+    gcmmhlink_t link = xdev->cmyk_icc_link;
     int i;
 
-    if (luo != NULL) {
-	double in[4];
-	double tmp[MAX_CHAN];
-	int outn = xdev->lu_cmyk_outn;
+    if (link != NULL) {
+	unsigned short in[4];
+	unsigned short tmp[MAX_CHAN];
+	int outn = xdev->cmyk_profile->pcs_num_comps;
 
-	in[0] = frac2float(c);
-	in[1] = frac2float(m);
-	in[2] = frac2float(y);
-	in[3] = frac2float(k);
-	/* luo->lookup(luo, tmp, in); */
+	in[0] = frac2ushort(c);
+	in[1] = frac2ushort(m);
+	in[2] = frac2ushort(y);
+	in[3] = frac2ushort(k);
+
+        gscms_transform_color(link, &(in[0]),
+                        &(tmp[0]), 2, NULL);
+
 	for (i = 0; i < outn; i++)
-	    out[i] = float2frac(tmp[i]);
+	    out[i] = ushort2frac(tmp[i]);
 	for (; i < n + 4; i++)
 	    out[i] = 0;
+
     } else {
 	/* If no profile given, assume CMYK */
 	out[0] = c;
@@ -387,21 +413,23 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     xcf_device *xdev = (xcf_device *)dev;
     int n = xdev->separation_names.num_names;
-    /* icmLuBase *luo = xdev->lu_rgb; MJV TO FIX */
-    void *luo = NULL;
+    gcmmhlink_t link = xdev->rgb_icc_link;
     int i;
 
-    if (luo != NULL) {
-	double in[3];
-	double tmp[MAX_CHAN];
-	int outn = xdev->lu_rgb_outn;
+    if (link != NULL) {
+	unsigned short in[3];
+	unsigned short tmp[MAX_CHAN];
+	int outn = xdev->rgb_profile->pcs_num_comps;
 
-	in[0] = frac2float(r);
-	in[1] = frac2float(g);
-	in[2] = frac2float(b);
-	/* luo->lookup(luo, tmp, in); */
+	in[0] = frac2ushort(r);
+	in[1] = frac2ushort(g);
+	in[2] = frac2ushort(b);
+
+        gscms_transform_color(link, &(in[0]),
+                        &(tmp[0]), 2, NULL);
+
 	for (i = 0; i < outn; i++)
-	    out[i] = float2frac(tmp[i]);
+	    out[i] = ushort2frac(tmp[i]);
 	for (; i < n + 4; i++)
 	    out[i] = 0;
     } else {
@@ -590,51 +618,68 @@ repack_data(byte * source, byte * dest, int depth, int first_bit,
 }
 #endif /* 0 */
 
-#if 0 /* MJV TO FIX */
-static int
-xcf_open_profile(xcf_device *xdev, char *profile_fn, icmLuBase **pluo,
-		 int *poutn)
-{
-    icmFile *fp;
-    icc *icco;
-    icmLuBase *luo;
 
-    dlprintf1("xcf_open_profile %s\n", profile_fn);
-    fp = new_icmFileStd_name(profile_fn, (char *)"r");
-    if (fp == NULL)
-	return_error(gs_error_undefinedfilename);
-    icco = new_icc();
-    if (icco == NULL)
-	return_error(gs_error_VMerror);
-    if (icco->read(icco, fp, 0))
-	return_error(gs_error_rangecheck);
-    luo = icco->get_luobj(icco, icmFwd, icmDefaultIntent, icmSigDefaultData, icmLuOrdNorm);
-    if (luo == NULL)
-	return_error(gs_error_rangecheck);
-    *pluo = luo;
-    luo->spaces(luo, NULL, NULL, NULL, poutn, NULL, NULL, NULL, NULL);
-    return 0;
+
+static int
+xcf_open_profile(const char *profile_out_fn, cmm_profile_t *icc_profile, gcmmhlink_t icc_link, gs_memory_t *memory)
+{
+
+    gsicc_rendering_param_t rendering_params;
+    
+    icc_profile = gsicc_get_profile_handle_file(profile_out_fn, 
+                    strlen(profile_out_fn), memory);
+
+    if (icc_profile == NULL)
+        return gs_throw(-1, "Could not create profile for xcf device");
+
+    /* Set up the rendering parameters */
+
+    rendering_params.black_point_comp = false;
+    rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
+    rendering_params.rendering_intent = gsPERCEPTUAL;
+
+    /* Call with a NULL destination profile since we are using a device link profile here */
+    icc_link = gscms_get_link(icc_profile, 
+                    NULL, &rendering_params);
+
+    if (icc_link == NULL)
+        return gs_throw(-1, "Could not create link handle for xdev device");
+
+    return(0);
+
+
 }
+
 
 static int
 xcf_open_profiles(xcf_device *xdev)
 {
     int code = 0;
-    if (xdev->lu_out == NULL && xdev->profile_out_fn[0]) {
-	code = xcf_open_profile(xdev, xdev->profile_out_fn,
-				    &xdev->lu_out, NULL);
+
+    if (xdev->output_icc_link == NULL && xdev->profile_out_fn[0]) {
+
+        code = xcf_open_profile(xdev->profile_out_fn, xdev->output_profile, 
+            xdev->output_icc_link, xdev->memory);
+
     }
-    if (code >= 0 && xdev->lu_rgb == NULL && xdev->profile_rgb_fn[0]) {
-	code = xcf_open_profile(xdev, xdev->profile_rgb_fn,
-				&xdev->lu_rgb, &xdev->lu_rgb_outn);
+
+    if (code >= 0 && xdev->rgb_icc_link == NULL && xdev->profile_rgb_fn[0]) {
+
+        code = xcf_open_profile(xdev->profile_rgb_fn, xdev->rgb_profile, 
+            xdev->rgb_icc_link, xdev->memory);
+
     }
-    if (code >= 0 && xdev->lu_cmyk == NULL && xdev->profile_cmyk_fn[0]) {
-	code = xcf_open_profile(xdev, xdev->profile_cmyk_fn,
-				&xdev->lu_cmyk, &xdev->lu_cmyk_outn);
+
+    if (code >= 0 && xdev->cmyk_icc_link == NULL && xdev->profile_cmyk_fn[0]) {
+
+        code = xcf_open_profile(xdev->profile_cmyk_fn, xdev->cmyk_profile, 
+            xdev->cmyk_icc_link, xdev->memory);
+
     }
+
     return code;
 }
-#endif
+
 
 #define set_param_array(a, d, s)\
   (a.data = d, a.size = s, a.persistent = false);
@@ -919,7 +964,7 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
 	memcpy(pdevn->profile_cmyk_fn, pcmyk.data, pcmyk.size);
 	pdevn->profile_cmyk_fn[pcmyk.size] = 0;
     }
-  /*   code = xcf_open_profiles(pdevn); MJV TO FIX */
+    code = xcf_open_profiles(pdevn);
 
     return code;
 }
@@ -1211,10 +1256,10 @@ xcf_shuffle_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
     }
 }
 
-#if 0  /*MJV TO FIX */
+
 static void
 xcf_icc_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
-		    int y, icmLuBase *luo)
+		    int y, gcmmhlink_t link)
 {
     int tile_j = y / TILE_HEIGHT;
     int yrem = y % TILE_HEIGHT;
@@ -1222,9 +1267,6 @@ xcf_icc_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
     int base_bytes_pp = xc->base_bytes_pp;
     int n_extra_channels = xc->n_extra_channels;
     int row_idx = 0;
-    int inn, outn;
-
-    luo->spaces(luo, NULL, &inn, NULL, &outn, NULL, NULL, NULL, NULL);
 
     for (tile_i = 0; tile_i < xc->n_tiles_x; tile_i++) {
 	int x;
@@ -1235,24 +1277,26 @@ xcf_icc_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
 	int extra_stride = tile_width * tile_height;
 	byte *extra_ptr = tile_data[tile_i] + extra_stride * base_bytes_pp +
 	    yrem * tile_width;
-	double in[MAX_CHAN], out[MAX_CHAN];
 	    
 	int base_idx = 0;
 
 	for (x = 0; x < tile_width; x++) {
+
 	    int plane_idx;
 
-	    for (plane_idx = 0; plane_idx < inn; plane_idx++)
-		in[plane_idx] = row[row_idx++] * (1.0 / 255);
-	    luo->lookup(luo, out, in);
-	    for (plane_idx = 0; plane_idx < outn; plane_idx++)
-		base_ptr[base_idx++] = (int)(0.5 + 255 * out[plane_idx]);
+                /* This loop could be optimized.  I don't quite 
+                   understand what is going on in the loop 
+                   with the 255^row[row_idx++] operation */
+
+            gscms_transform_color(link, &(row[row_idx]),
+                            &(base_ptr[base_idx]), 1, NULL);
+
 	    for (plane_idx = 0; plane_idx < n_extra_channels; plane_idx++)
 		extra_ptr[plane_idx * extra_stride + x] = 255 ^ row[row_idx++];
 	}
     }
 }
-#endif
+
 
 static int
 xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
@@ -1267,8 +1311,7 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
     int bytes_pp = base_bytes_pp + n_extra_channels;
     int chan_idx;
     xcf_device *xdev = (xcf_device *)pdev;
-   /*  icmLuBase *luo = xdev->lu_out; MJV TO FIX */
-    void *luo = NULL;
+    gcmmhlink_t link = xdev->output_icc_link;
 
     line = gs_alloc_bytes(pdev->memory, raster, "xcf_write_image_data");
     tile_data = (byte **)gs_alloc_bytes(pdev->memory,
@@ -1289,10 +1332,10 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
 	y1 = min(xc->height, y0 + TILE_HEIGHT);
 	for (y = y0; y < y1; y++) {
 	    code = gdev_prn_get_bits(pdev, y, line, &row);
-	    if (luo == NULL)
+	    if (link == NULL)
 		xcf_shuffle_to_tile(xc, tile_data, row, y);
-	    /* else */
-		/* xcf_icc_to_tile(xc, tile_data, row, y, luo);  MJV TO FIX */
+	    else
+		xcf_icc_to_tile(xc, tile_data, row, y, link); 
 	}
 	for (tile_i = 0; tile_i < xc->n_tiles_x; tile_i++) {
 	    int tile_idx = tile_j * xc->n_tiles_x + tile_i;
