@@ -17,7 +17,6 @@
 /* $Id$ */
 /* ALPHA: Sample Device that provides WTS screening and IMDI color management */
 /* TODO: this should be configurable */
-#define LINK_ICC_NAME	"link.icc"
 
 #include "errno_.h"
 #include "string_.h"
@@ -38,6 +37,12 @@
     #define cmm_gcmmhlink_DEFINED
     typedef void* gcmmhlink_t;
 #endif
+
+#ifndef cmm_gcmmhprofile_DEFINED
+    #define cmm_gcmmhprofile_DEFINED
+    typedef void* gcmmhprofile_t;
+#endif
+
 
 /* Memory arg is included in ghostpcl branch but not main branch. */
 #define GS_NOTE_ERROR(m, e) gs_note_error(e)
