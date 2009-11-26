@@ -1753,8 +1753,33 @@ retry_oversampling:
 	       using src_type, dst_type. Should adjust the 'matrix' above.
                Call get_font_proportional_feature for proper choice.
             */
-	} else 
-	    cr.char_codes[0] = client_char_code;
+	} else {
+            ref *CIDMap, Str;
+	    byte *Map;
+	    int ccode = client_char_code;
+
+	    /* The PDF Reference says that we should use a CIDToGIDMap, but the PDF
+	     * interpreter converts this into a CIDMap (see pdf_font.ps, processCIDToGIDMap)
+	     */
+	    if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name)) {
+		if (r_has_type(CIDMap, t_array)) {
+		    /* Too big for single string, so its an array of 2 strings */
+		    if (client_char_code < 32767) 
+			code = array_get(imemory, CIDMap, 0, &Str);
+		    else {
+			code = array_get(imemory, CIDMap, 1, &Str);
+			ccode -= 32767;
+		    }
+		    if (code < 0)
+		        return code;
+		    Map = &Str.value.bytes[ccode * 2];
+		} else
+		    Map = &CIDMap->value.bytes[ccode * 2];
+		cr.char_codes[0] = (Map[0] << 8) + Map[1];
+	    }
+	    else
+		cr.char_codes[0] = client_char_code;
+	}
     } else if (is_TT_from_type42) {
         /* This font must not use 'cmap', so compute glyph index from CharStrings : */
 	ref *CharStrings, *glyph_index;
