@@ -179,8 +179,9 @@ static void sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
     while (!r->error) {
         int l = min(length, r->length - r->offset);
         memcpy(v, r->p + r->offset, l);
-        r->p += l;
+/*        r->p += l;*/
         length -= l;
+	r->offset += l;
         if (length <= 0)
             return;
         sfnts_next_elem(r);
