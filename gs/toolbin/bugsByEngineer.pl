@@ -18,6 +18,10 @@ use warnings;
 use LWP::Simple;
 use Date::Calc qw(Delta_Days);
 
+use Data::Dumper;
+
+my @enhancements;
+
 sub daysFromNow($) {
   my $date=shift;
   my $diff=0;
@@ -87,12 +91,22 @@ foreach (@a) {
   }
 }
 
+$a=`lynx -nolist -width 1024 -dump http://bugs.ghostscript.com/buglist.cgi?short_desc_type=allwordssubstr\\&short_desc=\\&long_desc_type=allwordssubstr\\&long_desc=\\&keywords_type=allwords\\&bug_status=UNCONFIRMED\\&bug_status=NEW\\&bug_status=ASSIGNED\\&bug_status=REOPENED\\&bug_severity=enhancement\\&emailassigned_to1=1\\&emailtype1=substring\\&email1=$engineer\\&emailassigned_to2=1\\&bugidtype=include\\&chfieldto=Now\\&field0-0-0=Customer\\&type0-0-0=greaterthan\\&value0-0-0=0`;
+@a=split '\n',$a;
+foreach (@a) {
+  chomp;
+  if (m/(\d\d\d\d\d\d) ... P. /) {
+    $bugList{$1}="Enhancement";
+  }
+}
+
+
 $a=`lynx -nolist -width 1024 -dump http://bugs.ghostscript.com/buglist.cgi?short_desc_type=allwordssubstr\\&short_desc=\\&long_desc_type=allwordssubstr\\&long_desc=\\&keywords_type=allwords\\&bug_status=CLOSED\\&resolution=LATER\\&resolution=REMIND\\&bug_severity=blocker\\&bug_severity=critical\\&bug_severity=major\\&bug_severity=normal\\&bug_severity=minor\\&bug_severity=trivial\\&emailassigned_to1=1\\&emailtype1=substring\\&email1=$engineer\\&emailassigned_to2=1\\&bugidtype=include\\&chfieldto=Now\\&field0-0-0=Customer\\&type0-0-0=greaterthan\\&value0-0-0=0`;
 @a=split '\n',$a;
 foreach (@a) {
   chomp;
   if (m/(\d\d\d\d\d\d) ... P. /) {
-    $bugList{$1}="Customer";
+#   $bugList{$1}="Customer";
   }
 }
 
@@ -116,7 +130,7 @@ $a=`lynx -nolist -width 1024 -dump http://bugs.ghostscript.com/buglist.cgi?short
 foreach (@a) {
   chomp;
   if (m/(\d\d\d\d\d\d) ... P. /) {
-    $bugList{$1}="Regression" if (!exists $bugList{$1});
+#   $bugList{$1}="Regression" if (!exists $bugList{$1});
   }
 }
 
@@ -135,7 +149,7 @@ $a=`lynx -nolist -width 1024 -dump http://bugs.ghostscript.com/buglist.cgi?short
 foreach (@a) {
   chomp;
   if (m/(\d\d\d\d\d\d) ... P. /) {
-    $bugList{$1}="P1" if (!exists $bugList{$1});
+#   $bugList{$1}="P1" if (!exists $bugList{$1});
   }
 }
 
@@ -171,7 +185,7 @@ foreach (sort keys %bugList) {
     }
 
 
-    if ($bugList{$bugNumber} eq "Customer") {
+    if ($bugList{$bugNumber} eq "Customer" || $bugList{$bugNumber} eq "Enhancement") {
       my $url="http://bugs.ghostscript.com/show_bug.cgi?id=$bugNumber";
       $b=get $url;
   
@@ -201,10 +215,16 @@ foreach (sort keys %bugList) {
       $customerName=substr $customerName,0,30;
       my $responseNeeded='---';
       $responseNeeded=daysFromNow($commentedUpon) if ($commentedUpon ne "never");
-      if ($customerCount==0) {
-        printf "%d  %5d  %5d  %5d    %3s    %-30s   %s\n",$bugNumber,daysFromNow($opened),daysFromNow($dateAssigned),daysFromNow($modified),$responseNeeded,$customerName,$description;
+#     $description = "Enhancement: ".$description if ($bugList{$bugNumber} eq "Enhancement");
+      if ($bugList{$bugNumber} eq "Enhancement") {
+        my $s=sprintf "%d  %5d  %5d  %5d    %3s    %-30s   %s\n",$bugNumber,daysFromNow($opened),daysFromNow($dateAssigned),daysFromNow($modified),$responseNeeded,$customerName,$description;
+        push @enhancements, $s;
       } else {
-        printf "                                      %-30s\n",$customerName;
+        if ($customerCount==0) {
+          printf "%d  %5d  %5d  %5d    %3s    %-30s   %s\n",$bugNumber,daysFromNow($opened),daysFromNow($dateAssigned),daysFromNow($modified),$responseNeeded,$customerName,$description;
+        } else {
+          printf "                                      %-30s\n",$customerName;
+        }
       }
     }
 
@@ -216,15 +236,32 @@ foreach (sort keys %bugList) {
   printReport("Alex");
   printReport("Henry");
   printReport("Ken");
-  printReport("Leonardo");
   printReport("Marcos");
+  printReport("Masaki");
   printReport("Michael");
   printReport("Ralph");
   printReport("Ray");
   printReport("Tor");
+  printReport("robin");
+  printReport("htl");
+  printReport("larsu");
   printReport("support");
 
+my @sorted=sort(@enhancements);
 
 
+  print "\n";
+  print "-------------------------------------------------------------------------------------------------------------------\n";
+  print "\n";
+  print "Enhancement requests:\n";
+  print "\n";
+  print "                              Days\n";
+  print " Bug     Days   Days   Days   Engr\n";
+  print "Number   Open  Assign  Idle   Resp    Customer(s)                      Summary\n";
+  print "\n";
+
+foreach (@sorted) {
+  print "$_";
+}
 
 
