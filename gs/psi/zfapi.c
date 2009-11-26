@@ -1753,8 +1753,8 @@ retry_oversampling:
 	       using src_type, dst_type. Should adjust the 'matrix' above.
                Call get_font_proportional_feature for proper choice.
             */
-        } else
-            cr.char_codes[0] = client_char_code;
+	} else 
+	    cr.char_codes[0] = client_char_code;
     } else if (is_TT_from_type42) {
         /* This font must not use 'cmap', so compute glyph index from CharStrings : */
 	ref *CharStrings, *glyph_index;
@@ -2051,10 +2051,15 @@ retry_oversampling:
      * from glyph code ? Currently we keep a compatibility
      * to the native GS font renderer without a deep analyzis.
      */
-    code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
+    if (bCID)
+	code = zchar_set_cache(i_ctx_p, pbfont, op,
 		           NULL, sbw + 2, &char_bbox,
 			   fapi_finish_render, &exec_cont, sbw);
-    if (code >= 0 && exec_cont != 0)
+    else
+	code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
+		           NULL, sbw + 2, &char_bbox,
+			   fapi_finish_render, &exec_cont, sbw);
+    if (code >= 0 && exec_cont != 0) 
 	code = (*exec_cont)(i_ctx_p);
     if (code != 0) {
         if (code < 0) {
