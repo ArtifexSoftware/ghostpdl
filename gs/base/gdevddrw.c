@@ -777,6 +777,15 @@ gx_default_draw_thin_line(gx_device * dev,
     int itoy = fixed2int_var(fy1);
 
     return_if_interrupt(dev->memory);
+    /* These special cases are intended to capture the times when we can
+     * render a vertical or horizontal rectangle to get the correct result.
+     * Unfortunately, they fail to match what the general case does. I have
+     * a fix that I believe does match, but if I simply replace one with the
+     * other, we'll never know. A better plan is to remove the old special
+     * cases in one commit, allow the regression tests to settle, and then
+     * commit the (hopefully) correct replacements in the next commit. The
+     * regression tests should then run cleanly. - RJW */
+if (0==1) {
     if (itoy == iy) {		/* horizontal line */
 	return (ix <= itox ?
 		gx_fill_rectangle_device_rop(ix, iy, itox - ix + 1, 1,
@@ -792,7 +801,9 @@ gx_default_draw_thin_line(gx_device * dev,
 		gx_fill_rectangle_device_rop(ix, itoy, 1, iy - itoy + 1,
 					     pdevc, dev, lop)
 	    );
-    } {
+    }
+}
+    {
 	fixed h = fy1 - fy0;
 	fixed w = fx1 - fx0;
 	fixed tf;
