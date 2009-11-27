@@ -265,8 +265,8 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
 	gs_separations * separations = &pdevn_params->separations;
 	int sep_num = separations->num_separations++;
 
-	/* We have a new spot colorant */
-	sep_name = gs_alloc_bytes(dev->memory,
+	/* We have a new spot colorant - put in stable memory to avoid "restore" */
+	sep_name = gs_alloc_bytes(dev->memory->stable_memory,
 			name_size, "devn_get_color_comp_index");
 	memcpy(sep_name, pname, name_size);
 	separations->names[sep_num].size = name_size;
@@ -717,7 +717,7 @@ free_separation_names(gs_memory_t * mem,
 
     /* Discard the sub levels. */
     for (i = 0; i < pseparation->num_separations; i++)
-        gs_free_object(mem, pseparation->names[i].data,
+        gs_free_object(mem->stable_memory, pseparation->names[i].data,
 				"free_separation_names");
     pseparation->num_separations = 0;
     return;
