@@ -287,11 +287,12 @@ gx_forward_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
-    bool was_open = tdev->is_open;
+    bool was_open;
     int code;
 
     if (tdev == 0)
 	return gx_default_put_params(dev, plist);
+    was_open = tdev->is_open;
     code = dev_proc(tdev, put_params)(tdev, plist);
     if (code == 0 && !tdev->is_open) {
 	    code = was_open ? 1 : 0;   /* target device closed */
