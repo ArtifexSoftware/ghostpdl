@@ -771,38 +771,11 @@ gx_default_draw_thin_line(gx_device * dev,
 			  fixed fx0, fixed fy0, fixed fx1, fixed fy1,
 		  const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
-    int ix = fixed2int_var(fx0);
-    int iy = fixed2int_var(fy0);
-    int itox = fixed2int_var(fx1);
-    int itoy = fixed2int_var(fy1);
-
+    int ix, iy, itox, itoy;
+    fixed tf;
+    
     return_if_interrupt(dev->memory);
-    /* These special cases are intended to capture the times when we can
-     * render a vertical or horizontal rectangle to get the correct result.
-     * Unfortunately, they fail to match what the general case does. I have
-     * a fix that I believe does match, but if I simply replace one with the
-     * other, we'll never know. A better plan is to remove the old special
-     * cases in one commit, allow the regression tests to settle, and then
-     * commit the (hopefully) correct replacements in the next commit. The
-     * regression tests should then run cleanly. - RJW */
-if (0==1) {
-    if (itoy == iy) {		/* horizontal line */
-	return (ix <= itox ?
-		gx_fill_rectangle_device_rop(ix, iy, itox - ix + 1, 1,
-					     pdevc, dev, lop) :
-		gx_fill_rectangle_device_rop(itox, iy, ix - itox + 1, 1,
-					     pdevc, dev, lop)
-	    );
-    }
-    if (itox == ix) {		/* vertical line */
-	return (iy <= itoy ?
-		gx_fill_rectangle_device_rop(ix, iy, 1, itoy - iy + 1,
-					     pdevc, dev, lop) :
-		gx_fill_rectangle_device_rop(ix, itoy, 1, iy - itoy + 1,
-					     pdevc, dev, lop)
-	    );
-    }
-}
+    
     {
 	fixed h = fy1 - fy0;
 	fixed w = fx1 - fx0;
@@ -811,18 +784,55 @@ if (0==1) {
 	gs_fixed_edge left, right;
 
 	if ((w < 0 ? -w : w) <= (h < 0 ? -h : h)) {
+            /* A "mostly-vertical" line */
 	    if (h < 0)
 		SWAP(fx0, fx1, tf), SWAP(fy0, fy1, tf),
 		    h = -h;
+	    /* Can we treat it as a vertical rectangle? */
+            ix   = fixed2int_var(fx0-fixed_epsilon);
+            itox = fixed2int_var(fx1-fixed_epsilon);
+            if (itox == ix) {
+                int sy, sh;
+                /* Figure out the start/height, allowing for our "covers
+                 * centre of pixel" rule. */
+                iy   = fixed2int_var(fy0+fixed_half-fixed_epsilon);
+                itoy = fixed2int_var(fy1+fixed_half-fixed_epsilon);
+                itoy = itoy - iy;
+                if (itoy <= 0) {
+                    /* Zero height; drawing this as a trapezoid wouldn't
+                     * fill any pixels, so just exit. */
+                    return 0;
+                }
+                return gx_fill_rectangle_device_rop(ix, iy, 1, itoy,
+                                                    pdevc, dev, lop);
+            }
 	    right.start.x = (left.start.x = fx0 - fixed_half) + fixed_1;
 	    right.end.x = (left.end.x = fx1 - fixed_half) + fixed_1;
 	    left.start.y = right.start.y = fy0;
 	    left.end.y = right.end.y = fy1;
 	    swap_axes = false;
 	} else {
+            /* A "mostly-horizontal" line */
 	    if (w < 0)
 		SWAP(fx0, fx1, tf), SWAP(fy0, fy1, tf),
 		    w = -w;
+            /* Can we treat this as a horizontal rectangle? */
+            iy   = fixed2int_var(fy0-fixed_epsilon);
+            itoy = fixed2int_var(fy1-fixed_epsilon);
+            if (itoy == iy) {
+                /* Figure out the start/width, allowing for our "covers
+                * centre of pixel" rule. */
+                ix   = fixed2int_var(fx0+fixed_half-fixed_epsilon);
+                itox = fixed2int_var(fx1+fixed_half-fixed_epsilon);
+                itox = itox - ix;
+                if (itox <= 0) {
+                    /* Zero width; drawing this as a trapezoid wouldn't
+                     * fill any pixels, so just exit. */
+                    return 0;
+                }
+                return gx_fill_rectangle_device_rop(ix, iy, itox, 1,
+                                                    pdevc, dev, lop);
+            }
 	    right.start.x = (left.start.x = fy0 - fixed_half) + fixed_1;
 	    right.end.x = (left.end.x = fy1 - fixed_half) + fixed_1;
 	    left.start.y = right.start.y = fx0;
