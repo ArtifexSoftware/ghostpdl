@@ -140,10 +140,15 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
     {
 	unsigned char *buffer = NULL;
 	length = ff->get_glyph(ff, a_index, NULL, 0);
+	if (length == 65535)
+	    return FT_Err_Invalid_Glyph_Index;
 	buffer = malloc(length);
 	if (!buffer)
 	    return FT_Err_Out_Of_Memory;
-	ff->get_glyph(ff, a_index, buffer, length);
+	if (ff->get_glyph(ff, a_index, buffer, length) == 65535) {
+	    free (buffer);
+	    return FT_Err_Invalid_Glyph_Index;
+	}
 	a_data->pointer = buffer;
     }
     else
@@ -345,6 +350,10 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     }
     if (!ft_error && a_glyph)
 	ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
+    if (ft_error == FT_Err_Invalid_Glyph_Index) {
+	eprintf1 ("FreeType is unable to find the glyph %d in the font. Continuing, ignoring missing glyph\n", a_char_ref->char_code);
+	ft_error = 0;
+    }
     return ft_to_gs_error(ft_error);
 } 
 
