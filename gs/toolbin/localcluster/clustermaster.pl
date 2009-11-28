@@ -137,11 +137,11 @@ my %rules=(
 );
 
 
-my $currentRev1=`/usr/local/bin/svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
-my $currentRev2=`/usr/local/bin/svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
+my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
+my $currentRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
 
 $footer.="\nChanged files:\n";
-my $a=`/usr/local/bin/svn update ghostpdl`;
+my $a=`svn update ghostpdl`;
 #print "$a";
 my @a=split '\n',$a;
 my $set=0;
@@ -174,15 +174,18 @@ print "($t) ";
 foreach my $i (keys %tests) {
   $product .= "$i " if ($set & $tests{$i});
 }
+
+$product =~ s/svg//;  # disable svg tests
+
 print "$product\n" if (length($product) && $verbose);
 
 $footer.="\nProducts tested: $product\n";
 
 # $product="gs pcl xps svg";
 
-#`/usr/local/bin/svn update ghostpdl`;
-my $newRev1=`/usr/local/bin/svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
-my $newRev2=`/usr/local/bin/svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
+#`svn update ghostpdl`;
+my $newRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
+my $newRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
 
 chomp $currentRev1;
 chomp $currentRev2;
@@ -280,14 +283,15 @@ if ($normalRegression==1 || $userRegression ne "") {
       $options.=" $_.jobs $machineSpeeds{$_}";
     }
     print "$options\n" if ($verbose);
+
     if (!$normalRegression) {
       my @a=split ' ',$userRegression,2;
       $userName=$a[0];
-#     $product="gs pcl xps svg"; # always test everything for users
       $product=$a[1];
       print "userName=$userName product=$product\n" if ($verbose);
       $footer="\n\nUser regression options: $product\n";
     }
+
     `./build.pl $product >jobs`;
     if ($? != 0) {
       # horrible hack, fix later
@@ -456,6 +460,7 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
       my $filter="cat current.tab";
       foreach (@a) {
         $filter.=" | grep -v \"\t$_\t\"";
+        $filter.=" | grep -v \"\t$_ pdfwrite\t\"";
       }
       $filter.=">t.tab";
       print "$filter\n" if ($verbose);
@@ -491,6 +496,7 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
       my $filter="cat current.tab";
       foreach (@a) {
         $filter.=" | grep -v \"\t$_\t\"";
+        $filter.=" | grep -v \"\t$_ pdfwrite\t\"";
       }
       $filter.=">t.tab";
       print "$filter\n" if ($verbose);

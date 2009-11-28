@@ -85,7 +85,7 @@ if (open(F,"<$machine.start")) {
 }
 
 
-my $host="casper.ghostscript.com";
+my $host="casper3.ghostscript.com";
 
 my $desiredRev;
 
@@ -95,7 +95,7 @@ $maxCount=16;
 
 my $baseDirectory=`pwd`;
 chomp $baseDirectory;
-my $usersDir="/home/marcos/cluster/users";
+my $usersDir="/home/regression/cluster/users";
 
 my $temp="./temp";
 my $temp2="./temp.tmp";
@@ -230,7 +230,7 @@ sub spawn($$) {
 sub checkAbort {
   checkPID();
   return (1) if ($abort==1);
-  spawn(60,"scp -i ~/.ssh/cluster_key  marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.abort . >/dev/null 2>/dev/null");
+  spawn(60,"scp -i ~/.ssh/cluster_key  regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.abort . >/dev/null 2>/dev/null");
   if (open(F,"<$machine.abort")) {
     close(F);
     killAll();
@@ -242,7 +242,7 @@ sub checkAbort {
 sub updateStatus($) {
   my $message=shift;
   `echo '$message' >$machine.status`;
-  spawn(0,"scp -i ~/.ssh/cluster_key $machine.status marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.status");
+  spawn(0,"scp -i ~/.ssh/cluster_key $machine.status regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.status");
 }
 
 if ($user) {
@@ -277,9 +277,9 @@ if (!$abort) {
     mkdir "users/$user/ghostpdl";
     mkdir "users/$user/ghostpdl/gs";
 # if ($product eq 'gs') {
-#   $cmd="cd users/$user/ghostpdl ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\" marcos\@$host:$usersDir/$user/ghostpdl/gs .";
+#   $cmd="cd users/$user/ghostpdl ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl/gs .";
 # } else {
-    $cmd="cd users/$user          ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\" marcos\@$host:$usersDir/$user/ghostpdl    .";
+    $cmd="cd users/$user          ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
     # }
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -700,13 +700,13 @@ if ($abort) {
   system("date") if ($debug2);
   `touch $machine.log.gz ; rm -f $machine.log.gz ; gzip $machine.log`;
   `touch $machine.out.gz ; rm -f $machine.out.gz ; gzip $machine.out`;
-  spawn(300,"scp -i ~/.ssh/cluster_key $machine.log.gz marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.log.gz");
-  spawn(300,"scp -i ~/.ssh/cluster_key $machine.out.gz marcos\@casper.ghostscript.com:/home/marcos/cluster/$machine.out.gz");
+  spawn(300,"scp -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz");
+  spawn(300,"scp -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz");
 
   system("date") if ($debug2);
   updateStatus('idle');
 } # if (!$abort)
-spawn(10,"ssh -i ~/.ssh/cluster_key marcos\@casper.ghostscript.com \"touch /home/marcos/cluster/$machine.done\"");
+spawn(10,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
 
 system("date") if ($debug2);
 #`rm -fr $temp`;

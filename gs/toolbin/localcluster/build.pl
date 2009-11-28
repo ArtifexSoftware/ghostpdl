@@ -170,7 +170,7 @@ my %tests=(
 #update the regression file source directories
 if ($updateTestFiles) {
   foreach my $testSource (sort keys %testSource) {
-    $cmd="cd $testSource ; /usr/local/bin/svn update";
+    $cmd="cd $testSource ; svn update";
     print STDERR "$cmd\n" if ($verbose);
     `$cmd`;
   }
