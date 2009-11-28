@@ -509,7 +509,7 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
 			return 0;
 		    switch (r_btype(&Element)) {
 			case t_name:
-			    name_string_ref(ff->memory, &name, &string);
+			    name_string_ref(ff->memory, &Element, &string);
 			    length += r_size(&string) + 1;
 			    break;
 			case t_real:
