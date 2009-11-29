@@ -425,6 +425,20 @@ const tiffsep1_device gs_tiffsep1_device =
 #undef ENCODE_COLOR
 #undef DECODE_COLOR
 
+static const uint32_t bit_order[32]={
+#if arch_is_big_endian
+	0x80000000, 0x40000000, 0x20000000, 0x10000000,	0x08000000, 0x04000000, 0x02000000, 0x01000000,
+	0x00800000, 0x00400000, 0x00200000, 0x00100000,	0x00080000, 0x00040000, 0x00020000, 0x00010000,
+	0x00008000, 0x00004000, 0x00002000, 0x00001000,	0x00000800, 0x00000400, 0x00000200, 0x00000100,
+	0x00000080, 0x00000040, 0x00000020, 0x00000010,	0x00000008, 0x00000004, 0x00000002, 0x00000001 
+#else
+	0x00000080, 0x00000040, 0x00000020, 0x00000010,	0x00000008, 0x00000004, 0x00000002, 0x00000001, 
+	0x00008000, 0x00004000, 0x00002000, 0x00001000,	0x00000800, 0x00000400, 0x00000200, 0x00000100,
+	0x00800000, 0x00400000, 0x00200000, 0x00100000,	0x00080000, 0x00040000, 0x00020000, 0x00010000,
+	0x80000000, 0x40000000, 0x20000000, 0x10000000,	0x08000000, 0x04000000, 0x02000000, 0x01000000 
+#endif
+    };
+
 /*
  * The following procedures are used to map the standard color spaces into
  * the color components for the tiffsep device.
@@ -1193,27 +1207,6 @@ threshold_from_order( gx_ht_order *d_order, int *Width, int *Height, gs_memory_t
    int i, j, l, prev_l;
    unsigned char *thresh;
    gx_ht_bit *bits = (gx_ht_bit *)d_order->bit_data;
-   int bit_order[32]={
-#if arch_is_big_endian
-	0x80000000, 0x40000000, 0x20000000, 0x10000000,
-	0x08000000, 0x04000000, 0x02000000, 0x01000000,
-	0x00800000, 0x00400000, 0x00200000, 0x00100000,
-	0x00080000, 0x00040000, 0x00020000, 0x00010000,
-	0x00008000, 0x00004000, 0x00002000, 0x00001000,
-	0x00000800, 0x00000400, 0x00000200, 0x00000100,
-	0x00000080, 0x00000040, 0x00000020, 0x00000010,
-	0x00000008, 0x00000004, 0x00000002, 0x00000001 
-#else
-	0x00000080, 0x00000040, 0x00000020, 0x00000010,
-	0x00000008, 0x00000004, 0x00000002, 0x00000001, 
-	0x00008000, 0x00004000, 0x00002000, 0x00001000,
-	0x00000800, 0x00000400, 0x00000200, 0x00000100,
-	0x00800000, 0x00400000, 0x00200000, 0x00100000,
-	0x00080000, 0x00040000, 0x00020000, 0x00010000,
-	0x80000000, 0x40000000, 0x20000000, 0x10000000,
-	0x08000000, 0x04000000, 0x02000000, 0x01000000 
-#endif
-    };
 
 #ifdef DEBUG
 if ( gs_debug_c('h') ) {
@@ -1605,24 +1598,6 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
  * the speed of compressed color encoding.
  */
 #define USE_32_BIT_WRITES
-
-#ifdef USE_32_BIT_WRITES
-#   if arch_is_big_endian
-		mask_list[32] = {
-		    0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001,
-		    0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,
-		    0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
-		    0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000
-		};
-#   else
-		uint32_t mask_list[32] = {
-		    0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001,
-		    0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,
-		    0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
-		    0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000
-		};
-#   endif
-#endif /* USE_32_BIT_WRITES */
 		byte *thresh_line_base = tfdev->thresholds[comp_num].dstart +
 				    ((y % tfdev->thresholds[comp_num].dheight) *
 					tfdev->thresholds[comp_num].dwidth) ;
@@ -1632,7 +1607,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 #ifdef USE_32_BIT_WRITES
 		uint32_t *dest = dithered_line;
 		uint32_t val = 0;
-		uint32_t *mask = mask_list;
+		uint32_t *mask = &bit_order[0];
 #else	/* example 8-bit code */
 		byte *dest = dithered_line;
 		byte val = 0;
@@ -1643,10 +1618,10 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 #ifdef USE_32_BIT_WRITES
 		    if (*src < *thresh_ptr++)
 		        val |= *mask;
-		    if (++mask == &(mask_list[32])) {
+		    if (++mask == &(bit_order[32])) {
 			*dest++ = val;
 			val = 0;
-			mask = mask_list;
+			mask = &bit_order[0];
 		    }
 #else	/* example 8-bit code */
 		    if (*src < *thresh_ptr++)
@@ -1663,7 +1638,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
                 } /* end src pixel loop - collect last bits if any */
 		/* the following relies on their being enough 'pad' in dithered_line */
 #ifdef USE_32_BIT_WRITES
-		if (mask != mask_list) {
+		if (mask != &bit_order[0]) {
 		    *dest = val;
 		}
 #else	/* example 8-bit code */
