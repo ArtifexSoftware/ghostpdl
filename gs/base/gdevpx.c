@@ -1632,6 +1632,7 @@ pclxl_fill_mask(gx_device * dev,
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
     int code;
     stream *s;
+    gx_color_index foreground;
 
     fit_copy(dev, data, data_x, raster, id, x, y, w, h);
     /* write_image_data() needs byte-alignment,
@@ -1643,6 +1644,7 @@ pclxl_fill_mask(gx_device * dev,
 				    x, y, w, h, pdcolor, depth,
 				    lop, pcpath);
     code = gdev_vector_update_clip_path(vdev, pcpath);
+    foreground = gx_dc_pure_color(pdcolor);
     if (code < 0)
 	return code;
     code = gdev_vector_update_fill_color(vdev, NULL, pdcolor);
@@ -1656,8 +1658,17 @@ pclxl_fill_mask(gx_device * dev,
 	if (pclxl_copy_text_char(xdev, data, raster, id, w, h) >= 0)
 	    return 0;
     }
+    /* This is similiar to the copy_mono white-on-mask,
+     * except we are drawing white on the black of a black/white mask,
+     * so we invert source, compared to copy_mono */
+    if (foreground == (1 << dev->color_info.depth) - 1) { /* white */
+      lop = rop3_not(rop3_S) | (rop3_D & rop3_S);
+    }else if (foreground == 0) { /* black */
+      lop = (rop3_S & rop3_D);
+    }else lop |= rop3_S | lop_S_transparent;
+
     code = gdev_vector_update_log_op(vdev,
-				     lop | rop3_S | lop_S_transparent);
+				     lop);
     if (code < 0)
 	return 0;
     pclxl_set_color_palette(xdev, eGray, (const byte *)"\377\000", 2);
@@ -1828,14 +1839,24 @@ pclxl_begin_image(gx_device * dev,
 	if (pim->ImageMask) {
 	    const byte *palette = (const byte *)
 		(pim->Decode[0] ? "\377\000" : "\000\377");
+	    gx_color_index foreground = gx_dc_pure_color(pdcolor);
 
 	    code = gdev_vector_update_fill_color(vdev, 
 	                             NULL, /* use process color */
 				     pdcolor);
 	    if (code < 0)
 		goto fail;
+	    /* This is similiar to the copy_mono white-on-mask,
+	     * except we are drawing white on the black of a black/white mask,
+	     * so we invert source, compared to copy_mono */
+	    if (foreground == (1 << dev->color_info.depth) - 1) { /* white */
+		lop = rop3_not(rop3_S) | (rop3_D & rop3_S);
+	    }else if (foreground == 0) { /* black */
+		lop = (rop3_S & rop3_D);
+	    }else lop |= rop3_S | lop_S_transparent;
+
 	    code = gdev_vector_update_log_op
-		(vdev, lop | rop3_S | lop_S_transparent);
+		(vdev, lop);
 	    if (code < 0)
 		goto fail;
 	    pclxl_set_color_palette(xdev, eGray, palette, 2);
