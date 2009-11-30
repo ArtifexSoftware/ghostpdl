@@ -741,7 +741,20 @@ get_num_pdf14_spot_colors(gs_state * pgs)
      * countspotcolors in lib/pdf_main.ps.
      */
     if (pclist_devn_params != NULL) {
-	return pclist_devn_params->page_spot_colors;
+
+        /* If the sep order names were specified, then we should only allocate
+           for those.  But only the nonstandard colorants that are stored
+           in num_separations.  See devn_put_params for details on this. 
+           Right now, the PDF14 device will always include CMYK.  A future
+           optimization is to be able to NOT have those included in the buffer 
+           allocations if we don't specify them.  It would then be possible to
+           output 8 separations at a time without using compressed color. */
+
+        if (pclist_devn_params->num_separation_order_names == 0)
+	    return pclist_devn_params->page_spot_colors;
+
+        return (pclist_devn_params->separations.num_separations);
+
     }
     return 0;
 }
