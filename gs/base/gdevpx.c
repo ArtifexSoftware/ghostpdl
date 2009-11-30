@@ -1053,6 +1053,10 @@ pclxl_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 {
     stream *s = gdev_vector_stream(vdev);
 
+    if ((join < 0) || (join > 3)) {
+        eprintf1("Igoring invalid linejoin enumerator %d\n", join);
+        return 0;
+    }
     /* The PCL XL join styles just happen to be identical to PostScript. */
     px_put_ub(s, (byte) join);
     px_put_ac(s, pxaLineJoinStyle, pxtSetLineJoin);
