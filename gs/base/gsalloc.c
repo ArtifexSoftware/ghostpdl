@@ -1325,7 +1325,6 @@ ialloc_consolidate_free(gs_ref_memory_t *mem)
 	    chunk_t *cnext = cp->cnext;
 
 	    if (!mem->is_controlled) {
-                dprintf1("freeing chunk %x\n", cp);
 		alloc_free_chunk(cp, mem);
 		if (mem->pcc == cp)
 		    mem->pcc =
