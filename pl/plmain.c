@@ -206,6 +206,20 @@ close_job(pl_main_universe_t *universe, pl_main_instance_t *pti)
     return pl_dnit_job(universe->curr_instance);
 }
 
+static void
+pl_reclaim(pl_main_instance_t *pti)
+    /* NB - gs_nogc_reclaim does a bit more than expected.  It has the
+       side effect of resetting the string memory procedures in the
+       memory "procs" table and other setup business prerequisite to
+       the nogc.dev allocator functioning properly.  It also
+       reclaims/consolidates memory. */
+{
+    vm_spaces *spaces = &pti->spaces;
+    gs_nogc_reclaim(spaces, true);
+}
+
+
+
 /* ----------- Command-line driver for pl_interp's  ------ */
 /* 
  * Here is the real main program.
@@ -478,7 +492,6 @@ pl_main(
     /* We lost the ability to print peak memory usage with the loss
      * of the memory wrappers.  
      */
-
     /* release param list */
     gs_c_param_list_release(&params);
     arg_finit(&args);
@@ -489,7 +502,9 @@ pl_main(
     if ( gs_debug_c('A') )
 	dprintf("Final time" );
     pl_platform_dnit(0);
-
+    pl_reclaim(&inst);
+    if (inst.leak_check)
+        debug_dump_allocator((gs_ref_memory_t *)mem);
     return 0;
 }
 
@@ -750,15 +765,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 	    (gs_ref_memory_t *)mem;
     }
 
-    /* NB - gs_nogc_reclaim does a bit more than expected.  It has the
-       side effect of resetting the string memory procedures in the
-       memory "procs" table and other setup business prerequisite to
-       the nogc.dev allocator functioning properly.  It also
-       reclaims/consolidates memory. */
-    {
-        vm_spaces *spaces = &pti->spaces;
-        gs_nogc_reclaim(spaces, true);
-    }
+    pl_reclaim(pti);
     pti->error_report = -1;
     pti->pause = true;
     pti->print_page_count = false;
@@ -770,6 +777,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->page_count = 0;
     pti->saved_hwres = false;
     pti->interpolate = false;
+    pti->leak_check = false;
     strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
@@ -981,7 +989,9 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 #endif
 	    }
 	    break;
-
+        case 'l':
+            pmi->leak_check=true;
+            break;
 	case 'p':
 	case 'P':
 	    {
@@ -1227,7 +1237,7 @@ pl_post_finish_page(pl_interp_instance_t *interp, void *closure)
 	  }
 	else if ( gs_debug_c(':') )
 	  pl_print_usage(pti, " done :");
-
+        pl_reclaim(pti);
 	return 0;
 }
 
