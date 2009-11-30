@@ -503,8 +503,10 @@ pl_main(
 	dprintf("Final time" );
     pl_platform_dnit(0);
     pl_reclaim(&inst);
+#ifdef DEBUG
     if (inst.leak_check)
         debug_dump_allocator((gs_ref_memory_t *)mem);
+#endif
     return 0;
 }
 
