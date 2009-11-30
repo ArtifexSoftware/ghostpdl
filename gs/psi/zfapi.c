@@ -1181,7 +1181,7 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
 	pbfont->FontBBox.q.x = (double)BBox[2] * size1 / size;
 	pbfont->FontBBox.q.y = (double)BBox[3] * size1 / size;
 	if (dict_find_string(op, "FontBBox", &v) > 0) {
-	    if(!r_has_type(v, t_array) && !r_has_type(v, t_shortarray))
+	    if(!r_has_type(v, t_array) && !r_has_type(v, t_shortarray) && !r_has_type(v, t_mixedarray))
 		return_error(e_invalidfont);
 	    if (r_size(v) < 4)
 		return_error(e_invalidfont);
@@ -1190,7 +1190,7 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
 	    make_real(&mat[1], pbfont->FontBBox.p.y);
 	    make_real(&mat[2], pbfont->FontBBox.q.x);
 	    make_real(&mat[3], pbfont->FontBBox.q.y);
-	    if(r_has_type(v, t_shortarray)) {
+	    if(r_has_type(v, t_shortarray) || r_has_type(v, t_mixedarray)) {
 		/* Create a new full blown array in case the values are reals */
 		code = ialloc_ref_array(&arr, a_all, 4, "array");
 		if (code < 0)
