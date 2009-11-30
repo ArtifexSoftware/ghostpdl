@@ -55,7 +55,7 @@ typedef struct pl_main_instance_s {
                                      personality - rtl, pcl5c, pcl5e, and
                                      pcl == default.  NB doesn't belong here. */
     bool interpolate;
-
+    bool leak_check;
 } pl_main_instance_t;
 
 /* initialize gs_stdin, gs_stdout, and gs_stderr.  Eventually the gs
