@@ -354,7 +354,7 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
     }
     if (!(type & gx_path_type_stroke) &&
 	(color_is_set(&xdev->saved_stroke_color.saved_dev_color) ||
-	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color)
+	!gx_dc_is_null(&xdev->saved_stroke_color.saved_dev_color)
 	 )
 	) {
 	pclxl_set_cached_nulls(xdev, pxaNullPen, pxtSetPenSource);
