@@ -63,11 +63,16 @@ ENUM_PTRS_WITH(image_enum_enum_ptrs, gx_image_enum *eptr)
 	bps = 1;
     if (index >= (1 << bps) * st_device_color_max_ptrs)		/* done */
 	return 0;
-    ret = ENUM_USING(st_device_color,
+    /* the clues may have been cleared by gx_image_free_enum, but not freed in that */
+    /* function due to being at a different save level. Only trace if dev_color.type != 0. */
+    if (eptr->clues[(index/st_device_color_max_ptrs) * (255 / ((1 << bps) - 1))].dev_color.type != 0)
+	ret = ENUM_USING(st_device_color,
 		     &eptr->clues[(index / st_device_color_max_ptrs) *
 				  (255 / ((1 << bps) - 1))].dev_color,
 		     sizeof(eptr->clues[0].dev_color),
 		     index % st_device_color_max_ptrs);
+    else
+	ret = 0;
     if (ret == 0)		/* don't stop early */
 	ENUM_RETURN(0);
     return ret;
