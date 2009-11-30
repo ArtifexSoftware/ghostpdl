@@ -12,8 +12,8 @@ my $verbose=1;
 
 # todo:
 
-my $runningSemaphore="./running";
-my $maxDownTime=180;  # how many seconds before a machine is considered down
+my $runningSemaphore="./clustermaster.pid";
+my $maxDownTime=300;  # how many seconds before a machine is considered down
 
 my $footer="";
 
@@ -299,7 +299,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       exit;
     }
     `./splitjobs.pl jobs $options`;
-    unlink "jobs";
+#   unlink "jobs";
 
     checkPID();
     foreach (keys %machines) {
@@ -323,9 +323,9 @@ if ($normalRegression==1 || $userRegression ne "") {
     chomp $startText;
     open (F,">status");
     if ($normalRegression) {
-      print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText";
+      print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText UTC";
     } else {
-      print F "Regression $userRegression started at $startText";
+      print F "Regression $userRegression started at $startText UTC";
     }
     close(F);
 
@@ -335,9 +335,138 @@ if ($normalRegression==1 || $userRegression ne "") {
     #print Dumper(\%doneTime) if ($verbose);
     print Dumper(\%machines) if ($verbose);
     print "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
+
+
+use IO::Socket;
+use Net::hostent;		# for OO version of gethostbyaddr
+
+my $PORT = 9000;			# pick something not in use
+
+my $server = IO::Socket::INET->new( Proto     => 'tcp',
+                                 LocalPort => $PORT,
+                                 Listen    => SOMAXCONN,
+                                 Reuse     => 1);
+
+die "can't setup server" unless $server;
+
+my @jobs;
+open(F,"<jobs");
+my $header=<F>;
+while(<F>) {
+  push @jobs,$_;
+}
+close(F);
+
+my %lastTransfer;
+foreach my $m (keys %machines) {
+  $lastTransfer{$m}=time+180;  # allow 3 minutes for the machines to build ghostscript, hack
+}
+
+my $doneCount=0;
+my $client;
+my $totalJobs=scalar(@jobs);
+
+my $tempDone=0;
+while (!$tempDone) {
+
+eval {
+
+local $SIG{ALRM} = sub { die "alarm\n" };
+alarm 30;
+
+while ($client = $server->accept()) {
+
+  checkPID();
+
+#print "doneCount=$doneCount machines=".(scalar(keys %machines))."\n";
+  $SIG{PIPE} = 'IGNORE';
+  $client->autoflush(1);
+  my $t=<$client>;
+  chomp $t;
+printf "Connect from $t (%s) (%d seconds); jobs remaining %d\n", $client->peerhost,(time-$lastTransfer{$t}),scalar(@jobs);
+  $lastTransfer{$t}=time;
+  if (scalar(@jobs)==0) {
+    print $client "done\n";
+    $doneCount++;
+    delete $lastTransfer{$t};
+print "sending done\n";
+  }
+  for (my $i=0;  $i<250 && scalar(@jobs);  $i++) {
+    my $a=shift @jobs;
+    print $client $a;
+  }
+printf "Connect finished; jobs remaining %d\n", scalar(@jobs);
+print "not connectecd\n" if (!$client->connected);
+  close $client;
+}
+alarm 0;
+};
+alarm 0;  # avoid race condition
+if ($@) {
+  print "no connections, checking done status\n";
+}
+
+
+
+  foreach my $m (keys %machines) {
+    if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxDownTime) {
+      $doneCount=scalar keys %machines;
+    }
+  }
+  foreach (keys %lastTransfer) {
+    if (time-$lastTransfer{$_}>=$maxDownTime) {
+print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
+      $doneCount=scalar keys %machines;
+      unlink "$_.up";
+    }
+  }
+
+  my $percentage=int(($totalJobs-scalar(@jobs))/$totalJobs*100+0.5);
+  $s=`date +\"%H:%M:%S\"`;
+  chomp $s;
+  open (F,">status");
+  if ($normalRegression) {
+    print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+  } else {
+    print F "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+  }
+  close(F);
+
+  $tempDone=1 if ($doneCount==scalar keys %machines);
+
+
+  foreach my $m (keys %machines) {
+    if (open(F,"<$m.done")) {
+      close(F);
+      print "$m is reporting done even though it should not be done\n";
+      $tempDone=1;
+    }
+  }
+}
+
+
+print "all machines sent done or some machine went down\n";
+
+my $machineSentDoneTime=time;
+
     while(scalar(keys %doneTime) < scalar(keys %machines)) {
       checkPID();
+      if (time-$machineSentDoneTime>=$maxDownTime) {
+        foreach my $m (keys %machines) {
+          if (!exists $doneTime{$m}) {
+            print "machine $m hasn't reported done in ".(time-$machineSentDoneTime)." seconds, assuming it went down\n";
+            unlink "$m.up";
+          }
+        }
+      }
       foreach my $m (keys %machines) {
+        if (open(F,"<$m.done")) {
+          close(F);
+          if ($verbose) {
+            print "$m is reporting done\n" if (!exists $doneTime{$m});
+          }
+          $doneTime{$m}=time if (!exists $doneTime{$m});
+        }
         if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxDownTime) {
           print "$m is down\n" if ($verbose);
           $abort=1;
@@ -347,14 +476,6 @@ if ($normalRegression==1 || $userRegression ne "") {
 	  }
           delete $machines{$m};
 	  sleep 60;  # hack
-        } else {
-          if (open(F,"<$m.done")) {
-            close(F);
-            if ($verbose) {
-              print "$m is reporting done\n" if (!exists $doneTime{$m});
-            }
-            $doneTime{$m}=time if (!exists $doneTime{$m});
-          }
         }
       }
       sleep(1);
@@ -369,9 +490,9 @@ if ($normalRegression==1 || $userRegression ne "") {
   chomp $s;
   open (F,">status");
   if ($normalRegression) {
-    print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText - finished at $s";
+    print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText UTC - finished at $s";
   } else {
-    print F "Regression $userRegression started at $startText - finished at $s";
+    print F "Regression $userRegression started at $startText UTC - finished at $s";
   }
   close(F);
 
@@ -550,7 +671,7 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
   checkPID();
   if ($normalRegression) {
     `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
-#   `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
     `./cp.all`;
   } else {
     if (exists $emails{$userName}) {

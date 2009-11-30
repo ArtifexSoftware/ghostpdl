@@ -27,8 +27,10 @@ my $verbose=0;
 
 local $| = 1;
 
-my $baseDirectory;
-$baseDirectory='./';
+my $baseDirectory='./';
+
+my $svnURLPrivate='file:///var/lib/svn-private/ghostpcl/trunk/';
+my $svnURLPublic ='http://svn.ghostscript.com/ghostscript/';
 
 my $temp="./temp";
 #$temp="/tmp/space/temp";
@@ -40,34 +42,34 @@ my $xpsBin=$baseDirectory."gs/bin/gxps";
 my $svgBin=$baseDirectory."gs/bin/gsvg";
 
 my %testSource=(
-  $baseDirectory."tests/pdf" => 'gs',
-  $baseDirectory."tests/ps" => 'gs',
-  $baseDirectory."tests/eps" => 'gs',
-  $baseDirectory."tests_private/ps/ps3cet" => 'gs',
-  $baseDirectory."tests_private/comparefiles" => 'gs',
-  $baseDirectory."tests_private/pdf/PDFIA1.7_SUBSET" => 'gs',
+  $svnURLPublic."tests/pdf" => 'gs',
+  $svnURLPublic."tests/ps" => 'gs',
+  $svnURLPublic."tests/eps" => 'gs',
+  $svnURLPrivate."tests_private/ps/ps3cet" => 'gs',
+  $svnURLPrivate."tests_private/comparefiles" => 'gs',
+  $svnURLPrivate."tests_private/pdf/PDFIA1.7_SUBSET" => 'gs',
 
-  $baseDirectory."tests/pcl" => 'pcl',
-# $baseDirectory."tests_private/customer_tests" => 'pcl',
-  $baseDirectory."tests_private/pcl/pcl5cfts" => 'pcl',
-  $baseDirectory."tests_private/pcl/pcl5cats/Subset" => 'pcl',
-  $baseDirectory."tests_private/pcl/pcl5efts" => 'pcl',
-  $baseDirectory."tests_private/pcl/pcl5ccet" => 'pcl',
-  $baseDirectory."tests_private/xl/pxlfts3.0" => 'pcl',
-  $baseDirectory."tests_private/xl/pcl6cet" => 'pcl',
-  $baseDirectory."tests_private/xl/pcl6cet3.0" => 'pcl',
-  $baseDirectory."tests_private/xl/pxlfts" => 'pcl',
-  $baseDirectory."tests_private/xl/pxlfts2.0" => 'pcl',
+  $svnURLPublic."tests/pcl" => 'pcl',
+# $svnURLPrivate."tests_private/customer_tests" => 'pcl',
+  $svnURLPrivate."tests_private/pcl/pcl5cfts" => 'pcl',
+  $svnURLPrivate."tests_private/pcl/pcl5cats/Subset" => 'pcl',
+  $svnURLPrivate."tests_private/pcl/pcl5efts" => 'pcl',
+  $svnURLPrivate."tests_private/pcl/pcl5ccet" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pxlfts3.0" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pcl6cet" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pcl6cet3.0" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pxlfts" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pxlfts2.0" => 'pcl',
 
-# $baseDirectory."tests/xps" => 'xps',
-  $baseDirectory."tests_private/xps/xpsfts-a4" => 'xps',
+# $svnURLPublic."tests/xps" => 'xps',
+  $svnURLPrivate."tests_private/xps/xpsfts-a4" => 'xps',
 
-  $baseDirectory."tests/svg/svgw3c-1.1-full/svg" => 'svg',
-  # $baseDirectory."tests/svg/svgw3c-1.1-full/svgHarness" => 'svg',
-  # $baseDirectory."tests/svg/svgw3c-1.1-full/svggen" => 'svg',
-# $baseDirectory."tests/svg/svgw3c-1.2-tiny/svg" => 'svg',
-  # $baseDirectory."tests/svg/svgw3c-1.2-tiny/svgHarness" => 'svg',
-  # $baseDirectory."tests/svg/svgw3c-1.2-tiny/svggen" => 'svg'
+  $svnURLPublic."tests/svg/svgw3c-1.1-full/svg" => 'svg',
+  # $svnURLPublic."tests/svg/svgw3c-1.1-full/svgHarness" => 'svg',
+  # $svnURLPublic."tests/svg/svgw3c-1.1-full/svggen" => 'svg',
+# $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svg" => 'svg',
+  # $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svgHarness" => 'svg',
+  # $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svggen" => 'svg'
   );
 
 my $cmd;
@@ -167,7 +169,9 @@ my %tests=(
     ]
   );
 
+my %testfiles;
 #update the regression file source directories
+if (0) {
 if ($updateTestFiles) {
   foreach my $testSource (sort keys %testSource) {
     $cmd="cd $testSource ; svn update";
@@ -177,7 +181,6 @@ if ($updateTestFiles) {
 }
 
 # build a list of the source files
-my %testfiles;
 foreach my $testSource (sort keys %testSource) {
   if (scalar keys %products==0 || exists $products{$testSource{$testSource}}) {
     opendir(DIR, $testSource) || die "can't opendir $testSource: $!";
@@ -185,6 +188,33 @@ foreach my $testSource (sort keys %testSource) {
       $testfiles{$testSource.'/'.$_}=$testSource{$testSource} if (!-d $testSource.'/'.$_ && ! m/^\./ && ! m/.disabled$/);
     }
     closedir DIR;
+  }
+}
+}
+
+foreach my $testSource (sort keys %testSource) {
+  if (scalar keys %products==0 || exists $products{$testSource{$testSource}}) {
+#print "$testSource\n";
+    my $a=`svn list $testSource`;
+
+    my $t1=$testSource;
+    my $t2=$svnURLPrivate;
+    my $t3=$svnURLPublic ;
+    $t1 =~ s/\+//g;
+    $t2 =~ s/\+//g;
+    $t3 =~ s/\+//g;
+    $t1 =~ s|$t2||;
+    $t1 =~ s|$t3||;
+
+#   print "$testSource{$testSource}\n";  exit;
+
+    my @a=split '\n',$a;
+    foreach (@a) {
+      chomp;
+      my $testfile=$t1.'/'.$_;
+      $testfiles{'./'.$testfile}=$testSource{$testSource} if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~m /.disabled$/));
+#     print "$testfile\n";
+    }
   }
 }
 
@@ -366,7 +396,9 @@ if (scalar keys %products>0) {
   }
   print "\n";
 }
+my $zz=0;
 while (scalar(@commands)) {
+#  exit if ($zz++>250);
   my $n=rand(scalar @commands);
 # $n=0;
   my $command=$commands[$n];  splice(@commands,$n,1);

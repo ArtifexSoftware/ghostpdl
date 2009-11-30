@@ -6,6 +6,8 @@ use warnings;
 use Data::Dumper;
 use POSIX ":sys_wait_h";
 
+use File::stat;
+
 my $updateGS=1;
 my $updateTestFiles=1;
 
@@ -40,14 +42,13 @@ sub checkPID {
     if ($t == $$) {
       return(1);
     }
-    print "terminating: $t $$\n";
+    print "terminating: $runningSemaphore pid mismatch $t $$\n";
     exit;
   }
   print "terminating: $runningSemaphore missing\n";
   exit;
 }
 
-if (0) {
 if (open(F,"<$runningSemaphore")) {
   close(F);
   my $fileTime = stat($runningSemaphore)->mtime;
@@ -60,7 +61,6 @@ if (open(F,"<$runningSemaphore")) {
     unlink $runningSemaphore;
   }
   exit;
-}
 }
 
 open(F,">$runningSemaphore");
@@ -153,6 +153,9 @@ while(<F>) {
   push @commands, $_;
 }
 close(F);
+
+my $poll=0;
+$poll=1 if (scalar (@commands)==0);
 
 my %products;
 my @products=split ' ',$products;
@@ -369,6 +372,14 @@ if ($updateGS) {
     `$cmd`;
 
 #   if (1 || !$product || $product eq 'gs') {  # always build ghostscript
+    
+    $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+    $cmd="cd $gpdlSource ; touch makepcl.out makexps.out makesvg.out ; rm -f touch makepcl.out makexps.out makesvg.out";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+
     if ($products{'gs'}) {
 
       updateStatus('Building Ghostscript');
@@ -395,6 +406,7 @@ if ($updateGS) {
 
 # if (1 || !$product || $product eq 'ghostpdl') {  # always build ghostpdl
 #   if (1) {
+if (0) {
       $abort=checkAbort;
       if (!$abort) {
         updateStatus('Make clean GhostPCL/XPS/SVG');
@@ -402,11 +414,12 @@ if ($updateGS) {
         print "$cmd\n" if ($verbose);
         `$cmd`;
       }
+}
 
       $abort=checkAbort;
       if ($products{'pcl'} && !$abort) {
         updateStatus('Building GhostPCL');
-        $cmd="cd $gpdlSource ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
+        $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
         if (open(F,"<$gpdlSource/main/obj/pcl6")) {
@@ -422,7 +435,7 @@ if ($updateGS) {
       $abort=checkAbort;
       if ($products{'xps'} && !$abort) {
         updateStatus('Building GhostXPS');
-        $cmd="cd $gpdlSource ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
+        $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
         if (open(F,"<$gpdlSource/xps/obj/gxps")) {
@@ -438,7 +451,7 @@ if ($updateGS) {
       $abort=checkAbort;
       if ($products{'svg'} && !$abort) {
         updateStatus('Building GhostSVG');
-        $cmd="cd $gpdlSource ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
+        $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
         if (open(F,"<$gpdlSource/svg/obj/gsvg")) {
@@ -458,6 +471,9 @@ unlink "link.icc","wts_plane_0","wts_plane_1","wts_plane_2","wts_plane_3";
 $cmd="cp -p ghostpdl/link.icc ghostpdl/wts_plane_0 ghostpdl/wts_plane_1 ghostpdl/wts_plane_2 ghostpdl/wts_plane_3 .";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+$cmd="touch urwfonts ; rm -fr urwfonts ; cp -pr ghostpdl/urwfonts .";
+print "$cmd\n" if ($verbose);
+`$cmd`;
 
 if ($md5sumFail ne "") {
   updateStatus('md5sum fail');
@@ -474,10 +490,87 @@ my $jobs=0;
 
 
 my $startTime=time;
-my $lastPercentage=-1;
 
-while (scalar(@commands) && !$abort) {
+while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
   my $count=0;
+
+  if ($poll==1 && scalar(@commands)==0) {
+
+use IO::Socket;
+my ($host, $port, $handle, $line);
+
+$host="casper.ghostscript.com";
+$port=9000;
+
+my $retry=10;
+do {
+if ($retry<10) {
+  my $s=`date +\"%y_%m_%d_%H_%M_%S\"`;
+  $s.="_$retry";
+  `touch $s`;
+}
+  
+sleep 10 if ($retry<10);
+# create a tcp connection to the specified host and port
+$handle = IO::Socket::INET->new(Proto     => "tcp",
+                                PeerAddr  => $host,
+                                PeerPort  => $port);
+} until (($handle) || ($retry--<=0));
+if (!$handle) {
+  unlink $runningSemaphore;
+  updateStatus("Can not connect to $host, quitting");
+  die "can not connect to port $port on $host: $!";  # hack
+}
+
+print $handle "$machine\n";
+
+my $n=0;
+my $s="";
+eval {
+local $SIG{ALRM} = sub { die "alarm\n" };
+alarm 60;
+do {
+  $n=sysread($handle,$line,4096);
+  $s.=$line;
+  #print STDOUT "$line";
+} until (!defined($n) || $n==0);
+alarm 0;
+};
+alarm 0;  # avoid race condition
+if ($@) {
+# die unless $@ eq "alarm\n";
+# unlink $runningSemaphore;
+  $s="";
+  updateStatus('Connection timed out, quitting');
+  @commands=();
+  $maxCount=0;
+  killAll();
+  $poll=0;
+  $abort=1;
+# die "timed out";  # hack
+}
+close $handle;
+
+
+if (!defined($n)) {
+# unlink $runningSemaphore;
+  $s="";
+  updateStatus('Connection interrupted, quitting');
+  @commands=();
+  $maxCount=0;
+  killAll();
+  $poll=0;
+  $abort=1;
+# die "sysread returned null";  # hack
+}
+
+@commands = split '\n',$s;
+$totalJobs=scalar(@commands);
+if ($commands[0] eq "done") {
+  $poll=0;
+  @commands=();
+}
+  }
 
   my $a=`ps -ef`;
   my @a=split '\n',$a;
@@ -516,7 +609,7 @@ while (scalar(@commands) && !$abort) {
     delete $pids{$pid} if ($s<0);
     $count++ if ($s>=0);
   }
-  if ($count<$maxCount) {
+  if (scalar(@commands)>0 && $count<$maxCount) {
     my $n=rand(scalar @commands);
     my @a=split '\t',$commands[$n];
     splice(@commands,$n,1);
@@ -535,21 +628,15 @@ while (scalar(@commands) && !$abort) {
         return($s);
       }
 
-      my $currentTime=time;
-      my $elapsedTime=$currentTime-$startTime;
-      my $t1=convertTime($elapsedTime);
-      my $t2=convertTime($elapsedTime * $totalJobs/$jobs - $elapsedTime);
-      my $t3=convertTime($elapsedTime * $totalJobs/$jobs);
-      my $percentage=int($jobs/$totalJobs * 100 + 0.5);
-      if ($percentage != $lastPercentage && ($percentage % 2) == 0) {
-        my $t=sprintf "%2d%% completed",$percentage;
+      my $elapsedTime=time-$startTime;
+      if ($elapsedTime>=60) {
+        my $t=sprintf "%d tests completed",$jobs;
         updateStatus($t);
-        $lastPercentage=$percentage;
-        # check for abort
         $abort=checkAbort;
+        $startTime=time;
 
       }
-      printf "\n$t1 $t2 $t3  %5d %5d  %3d",$jobs,$totalJobs, $percentage if ($debug);
+#     printf "\n$t1 $t2 $t3  %5d %5d  %3d",$jobs,$totalJobs, $percentage if ($debug);
     }
     my $pid = fork();
     if (not defined $pid) {
@@ -668,7 +755,7 @@ if ($abort) {
         }
         close(F3);
       } else {
-        print F2 "missing\n";
+#       print F2 "missing\n";
       }
     }
   }

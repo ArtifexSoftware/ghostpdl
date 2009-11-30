@@ -37,7 +37,7 @@ if ($directory eq 'gs') {
 }
 
 
-$product='gs pcl svg xps' if (!$product);
+$product='gs pcl xps' if (!$product);
 my @a=split ' ',$product;
 foreach my $i (@a) {
   if (!exists $products{$i}) {
@@ -55,7 +55,7 @@ my $cmd="rsync -avxc".
 " --exclude main/obj --exclude main/debugobj".
 " --exclude language_switch/obj --exclude language_switch/obj".
 " --exclude xps/obj --exclude xps/debugobj".
-" --exclude svg/obj --exclude xps/debugobj".
+" --exclude svg/obj --exclude svg/debugobj".
 " --exclude ufst --exclude ufst-obj".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
 " -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\"".

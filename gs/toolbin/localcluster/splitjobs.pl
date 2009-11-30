@@ -13,6 +13,8 @@ my @machine;
 my @ratio;
 my @count;
 
+my $header;
+
 while(my $t=shift) {
   push @machine,$t;
   push @ratio,shift;
@@ -20,10 +22,23 @@ while(my $t=shift) {
 
 die "usage: splitjobs.pl input [machine ratio ...]" if (!$input || scalar(@ratio)==0);
 
+open(F,"<$input") || die "file $input not found";
+$header=<F>;
+chomp $header;
+close(F);
+
+for (my $i=0;  $i<scalar(@machine);  $i++) {
+  open(F,">$machine[$i]") || die "can't write to file $machine[$i]";
+  print F "$header\n";
+  close(F);
+}
+exit;
+
+
 #print Dumper(\@machine);
 #print Dumper(\@ratio);
 
-my $header="";
+$header="";
 open(F,"<$input") || die "file $input not found";
 while(<F>) {
   chomp;
