@@ -1325,6 +1325,7 @@ ialloc_consolidate_free(gs_ref_memory_t *mem)
 	    chunk_t *cnext = cp->cnext;
 
 	    if (!mem->is_controlled) {
+                dprintf1("freeing chunk %x\n", cp);
 		alloc_free_chunk(cp, mem);
 		if (mem->pcc == cp)
 		    mem->pcc =
@@ -1901,6 +1902,12 @@ const dump_control_t dump_control_all =
     dump_do_pointed_strings | dump_do_contents, NULL, NULL
 };
 
+const dump_control_t dump_control_no_contents = 
+{
+    dump_do_strings | dump_do_type_addresses | dump_do_pointers |
+    dump_do_pointed_strings, NULL, NULL
+};
+
 /*
  * Internal procedure to dump a block of memory, in hex and optionally
  * also as characters.
@@ -2118,7 +2125,7 @@ debug_dump_memory(const gs_ref_memory_t * mem, const dump_control_t * control)
 void
 debug_dump_allocator(const gs_ref_memory_t *mem)
 {
-    debug_dump_memory(mem, &dump_control_all);
+    debug_dump_memory(mem, &dump_control_no_contents);
 }
 
 /* Find all the objects that contain a given pointer. */
