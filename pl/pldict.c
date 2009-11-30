@@ -42,13 +42,13 @@ gs_private_st_composite(st_pl_dict_entry, pl_dict_entry_t, "pl_dict_entry_t",
   pl_dict_entry_enum_ptrs, pl_dict_entry_reloc_ptrs);
 #define pde ((pl_dict_entry_t *)vptr)
 static ENUM_PTRS_BEGIN(pl_dict_entry_enum_ptrs) return 0;
-	ENUM_CONST_STRING_PTR(0, pl_dict_entry_t, key);
+     /*	ENUM_CONST_STRING_PTR(0, pl_dict_entry_t, key); */
 	ENUM_PTR(1, pl_dict_entry_t, value);
 	ENUM_PTR(2, pl_dict_entry_t, next);
 	ENUM_PTR(3, pl_dict_entry_t, link);
 ENUM_PTRS_END
 static RELOC_PTRS_BEGIN(pl_dict_entry_reloc_ptrs) {
-	RELOC_CONST_STRING_PTR(pl_dict_entry_t, key);
+    /*	RELOC_CONST_STRING_PTR(pl_dict_entry_t, key); */
 	RELOC_PTR(pl_dict_entry_t, value);
 	RELOC_PTR(pl_dict_entry_t, next);
 	RELOC_PTR(pl_dict_entry_t, link);
