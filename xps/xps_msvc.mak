@@ -134,9 +134,12 @@ TOP_OBJ=$(XPS_TOP_OBJ)
 # Target XPS
 TARGET_DEVS=$(XPSOBJDIR)\xps.dev
 PDL_INCLUDE_FLAGS=/DXPS_INCLUDED
+# We don't need fonts included by pcl6_gcc.mak
+PCLXL_ROMFS_ARGS=
 
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
 !ifndef COMPILE_INITS
+# Since XPS doesn't really need anything from the %rom% file system, set default:
 COMPILE_INITS=0
 !endif
 
