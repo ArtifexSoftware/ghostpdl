@@ -62,7 +62,7 @@ sub get_status {
     }
   }
 
-  my @jobs = `cat $clusteroot/user.run`;
+  my @jobs = `cat $clusteroot/queue.lst`;
   for (my $i = 0; $i < scalar(@jobs); $i++) {
     $status{'pending'}{$i} = $jobs[$i];
     chomp $status{'pending'}{$i};
