@@ -3,9 +3,12 @@
 use strict;
 use warnings;
 
+use CGI;
+
 use Time::localtime;
 use File::stat;
 
+my $clusteroot = '/home/regression/cluster';
 
 my $watchdog=0;
 
@@ -26,7 +29,7 @@ sub get_status {
   my %status;
 
   #my @machines=("i7","i7a","macpro","peeves","test");
-  my @machines = </home/marcos/cluster/*.status>;
+  my @machines = <$clusteroot/*.status>;
   #print "@machines\n";
 
   for (my $i=0;  $i<scalar(@machines);  $i++) {
@@ -35,7 +38,7 @@ sub get_status {
   }
   #print "@machines\n";
 
-  my $status=`cat /home/marcos/cluster/status`;
+  my $status=`cat $clusteroot/status`;
   chomp $status;
 
   if (!exists $status{'main'}{"status"} || $status{'main'}{"status"} ne $status) {
@@ -43,13 +46,13 @@ sub get_status {
   }
 
   foreach my $machine (@machines) {
-    my $s0=`cat /home/marcos/cluster/$machine.status`;
+    my $s0=`cat $clusteroot/$machine.status`;
     chomp $s0;
 
     my $down="";
     my $downTime=0;
-    $down="--DOWN--" if (!stat("/home/marcos/cluster/$machine.up") || 
-      ($downTime=(time-stat("/home/marcos/cluster/$machine.up")->ctime))>300);
+    $down="--DOWN--" if (!stat("$clusteroot/$machine.up") || 
+      ($downTime=(time-stat("$clusteroot/$machine.up")->ctime))>300);
 
     if (!exists $status{$machine}{"status"} || 
          $status{$machine}{"status"} ne $s0 ||
@@ -59,7 +62,7 @@ sub get_status {
     }
   }
 
-  my @jobs = `cat /home/marcos/cluster/user.run`;
+  my @jobs = `cat $clusteroot/user.run`;
   for (my $i = 0; $i < scalar(@jobs); $i++) {
     $status{'pending'}{$i} = $jobs[$i];
     chomp $status{'pending'}{$i};
@@ -68,8 +71,34 @@ sub get_status {
   return %status;
 }
 
+sub get_reports {
+  my @reports;
+  my @emails = <$clusteroot/archive/*/email.txt>;
 
+  foreach my $email (@emails) {
+    $email =~ s/.*(\d{5}-\d{5}).*/$1/;
+    push @reports, $email;
+  }
+
+  return @reports;
+}
+
+# if we've been asked for a specific result, just return it
+my $report = CGI::param('report');
+
+if ($report =~ /^\d+-\d+$/) {
+  print CGI::header('text/plain');
+  #print open "$clusteroot/archive/$report/email.txt";
+  print "report $report.\n\n";
+  open my $file, "$clusteroot/archive/$report/email.txt";
+  print while <$file>;
+  close $file;
+  exit;
+}
+
+# otherwise, send the dashboard json
 my %status = get_status;
+my @reports = get_reports;
 
 # FIXME: need to escape the strings we encode as json
 my $json = "";
@@ -90,8 +119,15 @@ $json .= "  \"pending\" : [\n";
 foreach my $job (sort keys %{$status{'pending'}}) {
   $json .= "  \"".$status{'pending'}{$job}."\",\n";
 }
+$json .= "  ],\n";
+$json .= "  \"reports\" : [\n";
+foreach my $report (@reports) {
+  $json .= "  \"".$report."\",\n";
+}
 $json .= "  ]\n";
 $json .= "}\n";
 
-http_send $json;
+print CGI::header('application/json');
+print $json;
+#http_send $json;
 
