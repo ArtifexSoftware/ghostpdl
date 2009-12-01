@@ -1803,6 +1803,150 @@ add_points(gx_path * ppath, const gs_fixed_point * points, int npoints,
 
 /* ---------------- Join computation ---------------- */
 
+static int
+check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
+            const gs_matrix * pmat, p_ptr outp, p_ptr np, p_ptr mpt,
+            bool ccw0)
+{
+    /*
+     * Check whether a miter join is appropriate.
+     * Let a, b be the angles of the two lines.
+     * We check tan(a-b) against the miter_check
+     * by using the following formula:
+     *      If tan(a)=u1/v1 and tan(b)=u2/v2, then
+     *      tan(a-b) = (u1*v2 - u2*v1) / (u1*u2 + v1*v2).
+     *
+     * We can do all the computations unscaled,
+     * because we're only concerned with ratios.
+     * However, if we have a non-uniform coordinate
+     * system (indicated by pmat != 0), we must do the
+     * computations in user space.
+     */
+    float check = pgs_lp->miter_check;
+    double u1 = plp->vector.y, v1 = plp->vector.x;
+    double u2 = -nplp->vector.y, v2 = -nplp->vector.x;
+    double num, denom;
+    int code;
+
+    if (pmat) {
+        gs_point pt;
+
+        code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
+        if (code < 0)
+    	return code;
+        v1 = pt.x, u1 = pt.y;
+        code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
+        if (code < 0)
+            return code;
+        v2 = pt.x, u2 = pt.y;
+        /*
+         * We need to recompute ccw according to the
+         * relative positions of the lines in user space.
+         * We repeat the computation described above,
+         * using the cdelta values instead of the widths.
+         * Because the definition of ccw above is inverted
+         * from the intuitive one (for historical reasons),
+         * we actually have to do the test backwards.
+         */
+        ccw0 = v1 * u2 < v2 * u1;
+#ifdef DEBUG
+        {
+            double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
+
+            if (dif < 0)
+                dif += 2 * M_PI;
+            else if (dif >= 2 * M_PI)
+                dif -= 2 * M_PI;
+            if (dif != 0 && (dif < M_PI) != ccw0)
+                lprintf8("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw0=%d\n",
+                         a1, u1, v1, a2, u2, v2, dif, ccw0);
+        }
+#endif
+    }
+    num = u1 * v2 - u2 * v1;
+    denom = u1 * u2 + v1 * v2;
+    /*
+     * We will want either tan(a-b) or tan(b-a)
+     * depending on the orientations of the lines.
+     * Fortunately we know the relative orientations already.
+     */
+    if (!ccw0)		/* have plp - nplp, want vice versa */
+        num = -num;
+#ifdef DEBUG
+    if (gs_debug_c('O')) {
+        dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
+                  u1, v1, u2, v2);
+        dlprintf3("        num=%f, denom=%f, check=%f\n",
+                  num, denom, check);
+    }
+#endif
+    /*
+     * If we define T = num / denom, then we want to use
+     * a miter join iff arctan(T) >= arctan(check).
+     * We know that both of these angles are in the 1st
+     * or 2nd quadrant, and since arctan is monotonic
+     * within each quadrant, we can do the comparisons
+     * on T and check directly, taking signs into account
+     * as follows:
+     *              sign(T) sign(check)     atan(T) >= atan(check)
+     *              ------- -----------     ----------------------
+     *              +       +               T >= check
+     *              -       +               true
+     *              +       -               false
+     *              -       -               T >= check
+     */
+    if (num == 0 && denom == 0)
+        return_error(gs_error_unregistered); /* Must not happen. */
+    if (denom < 0)
+        num = -num, denom = -denom;
+    /* Now denom >= 0, so sign(num) = sign(T). */
+    if (check > 0 ?
+        (num < 0 || num >= denom * check) :
+        (num < 0 && num >= denom * check)
+        ) {
+        /* OK to use a miter join. */
+        gs_fixed_point dirn1, dirn2;
+	    
+        dirn1.x = plp->e.cdelta.x;
+        dirn1.y = plp->e.cdelta.y;
+        /* If this direction is small enough that we might have
+         * underflowed and the vector record is suitable for us
+         * to use to calculate a better one, then do so. */
+        if ((abs(dirn1.x) + abs(dirn1.y) < 16) &&
+            ((plp->vector.x != 0) || (plp->vector.y != 0)))
+        {
+            float scale = 65536.0;
+            if (abs(plp->vector.x) > abs(plp->vector.y))
+                scale /= abs(plp->vector.x);
+            else
+                scale /= abs(plp->vector.y);
+            dirn1.x = (fixed)(plp->vector.x*scale);
+            dirn1.y = (fixed)(plp->vector.y*scale);
+        }
+        dirn2.x = nplp->o.cdelta.x;
+        dirn2.y = nplp->o.cdelta.y;
+        /* If this direction is small enough that we might have
+         * underflowed and the vector record is suitable for us
+         * to use to calculate a better one, then do so. */
+        if ((abs(dirn2.x) + abs(dirn2.y) < 16) &&
+            ((nplp->vector.x != 0) || (nplp->vector.y != 0)))
+        {
+            float scale = 65536.0;
+            if (abs(nplp->vector.x) > abs(nplp->vector.y))
+                scale /= abs(nplp->vector.x);
+            else
+                scale /= abs(nplp->vector.y);
+            dirn2.x = (fixed)(-nplp->vector.x*scale);
+            dirn2.y = (fixed)(-nplp->vector.y*scale);
+        }
+        if_debug0('O', "	... passes.\n");
+        /* Compute the intersection of the extended edge lines. */
+        if (line_intersect(outp, &dirn1, np, &dirn2, mpt) == 0)
+            return 0;
+    }
+    return 1;
+}
+
 /* Compute the points for a bevel, miter, or triangle join. */
 /* Treat no join the same as a bevel join. */
 /* If pmat != 0, we must inverse-transform the distances for */
@@ -1849,6 +1993,7 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	(double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
     bool ccw0 = ccw;
     p_ptr outp, np;
+    int   code;
 
     ccw ^= reflected;
 
@@ -1900,113 +2045,12 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	!(fixed2long(outp->x << 1) == fixed2long(np->x << 1) &&
 	  fixed2long(outp->y << 1) == fixed2long(np->y << 1))
 	) {
-	/*
-	 * Check whether a miter join is appropriate.
-	 * Let a, b be the angles of the two lines.
-	 * We check tan(a-b) against the miter_check
-	 * by using the following formula:
-	 *      If tan(a)=u1/v1 and tan(b)=u2/v2, then
-	 *      tan(a-b) = (u1*v2 - u2*v1) / (u1*u2 + v1*v2).
-	 *
-	 * We can do all the computations unscaled,
-	 * because we're only concerned with ratios.
-	 * However, if we have a non-uniform coordinate
-	 * system (indicated by pmat != 0), we must do the
-	 * computations in user space.
-	 */
-	float check = pgs_lp->miter_check;
-	double u1 = plp->vector.y, v1 = plp->vector.x;
-	double u2 = -nplp->vector.y, v2 = -nplp->vector.x;
-	double num, denom;
-	int code;
-
-	if (pmat) {
-	    gs_point pt;
-
-	    code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
-	    if (code < 0)
-		return code;
-	    v1 = pt.x, u1 = pt.y;
-	    code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
-	    if (code < 0)
-		return code;
-	    v2 = pt.x, u2 = pt.y;
-	    /*
-	     * We need to recompute ccw according to the
-	     * relative positions of the lines in user space.
-	     * We repeat the computation described above,
-	     * using the cdelta values instead of the widths.
-	     * Because the definition of ccw above is inverted
-	     * from the intuitive one (for historical reasons),
-	     * we actually have to do the test backwards.
-	     */
-	    ccw0 = v1 * u2 < v2 * u1;
-#ifdef DEBUG
-	    {
-		double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
-
-		if (dif < 0)
-		    dif += 2 * M_PI;
-		else if (dif >= 2 * M_PI)
-		    dif -= 2 * M_PI;
-		if (dif != 0 && (dif < M_PI) != ccw0)
-		    lprintf8("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw=%d\n",
-			     a1, u1, v1, a2, u2, v2, dif, ccw);
-	    }
-#endif
-	}
-	num = u1 * v2 - u2 * v1;
-	denom = u1 * u2 + v1 * v2;
-	/*
-	 * We will want either tan(a-b) or tan(b-a)
-	 * depending on the orientations of the lines.
-	 * Fortunately we know the relative orientations already.
-	 */
-	if (!ccw0)		/* have plp - nplp, want vice versa */
-	    num = -num;
-#ifdef DEBUG
-	if (gs_debug_c('O')) {
-	    dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
-		      u1, v1, u2, v2);
-	    dlprintf3("        num=%f, denom=%f, check=%f\n",
-		      num, denom, check);
-	}
-#endif
-	/*
-	 * If we define T = num / denom, then we want to use
-	 * a miter join iff arctan(T) >= arctan(check).
-	 * We know that both of these angles are in the 1st
-	 * or 2nd quadrant, and since arctan is monotonic
-	 * within each quadrant, we can do the comparisons
-	 * on T and check directly, taking signs into account
-	 * as follows:
-	 *              sign(T) sign(check)     atan(T) >= atan(check)
-	 *              ------- -----------     ----------------------
-	 *              +       +               T >= check
-	 *              -       +               true
-	 *              +       -               false
-	 *              -       -               T >= check
-	 */
-	if (num == 0 && denom == 0)
-	    return_error(gs_error_unregistered); /* Must not happen. */
-	if (denom < 0)
-	    num = -num, denom = -denom;
-	/* Now denom >= 0, so sign(num) = sign(T). */
-	if (check > 0 ?
-	    (num < 0 || num >= denom * check) :
-	    (num < 0 && num >= denom * check)
-	    ) {
-	    /* OK to use a miter join. */
-	    gs_fixed_point mpt;
-
-	    if_debug0('O', "	... passes.\n");
-	    /* Compute the intersection of */
-	    /* the extended edge lines. */
-	    if (line_intersect(outp, &plp->e.cdelta, np,
-			       &nplp->o.cdelta, &mpt) == 0
-		)
-		ASSIGN_POINT(outp, mpt);
-	}
+        gs_fixed_point mpt;
+	code = check_miter(pgs_lp, plp, nplp, pmat, outp, np, &mpt, ccw0);
+	if (code < 0)
+	    return code;
+	if (code == 0)
+	    ASSIGN_POINT(outp, mpt);
     }
     return 4;
 }
@@ -2045,115 +2089,15 @@ line_join_points_fast_cw(const gx_line_params * pgs_lp,
 	!(fixed2long(plp->e.ce.x << 1) == fixed2long(nplp->o.co.x << 1) &&
 	  fixed2long(plp->e.ce.y << 1) == fixed2long(nplp->o.co.y << 1))
 	) {
-	/*
-	 * Check whether a miter join is appropriate.
-	 * Let a, b be the angles of the two lines.
-	 * We check tan(a-b) against the miter_check
-	 * by using the following formula:
-	 *      If tan(a)=u1/v1 and tan(b)=u2/v2, then
-	 *      tan(a-b) = (u1*v2 - u2*v1) / (u1*u2 + v1*v2).
-	 *
-	 * We can do all the computations unscaled,
-	 * because we're only concerned with ratios.
-	 * However, if we have a non-uniform coordinate
-	 * system (indicated by pmat != 0), we must do the
-	 * computations in user space.
-	 */
-	float check = pgs_lp->miter_check;
-	double u1 = plp->vector.y, v1 = plp->vector.x;
-	double u2 = -nplp->vector.y, v2 = -nplp->vector.x;
-	double num, denom;
-	int code;
-	bool ccw0;
-
-	if (pmat) {
-	    gs_point pt;
-
-	    code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
-	    if (code < 0)
-		return code;
-	    v1 = pt.x, u1 = pt.y;
-	    code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
-	    if (code < 0)
-		return code;
-	    v2 = pt.x, u2 = pt.y;
-	    /*
-	     * We need to recompute ccw according to the
-	     * relative positions of the lines in user space.
-	     * We repeat the computation described above,
-	     * using the cdelta values instead of the widths.
-	     * Because the definition of ccw above is inverted
-	     * from the intuitive one (for historical reasons),
-	     * we actually have to do the test backwards.
-	     */
-	    ccw0 = v1 * u2 < v2 * u1;
-#ifdef DEBUG
-	    {
-		double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
-
-		if (dif < 0)
-		    dif += 2 * M_PI;
-		else if (dif >= 2 * M_PI)
-		    dif -= 2 * M_PI;
-		if (dif != 0 && (dif < M_PI) != ccw0)
-		    lprintf7("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw=0\n",
-			     a1, u1, v1, a2, u2, v2, dif);
-	    }
-#endif
-	}
-	num = u1 * v2 - u2 * v1;
-	denom = u1 * u2 + v1 * v2;
-	/*
-	 * We will want either tan(a-b) or tan(b-a)
-	 * depending on the orientations of the lines.
-	 * Fortunately we know the relative orientations already.
-	 */
-	if (!ccw0)		/* have plp - nplp, want vice versa */
-	    num = -num;
-#ifdef DEBUG
-	if (gs_debug_c('O')) {
-	    dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
-		      u1, v1, u2, v2);
-	    dlprintf3("        num=%f, denom=%f, check=%f\n",
-		      num, denom, check);
-	}
-#endif
-	/*
-	 * If we define T = num / denom, then we want to use
-	 * a miter join iff arctan(T) >= arctan(check).
-	 * We know that both of these angles are in the 1st
-	 * or 2nd quadrant, and since arctan is monotonic
-	 * within each quadrant, we can do the comparisons
-	 * on T and check directly, taking signs into account
-	 * as follows:
-	 *              sign(T) sign(check)     atan(T) >= atan(check)
-	 *              ------- -----------     ----------------------
-	 *              +       +               T >= check
-	 *              -       +               true
-	 *              +       -               false
-	 *              -       -               T >= check
-	 */
-	if (num == 0 && denom == 0)
-	    return_error(gs_error_unregistered); /* Must not happen. */
-	if (denom < 0)
-	    num = -num, denom = -denom;
-	/* Now denom >= 0, so sign(num) = sign(T). */
-	if (check > 0 ?
-	    (num < 0 || num >= denom * check) :
-	    (num < 0 && num >= denom * check)
-	    ) {
-	    /* OK to use a miter join. */
-	    gs_fixed_point mpt;
-
-	    if_debug0('O', "	... passes.\n");
-	    /* Compute the intersection of */
-	    /* the extended edge lines. */
-	    if (line_intersect(&plp->e.ce, &plp->e.cdelta, &nplp->o.co,
-			       &nplp->o.cdelta, &mpt) == 0) {
-                ASSIGN_POINT(&rjoin_points[0], mpt);
-                ASSIGN_POINT(&rjoin_points[1], nplp->o.co);
-                return 2;
-            }
+        gs_fixed_point mpt;
+	int code = check_miter(pgs_lp, plp, nplp, pmat, &plp->e.ce,
+	                       &nplp->o.co, &mpt, false);
+	if (code < 0)
+	    return code;
+	if (code == 0) {
+            ASSIGN_POINT(&rjoin_points[0], mpt);
+            ASSIGN_POINT(&rjoin_points[1], nplp->o.co);
+            return 2;
 	}
     }
     return 1;
@@ -2192,115 +2136,15 @@ line_join_points_fast_ccw(const gx_line_params * pgs_lp,
 	!(fixed2long(plp->e.co.x << 1) == fixed2long(nplp->o.ce.x << 1) &&
 	  fixed2long(plp->e.co.y << 1) == fixed2long(nplp->o.ce.y << 1))
 	) {
-	/*
-	 * Check whether a miter join is appropriate.
-	 * Let a, b be the angles of the two lines.
-	 * We check tan(a-b) against the miter_check
-	 * by using the following formula:
-	 *      If tan(a)=u1/v1 and tan(b)=u2/v2, then
-	 *      tan(a-b) = (u1*v2 - u2*v1) / (u1*u2 + v1*v2).
-	 *
-	 * We can do all the computations unscaled,
-	 * because we're only concerned with ratios.
-	 * However, if we have a non-uniform coordinate
-	 * system (indicated by pmat != 0), we must do the
-	 * computations in user space.
-	 */
-	float check = pgs_lp->miter_check;
-	double u1 = plp->vector.y, v1 = plp->vector.x;
-	double u2 = -nplp->vector.y, v2 = -nplp->vector.x;
-	double num, denom;
-	int code;
-	bool ccw0;
-
-	if (pmat) {
-	    gs_point pt;
-
-	    code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
-	    if (code < 0)
-		return code;
-	    v1 = pt.x, u1 = pt.y;
-	    code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
-	    if (code < 0)
-		return code;
-	    v2 = pt.x, u2 = pt.y;
-	    /*
-	     * We need to recompute ccw according to the
-	     * relative positions of the lines in user space.
-	     * We repeat the computation described above,
-	     * using the cdelta values instead of the widths.
-	     * Because the definition of ccw above is inverted
-	     * from the intuitive one (for historical reasons),
-	     * we actually have to do the test backwards.
-	     */
-	    ccw0 = v1 * u2 < v2 * u1;
-#ifdef DEBUG
-	    {
-		double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
-
-		if (dif < 0)
-		    dif += 2 * M_PI;
-		else if (dif >= 2 * M_PI)
-		    dif -= 2 * M_PI;
-		if (dif != 0 && (dif < M_PI) != ccw0)
-		    lprintf7("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw=1\n",
-			     a1, u1, v1, a2, u2, v2, dif);
-	    }
-#endif
-	}
-	num = u1 * v2 - u2 * v1;
-	denom = u1 * u2 + v1 * v2;
-	/*
-	 * We will want either tan(a-b) or tan(b-a)
-	 * depending on the orientations of the lines.
-	 * Fortunately we know the relative orientations already.
-	 */
-	if (!ccw0)		/* have plp - nplp, want vice versa */
-	    num = -num;
-#ifdef DEBUG
-	if (gs_debug_c('O')) {
-	    dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
-		      u1, v1, u2, v2);
-	    dlprintf3("        num=%f, denom=%f, check=%f\n",
-		      num, denom, check);
-	}
-#endif
-	/*
-	 * If we define T = num / denom, then we want to use
-	 * a miter join iff arctan(T) >= arctan(check).
-	 * We know that both of these angles are in the 1st
-	 * or 2nd quadrant, and since arctan is monotonic
-	 * within each quadrant, we can do the comparisons
-	 * on T and check directly, taking signs into account
-	 * as follows:
-	 *              sign(T) sign(check)     atan(T) >= atan(check)
-	 *              ------- -----------     ----------------------
-	 *              +       +               T >= check
-	 *              -       +               true
-	 *              +       -               false
-	 *              -       -               T >= check
-	 */
-	if (num == 0 && denom == 0)
-	    return_error(gs_error_unregistered); /* Must not happen. */
-	if (denom < 0)
-	    num = -num, denom = -denom;
-	/* Now denom >= 0, so sign(num) = sign(T). */
-	if (check > 0 ?
-	    (num < 0 || num >= denom * check) :
-	    (num < 0 && num >= denom * check)
-	    ) {
-	    /* OK to use a miter join. */
-	    gs_fixed_point mpt;
-
-	    if_debug0('O', "	... passes.\n");
-	    /* Compute the intersection of */
-	    /* the extended edge lines. */
-	    if (line_intersect(&plp->e.co, &plp->e.cdelta, &nplp->o.ce,
-			       &nplp->o.cdelta, &mpt) == 0 ) {
-                ASSIGN_POINT(&join_points[0], mpt);
-                ASSIGN_POINT(&join_points[1], nplp->o.ce);
-                return 2;
-            }
+        gs_fixed_point mpt;
+	int code = check_miter(pgs_lp, plp, nplp, pmat, &plp->e.co,
+	                       &nplp->o.ce, &mpt, true);
+	if (code < 0)
+	    return code;
+	if (code == 0) {
+            ASSIGN_POINT(&join_points[0], mpt);
+            ASSIGN_POINT(&join_points[1], nplp->o.ce);
+            return 2;
 	}
     }
     return 1;
