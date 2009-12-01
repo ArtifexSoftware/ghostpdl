@@ -155,8 +155,11 @@ xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *ro
 	}
     }
 
-    head->base_uri = xps_alloc(ctx, strlen(base_uri) + 1);
-    strcpy(head->base_uri, base_uri);
+    if (head)
+    {
+	head->base_uri = xps_alloc(ctx, strlen(base_uri) + 1);
+	strcpy(head->base_uri, base_uri);
+    }
 
     return head;
 }
