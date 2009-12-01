@@ -639,6 +639,8 @@ zgetpath(i_ctx_t *i_ctx_p)
         main_ref = op->value.refs;
 	gs_path_enum_copy_init(&penum, igs, false);
         pe = gs_path_enum_next(&penum, pts);
+        if (pe < 0)
+            return pe;
         k = 0;
 
         for (i = 0; i < leaf_count; i++) {
