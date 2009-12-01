@@ -1566,7 +1566,7 @@ imdi_=$(GLOBJ)gdevimdi.$(OBJ)
 
 $(GLOBJ)gdevimdi.$(OBJ) : $(GLSRC)gdevimdi.c $(PDEVH) \
     $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)\
-    $(gscms_h) $(gsicccache_h $(gsiccmanage_h)
+    $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
     $(GLCC) -I$(IMDISRCDIR) $(GLO_)gdevimdi.$(OBJ) $(C_) $(GLSRC)gdevimdi.c
 
 $(DD)imdi.dev : $(DEVS_MAK) $(imdi_) $(GLD)page.dev $(GLD)sicclib.dev $(GLD)simdi.dev
