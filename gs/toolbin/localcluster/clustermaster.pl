@@ -5,14 +5,18 @@ use warnings;
 
 use Time::localtime;
 use File::stat;
+use Fcntl qw(:flock);
 
 use Data::Dumper;
 
 my $verbose=1;
 
-# todo:
-
 my $runningSemaphore="./clustermaster.pid";
+my $queue="./queue.lst";
+my $lock="./queue.lck";
+my $usersDir="users";
+my $jobs="./jobs";
+
 my $maxDownTime=300;  # how many seconds before a machine is considered down
 
 my $footer="";
@@ -34,8 +38,37 @@ sub checkPID {
   exit;
 }
 
-  my $usersDir="users";
+{
+  my $url1=`svn info ghostpdl | grep "URL" | awk '{ print \$2 } '`;
+  my $url2=`svn info ghostpdl/gs | grep "URL" | awk '{ print \$2 } '`;
+  chomp $url1;
+  chomp $url2;
+  my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4 } '`;
+  my $currentRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4 } '`;
+  my $newRev1    =`svn info $url1 | grep "Last Changed Rev" | awk '{ print \$4 } '`;
+  my $newRev2    =`svn info $url2 | grep "Last Changed Rev" | awk '{ print \$4 } '`;
+  chomp $currentRev1;
+  chomp $currentRev2;
+  chomp $newRev1;
+  chomp $newRev2;
+  if ($currentRev1 != $newRev1 || $currentRev2 != $newRev2) {
+    print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
+    open(LOCK,">$lock") || die "can't write to $lock";
+    flock(LOCK,LOCK_EX);
+    my $s="svn $newRev1 $newRev2";
+    my $t=`grep "$s" $queue`;
+    chomp $t;
+    print "grep '$s' return: $t\n";
+    if (length($t)==0) {
+      open(F,">>$queue");
+      print F "svn $newRev1 $newRev2\n";
+      close(F);
+    }
+    close(LOCK);
+  }
+}
 
+{
   opendir(DIR, $usersDir) || die "can't opendir $usersDir: $!";
   foreach my $user (readdir(DIR)) {
     my $product="";
@@ -63,12 +96,23 @@ sub checkPID {
       unlink "$usersDir/$user/ghostpdl/gs/cluster_command.run";
     }
     if ($product) {
-      open(F,">>user.run");
-      print F "$product\n";
-      close(F);
+      print "user $product\n";
+      open(LOCK,">$lock") || die "can't write to $lock";
+      flock(LOCK,LOCK_EX);
+      my $s="user $product";
+      my $t=`grep "$s" $queue`;
+      chomp $t;
+      print "grep '$s' return: $t\n";
+      if (length($t)==0) {
+        open(F,">>$queue");
+        print F "user $product\n";
+        close(F);
+        close(LOCK);
+      }
     }
   }
   closedir DIR;
+}
 
 if (open(F,"<$runningSemaphore")) {
   close(F);
@@ -84,6 +128,10 @@ if (open(F,"<$runningSemaphore")) {
   exit;
 }
 
+open(F,">$runningSemaphore");
+print F "$$\n";
+close(F);
+
 my %emails;
 if (open(F,"<emails.tab")) {
   while(<F>) {
@@ -94,12 +142,7 @@ if (open(F,"<emails.tab")) {
   close(F);
 }
 
-open(F,">$runningSemaphore");
-print F "$$\n";
-close(F);
-
 my $product="";
-
 
 #gs/base, gs/Resource: all languages
 #gs/psi: ps, pdf
@@ -119,103 +162,122 @@ my %tests=(
   'pcl' => 2,
   'xps' => 4,
   'svg' => 8
-);
-
+  );
 
 my %rules=(
- 'xps' => 4,
- 'svg' => 8,
- 'pcl' => 2,
- 'pxl' => 2,
- 'urwfonts' => 2,
- 'pl' => 15,
- 'main' => 15,
- 'common' => 15,
- 'gs/psi' => 1,
- 'gs/base' => 15,
- 'gs/Resource' => 15
-);
+  'xps' => 4,
+  'svg' => 8,
+  'pcl' => 2,
+  'pxl' => 2,
+  'urwfonts' => 2,
+  'pl' => 15,
+  'main' => 15,
+  'common' => 15,
+  'gs/psi' => 1,
+  'gs/base' => 15,
+  'gs/Resource' => 15
+  );
 
+#my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
+#my $currentRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
+#chomp $currentRev1;
+#chomp $currentRev2;
 
-my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
-my $currentRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
+my $regression;
 
-$footer.="\nChanged files:\n";
-my $a=`svn update ghostpdl`;
-#print "$a";
-my @a=split '\n',$a;
-my $set=0;
-for (my $i=0;  $i<scalar(@a);  $i++) {
-  my $s=$a[$i];
-  chomp $s;
-
-  if ($s =~ m|/|) {
-#   print "$s\n";
-    $s=~ s|ghostpdl/||;
-    if ($s =~ m|. +(.+)/|) {
-      print "$s\n";
-$footer.="$s\n";
-      my $t=$1;
-      print "$t ";
-      $t="gs/$1" if ($t =~ m|gs/(.+?)/|);
-print "($t) ";
-      if (exists $rules{$t}) {
-        print "$rules{$t}";
-        $set|=$rules{$t};
-      } else {
-        print "missing";
-      }
-      print "\n";
-    }
-  }
+open(LOCK,">$lock") || die "can't write to $lock";
+flock(LOCK,LOCK_EX);
+if (open(F,"<$queue")) {
+  $regression=<F>;
+  close(F);
 }
+close(LOCK);
 
-#print "$set\n";
-foreach my $i (keys %tests) {
-  $product .= "$i " if ($set & $tests{$i});
+if (!$regression) {
+  checkPID();
+  unlink $runningSemaphore;
+  exit;
 }
-
-$product =~ s/svg//;  # disable svg tests
-
-print "$product\n" if (length($product) && $verbose);
-
-$footer.="\nProducts tested: $product\n";
-
-# $product="gs pcl xps svg";
-
-#`svn update ghostpdl`;
-my $newRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
-my $newRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
-
-chomp $currentRev1;
-chomp $currentRev2;
-chomp $newRev1;
-chomp $newRev2;
-#print "$currentRev1 $currentRev2 $newRev1 $newRev2\n";
 
 my $normalRegression=0;
 my $userRegression="";
 my $userName="";
+my $rev1;
+my $rev2;
 
-if (length($product)>0 && $currentRev1!=0 && $currentRev2!=0 && ($currentRev1!=$newRev1 || $currentRev2!=$newRev2)) {
+if ($regression =~ m/svn (\d+) (\d+)/) {
+  print "found normal regression in queue: $regression\n";
   $normalRegression=1;
-} else {
+  $rev1=$1;
+  $rev2=$2;
 
-  if (open(F,"<user.run")) {
-    my @a;
-    while(<F>) {
-      chomp;
-      push @a,$_;
-    }
-    close(F);
-    if (scalar(@a)>0) {
-      open(F,">user.run");
-      for (my $i=1;  $i<scalar(@a);  $i++) {
-        print F "$a[$i]\n";
+  my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4 } '`;
+  my $currentRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4 } '`;
+  chomp $currentRev1;
+  chomp $currentRev2;
+
+  my $a=`svn update ghostpdl -r$rev1 --ignore-externals`;
+  my $b=`svn update ghostpdl/gs -r$rev2`;
+  print "svn update ghostpdl -r$rev1 --ignore-externals\nsvn update ghostpdl/gs -r$rev2\n" if ($verbose);
+
+  `svn update ghostpdl -r$currentRev1 --ignore-externals`;
+  `svn update ghostpdl/gs -r$currentRev2`;
+  print "svn update ghostpdl -r$currentRev1 --ignore-externals\nsvn update ghostpdl/gs -r$currentRev2\n" if ($verbose);
+
+  $footer.="\nChanged files:\n";
+  $a.=$b;
+  #print "$a";
+  my @a=split '\n',$a;
+  my $set=0;
+  for (my $i=0;  $i<scalar(@a);  $i++) {
+    my $s=$a[$i];
+    chomp $s;
+
+    if ($s =~ m|/|) {
+      #   print "$s\n";
+      $s=~ s|ghostpdl/||;
+      if ($s =~ m|. +(.+)/|) {
+        print "$s\n";
+        $footer.="$s\n";
+        my $t=$1;
+        print "$t ";
+        $t="gs/$1" if ($t =~ m|gs/(.+?)/|);
+        print "($t) ";
+        if (exists $rules{$t}) {
+          print "$rules{$t}";
+          $set|=$rules{$t};
+        } else {
+          print "missing";
+        }
+        print "\n";
       }
-      close(F);
-      $userRegression=$a[0];
     }
+  }
+
+  #print "$set\n";
+  foreach my $i (keys %tests) {
+    $product .= "$i " if ($set & $tests{$i});
+  }
+
+  $product =~ s/svg//;  # disable svg tests
+
+  print "$product\n" if (length($product) && $verbose);
+
+  $footer.="\nProducts tested: $product\n";
+
+  # $product="gs pcl xps svg";
+
+#`svn update ghostpdl`;
+#my $newRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
+#my $newRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
+#chomp $newRev1;
+#chomp $newRev2;
+
+##print "$currentRev1 $currentRev2 $newRev1 $newRev2\n";
+
+} else {
+  if ($regression=~/user (.+)/) {
+    $userRegression=$1;
   }
 }
 
@@ -225,11 +287,11 @@ if ($normalRegression==1 || $userRegression ne "") {
     print "running: $userRegression\n" if ($verbose);
   }
 
-# if ($normalRegression) {
+  if ($normalRegression) {
     open(F,">revision");
-    print F "local cluster regression gs-r$newRev2 / ghostpdl-r$newRev1 (xefitra)\n";
+    print F "local cluster regression gs-r$rev2 / ghostpdl-r$rev1 (xefitra)\n";
     close(F);
-# }
+  }
 
   my %machines;
   my @machines = <*.up>;
@@ -255,7 +317,6 @@ if ($normalRegression==1 || $userRegression ne "") {
   my %doneTime;
   my $s;
   my $startText;
-  my %machineSpeeds;
 
   my $abort=0;
   do {
@@ -267,22 +328,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       die "There aren't any cluster machines available"
     }
 
-    if (open(F,"<machinespeeds.txt")) {
-      while(<F>) {
-        chomp;
-        my @a=split '\s';
-        $machineSpeeds{$a[0]}=$a[1];
-      }
-      close(F);
-    }
-
     checkPID();
-    my $options="";
-    foreach (sort {lc $a cmp lc $b} keys %machines) {
-      $machineSpeeds{$_}=1 if (!exists $machineSpeeds{$_});
-      $options.=" $_.jobs $machineSpeeds{$_}";
-    }
-    print "$options\n" if ($verbose);
 
     if (!$normalRegression) {
       my @a=split ' ',$userRegression,2;
@@ -292,30 +338,31 @@ if ($normalRegression==1 || $userRegression ne "") {
       $footer="\n\nUser regression options: $product\n";
     }
 
-    `./build.pl $product >jobs`;
+    `./build.pl $product >$jobs`;
     if ($? != 0) {
       # horrible hack, fix later
+      print "build.pl $product failed\n";
       unlink  $runningSemaphore;
       exit;
     }
-    `./splitjobs.pl jobs $options`;
-#   unlink "jobs";
 
     checkPID();
     foreach (keys %machines) {
       print "unlinking $_.done\n" if ($verbose);
       print "unlinking $_.abort\n" if ($verbose);
-      unlink("$_.jobs.gz");
-      `gzip $_.jobs`;
+      print "unlinking $_.jobs.gz\n" if ($verbose);
       unlink("$_.done");
       unlink("$_.abort");
+      unlink("$_.jobs.gz");
+      `touch $_.jobs`;
+      `gzip $_.jobs`;
+      open(F,">$_.start");
       if ($normalRegression) {
-        `touch $_.start`;
+        print F "svn\t$rev1 $rev2\t$product\n";
       } else {
-        open(F,">$_.start");
-        print F "$userRegression\n";
-        close(F);
+        print F "user\t$userName\t$product\n";
       }
+      close(F);
     }
 
     checkPID();
@@ -323,7 +370,7 @@ if ($normalRegression==1 || $userRegression ne "") {
     chomp $startText;
     open (F,">status");
     if ($normalRegression) {
-      print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText UTC";
+      print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC";
     } else {
       print F "Regression $userRegression started at $startText UTC";
     }
@@ -332,122 +379,127 @@ if ($normalRegression==1 || $userRegression ne "") {
     %doneTime=();
     $abort=0;
     $startTime=time;
-    #print Dumper(\%doneTime) if ($verbose);
     print Dumper(\%machines) if ($verbose);
     print "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
 
+    use IO::Socket;
+    use Net::hostent;
+    my $PORT = 9000;
 
-use IO::Socket;
-use Net::hostent;		# for OO version of gethostbyaddr
+    my $server = IO::Socket::INET->new( 
+      Proto     => 'tcp',
+      LocalPort => $PORT,
+      Listen    => SOMAXCONN,
+      Reuse     => 1
+    );
 
-my $PORT = 9000;			# pick something not in use
-
-my $server = IO::Socket::INET->new( Proto     => 'tcp',
-                                 LocalPort => $PORT,
-                                 Listen    => SOMAXCONN,
-                                 Reuse     => 1);
-
-die "can't setup server" unless $server;
-
-my @jobs;
-open(F,"<jobs");
-my $header=<F>;
-while(<F>) {
-  push @jobs,$_;
-}
-close(F);
-
-my %lastTransfer;
-foreach my $m (keys %machines) {
-  $lastTransfer{$m}=time+180;  # allow 3 minutes for the machines to build ghostscript, hack
-}
-
-my $doneCount=0;
-my $client;
-my $totalJobs=scalar(@jobs);
-
-my $tempDone=0;
-while (!$tempDone) {
-
-eval {
-
-local $SIG{ALRM} = sub { die "alarm\n" };
-alarm 30;
-
-while ($client = $server->accept()) {
-
-  checkPID();
-
-#print "doneCount=$doneCount machines=".(scalar(keys %machines))."\n";
-  $SIG{PIPE} = 'IGNORE';
-  $client->autoflush(1);
-  my $t=<$client>;
-  chomp $t;
-printf "Connect from $t (%s) (%d seconds); jobs remaining %d\n", $client->peerhost,(time-$lastTransfer{$t}),scalar(@jobs);
-  $lastTransfer{$t}=time;
-  if (scalar(@jobs)==0) {
-    print $client "done\n";
-    $doneCount++;
-    delete $lastTransfer{$t};
-print "sending done\n";
-  }
-  for (my $i=0;  $i<250 && scalar(@jobs);  $i++) {
-    my $a=shift @jobs;
-    print $client $a;
-  }
-printf "Connect finished; jobs remaining %d\n", scalar(@jobs);
-print "not connectecd\n" if (!$client->connected);
-  close $client;
-}
-alarm 0;
-};
-alarm 0;  # avoid race condition
-if ($@) {
-  print "no connections, checking done status\n";
-}
-
-
-
-  foreach my $m (keys %machines) {
-    if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxDownTime) {
-      $doneCount=scalar keys %machines;
+    if (!$server) {
+      unlink $runningSemaphore;
+      die "can't setup server";
     }
-  }
-  foreach (keys %lastTransfer) {
-    if (time-$lastTransfer{$_}>=$maxDownTime) {
-print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
-      $doneCount=scalar keys %machines;
-      unlink "$_.up";
+
+    my @jobs;
+    open(F,"<$jobs");
+    while(<F>) {
+      push @jobs,$_;
     }
-  }
+    close(F);
 
-  my $percentage=int(($totalJobs-scalar(@jobs))/$totalJobs*100+0.5);
-  $s=`date +\"%H:%M:%S\"`;
-  chomp $s;
-  open (F,">status");
-  if ($normalRegression) {
-    print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
-  } else {
-    print F "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
-  }
-  close(F);
-
-  $tempDone=1 if ($doneCount==scalar keys %machines);
-
-
-  foreach my $m (keys %machines) {
-    if (open(F,"<$m.done")) {
-      close(F);
-      print "$m is reporting done even though it should not be done\n";
-      $tempDone=1;
+    my %lastTransfer;
+    foreach my $m (keys %machines) {
+      $lastTransfer{$m}=time+180;  # allow 3 minutes for the machines to build ghostscript, hack
     }
-  }
-}
 
+    my $doneCount=0;
+    my $client;
+    my $totalJobs=scalar(@jobs);
 
-print "all machines sent done or some machine went down\n";
+    my $tempDone=0;
+    while (!$tempDone) {
 
-my $machineSentDoneTime=time;
+      eval {
+        local $SIG{ALRM} = sub { die "alarm\n" };
+        alarm 30;
+
+        while ((!$tempDone) && ($client = $server->accept())) {
+          alarm 30;
+
+          checkPID();
+
+          #print "doneCount=$doneCount machines=".(scalar(keys %machines))."\n";
+          $SIG{PIPE} = 'IGNORE';
+          $client->autoflush(1);
+          my $t=<$client>;
+          chomp $t;
+          printf "Connect from $t (%s) (%d seconds); jobs remaining %d\n", $client->peerhost,(time-$lastTransfer{$t}),scalar(@jobs);
+          $lastTransfer{$t}=time;
+          if (scalar(@jobs)==0) {
+            print $client "done\n";
+            $doneCount++;
+            delete $lastTransfer{$t};
+            print "sending done: $doneCount\n";
+          }
+          for (my $i=0;  $i<250 && scalar(@jobs);  $i++) {
+            my $a=shift @jobs;
+            print $client $a;
+          }
+          printf "Connect finished; jobs remaining %d\n", scalar(@jobs);
+          print "not connectecd\n" if (!$client->connected);
+          close $client;
+
+          foreach my $m (keys %machines) {
+            if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxDownTime) {
+              $doneCount=scalar keys %machines;
+              print "1: setting doneCount to $doneCount\n";
+            }
+          }
+          foreach (keys %lastTransfer) {
+            if (time-$lastTransfer{$_}>=$maxDownTime) {
+              print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
+              $doneCount=scalar keys %machines;
+              print "2: setting doneCount to $doneCount\n";
+              unlink "$_.up";
+            }
+          }
+
+          my $percentage=int(($totalJobs-scalar(@jobs))/$totalJobs*100+0.5);
+          $s=`date +\"%H:%M:%S\"`;
+          chomp $s;
+          open (F,">status");
+          if ($normalRegression) {
+            print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+          } else {
+            print F "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+          }
+          close(F);
+
+          foreach my $m (keys %machines) {
+            if (open(F,"<$m.done") && exists $lastTransfer{$m}) {
+              close(F);
+              print "$m is reporting done even though it should not be done\n";
+              $tempDone=1;
+            }
+          }
+
+          if ($doneCount==scalar keys %machines) {
+            $tempDone=1 ;
+            print "setting tempDone to 1\n";
+          }
+
+        }
+        alarm 0;
+      };
+
+      alarm 0;  # avoid race condition
+      if ($@) {
+        print "no connections, checking done status\n";
+      }
+
+    }
+
+    print "all machines sent done or some machine went down\n";
+
+    my $machineSentDoneTime=time;
 
     while(scalar(keys %doneTime) < scalar(keys %machines)) {
       checkPID();
@@ -473,9 +525,9 @@ my $machineSentDoneTime=time;
           %doneTime=();  # avoids a race condition where the machine we just aborted reports done
           foreach my $n (keys %machines) {
             `touch $n.abort`;
-	  }
+          }
           delete $machines{$m};
-	  sleep 60;  # hack
+          sleep 60;  # hack
         }
       }
       sleep(1);
@@ -490,64 +542,11 @@ my $machineSentDoneTime=time;
   chomp $s;
   open (F,">status");
   if ($normalRegression) {
-    print F "Regression gs-r$newRev2 / ghostpdl-r$newRev1 started at $startText UTC - finished at $s";
+    print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC - finished at $s";
   } else {
     print F "Regression $userRegression started at $startText UTC - finished at $s";
   }
   close(F);
-
-  checkPID();
-  if ($normalRegression) {
-    my $averageTime=0;
-    foreach (keys %machines) {
-      $averageTime+=$doneTime{$_}-$startTime;
-    }
-    $averageTime/=scalar(keys %machines);
-    my $shortestTime=99999999;
-    foreach (keys %machines) {
-      $shortestTime=$doneTime{$_}-$startTime if ($shortestTime>$doneTime{$_}-$startTime);
-    }
-    print "averageTime=$averageTime\n" if ($verbose);
-    print "shortestTime=$shortestTime\n" if ($verbose);
-    print "startTime=$startTime\n" if ($verbose);
-    print Dumper(\%doneTime) if ($verbose);
-    print Dumper(\%machineSpeeds) if ($verbose);
-    my $totalSpeed=0;
-    my $totalTime=0;
-    my $max=0;
-    foreach (keys %machines) {
-      $totalSpeed+=$machineSpeeds{$_};
-      $totalTime+=$doneTime{$_}-$startTime;
-    }
-print "totalSpeed=$totalSpeed totalTime=$totalTime\n" if ($verbose);
-    foreach (keys %machines) {
-printf "%s %f %f %f ",$_,($machineSpeeds{$_}/$totalSpeed),(($doneTime{$_}-$startTime)/$totalTime),$machineSpeeds{$_} if ($verbose);
-      $machineSpeeds{$_}=(($machineSpeeds{$_}/$totalSpeed)/(($doneTime{$_}-$startTime)/$totalTime)+$machineSpeeds{$_})/2;
-printf "%f\n",$machineSpeeds{$_} if ($verbose);
-      $max=$machineSpeeds{$_} if ($max<$machineSpeeds{$_});
-    }
-    if (0) {
-    foreach (keys %machines) {
-printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose);
-      $machineSpeeds{$_}=$machineSpeeds{$_}*($shortestTime/($doneTime{$_}-$startTime));
-printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose);
-      $max=$machineSpeeds{$_} if ($max<$machineSpeeds{$_});
-    }
-    }
-    foreach (keys %machines) {
-      $machineSpeeds{$_}/=$max;
-      $machineSpeeds{$_}=(int($machineSpeeds{$_}*100+0.5))/100;
-      $machineSpeeds{$_}=0.01 if ($machineSpeeds{$_}==0);
-printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose);
-    }
-    print Dumper(\%machineSpeeds);
-    if (open(F,">machinespeeds.txt")) {
-      foreach (sort keys %machineSpeeds) {
-        print F "$_ $machineSpeeds{$_}\n";
-      }
-      close(F);
-    }
-  }
 
   checkPID();
   my $buildFail=0;  # did at least one machine report a build failure?
@@ -599,18 +598,18 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
      #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
 
       checkPID();
-      `touch archive/$newRev2-$newRev1`;
-      `rm -fr archive/$newRev2-$newRev1`;
-      `mkdir archive/$newRev2-$newRev1`;
-      `mv $logs archive/$newRev2-$newRev1/.`;
-      `gzip archive/$newRev2-$newRev1/*log`;
-      `cp -p email.txt archive/$newRev2-$newRev1/.`;
-      `cp -p current.tab archive/$newRev2-$newRev1/current.tab`;
-      `cp -p previous.tab archive/$newRev2-$newRev1/previous.tab`;
-      `cp -p current.tab archive/$newRev2-$newRev1.tab`;
-      #  `touch archive/$newRev2-$newRev1.tab.gz`;
-      #  unlink "archive/$newRev2-$newRev1.tab.gz";
-      #  `gzip archive/$newRev2-$newRev1.tab`;
+      `touch archive/$rev2-$rev1`;
+      `rm -fr archive/$rev2-$rev1`;
+      `mkdir archive/$rev2-$rev1`;
+      `mv $logs archive/$rev2-$rev1/.`;
+      `gzip archive/$rev2-$rev1/*log`;
+      `cp -p email.txt archive/$rev2-$rev1/.`;
+      `cp -p current.tab archive/$rev2-$rev1/current.tab`;
+      `cp -p previous.tab archive/$rev2-$rev1/previous.tab`;
+      `cp -p current.tab archive/$rev2-$rev1.tab`;
+      #  `touch archive/$rev2-$rev1.tab.gz`;
+      #  unlink "archive/$rev2-$rev1.tab.gz";
+      #  `gzip archive/$rev2-$rev1.tab`;
       # unlink "log";
     } else {
       my @a=split ' ',$product;
@@ -628,10 +627,10 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
 
       checkPID();
       `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >$userName.txt`;
-      `mv $logs users/$userName/.`;
-      `cp -p $userName.txt users/$userName/.`;
-      `cp -p temp.tab users/$userName/.`;
-      `cp -p current.tab users/$userName/.`;
+      `mv $logs $usersDir/$userName/.`;
+      `cp -p $userName.txt $usersDir/$userName/.`;
+      `cp -p temp.tab $usersDir/$userName/.`;
+      `cp -p current.tab $usersDir/$userName/.`;
 
     }
   } else {
@@ -641,14 +640,14 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
     foreach my $machine (keys %machines) {
       if ($buildFail{$machine}) {
         print F "\n\n$machine log:\n\n";
-	`tail -100 $machine.log >temp.log`;
+        `tail -100 $machine.log >temp.log`;
         open(F2,"<temp.log");
         while(<F2>) {
           print F $_;
         }
         close(F2);
         print F "\n\n$machine stdout:\n\n";
-	`tail -100 $machine.out >temp.out`;
+        `tail -100 $machine.out >temp.out`;
         open(F2,"<temp.out");
         while(<F2>) {
           print F $_;
@@ -672,13 +671,18 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
   if ($normalRegression) {
     `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
-    `./cp.all`;
+
+    print "test complete, performing final svn update\n";
+    `svn update ghostpdl -r$rev1 --ignore-externals`;
+    `svn update ghostpdl/gs -r$rev2`;
+
+    `./cp.all.sh`;
   } else {
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision\`\" <$userName.txt`;
-      `mail marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
       `mail $emails{$userName} -s \"$userRegression \`cat revision\`\" <$userName.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
     } else {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
       `mail marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
@@ -686,6 +690,27 @@ printf "%s %f %f\n",$_,$doneTime{$_}-$startTime,$machineSpeeds{$_} if ($verbose)
   }
 
 }
+
+checkPID();
+
+print "removing top element from queue\n";
+open(LOCK,">$lock") || die "can't write to $lock";
+flock(LOCK,LOCK_EX);
+if (open(F,"<$queue")) {
+  my @a;
+  while(<F>) {
+    chomp;
+    push @a,$_;
+  }
+  close(F);
+  if (scalar(@a)>0) {
+    open(F,">$queue");
+    for (my $i=1;  $i<scalar(@a);  $i++) {
+      print F "$a[$i]\n";
+    }
+  }
+}
+close(LOCK);
 
 checkPID();
 unlink $runningSemaphore;

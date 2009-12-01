@@ -389,16 +389,14 @@ foreach my $testfile (sort keys %testfiles) {
   }
 }
 
-if (scalar keys %products>0) {
-  print "pdl=";
-  foreach (keys %products) {
-    print "$_ ";
-  }
-  print "\n";
-}
-my $zz=0;
+#if (scalar keys %products>0) {
+#  print "pdl=";
+#  foreach (keys %products) {
+#    print "$_ ";
+#  }
+#  print "\n";
+#}
 while (scalar(@commands)) {
-#  exit if ($zz++>250);
   my $n=rand(scalar @commands);
 # $n=0;
   my $command=$commands[$n];  splice(@commands,$n,1);

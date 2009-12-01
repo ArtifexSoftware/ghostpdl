@@ -8,7 +8,6 @@ use POSIX ":sys_wait_h";
 
 use File::stat;
 
-my $updateGS=1;
 my $updateTestFiles=1;
 
 my $debug=0;
@@ -25,10 +24,11 @@ my %timeOuts;
 my $machine=shift || die "usage: run.pl machine_name";
 
 my $user;
+my $revs;
 #my $product;
+my @commands;
 
-my $products="gs pcl svg xps";
-
+my $products;
 
 my $runningSemaphore="./run.pid";
 
@@ -68,22 +68,27 @@ print F "$$\n";
 close(F);
 
 if (open(F,"<$machine.start")) {
-  $_=<F>;
+  my $t=<F>;
+  chomp $t;
   close(F);
-  if ($_) {
-    chomp;
-    my @a=split ' ';
-    $user=$a[0];
-#   $product=$a[1];
-#   if ($user && $product) {
-#     #   print "user=$user product=$product\n";
-#   } else {
-#     #   print "empty user\n";
-#   }
+  if ($t) {
+    my @a=split '\t', $t;
+    if ($a[0] eq "svn") {
+      $revs=$a[1];
+      $products=$a[2];
+    } elsif ($a[0] eq "user") {
+      $user=$a[1];
+      $products=$a[2];
+    } else {
+      die "oops 3";  # hack
+    }
+  } else {
+    die "oops 1";  # hack
   }
   unlink("$machine.start");
+} else {
+  die "oops 2";  # hack
 }
-
 
 my $host="casper3.ghostscript.com";
 
@@ -91,7 +96,6 @@ my $desiredRev;
 
 my $maxCount=12;
 $maxCount=16;
-
 
 my $baseDirectory=`pwd`;
 chomp $baseDirectory;
@@ -115,11 +119,11 @@ my $timeoutFail="";
 #if ($md5sumFail eq "") {
 #  $md5sumFail=`which md5`;
 #  $md5Command='md5';
-#} 
+#}
 #if ($md5sumFail eq "") {
 #  $md5sumFail=`which /sbin/md5`;
 #  $md5Command='/sbin/md5';
-#} 
+#}
 if ($md5sumFail) {
   $md5sumFail="";
 }  else {
@@ -133,48 +137,44 @@ local $| = 1;
 my %testSource=(
   $baseDirectory."/tests/" => '1',
   $baseDirectory."/tests_private/" => '1'
-);
+  );
 
 system("date") if ($debug2);
 
-open(F,"<$machine.jobs") || die "file $machine.jobs not found";
-my @commands;
-my $t=<F>;
-chomp $t;
-if ($t =~ m/^\d+$/) {
-  $desiredRev=$t;
-} elsif ($t =~m/^pdl=(.+)/) {
-  $products=$1;
-} else {
-  push @commands, $t;
+if (0) {
+  open(F,"<$machine.jobs") || die "file $machine.jobs not found";
+  my $t=<F>;
+  chomp $t;
+  if ($t =~ m/^\d+$/) {
+    $desiredRev=$t;
+  } elsif ($t =~m/^pdl=(.+)/) {
+    $products=$1;
+  } else {
+    push @commands, $t;
+  }
+  while(<F>) {
+    chomp;
+    push @commands, $_;
+  }
+  close(F);
 }
-while(<F>) {
-  chomp;
-  push @commands, $_;
-}
-close(F);
 
-my $poll=0;
-$poll=1 if (scalar (@commands)==0);
+my $poll=1;
 
+$products="gs pcl xps svg" if (length($products)==0);
 my %products;
 my @products=split ' ',$products;
 foreach (@products) {
   $products{$_}=1;
 }
 
-
 my $cmd;
 my $s;
-my $previousRev1;
-my $previousRev2;
-my $newRev1=99999;
-my $newRev2=99999;
 
 my %spawnPIDs;
 
 sub killAll() {
-print "in killAll()\n";
+  print "in killAll()\n";
   my $a=`ps -ef`;
   my @a=split '\n',$a;
   my %children;
@@ -184,15 +184,15 @@ print "in killAll()\n";
     }
   }
 
-    foreach my $pid (keys %pids) {
-        #     kill 1, $pid;
-        my $p=$pid;
-        while (exists $children{$p}) {
-          print "$p->$children{$p}\n";
-          $p=$children{$p};
-        }
-        kill 1, $p;
+  foreach my $pid (keys %pids) {
+    #     kill 1, $pid;
+    my $p=$pid;
+    while (exists $children{$p}) {
+      print "$p->$children{$p}\n";
+      $p=$children{$p};
     }
+    kill 1, $p;
+  }
 }
 
 sub spawn($$) {
@@ -218,7 +218,7 @@ sub spawn($$) {
           select(undef, undef, undef, 0.1);
           $status=waitpid($pid,WNOHANG);
           $t++;
-        } while($status>=0 && $t<abs($timeout*10));
+          } while($status>=0 && $t<abs($timeout*10));
         $done=1 if ($timeout<0);
         if ($status>=0) {
           kill 9, $pid;
@@ -268,12 +268,6 @@ $abort=checkAbort;
 if (!$abort) {
 
   if ($user) {
-    # `pkill -9 rsync`; exit;
-    # my $s=`ps -ef | grep rsync | grep -v grep`;
-    # chomp $s;
-    # my @a=split ' ',$s;
-    # `kill -9 $a[1]`;
-
     updateStatus("Fetching source from users/$user");
     mkdir "users";
     mkdir "users/$user";
@@ -293,58 +287,19 @@ if (!$abort) {
 
     updateStatus('Updating Ghostscript');
 
-    if ($updateGS) {
-      # check previous revision
-      $cmd="cd $gpdlSource ; svn info";
-      $s=`$cmd`;
-      if ($s=~m/Last Changed Rev: (\d+)/) {
-        $previousRev1=$1;
-      } else {
-        die "svn info failed";
-      }
-      $cmd="cd $gsSource ; svn info";
-      $s=`$cmd`;
-      if ($s=~m/Last Changed Rev: (\d+)/) {
-        $previousRev2=$1;
-      } else {
-        die "svn info failed";
-      }
-
-      # get update
-      if ($desiredRev) {
-        $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$desiredRev ; cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$desiredRev";
-      } else {
-        $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update";
-      }
-      print "$cmd\n" if ($verbose);
-      `$cmd`;
-
-      updateStatus('Modifying Ghostscript');
-
-      # check current revision
-      $cmd="cd $gpdlSource ; svn info";
-      $s=`$cmd`;
-      if ($s=~m/Last Changed Rev: (\d+)/) {
-        $newRev1=$1;
-      } else {
-        die "svn info failed";
-      }
-      $cmd="cd $gsSource ; svn info";
-      $s=`$cmd`;
-      if ($s=~m/Last Changed Rev: (\d+)/) {
-        $newRev2=$1;
-      } else {
-        die "svn info failed";
-      }
-
-      print "$previousRev1 $newRev1\n" if ($verbose);
-      print "$previousRev2 $newRev2\n" if ($verbose);
-
-      if ($previousRev1==$newRev1 && $previousRev2==$newRev2) {
-        #   print "no updates to repository, quitting\n";
-        #   exit;
-      }
+    # get update
+    my $pdlrev;
+    my $gsrev;
+    if ($revs =~ m/(\d+) (\d+)/) {
+      $pdlrev=$1;
+      $gsrev=$2;
+    } else {
+      die "oops 4";  # hack
     }
+    $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$pdlrev ; cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$gsrev";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+
   }
 }
 
@@ -352,119 +307,115 @@ $cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; rm -fr $tem
 print "$cmd\n" if ($verbose);
 `$cmd`;
 
-if ($updateGS) {
-  if (!$abort) {
+if (!$abort) {
 
-    # modify product name so that files that print that information don't change
-    # when we rev. the revision
-    open(F1,"<$gsSource/base/gscdef.c") || die "file $gsSource/base/gscdef.c not found";
-    open(F2,">$gsSource/base/gscdef.tmp") || die "$gsSource/base/gscdef.tmp cannot be open for writing";
-    while(<F1>) {
-      print F2 $_;
-      if (m/define GS_PRODUCT/) {
-        my $dummy=<F1>;
-        print F2 "\t\"GPL Ghostscript\"\n";
-      }
-    }
-    close(F1);
-    close(F2);
-    $cmd="mv $gsSource/base/gscdef.tmp $gsSource/base/gscdef.c";
-    `$cmd`;
-
-#   if (1 || !$product || $product eq 'gs') {  # always build ghostscript
-    
-    $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
-    $cmd="cd $gpdlSource ; touch makepcl.out makexps.out makesvg.out ; rm -f touch makepcl.out makexps.out makesvg.out";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
-
-    if ($products{'gs'}) {
-
-      updateStatus('Building Ghostscript');
-
-      # build ghostscript
-      $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; nice make >>makegs.out 2>&1";
-      print "$cmd\n" if ($verbose);
-      `$cmd`;
-
-      updateStatus('Installing Ghostscript');
-
-      #install ghostscript
-      $cmd="rm -fr $gsBin ; cd $gsSource ; nice make install";
-      print "$cmd\n" if ($verbose);
-      `$cmd`;
-
-      if (open(F,"<$gsBin/bin/gs")) {
-        close(F);
-      } else {
-        $compileFail.="gs ";
-      }
+  # modify product name so that files that print that information don't change
+  # when we rev. the revision
+  open(F1,"<$gsSource/base/gscdef.c") || die "file $gsSource/base/gscdef.c not found";
+  open(F2,">$gsSource/base/gscdef.tmp") || die "$gsSource/base/gscdef.tmp cannot be open for writing";
+  while(<F1>) {
+    print F2 $_;
+    if (m/define GS_PRODUCT/) {
+      my $dummy=<F1>;
+      print F2 "\t\"GPL Ghostscript\"\n";
     }
   }
+  close(F1);
+  close(F2);
+  $cmd="mv $gsSource/base/gscdef.tmp $gsSource/base/gscdef.c";
+  `$cmd`;
+
+  #   if (1 || !$product || $product eq 'gs') {  # always build ghostscript
+
+  $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out";
+  print "$cmd\n" if ($verbose);
+  `$cmd`;
+  $cmd="cd $gpdlSource ; touch makepcl.out makexps.out makesvg.out ; rm -f touch makepcl.out makexps.out makesvg.out";
+  print "$cmd\n" if ($verbose);
+  `$cmd`;
+
+  if ($products{'gs'}) {
+
+    updateStatus('Building Ghostscript');
+
+    # build ghostscript
+    $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; nice make >>makegs.out 2>&1";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+
+    updateStatus('Installing Ghostscript');
+
+    #install ghostscript
+    $cmd="rm -fr $gsBin ; cd $gsSource ; nice make install";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+
+    if (open(F,"<$gsBin/bin/gs")) {
+      close(F);
+    } else {
+      $compileFail.="gs ";
+    }
+  }
+}
 
 # if (1 || !$product || $product eq 'ghostpdl') {  # always build ghostpdl
 #   if (1) {
 if (0) {
-      $abort=checkAbort;
-      if (!$abort) {
-        updateStatus('Make clean GhostPCL/XPS/SVG');
-        $cmd="cd $gpdlSource ; nice make pcl-clean xps-clean svg-clean -j 12 >makeclean.out 2>&1";
-        print "$cmd\n" if ($verbose);
-        `$cmd`;
-      }
+  $abort=checkAbort;
+  if (!$abort) {
+    updateStatus('Make clean GhostPCL/XPS/SVG');
+    $cmd="cd $gpdlSource ; nice make pcl-clean xps-clean svg-clean -j 12 >makeclean.out 2>&1";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+  }
 }
 
-      $abort=checkAbort;
-      if ($products{'pcl'} && !$abort) {
-        updateStatus('Building GhostPCL');
-        $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
-        print "$cmd\n" if ($verbose);
-        `$cmd`;
-        if (open(F,"<$gpdlSource/main/obj/pcl6")) {
-          close(F);
-          $cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
-          print "$cmd\n" if ($verbose);
-          `$cmd`;
-        } else {
-          $compileFail.="pcl6 ";
-        }
-      }
+$abort=checkAbort;
+if ($products{'pcl'} && !$abort) {
+  updateStatus('Building GhostPCL');
+  $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
+  print "$cmd\n" if ($verbose);
+  `$cmd`;
+  if (open(F,"<$gpdlSource/main/obj/pcl6")) {
+    close(F);
+    $cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+  } else {
+    $compileFail.="pcl6 ";
+  }
+}
 
-      $abort=checkAbort;
-      if ($products{'xps'} && !$abort) {
-        updateStatus('Building GhostXPS');
-        $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
-        print "$cmd\n" if ($verbose);
-        `$cmd`;
-        if (open(F,"<$gpdlSource/xps/obj/gxps")) {
-          close(F);
-          $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
-          print "$cmd\n" if ($verbose);
-          `$cmd`;
-        } else {
-          $compileFail.="gxps ";
-        }
-      }
+$abort=checkAbort;
+if ($products{'xps'} && !$abort) {
+  updateStatus('Building GhostXPS');
+  $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
+  print "$cmd\n" if ($verbose);
+  `$cmd`;
+  if (open(F,"<$gpdlSource/xps/obj/gxps")) {
+    close(F);
+    $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+  } else {
+    $compileFail.="gxps ";
+  }
+}
 
-      $abort=checkAbort;
-      if ($products{'svg'} && !$abort) {
-        updateStatus('Building GhostSVG');
-        $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
-        print "$cmd\n" if ($verbose);
-        `$cmd`;
-        if (open(F,"<$gpdlSource/svg/obj/gsvg")) {
-          close(F);
-          $cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
-          print "$cmd\n" if ($verbose);
-          `$cmd`;
-        } else {
-          $compileFail.="gsvg ";
-        }
-      }
-#   }
-# }
+$abort=checkAbort;
+if ($products{'svg'} && !$abort) {
+  updateStatus('Building GhostSVG');
+  $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
+  print "$cmd\n" if ($verbose);
+  `$cmd`;
+  if (open(F,"<$gpdlSource/svg/obj/gsvg")) {
+    close(F);
+    $cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+  } else {
+    $compileFail.="gsvg ";
+  }
 }
 
 unlink "link.icc","wts_plane_0","wts_plane_1","wts_plane_2","wts_plane_3";
@@ -488,7 +439,6 @@ if ($md5sumFail ne "") {
 my $totalJobs=scalar(@commands);
 my $jobs=0;
 
-
 my $startTime=time;
 
 while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
@@ -496,80 +446,79 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
 
   if ($poll==1 && scalar(@commands)==0) {
 
-use IO::Socket;
-my ($host, $port, $handle, $line);
+    use IO::Socket;
+    my ($host, $port, $handle, $line);
 
-$host="casper.ghostscript.com";
-$port=9000;
+    $host="casper.ghostscript.com";
+    $port=9000;
 
-my $retry=10;
-do {
-if ($retry<10) {
-  my $s=`date +\"%y_%m_%d_%H_%M_%S\"`;
-  $s.="_$retry";
-  `touch $s`;
-}
-  
-sleep 10 if ($retry<10);
-# create a tcp connection to the specified host and port
-$handle = IO::Socket::INET->new(Proto     => "tcp",
-                                PeerAddr  => $host,
-                                PeerPort  => $port);
-} until (($handle) || ($retry--<=0));
-if (!$handle) {
-  unlink $runningSemaphore;
-  updateStatus("Can not connect to $host, quitting");
-  die "can not connect to port $port on $host: $!";  # hack
-}
+    my $retry=10;
+    do {
+      if ($retry<10) {
+        my $s=`date +\"%y_%m_%d_%H_%M_%S\"`;
+        $s.="_$retry";
+        `touch $s`;
+      }
 
-print $handle "$machine\n";
+      sleep 10 if ($retry<10);
+      # create a tcp connection to the specified host and port
+      $handle = IO::Socket::INET->new(Proto     => "tcp",
+        PeerAddr  => $host,
+        PeerPort  => $port);
+      } until (($handle) || ($retry--<=0));
+    if (!$handle) {
+      unlink $runningSemaphore;
+      updateStatus("Can not connect to $host, quitting");
+      die "can not connect to port $port on $host: $!";  # hack
+    }
 
-my $n=0;
-my $s="";
-eval {
-local $SIG{ALRM} = sub { die "alarm\n" };
-alarm 60;
-do {
-  $n=sysread($handle,$line,4096);
-  $s.=$line;
-  #print STDOUT "$line";
-} until (!defined($n) || $n==0);
-alarm 0;
-};
-alarm 0;  # avoid race condition
-if ($@) {
-# die unless $@ eq "alarm\n";
-# unlink $runningSemaphore;
-  $s="";
-  updateStatus('Connection timed out, quitting');
-  @commands=();
-  $maxCount=0;
-  killAll();
-  $poll=0;
-  $abort=1;
-# die "timed out";  # hack
-}
-close $handle;
+    print $handle "$machine\n";
 
+    my $n=0;
+    my $s="";
+    eval {
+      local $SIG{ALRM} = sub { die "alarm\n" };
+      alarm 60;
+      do {
+        $n=sysread($handle,$line,4096);
+        $s.=$line;
+        #print STDOUT "$line";
+        } until (!defined($n) || $n==0);
+      alarm 0;
+      };
+    alarm 0;  # avoid race condition
+    if ($@) {
+      # die unless $@ eq "alarm\n";
+      # unlink $runningSemaphore;
+      $s="";
+      updateStatus('Connection timed out, quitting');
+      @commands=();
+      $maxCount=0;
+      killAll();
+      $poll=0;
+      $abort=1;
+      # die "timed out";  # hack
+    }
+    close $handle;
 
-if (!defined($n)) {
-# unlink $runningSemaphore;
-  $s="";
-  updateStatus('Connection interrupted, quitting');
-  @commands=();
-  $maxCount=0;
-  killAll();
-  $poll=0;
-  $abort=1;
-# die "sysread returned null";  # hack
-}
+    if (!defined($n)) {
+      # unlink $runningSemaphore;
+      $s="";
+      updateStatus('Connection interrupted, quitting');
+      @commands=();
+      $maxCount=0;
+      killAll();
+      $poll=0;
+      $abort=1;
+      # die "sysread returned null";  # hack
+    }
 
-@commands = split '\n',$s;
-$totalJobs=scalar(@commands);
-if ($commands[0] eq "done") {
-  $poll=0;
-  @commands=();
-}
+    @commands = split '\n',$s;
+    $totalJobs=scalar(@commands);
+    if ((scalar @commands==0) || $commands[0] eq "done") {
+      $poll=0;
+      @commands=();
+    }
   }
 
   my $a=`ps -ef`;
@@ -693,14 +642,14 @@ if ($abort) {
         kill 1, $p;
 
         $timeOuts{$pids{$pid}{'filename'}}=1;
-	my $count=scalar (keys %timeOuts);
+        my $count=scalar (keys %timeOuts);
         print "\nkilled:  $p ($pid) $pids{$pid}{'filename'}  total $count\n";
         if ($count>=$maxTimeout) {
           $timeoutFail="too many timeouts";
           updateStatus('Timeout fail');
           @commands=();
           $maxCount=0;
-	  killAll();
+          killAll();
         }
       } else {
 #print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
@@ -741,7 +690,7 @@ if ($abort) {
       my $count=0;
       if (open(F3,"<$dir/$i")) {
         while(<F3>) {
-	  $count++;
+          $count++;
         }
         close(F3);
       }
@@ -749,13 +698,13 @@ if ($abort) {
       print F2 "\n$i (last 20 lines):\n\n";
       if (open(F3,"<$dir/$i")) {
         while(<F3>) {
-	  if ($count--<0) {
+          if ($count--<0) {
             print F2 $_;
-	  }
+          }
         }
         close(F3);
       } else {
-#       print F2 "missing\n";
+        #       print F2 "missing\n";
       }
     }
   }
