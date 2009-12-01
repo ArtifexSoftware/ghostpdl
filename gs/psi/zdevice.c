@@ -457,14 +457,6 @@ zsetdevice(i_ctx_t *i_ctx_p)
         if(op->value.pdevice != dev) 	  /* don't allow a different device    */
 	    return_error(e_invalidaccess);
     }
-#ifndef PSI_INCLUDED
-    /* the language switching build shouldn't install a new device
-       here.  The language switching machinery installs a shared
-       device. */
-
-    code = gs_setdevice_no_erase(igs, op->value.pdevice);
-    if (code < 0)
-        return code;
 
     /* If the device has a profile, this will get it to the manager.
        If it does not, then a default one appropriate for the device will be used */
@@ -473,6 +465,14 @@ zsetdevice(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
+#ifndef PSI_INCLUDED
+    /* the language switching build shouldn't install a new device
+       here.  The language switching machinery installs a shared
+       device. */
+
+    code = gs_setdevice_no_erase(igs, op->value.pdevice);
+    if (code < 0)
+        return code;
 
 #endif
     make_bool(op, code != 0);	/* erase page if 1 */
