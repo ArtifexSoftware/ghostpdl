@@ -788,6 +788,37 @@ gx_default_draw_thin_line(gx_device * dev,
 	    if (h < 0)
 		SWAP(fx0, fx1, tf), SWAP(fy0, fy1, tf),
 		    h = -h;
+	    /* So we are plotting a trapezoid with horizontal thin edges.
+	     * Check for whether a triangular extension area on the end
+	     * covers an additional pixel centre. */
+	    {
+	        int deltay = int2fixed(fixed2int_var(fy1)) + fixed_half -fy1;
+	        int deltax = int2fixed(fixed2int_var(fx1)) + fixed_half -fx1;
+
+                if (deltax < 0) deltax=-deltax;
+	        if ((deltay > 0) && (deltay <= fixed_half) &&
+	            (deltay+deltax <= fixed_half))
+                {
+                    int c = gx_fill_rectangle_device_rop(fixed2int_var(fx1),
+                                                         fixed2int_var(fy1),
+                                                         1,1,pdevc,dev,lop);
+                    if (c < 0) return c;
+                }
+	    }
+	    {
+	        int deltay = int2fixed(fixed2int_var(fy0)) + fixed_half -fy0;
+	        int deltax = int2fixed(fixed2int_var(fx0)) + fixed_half -fx0;
+
+                if (deltax < 0) deltax=-deltax;
+	        if ((deltay < 0) && (deltay >= -fixed_half) &&
+	            (-deltay+deltax <= fixed_half))
+                {
+                    int c = gx_fill_rectangle_device_rop(fixed2int_var(fx0),
+                                                         fixed2int_var(fy0),
+                                                         1,1,pdevc,dev,lop);
+                    if (c < 0) return c;
+                }
+	    }
 	    /* Can we treat it as a vertical rectangle? */
             ix   = fixed2int_var(fx0-fixed_epsilon);
             itox = fixed2int_var(fx1-fixed_epsilon);
@@ -816,6 +847,37 @@ gx_default_draw_thin_line(gx_device * dev,
 	    if (w < 0)
 		SWAP(fx0, fx1, tf), SWAP(fy0, fy1, tf),
 		    w = -w;
+	    /* So we are plotting a trapezoid with vertical thin edges
+	     * Check for whether a triangular extension area on the end
+	     * covers an additional pixel centre. */
+	    {
+	        int deltax = int2fixed(fixed2int_var(fx1)) + fixed_half -fx1;
+	        int deltay = int2fixed(fixed2int_var(fy1)) + fixed_half -fy1;
+
+                if (deltay < 0) deltay=-deltay;
+	        if ((deltax > 0) && (deltax <= fixed_half) &&
+	            (deltax+deltay <= fixed_half))
+                {
+                    int c = gx_fill_rectangle_device_rop(fixed2int_var(fx1),
+                                                         fixed2int_var(fy1),
+                                                         1,1,pdevc,dev,lop);
+                    if (c < 0) return c;
+                }
+	    }
+	    {
+	        int deltax = int2fixed(fixed2int_var(fx0)) + fixed_half -fx0;
+	        int deltay = int2fixed(fixed2int_var(fy0)) + fixed_half -fy0;
+
+                if (deltay < 0) deltay=-deltay;
+	        if ((deltax < 0) && (deltax >= -fixed_half) &&
+	            (-deltax+deltay <= fixed_half))
+                {
+                    int c = gx_fill_rectangle_device_rop(fixed2int_var(fx0),
+                                                         fixed2int_var(fy0),
+                                                         1,1,pdevc,dev,lop);
+                    if (c < 0) return c;
+                }
+	    }
             /* Can we treat this as a horizontal rectangle? */
             iy   = fixed2int_var(fy0-fixed_epsilon);
             itoy = fixed2int_var(fy1-fixed_epsilon);
