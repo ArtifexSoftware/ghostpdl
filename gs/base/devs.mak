@@ -1269,7 +1269,7 @@ $(DD)xcfcmyk.dev : $(DEVS_MAK) $(xcf_) $(GLD)page.dev
 $(GLOBJ)gdevxcf.$(OBJ) : $(GLSRC)gdevxcf.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
  $(gxdcconv_h) $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
- 	$(GLCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
+	$(GLCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
 
 ### --------------------------- The PSD device ------------------------- ###
 
@@ -1567,7 +1567,7 @@ imdi_=$(GLOBJ)gdevimdi.$(OBJ)
 $(GLOBJ)gdevimdi.$(OBJ) : $(GLSRC)gdevimdi.c $(PDEVH) \
     $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)\
     $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
-    $(GLCC) -I$(IMDISRCDIR) $(GLO_)gdevimdi.$(OBJ) $(C_) $(GLSRC)gdevimdi.c
+	$(GLCC) -I$(IMDISRCDIR) $(GLO_)gdevimdi.$(OBJ) $(C_) $(GLSRC)gdevimdi.c
 
 $(DD)imdi.dev : $(DEVS_MAK) $(imdi_) $(GLD)page.dev $(GLD)sicclib.dev $(GLD)simdi.dev
 	$(SETPDEV2) $(DD)imdi $(imdi_)
