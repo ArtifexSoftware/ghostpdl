@@ -141,18 +141,6 @@ typedef enum {
     image_skewed		/* any other transformation */
 } image_posture;
 
-/*
- * Define an entry in the image color table.  For single-source-plane
- * images, the table index is the sample value, and the key is not used;
- * for multiple-plane (color) images, the table index is a hash of the key,
- * which is the concatenation of the source pixel components.
- * "Clue" = Color LookUp Entry (by analogy with CLUT).
- */
-typedef struct gx_image_clue_s {
-    gx_device_color dev_color;
-    bits32 key;
-} gx_image_clue;
-
 /* Main state structure */
 
 #ifndef gx_device_clip_DEFINED
@@ -267,9 +255,8 @@ struct gx_image_enum_s {
     sample_map map[GS_IMAGE_MAX_COMPONENTS];
     /* Entries 0 and 255 of the following are set at initialization */
     /* for monochrome images; other entries are updated dynamically. */
-    gx_image_clue clues[256];
-#define icolor0 clues[0].dev_color
-#define icolor1 clues[255].dev_color
+    gx_device_color icolor0;
+    gx_device_color icolor1;
 };
 
 /* Enumerate the pointers in an image enumerator. */

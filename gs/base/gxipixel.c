@@ -63,24 +63,16 @@ ENUM_PTRS_WITH(image_enum_enum_ptrs, gx_image_enum *eptr)
 	bps = 1;
     if (index >= (1 << bps) * st_device_color_max_ptrs)		/* done */
 	return 0;
-    /* the clues may have been cleared by gx_image_free_enum, but not freed in that */
-    /* function due to being at a different save level. Only trace if dev_color.type != 0. */
-    if (eptr->clues[(index/st_device_color_max_ptrs) * (255 / ((1 << bps) - 1))].dev_color.type != 0)
-    ret = ENUM_USING(st_device_color,
-		     &eptr->clues[(index / st_device_color_max_ptrs) *
-				  (255 / ((1 << bps) - 1))].dev_color,
-		     sizeof(eptr->clues[0].dev_color),
-		     index % st_device_color_max_ptrs);
-    else
-	ret = 0;
-    if (ret == 0)		/* don't stop early */
-	ENUM_RETURN(0);
+
+    ENUM_RETURN(0);
     return ret;
 }
+
 #define e1(i,elt) ENUM_PTR(i,gx_image_enum,elt);
 gx_image_enum_do_ptrs(e1)
 #undef e1
 ENUM_PTRS_END
+
 static RELOC_PTRS_WITH(image_enum_reloc_ptrs, gx_image_enum *eptr)
 {
     int i;
@@ -95,9 +87,6 @@ static RELOC_PTRS_WITH(image_enum_reloc_ptrs, gx_image_enum *eptr)
 	    bps = 8;
 	else if (bps > 8 || eptr->unpack == sample_unpack_copy)
 	    bps = 1;
-	for (i = 0; i <= 255; i += 255 / ((1 << bps) - 1))
-	    RELOC_USING(st_device_color,
-			&eptr->clues[i].dev_color, sizeof(gx_device_color));
     }
 }
 RELOC_PTRS_END
@@ -680,47 +669,6 @@ color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor)
     return -1;
 }
 
-/* Export this for use by image_render_ functions */
-void
-image_init_clues(gx_image_enum * penum, int bps, int spp)
-{
-    /* Initialize the color table */
-#define ictype(i)\
-  penum->clues[i].dev_color.type
-
-    switch ((spp == 1 ? bps : 8)) {
-	case 8:		/* includes all color images */
-	    {
-		register gx_image_clue *pcht = &penum->clues[0];
-		register int n = 64;	/* 8 bits means 256 clues, do	*/
-					/* 4 at a time for efficiency	*/
-		do {
-		    pcht[0].dev_color.type =
-			pcht[1].dev_color.type =
-			pcht[2].dev_color.type =
-			pcht[3].dev_color.type =
-			gx_dc_type_none;
-		    pcht[0].key = pcht[1].key =
-			pcht[2].key = pcht[3].key = 0;
-		    pcht += 4;
-		}
-		while (--n > 0);
-		penum->clues[0].key = 1;	/* guarantee no hit */
-		break;
-	    }
-	case 4:
-	    ictype(17) = ictype(2 * 17) = ictype(3 * 17) =
-		ictype(4 * 17) = ictype(6 * 17) = ictype(7 * 17) =
-		ictype(8 * 17) = ictype(9 * 17) = ictype(11 * 17) =
-		ictype(12 * 17) = ictype(13 * 17) = ictype(14 * 17) =
-		gx_dc_type_none;
-	    /* falls through */
-	case 2:
-	    ictype(5 * 17) = ictype(10 * 17) = gx_dc_type_none;
-#undef ictype
-    }
-}
-
 /* Initialize the color mapping tables for a non-mask image. */
 static void
 image_init_colors(gx_image_enum * penum, int bps, int spp,
@@ -732,8 +680,6 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
     static const float default_decode[] = {
 	0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
     };
-
-    image_init_clues(penum, bps, spp);
 
     decode_type = 3; /* 0=custom, 1=identity, 2=inverted, 3=impossible */
     for (ci = 0; ci < spp; ci +=2 ) {
