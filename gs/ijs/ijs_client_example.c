@@ -321,6 +321,10 @@ main (int argc, char **argv)
 	    case 's':
 	      arg = get_arg (argc, argv, &i, arg + 2);
 	      ctx = ijs_invoke_server (arg);
+	      if (!ctx) {
+	        fprintf (stderr, "ijs_invoke_server %s failed\n", arg);
+	        return 1;
+	      }
 	      ijs_client_open (ctx);
 	      ijs_client_begin_job (ctx, 0);
 	      break;

@@ -72,7 +72,7 @@ static inline void
 dynamic_init(da_ptr pda, gs_memory_t *mem)
 {
     pda->is_dynamic = false;
-    pda->limit = pda->buf + da_buf_size;
+    pda->limit = pda->buf + sizeof(pda->buf);
     pda->next = pda->base = pda->buf;
     pda->memory = mem;
 }
@@ -143,8 +143,12 @@ static void
 dynamic_save(da_ptr pda)
 {
     if (!pda->is_dynamic && pda->base != pda->buf) {
-	memcpy(pda->buf, pda->base, da_size(pda));
-	pda->next = pda->buf + da_size(pda);
+        int len = da_size(pda);
+
+	if (len > sizeof(pda->buf))
+            len = sizeof(pda->buf);
+        memcpy(pda->buf, pda->base, len);
+	pda->next = pda->buf + len;
 	pda->base = pda->buf;
     }
 }

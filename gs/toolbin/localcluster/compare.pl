@@ -7,7 +7,18 @@ use Data::Dumper;
 
 my $previousValues=20;
 
-my @errorDescription=("none","Error_reading_input_file","Error_reading_Ghostscript_produced_PDF_file","Timeout_reading_input_file","Timeout_reading_Ghostscript_produced_PDF_File","Input_file_missing","Ghostscript_generated_PDF_file_missing","Seg_Fault_during_pdfwrite","Seg_Fault","Internal_error");
+my @errorDescription=(
+"none",
+"Error_reading_input_file",
+"Error_reading_Ghostscript_produced_PDF_file",
+"Timeout_reading_input_file",
+"Timeout_reading_Ghostscript_produced_PDF_File",
+"Input_file_missing",
+"Ghostscript_generated_PDF_file_missing",
+"Seg_Fault_during_pdfwrite",
+"Seg_Fault",
+"Seg_Fault_reading_Ghostscript_produced_PDF_File",
+"Internal_error");
 
 my $current=shift;
 my $previous=shift;
@@ -34,6 +45,7 @@ my @allErrors;
 my @brokePrevious;
 my @repairedPrevious;
 my @differencePrevious;
+my @differencePreviousPdfwrite;
 my @archiveMatch;
 
 my $t2;
@@ -123,10 +135,14 @@ foreach my $t (sort keys %previous) {
             }
           }
           if (!$match) {
+	    if ($currentProduct{$t} =~ m/pdfwrite/) {
+              push @differencePreviousPdfwrite,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
+	    } else {
             push @differencePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
           }
         }
       }
+    }
     }
   } else {
     push @filesRemoved,"$t $previousProduct{$t}";
@@ -134,6 +150,9 @@ foreach my $t (sort keys %previous) {
 }
 
 #print Dumper(\@archiveMatch);
+
+my $pdfwriteTestCount=0;
+my $notPdfwriteTestCount=0;
 
 foreach my $t (sort keys %current) {
   if (!exists $previous{$t}) {
@@ -143,18 +162,33 @@ foreach my $t (sort keys %current) {
       push @brokePrevious,"$t $currentMachine{$t} $currentError{$t}";
     }
   }
+  if ($currentProduct{$t} =~ m/pdfwrite/) {
+    $pdfwriteTestCount++;
+  } else {
+    $notPdfwriteTestCount++;
+}
 }
 
 print "ran ".scalar(keys %current)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 
 if (@differencePrevious) {
-  print "Differences in ".scalar(@differencePrevious)." of ".scalar(keys %current)." test(s):\n";
+  print "Differences in ".scalar(@differencePrevious)." of $notPdfwriteTestCount non-pdfwrite test(s):\n";
   while(my $t=shift @differencePrevious) {
     print "$t\n";
   }
   print "\n";
 } else {
-  print "No differences in ".scalar(keys %current)." tests\n\n";
+  print "No differences in $notPdfwriteTestCount non-pdfwrite tests\n\n";
+}
+
+if (@differencePreviousPdfwrite) {
+  print "Differences in ".scalar(@differencePreviousPdfwrite)." of $pdfwriteTestCount pdfwrite test(s):\n";
+  while(my $t=shift @differencePreviousPdfwrite) {
+    print "$t\n";
+  }
+  print "\n";
+} else {
+  print "No differences in $pdfwriteTestCount pdfwrite tests\n\n";
 }
 
 if (@brokePrevious) {
@@ -191,6 +225,7 @@ if (!$skipMissing) {
     print "\n";
   }
 
+if (0) {
   if (@allErrors) {
     print "The following ".scalar(@allErrors)." regression file(s) are producing errors:\n";
     while(my $t=shift @allErrors) {
@@ -198,6 +233,7 @@ if (!$skipMissing) {
     }
     print "\n";
   }
+}
 
   if (@archiveMatch) {
     print "The following ".scalar(@archiveMatch)." regression file(s) had md5sum differences but matched at least once in the previous $previousValues runs:\n";

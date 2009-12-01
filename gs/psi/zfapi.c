@@ -179,8 +179,8 @@ static void sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
     while (!r->error) {
         int l = min(length, r->length - r->offset);
         memcpy(v, r->p + r->offset, l);
-        r->p += l;
         length -= l;
+	r->offset += l;
         if (length <= 0)
             return;
         sfnts_next_elem(r);
@@ -509,7 +509,7 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
 			return 0;
 		    switch (r_btype(&Element)) {
 			case t_name:
-			    name_string_ref(ff->memory, &name, &string);
+			    name_string_ref(ff->memory, &Element, &string);
 			    length += r_size(&string) + 1;
 			    break;
 			case t_real:
@@ -1181,7 +1181,7 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
 	pbfont->FontBBox.q.x = (double)BBox[2] * size1 / size;
 	pbfont->FontBBox.q.y = (double)BBox[3] * size1 / size;
 	if (dict_find_string(op, "FontBBox", &v) > 0) {
-	    if(!r_has_type(v, t_array) && !r_has_type(v, t_shortarray))
+	    if(!r_has_type(v, t_array) && !r_has_type(v, t_shortarray) && !r_has_type(v, t_mixedarray))
 	    return_error(e_invalidfont);
 	if (r_size(v) < 4)
 	    return_error(e_invalidfont);
@@ -1190,7 +1190,7 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
 	    make_real(&mat[1], pbfont->FontBBox.p.y);
 	    make_real(&mat[2], pbfont->FontBBox.q.x);
 	    make_real(&mat[3], pbfont->FontBBox.q.y);
-	    if(r_has_type(v, t_shortarray)) {
+	    if(r_has_type(v, t_shortarray) || r_has_type(v, t_mixedarray)) {
 		/* Create a new full blown array in case the values are reals */
 		code = ialloc_ref_array(&arr, a_all, 4, "array");
 		if (code < 0)
@@ -1753,8 +1753,33 @@ retry_oversampling:
 	       using src_type, dst_type. Should adjust the 'matrix' above.
                Call get_font_proportional_feature for proper choice.
             */
+	} else {
+            ref *CIDMap, Str;
+	    byte *Map;
+	    int ccode = client_char_code;
+
+	    /* The PDF Reference says that we should use a CIDToGIDMap, but the PDF
+	     * interpreter converts this into a CIDMap (see pdf_font.ps, processCIDToGIDMap)
+	     */
+	    if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name)) {
+		if (r_has_type(CIDMap, t_array)) {
+		    /* Too big for single string, so its an array of 2 strings */
+		    if (client_char_code < 32767) 
+			code = array_get(imemory, CIDMap, 0, &Str);
+		    else {
+			code = array_get(imemory, CIDMap, 1, &Str);
+			ccode -= 32767;
+		    }
+		    if (code < 0)
+		        return code;
+		    Map = &Str.value.bytes[ccode * 2];
         } else
+		    Map = &CIDMap->value.bytes[ccode * 2];
+		cr.char_codes[0] = (Map[0] << 8) + Map[1];
+	    }
+	    else
             cr.char_codes[0] = client_char_code;
+	}
     } else if (is_TT_from_type42) {
         /* This font must not use 'cmap', so compute glyph index from CharStrings : */
 	ref *CharStrings, *glyph_index;
@@ -2051,6 +2076,11 @@ retry_oversampling:
      * from glyph code ? Currently we keep a compatibility
      * to the native GS font renderer without a deep analyzis.
      */
+    if (bCID)
+	code = zchar_set_cache(i_ctx_p, pbfont, op,
+		           NULL, sbw + 2, &char_bbox,
+			   fapi_finish_render, &exec_cont, sbw);
+    else
     code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
 		           NULL, sbw + 2, &char_bbox,
 			   fapi_finish_render, &exec_cont, sbw);

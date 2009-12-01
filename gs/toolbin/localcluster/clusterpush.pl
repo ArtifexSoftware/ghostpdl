@@ -7,34 +7,43 @@ use Data::Dumper;
 
 my $verbose=0;
 
-my $buildType=shift;
+my %products=('gs' =>1,
+              'pcl'=>1,
+              'svg'=>1,
+              'xps'=>1);
+
+my $product=shift;
 my $user=shift;
 
 my $host="casper.ghostscript.com";
-my $dir="/home/marcos/cluster/users";
+my $dir="/home/regression/cluster/users";
 if (!$user) {
   $user=`echo \$USER`;
   chomp $user;
 }
 
-if (!$buildType) {
-  $buildType=`pwd`;
-  chomp $buildType;
-}
+my $directory=`pwd`;
+chomp $directory;
 
-$buildType =~ s|.+/||;
-print "$user $buildType\n" if ($verbose);
+$directory =~ s|.+/||;
+print "$user $directory $product\n" if ($verbose);
 
-die "clusterpush.pl must be run from gs or ghostpdl directory" if ($buildType ne 'gs' && $buildType ne 'ghostpdl');
+die "clusterpush.pl must be run from gs or ghostpdl directory" if ($directory ne 'gs' && $directory ne 'ghostpdl');
 
 #           rsync -av -e "ssh -l ssh-user" rsync-user@host::module /dest
 
-my $product="";
-if ($buildType eq 'gs') {
-  $buildType="ghostpdl/".$buildType;
-  $product='gs';
-} else {
-  $product='ghostpdl';
+if ($directory eq 'gs') {
+  $directory='ghostpdl/gs';
+}
+
+
+$product='gs pcl xps' if (!$product);
+my @a=split ' ',$product;
+foreach my $i (@a) {
+  if (!exists $products{$i}) {
+    print STDERR "illegal product: $i\n";
+    exit;
+  }
 }
 
 my $cmd="rsync -avxc".
@@ -46,14 +55,18 @@ my $cmd="rsync -avxc".
 " --exclude main/obj --exclude main/debugobj".
 " --exclude language_switch/obj --exclude language_switch/obj".
 " --exclude xps/obj --exclude xps/debugobj".
-" --exclude svg/obj --exclude xps/debugobj".
+" --exclude svg/obj --exclude svg/debugobj".
 " --exclude ufst --exclude ufst-obj".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
-" -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\"".
+" -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\"".
 " .".
-" marcos\@$host:$dir/$user/$buildType";
+" regression\@$host:$dir/$user/$directory";
 
-print STDERR "syncing\n";
+open(F,">cluster_command.run");
+print F "$user $product\n";
+close(F);
+
+print STDERR "syncing and queuing\n";
 print "$cmd\n" if ($verbose);
 #`$cmd`;
 open(T,"$cmd |");
@@ -62,30 +75,5 @@ while(<T>) {
 }
 close(T);
 
+unlink "cluster_command.run";
 
-print STDERR "queuing\n";
-`ssh -l marcos -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
-
-
-
-
-#
-#echo "Queuing regression test..."
-#echo "cd $DEST/$TARGET && run_regression" | ssh $HOST
-#if test ! $? -eq 0; then
-#  echo "$0 aborted."
-#  exit 1
-#fi
-#
-#REPORT=`ssh $HOST ls $DEST/$TARGET \| egrep '^regression-[0-9]+.log$' \| sort -r \| head -1`
-#echo "Pulling $REPORT..."
-#scp -q $HOST:$DEST/$TARGET/$REPORT .
-#if test ! $? -eq 0; then
-#  echo "$0 aborted."
-#  exit 1
-#fi
-#cat $REPORT
-#if test ! $? -eq 0; then
-#  echo "$0 aborted."
-#  exit 1
-#fi

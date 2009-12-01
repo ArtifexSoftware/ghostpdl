@@ -13,6 +13,8 @@ my @machine;
 my @ratio;
 my @count;
 
+my $header;
+
 while(my $t=shift) {
   push @machine,$t;
   push @ratio,shift;
@@ -20,17 +22,35 @@ while(my $t=shift) {
 
 die "usage: splitjobs.pl input [machine ratio ...]" if (!$input || scalar(@ratio)==0);
 
+open(F,"<$input") || die "file $input not found";
+$header=<F>;
+chomp $header;
+close(F);
+
+for (my $i=0;  $i<scalar(@machine);  $i++) {
+  open(F,">$machine[$i]") || die "can't write to file $machine[$i]";
+  print F "$header\n";
+  close(F);
+}
+exit;
+
+
 #print Dumper(\@machine);
 #print Dumper(\@ratio);
 
+$header="";
 open(F,"<$input") || die "file $input not found";
 while(<F>) {
   chomp;
-  if (m/^tests__svg/) {
+  if (m/^pdl=/) {
+    $header=$_;
+  } else {
+    if (m/__svg__/ || m/__pcl__/ || m/__xl__/ || m/__xps__/) {
     push @svgJobs,$_;
   } else {
     push @jobs,$_;
   }
+}
 }
 close(F);
 
@@ -54,6 +74,7 @@ $count[-1]+=$remainder;
 
 for (my $i=0;  $i<scalar(@machine);  $i++) {
   open(F,">$machine[$i]") || die "can't write to file $machine[$i]";
+  print F "$header\n" if ($header);
   while($count[$i]--) {
     if (scalar(@svgJobs)>0) {
       print F (shift @svgJobs)."\n";

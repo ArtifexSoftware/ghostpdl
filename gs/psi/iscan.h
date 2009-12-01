@@ -20,6 +20,7 @@
 
 #include "sa85x.h"
 #include "sstring.h"
+#include "inamestr.h"
 
 /*
  * Define the state of the scanner.  Before calling scan_token initially,
@@ -46,14 +47,12 @@ typedef struct scanner_state_s scanner_state;
  * or (only while control is inside scan_token) into the source stream buffer.
  */
 #define max_comment_line 255	/* max size of an externally processable comment */
-#define max_dsc_line max_comment_line	/* backward compatibility */
-#define da_buf_size (max_comment_line + 2)
 typedef struct dynamic_area_s {
     byte *base;
     byte *next;
     byte *limit;
     bool is_dynamic;
-    byte buf[da_buf_size];	/* initial buffer */
+    byte buf[max_name_string];	/* initial buffer, enough for a valid string */
     gs_memory_t *memory;
 } dynamic_area;
 

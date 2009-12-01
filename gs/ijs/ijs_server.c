@@ -115,9 +115,21 @@ ijs_server_init (void)
 
   fd_from = 0;
   fd_to = 1;
-#ifdef _MSC_VER
+  /* MSVC    defines _MSC_VER     and _WIN32
+     Mingw   defines __MINGW32__  and _WIN32
+     Watcom  defines __WATCOMC__  and _WIN32
+     borland defines __BORLANDC__ and _WIN32 */
+#ifdef _WIN32
+#if !defined(__BORLANDC__)
+  /* MSVC, mingw, watcom */
+  /* mingw and watcom have both _setmode and setmode */
   _setmode(fd_from, _O_BINARY);
   _setmode(fd_to, _O_BINARY);
+#else
+  /* borland has setmode but not _setmode */
+  setmode(fd_from, _O_BINARY);
+  setmode(fd_to, _O_BINARY);
+#endif /* !__BORLANDC__ */
 #endif
 #ifdef VERBOSE
   fprintf (stderr, "fd_from = %d, fd_to = %d\n", fd_from, fd_to);
@@ -696,7 +708,7 @@ ijs_server_proc_begin_page (IjsServerCtx *ctx)
   if ((ctx->fields_set & IJS_FIELDS_REQUIRED) != IJS_FIELDS_REQUIRED)
     status = IJS_EPROTO;
 #ifdef VERBOSE
-  fprintf (stderr, "begin page %d %d %d %d %d\n",
+  fprintf (stderr, "begin page %d %d %s %d %d\n",
 	   ph->n_chan, ph->bps, ph->cs, ph->width, ph->height);
 #endif
   if (!status)

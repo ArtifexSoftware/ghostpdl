@@ -43,7 +43,7 @@ pdf2dsc pdf2ps pdfopt pf2afm pfbtopfa printafm \
 ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdf14 ps2pdfwr ps2ps ps2ps2 \
 wftopfa fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then \
-	  (cat $(PSLIBDIR)/$$f | sed -e "s/GS_EXECUTABLE=[^ \t]*/GS_EXECUTABLE=$(GS)/" > $(PSOBJDIR)/$$f); \
+	  (cat $(PSLIBDIR)/$$f | sed -e "s/GS_EXECUTABLE=gs/GS_EXECUTABLE=$(GS)/" > $(PSOBJDIR)/$$f); \
 	  $(INSTALL_PROGRAM) $(PSOBJDIR)/$$f $(DESTDIR)$(scriptdir)/$$f; \
 	fi;\
 	done'

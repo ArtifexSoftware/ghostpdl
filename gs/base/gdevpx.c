@@ -32,6 +32,8 @@
 #include "gdevpxop.h"
 #include "gdevpxut.h"
 #include "gxlum.h"
+#include "gdevpcl.h" /* for gdev_pcl_mode3compress() */
+#include <stdlib.h> /* abs() */
 
 
 /* ---------------- Device definition ---------------- */
@@ -92,6 +94,12 @@ typedef struct gx_device_pclxl_s {
     } chars;
     bool font_set;
     int state_rotated; /* 0, 1, 2, -1, mutiple of 90 deg */
+    int CompressMode; /* std PXL enum: None=0, RLE=1, DeltaRow=3; JPEG=2 not used */
+    bool scaled;
+    floatp x_scale; /* chosen so that max(x) is scaled to 0x7FFF, to give max distinction between x values */
+    floatp y_scale;
+    bool pen_null;
+    bool brush_null;
 } gx_device_pclxl;
 
 gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
@@ -193,6 +201,11 @@ pclxl_page_init(gx_device_pclxl * xdev)
     xdev->palette.size = 0;
     xdev->font_set = false;
     xdev->state_rotated = 0;
+    xdev->scaled = false;
+    xdev->x_scale = 1;
+    xdev->y_scale = 1;
+    xdev->pen_null = false;
+    xdev->brush_null = false;
 }
 
 /* Test whether a RGB color is actually a gray shade. */
@@ -208,6 +221,7 @@ pclxl_set_color_space(gx_device_pclxl * xdev, pxeColorSpace_t color_space)
 	px_put_ub(s, (byte)color_space);
 	px_put_ac(s, pxaColorSpace, pxtSetColorSpace);
 	xdev->color_space = color_space;
+	xdev->palette.size = 0; /* purge the cached palette */
     }
 }
 static void
@@ -236,6 +250,33 @@ pclxl_set_color_palette(gx_device_pclxl * xdev, pxeColorSpace_t color_space,
     }
 }
 
+/* For caching either NullPen or NullBrush, which happens a lot for
+ * drawing masks in the PS3 CET test set.
+ *
+ * The expected null_source/op combos are:
+ * pxaNullPen/pxtSetPenSource and pxaNullBrush/pxtSetBrushSource
+ */
+static int
+pclxl_set_cached_nulls(gx_device_pclxl * xdev, px_attribute_t null_source, px_tag_t op)
+{
+    stream *s = pclxl_stream(xdev);
+    if (op == pxtSetPenSource) {
+        if (xdev->pen_null)
+            return 0;
+        else
+            xdev->pen_null = true;
+    }
+    if (op == pxtSetBrushSource) {
+        if (xdev->brush_null)
+            return 0;
+        else 
+            xdev->brush_null = true;
+    }
+    px_put_uba(s, 0, (byte)null_source);
+    spputc(s, (byte)op);
+    return 0;
+}
+
 /* Set a drawing RGB color. */
 static int
 pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
@@ -245,6 +286,9 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 
     if (gx_dc_is_pure(pdc)) {
 	gx_color_index color = gx_dc_pure_color(pdc);
+
+	if (op == pxtSetPenSource)   xdev->pen_null   = false;
+	if (op == pxtSetBrushSource) xdev->brush_null = false;
 
 	if (xdev->color_info.num_components == 1 || RGB_IS_GRAY(color)) {
 	    pclxl_set_color_space(xdev, eGray);
@@ -258,9 +302,12 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 	    spputc(s, (byte) color);
 	    px_put_a(s, pxaRGBColor);
 	}
-    } else if (gx_dc_is_null(pdc) || !color_is_set(pdc))
+    } else if (gx_dc_is_null(pdc) || !color_is_set(pdc)) {
+	if (op == pxtSetPenSource || op == pxtSetBrushSource)
+	    return pclxl_set_cached_nulls(xdev, null_source, op);
+	else
 	px_put_uba(s, 0, null_source);
-    else
+    } else
 	return_error(gs_error_rangecheck);
     spputc(s, (byte)op);
     return 0;
@@ -296,11 +343,7 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
 	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color) 
 	)
 	) {
-	static const byte nac_[] = {
-	    DUB(0), DA(pxaNullBrush), pxtSetBrushSource
-	};
-
-	PX_PUT_LIT(s, nac_);
+	pclxl_set_cached_nulls(xdev, pxaNullBrush, pxtSetBrushSource);
 	color_set_null(&xdev->saved_fill_color.saved_dev_color);
 	if (rule != xdev->fill_rule) {
 	    px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
@@ -311,16 +354,47 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
     }
     if (!(type & gx_path_type_stroke) &&
 	(color_is_set(&xdev->saved_stroke_color.saved_dev_color) ||
-	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color)
+	!gx_dc_is_null(&xdev->saved_stroke_color.saved_dev_color)
 	 )
 	) {
-	static const byte nac_[] = {
-	    DUB(0), DA(pxaNullPen), pxtSetPenSource
-	};
-
-	PX_PUT_LIT(s, nac_);
+	pclxl_set_cached_nulls(xdev, pxaNullPen, pxtSetPenSource);
 	color_set_null(&xdev->saved_stroke_color.saved_dev_color);
     }
+}
+
+static void
+pclxl_set_page_origin(stream *s, int x, int y)
+{
+    px_put_ssp(s, x, y);
+    px_put_ac(s, pxaPageOrigin, pxtSetPageOrigin);
+    return;
+}
+
+static void
+pclxl_set_page_scale(gx_device_pclxl * xdev, floatp x_scale, floatp y_scale)
+{
+    stream *s = pclxl_stream(xdev);
+    if (xdev->scaled) {
+        xdev->x_scale = x_scale;
+        xdev->y_scale = y_scale;
+        px_put_rp(s, x_scale, y_scale);
+        px_put_ac(s, pxaPageScale, pxtSetPageScale);
+    }
+    return;
+}
+
+static void
+pclxl_unset_page_scale(gx_device_pclxl * xdev)
+{
+    stream *s = pclxl_stream(xdev);
+    if (xdev->scaled) {
+        px_put_rp(s, 1/xdev->x_scale, 1/xdev->y_scale);
+        px_put_ac(s, pxaPageScale, pxtSetPageScale);
+        xdev->scaled = false;
+        xdev->x_scale = 1;
+        xdev->y_scale = 1;
+    }
+    return;
 }
 
 /* Set the cursor. */
@@ -328,9 +402,26 @@ static int
 pclxl_set_cursor(gx_device_pclxl * xdev, int x, int y)
 {
     stream *s = pclxl_stream(xdev);
-
+    floatp x_scale = 1;
+    floatp y_scale = 1;
+    /* Points must be one of ubyte/uint16/sint16;
+       Here we play with PageScale (one of ubyte/uint16/real32_xy) to go higher.
+       This gives us 32768 x 3.4e38 in UnitsPerMeasure.
+       If we ever need to go higher, we play with UnitsPerMeasure. */
+    if (abs(x) > 0x7FFF) {
+        x_scale = ((floatp) abs(x))/0x7FFF;
+        x = (x > 0 ? 0x7FFF : -0x7FFF);
+        xdev->scaled = true;
+    }
+    if (abs(y) > 0x7FFF) {
+        y_scale = ((floatp) abs(y))/0x7FFF;
+        y = (y > 0 ? 0x7FFF : -0x7FFF);
+        xdev->scaled = true;
+    }
+    pclxl_set_page_scale(xdev, x_scale, y_scale);
     px_put_ssp(s, x, y);
     px_put_ac(s, pxaPoint, pxtSetCursor);
+    pclxl_unset_page_scale(xdev);
     return 0;
 }
 
@@ -356,7 +447,48 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 	pxeDataType_t data_type;
 	int i, di;
 	byte diffs[NUM_POINTS * 2];
+	floatp x_scale = 1;
+	floatp y_scale = 1;
+	int temp_origin_x = 0, temp_origin_y = 0;
+	int count_smalls = 0;
 
+	if (xdev->points.type != POINTS_NONE) {
+	    for (i = 0; i < count; ++i) {
+		if ((abs(xdev->points.data[i].x) > 0x7FFF) || (abs(xdev->points.data[i].y) > 0x7FFF))
+		    xdev->scaled = true;
+		if ((abs(xdev->points.data[i].x) < 0x8000) && (abs(xdev->points.data[i].y) < 0x8000)) {
+		    if ((temp_origin_x != xdev->points.data[i].x) || (temp_origin_y != xdev->points.data[i].y)) {
+			temp_origin_x = xdev->points.data[i].x;
+			temp_origin_y = xdev->points.data[i].y;
+			count_smalls++;
+		    }
+		}
+	    }
+	    if (xdev->scaled) {
+		/* if there are some points with small co-ordinates, we set origin to it
+		   before scaling, an unset afterwards. This works around problems
+		   for small co-ordinates being moved snapped to 32767 x 32767 grid points;
+		   if there are more than 1, the other points
+		   will be in-accurate, unfortunately */
+		if (count_smalls) {
+		    pclxl_set_page_origin(s, temp_origin_x, temp_origin_y);
+		}
+		for (i = 0; i < count; ++i) {
+		    x_scale = max(((floatp) abs(xdev->points.data[i].x - temp_origin_x))/0x7FFF , x_scale);
+		    y_scale = max(((floatp) abs(xdev->points.data[i].y - temp_origin_y))/0x7FFF , y_scale);
+		}
+		for (i = 0; i < count; ++i) {
+		    xdev->points.data[i].x = (xdev->points.data[i].x - temp_origin_x)/x_scale + 0.5;
+		    xdev->points.data[i].y = (xdev->points.data[i].y - temp_origin_y)/y_scale + 0.5;
+		}
+		x = (x - temp_origin_x)/x_scale + 0.5;
+		y = (y - temp_origin_y)/y_scale + 0.5;
+		pclxl_set_page_scale(xdev, x_scale, y_scale);
+	    } else {
+		/* don't reset origin if we did not scale */
+		count_smalls = 0;
+	    }
+	}
 	/*
 	 * Writing N lines using a point list requires 11 + 4*N or 11 +
 	 * 2*N bytes, as opposed to 8*N bytes using separate commands;
@@ -380,6 +512,9 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 			px_put_a(s, pxaEndPoint);
 			spputc(s, (byte)op);
 		    }
+		    pclxl_unset_page_scale(xdev);
+		    if (count_smalls)
+			pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
 		    goto zap;
 		}
 		/* See if we can use byte values. */
@@ -405,6 +540,9 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 		spputc(s, (byte)op);
 		px_put_data_length(s, count * 2);	/* 2 bytes per point */
 		px_put_bytes(s, diffs, count * 2);
+		pclxl_unset_page_scale(xdev);
+		if (count_smalls)
+		    pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
 		goto zap;
 	    case POINTS_CURVES:
 		op = pxtBezierPath;
@@ -447,6 +585,9 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 	    px_put_s(s, xdev->points.data[i].x);
 	    px_put_s(s, xdev->points.data[i].y);
 	}
+	pclxl_unset_page_scale(xdev);
+	if (count_smalls)
+	    pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
       zap:xdev->points.type = POINTS_NONE;
 	xdev->points.count = 0;
     }
@@ -476,8 +617,10 @@ pclxl_write_begin_image(gx_device_pclxl * xdev, uint width, uint height,
 
 /* Write rows of an image. */
 /****** IGNORES data_bit ******/
+/* 2009: we try to cope with the case of data_bit being multiple of 8 now */
+/* RLE version */
 static void
-pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
+pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base, int data_bit,
 		       uint raster, uint width_bits, int y, int height)
 {
     stream *s = pclxl_stream(xdev);
@@ -485,6 +628,9 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
     uint num_bytes = ROUND_UP(width_bytes, 4) * height;
     bool compress = num_bytes >= 8;
     int i;
+    /* cannot handle data_bit not multiple of 8, but we don't invoke this routine that way */
+    int offset = data_bit >> 3;
+    const byte *data = base + offset;
 
     px_put_usa(s, y, pxaStartLine);
     px_put_usa(s, height, pxaBlockHeight);
@@ -556,6 +702,76 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
     for (i = 0; i < height; ++i) {
 	px_put_bytes(s, data + i * raster, width_bytes);
 	px_put_bytes(s, (const byte *)"\000\000\000\000", -(int)width_bytes & 3);
+    }
+}
+/* DeltaRow compression (also called "mode 3"):
+   drawn heavily from gdevcljc.c:cljc_print_page(),
+   This is simplier since PCL XL does not allow
+   compression mix-and-match.
+
+   Worse case of RLE is + 1/128, but worse case of DeltaRow is + 1/8
+ */
+static void
+pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base, int data_bit,
+		       uint raster, uint width_bits, int y, int height)
+{
+    stream *s = pclxl_stream(xdev);
+    uint width_bytes = (width_bits + 7) >> 3;
+    int worst_case_comp_size = width_bytes + (width_bytes / 8) + 1;
+    byte *cdata = 0;
+    byte *prow = 0;
+    int i;
+    int count;
+    /* cannot handle data_bit not multiple of 8, but we don't invoke this routine that way */
+    int offset = data_bit >> 3;
+    const byte *data = base + offset;
+
+    /* allocate the worst case scenario; PCL XL has an extra 2 byte per row compared to PCL5 */
+    byte *buf = gs_alloc_bytes(xdev->v_memory, (worst_case_comp_size + 2)* height,
+                               "pclxl_write_image_data_DeltaRow(buf)");
+    prow = gs_alloc_bytes(xdev->v_memory, width_bytes, "pclxl_write_image_data_DeltaRow(prow)");
+    /* the RLE routine can write uncompressed without extra-allocation */
+    if ((buf == 0) || (prow == 0))
+        return pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+    /* initialize the seed row */
+    memset(prow, 0, width_bytes);
+    cdata = buf;
+    for (i = 0; i < height; i++) {
+        int compressed_size = gdev_pcl_mode3compress(width_bytes, data + i * raster, prow, cdata + 2);
+        /* PCL XL prepends row data with byte count */
+        *cdata = compressed_size & 0xff;
+        *(cdata+1) = compressed_size >> 8;
+        cdata += compressed_size + 2;
+    }
+    px_put_usa(s, y, pxaStartLine);
+    px_put_usa(s, height, pxaBlockHeight);
+    px_put_ub(s, eDeltaRowCompression);
+    px_put_ac(s, pxaCompressMode, pxtReadImage);
+    count = cdata - buf;
+    px_put_data_length(s, count);
+    px_put_bytes(s, buf, count);
+
+    gs_free_object(xdev->v_memory, buf, "pclxl_write_image_data_DeltaRow(buf)");
+    gs_free_object(xdev->v_memory, prow, "pclxl_write_image_data_DeltaRow(prow)");
+    return;
+}
+
+static void
+pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
+		       uint raster, uint width_bits, int y, int height)
+{
+    /* If we only have 1 line, it does not make sense to do DeltaRow */
+    if (height < 2)
+    return pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+
+    switch(xdev->CompressMode){
+    case eDeltaRowCompression:
+        pclxl_write_image_data_DeltaRow(xdev, data, data_bit, raster, width_bits, y, height);
+        break;
+    case eRLECompression:
+    default:
+        pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+        break;
     }
 }
 
@@ -816,7 +1032,7 @@ pclxl_setlinewidth(gx_device_vector * vdev, floatp width)
 {
     stream *s = gdev_vector_stream(vdev);
 
-    px_put_us(s, (uint) width);
+    px_put_us(s, (uint) (width+0.5));
     px_put_ac(s, pxaPenWidth, pxtSetPenWidth);
     return 0;
 }
@@ -837,6 +1053,10 @@ pclxl_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 {
     stream *s = gdev_vector_stream(vdev);
 
+    if ((join < 0) || (join > 3)) {
+        eprintf1("Igoring invalid linejoin enumerator %d\n", join);
+        return 0;
+    }
     /* The PCL XL join styles just happen to be identical to PostScript. */
     px_put_ub(s, (byte) join);
     px_put_ac(s, pxaLineJoinStyle, pxtSetLineJoin);
@@ -991,8 +1211,8 @@ pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     if (code < 0)
 	return code;
     return pclxl_set_cursor(xdev,
-			    xdev->points.current.x = (int)x,
-			    xdev->points.current.y = (int)y);
+			    xdev->points.current.x = (int)(x+0.5),
+			    xdev->points.current.y = (int)(y+0.5));
 }
 
 static int
@@ -1010,13 +1230,13 @@ pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	    if (code < 0)
 		return code;
 	}
-	xdev->points.current.x = (int)x0;
-	xdev->points.current.y = (int)y0;
+	xdev->points.current.x = (int)(x0+0.5);
+	xdev->points.current.y = (int)(y0+0.5);
 	xdev->points.type = POINTS_LINES;
     } {
 	gs_int_point *ppt = &xdev->points.data[xdev->points.count++];
 
-	ppt->x = (int)x, ppt->y = (int)y;
+	ppt->x = (int)(x+0.5), ppt->y = (int)(y+0.5);
     }
     return 0;
 }
@@ -1037,16 +1257,16 @@ pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 	    if (code < 0)
 		return code;
 	}
-	xdev->points.current.x = (int)x0;
-	xdev->points.current.y = (int)y0;
+	xdev->points.current.x = (int)(x0+0.5);
+	xdev->points.current.y = (int)(y0+0.5);
 	xdev->points.type = POINTS_CURVES;
     }
     {
 	gs_int_point *ppt = &xdev->points.data[xdev->points.count];
 
-	ppt->x = (int)x1, ppt->y = (int)y1, ++ppt;
-	ppt->x = (int)x2, ppt->y = (int)y2, ++ppt;
-	ppt->x = (int)x3, ppt->y = (int)y3;
+	ppt->x = (int)(x1+0.5), ppt->y = (int)(y1+0.5), ++ppt;
+	ppt->x = (int)(x2+0.5), ppt->y = (int)(y2+0.5), ++ppt;
+	ppt->x = (int)(x3+0.5), ppt->y = (int)(y3+0.5);
     }
     xdev->points.count += 3;
     return 0;
@@ -1063,8 +1283,8 @@ pclxl_closepath(gx_device_vector * vdev, floatp x, floatp y,
     if (code < 0)
 	return code;
     spputc(s, pxtCloseSubPath);
-    xdev->points.current.x = (int)x_start;
-    xdev->points.current.y = (int)y_start;
+    xdev->points.current.x = (int)(x_start+0.5);
+    xdev->points.current.y = (int)(y_start+0.5);
     return 0;
 }
 
@@ -1189,6 +1409,8 @@ pclxl_close_device(gx_device * dev)
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
     FILE *file = xdev->file;
 
+    if (xdev->strm != NULL)
+	sflush(xdev->strm);
     if (xdev->in_page)
 	fputc(pxtEndPage, file);
     px_write_file_trailer(file);
@@ -1212,6 +1434,8 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     int code;
     stream *s;
     gx_color_index color0 = zero, color1 = one;
+    gx_color_index white = (1 << dev->color_info.depth) - 1;
+    gx_color_index black = 0;
     gs_logical_operation_t lop;
     byte palette[2 * 3];
     int palette_size;
@@ -1222,7 +1446,11 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     if (code < 0)
 	return code;
 
-    if (data_x !=0 )
+    /* write_image_data() needs byte-alignment,
+     * and gx_default_copy_* is more efficient than pxlcl_*
+     * for small rasters. See details in copy_color().
+     */
+    if ( ((data_x & 7) != 0) || (h == 1) || (w == 1) )
         return gx_default_copy_mono(dev, data, data_x, raster, id, 
   				    x, y, w, h, zero, one);
 
@@ -1231,6 +1459,10 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
 	one != gx_no_color_index && data_x == 0
 	) {
 	gx_drawing_color dcolor;
+
+	code = gdev_vector_update_log_op(vdev, rop3_T|lop_T_transparent);
+	if (code < 0)
+	    return 0;
 
 	set_nonclient_dev_color(&dcolor, one);
 	pclxl_setfillcolor(vdev, NULL, &dcolor);
@@ -1241,29 +1473,55 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
      * The following doesn't work if we're writing white with a mask.
      * We'll fix it eventually.
      *
-     * This is a slightly better version than before (see bug 688372).
+     * The logic goes like this: non-white + mask (transparent)
+     * works by setting the mask color to white and also declaring
+     * white-is-transparent. This doesn't work for drawing white + mask,
+     * since everything is then white+white-and-transparent. So instead
+     * we set mask color to black, invert and draw the destination/background
+     * through it, as well as drawing the white color.
+     *
+     * In rop3 terms, this is (D & ~S) | S
+     *
+     * This also only works in the case of the drawing color is white,
+     * because we need the inversion to not draw anything, (especially
+     * not the complimentary color/shade). So we have two different code paths,
+     * white + mask and non-whites + mask.
+     *
+     * There is a further refinement to this algorithm - it appears that
+     * black+mask is treated specially by the vector driver core (rendered
+     * as transparent on white), and does not work as non-white + mask. 
+     * So Instead we set mask color to white and do (S & D) (i.e. draw
+     * background on mask, instead of transparent on mask).
+     *
      */
-    if (zero == one) {
         if (zero == gx_no_color_index) {
-          /* one != gx_no_color_index */
+	if (one == gx_no_color_index)
+	    return 0;
+	if (one != white) {
+	    if (one == black) {
+	        lop = (rop3_S & rop3_D);
+	    } else {
 	    lop = rop3_S | lop_S_transparent;
-	    color0 = (1 << dev->color_info.depth) - 1;
+	    }
+	    color0 = white;
+	} else {
+	    lop = rop3_S | (rop3_D & rop3_not(rop3_S));
+	    color0 = black;
+	}
         } else if (one == gx_no_color_index) {
-          /* zero != gx_no_color_index */
+	if (zero != white) {
+	    if (zero == black) {
+	        lop = (rop3_S & rop3_D);
+	    } else {
 	    lop = rop3_S | lop_S_transparent;
-	    color1 = (1 << dev->color_info.depth) - 1;
+	    }
+	    color1 = white;
         } else {
-          /* both != no_color_index */
-	    lop = rop3_S;
+	    lop = rop3_S | (rop3_D & rop3_not(rop3_S));
+	    color1 = black;
         }
     } else {
-        if_debug3('b', "zero %d one %d noidx %08X\n", zero, one, gx_no_color_index);
-	if ((zero == gx_no_color_index) &&
-	    (one == gx_no_color_index))
-	  return 0;
-	lop = lop_T_transparent  |rop3_S;
-	color1 = one;
-	color0 = one;
+	lop = rop3_S;
     }
 
     if (dev->color_info.num_components == 1 ||
@@ -1322,7 +1580,24 @@ pclxl_copy_color(gx_device * dev,
 
 
     source_bit = sourcex * dev->color_info.depth;
-    if ((source_bit & 7) != 0)
+
+    /* side-effect from fill/stroke may have set color space to eGray */
+    if (dev->color_info.num_components == 3)
+        pclxl_set_color_space(xdev, eRGB);
+
+    /* write_image_data() needs byte-alignment,
+     * and gx_default_copy_* is more efficient than pxlcl_*
+     * for small rasters.
+     *
+     * SetBrushSource + Rectangle = 21 byte for 1x1 RGB
+     * SetCursor+ BeginImage + ReadImage + EndImage = 56 bytes for 1x1 RGB
+     * 3x1 RGB at 3 different colors takes 62 bytes for pxlcl_*
+     * but gx_default_copy_* uses 63 bytes. Below 3 pixels, gx_default_copy_*
+     * is better than pxlcl_*; above 3 pixels, it is less clear;
+     * in practice, single-lines seems better coded as painted rectangles
+     * than images.
+     */
+    if ( ((source_bit & 7) != 0) || (w == 1) || (h == 1) )
 	return gx_default_copy_color(dev, base, sourcex, raster, id,
 				     x, y, w, h);
     gdev_vector_update_log_op(vdev, rop3_S);
@@ -1357,13 +1632,19 @@ pclxl_fill_mask(gx_device * dev,
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
     int code;
     stream *s;
+    gx_color_index foreground;
 
     fit_copy(dev, data, data_x, raster, id, x, y, w, h);
-    if ((data_x & 7) != 0 || !gx_dc_is_pure(pdcolor) || depth > 1)
+    /* write_image_data() needs byte-alignment,
+     * and gx_default_copy_* is more efficient than pxlcl_*
+     * for small rasters. See details in copy_color().
+     */
+    if ((data_x & 7) != 0 || !gx_dc_is_pure(pdcolor) || depth > 1 || (w == 1) || (h == 1) )
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
 				    x, y, w, h, pdcolor, depth,
 				    lop, pcpath);
     code = gdev_vector_update_clip_path(vdev, pcpath);
+    foreground = gx_dc_pure_color(pdcolor);
     if (code < 0)
 	return code;
     code = gdev_vector_update_fill_color(vdev, NULL, pdcolor);
@@ -1377,8 +1658,17 @@ pclxl_fill_mask(gx_device * dev,
 	if (pclxl_copy_text_char(xdev, data, raster, id, w, h) >= 0)
 	    return 0;
     }
+    /* This is similiar to the copy_mono white-on-mask,
+     * except we are drawing white on the black of a black/white mask,
+     * so we invert source, compared to copy_mono */
+    if (foreground == (1 << dev->color_info.depth) - 1) { /* white */
+      lop = rop3_not(rop3_S) | (rop3_D & rop3_S);
+    }else if (foreground == 0) { /* black */
+      lop = (rop3_S & rop3_D);
+    }else lop |= rop3_S | lop_S_transparent;
+
     code = gdev_vector_update_log_op(vdev,
-				     lop | rop3_S | lop_S_transparent);
+				     lop);
     if (code < 0)
 	return 0;
     pclxl_set_color_palette(xdev, eGray, (const byte *)"\377\000", 2);
@@ -1549,33 +1839,38 @@ pclxl_begin_image(gx_device * dev,
 	if (pim->ImageMask) {
 	    const byte *palette = (const byte *)
 		(pim->Decode[0] ? "\377\000" : "\000\377");
+	    gx_color_index foreground = gx_dc_pure_color(pdcolor);
 
 	    code = gdev_vector_update_fill_color(vdev, 
 	                             NULL, /* use process color */
 				     pdcolor);
 	    if (code < 0)
 		goto fail;
+	    /* This is similiar to the copy_mono white-on-mask,
+	     * except we are drawing white on the black of a black/white mask,
+	     * so we invert source, compared to copy_mono */
+	    if (foreground == (1 << dev->color_info.depth) - 1) { /* white */
+		lop = rop3_not(rop3_S) | (rop3_D & rop3_S);
+	    }else if (foreground == 0) { /* black */
+		lop = (rop3_S & rop3_D);
+	    }else lop |= rop3_S | lop_S_transparent;
+
 	    code = gdev_vector_update_log_op
-		(vdev, lop | rop3_S | lop_S_transparent);
+		(vdev, lop);
 	    if (code < 0)
 		goto fail;
 	    pclxl_set_color_palette(xdev, eGray, palette, 2);
 	} else {
             if (bits_per_pixel == 24 ) {
-                stream *s = pclxl_stream(xdev);
+                code = gdev_vector_update_log_op
+                    (vdev, (pim->CombineWithColor ? lop : rop3_know_T_0(lop)));
+                if (code < 0)
+                    goto fail;
                 if (dev->color_info.num_components == 1) {
                     pclxl_set_color_space(xdev, eGray);
-                    px_put_uba(s, (byte) 0x00, pxaGrayLevel);
                 } else {
                     pclxl_set_color_space(xdev, eRGB);
-                    spputc(s, pxt_ubyte_array);
-                    px_put_ub(s, 3);
-                    spputc(s, (byte) 0x00);
-                    spputc(s, (byte) 0x00);
-                    spputc(s, (byte) 0x00);
-                    px_put_a(s, pxaRGBColor);
                 }
-                spputc(s, (byte) pxtSetBrushSource);
             } else {
 	    int bpc = pim->BitsPerComponent;
 	    int num_components = pie->plane_depths[0] * pie->num_planes / bpc;
@@ -1683,7 +1978,7 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
             for (i=0;  i<rows_raster;  i++) {
               *out = (byte)( ((*(in+0) * (ulong) lum_red_weight) + 
                               (*(in+1) * (ulong) lum_green_weight) + 
-                              (*(in+3) * (ulong) lum_blue_weight) + 
+                              (*(in+2) * (ulong) lum_blue_weight) + 
                               (lum_all_weights / 2)) / lum_all_weights);
               in+=3;
               out++;
@@ -1813,6 +2108,10 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
   if ((code = param_write_bool(plist, "Tumble", &(xdev->Tumble))) < 0)
     return (code);
 
+  if ((code = param_write_int(plist, "CompressMode",
+                              &(xdev->CompressMode))) < 0)
+    return (code);
+
   return (0);
 }
 
@@ -1866,6 +2165,7 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
   intoption(MediaPosition, "MediaPosition", int)
   if (code == 0) xdev->MediaPosition_set = true;
   booloption(Tumble, "Tumble")
+  intoption(CompressMode, "CompressMode", int)
 
  /*
   * Then process standard page device parameters...

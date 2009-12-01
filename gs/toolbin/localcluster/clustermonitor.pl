@@ -11,7 +11,7 @@ my $watchdog=0;
 #my @machines=("i7","i7a","macpro","peeves","test");
 #my @machines=("i7","i7a","test");
 #
-my @machines = </home/marcos/cluster/*.status>;
+my @machines = </home/regression/cluster/*.status>;
 #print "@machines\n";
 
 for (my $i=0;  $i<scalar(@machines);  $i++) {
@@ -47,7 +47,7 @@ print chr(0x1b)."[J";
 
 while(1) {
 
-  my $status=`cat /home/marcos/cluster/status`;
+  my $status=`cat /home/regression/cluster/status`;
   chomp $status;
 
   if (!exists $status{'main'}{"status"} || $status{'main'}{"status"} ne $status) {
@@ -61,11 +61,11 @@ for (my $i=0;  $i<scalar(@machines);  $i++) {
   my $machine=$machines[$i];
   my $s1;
 
-  my $s0=`cat /home/marcos/cluster/$machine.status`;
+  my $s0=`cat /home/regression/cluster/$machine.status`;
   chomp $s0;
   my $down="";
   my $downTime=0;
-  $down="--DOWN--" if (!stat("/home/marcos/cluster/$machine.up") || ($downTime=(time-stat("/home/marcos/cluster/$machine.up")->ctime))>300);
+  $down="--DOWN--" if (!stat("/home/regression/cluster/$machine.up") || ($downTime=(time-stat("/home/regression/cluster/$machine.up")->ctime))>300);
   if (!exists $status{$machine}{"status"} || $status{$machine}{"status"} ne $s0 || $status{$machine}{"down"} ne $down) {
     $status{$machine}{"status"}=$s0;
     $status{$machine}{"down"}=$down;
@@ -73,7 +73,7 @@ for (my $i=0;  $i<scalar(@machines);  $i++) {
     printf "%-10s  %s %s".chr(0x1b)."[K\n",$machine,$down,$s0;
     print chr(0x1b)."[".(scalar(@machines)+2).";1H";
   }
-  my $a=`cat /home/marcos/cluster/user.run`;
+  my $a=`cat /home/regression/cluster/user.run`;
   if ($a ne $b) {
     print chr(0x1b)."[".(scalar(@machines)+3).";1H";
     print "pending jobs:\n";

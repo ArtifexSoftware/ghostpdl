@@ -34,7 +34,7 @@ while(<F>) {
 
   chomp;
 
-  if (m/^compileFail/ || m/^md5sumFail/) {
+  if (m/^compileFail/ || m/^md5sumFail/ || m/^timeoutFail/) {
     close(F);
     print "$_\n";
     exit;
@@ -59,9 +59,14 @@ while(<F>) {
     $divider=1;
   }
 
-  if (m/Unrecoverable error, exit code/ || m/Command exited with non-zero status/ || m/Command terminated by signal/ || m/Warning interpreter exited with error code/ || m/Segmentation fault/) {
+  if (m/Unrecoverable error, exit code/ || m/Command exited with non-zero status/ || m/Command terminated by signal/ || m/Warning interpreter exited with error code/) {
     $error=1 if ($divider==0 && $error==0);
     $error=2 if ($divider==1 && $error==0);
+    $results{$file}{"error"}=$error;
+  }
+  if (m/Segmentation fault/) {
+    $error=8 if ($divider==0 && $error==0);
+    $error=9 if ($divider==1 && $error==0);
     $results{$file}{"error"}=$error;
   }
   if (m/killed: timeout/) {
@@ -105,7 +110,7 @@ if ($input2) {
 #     print "$pdfwrite $file\n";
       if (exists $results{$file}{"error"}) {
         $results{$file}{"error"}=7 if ($pdfwrite==1);
-        $results{$file}{"error"}=8 if ($pdfwrite==0 && $results{$file}{"error"}%2 == 0);
+        $results{$file}{"error"}=8 if ($pdfwrite==0 && ($results{$file}{"error"} % 2 == 0 || $results{$file}{"error"} == -1));
       } else {
 #       die "$file not found in ressults";
       }

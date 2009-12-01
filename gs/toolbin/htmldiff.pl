@@ -20,16 +20,20 @@
 $gsexe     = "gs\\debugbin\\gswin32c.exe";
 $pclexe    = "main\\obj\\pcl6.exe";
 $xpsexe    = "xps\\obj\\gxps.exe";
+$svgexe    = "svg\\obj\\gsvg.exe";
 $bmpcmpexe = "..\\bmpcmp\\bmpcmp\\Debug\\bmpcmp.exe";
 $convertexe= "convert.exe"; # ImageMagick
 
 # The args fed to the different exes. Probably won't need to play with these.
-$gsargs    = "-sDEVICE=bmp16m -dNOPAUSE -dBATCH -q";
+$gsargs    = "-sDEVICE=bmp16m -dNOPAUSE -dBATCH -q -sDEFAULTPAPERSIZE=letter";
+$gsargsPS  = " %rom%Resource/Init/gs_cet.ps";
 $pclargs   = "-sDEVICE=bmp16m -dNOPAUSE";
 $xpsargs   = "-sDEVICE=bmp16m -dNOPAUSE";
+$svgargs   = "-sDEVICE=bmp16m -dNOPAUSE";
 $pwgsargs  = "-sDEVICE=pdfwrite -dNOPAUSE -dBATCH -q";
 $pwpclargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 $pwxpsargs = "-sDEVICE=pdfwrite -dNOPAUSE";
+$pwsvgargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 
 # Set the following to true to convert bmps to pngs (useful to save space
 # if you want to show people this across the web).
@@ -41,7 +45,7 @@ $fileadjust = "../ghostpcl/";
 
 # The path to prepend to each of the above exe's to get the reference
 # version.
-$reference = "REF\\";
+$reference = "..\\ghostpdlREF\\";
 
 
 # Here follows todays lesson. Abandon hope all who enter here. Etc. Etc.
@@ -62,6 +66,10 @@ print $html "}</SCRIPT><BODY>";
 
 # Keep a list of files we've done, so we don't repeat
 %done = ();
+
+# Keep a list of files we fail to find any changes in, so we can list them
+# at the end.
+%nodiffs = ();
 
 # Now run through the list of files
 $images = 0;
@@ -105,6 +113,7 @@ while (<>)
         $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
+        if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS };
         $cmd .= " ".$file;
         $ret = system($cmd);
         if ($ret != 0)
@@ -117,6 +126,7 @@ while (<>)
         $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS }
         $cmd .= " ".$file;
         $ret = system($cmd);
         if ($ret != 0)
@@ -180,12 +190,40 @@ while (<>)
             next;
         }
     }
+    elsif ($exe eq "svg")
+    {
+        $cmd  =     $svgexe;
+        $cmd .= " ".$svgargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
+        $cmd .= " ".$file;
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "New bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        $cmd  = $reference.$svgexe;
+        $cmd .= " ".$svgargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd .= " ".$file;
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "Ref bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+    }
     elsif ($exe eq "pwgs")
     {
         $cmd  =     $gsexe;
         $cmd .= " ".$pwgsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1.pdf";
+        if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
         $cmd .= " ".$file2;
         $ret = system($cmd);
         if ($ret != 0)
@@ -198,6 +236,7 @@ while (<>)
         $cmd .= " ".$pwgsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
         $cmd .= " ".$file2;
         $ret = system($cmd);
         if ($ret != 0)
@@ -339,6 +378,59 @@ while (<>)
         unlink $outdir."/tmp1.pdf";
         unlink $outdir."/tmp2.pdf";
     }
+    elsif ($exe eq "pwsvg")
+    {
+        $cmd  =     $svgexe;
+        $cmd .= " ".$pwsvgargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp1.pdf";
+        $cmd .= " ".$file2;
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "New bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        $cmd  = $reference.$svgexe;
+        $cmd .= " ".$pwsvgargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        $cmd .= " ".$file2;
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "Ref bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        $cmd  =     $gsexe;
+        $cmd .= " ".$gsargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
+        $cmd .= " ".$outdir."/tmp1.pdf";
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "New bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        $cmd  = $reference.$gsexe;
+        $cmd .= " ".$gsargs;
+        $cmd .= " -r".$res;
+        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd .= " ".$outdir."/tmp2.pdf";
+        $ret = system($cmd);
+        if ($ret != 0)
+        {
+            print "Ref bitmap generation failed with exit code ".$ret."\n";
+            print "Command was: ".$cmd;
+            next;
+        }
+        unlink $outdir."/tmp1.pdf";
+        unlink $outdir."/tmp2.pdf";
+    }
     else
     {
         print "Unknown program: ".$exe."\n";
@@ -346,7 +438,7 @@ while (<>)
     }
 
     # Output the title
-    print $html "<H1>".$file."</H1></BR>";
+    print $html "<H1>".$file." (".$res."dpi)</H1></BR>";
     
     # Now diff those things
     $page = 1;
@@ -403,9 +495,9 @@ while (<>)
                 unlink $outdir."/out.".($images+2).".bmp";
                 $suffix = ".png";
             }
-            print $html "<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1></TD>";
-           print $html "<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1></TD>";
-           print $html "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1></TD></TR></TABLE><BR>";
+            print $html "<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate: ".$file." page=".$page." res=".$res."\"></TD>";
+           print $html "<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\"></TD>";
+           print $html "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\"></TD></TR></TABLE><BR>";
            $images += 3;
            $diffs++;
         }
@@ -416,9 +508,21 @@ while (<>)
     if ($diffs == 0)
     {
         print "Failed to find any differences on any page!\n";
+        push @nodiffs, $file.":".$exe.":".$res;
     }
 }
 
 # Finish off the HTML file
 print $html "</BODY>";
 close $html;
+
+# List the files that we expected to find differences in, but failed to:
+if (scalar(@nodiffs) != 0)
+{
+  print "Failed to find expected differences in the following:\n";
+  
+  foreach $file (@nodiffs)
+  {
+      print "  ".$file."\n";
+  }
+}

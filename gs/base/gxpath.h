@@ -99,6 +99,8 @@ int gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
 /*
  * Initialize a stack-allocated pseudo-path for computing a bbox
  * for a dynamic path.
+ *
+ * Note: This bbox will always contain the origin.
  */
 void gx_path_init_bbox_accumulator(gx_path * ppath);
 
@@ -239,6 +241,7 @@ int gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath_new,
 int gx_path_add_dash_expansion(const gx_path * /*old*/, gx_path * /*new*/,
 				  const gs_imager_state *),
       gx_path_copy_reversed(const gx_path * /*old*/, gx_path * /*new*/),
+      gx_path_append_reversed(const gx_path * /*orig*/, gx_path * /*rev*/),
       gx_path_translate(gx_path *, fixed, fixed),
       gx_path_scale_exp2_shared(gx_path *ppath, int log2_scale_x,
 				   int log2_scale_y, bool segments_shared);

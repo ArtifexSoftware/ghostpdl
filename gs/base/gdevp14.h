@@ -17,6 +17,9 @@
 #  define gdevp14_INCLUDED
 
 #include "gxcmap.h"
+#include "gsmatrix.h"
+#include "gxcolor2.h"
+#include "gxdcolor.h"
 #include "gxpcolor.h"
 #include "gdevdevn.h"
 
@@ -264,9 +267,6 @@ pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
 int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuff);
 
 /* Not static due to call from pattern logic */
-int
-pdf14_disable_device(gx_device * dev);
-
-
+int pdf14_disable_device(gx_device * dev);
 
 #endif /* gdevp14_INCLUDED */

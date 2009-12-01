@@ -48,9 +48,43 @@ pdfdict begin
   /EX { /BXlevel BXlevel 1 sub store } bind
   /PS { cvx exec } bind
 	% PDF 1.2 operators
-  /BMC { pop } bind
-  /BDC { pop pop } bind
-  /EMC { }
+  /BMC {
+    /BMClevel BMClevel 1 add store
+    pop
+  } bind
+  /BDC {
+    /BMClevel BMClevel 1 add store
+    exch /OC eq {
+      dup type /nametype eq {
+        PDFfile fileposition exch                      % pos /Name
+        Page /Properties rget {
+          ocg-is-visible not {
+            OFFlevels
+            dup length 0 eq {
+              gsave get-gs-attrs nulldevice set-gs-attrs
+            } if
+            BMClevel dup put
+          } if
+        } if
+        PDFfile exch setfileposition
+      } {
+        pop
+      } ifelse
+    } {
+      pop
+    } ifelse
+  } bind
+  /EMC {
+    OFFlevels BMClevel
+    2 copy known {
+       2 copy undef
+       1 index length 0 eq {
+          get-gs-attrs grestore set-gs-attrs
+       } if
+    } if
+    1 sub /BMClevel exch store
+    pop
+  } bind
   /MP { pop } bind
   /DP { pop pop } bind
   /- { 0  % Bug 690016
@@ -270,7 +304,7 @@ currentdict /runpdfstring .undef
   //pdf_collection_files exec
   dup mark eq {
     pop
-    copy_trailer_attrs
+    process_trailer_attrs
     //runpdfpagerange exec
     //dopdfpages exec
   //runpdfend exec
@@ -279,7 +313,7 @@ currentdict /runpdfstring .undef
     ] {
         dup type /filetype eq {
           //runpdfbegin exec
-          copy_trailer_attrs
+          process_trailer_attrs
           //runpdfpagerange exec
           //dopdfpages exec
           //runpdfend exec
@@ -287,7 +321,7 @@ currentdict /runpdfstring .undef
         } {
     .namestring dup (r) file
     //runpdfbegin exec
-    copy_trailer_attrs
+          process_trailer_attrs
     //runpdfpagerange exec
     //dopdfpages exec
     //runpdfend exec
@@ -377,9 +411,14 @@ pdfdict begin
        pop			% Stack: <err count> <obj#> <loc> <gen#> <tag>
        dup /n eq {		% xref line tag is /n
 	 pop			% pop dup of line tag
+         2 copy or 0 eq {
+           (   **** Warning: considering '0000000000 00000 n' as a free entry.\n)
+           pdfformaterror
+         } {
 	 0 3 1 roll		% Set ObjectStream object number = 0
 	 //false setxrefentry	% Save xref entry, don't change existing entries
 	 3 -1 roll pop		% Remove ObjectStream object onumber
+         } ifelse
        }
        {			% xref line tag was not /n
 	 /f ne			% verify that the tag was /f
@@ -578,7 +617,7 @@ pdfdict begin
   currentdict end
 } bind def
 
-/copy_trailer_attrs {  % - copy_trailer_attrs -
+/process_trailer_attrs {  % - process_trailer_attrs -
   writeoutputintents
   .writepdfmarks {
 	% Copy bookmarks (outline) to the output.
@@ -588,6 +627,20 @@ pdfdict begin
       } if
     } if
   } if		% end .writepdfmarks
+  % Initialize OC groups
+  Trailer /Root oget /OCProperties knownoget {
+    % By default, OCGs are 'on'; mark only 'off' OCGs.
+    /D knownoget {
+      /OFF knownoget {
+        { oforce dup type /dicttype eq {
+            /OFF 0 put
+          } {
+            pop
+          } ifelse
+        } forall
+      } if
+    } if
+  } if
 } bind def
 
 % Verify that each entry in the xref table is pointing at an object with
@@ -967,16 +1020,39 @@ pdfdict begin
 /rget {			% <resname> <pagedict> <restype> rget <value> -true-
 			% <resname> <pagedict> <restype> rget -false-
   LocalResources 1 index knownoget {
+     dup type /dicttype eq {
      3 index knownoget
   } {
-    false
+       //false exch {
+         4 index knownoget {
+           exch not exit
+         } if
+       } forall
+     } ifelse
+  } {
+    //false
   } ifelse {
-    exch pop exch pop exch pop true
+    exch pop exch pop exch pop //true
   } {
     exch /Resources pget {
-      exch knownoget { exch knownoget } { pop false } ifelse
+      exch knownoget {                 % /Name [<<>> ...]
+          dup type /dicttype eq {
+            exch knownoget
     } {
-      pop pop false
+            % GS uses array of dicts if resources don't fit in one dict.
+            //false 3 1 roll {         % false /Name <<>>
+              1 index knownoget {      % false /Name val
+                exch pop exch not % i.e. true
+                0 exit
+              } if
+            } forall
+            pop
+    } ifelse
+      } {
+        pop //false
+  } ifelse
+    } {
+      pop pop //false
     } ifelse
   } ifelse
 } bind def
@@ -1487,13 +1563,15 @@ currentdict /PDF2PS_matrix_key undef
 /.free_page_resources {   % - .free_page_resources -
   Page /Resources pget {
     /Shading knownoget {
-      { dup type /dicttype eq {
+      { {
+          dup type /dicttype eq {
           dup /.shading_dict known {
             dup /.shading_dict undef
           } if
         } if
         pop pop
       } forall
+      } big-res-forall
     } if
   } if
 } bind def
@@ -1535,8 +1613,10 @@ currentdict /PDF2PS_matrix_key undef
   } if		% end .writepdfmarks
 
 	% Display the actual page contents.
-   6 dict begin
+   8 dict begin
    /BXlevel 0 def
+   /BMClevel 0 def
+   /OFFlevels 0 dict def
    /BGDefault currentblackgeneration def
    /UCRDefault currentundercolorremoval def
 	%****** DOESN'T HANDLE COLOR TRANSFER YET ******
@@ -1720,19 +1800,24 @@ currentdict /PDF2PS_matrix_key undef
     2 copy //true put              % In the current chain.
     dup /ExtGState knownoget {
       //false exch
-      { exch pop oforce extgstateusestransparency { pop //true exit } if
+      { { exch pop oforce extgstateusestransparency { pop //true exit } if
       } forall
+        dup { exit } if
+      } big-res-forall
       { pop //true exit } if
     } if
     dup /Pattern knownoget {
       //false exch
-      { exch pop oforce patternusestransparency { pop //true exit } if
+      { { exch pop oforce patternusestransparency { pop //true exit } if
       } forall
+        dup { exit } if
+      } big-res-forall
       { pop //true exit } if
     } if
     dup /XObject knownoget {
-      dup type /dicttype eq {
-        //false exch {
+      dup type dup /dicttype eq exch /arraytype eq or {
+        //false exch
+        { {
 	  exch pop oforce dup /Subtype get
 	  dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
 	  /Form eq {
@@ -1740,7 +1825,10 @@ currentdict /PDF2PS_matrix_key undef
 	  } {
 	    pop
 	  } ifelse
-        } forall { pop //true exit } if
+          } forall
+          dup { exit } if
+        } big-res-forall
+        { pop //true exit } if
       } {
         (   **** Ignoring non-dictionary /XObject attribute.\n)
         pdfformaterror
@@ -1802,6 +1890,13 @@ currentdict /PDF2PS_matrix_key undef
   pop pop
 } bind def
 
+% Enumerate resource dictionary or an array of dictionaries
+% <object> <proc> big-res-forall - 
+/big-res-forall {
+  1 index type /dicttype eq { 0 get } if
+  forall
+} bind def
+
 % Check the Resources of a page, form, or annotation.  Determine which spot
 % colors are used within the resource  Note: The spot color dict will include
 % all colors used in Separation or DeviceN color spaces.  Thus it may include
@@ -1821,19 +1916,20 @@ currentdict /PDF2PS_matrix_key undef
 
     % Scan resources that might contain a color space.
     dup /ColorSpace knownoget {
-      { exch pop oforce 3 index colorspacespotcolors } forall
+      { { exch pop oforce 3 index colorspacespotcolors } forall } big-res-forall
     } if
     dup /Pattern knownoget {
-      { exch pop oforce 4 copy exch pop resourcespotcolors pop pop pop } forall
+      { { exch pop oforce 4 copy exch pop resourcespotcolors pop pop pop } forall } big-res-forall
     } if
     dup /Shading knownoget {
-      { exch pop oforce /ColorSpace oget 3 index colorspacespotcolors } forall
+      { { exch pop oforce /ColorSpace oget 3 index colorspacespotcolors } forall } big-res-forall
     } if
     /XObject knownoget {
-      dup type /dicttype eq {
-        { exch pop oforce dup
+      dup type dup /dicttype eq exch /arraytype eq or {
+        { { exch pop oforce dup
           /Subtype get /Form eq { resourcespotcolors } { pop } ifelse
         } forall
+        } big-res-forall
       } {
         pop % Just ignore here, already reported by resourceusestransparency.
       } ifelse

@@ -332,13 +332,17 @@ drivers that produce uncompressed output:
 <dd>Produces 12-bit RGB output (4 bits per component).
 <dt><code>tiff24nc</code>
 <dd>Produces 24-bit RGB output (8 bits per component).
+<dt><code>tiff48nc</code>
+<dd>Produces 48-bit RGB output (16 bits per component).
 <dt><code>tiff32nc</code>
 <dd>Produces 32-bit CMYK output (8 bits per component).
+<dt><code>tiff64nc</code>
+<dd>Produces 64-bit CMYK output (16 bits per component).
 <a name="tiffsep"></a><dt><code>tiffsep</code>
 <dd>
 The tiffsep device creates multiple output files.  The device creates a single
 32 bit composite CMYK file (tiff32nc format) and multiple tiffgray files.
-A tiffgray file is created for each separation.
+A tiffgray file compressed with LZW is created for each separation.
 
 <p>
 The file specified via the OutputFile command line parameter will contain 
@@ -405,6 +409,26 @@ This will produce a single separation file for the spot color called 'Name1'.
 It is possible to create an overall CMYK composite for more than 4 colorants 
 by then adding together (via an external application like imagemagick) 
 the composite CMYK output files from the individual Ghostscript passes. 
+
+<a name="tiffsep1"></a><dt><code>tiffsep1</code>
+<dd>
+The tiffsep1 device creates multiple output files, one for each component
+or separation color.  The device creates multiple tiffg4 files (the compression
+can be set using -sCompression= described below).
+
+<p>
+The file specified via the OutputFile command line parameter will not be
+created (it is opened, but deleted prior to finishing each page). 
+
+<p>
+File names for the separations for the CMYK colorants are created by appending 
+'(Cyan).tif', '(Magenta).tif' '(Yellow).tif' or '(Black).tif' to the to the 
+end of the file name specified via the OutputFile parameter. File names 
+for the spot color separation files are created by appending the Spot color
+name in '(' and ').tif' to the filename.
+If the file name specified via the OutputFile parameter ends with the suffix
+'.tif', then the suffix is removed prior to adding the component name in
+'(' and ').tif'.
 
 </dl>
 </blockquote>
@@ -489,6 +513,25 @@ Earlier versions of Ghostscript always generated TIFF files with FillOrder = 2.
 According to the TIFF 6.0 specification, Section 8, page 32, support of
 FillOrder = 2 is not required in a Baseline TIFF compliant reader
 
+<p>
+The compression scheme that is used for the image data can be set for all tiff
+devices with:
+
+<blockquote>
+    <dl>
+	<dt><code>-sCompression=<em>none | crle | g3 | g4 | lzw | pack</em></code></dt>
+	<dd>Change the compression scheme of the tiff device.
+	<code>crle</code>, <code>g3</code>, and <code>g4</code> may only be
+	used with 1 bit devices (including <code>tiffsep1</code>).</dd>
+    </dl>
+</blockquote>
+
+<p>
+For the <code>tiffsep</code> device, it only changes the compression scheme
+of the separation files (which is <code>lzw</code> by default), not the
+composite cmyk file.  It defaults to <code>g4</code> for the
+<code>tiffsep1</code> device.
+
 <h3><a name="fax"></a>FAX</h3>
 
 <p>
@@ -525,8 +568,8 @@ series of devices.
 PSD is the image format used by Adobe Photoshop.
 It is supported by the <tt>psdcmyk</tt> and <tt>psdrgb</tt> devices.
 Of special interest with the <tt>psdcmyk</tt> device is that it supports spot
-colors.  <a href="#tiffsep">See the comments under the tiffsep device
-about the maximum number of spot colors supported by Ghostscript</a>
+colors.  <a href="#tiffsep">See the comments under the tiffsep and tiffsep1 
+device about the maximum number of spot colors supported by Ghostscript</a>
 
 <h2><a name="High-level"></a>High-level devices</h2>
 
@@ -574,6 +617,13 @@ Currently language level 3 generates the same PostScript as 2.
 
 <p>The <tt>pxlmono</tt> and <tt>pxlcolor</tt> devices output HP PCL-XL,
 a graphic language understood by many recent laser printers.
+
+<h4>Options</h4>
+<blockquote>
+<dl>
+<dt><code>-dCompressMode=<em>1 | 3</em></code> (default is 1)
+<dd>Set the compression algorithm used for bitmap graphics. RLE=1, DeltaRow=3. (JPEG=2 is unimplemented)
+</dl></blockquote>
 
 <p>
 

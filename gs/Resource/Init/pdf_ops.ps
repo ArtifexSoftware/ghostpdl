@@ -134,6 +134,44 @@ nodict readonly pop
   } ifelse
 } bdef
 
+% Save most of graphic state attributes.
+% - get-gs-attrs ...
+/get-gs-attrs {
+  currentsmoothness
+  currentflat
+  currentoverprint
+  currentstrokeadjust
+  currentdash
+  currentmiterlimit
+  currentlinejoin
+  currentlinecap
+  currentlinewidth
+  currentfont
+  currentcolor
+  currentcolorspace
+  { currentpoint } stopped
+  matrix currentmatrix
+} bdef
+
+% Restore most of graphic state attributes.
+% ... get-gs-attrs -
+/set-gs-attrs {
+  setmatrix
+  { newpath } { moveto } ifelse
+  setcolorspace
+  setcolor
+  setfont
+  setlinewidth
+  setlinecap
+  setlinejoin
+  setmiterlimit
+  setdash
+  setstrokeadjust
+  setoverprint
+  setflat
+  setsmoothness
+} bdef
+
 % ---------------- Color setting ---------------- %
 
 /fcput		% <color> <colorspace> fcput -
@@ -377,14 +415,11 @@ end def
   } ifelse
 } bdef
 /fsexec		% <fillop|strokeop> fsexec -
- {		% Preserve the current point, if any.
+ {
    SoftMask //null ne {
      mark /Subtype /Group /Isolated true .dicttomark pathbbox .begintransparencygroup
    } if
-    { currentpoint } stopped
-    { $error /newerror false put   cvx exec }
-    { 3 -1 roll cvx exec moveto }
-   ifelse
+   cvx exec
    SoftMask //null ne {
      .endtransparencygroup
    } if
@@ -408,12 +443,12 @@ end def
 /S { gsave setstrokestate stroke grestore n } bdef
 /f { gsave setfillstate fill grestore n } bdef
 /f* { gsave setfillstate eofill grestore n } bdef
-/n { end clip newpath } bdef
+/n { end { currentpoint } stopped not { pop pop clip } if newpath } bdef
 end readonly def
 /W { //Wdict begin } bdef
 /W*dict 4 dict dup begin
 Wdict { def } forall
-/n { end eoclip newpath } bdef
+/n { end { currentpoint } stopped not { pop pop eoclip } if newpath } bdef
 end readonly def
 /W* { //W*dict begin } bdef
 

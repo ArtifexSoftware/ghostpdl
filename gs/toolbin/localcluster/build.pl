@@ -6,32 +6,35 @@ use warnings;
 use Data::Dumper;
 use POSIX ":sys_wait_h";
 
-my $product=shift;
-die "usage: build.pl (gs|ghostpdl)" if ($product && $product ne "gs" && $product ne "ghostpdl");
+my %allowedProducts=(
+  'gs'  => 1,
+  'pcl' => 1,
+  'xps' => 1,
+  'svg' => 1
+);
+
+my %products;
+
+my $t;
+
+while ($t=shift) {
+  $products{$t}=1;
+  die "usage: build.pl [gs] [pcl] [xps] [svg]" if (!exists $allowedProducts{$t});
+}
 
 my $updateTestFiles=1;
-
 my $verbose=0;
 
 local $| = 1;
 
-my $baseDirectory;
-$baseDirectory='./';
+my $baseDirectory='./';
+
+my $svnURLPrivate='file:///var/lib/svn-private/ghostpcl/trunk/';
+my $svnURLPublic ='http://svn.ghostscript.com/ghostscript/';
 
 my $temp="./temp";
 #$temp="/tmp/space/temp";
 #$temp="/dev/shm/temp";
-
-my %productMap=(
-  'gs'.'gs' => 1,
-  'pcl'.'gs' => 1,
-  'xps'.'gs' => 1,
-  'svg'.'gs' => 1,
-  'gs'.'ghostpdl' => 1,
-  'pcl'.'ghostpdl' => 1,
-  'xps'.'ghostpdl' => 1,
-  'svg'.'ghostpdl' => 1
-  );
 
 my $gsBin=$baseDirectory."gs/bin/gs";
 my $pclBin=$baseDirectory."gs/bin/pcl6";
@@ -39,24 +42,34 @@ my $xpsBin=$baseDirectory."gs/bin/gxps";
 my $svgBin=$baseDirectory."gs/bin/gsvg";
 
 my %testSource=(
-  $baseDirectory."tests/pdf" => 'gs',
-  $baseDirectory."tests/ps" => 'gs',
-  $baseDirectory."tests/eps" => 'gs',
-  $baseDirectory."tests_private/ps/ps3cet" => 'gs',
-  $baseDirectory."tests_private/comparefiles" => 'gs',
-  $baseDirectory."tests_private/pdf/PDFIA1.7_SUBSET" => 'gs',
-  $baseDirectory."tests/pcl" => 'pcl',
-  $baseDirectory."tests_private/pcl/pcl5cfts" => 'pcl',
-  $baseDirectory."tests_private/pcl/pcl5efts" => 'pcl',
-  $baseDirectory."tests_private/xl/pxlfts3.0" => 'pcl',
-  $baseDirectory."tests/xps" => 'xps',
-  $baseDirectory."tests_private/xps/xpsfts-a4" => 'xps',
-  # $baseDirectory."tests/svg/svgw3c-1.1-full/svg" => 'svg',
-  # $baseDirectory."tests/svg/svgw3c-1.1-full/svgHarness" => 'svg',
-  # $baseDirectory."tests/svg/svgw3c-1.1-full/svggen" => 'svg',
-  $baseDirectory."tests/svg/svgw3c-1.2-tiny/svg" => 'svg',
-  # $baseDirectory."tests/svg/svgw3c-1.2-tiny/svgHarness" => 'svg',
-  # $baseDirectory."tests/svg/svgw3c-1.2-tiny/svggen" => 'svg'
+  $svnURLPublic."tests/pdf" => 'gs',
+  $svnURLPublic."tests/ps" => 'gs',
+  $svnURLPublic."tests/eps" => 'gs',
+  $svnURLPrivate."tests_private/ps/ps3cet" => 'gs',
+  $svnURLPrivate."tests_private/comparefiles" => 'gs',
+  $svnURLPrivate."tests_private/pdf/PDFIA1.7_SUBSET" => 'gs',
+
+  $svnURLPublic."tests/pcl" => 'pcl',
+# $svnURLPrivate."tests_private/customer_tests" => 'pcl',
+  $svnURLPrivate."tests_private/pcl/pcl5cfts" => 'pcl',
+  $svnURLPrivate."tests_private/pcl/pcl5cats/Subset" => 'pcl',
+  $svnURLPrivate."tests_private/pcl/pcl5efts" => 'pcl',
+  $svnURLPrivate."tests_private/pcl/pcl5ccet" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pxlfts3.0" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pcl6cet" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pcl6cet3.0" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pxlfts" => 'pcl',
+  $svnURLPrivate."tests_private/xl/pxlfts2.0" => 'pcl',
+
+# $svnURLPublic."tests/xps" => 'xps',
+  $svnURLPrivate."tests_private/xps/xpsfts-a4" => 'xps',
+
+  $svnURLPublic."tests/svg/svgw3c-1.1-full/svg" => 'svg',
+  # $svnURLPublic."tests/svg/svgw3c-1.1-full/svgHarness" => 'svg',
+  # $svnURLPublic."tests/svg/svgw3c-1.1-full/svggen" => 'svg',
+# $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svg" => 'svg',
+  # $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svgHarness" => 'svg',
+  # $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svggen" => 'svg'
   );
 
 my $cmd;
@@ -78,7 +91,7 @@ my %tests=(
     "ppmraw.72.0",
     "ppmraw.300.0",
     "ppmraw.300.1",
-    #"psdcmyk.72.0",
+    "psdcmyk.72.0",
 ##"psdcmyk.300.0",
 ##"psdcmyk.300.1",
     "pdf.ppmraw.72.0",
@@ -86,27 +99,27 @@ my %tests=(
     "pdf.pkmraw.300.0"
     ],
   'pcl' => [
-    "pbmraw.75.0",
-    "pbmraw.600.0",
+#   "pbmraw.75.0",
+#   "pbmraw.600.0",
     "pbmraw.600.1",
-    "pgmraw.75.0",
-    "pgmraw.600.0",
+#   "pgmraw.75.0",
+#   "pgmraw.600.0",
     "pgmraw.600.1",
     #"wtsimdi.75.0",
     #"wtsimdi.600.0",
     #"wtsimdi.600.1",
-    "ppmraw.75.0",
-    "ppmraw.600.0",
+#   "ppmraw.75.0",
+#   "ppmraw.600.0",
     "ppmraw.600.1",
-    "bitrgb.75.0",
-    "bitrgb.600.0",
+#   "bitrgb.75.0",
+#   "bitrgb.600.0",
     "bitrgb.600.1",
     #"psdcmyk.75.0",
 ##"psdcmyk.600.0",
 ##"psdcmyk.600.1",
-    "pdf.ppmraw.75.0",
-    "pdf.ppmraw.600.0",
-    "pdf.pkmraw.600.0"
+#   "pdf.ppmraw.75.0",
+    "pdf.ppmraw.600.0"
+#   "pdf.pkmraw.600.0"
     ],
   'xps' => [
     "pbmraw.72.0",
@@ -132,10 +145,10 @@ my %tests=(
 ##"pdf.pkmraw.300.0"
     ],
   'svg' => [
-    "pbmraw.72.0",
+#   "pbmraw.72.0",
     #"pbmraw.300.0",
     #"pbmraw.300.1",
-    "pgmraw.72.0",
+#   "pgmraw.72.0",
     #"pgmraw.300.0",
     #"pgmraw.300.1",
     #"wtsimdi.72.0",
@@ -144,36 +157,64 @@ my %tests=(
     "ppmraw.72.0",
     #"ppmraw.300.0",
     #"ppmraw.300.1",
-    "bitrgb.72.0",
+#   "bitrgb.72.0",
     #"bitrgb.300.0",
     #"bitrgb.300.1",
     #"psdcmyk.72.0",
-##"psdcmyk.300.0",
-##"psdcmyk.300.1",
-    "pdf.ppmraw.72.0",
+    #"psdcmyk.300.0",
+    #"psdcmyk.300.1",
+#   "pdf.ppmraw.72.0",
     #"pdf.ppmraw.300.0",
     #"pdf.pkmraw.300.0"
     ]
   );
 
+my %testfiles;
 #update the regression file source directories
+if (0) {
 if ($updateTestFiles) {
   foreach my $testSource (sort keys %testSource) {
-    $cmd="cd $testSource ; /usr/local/bin/svn update";
+    $cmd="cd $testSource ; svn update";
     print STDERR "$cmd\n" if ($verbose);
     `$cmd`;
   }
 }
 
 # build a list of the source files
-my %testfiles;
 foreach my $testSource (sort keys %testSource) {
-  if (!$product || exists $productMap{$testSource{$testSource}.$product}) {
+  if (scalar keys %products==0 || exists $products{$testSource{$testSource}}) {
     opendir(DIR, $testSource) || die "can't opendir $testSource: $!";
     foreach (readdir(DIR)) {
       $testfiles{$testSource.'/'.$_}=$testSource{$testSource} if (!-d $testSource.'/'.$_ && ! m/^\./ && ! m/.disabled$/);
     }
     closedir DIR;
+  }
+}
+}
+
+foreach my $testSource (sort keys %testSource) {
+  if (scalar keys %products==0 || exists $products{$testSource{$testSource}}) {
+#print "$testSource\n";
+    my $a=`svn list $testSource`;
+
+    my $t1=$testSource;
+    my $t2=$svnURLPrivate;
+    my $t3=$svnURLPublic ;
+    $t1 =~ s/\+//g;
+    $t2 =~ s/\+//g;
+    $t3 =~ s/\+//g;
+    $t1 =~ s|$t2||;
+    $t1 =~ s|$t3||;
+
+#   print "$testSource{$testSource}\n";  exit;
+
+    my @a=split '\n',$a;
+    foreach (@a) {
+      chomp;
+      my $testfile=$t1.'/'.$_;
+      $testfiles{'./'.$testfile}=$testSource{$testSource} if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~m /.disabled$/));
+#     print "$testfile\n";
+    }
   }
 }
 
@@ -211,9 +252,9 @@ sub build($$$$) {
 
   $cmd  .= " true";
 
-  $cmd .= " ; echo \"$product\" >>$logFilename ";
 
   if ($a[0] eq 'pdf') {
+    $cmd .= " ; echo \"$product pdfwrite\" >>$logFilename ";
 
     $outputFilename="$temp/$tempname.$options.pdf";
     if ($product eq 'gs') {
@@ -280,6 +321,7 @@ sub build($$$$) {
     $outputFilenames.="$inputFilename ";
 
   } else {
+    $cmd .= " ; echo \"$product\" >>$logFilename ";
     $outputFilename="$temp/$filename.$options";
     if ($product eq 'gs') {
       $cmd2.=" nice $gsBin";
@@ -347,8 +389,16 @@ foreach my $testfile (sort keys %testfiles) {
   }
 }
 
+#if (scalar keys %products>0) {
+#  print "pdl=";
+#  foreach (keys %products) {
+#    print "$_ ";
+#  }
+#  print "\n";
+#}
 while (scalar(@commands)) {
   my $n=rand(scalar @commands);
+# $n=0;
   my $command=$commands[$n];  splice(@commands,$n,1);
   my $filename=$filenames[$n];  splice(@filenames,$n,1);
   print "$filename\t$command\n";

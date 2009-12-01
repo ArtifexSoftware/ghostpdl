@@ -481,7 +481,8 @@ R_fill_triangle_new(patch_fill_state_t *pfs, const gs_rect *rect,
 static int
 R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 	double x0, double y0, double r0, 
-	double x1, double y1, double r1, double t0, double r_rect)
+	double x1, double y1, double r1, double t0, double r_rect,
+	bool inwards)
 {
     double dx = x1 - x0, dy = y1 - y0, dr = any_abs(r1 - r0);
     double d = hypot(dx, dy);
@@ -534,8 +535,12 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 	code = R_tensor_annulus(pfs, rect, x0, y0, r0, t0, ex, ey, er, t0);
 	if (code < 0)
 	    return code;
-	/* Fill entire ending circle to ewnsure antire rect is covered : */
-	return R_tensor_annulus(pfs, rect, ex, ey, er, t0, ex, ey, 0, t0);
+	/* Fill entire ending circle to ensure entire rect is covered, but
+	 * only if we are filling "inwards" (as otherwise we will overwrite
+	 * all the hard work we have done to this point) */
+	if (inwards)
+	    code = R_tensor_annulus(pfs, rect, ex, ey, er, t0, ex, ey, 0, t0);
+        return code;
     }
 }
 
@@ -594,7 +599,7 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
 	if (r0 > r1) {
 	    if (Extend0) {
 		r = R_rect_radius(rect, x0, y0);
-		code = R_obtuse_cone(pfs, rect, x0, y0, r0, x1, y1, r1, t0, r);
+		code = R_obtuse_cone(pfs, rect, x0, y0, r0, x1, y1, r1, t0, r, true);
 		if (code < 0)
 		    return code;
 	    }
@@ -604,7 +609,7 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
 	} else {
 	    if (Extend1) {
 		r = R_rect_radius(rect, x1, y1);
-		code = R_obtuse_cone(pfs, rect, x1, y1, r1, x0, y0, r0, t1, r);
+		code = R_obtuse_cone(pfs, rect, x1, y1, r1, x0, y0, r0, t1, r, false);
 		if (code < 0)
 		    return code;
 	    }
