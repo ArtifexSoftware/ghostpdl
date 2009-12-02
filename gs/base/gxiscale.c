@@ -265,8 +265,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	penum->xyi.x = fixed2int_pixround(dda_current(x0));
     }
     penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y 
-				    * penum->dst_height / penum->Height))
-		* (penum->matrix.yy > 0 ? 1 : -1);
+				    * penum->dst_height / penum->Height));
     if_debug0('b', "[b]render=interpolate\n");
 
     return &image_render_interpolate;
