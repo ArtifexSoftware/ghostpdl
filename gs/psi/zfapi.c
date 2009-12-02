@@ -790,9 +790,7 @@ static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, 
      * being the end of the old glyph. So we need to search the entire loca table to
      * determine the length of the glyph. Isn't TrueType wonderful ?
      */
-    /* Start by assuming the offset is the end of the table */
-    *offset1 = pfont42->data.loca + (glyf_elem_size * pfont42->data.numGlyphs);
-    /* Start from the beginning of the LOCA table */
+    *offset1 = glyf_elem_size == 2 ? 0xffff : 0xffffffff;
     r.seek(&r, pfont42->data.loca);
     for (i=0;i<pfont42->data.numGlyphs;i++) {
 	/* Check every entry in the LOCA table to see if its beyond the 
