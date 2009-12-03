@@ -305,8 +305,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 		/* falls through */
 	    case t_string:
 		if (r_type(pp) != r_type(sources)) {
-    		    if (pie != NULL)
-		        gx_image_end(pie, false);    /* Clean up pie */
+		    gx_image_end(pie, false);    /* Clean up pie */
 		    return_error(e_typecheck);
 		}
 		check_read(*pp);
@@ -314,8 +313,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 	    default:
 		if (!r_is_proc(sources)) {
     		    static const char ds[] = "DataSource";
-                    if (pie != NULL)
-                        gx_image_end(pie, false);    /* Clean up pie */
+                    gx_image_end(pie, false);    /* Clean up pie */
                     gs_errorinfo_put_pair(i_ctx_p, ds, sizeof(ds) - 1, pp);
 		    return_error(e_typecheck);
 		}
