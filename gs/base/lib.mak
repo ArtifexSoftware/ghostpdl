@@ -36,7 +36,7 @@ GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
 # We can't use $(CC_) for GLLCMSCC becuase that includes /Za on
 # msvc builds, and lcms configures itself to depend on msvc extensions
 # (inline asm, including windows.h) when compiled under msvc.
-GLLCMSCC=$(CC) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
+GLLCMSCC=$(CC) $(GCFLAGS) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
 
 # All top-level makefiles define GLD.
 #GLD=$(GLGEN)
