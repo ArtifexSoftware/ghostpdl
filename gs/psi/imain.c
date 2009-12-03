@@ -784,8 +784,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         "serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
 	0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
-    if (gs_debug_c(':'))
+    if (gs_debug_c(':')) {
 	print_resource_usage(minst, &gs_imemory, "Final");
+	dprintf1("%% Exiting instance 0x%p\n", minst);
+    }
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */
     if (minst->init_done >= 1) {

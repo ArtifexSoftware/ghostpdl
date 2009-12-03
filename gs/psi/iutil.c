@@ -477,7 +477,7 @@ other:
 	    {
 		int rtype = r_btype(op);
 
-		if (rtype > countof(type_strings))
+		if (rtype >= countof(type_strings))
 		    return_error(e_rangecheck);
 		data = (const byte *)type_strings[rtype];
 		if (data == 0)

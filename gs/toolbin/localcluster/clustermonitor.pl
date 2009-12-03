@@ -73,13 +73,13 @@ for (my $i=0;  $i<scalar(@machines);  $i++) {
     printf "%-10s  %s %s".chr(0x1b)."[K\n",$machine,$down,$s0;
     print chr(0x1b)."[".(scalar(@machines)+2).";1H";
   }
-  my $a=`cat /home/regression/cluster/user.run`;
+  my $a=`cat /home/regression/cluster/queue.lst`;
   if ($a ne $b) {
     print chr(0x1b)."[".(scalar(@machines)+3).";1H";
-    print "pending jobs:\n";
+    print "Current and pending jobs:\n";
+print chr(0x1b)."[J";
     print $a;
     $b=$a;
-print chr(0x1b)."[J";
   }
 }
 

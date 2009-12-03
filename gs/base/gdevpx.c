@@ -1764,7 +1764,7 @@ pclxl_begin_image(gx_device * dev,
 	 (!pclxl_can_handle_color_space(pim->ColorSpace) ||
 	  (bits_per_pixel != 1 && bits_per_pixel != 4 &&
 	   bits_per_pixel != 8 && bits_per_pixel !=24))) ||
-	format != gs_image_format_chunky ||
+	format != gs_image_format_chunky || pim->Interpolate ||
 	prect
 	)
 	goto use_default;

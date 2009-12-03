@@ -322,7 +322,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 {
     if (pdev->DSCEncodingToUnicode.data == 0) {
 	int i, j=0;
-	unsigned char *buf0 = data;
+	unsigned char *buf0;
 
 	buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char), 
 			"pdf_xmp_write_translated");

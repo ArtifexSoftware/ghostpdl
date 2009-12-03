@@ -26,9 +26,21 @@ my $directory=`pwd`;
 chomp $directory;
 
 $directory =~ s|.+/||;
+if ($directory ne 'gs' && $directory ne 'ghostpdl') {
+  $directory="";
+  if (-d "base" && -d "Resource") {
+    $directory='gs';
+  }
+  if (-d "pxl" && -d "pcl") {
+    $directory='ghostpdl';
+  }
+}
+
+die "can't figure out if this is a ghostscript or ghostpdl directory" if ($directory eq "");
+
+$product='gs pcl xps' if (!$product);
 print "$user $directory $product\n" if ($verbose);
 
-die "clusterpush.pl must be run from gs or ghostpdl directory" if ($directory ne 'gs' && $directory ne 'ghostpdl');
 
 #           rsync -av -e "ssh -l ssh-user" rsync-user@host::module /dest
 
@@ -37,7 +49,6 @@ if ($directory eq 'gs') {
 }
 
 
-$product='gs pcl xps' if (!$product);
 my @a=split ' ',$product;
 foreach my $i (@a) {
   if (!exists $products{$i}) {
