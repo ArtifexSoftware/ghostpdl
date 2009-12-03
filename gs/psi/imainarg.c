@@ -202,6 +202,14 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 		    return code;
 		if (code > 0)
 		    outprintf(minst->heap, "Unknown switch %s - ignoring\n", arg);
+		if (gs_debug[':'] && arg[1] == 'Z') {
+		    int i;
+
+		    dprintf1("%% Init started, instance 0x%p, with args: ", minst);
+		    for (i=1; i<argc; i++)
+			dprintf1("%s ", argv[i]);
+		    dprintf("\n");
+		}
 		break;
 	    default:
 		code = argproc(minst, arg);
@@ -212,11 +220,18 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
     if (code < 0)
 	return code;
 
-
     code = gs_main_init2(minst);
     if (code < 0)
 	return code;
 
+    if (gs_debug[':']) {
+	int i;
+
+	dprintf1("%% Init done, instance 0x%p, with args: ", minst);
+	for (i=1; i<argc; i++)
+	    dprintf1("%s ", argv[i]);
+	dprintf("\n");
+    }
     if (!minst->run_start)
 	return e_Quit;
     return code ;
