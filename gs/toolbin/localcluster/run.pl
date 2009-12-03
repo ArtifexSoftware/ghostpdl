@@ -32,9 +32,16 @@ my $products;
 
 my $runningSemaphore="./run.pid";
 
+sub spawn;
+
+sub watchdog {
+  spawn(0,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com touch /home/regression/cluster/$machine.up");
+}
+
 # the concept with checkPID is that if the semaphore file is missing or doesn't
 # contain our PID something bad has happened and we just just exit
 sub checkPID {
+  watchdog();
   if (open(F,"<$runningSemaphore")) {
     my $t=<F>;
     close(F);
@@ -307,6 +314,7 @@ $cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; rm -fr $tem
 print "$cmd\n" if ($verbose);
 `$cmd`;
 
+$abort=checkAbort;
 if (!$abort) {
 
   # modify product name so that files that print that information don't change
@@ -339,7 +347,7 @@ if (!$abort) {
     updateStatus('Building Ghostscript');
 
     # build ghostscript
-    $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; nice make >>makegs.out 2>&1";
+    $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; nice make >>makegs.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
 
@@ -611,15 +619,18 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
   # }
 }
 
-if ($abort) {
-  updateStatus('Abort command received');
-} else {
+if (!$abort) {
 
   updateStatus('Waiting for jobs to finish');
 
   print "\n" if ($debug);
   my $count;
+  my $startTime=time;
   do {
+    if (time-$startTime>60) {
+      $abort=checkAbort;
+      $startTime=time;
+    }
     $count=0;
 
     my $a=`ps -ef`;
@@ -661,87 +672,94 @@ if ($abort) {
     }
     print "$count " if ($debug);
     select(undef, undef, undef, 0.25);
-    } while ($count>0);
+  } while ($count>0 && !$abort);
   print "\n" if ($debug);
 
-  updateStatus('Collecting log files');
+  if (!$abort) {
+    updateStatus('Collecting log files');
 
-  my %logfiles;
-  opendir(DIR, $temp) || die "can't opendir $temp: $!";
-  foreach (readdir(DIR)) {
-    $logfiles{$1}=1 if (m/(.+)\.log$/);
-  }
-  closedir DIR;
+    my %logfiles;
+    opendir(DIR, $temp) || die "can't opendir $temp: $!";
+    foreach (readdir(DIR)) {
+      $logfiles{$1}=1 if (m/(.+)\.log$/);
+    }
+    closedir DIR;
 
-  #print Dumper(\%logfiles);
+    #print Dumper(\%logfiles);
 
-  system("date") if ($debug2);
+    system("date") if ($debug2);
 
-  open(F2,">$machine.log");
+    open(F2,">$machine.log");
 
-  if ($md5sumFail ne "") {
-    print F2 "md5sumFail: $md5sumFail";
-  }
-  if ($compileFail ne "") {
-    print F2 "compileFail: $compileFail\n\n";
-    my $dir="ghostpdl";
-    $dir="users/$user/ghostpdl" if ($user);
-    foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out') {
-      my $count=0;
-      if (open(F3,"<$dir/$i")) {
-        while(<F3>) {
-          $count++;
-        }
-        close(F3);
-      }
-      $count-=20;
-      print F2 "\n$i (last 20 lines):\n\n";
-      if (open(F3,"<$dir/$i")) {
-        while(<F3>) {
-          if ($count--<0) {
-            print F2 $_;
+    if ($md5sumFail ne "") {
+      print F2 "md5sumFail: $md5sumFail";
+    }
+    if ($compileFail ne "") {
+      print F2 "compileFail: $compileFail\n\n";
+      my $dir="ghostpdl";
+      $dir="users/$user/ghostpdl" if ($user);
+      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out') {
+        my $count=0;
+        if (open(F3,"<$dir/$i")) {
+          while(<F3>) {
+            $count++;
           }
+          close(F3);
         }
-        close(F3);
-      } else {
-        #       print F2 "missing\n";
+        $count-=20;
+        print F2 "\n$i (last 20 lines):\n\n";
+        if (open(F3,"<$dir/$i")) {
+          while(<F3>) {
+            if ($count--<0) {
+              print F2 $_;
+            }
+          }
+          close(F3);
+        } else {
+          #       print F2 "missing\n";
+        }
       }
     }
-  }
-  if ($timeoutFail ne "") {
-    print F2 "timeoutFail: $timeoutFail\n";
-  }
-  foreach my $logfile (keys %logfiles) {
-    print F2 "===$logfile===\n";
-    open(F,"<$temp/$logfile.log") || die "file $temp/$logfile.log not found";
-    while(<F>) {
-      print F2 $_;
+    if ($timeoutFail ne "") {
+      print F2 "timeoutFail: $timeoutFail\n";
     }
-    close(F);
-    if (open(F,"<$temp/$logfile.md5")) {
+    foreach my $logfile (keys %logfiles) {
+      print F2 "===$logfile===\n";
+      open(F,"<$temp/$logfile.log") || die "file $temp/$logfile.log not found";
       while(<F>) {
         print F2 $_;
       }
       close(F);
+      if (open(F,"<$temp/$logfile.md5")) {
+        while(<F>) {
+          print F2 $_;
+        }
+        close(F);
+      }
+      if (exists $timeOuts{$logfile}) {
+        print F2 "killed: timeout\n";
+      }
+      print F2 "\n";
     }
-    if (exists $timeOuts{$logfile}) {
-      print F2 "killed: timeout\n";
-    }
-    print F2 "\n";
+
+    close(F2);
+
+    updateStatus('Uploading log files');
+    system("date") if ($debug2);
+    `touch $machine.log.gz ; rm -f $machine.log.gz ; gzip $machine.log`;
+    `touch $machine.out.gz ; rm -f $machine.out.gz ; gzip $machine.out`;
+    spawn(300,"scp -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz");
+    spawn(300,"scp -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz");
+
+    system("date") if ($debug2);
+    updateStatus('idle');
   }
-
-  close(F2);
-
-  updateStatus('Uploading log files');
-  system("date") if ($debug2);
-  `touch $machine.log.gz ; rm -f $machine.log.gz ; gzip $machine.log`;
-  `touch $machine.out.gz ; rm -f $machine.out.gz ; gzip $machine.out`;
-  spawn(300,"scp -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz");
-  spawn(300,"scp -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz");
-
-  system("date") if ($debug2);
-  updateStatus('idle');
 } # if (!$abort)
+
+if ($abort) {
+  updateStatus('Abort command received');
+}
+
 spawn(10,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
 
 system("date") if ($debug2);

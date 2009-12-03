@@ -52,16 +52,17 @@ sub checkPID {
   chomp $newRev1;
   chomp $newRev2;
   if ($currentRev1 != $newRev1 || $currentRev2 != $newRev2) {
-    print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
+    #   print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
     open(LOCK,">$lock") || die "can't write to $lock";
     flock(LOCK,LOCK_EX);
     my $s="svn $newRev1 $newRev2";
     my $t=`grep "$s" $queue`;
     chomp $t;
-    print "grep '$s' return: $t\n";
+    #   print "grep '$s' returned: $t\n";
     if (length($t)==0) {
+      print "grep '$s' returns no match, adding to queue\n";
       open(F,">>$queue");
-      print F "svn $newRev1 $newRev2\n";
+      print F "$s\n";
       close(F);
     }
     close(LOCK);
@@ -102,10 +103,11 @@ sub checkPID {
       my $s="user $product";
       my $t=`grep "$s" $queue`;
       chomp $t;
-      print "grep '$s' return: $t\n";
+      print "grep '$s' returned: $t\n";
       if (length($t)==0) {
+        print "grep '$s' returns no match, adding to queue\n";
         open(F,">>$queue");
-        print F "user $product\n";
+        print F "$s\n";
         close(F);
         close(LOCK);
       }
@@ -206,7 +208,7 @@ my $rev1;
 my $rev2;
 
 if ($regression =~ m/svn (\d+) (\d+)/) {
-  print "found normal regression in queue: $regression\n";
+  print "found svn regression in queue: $regression\n";
   $normalRegression=1;
   $rev1=$1;
   $rev2=$2;
@@ -219,10 +221,6 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
   my $a=`svn update ghostpdl -r$rev1 --ignore-externals`;
   my $b=`svn update ghostpdl/gs -r$rev2`;
   print "svn update ghostpdl -r$rev1 --ignore-externals\nsvn update ghostpdl/gs -r$rev2\n" if ($verbose);
-
-  `svn update ghostpdl -r$currentRev1 --ignore-externals`;
-  `svn update ghostpdl/gs -r$currentRev2`;
-  print "svn update ghostpdl -r$currentRev1 --ignore-externals\nsvn update ghostpdl/gs -r$currentRev2\n" if ($verbose);
 
   $footer.="\nChanged files:\n";
   $a.=$b;
@@ -255,27 +253,29 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
   }
 
   #print "$set\n";
-  foreach my $i (keys %tests) {
+  foreach my $i (sort keys %tests) {
     $product .= "$i " if ($set & $tests{$i});
   }
 
   $product =~ s/svg//;  # disable svg tests
-
-  print "$product\n" if (length($product) && $verbose);
-
-  $footer.="\nProducts tested: $product\n";
-
   # $product="gs pcl xps svg";
 
-#`svn update ghostpdl`;
-#my $newRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
-#my $newRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
-#chomp $newRev1;
-#chomp $newRev2;
+  print "products: $product\n";
 
-##print "$currentRev1 $currentRev2 $newRev1 $newRev2\n";
+  $footer.="\nProducts tested: $product\n\n";
+
+  if (length($product)) {
+# un-update the source so that if the regression fails were are back to the where we started
+    `svn update ghostpdl -r$currentRev1 --ignore-externals`;
+    `svn update ghostpdl/gs -r$currentRev2`;
+    print "svn update ghostpdl -r$currentRev1 --ignore-externals\nsvn update ghostpdl/gs -r$currentRev2\n" if ($verbose);
+  } else {
+    print "no interesting files changed, skipping regression\n";
+    $normalRegression=0;
+  }
 
 } else {
+  print "found user regression in queue: $regression\n";
   if ($regression=~/user (.+)/) {
     $userRegression=$1;
   }
@@ -386,12 +386,12 @@ if ($normalRegression==1 || $userRegression ne "") {
     use Net::hostent;
     my $PORT = 9000;
 
-    my $server = IO::Socket::INET->new( 
+    my $server = IO::Socket::INET->new(
       Proto     => 'tcp',
       LocalPort => $PORT,
       Listen    => SOMAXCONN,
       Reuse     => 1
-    );
+      );
 
     if (!$server) {
       unlink $runningSemaphore;
@@ -447,21 +447,6 @@ if ($normalRegression==1 || $userRegression ne "") {
           print "not connectecd\n" if (!$client->connected);
           close $client;
 
-          foreach my $m (keys %machines) {
-            if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxDownTime) {
-              $doneCount=scalar keys %machines;
-              print "1: setting doneCount to $doneCount\n";
-            }
-          }
-          foreach (keys %lastTransfer) {
-            if (time-$lastTransfer{$_}>=$maxDownTime) {
-              print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
-              $doneCount=scalar keys %machines;
-              print "2: setting doneCount to $doneCount\n";
-              unlink "$_.up";
-            }
-          }
-
           my $percentage=int(($totalJobs-scalar(@jobs))/$totalJobs*100+0.5);
           $s=`date +\"%H:%M:%S\"`;
           chomp $s;
@@ -473,26 +458,41 @@ if ($normalRegression==1 || $userRegression ne "") {
           }
           close(F);
 
-          foreach my $m (keys %machines) {
-            if (open(F,"<$m.done") && exists $lastTransfer{$m}) {
-              close(F);
-              print "$m is reporting done even though it should not be done\n";
-              $tempDone=1;
-            }
-          }
-
-          if ($doneCount==scalar keys %machines) {
-            $tempDone=1 ;
-            print "setting tempDone to 1\n";
-          }
-
         }
         alarm 0;
-      };
+        };
 
       alarm 0;  # avoid race condition
+
       if ($@) {
         print "no connections, checking done status\n";
+      }
+      foreach my $m (keys %machines) {
+        if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxDownTime) {
+          $doneCount=scalar keys %machines;
+          print "1: setting doneCount to $doneCount\n";
+        }
+      }
+      foreach (keys %lastTransfer) {
+        if (time-$lastTransfer{$_}>=$maxDownTime) {
+          print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
+          $doneCount=scalar keys %machines;
+          print "2: setting doneCount to $doneCount\n";
+          unlink "$_.up";
+        }
+      }
+
+      foreach my $m (keys %machines) {
+        if (open(F,"<$m.done") && exists $lastTransfer{$m}) {
+          close(F);
+          print "$m is reporting done even though it should not be done\n";
+          $tempDone=1;
+        }
+      }
+
+      if ($doneCount==scalar keys %machines) {
+        $tempDone=1 ;
+        print "setting tempDone to 1\n";
       }
 
     }
@@ -555,22 +555,35 @@ if ($normalRegression==1 || $userRegression ne "") {
   my $logs="";
   my $tabs="";
   foreach (keys %machines) {
-    `touch $_.log; rm -f $_.log; gunzip $_.log.gz`;
-    `touch $_.out; rm -f $_.out; gunzip $_.out.gz`;
-    my $a=`./readlog.pl $_.log $_.tab $_ $_.out`;
-    if ($a ne "") {
-      chomp $a;
-      print "$_: $a\n" if ($verbose);
-      $buildFail=1;
-      $failMessage.="$_ reports: $a\n";
-      $buildFail{$_}=1;
+    if (-e "$_.log.gz" && -e "$_.out.gz") {
+      `touch $_.log; rm -f $_.log; gunzip $_.log.gz`;
+      `touch $_.out; rm -f $_.out; gunzip $_.out.gz`;
+      my $a=`./readlog.pl $_.log $_.tab $_ $_.out`;
+      if ($a ne "") {
+        chomp $a;
+        print "$_: $a\n" if ($verbose);
+        $buildFail=1;
+        $failMessage.="$_ reports: $a\n";
+        $buildFail{$_}=1;
+      }
+      $logs.=" $_.log $_.out";
+      $tabs.=" $_.tab";
     }
-    $logs.=" $_.log $_.out";
-    $tabs.=" $_.tab";
   }
 
   checkPID();
   $userName="email" if ($normalRegression);
+
+  {
+    my @t=split '\n',$footer;
+    open(F,">$userName.txt");
+    foreach (@t) {
+      print F "$_\n";
+    }
+    print F "\n\n";
+    close(F);
+  }
+
   if (!$buildFail) {
 
     my $machineCount=scalar (keys %machines);
@@ -594,7 +607,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       #  `./readlog.pl log current.tab`;
 
       checkPID();
-      `./compare.pl current.tab previous.tab $elapsedTime $machineCount >email.txt`;
+      `./compare.pl current.tab previous.tab $elapsedTime $machineCount >>email.txt`;
      #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
 
       checkPID();
@@ -626,7 +639,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       `rm $tabs`;
 
       checkPID();
-      `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >$userName.txt`;
+      `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >>$userName.txt`;
       `mv $logs $usersDir/$userName/.`;
       `cp -p $userName.txt $usersDir/$userName/.`;
       `cp -p temp.tab $usersDir/$userName/.`;
@@ -658,21 +671,13 @@ if ($normalRegression==1 || $userRegression ne "") {
     close(F);
   }
 
-  {
-    my @t=split '\n',$footer;
-    open(F,">>$userName.txt");
-    foreach (@t) {
-      print F "$_\n";
-    }
-    close(F);
-  }
-
   checkPID();
   if ($normalRegression) {
     `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
 
     print "test complete, performing final svn update\n";
+    print "svn update ghostpdl -r$rev1 --ignore-externals\nsvn update ghostpdl/gs -r$rev2\n" if ($verbose);
     `svn update ghostpdl -r$rev1 --ignore-externals`;
     `svn update ghostpdl/gs -r$rev2`;
 
@@ -687,6 +692,12 @@ if ($normalRegression==1 || $userRegression ne "") {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
       `mail marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
     }
+  }
+
+  foreach my $machine (keys %machines) {
+    open(F,">$machine.status");
+    print "idle\n";
+    close(F);
   }
 
 }
