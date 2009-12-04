@@ -1050,9 +1050,9 @@ end
 } bind def
 
 /jp2_csp_dict <<
-  16 /sRGB
-  17 /sGray
-  18 /sRGB  % YCC is convertrd to RGB
+  16 { /sRGB /ColorSpace findresource } bind
+  18 1 index  % YCC is convertrd to RGB
+  17 { /sGray /ColorSpace findresource } bind
 >> readonly def
  
 % Process jp2 blocks (aka boxes). All procedures have the signature
@@ -1079,8 +1079,7 @@ end
         1 index 4 string readstring pop    % file len-16 (4) 
         0 getu32                           % file len-16 enum
         //jp2_csp_dict exch .knownget {
-          /ColorSpace exch /ColorSpace findresource
-          def                              % file len-7
+          exec /ColorSpace exch def        % file len-7
         } {
           (   **** Warning: Unknown enumerated color space in JPX stream.\n)
           pdfformaterror
