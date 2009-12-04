@@ -33,6 +33,18 @@
 #include "gxpaint.h"
 #include "vdtrace.h"
 
+/* RJW: There appears to be a difference in the xps and postscript models
+ * (at least in as far as Microsofts implementation of xps and Acrobats of
+ * postscript). Acrobat (and ghostscript) are happy to join a line segment
+ * around a corner, even when the next segment is a dash gap. Microsofts
+ * implementation of XPS does not.
+ *
+ * A test file that shows this up is tests_private/comparefiles/298-05.ps
+ *
+ * Enabling the following define would emulate xps behaviour here.
+ */
+#undef AVOID_JOINING_TO_DASH_GAPS
+
 /*
  * We don't really know whether it's a good idea to take fill adjustment
  * into account for stroking.  Disregarding it means that strokes
@@ -100,8 +112,12 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
 	is_fzero2(pis->ctm.xx, pis->ctm.yy)
 	) {
 	bool must_be_closed =
-	    !(pis->line_params.cap == gs_cap_square ||
-	      pis->line_params.cap == gs_cap_round);
+	    !(pis->line_params.start_cap == gs_cap_square ||
+	      pis->line_params.start_cap == gs_cap_round  ||
+	      pis->line_params.end_cap   == gs_cap_square ||
+	      pis->line_params.end_cap   == gs_cap_round  ||
+	      pis->line_params.dash_cap  == gs_cap_square ||
+	      pis->line_params.dash_cap  == gs_cap_round);
 	gs_fixed_point prev;
 
 	prev.x = prev.y = 0; /* Quiet gcc warning. */
@@ -213,21 +229,54 @@ typedef partial_line *pl_ptr;
  * In order to get the joins right we need to keep flags about both
  * prev and current, and whether they originally came from arcs.
  */
-typedef enum ArcFlags {
-    ArcFlags_AllFromArc      = 1, /* If set, all the line segments that make
-                                   * up current come from arcs. */
-    ArcFlags_SomeFromArc     = 2, /* If set, at least one of the line
-                                   * segments that make up current, come
-                                   * from arcs. */
-    ArcFlags_PrevAllFromArc  = 4, /* If set, all the line segments that make
-                                   * up prev come from arcs. */
-    ArcFlags_PrevSomeFromArc = 8  /* If set, at least one of the line
-                                   * segment that make up prev, come from
-                                   * arcs. */
-} ArcFlags;
+typedef enum note_flags {
+    
+    /* If set, all the line segments that make up current come from arcs. */
+    nf_all_from_arc       = 1,
 
-/* Macro to combine the prev and current arc_flags */
-#define COMBINE_FLAGS(F) (((F) & ((F>>2) | ArcFlags_SomeFromArc)) | ((F>>2) & ArcFlags_SomeFromArc))
+    /* If set, at least one of the line segments that make up current, come
+     * from arcs. */
+    nf_some_from_arc      = 2,
+    
+    /* If set then this segment should have a dash cap on the start rather
+     * than a start cap. */
+    nf_dash_head          = 4,
+
+    /* If set then this segment should have a dash cap on the end rather
+     * than an end cap. */
+    nf_dash_tail          = 8,
+    
+    /* If set, all the line segments that make up prev come from arcs. */
+    nf_prev_all_from_arc  = 16,
+
+    /* If set, at least one of the line segment that make up prev, come from
+     * arcs. */
+    nf_prev_some_from_arc = 32,
+    
+    /* If set then prev should have a dash cap on the start rather
+     * than a start cap. */
+    nf_prev_dash_head     = 64,
+
+    /* If set then prev should have a dash cap on the end rather
+     * than an end cap. */
+    nf_prev_dash_tail     = 128
+    
+} note_flags;
+
+/* Macro to combine the prev and current arc_flags. After applying this
+ * macro, the bits in the result have the following meanings:
+ *  nf_all_from_arc    set if all the components of current and prev
+ *                     come from an Arc.
+ *  nf_some_from_arc   set if any of the components of current and
+ *                     prev come from an Arc.
+ *  nf_dash_head       set if prev should have a dash cap rather than
+ *                     a start cap.
+ *  nf_dash_tail       set if prev should have a dash cap rather than
+ *                     an end cap.
+ */
+#define COMBINE_FLAGS(F) \
+    (((F>>4) | ((F) & nf_some_from_arc)) & \
+     (((F) & nf_all_from_arc) ? ~0 : ~nf_all_from_arc))
 
 /* Assign a point.  Some compilers would do this with very slow code */
 /* if we simply implemented it as an assignment. */
@@ -236,7 +285,7 @@ typedef enum ArcFlags {
 
 /* Other forward declarations */
 static bool width_is_thin(pl_ptr);
-static void adjust_stroke(gx_device *, pl_ptr, const gs_imager_state *, bool, bool);
+static void adjust_stroke(gx_device *, pl_ptr, const gs_imager_state *, bool, bool, note_flags);
 static int line_join_points(const gx_line_params * pgs_lp,
 			     pl_ptr plp, pl_ptr nplp,
 			     gs_fixed_point * join_points,
@@ -304,7 +353,7 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
   int proc(gx_path *, gx_path *, bool ensure_closed, int, pl_ptr, pl_ptr,\
            const gx_device_color *, gx_device *, const gs_imager_state *,\
 	   const gx_stroke_params *, const gs_fixed_rect *, int,\
-	   gs_line_join, bool, ArcFlags)
+	   gs_line_join, bool, note_flags)
 typedef stroke_line_proc((*stroke_line_proc_t));
 
 static stroke_line_proc(stroke_add);
@@ -430,7 +479,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     const subpath *psub;
     gs_matrix initial_matrix;
     bool initial_matrix_reflected;
-    int arc_flags;
+    note_flags flags;
 
     (*dev_proc(pdev, get_initial_matrix)) (pdev, &initial_matrix);
     initial_matrix_reflected = initial_matrix.xy * initial_matrix.yx > 
@@ -441,10 +490,12 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	int count = pgs_lp->dash.pattern_size;
 	int i;
 
-	dlprintf3("[o]half_width=%f, cap=%d, join=%d,\n",
-		  pgs_lp->half_width, (int)pgs_lp->cap, (int)pgs_lp->join);
-	dlprintf2("   miter_limit=%f, miter_check=%f,\n",
-		  pgs_lp->miter_limit, pgs_lp->miter_check);
+	dlprintf4("[o]half_width=%f, start_cap=%d, end_cap=%d, dash_cap=%d,\n",
+		  pgs_lp->half_width, (int)pgs_lp->start_cap,
+		  (int)pgs_lp->end_cap, (int)pgs_lp->dash_cap);
+	dlprintf3("   join=%d, miter_limit=%f, miter_check=%f,\n",
+		  (int)pgs_lp->join, pgs_lp->miter_limit,
+		  pgs_lp->miter_check);
 	dlprintf1("   dash pattern=%d", count);
 	for (i = 0; i < count; i++)
 	    dprintf1(",%f", pgs_lp->dash.pattern[i]);
@@ -636,8 +687,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	bool is_closed = ((const subpath *)pseg)->is_closed;
 	partial_line pl, pl_prev, pl_first;
 	bool zero_length = true;
+	gs_line_cap cap;
 
-        arc_flags = ArcFlags_AllFromArc;
+        flags = nf_all_from_arc;
 
 	while ((pseg = pseg->next) != 0 &&
 	       pseg->type != s_start
@@ -663,13 +715,11 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	    }
 	    zero_length &= ((udx | udy) == 0);
 	    pl.o.p.x = x, pl.o.p.y = y;
-          d:arc_flags = (((pseg->notes & sn_not_first) ?
-	                  (arc_flags & ArcFlags_AllFromArc) : 0) |
-	                 ((pseg->notes & sn_not_first) ?
-	                   ArcFlags_SomeFromArc :
-	                   (arc_flags & ArcFlags_SomeFromArc)) |
-	                  (arc_flags & ~(ArcFlags_AllFromArc |
-                                        ArcFlags_SomeFromArc)));
+          d:flags = (((pseg->notes & sn_not_first) ?
+                      ((flags & nf_all_from_arc) | nf_some_from_arc) : 0) |
+                     ((pseg->notes & sn_dash_head) ? nf_dash_head : 0)    |
+                     ((pseg->notes & sn_dash_tail) ? nf_dash_tail : 0)    |
+                     (flags & ~nf_all_from_arc));
 	    pl.e.p.x = sx, pl.e.p.y = sy;
 	    if (!(udx | udy) || pseg->type == s_dash) {	/* degenerate or short */
 		/*
@@ -694,7 +744,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 			goto d;
 		    }
 		}
-		if (pgs_lp->dot_length == 0 && pgs_lp->cap != gs_cap_round && !is_dash_segment) {
+		if (pgs_lp->dot_length == 0 &&
+		    pgs_lp->start_cap != gs_cap_round &&
+		    pgs_lp->end_cap != gs_cap_round &&
+		    !is_dash_segment) {
 		    /* From PLRM, stroke operator :
 		       If a subpath is degenerate (consists of a single-point closed path 
 		       or of two or more points at the same coordinates), 
@@ -702,7 +755,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    break;
 		}
 		/*
-		 * If the subpath is a dash, take the orientation from the dash segmnent.
+                 * If the subpath is a dash, take the orientation from the dash segment.
 		 * Otherwise orient the dot according to the previous segment if
 		 * any, or else the next segment if any, or else
 		 * according to the specified dot orientation.
@@ -742,7 +795,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		     * Don't apply this with always_thin, becase
 		     * draw thin line always rounds the length up.
 		     */
-		    if (!always_thin && pgs_lp->cap == gs_cap_butt) {
+		    if (!always_thin && (pgs_lp->start_cap == gs_cap_butt ||
+		                         pgs_lp->end_cap   == gs_cap_butt ||
+		                         pgs_lp->dash_cap  == gs_cap_butt)) {
 			fixed dmax = max(any_abs(udx), any_abs(udy));
 
 			if (dmax * scale < fixed_1)
@@ -831,7 +886,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    adjust_stroke(dev, &pl, pis, false, 
 			    (pseg->prev == 0 || pseg->prev->type == s_start) && 
 			    (pseg->next == 0 || pseg->next->type == s_start) &&
-			    (zero_length || !is_closed));
+			    (zero_length || !is_closed),
+			    COMBINE_FLAGS(flags));
 		    compute_caps(&pl);
 		}
 	    }
@@ -852,6 +908,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    first = (is_closed ? 1 : index - 2);
 		    lptr = &pl;
 		}
+#ifdef AVOID_JOINING_TO_DASH_GAPS
+                if (is_dash_segment) /* Never join to a dash segment */
+                    lptr = NULL;
+#endif
                 ensure_closed = ((to_path == &stroke_path_body &&
                                   lop_is_idempotent(pis->log_op)) ||
                                  (lptr == NULL ? true : lptr->thin));
@@ -859,7 +919,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		                     first, &pl_prev, lptr,
 				     pdevc, dev, pis, params, &cbox,
 				     uniform, join, initial_matrix_reflected,
-				     COMBINE_FLAGS(arc_flags));
+				     COMBINE_FLAGS(flags));
 		if (code < 0)
 		    goto exit;
 		FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
@@ -867,7 +927,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		pl_first = pl;
 	    pl_prev = pl;
 	    x = sx, y = sy;
-	    arc_flags = (arc_flags<<2) | ArcFlags_AllFromArc;
+	    flags = (flags<<4) | nf_all_from_arc;
 	}
 	if (index) {
 	    /* If closed, join back to start, else cap. */
@@ -876,26 +936,33 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                                    pseg)->notes;
             gs_line_join join = (notes & not_first ? curve_join :
 	                         pgs_lp->join);
+            gs_line_cap cap;
 	    /* For some reason, the Borland compiler requires the cast */
 	    /* in the following statement. */
 	    pl_ptr lptr =
 		(!is_closed || join == gs_join_none || zero_length ?
 		 (pl_ptr) 0 : (pl_ptr) & pl_first);
-
-	    if (notes & sn_not_first)
-	        arc_flags = ((arc_flags & ArcFlags_AllFromArc) |
-	                     ArcFlags_SomeFromArc |
-	                     (arc_flags & ~(ArcFlags_AllFromArc|
-	                                    ArcFlags_SomeFromArc)));
+	    
+#ifdef AVOID_JOINING_TO_DASH_GAPS
+            if (lptr && psub->type == s_dash)
+                lptr = NULL;
+#endif
+            flags = (((notes & sn_not_first) ?
+                      ((flags & nf_all_from_arc) | nf_some_from_arc) : 0) |
+                     ((notes & sn_dash_head) ? nf_dash_head : 0) |
+                     ((notes & sn_dash_tail) ? nf_dash_tail : 0) |
+                     (flags & ~nf_all_from_arc));
 	    code = (*line_proc) (to_path, to_path_reverse, true,
 	                         index - 1, &pl_prev, lptr, pdevc,
 				 dev, pis, params, &cbox, uniform, join, 
 				 initial_matrix_reflected,
-				 COMBINE_FLAGS(arc_flags));
+				 COMBINE_FLAGS(flags));
 	    if (code < 0)
 		goto exit;
 	    FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
-	    if (traditional && lptr == 0 && pgs_lp->cap != gs_cap_butt) {
+	    cap = ((flags & nf_prev_dash_head) ?
+	           pgs_lp->start_cap : pgs_lp->dash_cap);
+	    if (traditional && lptr == 0 && cap != gs_cap_butt) {
 		/* Create the initial cap at last. */
 		code = stroke_add_initial_cap_compat(to_path, &pl_first, index == 1, pdevc, dev, pis);
 		if (code < 0)
@@ -1041,7 +1108,9 @@ adjust_stroke_transversal(pl_ptr plp, const gs_imager_state * pis, bool thin, bo
 }
 
 static void 
-adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis, bool thin, bool horiz)
+adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis,
+                        bool thin, bool horiz,
+                        gs_line_cap start_cap, gs_line_cap end_cap)
 {
 
     fixed *pow = (horiz ? &plp->o.p.y : &plp->o.p.x);
@@ -1066,7 +1135,7 @@ adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis, bool thin, bool
 	*/
 	if (length > fixed_1) /* comparefiles/file2.pdf */
 	    return;
-	if (pis->line_params.cap == gs_cap_butt) {
+	if (start_cap == gs_cap_butt || end_cap == gs_cap_butt) {
 	    length_r = fixed_rounded(length);
 	    if (length_r < fixed_1)
 		length_r = fixed_1;
@@ -1096,9 +1165,16 @@ adjust_stroke_longitude(pl_ptr plp, const gs_imager_state * pis, bool thin, bool
 /* to achieve more uniform rendering. */
 /* Only o.p, e.p, e.cdelta, and width have been set. */
 static void
-adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis, bool thin, bool adjust_longitude)
+adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis,
+              bool thin, bool adjust_longitude, note_flags flags)
 {
     bool horiz, adjust = true;
+    gs_line_cap start_cap = (flags & nf_dash_head ?
+                             pis->line_params.dash_cap :
+                             pis->line_params.start_cap);
+    gs_line_cap end_cap   = (flags & nf_dash_tail ?
+                             pis->line_params.dash_cap :
+                             pis->line_params.end_cap);
 
     if (!pis->stroke_adjust && (plp->width.x != 0 && plp->width.y != 0)) {
 	dev->sgr.stroke_stored = false;
@@ -1107,7 +1183,8 @@ adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis, bool thin
     /* Recognizing gradients, which some obsolete software
        represent as a set of parallel strokes. 
        Such strokes must not be adjusted - bug 687974. */
-    if (dev->sgr.stroke_stored && pis->line_params.cap == gs_cap_butt && 
+    if (dev->sgr.stroke_stored &&
+        (start_cap == gs_cap_butt || end_cap == gs_cap_butt) && 
 	dev->sgr.orig[3].x == plp->vector.x && dev->sgr.orig[3].y == plp->vector.y) {
 	/* Parallel. */
 	if ((int64_t)(plp->o.p.x - dev->sgr.orig[0].x) * plp->vector.x == 
@@ -1172,7 +1249,7 @@ adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis, bool thin
 	    }
 	}
     }
-    if (pis->line_params.cap == gs_cap_butt) {
+    if ((start_cap == gs_cap_butt) || (end_cap == gs_cap_butt)) {
 	dev->sgr.stroke_stored = true;
 	dev->sgr.orig[0] = plp->o.p;
 	dev->sgr.orig[1] = plp->e.p;
@@ -1184,9 +1261,9 @@ adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis, bool thin
 	horiz = (any_abs(plp->width.x) <= any_abs(plp->width.y));
 	adjust_stroke_transversal(plp, pis, thin, horiz);
 	if (adjust_longitude)
-	    adjust_stroke_longitude(plp, pis, thin, horiz);
+	    adjust_stroke_longitude(plp, pis, thin, horiz, start_cap, end_cap);
     } 
-    if (pis->line_params.cap == gs_cap_butt) {
+    if ((start_cap == gs_cap_butt) || (end_cap == gs_cap_butt)) {
 	dev->sgr.adjusted[0] = plp->o.p;
 	dev->sgr.adjusted[1] = plp->e.p;
 	dev->sgr.adjusted[2] = plp->width;
@@ -1270,7 +1347,7 @@ stroke_fill(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
             gx_device * dev, const gs_imager_state * pis,
             const gx_stroke_params * params, const gs_fixed_rect * pbbox,
             int uniform, gs_line_join join, bool reflected,
-            ArcFlags arc_flags)
+            note_flags flags)
 {
     const fixed lix = plp->o.p.x;
     const fixed liy = plp->o.p.y;
@@ -1285,11 +1362,18 @@ stroke_fill(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     /* Check for being able to fill directly. */
     {
 	const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
-	gs_line_cap cap = pgs_lp->cap;
+	gs_line_cap start_cap = (flags & nf_dash_head ?
+	                         pgs_lp->dash_cap : pgs_lp->start_cap);
+	gs_line_cap end_cap   = (flags & nf_dash_tail ?
+	                         pgs_lp->dash_cap : pgs_lp->end_cap);
 
+        if (first != 0)
+            start_cap = gs_cap_butt;
+        if (nplp != 0)
+            end_cap = gs_cap_butt;
 	if (!plp->thin && (nplp == 0 || !nplp->thin)
-	    && ((first != 0 && nplp != 0) || cap == gs_cap_butt
-		|| cap == gs_cap_square)
+	    && (start_cap == gs_cap_butt || start_cap == gs_cap_square)
+	    && (end_cap   == gs_cap_butt || end_cap   == gs_cap_square)
 	    && (join == gs_join_bevel || join == gs_join_miter ||
 		join == gs_join_none)
 	    && (pis->fill_adjust.x | pis->fill_adjust.y) == 0
@@ -1299,10 +1383,9 @@ stroke_fill(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
 	    int npoints, code;
 	    fixed ax, ay, bx, by;
 
-	    npoints = cap_points((first == 0 ? cap : gs_cap_butt),
-				 &plp->o, points);
+	    npoints = cap_points(start_cap, &plp->o, points);
 	    if (nplp == 0)
-		code = cap_points(cap, &plp->e, points + npoints);
+		code = cap_points(end_cap, &plp->e, points + npoints);
 	    else
 		code = line_join_points(pgs_lp, plp, nplp, points + npoints,
 					(uniform ? (gs_matrix *) 0 :
@@ -1362,7 +1445,7 @@ stroke_fill(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
  general:
     return stroke_add(ppath, rpath, ensure_closed, first, plp, nplp, pdevc,
                       dev, pis, params, pbbox, uniform, join, reflected,
-                      arc_flags);
+                      flags);
 }
 
 /* Add a segment to the path.  This handles all the complex cases. */
@@ -1372,23 +1455,27 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
            gx_device * dev, const gs_imager_state * pis,
            const gx_stroke_params * params,
            const gs_fixed_rect * ignore_pbbox, int uniform,
-           gs_line_join join, bool reflected, ArcFlags arc_flags)
+           gs_line_join join, bool reflected, note_flags flags)
 {
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
     gs_fixed_point points[8];
     int npoints;
     int code;
     bool moveto_first = true;
+    gs_line_cap start_cap = (flags & nf_dash_head ?
+                             pgs_lp->dash_cap : pgs_lp->start_cap);
+    gs_line_cap end_cap   = (flags & nf_dash_tail ?
+                             pgs_lp->dash_cap : pgs_lp->end_cap);
 
     if (plp->thin) {
 	/* We didn't set up the endpoint parameters before, */
 	/* because the line was thin.  Do it now. */
 	set_thin_widths(plp);
-	adjust_stroke(dev, plp, pis, true, first == 0 && nplp == 0);
+	adjust_stroke(dev, plp, pis, true, first == 0 && nplp == 0, flags);
 	compute_caps(plp);
     }
     /* Create an initial cap if desired. */
-    if (first == 0 && pgs_lp->cap == gs_cap_round) {
+    if (first == 0 && start_cap == gs_cap_round) {
 	vd_moveto(plp->o.co.x, plp->o.co.y);
 	if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
 	    (code = add_pie_cap(ppath, &plp->o)) < 0)
@@ -1396,12 +1483,13 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
 	npoints = 0;
 	moveto_first = false;
     } else {
-	if ((npoints = cap_points((first == 0 ? pgs_lp->cap : gs_cap_butt), &plp->o, points)) < 0)
+	if ((npoints = cap_points((first == 0 ? start_cap : gs_cap_butt),
+	                          &plp->o, points)) < 0)
 	    return npoints;
     }
     if (nplp == 0) {
 	/* Add a final cap. */
-	if (pgs_lp->cap == gs_cap_round) {
+	if (end_cap == gs_cap_round) {
 	    ASSIGN_POINT(&points[npoints], plp->e.co);
 	    vd_lineto(points[npoints].x, points[npoints].y);
 	    ++npoints;
@@ -1410,8 +1498,8 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
 	    code = add_pie_cap(ppath, &plp->e);
 	    goto done;
 	}
-	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
-    } else if (nplp->thin)	/* no join */
+	code = cap_points(end_cap, &plp->e, points + npoints);
+    } else if (nplp->thin) /* no join */
 	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
     else if (join == gs_join_round) {
 	ASSIGN_POINT(&points[npoints], plp->e.co);
@@ -1421,7 +1509,7 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
 	    return code;
         code = add_pie_join(ppath, plp, nplp, reflected, true);
 	goto done;
-    } else if (arc_flags & ArcFlags_AllFromArc) {
+    } else if (flags & nf_all_from_arc) {
         /* If all the segments in 'prev' and 'current' are from a curve
          * then the join should actually be a round one, because it would
          * have been round if we had flattened it enough. */
@@ -1443,7 +1531,7 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     if (code < 0)
 	return code;
     vd_closepath;
-    if ((arc_flags & ArcFlags_SomeFromArc) && (!plp->thin) &&
+    if ((flags & nf_some_from_arc) && (!plp->thin) &&
         (nplp != NULL) && (!nplp->thin))
         code = join_under_pie(ppath, plp, nplp, reflected);
     return gx_path_close_subpath(ppath);
@@ -1454,11 +1542,11 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
  * merged together. */
 static int
 stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
-           pl_ptr plp, pl_ptr nplp, const gx_device_color * pdevc,
-           gx_device * dev, const gs_imager_state * pis,
-           const gx_stroke_params * params,
-           const gs_fixed_rect * ignore_pbbox, int uniform,
-           gs_line_join join, bool reflected, ArcFlags arc_flags)
+                pl_ptr plp, pl_ptr nplp, const gx_device_color * pdevc,
+                gx_device * dev, const gs_imager_state * pis,
+                const gx_stroke_params * params,
+                const gs_fixed_rect * ignore_pbbox, int uniform,
+                gs_line_join join, bool reflected, note_flags flags)
 {
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
     gs_fixed_point points[8];
@@ -1468,34 +1556,38 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     int code;
     bool moveto_first  = false;
     bool rmoveto_first = false;
-    gs_line_cap cap;
+    gs_line_cap start_cap, end_cap;
 
     if (plp->thin) {
 	/* We didn't set up the endpoint parameters before, */
 	/* because the line was thin.  Do it now. */
 	set_thin_widths(plp);
-	adjust_stroke(dev, plp, pis, true, first == 0 && nplp == 0);
+	adjust_stroke(dev, plp, pis, true, first == 0 && nplp == 0, flags);
 	compute_caps(plp);
     }
-    cap = pgs_lp->cap;
+    start_cap = (flags & nf_dash_head ?
+                 pgs_lp->dash_cap : pgs_lp->start_cap);
+    end_cap   = (flags & nf_dash_tail ?
+                 pgs_lp->dash_cap : pgs_lp->end_cap);
     /* If we're starting a new rpath here, we need to fake a new cap.
      * Don't interfere if we would have been doing a cap anyway. */
     if (gx_path_is_void(rpath) && (first != 0)) {
         first = 0;
-        cap = gs_cap_butt;
+        start_cap = gs_cap_butt;
+        end_cap   = gs_cap_butt;
         moveto_first  = true;
         rmoveto_first = true;
     }
     if (first == 0) {
         /* Create an initial cap. */
-        if (cap == gs_cap_round) {
+        if (start_cap == gs_cap_round) {
             vd_moveto(plp->o.co.x, plp->o.co.y);
             if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
 	        (code = add_pie_cap(ppath, &plp->o)) < 0)
                 return code;
             moveto_first = false;
         } else {
-            if ((npoints = cap_points(cap, &plp->o, points)) < 0)
+            if ((npoints = cap_points(start_cap, &plp->o, points)) < 0)
                 return npoints;
             moveto_first = true;
         }
@@ -1516,10 +1608,10 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     nrpoints = 0;
     
     if (nplp == 0) { /* Add a final cap. */
-	if (pgs_lp->cap == gs_cap_round) {
+	if (end_cap == gs_cap_round) {
 	    code = add_pie_cap(ppath, &plp->e);
 	} else {
-            code = cap_points(pgs_lp->cap, &plp->e, points);
+            code = cap_points(end_cap, &plp->e, points);
             npoints = code;
         }
     } else if (nplp->thin) { /* no join */
@@ -1537,13 +1629,13 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
         else if ((l > r) ^ reflected) {
             /* CCW rotation. Join in the forward path. "Underjoin" in the
              * reverse path. */
-            /* RJW: Ideally we should include the "|| arc_flags" clause in
+            /* RJW: Ideally we should include the "|| flags" clause in
              * the following condition. This forces all joins between
              * line segments generated from arcs to be round. This would
              * solve some flatness issues, but makes some pathological
              * cases incredibly slow. */
             if ((join == gs_join_round)
-                /* || (arc_flags & ArcFlags_AllFromArc) */) {
+                /* || (flags & nf_all_from_arc) */) {
                 code = add_pie_join_fast_ccw(ppath, plp, nplp, reflected);
             } else { /* non-round join */
                 code = line_join_points_fast_ccw(pgs_lp, plp, nplp,
@@ -1556,7 +1648,7 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
             if (code < 0)
                 return code;
             /* The underjoin */
-            if (!(arc_flags & ArcFlags_SomeFromArc)) {
+            if (!(flags & nf_some_from_arc)) {
                 /* RJW: This is an approximation. We ought to draw a line
                  * back to nplp->o.p, and then independently fill any exposed
                  * region under the curve with a round join. Sadly, that's
@@ -1577,13 +1669,13 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
         } else {
             /* CW rotation. Join in the reverse path. "Underjoin" in the
              * forward path. */
-            /* RJW: Ideally we should include the "|| arc_flags" clause in
+            /* RJW: Ideally we should include the "|| flags" clause in
              * the following condition. This forces all joins between
              * line segments generated from arcs to be round. This would
              * solve some flatness issues, but makes some pathological
              * cases incredibly slow. */
             if ((join == gs_join_round)
-                /* || (arc_flags & ArcFlags_AllFromArc) */) {
+                /* || (flags & nf_all_from_arc) */) {
                 code = add_pie_join_fast_cw(rpath, plp, nplp, reflected);
             } else { /* non-round join */
                 code = line_join_points_fast_cw(pgs_lp, plp, nplp,
@@ -1596,7 +1688,7 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
             if (code < 0)
                 return code;
             /* The underjoin */
-            if (!(arc_flags & ArcFlags_SomeFromArc)) {
+            if (!(flags & nf_some_from_arc)) {
                 /* RJW: This is an approximation. We ought to draw a line
                  * back to nplp->o.p, and then independently fill any exposed
                  * region under the curve with a round join. Sadly, that's
@@ -1634,7 +1726,12 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     return 0;
 }
 
-/* Add a CPSI-compatible segment to the path.  This handles all the complex cases. */
+/* Add a CPSI-compatible segment to the path.  This handles all the complex
+ * cases.
+ *
+ * This method doesn't support start/end/dash caps, but it's only used from
+ * postscript, so it doesn't need to.
+ */
 static int
 stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
                   int first, pl_ptr plp, pl_ptr nplp,
@@ -1642,7 +1739,7 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
                   const gs_imager_state * pis,
                   const gx_stroke_params * params,
                   const gs_fixed_rect * ignore_pbbox, int uniform,
-                  gs_line_join join, bool reflected, ArcFlags arc_flags)
+                  gs_line_join join, bool reflected, note_flags flags)
 {
     /* Actually it adds 2 contours : one for the segment itself,
        and another one for line join or for the ending cap. 
@@ -1657,7 +1754,7 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
 	/* We didn't set up the endpoint parameters before, */
 	/* because the line was thin.  Do it now. */
 	set_thin_widths(plp);
-	adjust_stroke(dev, plp, pis, true, first == 0 && nplp == 0);
+	adjust_stroke(dev, plp, pis, true, first == 0 && nplp == 0, flags);
 	compute_caps(plp);
     }
     /* The segment itself : */
@@ -1675,9 +1772,9 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
     npoints = 0;
     if (nplp == 0) {
 	/* Add a final cap. */
-	if (pgs_lp->cap == gs_cap_butt)
+	if (pgs_lp->start_cap == gs_cap_butt)
 	    return 0;
-	if (pgs_lp->cap == gs_cap_round) {
+	if (pgs_lp->start_cap == gs_cap_round) {
 	    ASSIGN_POINT(&points[npoints], plp->e.co);
 	    vd_lineto(points[npoints].x, points[npoints].y);
 	    ++npoints;
@@ -1689,7 +1786,7 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
 	++npoints;
 	ASSIGN_POINT(&points[npoints], plp->e.co);
 	++npoints;
-	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
+	code = cap_points(pgs_lp->start_cap, &plp->e, points + npoints);
 	if (code < 0)
 	    return code;
 	npoints += code;
@@ -1736,7 +1833,12 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
     return code;
 }
 
-/* Add a CPSI-compatible segment to the path.  This handles all the complex cases. */
+/* Add a CPSI-compatible segment to the path.  This handles all the complex
+ * cases.
+ *
+ * This method doesn't support start/end/dash caps, but it's only used from
+ * postscript, so it doesn't need to.
+ */
 static int
 stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude,
 	   const gx_device_color * pdevc, gx_device * dev,
@@ -1747,17 +1849,17 @@ stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude
     int npoints = 0;
     int code;
 
-    if (pgs_lp->cap == gs_cap_butt)
+    if (pgs_lp->start_cap == gs_cap_butt)
 	return 0;
     if (plp->thin) {
 	/* We didn't set up the endpoint parameters before, */
 	/* because the line was thin.  Do it now. */
 	set_thin_widths(plp);
-	adjust_stroke(dev, plp, pis, true, adlust_longitude);
+	adjust_stroke(dev, plp, pis, true, adlust_longitude, 0);
 	compute_caps(plp);
     }
     /* Create an initial cap if desired. */
-    if (pgs_lp->cap == gs_cap_round) {
+    if (pgs_lp->start_cap == gs_cap_round) {
 	vd_moveto(plp->o.co.x, plp->o.co.y);
 	if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
 	    (code = add_round_cap(ppath, &plp->o)) < 0
@@ -1767,7 +1869,7 @@ stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude
     } else {
 	ASSIGN_POINT(&points[0], plp->o.co);
 	++npoints;
-	if ((code = cap_points(pgs_lp->cap, &plp->o, points + npoints)) < 0)
+	if ((code = cap_points(pgs_lp->start_cap, &plp->o, points + npoints)) < 0)
 	    return npoints;
 	npoints += code;
 	ASSIGN_POINT(&points[npoints], plp->o.ce);

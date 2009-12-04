@@ -63,6 +63,18 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
     bool zero_length = true;
     int code;
+    gs_line_cap cap;
+    segment_notes start_notes, end_notes;
+
+    if (wrap) {
+        /* If we are wrapping around, then we use dash caps throughout */
+        cap         = pgs_lp->dash_cap;
+        start_notes = sn_dash_head;
+    } else {
+        /* Otherwise, start off with a start cap */
+        cap         = pgs_lp->start_cap;
+        start_notes = 0;
+    }
 
     if ((code = gx_path_add_point(ppath, x0, y0)) < 0)
 	return code;
@@ -87,7 +99,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 
 	if (!(udx | udy)) {	/* degenerate */
 	    if (pgs_lp->dot_length == 0 &&
-		pgs_lp->cap != gs_cap_round) {
+		cap != gs_cap_round) {
 		/* From PLRM, stroke operator :
 		   If a subpath is degenerate (consists of a single-point closed path 
 		   or of two or more points at the same coordinates), 
@@ -127,11 +139,15 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	    if (ink_on) {
 		if (drawing >= 0) {
 		    if (left >= elt_length && any_abs(fx) + any_abs(fy) < fixed_half)
-			code = gx_path_add_dash_notes(ppath, nx, ny, udx, udy, 
-				notes & pseg->notes);
+			code = gx_path_add_dash_notes(ppath, nx, ny, udx, udy,
+                                                      ((notes & pseg->notes)|
+                                                       start_notes|
+                                                       sn_dash_tail));
 		    else
 			code = gx_path_add_line_notes(ppath, nx, ny,
-						  notes & pseg->notes);
+						      ((notes & pseg->notes)|
+                                                       start_notes|
+                                                       sn_dash_tail));
 		}
 		notes |= sn_not_first;
 	    } else {
@@ -145,6 +161,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 		return code;
 	    left -= elt_length;
 	    ink_on = !ink_on;
+	    start_notes = sn_dash_head;
 	    if (++index == count)
 		index = 0;
 	    elt_length = pattern[index] * scale;
@@ -152,11 +169,33 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	}
 	elt_length -= left;
 	/* Handle the last dash of a segment. */
+        if (wrap) {
+            /* We are wrapping, therefore we always use the dash cap */
+            end_notes = sn_dash_tail;
+        } else {
+            /* Look ahead to see if we have any more non-degenerate segments
+             * before the next move or end of subpath. (i.e. should we use an
+             * end cap or a dash cap?) */
+            const segment *pseg2 = pseg->next;
+            
+            end_notes = 0;
+            while (pseg2 != 0 && pseg2->type != s_start)
+            {
+                if ((pseg2->pt.x != sx) || (pseg2->pt.x != sy)) {
+                    /* Non degenerate. We aren't the last one */
+                    end_notes = sn_dash_tail;
+                    break;
+                }
+                pseg2 = pseg2->next;
+            }
+        }
       on:if (ink_on) {
 	    if (drawing >= 0) {
 		if (pseg->type == s_line_close && drawing > 0)
 		    code = gx_path_close_subpath_notes(ppath,
-						 notes & pseg->notes);
+                                                       ((notes & pseg->notes)|
+                                                        start_notes |
+                                                        end_notes));
 		else if ((any_abs(sx - x) + any_abs(sy - y) < fixed_half) &&
 		         (udx | udy))
 		    /* If we only need to move a short distance, then output
@@ -165,10 +204,12 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 		     * notes if we don't have any useful information to put
 		     * in the note though (if udx == 0 && udy == 0). */
 		    code = gx_path_add_dash_notes(ppath, sx, sy, udx, udy, 
-			    notes & pseg->notes);
+                                                  ((notes & pseg->notes)|
+                                                   start_notes | end_notes));
 		else
 		    code = gx_path_add_line_notes(ppath, sx, sy,
-					notes & pseg->notes);
+                                                  ((notes & pseg->notes)|
+                                                   start_notes | end_notes));
 		notes |= sn_not_first;
 	    }
 	} else {
@@ -176,13 +217,13 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	    notes &= ~sn_not_first;
 	    if (elt_length < fixed2float(fixed_epsilon) &&
 		(pseg->next == 0 || pseg->next->type == s_start || elt_length == 0)) {		
-				/*
-				 * Ink is off, but we're within epsilon of the end
-				 * of the dash element.  
-				 * "Stretch" a little so we get a dot.
-				 * Also if the next dash pattern is zero length,
-				 * use the last segment orientation.
-				 */
+                /*
+                 * Ink is off, but we're within epsilon of the end
+                 * of the dash element.  
+                 * "Stretch" a little so we get a dot.
+                 * Also if the next dash pattern is zero length,
+                 * use the last segment orientation.
+                 */
 		double elt_length1;
 
 		if (code < 0)
@@ -202,7 +243,8 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 		if (elt_length1 == 0) {
 		    left = 0;
 		    code = gx_path_add_dash_notes(ppath, sx, sy, udx, udy,
-				    notes & pseg->notes);
+                                                  ((notes & pseg->notes)|
+                                                  start_notes | end_notes));
 		    if (++index == count)
 			index = 0;
 		    elt_length = pattern[index] * scale;
@@ -219,6 +261,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	if (code < 0)
 	    return code;
 	x = sx, y = sy;
+	cap = pgs_lp->dash_cap;
     }
     /* Check for wraparound. */
     if (wrap && drawing <= 0) {	/* We skipped some initial lines. */

@@ -40,9 +40,11 @@ typedef struct gx_path_s gx_path;
 /* Define 'notes' that describe the role of a path segment. */
 /* These are only for internal use; a normal segment's notes are 0. */
 typedef enum {
-    sn_none = 0,
-    sn_not_first = 1,		/* segment is in curve/arc and not first */
-    sn_from_arc = 2		/* segment is part of an arc */
+    sn_none      = 0,
+    sn_not_first = 1,           /* segment is in curve/arc and not first */
+    sn_from_arc  = 2,           /* segment is part of an arc             */
+    sn_dash_head = 4,           /* segment follows a dash break          */
+    sn_dash_tail = 8,           /* segment is followed by dash break     */
 } segment_notes;
 
 /* Debugging routines */

@@ -741,7 +741,9 @@ gs_initgraphics(gs_state * pgs)
     if ((code = gs_newpath(pgs)) < 0 ||
 	(code = gs_initclip(pgs)) < 0 ||
 	(code = gs_setlinewidth(pgs, 1.0)) < 0 ||
-	(code = gs_setlinecap(pgs, gstate_initial.line_params.cap)) < 0 ||
+	(code = gs_setlinestartcap(pgs, gstate_initial.line_params.start_cap)) < 0 ||
+	(code = gs_setlineendcap(pgs, gstate_initial.line_params.end_cap)) < 0 ||
+	(code = gs_setlinedashcap(pgs, gstate_initial.line_params.dash_cap)) < 0 ||
 	(code = gs_setlinejoin(pgs, gstate_initial.line_params.join)) < 0 ||
 	(code = gs_setcurvejoin(pgs, gstate_initial.line_params.curve_join)) < 0 ||
 	(code = gs_setdash(pgs, (float *)0, 0, 0.0)) < 0 ||

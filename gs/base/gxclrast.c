@@ -2366,10 +2366,12 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
     cmd_getw(mask, cbp);
     if (mask & cap_join_known) {
 	cb = *cbp++;
-	pis->line_params.cap = (gs_line_cap)((cb >> 3) & 7);
+        pis->line_params.start_cap =
+            pis->line_params.end_cap =
+                pis->line_params.dash_cap = (gs_line_cap)((cb >> 3) & 7);
 	pis->line_params.join = (gs_line_join)(cb & 7);
 	if_debug2('L', " cap=%d join=%d\n",
-		  pis->line_params.cap, pis->line_params.join);
+		  pis->line_params.start_cap, pis->line_params.join);
     }
     if (mask & cj_ac_sa_known) {
 	cb = *cbp++;
