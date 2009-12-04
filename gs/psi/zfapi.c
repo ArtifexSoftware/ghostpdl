@@ -183,6 +183,7 @@ static void sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
 	r->offset += l;
         if (length <= 0)
             return;
+	v += l;
         sfnts_next_elem(r);
     }
 }
