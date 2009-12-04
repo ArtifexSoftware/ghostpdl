@@ -483,13 +483,14 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 	    gx_set_miter_limit(&vdev->state.line_params,
 			       pis->line_params.miter_limit);
 	}
-	if (pis->line_params.cap != vdev->state.line_params.cap) {
+	/* FIXME: Should cope with end_cap and dash_cap too */
+	if (pis->line_params.start_cap != vdev->state.line_params.start_cap) {
 	    int code = (*vdev_proc(vdev, setlinecap))
-		(vdev, pis->line_params.cap);
+		(vdev, pis->line_params.start_cap);
 
 	    if (code < 0)
 		return code;
-	    vdev->state.line_params.cap = pis->line_params.cap;
+	    vdev->state.line_params.start_cap = pis->line_params.start_cap;
 	}
 	if (pis->line_params.join != vdev->state.line_params.join) {
 	    int code = (*vdev_proc(vdev, setlinejoin))

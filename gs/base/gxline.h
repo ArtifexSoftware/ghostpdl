@@ -38,7 +38,9 @@ typedef struct gx_dash_params_s {
   NULL, 0, 0.0, 0/*false*/, 0.0, 1/*true*/, 0, 0.0
 typedef struct gx_line_params_s {
     float half_width;		/* one-half line width */
-    gs_line_cap cap;
+    gs_line_cap start_cap;      /* Cap to use on start of line */
+    gs_line_cap end_cap;        /* Cap to use on end of line */
+    gs_line_cap dash_cap;       /* Cap to use on start/end of dash segment */
     gs_line_join join;
     int curve_join;		/* <0 means use join between segments of */
 				/* flattened curves, >=0 means use this join */
@@ -67,7 +69,7 @@ int gx_set_dot_length(gx_line_params *, floatp, bool);
 
 /* See gsline.c for the computation of miter_check. */
 #define gx_line_params_initial\
- 0.0, gs_cap_butt, gs_join_miter, -1,\
+ 0.0, gs_cap_butt, gs_cap_butt, gs_cap_butt, gs_join_miter, -1,\
  10.0, (float)0.20305866, 0.0, 0/*false*/,\
   { identity_matrix_body }, { gx_dash_params_initial }
 

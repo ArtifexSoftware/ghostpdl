@@ -378,7 +378,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 			     dev, pis, text, font, path, pdcolor, pcpath, mem);
 	do {
 	    font_code = penum->orig_font->procs.next_char_glyph
-		(penum, &chr, &glyph);   
+		((gs_text_enum_t *)penum, &chr, &glyph);   
 	    if (font_code == 1){
 		if (penum->fstack.items[penum->fstack.depth].font->FontType == 3) {
 		    user_defined = 1;
@@ -386,7 +386,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 		}
 	    }
 	} while(font_code != 2 && font_code >= 0);
-	gs_text_release(penum, "pdf_text_process");
+	gs_text_release((gs_text_enum_t *)penum, "pdf_text_process");
     }
 
     if (!user_defined || !(text->operation & TEXT_DO_ANY_CHARPATH)) {
@@ -2546,7 +2546,9 @@ pdf_text_process(gs_text_enum_t *pte)
 		   but at this moment we don't know in what contexts
 		   it will be used. */
 		pdev->state.line_params.half_width = -1;
-		pdev->state.line_params.cap = gs_cap_unknown;
+		pdev->state.line_params.start_cap = gs_cap_unknown;
+		pdev->state.line_params.end_cap = gs_cap_unknown;
+		pdev->state.line_params.dash_cap = gs_cap_unknown;
 		pdev->state.line_params.join = gs_join_unknown;
 		pdev->state.line_params.miter_limit = -1;
 		pdev->state.line_params.dash.pattern_size = -1;

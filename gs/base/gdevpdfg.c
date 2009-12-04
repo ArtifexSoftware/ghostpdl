@@ -165,7 +165,9 @@ pdf_viewer_state_from_imager_state_aux(pdf_viewer_state *pvs, const gs_imager_st
     pvs->stroke_overprint = false;
     pvs->stroke_adjust = false;
     pvs->line_params.half_width = 0.5;
-    pvs->line_params.cap = 0;
+    pvs->line_params.start_cap = 0;
+    pvs->line_params.end_cap = 0;
+    pvs->line_params.dash_cap = 0;
     pvs->line_params.join = 0;
     pvs->line_params.curve_join = 0;
     pvs->line_params.miter_limit = 10.0;
