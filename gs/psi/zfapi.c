@@ -778,7 +778,7 @@ static ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_l
     return get_type1_data(ff, &subr, buf, buf_length);
 }
 
-static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0, ulong *offset1)
+static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
     int i, glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
@@ -787,20 +787,6 @@ static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, 
     sfnts_reader_init(&r, pdr);
     r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
     *offset0 = pfont42->data.glyf + (glyf_elem_size == 2 ? r.rword(&r) * 2 : r.rlong(&r));
-    /* LOCA table may be unsroted, so we can't rely on the offset of the 'next' glyph
-     * being the end of the old glyph. So we need to search the entire loca table to
-     * determine the length of the glyph. Isn't TrueType wonderful ?
-     */
-    *offset1 = glyf_elem_size == 2 ? 0xffff : 0xffffffff;
-    r.seek(&r, pfont42->data.loca);
-    for (i=0;i<pfont42->data.numGlyphs;i++) {
-	/* Check every entry in the LOCA table to see if its beyond the 
-	 * offset of the glyph we are using, but before the current nearest glyph
-	 */
-	off = pfont42->data.glyf + (glyf_elem_size == 2 ? r.rword(&r) * 2 : r.rlong(&r));
-	if (off > *offset0 && off < *offset1)
-	    *offset1 = off;
-    }
     return r.error;
 }
 
@@ -909,10 +895,10 @@ static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort 
                 memcpy(buf, data_ptr + mc, min(glyph_length, buf_length)/* safety */);
         } else {
             gs_font_type42 *pfont42 = (gs_font_type42 *)ff->client_font_data;
-            ulong offset0, offset1;
-	    bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0, &offset1);
+            ulong offset0;
+	    bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0);
 
-            glyph_length = (error ? -1 : offset1 - offset0);
+            glyph_length = (error ? -1 : pfont42->data.len_glyphs[char_code]);
             if (buf != 0 && !error) {
                 sfnts_reader r;
                 sfnts_reader_init(&r, pdr);
