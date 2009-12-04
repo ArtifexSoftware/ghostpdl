@@ -893,6 +893,19 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
     return 0;
 }
 
+static int
+xps_parse_line_cap(char *attr)
+{
+    if (attr)
+    {
+	if (!strcmp(attr, "Flat")) return gs_cap_butt;
+	if (!strcmp(attr, "Square")) return gs_cap_square;
+	if (!strcmp(attr, "Round")) return gs_cap_round;
+	if (!strcmp(attr, "Triangle")) return gs_cap_triangle;
+    }
+    return gs_cap_butt;
+}
+
 /*
  * Parse an XPS <Path> element, and call relevant ghostscript
  * functions for drawing and/or clipping the child elements.
@@ -935,7 +948,6 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     char *stroke_miter_limit_att;
     char *stroke_thickness_att;
 
-    gs_line_cap linecap;
     gs_line_join linejoin;
     float linewidth;
     float miterlimit;
@@ -1019,18 +1031,9 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 	stroke_tag = NULL;
     }
 
-    /* TODO: stroke_end_line_cap_att */
-    /* TODO: stroke_dash_cap_att */
-
-    linecap = gs_cap_butt;
-    if (stroke_start_line_cap_att)
-    {
-	if (!strcmp(stroke_start_line_cap_att, "Flat")) linecap = gs_cap_butt;
-	if (!strcmp(stroke_start_line_cap_att, "Square")) linecap = gs_cap_square;
-	if (!strcmp(stroke_start_line_cap_att, "Round")) linecap = gs_cap_round;
-	if (!strcmp(stroke_start_line_cap_att, "Triangle")) linecap = gs_cap_triangle;
-    }
-    gs_setlinecap(ctx->pgs, linecap);
+    gs_setlinestartcap(ctx->pgs, xps_parse_line_cap(stroke_start_line_cap_att));
+    gs_setlineendcap(ctx->pgs, xps_parse_line_cap(stroke_end_line_cap_att));
+    gs_setlinedashcap(ctx->pgs, xps_parse_line_cap(stroke_dash_cap_att));
 
     linejoin = gs_join_miter;
     if (stroke_line_join_att)
