@@ -267,7 +267,7 @@ get_subst_CID_on_WMode(gs_subst_CID_on_WMode_t *subst, ref *t, int WMode)
 	uint *s;
 
 	s = (uint *)gs_alloc_byte_array(subst->rc.memory, n, sizeof(int), "zbuildfont11");
-	if (subst == NULL)
+	if (s == NULL)
 	    return_error(e_VMerror);
 	for (i = 0; i < n; i++) {
 	    array_get(subst->rc.memory, a, (long)i, &e);
