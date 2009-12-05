@@ -593,12 +593,15 @@ obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prl
 {
     int code = obj_cvp(op, str, len, prlen, 0, 0, mem, false);  /* NB: NULL memptr */
 
-    if (code != 1 && pchars) {
-	*pchars = str;
+    if (code == 1) {
+        if (pchars)
+            obj_string_data(mem, op, pchars, prlen);
+        return gs_note_error(e_rangecheck);
+    } else {
+	if (pchars)
+          *pchars = str;
 	return code;
     }
-    obj_string_data(mem, op, pchars, prlen);
-    return gs_note_error(e_rangecheck);
 }
 
 /* Find the index of an operator that doesn't have one stored in it. */
