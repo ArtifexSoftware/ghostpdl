@@ -115,7 +115,10 @@ setcolorscreen_finish(i_ctx_t *i_ctx_p)
     code = gx_ht_install(igs, r_ptr(esp - 1, gs_halftone), pdht);
     if (code < 0)
 	return code;
-    memcpy(&istate->screen_procs.red, esp - 5, sizeof(ref) * 4);
+    istate->screen_procs.red   = esp[-5];
+    istate->screen_procs.green = esp[-4];
+    istate->screen_procs.blue  = esp[-3];
+    istate->screen_procs.gray  = esp[-2];
     make_null(&istate->halftone);
     esp -= 7;
     setcolorscreen_cleanup(i_ctx_p);
