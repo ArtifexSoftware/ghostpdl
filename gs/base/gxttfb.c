@@ -681,7 +681,7 @@ static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	code = t1_hinter__sbw(&h.super, sbx, sby, e->w.x, e->w.y);
 	if (code < 0)
 	    return code;
-	gx_path_bbox(path, &bbox);
+	code = gx_path_bbox(path, &bbox);
 	if (code < 0)
 	    return code;
 	memset(&is_stub, 0, sizeof(is_stub));
