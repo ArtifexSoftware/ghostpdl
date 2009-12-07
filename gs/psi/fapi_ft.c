@@ -350,6 +350,18 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     }
     if (!ft_error && a_glyph)
 	ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
+    if (ft_error == FT_Err_Too_Many_Hints) {
+	eprintf1 ("TrueType glyph %d uses more instructions than the declared maximum in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+	ft_error = 0;
+    }
+    if (ft_error == FT_Err_Invalid_Argument) {
+	eprintf1 ("TrueType parsing error in glyph %d in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+	ft_error = 0;
+    }
+    if (ft_error == FT_Err_Too_Many_Function_Defs) {
+	eprintf1 ("TrueType instruction error in glyph %d in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+	ft_error = 0;
+    }
     if (ft_error == FT_Err_Invalid_Glyph_Index) {
 	eprintf1 ("FreeType is unable to find the glyph %d in the font. Continuing, ignoring missing glyph\n", a_char_ref->char_code);
 	ft_error = 0;
