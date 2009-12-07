@@ -1029,7 +1029,7 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    info->v.x = sbw[0];
 	    info->v.y = sbw[1];
 	} else {
-	    gs_distance_transform(sbw[0], sbw[1], pmat, &info->v);
+	    code = gs_distance_transform(sbw[0], sbw[1], pmat, &info->v);
 	    if (code < 0)
 		return code;
 	}
