@@ -225,7 +225,7 @@ sub spawn($$) {
           select(undef, undef, undef, 0.1);
           $status=waitpid($pid,WNOHANG);
           $t++;
-          } while($status>=0 && $t<abs($timeout*10));
+        } while($status>=0 && $t<abs($timeout*10));
         $done=1 if ($timeout<0);
         if ($status>=0) {
           kill 9, $pid;
@@ -466,6 +466,8 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
         my $s=`date +\"%y_%m_%d_%H_%M_%S\"`;
         $s.="_$retry";
         `touch $s`;
+        $abort=checkAbort;
+        $retry=0 if ($abort);
       }
 
       sleep 10 if ($retry<10);
@@ -473,7 +475,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
       $handle = IO::Socket::INET->new(Proto     => "tcp",
         PeerAddr  => $host,
         PeerPort  => $port);
-      } until (($handle) || ($retry--<=0));
+    } until (($handle) || ($retry--<=0));
     if (!$handle) {
       unlink $runningSemaphore;
       updateStatus("Can not connect to $host, quitting");
@@ -723,7 +725,13 @@ if (!$abort) {
     if ($timeoutFail ne "") {
       print F2 "timeoutFail: $timeoutFail\n";
     }
+    my $lastTime=time;
     foreach my $logfile (keys %logfiles) {
+      if ($lastTime-time>60) {
+        $abort=checkAbort;
+        $lastTime=time;
+      }
+
       print F2 "===$logfile===\n";
       open(F,"<$temp/$logfile.log") || die "file $temp/$logfile.log not found";
       while(<F>) {
@@ -760,7 +768,7 @@ if ($abort) {
   updateStatus('Abort command received');
 }
 
-spawn(10,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
 
 system("date") if ($debug2);
 #`rm -fr $temp`;

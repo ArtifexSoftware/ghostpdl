@@ -5,6 +5,8 @@ use warnings;
 
 use Data::Dumper;
 
+my $verbose=1;
+
 my $previousValues=20;
 
 my @errorDescription=(
@@ -23,8 +25,12 @@ my @errorDescription=(
 my $current=shift;
 my $previous=shift;
 my $elapsedTime=shift;
-my $machineCount=shift || die "usage: compare.pl current.tab previous.tab elapsedTime machineCount";
+my $machineCount=shift || die "usage: compare.pl current.tab previous.tab elapsedTime machineCount [skipMissing [products]]";
 my $skipMissing=shift;
+my $products=shift;
+
+$products="gs pcl xps svg" if (!$products);
+
 
 my %current;
 my %currentError;
@@ -50,6 +56,7 @@ my @archiveMatch;
 
 my $t2;
 
+print STDERR "reading $current\n" if ($verbose);
 open(F,"<$current") || die "file $current not found";
 while(<F>) {
   chomp;
@@ -65,6 +72,7 @@ while(<F>) {
   $currentMachine{$a[0]}=$a[9];
 }
 
+print STDERR "reading $previous\n" if ($verbose);
 open(F,"<$previous") || die "file $previous not found";
 while(<F>) {
   chomp;
@@ -82,6 +90,7 @@ while(<F>) {
 close(F);
 
 # build list of archived files
+print STDERR "reading archive directory\n" if ($verbose);
 my %archives;
 opendir(DIR, 'archive') || die "can't opendir archive: $!";
 foreach (readdir(DIR)) {
@@ -93,6 +102,7 @@ my $count=$previousValues;
 foreach my $i (sort {$b cmp $a} keys %archives) {
 # print STDERR "$i\n";
   if ($count>0) {
+    print STDERR "reading archive/$i\n" if ($verbose);
     open(F,"<archive/$i") || die "file archive/$i not found";
     while(<F>) {
       chomp;
@@ -162,14 +172,18 @@ foreach my $t (sort keys %current) {
       push @brokePrevious,"$t $currentMachine{$t} $currentError{$t}";
     }
   }
-  if ($currentProduct{$t} =~ m/pdfwrite/) {
-    $pdfwriteTestCount++;
-  } else {
-    $notPdfwriteTestCount++;
+  my $p=$currentProduct{$t};
+  $p =~ s/ pdfwrite//;
+  if ($products =~ m/$p/) {
+    if ($currentProduct{$t} =~ m/pdfwrite/) {
+      $pdfwriteTestCount++;
+    } else {
+      $notPdfwriteTestCount++;
+    }
   }
 }
 
-print "ran ".scalar(keys %current)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
+print "ran ".($pdfwriteTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 
 if (@differencePrevious) {
   print "Differences in ".scalar(@differencePrevious)." of $notPdfwriteTestCount non-pdfwrite test(s):\n";
@@ -207,7 +221,7 @@ if (@repairedPrevious) {
   print "\n";
 }
 
-if (!$skipMissing) {
+if (!$skipMissing || $skipMissing eq "false" || $skipMissing eq "0") {
 
   if (@filesRemoved) {
     print "The following ".scalar(@filesRemoved)." regression file(s) have been removed:\n";

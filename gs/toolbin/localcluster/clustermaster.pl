@@ -19,6 +19,8 @@ my $jobs="./jobs";
 
 my $maxDownTime=300;  # how many seconds before a machine is considered down
 
+my %machines;
+
 my $footer="";
 
 # the concept with checkPID is that if the semaphore file is missing or doesn't
@@ -29,13 +31,75 @@ sub checkPID {
     close(F);
     chomp $t;
     if ($t == $$) {
-      return(1);
+      return(0);
     }
-    print "terminating: $t $$\n";
-    exit;
+    print "terminating: $runningSemaphore mismatch $t $$\n";
+  } else {
+    print "terminating: $runningSemaphore missing\n";
   }
-  print "terminating: $runningSemaphore missing\n";
+  open(F,">$runningSemaphore");
+  print F "0\n";
+  close(F);
+  foreach my $m (keys %machines) {
+    `touch $m.abort`;
+  }
+  sleep 120;
+  unlink $runningSemaphore;
   exit;
+}
+
+    my %lastTransfer;
+    my %sent;
+    my $doneCount=0;
+    my @jobs;
+    my $abort=0;
+    my $tempDone=0;
+
+sub checkProblem {
+      foreach my $m (keys %machines) {
+        if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxDownTime) {
+          print "machine $m hasn't updated $m.up in $maxDownTime seconds, assuming it went down\n";
+          delete $lastTransfer{$m} if (exists $lastTransfer{$m});
+          delete $machines{$m} if (exists $machines{$m});
+          if (scalar keys %lastTransfer) {
+            `touch $m.abort`;
+            print "1: adding jobs back into queue: ".scalar(@{$sent{$m}})."\n";
+            @jobs=(@jobs,@{$sent{$m}});
+          } else {
+            $doneCount=scalar keys %machines;
+            print "1: setting doneCount to $doneCount\n";
+            $abort=1;
+          }
+        }
+      }
+      foreach (keys %lastTransfer) {
+        if (time-$lastTransfer{$_}>=$maxDownTime) {
+          delete $lastTransfer{$_} if (exists $lastTransfer{$_});
+          delete $machines{$_} if (exists $machines{$_});
+          print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
+          if (scalar keys %lastTransfer) {
+            `touch $_.abort`;
+            print "2: adding jobs back into queue: ".scalar(@{$sent{$_}})."\n";
+            @jobs=(@jobs,@{$sent{$_}});
+          } else {
+            $doneCount=scalar keys %machines;
+            print "2: setting doneCount to $doneCount\n";
+            unlink "$_.up";
+            $abort=1;
+          }
+
+        }
+      }
+
+      foreach my $m (keys %machines) {
+        if (open(F,"<$m.done") && exists $lastTransfer{$m}) {
+          close(F);
+          print "$m is reporting done even though it should not be done\n";
+          $tempDone=1;
+          $abort=1;
+        }
+      }
+
 }
 
 {
@@ -133,6 +197,8 @@ if (open(F,"<$runningSemaphore")) {
 open(F,">$runningSemaphore");
 print F "$$\n";
 close(F);
+
+checkPID();
 
 my %emails;
 if (open(F,"<emails.tab")) {
@@ -293,7 +359,6 @@ if ($normalRegression==1 || $userRegression ne "") {
     close(F);
   }
 
-  my %machines;
   my @machines = <*.up>;
   print "@machines\n" if ($verbose);
   foreach (@machines) {
@@ -318,7 +383,7 @@ if ($normalRegression==1 || $userRegression ne "") {
   my $s;
   my $startText;
 
-  my $abort=0;
+  $abort=0;
   do {
 
     print "running with ".(scalar keys %machines)." machines\n" if ($verbose);
@@ -350,12 +415,9 @@ if ($normalRegression==1 || $userRegression ne "") {
     foreach (keys %machines) {
       print "unlinking $_.done\n" if ($verbose);
       print "unlinking $_.abort\n" if ($verbose);
-      print "unlinking $_.jobs.gz\n" if ($verbose);
+      print "writing $_.start\n" if ($verbose);
       unlink("$_.done");
       unlink("$_.abort");
-      unlink("$_.jobs.gz");
-      `touch $_.jobs`;
-      `gzip $_.jobs`;
       open(F,">$_.start");
       if ($normalRegression) {
         print F "svn\t$rev1 $rev2\t$product\n";
@@ -398,23 +460,20 @@ if ($normalRegression==1 || $userRegression ne "") {
       die "can't setup server";
     }
 
-    my @jobs;
     open(F,"<$jobs");
     while(<F>) {
       push @jobs,$_;
     }
     close(F);
 
-    my %lastTransfer;
     foreach my $m (keys %machines) {
       $lastTransfer{$m}=time+180;  # allow 3 minutes for the machines to build ghostscript, hack
     }
 
-    my $doneCount=0;
     my $client;
     my $totalJobs=scalar(@jobs);
 
-    my $tempDone=0;
+    $tempDone=0;
     while (!$tempDone) {
 
       eval {
@@ -431,6 +490,10 @@ if ($normalRegression==1 || $userRegression ne "") {
           $client->autoflush(1);
           my $t=<$client>;
           chomp $t;
+          if (!exists $lastTransfer{$t}) {
+            printf "received connection from timed out client $t (%s); sending done\n", $client->peerhost;
+            print $client "done\n";
+          } else {
           printf "Connect from $t (%s) (%d seconds); jobs remaining %d\n", $client->peerhost,(time-$lastTransfer{$t}),scalar(@jobs);
           $lastTransfer{$t}=time;
           if (scalar(@jobs)==0) {
@@ -438,10 +501,16 @@ if ($normalRegression==1 || $userRegression ne "") {
             $doneCount++;
             delete $lastTransfer{$t};
             print "sending done: $doneCount\n";
+            if ($doneCount==scalar keys %machines) {
+              $tempDone=1 ;
+              print "setting tempDone to 1\n";
+            }
           }
           for (my $i=0;  $i<250 && scalar(@jobs);  $i++) {
             my $a=shift @jobs;
             print $client $a;
+            push @{$sent{$t}},$a;
+          }
           }
           printf "Connect finished; jobs remaining %d\n", scalar(@jobs);
           print "not connectecd\n" if (!$client->connected);
@@ -457,38 +526,17 @@ if ($normalRegression==1 || $userRegression ne "") {
             print F "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           }
           close(F);
-
+          checkProblem;
         }
         alarm 0;
-        };
+      };
 
       alarm 0;  # avoid race condition
 
       if ($@) {
         print "no connections, checking done status\n";
       }
-      foreach my $m (keys %machines) {
-        if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxDownTime) {
-          $doneCount=scalar keys %machines;
-          print "1: setting doneCount to $doneCount\n";
-        }
-      }
-      foreach (keys %lastTransfer) {
-        if (time-$lastTransfer{$_}>=$maxDownTime) {
-          print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
-          $doneCount=scalar keys %machines;
-          print "2: setting doneCount to $doneCount\n";
-          unlink "$_.up";
-        }
-      }
-
-      foreach my $m (keys %machines) {
-        if (open(F,"<$m.done") && exists $lastTransfer{$m}) {
-          close(F);
-          print "$m is reporting done even though it should not be done\n";
-          $tempDone=1;
-        }
-      }
+      checkProblem;
 
       if ($doneCount==scalar keys %machines) {
         $tempDone=1 ;
@@ -523,8 +571,8 @@ if ($normalRegression==1 || $userRegression ne "") {
           print "$m is down\n" if ($verbose);
           $abort=1;
           %doneTime=();  # avoids a race condition where the machine we just aborted reports done
-          foreach my $n (keys %machines) {
-            `touch $n.abort`;
+          foreach my $m (keys %machines) {
+            `touch $m.abort`;
           }
           delete $machines{$m};
           sleep 60;  # hack
@@ -556,8 +604,17 @@ if ($normalRegression==1 || $userRegression ne "") {
   my $tabs="";
   foreach (keys %machines) {
     if (-e "$_.log.gz" && -e "$_.out.gz") {
-      `touch $_.log; rm -f $_.log; gunzip $_.log.gz`;
-      `touch $_.out; rm -f $_.out; gunzip $_.out.gz`;
+      print "reading log for $_\n";
+      `touch $_.log $_.out`;
+      `rm -f $_.log $_.out`;
+      `gunzip $_.log.gz $_.out.gz`;
+      if ($?!=0) {
+        print "$_.log.gz and/or $_.out.gz missing, terminating\n";
+        checkPID();
+        unlink $runningSemaphore;  # force checkPID() to fail
+        checkPID();
+        exit;  # unecessary, checkPID() won't return
+      }
       my $a=`./readlog.pl $_.log $_.tab $_ $_.out`;
       if ($a ne "") {
         chomp $a;
@@ -568,6 +625,8 @@ if ($normalRegression==1 || $userRegression ne "") {
       }
       $logs.=" $_.log $_.out";
       $tabs.=" $_.tab";
+    } else {
+      print "ERROR: log or out missing for $_\n";
     }
   }
 
@@ -598,6 +657,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       $filter.=">t.tab";
       print "$filter\n" if ($verbose);
       `$filter`;
+#     my $oldCount=`wc -l t.tab | awk ' { print $1 } '`;
 
       `mv previous.tab previous2.tab`;
       `mv current.tab previous.tab`;
@@ -607,7 +667,8 @@ if ($normalRegression==1 || $userRegression ne "") {
       #  `./readlog.pl log current.tab`;
 
       checkPID();
-      `./compare.pl current.tab previous.tab $elapsedTime $machineCount >>email.txt`;
+print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCount false \"$product\"\n";
+      `./compare.pl current.tab previous.tab $elapsedTime $machineCount false \"$product\" >>email.txt`;
      #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
 
       checkPID();
@@ -634,12 +695,14 @@ if ($normalRegression==1 || $userRegression ne "") {
       $filter.=">t.tab";
       print "$filter\n" if ($verbose);
       `$filter`;
+#     my $oldCount=`wc -l t.tab | awk ' { print $1 } '`;
 
       `cat $tabs t.tab | sort >temp.tab`;
       `rm $tabs`;
 
       checkPID();
-      `./compare.pl temp.tab current.tab $elapsedTime $machineCount true >>$userName.txt`;
+print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCount true \"$product\"\n";
+      `./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\" >>$userName.txt`;
       `mv $logs $usersDir/$userName/.`;
       `cp -p $userName.txt $usersDir/$userName/.`;
       `cp -p temp.tab $usersDir/$userName/.`;
@@ -696,7 +759,7 @@ if ($normalRegression==1 || $userRegression ne "") {
 
   foreach my $machine (keys %machines) {
     open(F,">$machine.status");
-    print "idle\n";
+    print F "idle\n";
     close(F);
   }
 

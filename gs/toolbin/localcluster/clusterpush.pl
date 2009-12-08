@@ -16,7 +16,7 @@ my $product=shift;
 my $user=shift;
 
 my $host="casper.ghostscript.com";
-my $dir="/home/regression/cluster/users";
+my $dir="/home/marcos/cluster/users";
 if (!$user) {
   $user=`echo \$USER`;
   chomp $user;
@@ -26,21 +26,9 @@ my $directory=`pwd`;
 chomp $directory;
 
 $directory =~ s|.+/||;
-if ($directory ne 'gs' && $directory ne 'ghostpdl') {
-  $directory="";
-  if (-d "base" && -d "Resource") {
-    $directory='gs';
-  }
-  if (-d "pxl" && -d "pcl") {
-    $directory='ghostpdl';
-  }
-}
-
-die "can't figure out if this is a ghostscript or ghostpdl directory" if ($directory eq "");
-
-$product='gs pcl xps' if (!$product);
 print "$user $directory $product\n" if ($verbose);
 
+die "clusterpush.pl must be run from gs or ghostpdl directory" if ($directory ne 'gs' && $directory ne 'ghostpdl');
 
 #           rsync -av -e "ssh -l ssh-user" rsync-user@host::module /dest
 
@@ -49,6 +37,7 @@ if ($directory eq 'gs') {
 }
 
 
+$product='gs pcl svg xps' if (!$product);
 my @a=split ' ',$product;
 foreach my $i (@a) {
   if (!exists $products{$i}) {
@@ -66,12 +55,12 @@ my $cmd="rsync -avxc".
 " --exclude main/obj --exclude main/debugobj".
 " --exclude language_switch/obj --exclude language_switch/obj".
 " --exclude xps/obj --exclude xps/debugobj".
-" --exclude svg/obj --exclude svg/debugobj".
+" --exclude svg/obj --exclude xps/debugobj".
 " --exclude ufst --exclude ufst-obj".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
-" -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\"".
+" -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\"".
 " .".
-" regression\@$host:$dir/$user/$directory";
+" marcos\@$host:$dir/$user/$directory";
 
 open(F,">cluster_command.run");
 print F "$user $product\n";
@@ -87,4 +76,9 @@ while(<T>) {
 close(T);
 
 unlink "cluster_command.run";
+
+
+#`ssh -l marcos -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
+
+#`scp -i ~/.ssh/cluster_key -q user.tmp marcos\@casper.ghostscript.com:/home/marcos/cluster/users/$user/user.run . >/dev/null 2>/dev/null`;
 
