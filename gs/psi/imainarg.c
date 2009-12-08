@@ -751,8 +751,10 @@ run_buffered(gs_main_instance * minst, const char *arg)
 	return_error(e_invalidfileaccess);
     }
     code = gs_main_init2(minst);
-    if (code < 0)
+    if (code < 0) {
+        fclose(in);
 	return code;
+    }
     code = gs_main_run_string_begin(minst, minst->user_errors,
 				    &exit_code, &error_object);
     if (!code) {
