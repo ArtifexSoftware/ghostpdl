@@ -27,6 +27,19 @@
 #define DEFAULT_CMYK_ICC  "iccprofiles/default_cmyk.icc"
 #define LAB_ICC           "iccprofiles/lab.icc"
 
+/* Key names for special common canned profiles.
+   These are found in some image file formats as
+   a magic number.   */
+
+#define GSICC_STANDARD_PROFILES_KEYS\
+  "srgb", "sgray"
+
+#define GSICC_STANDARD_PROFILES\
+  "iccprofiles/srgb.icc", "iccprofiles/sgray.icc"
+
+#define GSICC_NUMBER_STANDARD_PROFILES 2
+
+
 #include "gsicc_littlecms.h"
 #include "gxclist.h"
 

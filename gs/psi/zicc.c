@@ -40,23 +40,29 @@
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
 
-    int                     code;
+    int                     code, k;
     gs_color_space *        pcs;
-    gs_color_space *  palt_cs;
+    gs_color_space *        palt_cs;
     ref *                   pstrmval;
     stream *                s = 0L;
     cmm_profile_t           *picc_profile;
     gs_imager_state *       pis = (gs_imager_state *)igs;
     int                     i;
+    ref *                   pnameval;
+    static const char *const icc_std_profile_names[] = {
+	    GSICC_STANDARD_PROFILES
+	};
+    static const char *const icc_std_profile_keys[] = {
+	    GSICC_STANDARD_PROFILES_KEYS
+	};
 
     palt_cs = gs_currentcolorspace(igs);
     /* verify the DataSource entry */
     if (dict_find_string(ICCdict, "DataSource", &pstrmval) <= 0)
         return_error(e_undefined);
     check_read_file(s, pstrmval);
-
-
     /* build the color space object */
+
     code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
     if (code < 0)
         return gs_rethrow(code, "building color space object");
@@ -73,7 +79,39 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         Note also, if we are going to be putting these into the clist we will 
         want to have this buffer. */
 
-    picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+    /* Check if we have the /Name entry.  This is used to associate with
+       specs that have enumerated types to indicate sRGB sGray etc */
+
+    if (dict_find_string(ICCdict, "Name", &pnameval) > 0){
+
+        uint size = r_size(pnameval);
+        char *str = (char *)gs_alloc_bytes(gs_state_memory(igs), size+1, "seticc");
+
+        memcpy(str, (const char *)pnameval->value.bytes, size);
+        str[size] = 0;
+
+        /* Compare this to the standard profile names */
+
+        picc_profile = NULL;
+
+        for (k = 0; k < GSICC_NUMBER_STANDARD_PROFILES; k++){
+
+            if ( strcmp( str, icc_std_profile_keys[k] ) == 0 ){
+
+                picc_profile = gsicc_get_profile_handle_file(icc_std_profile_names[k], 
+                    strlen(icc_std_profile_names[k]), gs_state_memory(igs));
+
+                break;
+
+            }
+
+        }
+
+    } else {
+        
+        picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+
+    }
 
     if (picc_profile == NULL) {
 

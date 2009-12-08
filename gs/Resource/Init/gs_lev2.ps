@@ -871,6 +871,19 @@ mark
   .dicttomark readonly
 ] readonly def
 
+
+% Special type to install
+% sRGB ICC profile color space
+/CIEsRGBICC [ /ICCBased
+  mark
+    /N 3 
+    /DataSource (srgb)
+    /Alternate [/DeviceRGB]
+    /Name (srgb) 
+  .dicttomark 
+] def
+
+
 % ------ Painting ------ %
 
 % A straightforward definition of execform that doesn't actually

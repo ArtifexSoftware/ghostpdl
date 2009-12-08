@@ -1010,9 +1010,11 @@ end
 } bind def
 
 /jp2_csp_dict <<
-  16 { /sRGB /ColorSpace findresource } bind
-  18 1 index  % YCC is convertrd to RGB
-  17 { /sGray /ColorSpace findresource } bind
+  16 { /DeviceRGB } bind
+  % 16 {/sRGBICC /ColorSpace findresource} bind
+  18 1 index  % YCC is converted to RGB
+  % 17 { /sGray /ColorSpace findresource } bind
+  17 { /DeviceGray } bind
 >> readonly def
 
 % Process jp2 blocks (aka boxes). All procedures have the signature
