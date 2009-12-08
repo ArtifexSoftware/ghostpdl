@@ -149,6 +149,10 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     pdevc = &devc1;
     pdevc_next = &devc2;
 
+    /* These used to be set by init clues */
+    pdevc->type = gx_dc_type_none;
+    pdevc_next->type = gx_dc_type_none;
+
     /* Define the rendering intents */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_IMAGE_TAG;
