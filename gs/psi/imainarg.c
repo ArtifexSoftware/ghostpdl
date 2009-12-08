@@ -979,7 +979,7 @@ print_devices(const gs_main_instance *minst)
 	const char **names;
 	size_t ndev = 0;
 
-	for (i = 0; (pdev = gs_getdevice(i)) != 0; i++)
+	for (i = 0; gs_getdevice(i) != 0; i++)
 	    ;
 	ndev = (size_t)i;
 	names = (const char **)gs_alloc_bytes(minst->heap, ndev * sizeof(const char*), "print_devices");
