@@ -33,6 +33,7 @@
 #include "gspath.h"
 #include "bfont.h"
 #include "dstack.h"
+#include "estack.h"
 #include "ichar.h"
 #include "idict.h"
 #include "iname.h"
@@ -1546,6 +1547,7 @@ find_substring(const byte *where, int length, const char *what)
 static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, char *font_file_path, bool bBuildGlyph, ref *charstring)
 {   /* Stack : <font> <code|name> --> - */
     os_ptr op = osp;
+    es_ptr ep = esp;
     ref *pdr = op - 1;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
@@ -1792,8 +1794,19 @@ retry_oversampling:
 		return code;
         } else if (r_has_type(glyph_index, t_integer))
             cr.char_codes[0] = glyph_index->value.intval;
-        else
-            return_error(e_invalidfont);
+	else {
+	    /* Check execution stack has space for BuldChar proc and finish_render */
+	    check_estack(2);
+	    /* check space and duplicate the glyph index for BuildChar */
+	    check_op(1);
+	    push(1);
+	    ref_assign_inline(op, op - 1);
+	    /* Come back to fapi_finish_render after running the BuildChar */
+	    push_op_estack(fapi_finish_render);
+	    ++esp;
+	    ref_assign(esp, glyph_index);
+	    return o_push_estack;
+	}
         cr.is_glyph_index = true;
     } else if (is_embedded_type1) {
         /*  Since the client passes charstring by callback using I->ff.char_data,
