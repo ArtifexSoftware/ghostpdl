@@ -11,7 +11,7 @@ Where type is either gs or ghostpdl.  If you do not specify 'type'
 clusterpush.pl will check the current directory name and if it is gs or
 ghostpdl will use that, otherwise it terminates with an error.
 
-And user is one of alex, giles, henrys, ken, marcos, masaki, mvrehl,
+And user is one of alex, giles, henrys, ken, marcos, masaki, mvrhel,
 ray, or tor.  If you don't specify 'user' clusterpush.pl uses the value
 of $USER.  This makes sense on Linux and Mac OS X and probably cygwin,
 but I'm not sure what happens when run under Windows.  If you prefer

@@ -80,5 +80,5 @@ unlink "cluster_command.run";
 
 #`ssh -l regression -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
 
-#`scp -i ~/.ssh/cluster_key -q user.tmp regression\@casper.ghostscript.com:/home/marcos/cluster/users/$user/user.run . >/dev/null 2>/dev/null`;
+#`scp -i ~/.ssh/cluster_key -q user.tmp regression\@casper.ghostscript.com:/home/regression/cluster/users/$user/user.run . >/dev/null 2>/dev/null`;
 
