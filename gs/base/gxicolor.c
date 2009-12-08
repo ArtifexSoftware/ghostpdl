@@ -161,6 +161,12 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
 
+    if (icc_link == NULL) {
+
+        return gs_rethrow(-1, "ICC Link not created during image render color");
+
+    }
+
     /* If the link is the identity, then we don't need to do any color conversions */
 
     if (icc_link->is_identity ) {
