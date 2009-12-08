@@ -16,7 +16,7 @@ my $product=shift;
 my $user=shift;
 
 my $host="casper.ghostscript.com";
-my $dir="/home/marcos/cluster/users";
+my $dir="/home/regression/cluster/users";
 if (!$user) {
   $user=`echo \$USER`;
   chomp $user;
@@ -58,9 +58,9 @@ my $cmd="rsync -avxc".
 " --exclude svg/obj --exclude xps/debugobj".
 " --exclude ufst --exclude ufst-obj".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
-" -e \"ssh -l marcos -i \$HOME/.ssh/cluster_key\"".
+" -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\"".
 " .".
-" marcos\@$host:$dir/$user/$directory";
+" regression\@$host:$dir/$user/$directory";
 
 open(F,">cluster_command.run");
 print F "$user $product\n";
@@ -78,7 +78,7 @@ close(T);
 unlink "cluster_command.run";
 
 
-#`ssh -l marcos -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
+#`ssh -l regression -i \$HOME/.ssh/cluster_key $host touch $dir/$user/$product.run`;
 
-#`scp -i ~/.ssh/cluster_key -q user.tmp marcos\@casper.ghostscript.com:/home/marcos/cluster/users/$user/user.run . >/dev/null 2>/dev/null`;
+#`scp -i ~/.ssh/cluster_key -q user.tmp regression\@casper.ghostscript.com:/home/marcos/cluster/users/$user/user.run . >/dev/null 2>/dev/null`;
 
