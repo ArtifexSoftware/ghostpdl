@@ -1030,7 +1030,6 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     int n_planes_out = 4;
     int i;
     int y;
-    gcmmhlink_t icc_link;
     int code = 0;
     rinkj_color_cache_entry *cache = NULL;
 
@@ -1041,7 +1040,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     for (i = 0; i < n_planes_out; i++)
 	plane_data[i] = gs_alloc_bytes(pdev->memory, xsb, "rinkj_write_image_data");
 
-    if (icc_link != NULL) {
+    if (rdev->icc_link != NULL) {
  
         cache = (rinkj_color_cache_entry *)gs_alloc_bytes(pdev->memory, RINKJ_CCACHE_SIZE * sizeof(rinkj_color_cache_entry), "rinkj_write_image_data");
 	if (cache == NULL)
@@ -1071,7 +1070,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 
 	code = gdev_prn_get_bits(pdev, y, line, &row);
 
-	if (icc_link == NULL) {
+	if (rdev->icc_link == NULL) {
 	    int rowix = 0;
 	    for (x = 0; x < pdev->width; x++) {
 		for (i = 0; i < n_planes_in; i++)
@@ -1083,17 +1082,17 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 	    for (x = 0; x < pdev->width; x++) {
 		byte cbuf[4] = {0, 0, 0, 0};
 		bits32 color;
-		bits32 hash = rinkj_color_hash(color);
+		bits32 hash;
 		byte vbuf[4];
 
 		memcpy(cbuf, row + rowix, 3);
 		color = ((bits32 *)cbuf)[0];
-		
+		hash = rinkj_color_hash(color);
+
 		if (cache[hash].key != color) {
-		    double in[MAX_CHAN], out[MAX_CHAN];
 
                     /* 3 channel to CMYK */
-                    gscms_transform_color(icc_link, &cbuf,
+                    gscms_transform_color(rdev->icc_link, &cbuf,
                         &(vbuf), 1, NULL);
 
 		    cache[hash].key = color;
@@ -1116,12 +1115,11 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 
 		if (cache[hash].key != color) {
 		    byte cbuf[4];
-		    double in[MAX_CHAN], out[MAX_CHAN];
 
 		    ((bits32 *)cbuf)[0] = color;
 
                     /* 4 channel to CMYK */
-                    gscms_transform_color(icc_link, &cbuf,
+                    gscms_transform_color(rdev->icc_link, &cbuf,
                         &(vbuf), 1, NULL);
 
 		    cache[hash].key = color;
@@ -1139,22 +1137,22 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 	    for (x = 0; x < pdev->width; x++) {
 		byte cbuf[4];
 		bits32 color;
-		bits32 hash = rinkj_color_hash(color);
+		bits32 hash;
 		byte vbuf[4];
 		byte spot;
 		int scolor[4] = { 0x08, 0xc0, 0x80, 0 };
 
 		memcpy(cbuf, row + rowix, 4);
 		color = ((bits32 *)cbuf)[0];
-		
+		hash = rinkj_color_hash(color);
+
 		if (cache[hash].key != color) {
-		    double in[MAX_CHAN], out[MAX_CHAN];
 
                     /* Not sure what is going on here.  Old
                        code was still working with 4 to 4 
                        conversion.  Replacing with new ICC AMP call */
 
-                    gscms_transform_color(icc_link, &cbuf,
+                    gscms_transform_color(rdev->icc_link, &cbuf,
                         &(vbuf), 1, NULL);
 
 		    cache[hash].key = color;
