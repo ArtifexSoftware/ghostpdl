@@ -284,9 +284,13 @@ void rc_increment_cs(gs_color_space *pcs)
 
     rc_increment(pcs);
 
-    if (pcs->cmm_icc_profile_data != NULL) {
+    if (pcs) {
 
-        rc_increment(pcs->cmm_icc_profile_data);
+        if (pcs->cmm_icc_profile_data != NULL) {
+
+            rc_increment(pcs->cmm_icc_profile_data);
+
+        }
 
     }
 
