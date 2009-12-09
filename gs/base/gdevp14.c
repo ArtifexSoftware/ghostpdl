@@ -1543,7 +1543,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     rc_decrement_only(pdev, "pdf_14_put_image");
 #endif
 
-    rc_decrement(pis->icc_manager->device_profile, "pdf14_put_image");
+    /* This will also decrement the device profile */
     rc_decrement_only_cs(pcs, "pdf14_put_image");
 
     return code;
