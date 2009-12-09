@@ -308,6 +308,13 @@ double2XYZtype(float number_in){
     short s;
     unsigned short m;
 
+    if (number_in < 0) {
+
+        number_in = 0;
+        gs_warn("Negative CIEXYZ in created ICC Profile");
+
+    }
+
     s = (short) number_in;
     m = (unsigned short) ((number_in - s) * 65536.0);
     return((icS15Fixed16Number) ((s << 16) | m) );
