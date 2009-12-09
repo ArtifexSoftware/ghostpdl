@@ -131,6 +131,8 @@ rc_gsicc_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 
     }
 
+    link_cache->num_links = 0;
+
     gs_free_object(mem->stable_memory, link_cache, "rc_gsicc_cache_free");
 
 }
@@ -454,11 +456,22 @@ gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, gs_memory_t
     nextlink = link->nextlink;
 
     if (prevlink != NULL){
+
         prevlink->nextlink = nextlink;
+
+    } else {
+
+        /* It is the first link */
+
+        icc_cache->icc_link = nextlink;
+
     }
 
+
     if (nextlink != NULL){
+
         nextlink->prevlink = prevlink;
+
     }
 
     gsicc_link_free(link, memory);
@@ -555,7 +568,8 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
 
     if (icc_cache->num_links > ICC_CACHE_MAXLINKS){
 
-        /* If not, see if there is anything we can remove from cache */
+        /* If not, see if there is anything we can remove from cache.
+           Need to spend some time on this.... */
 
         link = gsicc_find_zeroref_cache(icc_cache);
         if ( link == NULL){
