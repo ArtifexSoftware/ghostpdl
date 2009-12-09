@@ -2299,6 +2299,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 					    (GLYPH_INFO_VVECTOR0 << wmode) | 
 					    allow_cdevproc_callout,
 					    &info);
+	if (code < 0)
+	    return code;
 	/* fixme : Move this call before cfont->procs.glyph_info. */
 	if (info.members & GLYPH_INFO_CDEVPROC) {
 	    if (allow_cdevproc_callout)
