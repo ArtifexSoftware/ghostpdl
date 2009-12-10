@@ -335,12 +335,10 @@ if (!$abort) {
 
   #   if (1 || !$product || $product eq 'gs') {  # always build ghostscript
 
-  $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out";
-  print "$cmd\n" if ($verbose);
-  `$cmd`;
-  $cmd="cd $gpdlSource ; touch makepcl.out makexps.out makesvg.out ; rm -f touch makepcl.out makexps.out makesvg.out";
-  print "$cmd\n" if ($verbose);
-  `$cmd`;
+  unlink "$gsSource/makegs.out";
+  unlink "$gpdlSource/makepcl.out";
+  unlink "$gpdlSource/makexps.out";
+  unlink "$gpdlSource/makesvg.out";
 
   if ($products{'gs'}) {
 
@@ -436,9 +434,11 @@ print "$cmd\n" if ($verbose);
 
 if ($md5sumFail ne "") {
   updateStatus('md5sum fail');
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } elsif ($compileFail ne "") {
   updateStatus('Compile fail');
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } else {
   updateStatus('Starting jobs');
@@ -555,6 +555,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
       print "\nkilled:  $p ($pid) $pids{$pid}{'filename'}  total $count\n";
       if ($count>=$maxTimeout) {
         $timeoutFail="too many timeouts";
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
         updateStatus('Timeout fail');
         @commands=();
         $maxCount=0;
@@ -660,6 +661,7 @@ if (!$abort) {
         if ($count>=$maxTimeout) {
           $timeoutFail="too many timeouts";
           updateStatus('Timeout fail');
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
           @commands=();
           $maxCount=0;
           killAll();

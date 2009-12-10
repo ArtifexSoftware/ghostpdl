@@ -54,6 +54,7 @@ sub checkPID {
     my @jobs;
     my $abort=0;
     my $tempDone=0;
+    my $failOccured=0;
 
 sub checkProblem {
       foreach my $m (keys %machines) {
@@ -98,6 +99,11 @@ sub checkProblem {
           $tempDone=1;
           $abort=1;
         }
+        if (open(F,"<$m.fail")) {
+          close(F);
+          print "$m is reporting fail\n";
+          $failOccured=1;
+        }
       }
 
 }
@@ -115,6 +121,11 @@ sub checkProblem {
   chomp $currentRev2;
   chomp $newRev1;
   chomp $newRev2;
+  if ($currentRev1 eq "" || $currentRev2 eq "" || $newRev1 eq "" || $newRev2 eq "") {
+    checkPID();
+    unlink $runningSemaphore;
+    die "svn info failed";
+  }
   if ($currentRev1 != $newRev1 || $currentRev2 != $newRev2) {
     #   print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
     open(LOCK,">$lock") || die "can't write to $lock";
@@ -340,11 +351,11 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
     $normalRegression=0;
   }
 
-} else {
+} elsif ($regression=~/user (.+)/) {
   print "found user regression in queue: $regression\n";
-  if ($regression=~/user (.+)/) {
-    $userRegression=$1;
-  }
+  $userRegression=$1;
+} else {
+  print "found unknown entry in queue.lst, removing.\n";
 }
 
 if ($normalRegression==1 || $userRegression ne "") {
@@ -414,9 +425,11 @@ if ($normalRegression==1 || $userRegression ne "") {
     checkPID();
     foreach (keys %machines) {
       print "unlinking $_.done\n" if ($verbose);
+      print "unlinking $_.fail\n" if ($verbose);
       print "unlinking $_.abort\n" if ($verbose);
       print "writing $_.start\n" if ($verbose);
       unlink("$_.done");
+      unlink("$_.fail");
       unlink("$_.abort");
       open(F,">$_.start");
       if ($normalRegression) {
@@ -474,6 +487,7 @@ if ($normalRegression==1 || $userRegression ne "") {
     my $totalJobs=scalar(@jobs);
 
     $tempDone=0;
+    $doneCount=0;
     while (!$tempDone) {
 
       eval {
@@ -540,16 +554,28 @@ if ($normalRegression==1 || $userRegression ne "") {
 
       if ($doneCount==scalar keys %machines) {
         $tempDone=1 ;
-        print "setting tempDone to 1\n";
+        print "all machines are done, setting tempDone to 1\n";
       }
+
+      if ($failOccured) {
+        $tempDone=1 ;
+        $abort=0;
+        print "fail occured, setting tempDone to 1 and abort to 0\n";
+        sleep 60; # hack to allow other machines to have compiler error as well, if the compiled we don't want them to continue
+        print "aborting all machines\n";
+        foreach my $m (keys %machines) {
+          `touch $m.abort`;
+        }
+      }
+
 
     }
 
-    print "all machines sent done or some machine went down\n";
+    print "all machines sent done, some machine went down, or one or more failed\n";
 
     my $machineSentDoneTime=time;
 
-    while(scalar(keys %doneTime) < scalar(keys %machines)) {
+    while(!$abort && scalar(keys %doneTime) < scalar(keys %machines)) {
       checkPID();
       if (time-$machineSentDoneTime>=$maxDownTime) {
         foreach my $m (keys %machines) {
@@ -581,7 +607,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       sleep(1);
     }
     print "abort=$abort\n" if ($verbose);
-  } while ($abort);
+  } while ($abort && !$failOccured);
 
   my $elapsedTime=time-$startTime;
 
@@ -608,7 +634,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       `touch $_.log $_.out`;
       `rm -f $_.log $_.out`;
       `gunzip $_.log.gz $_.out.gz`;
-      if ($?!=0) {
+      if (!$failOccured && $?!=0) {
         print "$_.log.gz and/or $_.out.gz missing, terminating\n";
         checkPID();
         unlink $runningSemaphore;  # force checkPID() to fail
