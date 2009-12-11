@@ -2967,6 +2967,9 @@ pdf14_update_device_color_procs(gx_device *dev,
 
                     if (iccprofile == NULL)
                         return gs_rethrow(-1,"ICC data not found in clist");
+
+                    /* Keep a pointer to the clist device */
+                    iccprofile->dev = pcrdev;
    
                 } 
 
