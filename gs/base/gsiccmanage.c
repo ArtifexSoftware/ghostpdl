@@ -1468,6 +1468,8 @@ gsicc_search_icc_table(clist_icctable_t *icc_table, int64_t icc_hashcode, int *s
 
         }
 
+        curr_entry = curr_entry->next;
+
     }
 
     /* Did not find it! */
