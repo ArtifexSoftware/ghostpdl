@@ -1460,7 +1460,7 @@ currentdict /jp2_csp_dict .undef
   ] cvx /PaintProc exch put
     % Adjust pdfemptycount since we have an extra dictionary on the stack
   pdfemptycount countdictstack  3 -1 roll
-  /pdfemptycount count 1 sub store
+  /pdfemptycount count 2 sub store
   q execform  			% gsave / grestore around the Form
     % Restore pdfemptycount
   countdictstack exch sub
