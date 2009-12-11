@@ -650,12 +650,14 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     
     if (tmp.group_color == ICC ) {
 
+        /* Do I need to ref count here? */
         tmp.iccprofile = pparams->iccprofile;
-        /* Do I need to ref count here */
+        tmp.icc_hashcode = pparams->icc_hash;
 
     } else {
 
         tmp.iccprofile = NULL;
+        tmp.icc_hashcode = 0;
 
     }
 

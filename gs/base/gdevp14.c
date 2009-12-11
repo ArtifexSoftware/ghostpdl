@@ -3506,7 +3506,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 
     /* Always update the color mapping procs.  Otherwise we end up
        fowarding to the target device. */
-    code = pdf14_update_device_color_procs(dev,group_color,0,pis,ptmp->iccprofile);
+
+    code = pdf14_update_device_color_procs(dev, group_color, ptmp->icc_hashcode, pis, ptmp->iccprofile);
     if (code < 0)
 	return code;
 
@@ -4525,6 +4526,40 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
 	    }
 	    if (!pparams->function_is_identity)
 		mask_size = sizeof(pparams->transfer_fn);
+
+            /* Color space information may be ICC based 
+               in this case we need to store the ICC
+               profile or the ID if it is cached already */
+
+            if (pparams->group_color == ICC) {                   
+
+                /* Check if it is already in the ICC clist table */
+
+                hashcode = pparams->iccprofile->hashcode;
+                found_icc = clist_icc_searchtable(cdev, hashcode);
+               
+                if (!found_icc) {
+
+                    /* Add it to the table */
+
+                    clist_icc_addentry(cdev, hashcode, pparams->iccprofile);
+                    put_value(pbuf, hashcode);
+
+                } else {
+
+                    /* It will be in the clist. Just write out the hashcode */
+
+                    put_value(pbuf, hashcode);
+
+                }
+
+ 
+            } else {
+
+                put_value(pbuf, hashcode);
+
+            }
+
 	    break;
 	case PDF14_END_TRANS_MASK:
 	    break;
@@ -4683,7 +4718,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    } else {
 		read_value(data, params.transfer_fn);
 	    }
-	    break;
+            read_value(data, params.icc_hash);
+            break;
 	case PDF14_END_TRANS_MASK:
 	    break;
 	case PDF14_SET_BLEND_PARAMS:

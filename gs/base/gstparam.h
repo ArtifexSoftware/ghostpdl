@@ -112,6 +112,7 @@ typedef struct gs_transparency_mask_params_s {
     int (*TransferFunction)(floatp in, float *out, void *proc_data);
     gs_function_t *TransferFunction_data;
     bool replacing;
+    int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
     cmm_profile_t *iccprofile;               /* The profile  */    
 } gs_transparency_mask_params_t;
 
@@ -131,6 +132,7 @@ typedef struct gx_transparency_mask_params_s {
     bool replacing;
     uint mask_id;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
+    int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
     cmm_profile_t *iccprofile;               /* The profile  */    
 } gx_transparency_mask_params_t;
 
