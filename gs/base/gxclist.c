@@ -713,6 +713,19 @@ clist_finish_page(gx_device *dev, bool flush)
 	clist_teardown_render_threads(dev);
     }
 
+    /* Also free the icc_table at this time */
+
+    if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
+
+       /* Free the icc table associated with this device.
+           May Need to do some work here for multi-threaded case. MJV to do */
+        gx_device_clist_reader * const crdev =	&((gx_device_clist *)dev)->reader;
+
+        clist_icc_freetable(crdev->icc_table, crdev->memory);
+
+    }
+
+
     if (flush) {
 	if (cdev->page_cfile != 0)
 	    cdev->page_info.io_procs->rewind(cdev->page_cfile, true, cdev->page_cfname);
