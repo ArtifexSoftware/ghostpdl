@@ -1144,23 +1144,25 @@ int
 clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, cmm_profile_t *icc_profile)
 {
 
-    clist_icctable_entry_t *entry = gs_alloc_struct(cdev->memory, 
-		clist_icctable_entry_t,
-		&st_clist_icctable_entry, "clist_icc_addentry");
-
     clist_icctable_t *icc_table = cdev->icc_table;
-
-    entry->next = NULL;
-    entry->serial_data.hashcode = hashcode;
-    entry->serial_data.size = -1;
-    entry->serial_data.file_position = -1;
-    entry->icc_profile = icc_profile;
-    rc_increment(icc_profile);
-
-    if (entry == NULL) 
-        return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
+    clist_icctable_entry_t *entry, *curr_entry;
+    int k;
 
     if ( icc_table == NULL ) {
+
+        entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory, 
+		    clist_icctable_entry_t,
+		    &st_clist_icctable_entry, "clist_icc_addentry");
+
+        if (entry == NULL) 
+            return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
+
+        entry->next = NULL;
+        entry->serial_data.hashcode = hashcode;
+        entry->serial_data.size = -1;
+        entry->serial_data.file_position = -1;
+        entry->icc_profile = icc_profile;
+        rc_increment(icc_profile);
 
         icc_table = gs_alloc_struct(cdev->memory, 
 		clist_icctable_t,
@@ -1181,7 +1183,34 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, cmm_profile_t
 
     } else {
 
-        /* Add a new ICC profile */
+        /* First check if we already have this entry */
+
+        curr_entry = icc_table->head;
+
+        for ( k = 0; k < icc_table->tablesize; k++ ) {
+
+            if ( curr_entry->serial_data.hashcode == hashcode )
+                return(0);  /* A hit */
+
+            curr_entry = curr_entry->next;
+
+        }
+
+         /* Add a new ICC profile */
+              
+        entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory, 
+		    clist_icctable_entry_t,
+		    &st_clist_icctable_entry, "clist_icc_addentry");
+
+        if (entry == NULL) 
+            return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
+
+        entry->next = NULL;
+        entry->serial_data.hashcode = hashcode;
+        entry->serial_data.size = -1;
+        entry->serial_data.file_position = -1;
+        entry->icc_profile = icc_profile;
+        rc_increment(icc_profile);
 
         icc_table->final->next = entry;
         icc_table->final = entry;
