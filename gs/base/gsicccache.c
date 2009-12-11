@@ -632,10 +632,24 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
 
         } else {
 
-            /* Cant create the link.  No profile present.  Should not
-               occur with defaults defined and device profile defined */
+              /* See if we have a clist device pointer. */
+            if ( gs_output_profile->dev != NULL ){
 
-            return(NULL);
+                /* ICC profile should be in clist. This is
+                   the first call to it. */
+
+                cms_output_profile = 
+                    gsicc_get_profile_handle_clist(gs_output_profile, memory);
+                gs_output_profile->profile_handle = cms_output_profile;
+
+            } else {
+
+                /* Cant create the link.  No profile present, 
+                   nor any defaults to use for this.  Really
+                   need to throw an error for this case. */
+
+                return(NULL);
+            }
         }
 
     }
