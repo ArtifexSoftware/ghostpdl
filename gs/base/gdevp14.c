@@ -4474,43 +4474,27 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
                profile or the ID if it is cached already */
             if (pparams->group_color == ICC) {                   
 
-                /* Check if this is a "default" space */
+                /* Check if it is already in the ICC clist table */
 
-                if (pparams->iccprofile->default_match != DEFAULT_NONE) {
+                hashcode = pparams->iccprofile->hashcode;
+                found_icc = clist_icc_searchtable(cdev, hashcode);
+               
+                if (!found_icc) {
 
-                    /* If yes, write out special ID.  These are negative
-                       encoded number of gsicc_profile_t.  If we have a
-                       positive number that is stored then it is simply
-                       the pseudoband location of the ICC profile.  We
-                       will then read the serialized header in that case. */
+                    /* Add it to the table */
 
-                    hashcode = -pparams->iccprofile->default_match;
+                    clist_icc_addentry(cdev, hashcode, pparams->iccprofile);
                     put_value(pbuf, hashcode);
 
                 } else {
-                
-                    /* If no, check if it is already in the ICC clist table */
 
-                    hashcode = pparams->iccprofile->hashcode;
-                    found_icc = clist_icc_searchtable(cdev, hashcode);
-                   
-                    if (!found_icc) {
+                    /* It will be in the clist. Just write out the hashcode */
 
-                        /* Add it to the table */
-
-                        clist_icc_addentry(cdev, hashcode, pparams->iccprofile);
-                        put_value(pbuf, hashcode);
-
-                    } else {
-
-                        /* It will be in the clist. Just write out the hashcode */
-
-                        put_value(pbuf, hashcode);
-
-                    }
+                    put_value(pbuf, hashcode);
 
                 }
 
+ 
             } else {
 
                 put_value(pbuf, hashcode);
