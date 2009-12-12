@@ -57,11 +57,13 @@ foreach my $i (@a) {
   }
 }
 
-my $cmd="rsync -avxc".
+
+my $cmd="rsync -avxcz".
 " --delete".
+" --max-size=2500000".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
-" --exclude bin --exclude obj --exclude debugobj".
+" --exclude bin --exclude obj --exclude debugobj --exclude pgobj".
 " --exclude sobin --exclude soobj".
 " --exclude main/obj --exclude main/debugobj".
 " --exclude language_switch/obj --exclude language_switch/obj".
@@ -73,11 +75,7 @@ my $cmd="rsync -avxc".
 " .".
 " regression\@$host:$dir/$user/$directory";
 
-open(F,">cluster_command.run");
-print F "$user $product\n";
-close(F);
-
-print STDERR "syncing and queuing\n";
+print STDERR "syncing\n";
 print "$cmd\n" if ($verbose);
 #`$cmd`;
 open(T,"$cmd |");
@@ -85,6 +83,14 @@ while(<T>) {
   print $_;
 }
 close(T);
+
+open(F,">cluster_command.run");
+print F "$user $product\n";
+close(F);
+
+print STDERR "\nqueueing\n";
+print "$cmd\n" if ($verbose);
+`$cmd`;
 
 unlink "cluster_command.run";
 
