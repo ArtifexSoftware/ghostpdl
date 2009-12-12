@@ -1599,7 +1599,9 @@ pclxl_copy_color(gx_device * dev,
     if ( ((source_bit & 7) != 0) || (w == 1) || (h == 1) )
 	return gx_default_copy_color(dev, base, sourcex, raster, id,
 				     x, y, w, h);
-    gdev_vector_update_log_op(vdev, rop3_S);
+    code = gdev_vector_update_log_op(vdev, rop3_S);
+    if(code < 0)
+        return 0;
     pclxl_set_cursor(xdev, x, y);
     s = pclxl_stream(xdev);
     {
