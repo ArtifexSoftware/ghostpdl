@@ -15,7 +15,6 @@
 /* H-P PCL XL driver */
 #include "math_.h"
 #include "memory_.h"
-#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsccolor.h"
