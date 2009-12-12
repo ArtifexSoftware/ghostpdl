@@ -1650,7 +1650,7 @@ idata:			data_size = 0;
 					    goto out;
 				    }
 				    while (left) {
-					if (cbp + left > cbuf.limit) {
+					if (cbuf.limit - cbp < left) {
 					    code = top_up_cbuf(&cbuf, &cbp);
 					    if (code < 0)
 						return code;
@@ -2316,7 +2316,7 @@ read_ht_segment(
 
     /* get the segment size; refill command buffer if necessary */
     enc_u_getw(seg_size, cbp);
-    if (cbp + seg_size > pcb->limit) {
+    if (pcb->limit - cbp < seg_size) {
         code = top_up_cbuf(pcb, &cbp);
 	if (code < 0)
 	    return code;
