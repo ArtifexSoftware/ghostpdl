@@ -10,7 +10,8 @@ my %allowedProducts=(
   'gs'  => 1,
   'pcl' => 1,
   'xps' => 1,
-  'svg' => 1
+  'svg' => 1,
+  'mupdf' => 1
 );
 
 my %products;
@@ -19,7 +20,7 @@ my $t;
 
 while ($t=shift) {
   $products{$t}=1;
-  die "usage: build.pl [gs] [pcl] [xps] [svg]" if (!exists $allowedProducts{$t});
+  die "usage: build.pl [gs] [pcl] [xps] [svg] [mupdf]" if (!exists $allowedProducts{$t});
 }
 
 my $updateTestFiles=1;
@@ -40,6 +41,9 @@ my $gsBin=$baseDirectory."gs/bin/gs";
 my $pclBin=$baseDirectory."gs/bin/pcl6";
 my $xpsBin=$baseDirectory."gs/bin/gxps";
 my $svgBin=$baseDirectory."gs/bin/gsvg";
+my $mupdfBin=$baseDirectory."gs/bin/pdfdraw";
+
+# mupdf uses the same test files as gs but only ones ending in pdf (or PDF)
 
 my %testSource=(
   $svnURLPublic."tests/pdf" => 'gs',
@@ -166,6 +170,17 @@ my %tests=(
 #   "pdf.ppmraw.72.0",
     #"pdf.ppmraw.300.0",
     #"pdf.pkmraw.300.0"
+    ],
+  'mupdf' => [
+    "ppmraw.72.0",
+    "ppmraw.300.0"
+#   "ppmraw.300.1",
+#   "psdcmyk.72.0",
+##"psdcmyk.300.0",
+##"psdcmyk.300.1",
+#   "pdf.ppmraw.72.0",
+#   "pdf.ppmraw.300.0",
+#   "pdf.pkmraw.300.0"
     ]
   );
 
@@ -193,7 +208,7 @@ foreach my $testSource (sort keys %testSource) {
 }
 
 foreach my $testSource (sort keys %testSource) {
-  if (scalar keys %products==0 || exists $products{$testSource{$testSource}}) {
+  if (scalar keys %products==0 || exists $products{$testSource{$testSource}} || ($testSource{$testSource} eq 'gs' && exists $products{'mupdf'})) {
 #print "$testSource\n";
     my $a=`svn list $testSource`;
 
@@ -212,15 +227,17 @@ foreach my $testSource (sort keys %testSource) {
     foreach (@a) {
       chomp;
       my $testfile=$t1.'/'.$_;
-      $testfiles{'./'.$testfile}=$testSource{$testSource} if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~m /.disabled$/));
+      if (exists $products{'mupdf'}) {
+        $testfiles{'./'.$testfile}='mupdf'                  if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~ m/.disabled$/) && $testfile =~ m/.pdf$/i);
+      } else {
+        $testfiles{'./'.$testfile}=$testSource{$testSource} if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~ m/.disabled$/));
+      }
 #     print "$testfile\n";
     }
   }
 }
 
-#print Dumper(\%testfiles);
-
-#exit;
+#print Dumper(\%testfiles); exit;
 
 sub build($$$$) {
   my $product=shift;  # gs|pcl|xps|svg
@@ -331,9 +348,14 @@ sub build($$$$) {
       $cmd2.=" nice $xpsBin";
     } elsif ($product eq 'svg') {
       $cmd2.=" nice $svgBin";
+    } elsif ($product eq 'mupdf') {
+      $cmd2.=" nice $mupdfBin";
     } else {
       die "unexpected product: $product";
     }
+
+    if ($product eq 'mupdf') {
+    } else {
     if ($md5sumOnly) {
       $cmd2.=" -sOutputFile='|md5sum  >>$md5Filename'";
     } else {
@@ -361,6 +383,7 @@ sub build($$$$) {
     $cmd.=" ; echo \"$cmd2\" >>$logFilename ";
     #   $cmd.=" ; $timeCommand -f \"%U %S %E %P\" $cmd2 >>$logFilename 2>&1";
     $cmd.=" ; $cmd2 >>$logFilename 2>&1";
+    }
 
   }
   if ($md5sumOnly) {

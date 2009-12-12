@@ -7,7 +7,8 @@ use Data::Dumper;
 
 my $verbose=0;
 
-my %products=('gs' =>1,
+my %products=('abort' =>1,
+              'gs' =>1,
               'pcl'=>1,
               'svg'=>1,
               'xps'=>1);
@@ -42,8 +43,6 @@ $product='gs pcl xps' if (!$product);
 print "$user $directory $product\n" if ($verbose);
 
 
-#           rsync -av -e "ssh -l ssh-user" rsync-user@host::module /dest
-
 if ($directory eq 'gs') {
   $directory='ghostpdl/gs';
 }
@@ -75,20 +74,26 @@ my $cmd="rsync -avxcz".
 " .".
 " regression\@$host:$dir/$user/$directory";
 
-print STDERR "syncing\n";
-print "$cmd\n" if ($verbose);
-#`$cmd`;
-open(T,"$cmd |");
-while(<T>) {
-  print $_;
+if ($product ne "abort") {
+  print STDERR "syncing\n";
+  print "$cmd\n" if ($verbose);
+  #`$cmd`;
+  open(T,"$cmd |");
+  while(<T>) {
+    print $_;
+  }
+  close(T);
 }
-close(T);
 
 open(F,">cluster_command.run");
 print F "$user $product\n";
 close(F);
 
-print STDERR "\nqueueing\n";
+if ($product ne "abort") {
+  print STDERR "\nqueueing\n";
+} else {
+  print STDERR "\ndequeueing\n";
+}
 print "$cmd\n" if ($verbose);
 `$cmd`;
 

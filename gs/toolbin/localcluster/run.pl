@@ -15,7 +15,7 @@ my $debug2=0;
 my $verbose=0;
 
 my $wordSize="64";
-my $timeOut=300;
+my $timeOut=240;
 my $maxTimeout=20;
 
 my %pids;
@@ -241,8 +241,8 @@ sub checkAbort {
   checkPID();
   return (1) if ($abort==1);
   spawn(60,"scp -i ~/.ssh/cluster_key  regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.abort . >/dev/null 2>/dev/null");
-  if (open(F,"<$machine.abort")) {
-    close(F);
+  if (-e "$machine.abort") {
+    spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
     killAll();
     return(1);
   }
@@ -281,9 +281,9 @@ if (!$abort) {
     mkdir "users/$user/ghostpdl";
     mkdir "users/$user/ghostpdl/gs";
 # if ($product eq 'gs') {
-#   $cmd="cd users/$user/ghostpdl ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl/gs .";
+#   $cmd="cd users/$user/ghostpdl ; rsync -vlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl/gs .";
 # } else {
-    $cmd="cd users/$user          ; rsync -vlogDtprxe.iLs --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
+    $cmd="cd users/$user          ; rsync -vlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
     # }
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -356,8 +356,7 @@ if (!$abort) {
     print "$cmd\n" if ($verbose);
     `$cmd`;
 
-    if (open(F,"<$gsBin/bin/gs")) {
-      close(F);
+    if (-e "$gsBin/bin/gs") {
     } else {
       $compileFail.="gs ";
     }
@@ -382,8 +381,7 @@ if ($products{'pcl'} && !$abort) {
   $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
   print "$cmd\n" if ($verbose);
   `$cmd`;
-  if (open(F,"<$gpdlSource/main/obj/pcl6")) {
-    close(F);
+  if (-e "$gpdlSource/main/obj/pcl6") {
     $cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -398,8 +396,7 @@ if ($products{'xps'} && !$abort) {
   $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
   print "$cmd\n" if ($verbose);
   `$cmd`;
-  if (open(F,"<$gpdlSource/xps/obj/gxps")) {
-    close(F);
+  if (-e "$gpdlSource/xps/obj/gxps") {
     $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -414,8 +411,7 @@ if ($products{'svg'} && !$abort) {
   $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
   print "$cmd\n" if ($verbose);
   `$cmd`;
-  if (open(F,"<$gpdlSource/svg/obj/gsvg")) {
-    close(F);
+  if (-e "$gpdlSource/svg/obj/gsvg") {
     $cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;

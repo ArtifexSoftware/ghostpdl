@@ -23,9 +23,82 @@ my %machines;
 
 my $footer="";
 
+sub removeQueue {
+  print "removing top element from queue\n";
+  open(LOCK,">$lock") || die "can't write to $lock";
+  flock(LOCK,LOCK_EX);
+  if (open(F,"<$queue")) {
+    my @a;
+    while(<F>) {
+      chomp;
+      push @a,$_;
+    }
+    close(F);
+    open(F,">$queue");
+    for (my $i=1;  $i<scalar(@a);  $i++) {
+      print F "$a[$i]\n";
+    }
+    close(F);
+  }
+  close(LOCK);
+}
+
+sub abortAll {
+  my $startTime=time;
+  foreach my $m (keys %machines) {
+print "touching $m.abort\n";
+    `touch $m.abort`;
+  }
+  my $done=0;
+  my %doneTable;
+  while (!$done) {
+    $done=1;
+    foreach my $m (keys %machines) {
+      if (-e "$m.abort") {
+        $done=0;
+      } else {
+        print "$m.abort removed\n" if (!exists $doneTable{$m});
+        $doneTable{$m}=1;
+      }
+    }
+    $done=1 if (time-$startTime>120);
+    sleep 1;
+  }
+  sleep 5;  # allow final machine to set status
+  foreach my $machine (keys %machines) {
+    open(F,">$machine.status");
+    print F "idle\n";
+    close(F);
+  }
+
+}
+
+
+sub checkAbort {
+  if (-e "abort.job") {
+print "abort.job found\n";
+  alarm 0;
+  unlink "abort.job";
+  open(F,">status");
+  print F "Aborting current job";
+  close(F);
+
+# removeQueue();  not necessary
+
+  abortAll();
+ 
+  unlink $runningSemaphore;
+  exit;
+
+  }
+}
+
+
+
 # the concept with checkPID is that if the semaphore file is missing or doesn't
 # contain our PID something bad has happened and we just just exit
 sub checkPID {
+  checkAbort();
   if (open(F,"<$runningSemaphore")) {
     my $t=<F>;
     close(F);
@@ -37,13 +110,11 @@ sub checkPID {
   } else {
     print "terminating: $runningSemaphore missing\n";
   }
+  alarm 0;
   open(F,">$runningSemaphore");
   print F "0\n";
   close(F);
-  foreach my $m (keys %machines) {
-    `touch $m.abort`;
-  }
-  sleep 120;
+  abortAll();
   unlink $runningSemaphore;
   exit;
 }
@@ -64,8 +135,12 @@ sub checkProblem {
           delete $machines{$m} if (exists $machines{$m});
           if (scalar keys %lastTransfer) {
             `touch $m.abort`;
-            print "1: adding jobs back into queue: ".scalar(@{$sent{$m}})."\n";
-            @jobs=(@jobs,@{$sent{$m}});
+            if (exists $sent{$m}) {
+              print "1: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
+              @jobs=(@jobs,@{$sent{$m}});
+            } else {
+              print "1: $m queue empty, nothing to add back in\n";
+            }
           } else {
             $doneCount=scalar keys %machines;
             print "1: setting doneCount to $doneCount\n";
@@ -80,8 +155,12 @@ sub checkProblem {
           print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
           if (scalar keys %lastTransfer) {
             `touch $_.abort`;
-            print "2: adding jobs back into queue: ".scalar(@{$sent{$_}})."\n";
-            @jobs=(@jobs,@{$sent{$_}});
+            if (exists $sent{$_}) {
+              print "2: adding jobs from $_ back into queue: ".scalar(@{$sent{$_}})."\n";
+              @jobs=(@jobs,@{$sent{$_}});
+            } else {
+              print "2: $_ queue empty, nothing to add back in\n";
+            }
           } else {
             $doneCount=scalar keys %machines;
             print "2: setting doneCount to $doneCount\n";
@@ -145,6 +224,28 @@ sub checkProblem {
 }
 
 {
+  my $cmd="cd mupdf ; darcs pull -a";
+  my $value=`$cmd`;
+  chomp $value;
+  if ($value =~ "No remote changes") {
+  } else {
+    open(LOCK,">$lock") || die "can't write to $lock";
+    flock(LOCK,LOCK_EX);
+    my $s="mupdf";
+    my $t=`grep "$s" $queue`;
+    chomp $t;
+    #   print "grep '$s' returned: $t\n";
+    if (length($t)==0) {
+      print "grep '$s' returns no match, adding to queue\n";
+      open(F,">>$queue");
+      print F "$s\n";
+      close(F);
+    }
+    close(LOCK);
+  }
+}
+
+{
   opendir(DIR, $usersDir) || die "can't opendir $usersDir: $!";
   foreach my $user (readdir(DIR)) {
     my $product="";
@@ -175,15 +276,44 @@ sub checkProblem {
       print "user $product\n";
       open(LOCK,">$lock") || die "can't write to $lock";
       flock(LOCK,LOCK_EX);
-      my $s="user $product";
-      my $t=`grep "$s" $queue`;
-      chomp $t;
-      print "grep '$s' returned: $t\n";
-      if (length($t)==0) {
-        print "grep '$s' returns no match, adding to queue\n";
-        open(F,">>$queue");
-        print F "$s\n";
-        close(F);
+      if ($product =~  m/abort$/) {
+        if ($product =~ m/^(.+) /) {
+          $user = $1;
+print "abort for user $user\n";
+          if (open(F,"<$queue")) {
+            my $first=1;
+            my @a;
+            while(<F>) {
+              chomp;
+              if (! m/^user $user/) {
+                push @a,$_ 
+              } else {
+                if ($first) {
+print "setting 'abort.job'\n";
+                  `touch abort.job`;
+                }
+              }
+              $first=0;
+            }
+            close(F);
+            open(F,">$queue");
+            for (my $i=0;  $i<scalar(@a);  $i++) {
+              print F "$a[$i]\n";
+            }
+            close(F);
+          }
+        }
+      } else {
+        my $s="user $product";
+        my $t=`grep "$s" $queue`;
+        chomp $t;
+        print "grep '$s' returned: $t\n";
+        if (length($t)==0) {
+          print "grep '$s' returns no match, adding to queue\n";
+          open(F,">>$queue");
+          print F "$s\n";
+          close(F);
+        }
         close(LOCK);
       }
     }
@@ -280,6 +410,7 @@ if (!$regression) {
 
 my $normalRegression=0;
 my $userRegression="";
+my $mupdfRegression=0;
 my $userName="";
 my $rev1;
 my $rev2;
@@ -354,19 +485,34 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
 } elsif ($regression=~/user (.+)/) {
   print "found user regression in queue: $regression\n";
   $userRegression=$1;
+} elsif ($regression=~/mupdf/) {
+  print "found mupdf entry in queue.lst, not yet handled, removing.\n";
+  my $cmd="touch mupdf.tar.gz ; rm mupdf.tar.gz ; tar cvf mupdf.tar --exclude=_darcs mupdf ; gzip mupdf.tar";
+  `$cmd`;
+  $cmd="cd mupdf ; darcs changes --count";
+  $rev1=`$cmd`;
+  chomp $rev1;
+# $mupdfRegression=1;
+  $product="mupdf";
 } else {
   print "found unknown entry in queue.lst, removing.\n";
 }
 
-if ($normalRegression==1 || $userRegression ne "") {
+if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
 
   if ($userRegression ne "") {
     print "running: $userRegression\n" if ($verbose);
   }
 
   if ($normalRegression) {
-    open(F,">revision");
+    open(F,">revision.gs");
     print F "local cluster regression gs-r$rev2 / ghostpdl-r$rev1 (xefitra)\n";
+    close(F);
+  }
+
+  if ($mupdfRegression) {
+    open(F,">revision.mudpf");
+    print F "local cluster regression mupdf-r$rev1 (xefitra)\n";
     close(F);
   }
 
@@ -406,7 +552,7 @@ if ($normalRegression==1 || $userRegression ne "") {
 
     checkPID();
 
-    if (!$normalRegression) {
+    if ($userRegression ne "") {
       my @a=split ' ',$userRegression,2;
       $userName=$a[0];
       $product=$a[1];
@@ -418,7 +564,7 @@ if ($normalRegression==1 || $userRegression ne "") {
     if ($? != 0) {
       # horrible hack, fix later
       print "build.pl $product failed\n";
-      unlink  $runningSemaphore;
+      unlink $runningSemaphore;
       exit;
     }
 
@@ -434,6 +580,8 @@ if ($normalRegression==1 || $userRegression ne "") {
       open(F,">$_.start");
       if ($normalRegression) {
         print F "svn\t$rev1 $rev2\t$product\n";
+      } elsif ($mupdfRegression) {
+        print F "mupdf\t$rev1\t$product";
       } else {
         print F "user\t$userName\t$product\n";
       }
@@ -446,6 +594,8 @@ if ($normalRegression==1 || $userRegression ne "") {
     open (F,">status");
     if ($normalRegression) {
       print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC";
+    } elsif ($mupdfRegression) {
+      print F "Regression mupdf-r$rev1 started at $startText UTC";
     } else {
       print F "Regression $userRegression started at $startText UTC";
     }
@@ -491,13 +641,12 @@ if ($normalRegression==1 || $userRegression ne "") {
     while (!$tempDone) {
 
       eval {
+
         local $SIG{ALRM} = sub { die "alarm\n" };
         alarm 30;
 
         while ((!$tempDone) && ($client = $server->accept())) {
           alarm 30;
-
-          checkPID();
 
           #print "doneCount=$doneCount machines=".(scalar(keys %machines))."\n";
           $SIG{PIPE} = 'IGNORE';
@@ -536,11 +685,14 @@ if ($normalRegression==1 || $userRegression ne "") {
           open (F,">status");
           if ($normalRegression) {
             print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+          } elsif ($mupdfRegression) {
+            print F "Regression mupdf-r$rev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } else {
             print F "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           }
           close(F);
           checkProblem;
+          checkPID();
         }
         alarm 0;
       };
@@ -551,6 +703,7 @@ if ($normalRegression==1 || $userRegression ne "") {
         print "no connections, checking done status\n";
       }
       checkProblem;
+      checkPID();
 
       if ($doneCount==scalar keys %machines) {
         $tempDone=1 ;
@@ -563,9 +716,7 @@ if ($normalRegression==1 || $userRegression ne "") {
         print "fail occured, setting tempDone to 1 and abort to 0\n";
         sleep 60; # hack to allow other machines to have compiler error as well, if the compiled we don't want them to continue
         print "aborting all machines\n";
-        foreach my $m (keys %machines) {
-          `touch $m.abort`;
-        }
+        abortAll();
       }
 
 
@@ -597,11 +748,8 @@ if ($normalRegression==1 || $userRegression ne "") {
           print "$m is down\n" if ($verbose);
           $abort=1;
           %doneTime=();  # avoids a race condition where the machine we just aborted reports done
-          foreach my $m (keys %machines) {
-            `touch $m.abort`;
-          }
+          abortAll();
           delete $machines{$m};
-          sleep 60;  # hack
         }
       }
       sleep(1);
@@ -617,6 +765,8 @@ if ($normalRegression==1 || $userRegression ne "") {
   open (F,">status");
   if ($normalRegression) {
     print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC - finished at $s";
+  } elsif ($mupdfRegression) {
+    print F "Regression mupdf-r$rev1 started at $startText UTC - finished at $s";
   } else {
     print F "Regression $userRegression started at $startText UTC - finished at $s";
   }
@@ -695,7 +845,7 @@ if ($normalRegression==1 || $userRegression ne "") {
       checkPID();
 print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCount false \"$product\"\n";
       `./compare.pl current.tab previous.tab $elapsedTime $machineCount false \"$product\" >>email.txt`;
-     #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision\`\" <email.txt`;
+     #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision.gs\`\" <email.txt`;
 
       checkPID();
       `touch archive/$rev2-$rev1`;
@@ -711,6 +861,7 @@ print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
       #  unlink "archive/$rev2-$rev1.tab.gz";
       #  `gzip archive/$rev2-$rev1.tab`;
       # unlink "log";
+    } elsif ($mupdfRegression) {
     } else {
       my @a=split ' ',$product;
       my $filter="cat current.tab";
@@ -762,8 +913,8 @@ print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
 
   checkPID();
   if ($normalRegression) {
-    `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
-    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision\`\" <email.txt`;
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision.gs\`\" <email.txt`;
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision.gs\`\" <email.txt`;
 
     print "test complete, performing final svn update\n";
     print "svn update ghostpdl -r$rev1 --ignore-externals\nsvn update ghostpdl/gs -r$rev2\n" if ($verbose);
@@ -771,11 +922,12 @@ print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
     `svn update ghostpdl/gs -r$rev2`;
 
     `./cp.all.sh`;
+  } elsif ($mupdfRegression) {
   } else {
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
-#     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision\`\" <$userName.txt`;
-      `mail $emails{$userName} -s \"$userRegression \`cat revision\`\" <$userName.txt`;
+#     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;
+      `mail $emails{$userName} -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;
       `mail marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
     } else {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
@@ -793,24 +945,7 @@ print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
 
 checkPID();
 
-print "removing top element from queue\n";
-open(LOCK,">$lock") || die "can't write to $lock";
-flock(LOCK,LOCK_EX);
-if (open(F,"<$queue")) {
-  my @a;
-  while(<F>) {
-    chomp;
-    push @a,$_;
-  }
-  close(F);
-  if (scalar(@a)>0) {
-    open(F,">$queue");
-    for (my $i=1;  $i<scalar(@a);  $i++) {
-      print F "$a[$i]\n";
-    }
-  }
-}
-close(LOCK);
+removeQueue();
 
 checkPID();
 unlink $runningSemaphore;
