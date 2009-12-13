@@ -941,14 +941,34 @@ currentdict /no_debug_dict undef
     /.EOFDecode
   } ifelse
 } bind def
+
+/pdf_rules_dict << /PDFRules //true >> readonly def
+
+% Add PDF option to ASCII85Decode filter
+% <source>        <name> add_A85_param <source> <dict'> <name>
+% <source> <dict> <name> add_A85_param <source> <dict'> <name>
+/add_A85_param {
+  dup /ASCII85Decode eq {
+    1 index type /dicttype eq {
+      3 -1 roll dup length 1 add dict copy
+      dup /PDFRules //true put
+      3 1 roll
+    } {
+      //pdf_rules_dict exch
+    } ifelse
+  } if
+} bind def
+
+currentdict /pdf_rules_dict undef
+
 /applyfilters {		% <parms> <source> <filternames> applyfilters <stream>
-  2 index null eq {
-    { filtername filter }
+  2 index //null eq {
+    { filtername add_A85_param filter }
   } {
     {		% Stack: parms source filtername
-      2 index 0 oget dup null eq { pop } {
+      2 index 0 oget dup //null eq { pop } {
         exch filtername dup /JBIG2Decode eq { exch jbig2cachectx exch } if
-      } ifelse filter
+      } ifelse add_A85_param filter
       exch dup length 1 sub 1 exch getinterval exch
     }
   } ifelse forall exch pop

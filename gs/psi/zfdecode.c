@@ -55,7 +55,18 @@ zA85E(i_ctx_t *i_ctx_p)
 static int
 zA85D(i_ctx_t *i_ctx_p)
 {
-    return filter_read_simple(i_ctx_p, &s_A85D_template);
+    os_ptr op = osp;
+    stream_A85D_state ss;
+    int code;
+
+    if (r_has_type(op, t_dictionary)) {
+	check_dict_read(*op);
+	if ((code = dict_bool_param(op, "PDFRules", false, &ss.pdf_rules)) < 0)
+	    return code;
+    } else {
+        ss.pdf_rules = false;
+    }
+    return filter_read(i_ctx_p, 0, &s_A85D_template, (stream_state *)&ss, 0);
 }
 
 /* ------ CCITTFaxDecode filter ------ */
