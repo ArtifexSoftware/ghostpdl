@@ -772,6 +772,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     byte *new_data_buf;
     int num_noncolor_planes, new_num_planes;
     int num_cols, num_rows, num_newcolor_planes;
+    bool icc_match;
 
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -845,11 +846,29 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
 
 #endif
 
+/* Note currently if a pattern space has transparency, the ICC profile is not used
+   for blending purposes.  Instead we rely upon the gray, rgb, or cmyk parent space.
+   This is partially due to the fact that pdf14_pop_transparency_group and
+   pdf14_push_transparnecy_group have no real ICC interaction and those are the
+   operations called in the tile transparency code.  Instead we may want to
+   look at pdf14_begin_transparency_group and pdf14_end_transparency group which
+   is where all the ICC information is handled.  We will return to look at that later */
 
-	/* If the color spaces are different and we actually did do a swap of the procs for color */
+    if ( nos->parent_color_info_procs->icc_profile != NULL ) {
+
+        icc_match = (nos->parent_color_info_procs->icc_profile->hashcode != curr_icc_profile->hashcode);
+
+    } else {
+
+        /* Let the other tests make the decision if we need to transform */
+
+        icc_match = false;
+
+    }
+
+    /* If the color spaces are different and we actually did do a swap of the procs for color */
     if ( (nos->parent_color_info_procs->num_components != curr_num_color_comp && 
-        nos->parent_color_info_procs->parent_color_mapping_procs != NULL) ||
-        nos->parent_color_info_procs->icc_profile->hashcode != curr_icc_profile->hashcode) {
+        nos->parent_color_info_procs->parent_color_mapping_procs != NULL) || icc_match ) {
 
         if (x0 < x1 && y0 < y1) {
 
