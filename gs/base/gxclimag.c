@@ -440,9 +440,20 @@ clist_begin_typed_image(gx_device * dev,
 
             if ( base_index == gs_color_space_index_ICC) {
 
-                pie->color_space.icc_hash = pim->ColorSpace->cmm_icc_profile_data->hashcode;
-                clist_icc_addentry(cdev, pim->ColorSpace->cmm_icc_profile_data->hashcode, 
-                    pim->ColorSpace->cmm_icc_profile_data);
+                if (!indexed) {
+
+                    pie->color_space.icc_hash = pim->ColorSpace->cmm_icc_profile_data->hashcode;
+                    clist_icc_addentry(cdev, pim->ColorSpace->cmm_icc_profile_data->hashcode, 
+                        pim->ColorSpace->cmm_icc_profile_data);
+
+                } else {
+
+                    pie->color_space.icc_hash = pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode;
+                    clist_icc_addentry(cdev, pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode, 
+                        pim->ColorSpace->base_space->cmm_icc_profile_data);
+
+                }
+
 
             } else {
 

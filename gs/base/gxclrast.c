@@ -2487,6 +2487,9 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
         /* Get the profile information from the clist */
         picc_profile = gsicc_read_serial_icc(cdev, hash_code);
 
+        if (picc_profile == NULL)
+            return gs_rethrow(-1, "Failed to find ICC profile during clist read");
+
         /* Store the clist reader address in the profile
            structure so that we can get to the buffer
            data if we really neeed it.  Ideally, we
