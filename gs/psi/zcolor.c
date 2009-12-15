@@ -5263,15 +5263,17 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
 		return_error(e_typecheck);
 	}
     } else {
+        ref nameref;
+
 	switch (components) {
 	    case 1:
-		code = name_enter_string(imemory, "DeviceGray", tempref);
+		code = name_enter_string(imemory, "DeviceGray", &nameref);
 		break;
 	    case 3:
-		code = name_enter_string(imemory, "DeviceRGB", tempref);
+		code = name_enter_string(imemory, "DeviceRGB", &nameref);
 		break;
 	    case 4:
-		code = name_enter_string(imemory, "DeviceCMYK", tempref);
+		code = name_enter_string(imemory, "DeviceCMYK", &nameref);
 		break;
 	    default:
 		return_error(e_rangecheck);
@@ -5281,7 +5283,7 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
 	 * the named space, as before, then we are replacing the second ICCBased
 	 * space in the first ICCBased space with the named space!
 	 */
-	code = idict_put_string(&ICCdict, "Alternate", tempref);
+	code = idict_put_string(&ICCdict, "Alternate", &nameref);
 	if (code < 0)
 	    return code;
 
