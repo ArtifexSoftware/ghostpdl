@@ -295,8 +295,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
 			      gs_imager_state *pis);
 
 static int
-pdf14_update_device_color_procs_pop_c(gx_device *dev,
-			      gs_imager_state *pis);
+pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis);
 
 
 static void pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis);
@@ -2055,8 +2054,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 
         /* pop our transparency group which will force the blending */
 
-        code = pdf14_pop_transparency_group(pis, p14dev->ctx, p14dev->blend_procs, p14dev->color_info.num_components,
-                pis->icc_manager->device_profile);
+        code = pdf14_pop_transparency_group(pis, p14dev->ctx, p14dev->blend_procs, 
+                            p14dev->color_info.num_components, pis->icc_manager->device_profile);
     
     }
 
@@ -3040,7 +3039,7 @@ pdf14_update_device_color_procs(gx_device *dev,
         parent_color_info->depth = pdev->color_info.depth;
 
         /* Don't increment the space since we are going to remove it from the 
-           ICC manager anyway */
+           ICC manager anyway.  */
         if (group_color == ICC && iccprofile != NULL){
             parent_color_info->icc_profile = pis->icc_manager->device_profile;
         }
@@ -3271,13 +3270,11 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
 
             /* For the ICC profiles, we want to update the ICC profile for the
                device in the ICC manager.  We already stored in in pdf14_parent_color_t.
-               That will be stored in the clist and restored during the reading phase */
+               That will be stored in the clist and restored during the reading phase. */
 
-            if (group_color == ICC) {
+           if (group_color == ICC) {
 
-                rc_decrement_only(pis->icc_manager->device_profile, "pdf14_update_device_color_procs_push_c");
                 pis->icc_manager->device_profile = cmm_icc_profile_data;
-                rc_increment(cmm_icc_profile_data);
 
             }
 
@@ -3297,13 +3294,12 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
 
 
 static int
-pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
+pdf14_update_device_color_procs_pop_c(gx_device *dev, gs_imager_state *pis)
 {
 
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color = pdev->trans_group_parent_cmap_procs;
     gx_device_clist_writer * cldev = (gx_device_clist_writer *)pdev->pclist_device;
-
 
     if_debug0('v', "[v]pdf14_update_device_color_procs_pop_c\n");
   
@@ -3337,6 +3333,13 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
         if (pdev->ctx){
             pdev->ctx->additive = parent_color->isadditive;
         }
+
+       /* The device profile must be restored.  No reference - count is done here 
+          A match with pdf14_update_device_color_procs_push_c.  There functions
+          are closely integrated with pdf14_pop_parent_color and pdf14_push_parent color.
+          All four are used only on the clist writer side of the transparency code */
+
+         pis->icc_manager->device_profile = parent_color->icc_profile;
 
          if_debug0('v', "[v]procs updated\n");
 
@@ -3426,7 +3429,12 @@ pdf14_pop_parent_color(gx_device *dev, const gs_imager_state *pis)
 
      if_debug0('v', "[v]pdf14_pop_parent_color\n");
 
-   /* Update the link */
+     /* We need to compliment pdf14_push_parent color */
+
+     if (old_parent_color_info->icc_profile != NULL)
+        rc_decrement(old_parent_color_info->icc_profile, "pdf14_pop_parent_color");
+
+    /* Update the link */
 
     pdev->trans_group_parent_cmap_procs = old_parent_color_info->previous;
 
@@ -3565,7 +3573,6 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
                 /* Take care of the ICC profile */
 
                 if (parent_color->icc_profile != NULL){
-                    rc_decrement(pis->icc_manager->device_profile,"pdf14_end_transparency_mask");
                     pis->icc_manager->device_profile = parent_color->icc_profile;
                 }
                 
@@ -5985,12 +5992,10 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                   this mask can affect.  So, if needed change
                   the masks bounding box at this time */
 
-                  
-
 		break;
 
+            /* When we get a trans group pop, we need to update the color mapping procs if it was not a sep device */
 
-            /* When we get a trans group pop, we need to update the color mapping procs */
 	    case PDF14_END_TRANS_GROUP:
 
                /* We need to update the clist writer device procs based upon the
@@ -5998,9 +6003,12 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 
                 /* First restore our procs */
                 
-               code = pdf14_update_device_color_procs_pop_c(dev,pis);
+                sep_target = (strcmp(pdev->dname, "pdf14clistcustom") == 0) || (strcmp(pdev->dname, "pdf14clistcmykspot") == 0);
 
-                /* Now pop the old one */
+                if (!sep_target)
+                    code = pdf14_update_device_color_procs_pop_c(dev,pis);
+
+                /* We always do this push and pop */
 
                 pdf14_pop_parent_color(dev, pis);
 

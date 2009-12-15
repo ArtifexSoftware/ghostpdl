@@ -258,8 +258,6 @@ gs_begin_transparency_group(gs_state *pgs,
             /* Get the ICC profile */
 
             params.iccprofile = blend_color_space->cmm_icc_profile_data;
-            rc_increment(params.iccprofile);
-
 
         } else {
 

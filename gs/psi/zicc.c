@@ -183,6 +183,12 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(igs, pcs);
 
+    /* In this case, we already have a ref count of 2 on the icc profile 
+       one for when it was created and one for when it was set.  We really
+       only want one here so adjust */
+
+    rc_decrement(picc_profile,"seticc");
+
     /* Remove the ICC dict from the stack */
 
     pop(1);
