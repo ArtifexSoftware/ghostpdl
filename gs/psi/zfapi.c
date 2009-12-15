@@ -1547,7 +1547,6 @@ find_substring(const byte *where, int length, const char *what)
 static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, char *font_file_path, bool bBuildGlyph, ref *charstring)
 {   /* Stack : <font> <code|name> --> - */
     os_ptr op = osp;
-    es_ptr ep = esp;
     ref *pdr = op - 1;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
