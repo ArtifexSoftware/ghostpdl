@@ -734,7 +734,7 @@ int main(int argc, char *argv[])
 
     find_changed_bbox(bmp, bmp2, w, h, s, bpp, &bbox);
 
-    if ((bbox.xmin >= bbox.xmax) || (bbox.ymin >= bbox.ymax))
+    if ((bbox.xmin > bbox.xmax) && (bbox.ymin > bbox.ymax))
     {
         /* The script will scream for us */
         /* fprintf(stderr, "No differences found!\n"); */
