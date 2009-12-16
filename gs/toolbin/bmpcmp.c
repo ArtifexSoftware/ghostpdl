@@ -734,7 +734,7 @@ int main(int argc, char *argv[])
 
     find_changed_bbox(bmp, bmp2, w, h, s, bpp, &bbox);
 
-    if ((bbox.xmin > bbox.xmax) || (bbox.ymin > bbox.ymax))
+    if ((bbox.xmin >= bbox.xmax) || (bbox.ymin >= bbox.ymax))
     {
         /* The script will scream for us */
         /* fprintf(stderr, "No differences found!\n"); */
@@ -814,13 +814,21 @@ int main(int argc, char *argv[])
             if (boxlist->xmax > bbox2.xmax)
                 boxlist->xmax = bbox2.xmax;
             if (boxlist->xmin > boxlist->xmax-MINX)
+            {
                 boxlist->xmin = boxlist->xmax-MINX;
+                if (boxlist->xmin < 0)
+                    boxlist->xmin = 0;
+            }
             boxlist->ymin = bbox2.ymin + MAXY*h2;
             boxlist->ymax = boxlist->ymin + MAXY;
             if (boxlist->ymax > bbox2.ymax)
                 boxlist->ymax = bbox2.ymax;
             if (boxlist->ymin > boxlist->ymax-MINY)
+            {
                 boxlist->ymin = boxlist->ymax-MINY;
+                if (boxlist->ymin < 0)
+                    boxlist->ymin = 0;
+            }
             rediff(bmp, bmp2, s, bpp, boxlist);
             if (!BBox_valid(boxlist))
                 continue;
