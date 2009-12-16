@@ -14,6 +14,8 @@
 # 4) Invoke this script. (e.g. diffrun diffout list.txt)
 # 5) Make tea. Drink tea.
 
+########################################################################
+# SETUP SECTION
 
 # The path to the executables.
 #$gsexe     = "gs/bin/gswin32c.exe";
@@ -35,6 +37,10 @@ $pwpclargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 $pwxpsargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 $pwsvgargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 
+# Set the following to the maximum number (approx) of bitmap sets that
+# should be put into a single HTML file.
+$maxsets = 100;
+
 # Set the following to true to convert bmps to pngs (useful to save space
 # if you want to show people this across the web).
 $pngize = 1;
@@ -47,22 +53,71 @@ $fileadjust = "../ghostpcl/";
 # version.
 $reference = "..\\ghostpdlREF\\";
 
+# END SETUP SECTION
+########################################################################
 
+########################################################################
+# FUNCTIONS
+
+sub getfilename {
+    my ($num) = @_;
+    my $filename = "compare";
+    
+    if ($num != 0)
+    {
+        $filename .= $num;
+    }
+    $filename .= ".html";
+    return $filename;
+}
+
+sub openhtml {
+    $setsthisfile = 0;
+    open($html, ">", $outdir."/".getfilename($filenum));
+
+    print $html "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE></HEAD>";
+    print $html "<SCRIPT LANGUAGE=\"JavaScript\">";
+    print $html "function swap(n){";
+    print $html   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
+    print $html   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
+    print $html   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
+    print $html "}</SCRIPT><BODY>";
+    
+    if ($filenum > 0) {
+        print $html "<P>";
+        if ($num > 1)
+        {
+            print $html "<A href=\"".getfilename(0)."\">First</A>&nbsp;&nbsp;";
+        }
+        print $html "<A href=\"".getfilename($filenum-1)."\">Previous(".($filenum-1).")</A>";
+        print $html "</P>";
+    }
+    $filenum++;
+}
+
+sub closehtml {
+    print $html "</BODY>";
+    close $html;
+}
+
+sub nexthtml {
+    print $html "<P><A href=\"".getfilename($filenum)."\">Next(".$filenum.")</A>";
+    closehtml();
+    openhtml();
+}
+
+# END FUNCTIONS
+########################################################################
+
+########################################################################
 # Here follows todays lesson. Abandon hope all who enter here. Etc. Etc.
-$outdir = $ARGV[0];
-$ARGV = shift @ARGV;
+$outdir       = $ARGV[0];
+$ARGV         = shift @ARGV;
+$filenum      = 0;
 
 # Create the output dir/html file
 mkdir $outdir;
-open($html, ">", $outdir."/compare.html");
-
-print $html "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE></HEAD>";
-print $html "<SCRIPT LANGUAGE=\"JavaScript\">";
-print $html "function swap(n){";
-print $html   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
-print $html   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
-print $html   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
-print $html "}</SCRIPT><BODY>";
+openhtml();
 
 # Keep a list of files we've done, so we don't repeat
 %done = ();
@@ -105,6 +160,15 @@ while (<>)
     }
     $done{$file.":".$exe.":".$res} = 1;
     
+    # Start a new file if required
+    if ($setsthisfile >= $maxsets)
+    {
+        nexthtml();
+    }
+
+    # Output the title
+    print $html "<H1>".$file." (".$res."dpi)</H1></BR>";
+    
     # Generate the appropriate bmps to diff
     print $exe.": ".$file."\n";
     if ($exe eq "gs")
@@ -120,6 +184,8 @@ while (<>)
         {
             print "New bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$gsexe;
@@ -133,6 +199,8 @@ while (<>)
         {
             print "Ref bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
     }
@@ -148,6 +216,8 @@ while (<>)
         {
             print "New bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$pclexe;
@@ -160,6 +230,8 @@ while (<>)
         {
             print "Ref bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
     }
@@ -175,6 +247,8 @@ while (<>)
         {
             print "New bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$xpsexe;
@@ -187,6 +261,8 @@ while (<>)
         {
             print "Ref bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
     }
@@ -202,6 +278,8 @@ while (<>)
         {
             print "New bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$svgexe;
@@ -214,6 +292,8 @@ while (<>)
         {
             print "Ref bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
     }
@@ -230,6 +310,8 @@ while (<>)
         {
             print "New pdf generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New pdf generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$gsexe;
@@ -243,6 +325,8 @@ while (<>)
         {
             print "Ref pdf generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref pdf generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  =     $gsexe;
@@ -255,6 +339,8 @@ while (<>)
         {
             print "New bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  =     $gsexe;
@@ -267,6 +353,8 @@ while (<>)
         {
             print "Ref bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -284,6 +372,8 @@ while (<>)
         {
             print "New pdf generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New pdf generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$pclexe;
@@ -296,6 +386,8 @@ while (<>)
         {
             print "Ref pdf generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref pdf generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  =     $gsexe;
@@ -308,6 +400,8 @@ while (<>)
         {
             print "New bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$gsexe;
@@ -320,6 +414,8 @@ while (<>)
         {
             print "Ref bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -335,8 +431,10 @@ while (<>)
         $ret = system($cmd);
         if ($ret != 0)
         {
-            print "New bitmap generation failed with exit code ".$ret."\n";
+            print "New pdf generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New pdf generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$xpsexe;
@@ -347,8 +445,10 @@ while (<>)
         $ret = system($cmd);
         if ($ret != 0)
         {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
+            print "Ref pdf generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref pdf generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  =     $gsexe;
@@ -361,6 +461,8 @@ while (<>)
         {
             print "New bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$gsexe;
@@ -373,6 +475,8 @@ while (<>)
         {
             print "Ref bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -388,8 +492,10 @@ while (<>)
         $ret = system($cmd);
         if ($ret != 0)
         {
-            print "New bitmap generation failed with exit code ".$ret."\n";
+            print "New pdf generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New pdf generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$svgexe;
@@ -400,8 +506,10 @@ while (<>)
         $ret = system($cmd);
         if ($ret != 0)
         {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
+            print "Ref pdf generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref pdf generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  =     $gsexe;
@@ -414,6 +522,8 @@ while (<>)
         {
             print "New bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>New bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         $cmd  = $reference.$gsexe;
@@ -426,6 +536,8 @@ while (<>)
         {
             print "Ref bitmap generation failed with exit code ".$ret."\n";
             print "Command was: ".$cmd;
+            print $html "<P>Ref bitmap generation failed with exit code ";
+            print $html $ret."<br>Command was: ".$cmd."</P>\n";
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -437,9 +549,6 @@ while (<>)
         next;
     }
 
-    # Output the title
-    print $html "<H1>".$file." (".$res."dpi)</H1></BR>";
-    
     # Now diff those things
     $page = 1;
     $diffs = 0;
@@ -455,6 +564,7 @@ while (<>)
         if ($ret != 0)
         {
             print "Image differ failed!\n";
+            print $html "<p>Image differ failed!</p>\n";
         }
         # Delete the temporary files
         unlink $tmp1;
@@ -473,6 +583,7 @@ while (<>)
                 if ($ret != 0)
                 {
                     print "Conversion to png failed!\n";
+                    print $html "<p>Conversion to png failed!</p>\n";
                 }
                 unlink $outdir."/out.".$images.".bmp";
                 $cmd  = $convertexe." ";
@@ -482,6 +593,7 @@ while (<>)
                 if ($ret != 0)
                 {
                     print "Conversion to png failed!\n";
+                    print $html "<p>Conversion to png failed!</p>\n";
                 }
                 unlink $outdir."/out.".($images+1).".bmp";
                 $cmd  = $convertexe." ";
@@ -491,6 +603,7 @@ while (<>)
                 if ($ret != 0)
                 {
                     print "Conversion to png failed!\n";
+                    print $html "<p>Conversion to png failed</p>\n";
                 }
                 unlink $outdir."/out.".($images+2).".bmp";
                 $suffix = ".png";
@@ -500,6 +613,7 @@ while (<>)
            print $html "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\"></TD></TR></TABLE><BR>";
            $images += 3;
            $diffs++;
+           $setsthisfile++;
         }
 
         $page++;
@@ -513,8 +627,7 @@ while (<>)
 }
 
 # Finish off the HTML file
-print $html "</BODY>";
-close $html;
+closehtml();
 
 # List the files that we expected to find differences in, but failed to:
 if (scalar(@nodiffs) != 0)
