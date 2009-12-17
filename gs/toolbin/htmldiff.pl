@@ -23,16 +23,16 @@ $gsexe     = "gs\\debugbin\\gswin32c.exe";
 $pclexe    = "main\\obj\\pcl6.exe";
 $xpsexe    = "xps\\obj\\gxps.exe";
 $svgexe    = "svg\\obj\\gsvg.exe";
-$bmpcmpexe = "..\\bmpcmp\\bmpcmp\\Debug\\bmpcmp.exe";
+$bmpcmpexe = "..\\bmpcmp\\bmpcmp\\Release\\bmpcmp.exe";
 $convertexe= "convert.exe"; # ImageMagick
 
 # The args fed to the different exes. Probably won't need to play with these.
-$gsargs    = "-sDEVICE=bmp16m -dNOPAUSE -dBATCH -q -sDEFAULTPAPERSIZE=letter";
+$gsargs    = "-sDEVICE=bmp16m -dNOPAUSE -dBATCH -q -sDEFAULTPAPERSIZE=letter -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
 $gsargsPS  = " %rom%Resource/Init/gs_cet.ps";
 $pclargs   = "-sDEVICE=bmp16m -dNOPAUSE";
 $xpsargs   = "-sDEVICE=bmp16m -dNOPAUSE";
 $svgargs   = "-sDEVICE=bmp16m -dNOPAUSE";
-$pwgsargs  = "-sDEVICE=pdfwrite -dNOPAUSE -dBATCH -q";
+$pwgsargs  = "-sDEVICE=pdfwrite -dNOPAUSE -dBATCH -q -sDEFAULTPAPERSIZE=letter -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
 $pwpclargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 $pwxpsargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 $pwsvgargs = "-sDEVICE=pdfwrite -dNOPAUSE";
@@ -52,6 +52,11 @@ $fileadjust = "../ghostpcl/";
 # The path to prepend to each of the above exe's to get the reference
 # version.
 $reference = "..\\ghostpdlREF\\";
+
+# I thought we'd need to use redirection, but this gives problems on
+# windows at least. Non windows users may want to use the following:
+# $redir = " - < ";
+$redir = " ";
 
 # END SETUP SECTION
 ########################################################################
@@ -174,11 +179,11 @@ while (<>)
     if ($exe eq "gs")
     {
         $cmd  =     $gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
+        $cmd .= " ".$gsargs;
         if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS };
-        $cmd .= " ".$file;
+        $cmd .= $redir.$file;
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -189,11 +194,11 @@ while (<>)
             next;
         }
         $cmd  = $reference.$gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd .= " ".$gsargs;
         if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS }
-        $cmd .= " ".$file;
+        $cmd .= $redir.$file;
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -300,11 +305,11 @@ while (<>)
     elsif ($exe eq "pwgs")
     {
         $cmd  =     $gsexe;
-        $cmd .= " ".$pwgsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1.pdf";
+        $cmd .= " ".$pwgsargs;
         if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
-        $cmd .= " ".$file2;
+        $cmd .= $redir.$file2;
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -315,11 +320,11 @@ while (<>)
             next;
         }
         $cmd  = $reference.$gsexe;
-        $cmd .= " ".$pwgsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        $cmd .= " ".$pwgsargs;
         if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
-        $cmd .= " ".$file2;
+        $cmd .= $redir.$file2;
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -330,10 +335,10 @@ while (<>)
             next;
         }
         $cmd  =     $gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd .= " ".$outdir."/tmp1.pdf";
+        $cmd .= " ".$gsargs;
+        $cmd .= $redir.$outdir."/tmp1.pdf";
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -344,10 +349,10 @@ while (<>)
             next;
         }
         $cmd  =     $gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$outdir."/tmp2.pdf";
+        $cmd .= " ".$gsargs;
+        $cmd .= $redir.$outdir."/tmp2.pdf";
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -391,10 +396,10 @@ while (<>)
             next;
         }
         $cmd  =     $gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd .= " ".$outdir."/tmp1.pdf";
+        $cmd .= " ".$gsargs;
+        $cmd .= $redir.$outdir."/tmp1.pdf";
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -405,10 +410,10 @@ while (<>)
             next;
         }
         $cmd  = $reference.$gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$outdir."/tmp2.pdf";
+        $cmd .= " ".$gsargs;
+        $cmd .= $redir.$outdir."/tmp2.pdf";
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -452,10 +457,10 @@ while (<>)
             next;
         }
         $cmd  =     $gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd .= " ".$outdir."/tmp1.pdf";
+        $cmd .= " ".$gsargs;
+        $cmd .= $redir.$outdir."/tmp1.pdf";
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -466,10 +471,10 @@ while (<>)
             next;
         }
         $cmd  = $reference.$gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$outdir."/tmp2.pdf";
+        $cmd .= " ".$gsargs;
+        $cmd .= $redir.$outdir."/tmp2.pdf";
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -513,10 +518,10 @@ while (<>)
             next;
         }
         $cmd  =     $gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd .= " ".$outdir."/tmp1.pdf";
+        $cmd .= " ".$gsargs;
+        $cmd .= $redir.$outdir."/tmp1.pdf";
         $ret = system($cmd);
         if ($ret != 0)
         {
@@ -527,10 +532,10 @@ while (<>)
             next;
         }
         $cmd  = $reference.$gsexe;
-        $cmd .= " ".$gsargs;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$outdir."/tmp2.pdf";
+        $cmd .= " ".$gsargs;
+        $cmd .= $redir.$outdir."/tmp2.pdf";
         $ret = system($cmd);
         if ($ret != 0)
         {
