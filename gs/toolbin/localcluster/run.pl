@@ -333,8 +333,6 @@ if (!$abort) {
   $cmd="mv $gsSource/base/gscdef.tmp $gsSource/base/gscdef.c";
   `$cmd`;
 
-  #   if (1 || !$product || $product eq 'gs') {  # always build ghostscript
-
   unlink "$gsSource/makegs.out";
   unlink "$gpdlSource/makepcl.out";
   unlink "$gpdlSource/makexps.out";
@@ -357,23 +355,18 @@ if (!$abort) {
     `$cmd`;
 
     if (-e "$gsBin/bin/gs") {
+      if (!$user) {
+        `cp -p $gsBin/bin/gs ./gs.save`;
+      }
     } else {
       $compileFail.="gs ";
     }
+  } else {
+    if (-e "./gs.save") {
+      `cp -p ./gs.save $gsBin/bin/gs`;
+    }
   }
-}
-
-# if (1 || !$product || $product eq 'ghostpdl') {  # always build ghostpdl
-#   if (1) {
-if (0) {
-  $abort=checkAbort;
-  if (!$abort) {
-    updateStatus('Make clean GhostPCL/XPS/SVG');
-    $cmd="cd $gpdlSource ; nice make pcl-clean xps-clean svg-clean -j 12 >makeclean.out 2>&1";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
-  }
-}
+} 
 
 $abort=checkAbort;
 if ($products{'pcl'} && !$abort) {
@@ -459,14 +452,14 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
     my $retry=10;
     do {
       if ($retry<10) {
-        my $s=`date +\"%y_%m_%d_%H_%M_%S\"`;
-        $s.="_$retry";
-        `touch $s`;
+#       my $s=`date +\"%y_%m_%d_%H_%M_%S\"`;
+#       $s.="_$retry";
+#       `touch $s`;
         $abort=checkAbort;
         $retry=0 if ($abort);
       }
 
-      sleep 10 if ($retry<10);
+      sleep 5 if ($retry<10);
       # create a tcp connection to the specified host and port
       $handle = IO::Socket::INET->new(Proto     => "tcp",
         PeerAddr  => $host,
@@ -620,12 +613,29 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
 
 if (!$abort) {
 
-  updateStatus('Waiting for jobs to finish');
 
   print "\n" if ($debug);
   my $count;
   my $startTime=time;
+  my $lastCount=-1;
   do {
+    my $tempCount=scalar keys %pids;
+    if ($tempCount != $lastCount) {
+      my $message=("Waiting for $tempCount jobs to finish");
+      if ($tempCount<=3) {
+        if ($tempCount==1) {
+          $message="Waiting for $tempCount job to finish";
+        }
+        $message.=":";
+        foreach my $pid (keys %pids) {
+          $pids{$pid}{'filename'} =~ m/.+__(.+)$/;
+          $message.= ' '.$1;
+        }
+      }
+      updateStatus($message);
+      $lastCount=$tempCount;
+    }
+
     if (time-$startTime>60) {
       $abort=checkAbort;
       $startTime=time;
@@ -671,7 +681,7 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
       $count++ if ($s>=0);
     }
     print "$count " if ($debug);
-    select(undef, undef, undef, 0.25);
+    select(undef, undef, undef, 1.00);
   } while ($count>0 && !$abort);
   print "\n" if ($debug);
 
@@ -700,14 +710,20 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
       $dir="users/$user/ghostpdl" if ($user);
       foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out') {
         my $count=0;
+        my $start=-1;
         if (open(F3,"<$dir/$i")) {
           while(<F3>) {
+            $start=$count if (m/^gcc/);
             $count++;
           }
           close(F3);
         }
+        my $t1=$count;
         $count-=20;
-        print F2 "\n$i (last 20 lines):\n\n";
+        $count=$start-5 if ($start!=-1);
+        $count=$t1-10 if ($t1-$count<10);
+        $t1-=$count;
+        print F2 "\n$i (last $t1 lines):\n\n";
         if (open(F3,"<$dir/$i")) {
           while(<F3>) {
             if ($count--<0) {

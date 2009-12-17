@@ -14,6 +14,7 @@ my %allowedProducts=(
   'mupdf' => 1
 );
 
+
 my %products;
 
 my $t;
@@ -45,6 +46,18 @@ my $mupdfBin=$baseDirectory."gs/bin/pdfdraw";
 
 # mupdf uses the same test files as gs but only ones ending in pdf (or PDF)
 
+
+my %skip;
+
+if (open(F,"<skip.lst")) {
+  while(<F>) {
+    chomp;
+    $skip{$_}=1;
+  }
+  close(F);
+}
+
+
 my %testSource=(
   $svnURLPublic."tests/pdf" => 'gs',
   $svnURLPublic."tests/ps" => 'gs',
@@ -54,7 +67,7 @@ my %testSource=(
   $svnURLPrivate."tests_private/pdf/PDFIA1.7_SUBSET" => 'gs',
 
   $svnURLPublic."tests/pcl" => 'pcl',
-# $svnURLPrivate."tests_private/customer_tests" => 'pcl',
+  $svnURLPrivate."tests_private/customer_tests" => 'pcl',
   $svnURLPrivate."tests_private/pcl/pcl5cfts" => 'pcl',
   $svnURLPrivate."tests_private/pcl/pcl5cats/Subset" => 'pcl',
   $svnURLPrivate."tests_private/pcl/pcl5efts" => 'pcl',
@@ -287,6 +300,7 @@ sub build($$$$) {
     }
     $cmd1.=" -sOutputFile=$outputFilename";
     $cmd1.=" -sDEVICE=pdfwrite";
+    $cmd1.=" -r".$a[2];
     #   $cmd1.=" -q" if ($product eq 'gs');
     $cmd1.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd1.=" -dNOPAUSE -dBATCH";  # -Z:
@@ -407,8 +421,10 @@ foreach my $testfile (sort keys %testfiles) {
     my $outputFilenames="";
     my $filename="";
     ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,1);
-    push @commands,$cmd;
-    push @filenames,$filename;
+    if (!exists $skip{$filename}) {
+      push @filenames,$filename;
+      push @commands,$cmd;
+    }
   }
 }
 
@@ -419,11 +435,21 @@ foreach my $testfile (sort keys %testfiles) {
 #  }
 #  print "\n";
 #}
+my $subsetRemain=1;
 while (scalar(@commands)) {
-  my $n=rand(scalar @commands);
+  my $n=-1;
+  if (scalar @commands<4900 && $subsetRemain) {
+    for (my $i=0;  $i<scalar @commands && $n==-1;  $i++) {
+       $n=$i if ($filenames[$i] =~ m/Subset/);
+    }
+    $subsetRemain=0 if ($n==-1);
+  } 
+  if ($n==-1) {
+    $n=rand(scalar @commands);
+  }
 # $n=0;
-  my $command=$commands[$n];  splice(@commands,$n,1);
   my $filename=$filenames[$n];  splice(@filenames,$n,1);
+  my $command=$commands[$n];  splice(@commands,$n,1);
   print "$filename\t$command\n";
 }
 

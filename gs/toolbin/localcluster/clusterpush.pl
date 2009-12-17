@@ -16,6 +16,8 @@ my %products=('abort' =>1,
 my $product=shift;
 my $user=shift;
 
+unlink "cluster_command.run";
+
 my $host="casper.ghostscript.com";
 my $dir="/home/regression/cluster/users";
 if (!$user) {

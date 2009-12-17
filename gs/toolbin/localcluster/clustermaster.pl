@@ -44,6 +44,7 @@ sub removeQueue {
 }
 
 sub abortAll {
+print "aborting all machines\n";
   my $startTime=time;
   foreach my $m (keys %machines) {
 print "touching $m.abort\n";
@@ -77,18 +78,18 @@ print "touching $m.abort\n";
 sub checkAbort {
   if (-e "abort.job") {
 print "abort.job found\n";
-  alarm 0;
-  unlink "abort.job";
-  open(F,">status");
-  print F "Aborting current job";
-  close(F);
+    alarm 0;
+    unlink "abort.job";
+    open(F,">status");
+    print F "Aborting current job";
+    close(F);
 
 # removeQueue();  not necessary
 
-  abortAll();
+    abortAll();
  
-  unlink $runningSemaphore;
-  exit;
+    unlink $runningSemaphore;
+    exit;
 
   }
 }
@@ -148,23 +149,23 @@ sub checkProblem {
           }
         }
       }
-      foreach (keys %lastTransfer) {
-        if (time-$lastTransfer{$_}>=$maxDownTime) {
-          delete $lastTransfer{$_} if (exists $lastTransfer{$_});
-          delete $machines{$_} if (exists $machines{$_});
-          print "machine $_ hasn't connected in ".(time-$lastTransfer{$_})." seconds, assuming it went down\n";
+      foreach my $m (keys %lastTransfer) {
+        if (time-$lastTransfer{$m}>=$maxDownTime) {
+          delete $lastTransfer{$m} if (exists $lastTransfer{$m});
+          delete $machines{$m} if (exists $machines{$m});
+          print "machine $m hasn't connected in ".(time-$lastTransfer{$m})." seconds, assuming it went down\n";
           if (scalar keys %lastTransfer) {
-            `touch $_.abort`;
-            if (exists $sent{$_}) {
-              print "2: adding jobs from $_ back into queue: ".scalar(@{$sent{$_}})."\n";
-              @jobs=(@jobs,@{$sent{$_}});
+            `touch $m.abort`;
+            if (exists $sent{$m}) {
+              print "2: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
+              @jobs=(@jobs,@{$sent{$m}});
             } else {
-              print "2: $_ queue empty, nothing to add back in\n";
+              print "2: $m queue empty, nothing to add back in\n";
             }
           } else {
             $doneCount=scalar keys %machines;
             print "2: setting doneCount to $doneCount\n";
-            unlink "$_.up";
+            unlink "$m.up";
             $abort=1;
           }
 
@@ -172,14 +173,12 @@ sub checkProblem {
       }
 
       foreach my $m (keys %machines) {
-        if (open(F,"<$m.done") && exists $lastTransfer{$m}) {
-          close(F);
+        if (-e "$m.done" && exists $lastTransfer{$m}) {
           print "$m is reporting done even though it should not be done\n";
           $tempDone=1;
           $abort=1;
         }
-        if (open(F,"<$m.fail")) {
-          close(F);
+        if (-e "$m.fail") {
           print "$m is reporting fail\n";
           $failOccured=1;
         }
@@ -711,18 +710,33 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
       }
 
       if ($failOccured) {
-        $tempDone=1 ;
+        $tempDone=1;
         $abort=0;
         print "fail occured, setting tempDone to 1 and abort to 0\n";
-        sleep 60; # hack to allow other machines to have compiler error as well, if the compiled we don't want them to continue
-        print "aborting all machines\n";
-        abortAll();
+        my $startTime=time;
+        my $count=0;;
+        while ($count<scalar keys %machines && time-$startTime<60) {
+          foreach my $m (keys %machines) {
+            if (-e "$m.fail") {
+              print "$m is reporting fail\n";
+              $count++;
+              unlink "$m.fail";
+            }
+          }
+        }
+        if ($count<scalar keys %machines) {
+          print "aborting all machines\n";
+          abortAll();
+        }
       }
 
 
     }
 
     print "all machines sent done, some machine went down, or one or more failed\n";
+    if ($abort) {
+      abortAll();
+    }
 
     my $machineSentDoneTime=time;
 
@@ -878,10 +892,11 @@ print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
       `rm $tabs`;
 
       checkPID();
-print "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCount true \"$product\"\n";
+print "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\"\n";
       `./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\" >>$userName.txt`;
       `mv $logs $usersDir/$userName/.`;
       `cp -p $userName.txt $usersDir/$userName/.`;
+      `cp -p $userName.txt results/.`;
       `cp -p temp.tab $usersDir/$userName/.`;
       `cp -p current.tab $usersDir/$userName/.`;
 
@@ -949,3 +964,6 @@ removeQueue();
 
 checkPID();
 unlink $runningSemaphore;
+
+`./clustermaster.pl`;
+

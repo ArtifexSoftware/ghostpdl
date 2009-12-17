@@ -92,11 +92,12 @@ close(F);
 # build list of archived files
 print STDERR "reading archive directory\n" if ($verbose);
 my %archives;
-opendir(DIR, 'archive') || die "can't opendir archive: $!";
+if (opendir(DIR, 'archive')) { # || die "can't opendir archive: $!";
 foreach (readdir(DIR)) {
   $archives{$_}=1 if (!(-d $_) && (m/.tab$/));
 }
 closedir DIR;
+}
 
 my $count=$previousValues;
 foreach my $i (sort {$b cmp $a} keys %archives) {
