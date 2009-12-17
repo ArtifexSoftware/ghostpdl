@@ -937,6 +937,7 @@ print "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount 
     `svn update ghostpdl/gs -r$rev2`;
 
     `./cp.all.sh`;
+    `./cachearchive.pl >md5sum.cache`;
   } elsif ($mupdfRegression) {
   } else {
     if (exists $emails{$userName}) {
