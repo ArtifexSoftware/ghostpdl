@@ -106,6 +106,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
  */
 #define IMAGE_SET_GRAY(sample_value)\
   BEGIN\
+    if (!color_is_set(pdevc)) {\
 	if ((uint)(sample_value - mask_base) < mask_limit)\
 	    color_set_null(pdevc);\
 	else {\
@@ -114,7 +115,16 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 	    if (code < 0)\
 		goto err;\
 	}\
-  END
+    } else if (!color_is_pure(pdevc)) {\
+	if (!tiles_fit) {\
+	    code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);\
+	    if (code < 0)\
+		goto err;\
+	}\
+    }\
+END
+
+
     gx_dda_fixed_point next;	/* (y not used in fast loop) */
     gx_dda_step_fixed dxx2, dxx3, dxx4;		/* (not used in all loops) */
     const byte *psrc_initial = buffer + data_x;
