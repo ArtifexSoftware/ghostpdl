@@ -63,6 +63,7 @@ my $cmd="rsync -avxcz".
 " --delete".
 " --max-size=2500000".
 " --exclude .svn --exclude .git".
+" --exclude .deps".
 " --exclude _darcs --exclude .bzr --exclude .hg".
 " --exclude bin --exclude obj --exclude debugobj --exclude pgobj".
 " --exclude sobin --exclude soobj".
