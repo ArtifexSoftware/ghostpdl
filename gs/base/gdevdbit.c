@@ -52,10 +52,10 @@ gx_default_copy_mono(gx_device * dev, const byte * data,
     gx_device_color devc;
     
     if (!data) 
-	gs_throw(-997, __func__ );
+	return gs_throw_code(gs_error_unknownerror);
     fit_copy(dev, data, dx, raster, id, x, y, w, h);
     if (!data) 
-	gs_throw(-997, __func__ );
+	return gs_throw_code(gs_error_unknownerror);
     if (one != gx_no_color_index) {
 	invert = false;
 	color = one;
@@ -71,10 +71,10 @@ gx_default_copy_mono(gx_device * dev, const byte * data,
 	color = zero;
     }
     if (!data) 
-	gs_throw(-997, __func__ );
+	return gs_throw_code(gs_error_unknownerror);
     set_nonclient_dev_color(&devc, color);
     if (!data) 
-	gs_throw(-997, __func__ );
+	return gs_throw_code(gs_error_unknownerror);
     return gx_dc_default_fill_masked
 	(&devc, data, dx, raster, id, x, y, w, h, dev, rop3_T, invert);
 }
