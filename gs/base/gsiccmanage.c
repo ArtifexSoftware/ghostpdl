@@ -29,6 +29,7 @@
 #include "gserrors.h"
 #include "string_.h"
 #include "gxclist.h"
+#include "gxcldev.h"
 
 #if ICC_DUMP
 unsigned int global_icc_index = 0;
@@ -1022,6 +1023,7 @@ gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc_hashcode)
     cmm_profile_t *profile;
     int64_t position;
     int size;
+    int code;
         
     /* Create a new ICC profile structure */
     profile = gsicc_profile_new(NULL, pcrdev->memory, NULL, 0);
@@ -1029,7 +1031,13 @@ gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc_hashcode)
         return(NULL);  
 
     /* Check ICC table for hash code and get the whole size icc raw buffer
-       plus serialized header information */ 
+       plus serialized header information. Make sure the icc_table has 
+       been intialized */
+    if (pcrdev->icc_table == NULL) {
+        code = clist_read_icctable(pcrdev);
+        if (code<0)
+            return(NULL);
+    }
     position = gsicc_search_icc_table(pcrdev->icc_table, icc_hashcode, &size);
     if ( position < 0 ) 
         return(NULL);

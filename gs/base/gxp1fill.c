@@ -274,6 +274,8 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     crdev->icc_table = NULL;
     crdev->page_info.io_procs->rewind(crdev->page_info.bfile, false, NULL);
     crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
+     /* Check for and get ICC profile table */
+    code = clist_read_icctable(crdev);
 
     if_debug0('L', "Pattern clist playback begin\n");
     code = clist_playback_file_bands(playback_action_render,

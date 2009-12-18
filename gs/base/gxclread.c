@@ -40,7 +40,6 @@
 
 /* forward decl */
 static int gx_clist_reader_read_band_complexity(gx_device_clist *dev);
-
 private_st_clist_icctable_entry();
 private_st_clist_icctable();
 
@@ -517,7 +516,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
 
 /* Get the ICC profile table information from the clist */
 
-static int
+int
 clist_read_icctable(gx_device_clist_reader *crdev)
 {
     
