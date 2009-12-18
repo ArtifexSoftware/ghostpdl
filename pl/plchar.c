@@ -44,6 +44,7 @@
 #include "gxfixed.h"
 #include "gxchar.h"
 #include "gxfcache.h"
+#include "gxttf.h"
 #include "gzstate.h"
 
 /* Define whether to cache TrueType characters. */
@@ -1719,6 +1720,70 @@ fg:     pfg = pl_font_lookup_glyph(plfont, key);
         return 0;
 }
 
+static bool
+is_composite(byte *pgdata)
+{
+    return (pl_get_int16(pgdata) == -1);
+}
+
+int
+pl_font_disable_composite_metrics(pl_font_t *plfont, gs_glyph glyph)
+{
+    gs_glyph key = glyph;
+    gs_font_type42 *pfont = plfont->pfont;
+    pl_font_glyph_t *pfg;
+    gs_glyph_data_t glyph_data;
+    int code;
+
+    /* This is the unusual way of looking up a glyph thanks to the pcl
+       font wrapper format.  It is documented in several other places
+       in this file.  If a char_glyphs table is not available it is
+       not a downloadedd TT font wrapper so we do nothing. */
+    if (plfont->char_glyphs.table) { 
+        pl_tt_char_glyph_t *ptcg = pl_tt_lookup_char(plfont, key);
+        if ( ptcg->chr == gs_no_char )
+            return 0;
+        key = ptcg->glyph;
+    } else {
+        return -1;
+    }
+
+    /* should never fail as this procedure is called only after a
+       glyph has been successfully added. */
+    code = pfont->data.get_outline(pfont, key, &glyph_data);
+    if (code < 0)
+        return code;
+
+    /* null glyph */
+    if (glyph_data.bits.data == 0)
+        return 0;
+    
+    /* the glyph is guaranteed by the langauges to be have a reasonable
+       header (enough to test for a composite glyph and do the tests
+       below for components) so a UMR or overflow is not possible but
+       it would be better to add checks.  The component parser below  */
+    if (!is_composite(glyph_data.bits.data))
+        return 0;
+
+    /* enumerate the components and rewrite the flags field to not use
+       metrics from the component.  Similar to the enumeration code in
+       gstype42.c */
+    {
+        uint flags;
+        byte *next_component = glyph_data.bits.data + 10;
+        do {
+            gs_matrix_fixed mat;
+            byte *last_component = next_component;
+            memset(&mat, 0, sizeof(mat)); /* arbitrary */
+            gs_type42_parse_component(&next_component, &flags, &mat, NULL, plfont->pfont, &mat);
+            if (flags & TT_CG_USE_MY_METRICS)
+                /* bit 9 of the flags is the "use my metrics" flag
+                   which is bit 1 of byte 0 big endian wise */
+                last_component[0] &= ~(1 << 1);
+        } while (flags & TT_CG_MORE_COMPONENTS);
+    }
+    return 0;
+}
 /* Remove a glyph from a font.  Return 1 if the glyph was present. */
 int
 pl_font_remove_glyph(pl_font_t *plfont, gs_glyph glyph)

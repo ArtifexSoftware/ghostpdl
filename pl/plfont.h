@@ -326,5 +326,7 @@ int pl_swap_header(byte *header, uint gifct);
 /* UFST callbacks if needed */
 void plu_set_callbacks(void);
 
+/* disable component metrics in a TrueType glyph - emulate an HP printer bug */
+int pl_font_disable_composite_metrics(pl_font_t *plfont, gs_glyph glyph);
 
 #endif				/* plfont_INCLUDED */

@@ -40,6 +40,9 @@
    processing a corrupt download font. */
 #define IGNORE_CORRUPT_FONT
 
+/* Emulate bug in HP printer where component metrics are ignored. */
+#define DISABLE_USE_MY_METRICS
+
 /* Define the downloaded character data formats. */
 typedef enum {
   pccd_bitmap = 4,
@@ -276,7 +279,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
             }
 
             if (sum != 0) {
-                dprintf("corrupt font\n");
+                dprintf1("corrupt font sum=%ld\n", sum);
                 return e_Range;
             }
         }
@@ -457,6 +460,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
     pl_font_t *plfont;
     pcl_font_header_format_t format;
     byte *char_data = 0;
+    int code;
 
     if ( !pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id,
                                 current_font_id_size, &value) )
@@ -645,7 +649,14 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
         pcl_font_header_t *header = (pcl_font_header_t *)plfont->header;
         plfont->orient = header->Orientation;
     }
-    return pl_font_add_glyph(plfont, pcs->character_code, char_data);
+    code = pl_font_add_glyph(plfont, pcs->character_code, char_data);
+    if (code < 0)
+        return code;
+#ifdef DISABLE_USE_MY_METRICS
+    if (data[0] == pccd_truetype)
+        code = pl_font_disable_composite_metrics(plfont, pcs->character_code);
+#endif /* DISABLE_USE_MY_METRICS */
+    return code;
 #undef plfont
 }
 
