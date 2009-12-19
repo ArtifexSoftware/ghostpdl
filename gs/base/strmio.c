@@ -25,6 +25,10 @@
 #include "gsstype.h"
 #include "stream.h"
 #include "strmio.h"
+#include "gscdefs.h"
+
+/* Import the IODevice table. */
+extern_gx_io_device_table();
 
 /*
  * Open a stream using a filename that can include a PS style IODevice prefix
@@ -53,8 +57,9 @@ sfopen(const char *path, const char *mode, gs_memory_t *memory)
 #	undef EMSG
 	return NULL;
     }
+    /* iodev_default may not be set yet */
     if (pfn.iodev == NULL)
-	pfn.iodev = iodev_default;
+	pfn.iodev = (gx_io_device *)gx_io_device_table[0];
     open_file = pfn.iodev->procs.open_file;
     if (open_file == 0)
 	code = file_open_stream(pfn.fname, pfn.len, mode, 2048, &s,

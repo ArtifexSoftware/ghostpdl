@@ -308,14 +308,13 @@ gsicc_copy_colorname( const char *cmm_name, gsicc_colorname_t *colorname, gs_mem
     and the profile to the appropriate
     member variable in the ICC manager */
 int 
-gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, gsicc_profile_t defaulttype)
+gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen, gsicc_profile_t defaulttype)
 {
 
-    gsicc_manager_t *icc_manager = pis->icc_manager;
     cmm_profile_t *icc_profile;
     cmm_profile_t **manager_default_profile = NULL; /* quite compiler */
     stream *str;
-    gs_memory_t *mem_gc = pis->memory; 
+    gs_memory_t *mem_gc = icc_manager->memory; 
     int code;
     int k;
         
@@ -425,7 +424,7 @@ gsicc_set_profile(const gs_imager_state * pis, const char* pname, int namelen, g
                item.  The table is in the A2B0Tag item.
                The names are in the order such that the fastest
                index in the table is the first name */
-            gsicc_get_devicen_names(icc_profile, pis->memory);
+            gsicc_get_devicen_names(icc_profile, icc_manager->memory);
         }
         return(0);
     }
@@ -715,31 +714,58 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     }
 }
 
+static int
+gsicc_init_iccmanager(gsicc_manager_t *iccmanager, const char *pname, gsicc_profile_t defaulttype)
+{
+    int code;
+    int namelen;
+
+    namelen = strlen(pname);
+    code = gsicc_set_profile(iccmanager, pname, namelen, defaulttype);
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default icc profile");
+    return(code);
+}
+
+
 gsicc_manager_t *
 gsicc_manager_new(gs_memory_t *memory)
 {
     gsicc_manager_t *result;
+    int code;
 
     /* Allocated in gc memory */
     result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,
 			     "gsicc_manager_new");
     if ( result == NULL )
         return(NULL);
-    rc_init_free(result, memory, 1, rc_gsicc_manager_free);
-   result->default_cmyk = NULL;
+   rc_init_free(result, memory, 1, rc_gsicc_manager_free);
    result->default_gray = NULL;
    result->default_rgb = NULL;
+   result->default_cmyk = NULL;
+   result->lab_profile = NULL;
    result->device_named = NULL;
    result->output_link = NULL;
    result->device_profile = NULL;
    result->proof_profile = NULL;
-   result->lab_profile = NULL;
    result->device_n = NULL;
    result->memory = memory;
    result->profiledir = NULL;
    result->namelen = 0;
+
+   /* Set default profiles for the gray, rgb, cmyk and lab color spaces */
+
+   code = gsicc_init_iccmanager(result, DEFAULT_GRAY_ICC, DEFAULT_GRAY);
+   code = gsicc_init_iccmanager(result, DEFAULT_RGB_ICC, DEFAULT_RGB);
+   code = gsicc_init_iccmanager(result, DEFAULT_CMYK_ICC, DEFAULT_CMYK);
+   code = gsicc_init_iccmanager(result, LAB_ICC, LAB_TYPE);
+   if (code < 0) {
+        rc_decrement(result,"gsicc_manager_new");
+        return(NULL);
+   }
    return(result);
 }
+
 
 static void
 rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
