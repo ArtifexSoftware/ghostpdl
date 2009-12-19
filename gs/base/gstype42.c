@@ -445,10 +445,10 @@ gs_len_glyphs_release(void *data, void *event)
  * bother to parse the component index, since the caller can do this so
  * easily.
  */
-static void
-parse_component(const byte **pdata, uint *pflags, gs_matrix_fixed *psmat,
-		int *pmp /*[2], may be null*/, const gs_font_type42 *pfont,
-		const gs_matrix_fixed *pmat)
+void
+gs_type42_parse_component(const byte **pdata, uint *pflags, gs_matrix_fixed *psmat,
+                          int *pmp /*[2], may be null*/, const gs_font_type42 *pfont,
+                          const gs_matrix_fixed *pmat)
 {
     const byte *gdata = *pdata;
     uint flags;
@@ -556,7 +556,7 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
 	    if (code < 0)
 		return code;
 	    total += code;
-	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
+	    gs_type42_parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
 	}
 	while (flags & TT_CG_MORE_COMPONENTS);
     }
@@ -911,7 +911,7 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	for (i = 0; flags & TT_CG_MORE_COMPONENTS; ++i) {
 	    if (pieces)
 		pieces[i] = U16(gdata + 2) + GS_MIN_GLYPH_INDEX;
-	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
+	    gs_type42_parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
 	}
 	*pnum_pieces = i;
     } else
@@ -1172,10 +1172,10 @@ gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 	    do {
 		uint comp_index = U16(gdata + 2);
 
-		parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
-		if (flags & TT_CG_USE_MY_METRICS) {
-		    result = pfont->data.get_metrics(pfont, comp_index, wmode, sbw);
-		    goto done;
+		gs_type42_parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
+                if (flags & TT_CG_USE_MY_METRICS) {
+                    result = pfont->data.get_metrics(pfont, comp_index, wmode, sbw);
+                    goto done;
 		}
 	    }
 	    while (flags & TT_CG_MORE_COMPONENTS);
@@ -1503,7 +1503,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 	    gs_matrix_fixed mat;
 	    int mp[2];
 
-	    parse_component(&gdata, &flags, &mat, mp, pfont, pmat);
+	    gs_type42_parse_component(&gdata, &flags, &mat, mp, pfont, pmat);
 	    if (mp[0] >= 0) {
 		/* Match up points.  What a nuisance! */
 		const gs_fixed_point *const pfrom = ppts + mp[0];

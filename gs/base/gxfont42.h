@@ -37,6 +37,10 @@ typedef struct gs_type42_data_s gs_type42_data;
 typedef struct gs_font_type42_s gs_font_type42;
 #endif
 
+#ifndef gs_matrix_fixed_DEFINED
+#define gs_matrix_fixed_DEFINED
+typedef struct gs_matrix_fixed_s gs_matrix_fixed;
+#endif
 
 typedef enum gs_type42_metrics_options_s {
     gs_type42_metrics_options_WMODE0 = 0,
@@ -176,4 +180,10 @@ int gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
 
 uint gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index,
 					  int WMode, gs_glyph glyph);
+
+/* Get next component in a composite TrueType glyph. */
+void gs_type42_parse_component(const byte **pdata, uint *pflags, gs_matrix_fixed *psmat,
+                               int *pmp /*[2], may be null*/, const gs_font_type42 *pfont,
+                               const gs_matrix_fixed *pmat);
+
 #endif /* gxfont42_INCLUDED */
