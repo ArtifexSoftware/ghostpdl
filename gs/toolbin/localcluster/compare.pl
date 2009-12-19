@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=1;
 
-my $previousValues=20;
+my $previousValues=25;
 
 my @errorDescription=(
 "none",
@@ -30,6 +30,18 @@ my $skipMissing=shift;
 my $products=shift;
 
 $products="gs pcl xps svg" if (!$products);
+
+my %skip;
+
+if (open(F,"<skip.lst")) {
+  while(<F>) {
+    chomp;
+    s|__|/|g;
+    $skip{$_}=1;
+  }
+  close(F);
+}
+
 
 
 my %current;
@@ -64,6 +76,8 @@ while(<F>) {
   chomp;
   s|__|/|g;
   my @a=split '\t';
+  next if (exists $skip{$a[0]});
+  $a[6]=$a[1] if ($a[1] ne "0");
   $current{$a[0]}=$a[6];
   $currentError{$a[0]}=0;
   if ($a[1]!=0) {
@@ -80,6 +94,8 @@ while(<F>) {
   chomp;
   s|__|/|g;
   my @a=split '\t';
+  next if (exists $skip{$a[0]});
+  $a[6]=$a[1] if ($a[1] ne "0");
   $previous{$a[0]}=$a[6];
   $previousError{$a[0]}=0;
   if ($a[1]!=0) {
@@ -96,6 +112,8 @@ if (open(F,"<md5sum.cache")) {
     chomp;
     if (m/(.+) \| (.+)/) {
       $archiveCache{$1}=$2;
+    } elsif (m/^(\d+)$/) {
+      $previousValues=$1;
     }
   }
   close(F);
@@ -129,6 +147,7 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 #     $archiveMachine{$r}{$a[0]}=$a[9];
 #     $archiveMachine{$r}{$a[0]}="unknown" if (!$archiveMachine{$r}{$a[0]});
 #     $archiveCount{$r}=$previousValues-$count+1;
+      $a[6]=$a[1] if ($a[1] ne "0");
       my $key=$a[0].' '.$a[6];
       if ($count==$previousValues) {
         $current{$key}=1;
@@ -147,21 +166,42 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 }
 #print Dumper(\%archiveCache);
 
+#print "previous\n".Dumper(\%previous);
+#print "current \n".Dumper(\%current);
+
 foreach my $t (sort keys %previous) {
   if (exists $current{$t}) {
+    my $match=0;
     if ($currentError{$t}) {
       push @allErrors,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $currentError{$t}";
     }
     if ($currentError{$t} && !$previousError{$t}) {
-      push @brokePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $currentError{$t}";
+      if (exists $archiveCache{$t.' '.$current{$t}}) {
+            my @a=split "\t", $archiveCache{$t.' '.$current{$t}};
+            my $message="";
+            $message=$currentError{$t} if ($currentError{$t});
+            # die "happened" if ($currentError{$t});
+            push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3] $message";
+            $match=1;
+      } else {
+        push @brokePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $currentError{$t}";
+      }
     } else {
       if (!$currentError{$t} && $previousError{$t}) {
-        push @repairedPrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $previousError{$t}";
+        if (exists $archiveCache{$t.' '.$current{$t}}) {
+            my @a=split "\t", $archiveCache{$t.' '.$current{$t}};
+            my $message="";
+            $message=$currentError{$t} if ($currentError{$t});
+            # die "happened" if ($currentError{$t});
+            push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3] $message";
+            $match=1;
+        } else {
+          push @repairedPrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $previousError{$t}";
+        }
       } else {
         if ($current{$t} eq $previous{$t}) {
           #         print "$t match $previous and $current\n";
         } else {
-          my $match=0;
 #         foreach my $p (sort {$b cmp $a} keys %archive) {
 #           if (!$match && exists $archive{$p}{$t} && $archive{$p}{$t} eq $current{$t}) {
 #             $match=1;
@@ -170,7 +210,10 @@ foreach my $t (sort keys %previous) {
 #         }
           if (exists $archiveCache{$t.' '.$current{$t}}) {
             my @a=split "\t", $archiveCache{$t.' '.$current{$t}};
-            push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3]";
+            my $message="";
+            $message=$currentError{$t} if ($currentError{$t});
+            # die "happened" if ($currentError{$t});
+            push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3] $message";
             $match=1;
           }
           if (!$match) {
@@ -279,7 +322,8 @@ if (0) {
 }
 
   if (@archiveMatch) {
-    print "The following ".scalar(@archiveMatch)." regression file(s) had md5sum differences but matched at least once in the previous $previousValues runs:\n";
+    print "-------------------------------------------------------------------------------------------------------\n\n";
+    print "The following ".scalar(@archiveMatch)." regression file(s) had differences but matched at least once in the previous $previousValues runs:\n";
     while(my $t=shift @archiveMatch) {
       print "$t\n";
     }

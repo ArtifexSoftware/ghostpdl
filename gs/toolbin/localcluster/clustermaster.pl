@@ -618,6 +618,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
       );
 
     if (!$server) {
+      abortAll();
       unlink $runningSemaphore;
       die "can't setup server";
     }

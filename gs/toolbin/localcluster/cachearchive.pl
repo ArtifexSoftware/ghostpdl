@@ -5,7 +5,7 @@ use warnings;
 
 use Data::Dumper;
 
-my $previousValues=20;
+my $previousValues=50;
 
 my $verbose=1;
 
@@ -33,6 +33,7 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
       my @a=split '\t';
       $i=~m/(.+)\.tab/;
       my $r=$1;
+      $a[6]=$a[1] if ($a[1] ne "0");  # if no md5sum store the error code instead
       my $key=$a[0].' '.$a[6];
       if ($count==$previousValues) {
         $current{$key}=1;
@@ -49,6 +50,7 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 
 #print Dumper(\%archiveCache);
 
+print "$previousValues\n";
 foreach my $i (sort keys %archiveCache) {
   print "$i | $archiveCache{$i}\n";
 }

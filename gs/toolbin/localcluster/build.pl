@@ -47,17 +47,6 @@ my $mupdfBin=$baseDirectory."gs/bin/pdfdraw";
 # mupdf uses the same test files as gs but only ones ending in pdf (or PDF)
 
 
-my %skip;
-
-if (open(F,"<skip.lst")) {
-  while(<F>) {
-    chomp;
-    $skip{$_}=1;
-  }
-  close(F);
-}
-
-
 my %testSource=(
   $svnURLPublic."tests/pdf" => 'gs',
   $svnURLPublic."tests/ps" => 'gs',
@@ -421,10 +410,8 @@ foreach my $testfile (sort keys %testfiles) {
     my $outputFilenames="";
     my $filename="";
     ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,1);
-    if (!exists $skip{$filename}) {
-      push @filenames,$filename;
-      push @commands,$cmd;
-    }
+    push @filenames,$filename;
+    push @commands,$cmd;
   }
 }
 
