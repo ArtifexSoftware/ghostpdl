@@ -67,12 +67,12 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     uint count;
-    gs_halftone_component *phtc;
+    gs_halftone_component *phtc = 0;
     gs_halftone_component *pc;
     int code = 0;
     int j;
-    gs_halftone *pht;
-    gx_device_halftone *pdht;
+    gs_halftone *pht = 0;
+    gx_device_halftone *pdht = 0;
     ref sprocs[GS_CLIENT_COLOR_MAX_COMPONENTS + 1];
     ref tprocs[GS_CLIENT_COLOR_MAX_COMPONENTS + 1];
     gs_memory_t *mem;
@@ -100,7 +100,9 @@ zsethalftone5(i_ctx_t *i_ctx_p)
      * the device color space, so we need to mark them
      * with a different internal halftone type.
      */
-    dict_int_param(op - 1, "HalftoneType", 1, 5, 0, &type);
+    code = dict_int_param(op - 1, "HalftoneType", 1, 100, 0, &type);
+    if (code < 0)
+          return code;
     halftonetype = (type == 2 || type == 4)
     			? ht_type_multiple_colorscreen
 			: ht_type_multiple;
@@ -146,23 +148,25 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	    break;
         }
     }
-
-    check_estack(5);		/* for sampling Type 1 screens */
-    refset_null(sprocs, count);
-    refset_null(tprocs, count);
-    rc_alloc_struct_0(pht, gs_halftone, &st_halftone,
-		      imemory, pht = 0, ".sethalftone5");
-    phtc = gs_alloc_struct_array(mem, count, gs_halftone_component,
-				 &st_ht_component_element,
-				 ".sethalftone5");
-    rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
-		      imemory, pdht = 0, ".sethalftone5");
-    if (pht == 0 || phtc == 0 || pdht == 0) {
-	j = 0; /* Quiet the compiler: 
-	          gs_note_error isn't necessarily identity, 
-		  so j could be left ununitialized. */
-	code = gs_note_error(e_VMerror);
-    } else {
+    if (code >= 0) {
+        check_estack(5);		/* for sampling Type 1 screens */
+        refset_null(sprocs, count);
+        refset_null(tprocs, count);
+        rc_alloc_struct_0(pht, gs_halftone, &st_halftone,
+		          imemory, pht = 0, ".sethalftone5");
+        phtc = gs_alloc_struct_array(mem, count, gs_halftone_component,
+				     &st_ht_component_element,
+				     ".sethalftone5");
+        rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
+		          imemory, pdht = 0, ".sethalftone5");
+        if (pht == 0 || phtc == 0 || pdht == 0) {
+	    j = 0; /* Quiet the compiler: 
+	              gs_note_error isn't necessarily identity, 
+		      so j could be left ununitialized. */
+	    code = gs_note_error(e_VMerror);
+        }
+    }
+    if (code >= 0) {
         dict_enum = dict_first(op);
 	for (j = 0, pc = phtc; ;) {
 	    int type;
