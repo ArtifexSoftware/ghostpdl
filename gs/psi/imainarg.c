@@ -751,8 +751,10 @@ run_buffered(gs_main_instance * minst, const char *arg)
 	return_error(e_invalidfileaccess);
     }
     code = gs_main_init2(minst);
-    if (code < 0)
+    if (code < 0) {
+        fclose(in);
 	return code;
+    }
     code = gs_main_run_string_begin(minst, minst->user_errors,
 				    &exit_code, &error_object);
     if (!code) {
@@ -977,7 +979,7 @@ print_devices(const gs_main_instance *minst)
 	const char **names;
 	size_t ndev = 0;
 
-	for (i = 0; (pdev = gs_getdevice(i)) != 0; i++)
+	for (i = 0; gs_getdevice(i) != 0; i++)
 	    ;
 	ndev = (size_t)i;
 	names = (const char **)gs_alloc_bytes(minst->heap, ndev * sizeof(const char*), "print_devices");

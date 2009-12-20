@@ -2299,6 +2299,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 					    (GLYPH_INFO_VVECTOR0 << wmode) | 
 					    allow_cdevproc_callout,
 					    &info);
+	if (code == 0) {
 	/* fixme : Move this call before cfont->procs.glyph_info. */
 	if (info.members & GLYPH_INFO_CDEVPROC) {
 	    if (allow_cdevproc_callout)
@@ -2306,6 +2307,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	    else
 		return_error(gs_error_rangecheck);
 	}
+	} else
+	    info.members = 0;
     } else {
 	info.width[0].x = cdevproc_result[0];
 	info.width[0].y = cdevproc_result[1];

@@ -145,8 +145,11 @@ gx_image4_sget(gs_image_common_t *pic, stream *s,
     num_values =
 	gs_color_space_num_components(pcs) *
 	(pim->MaskColor_is_range ? 2 : 1);
-    for (i = 0; i < num_values; ++i)
-	sget_variable_uint(s, &pim->MaskColor[i]);
+    for (i = 0; i < num_values; ++i) {
+	code = sget_variable_uint(s, &pim->MaskColor[i]);
+        if (code < 0)
+	    return code;
+    }
     return 0;
 }
 

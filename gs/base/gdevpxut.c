@@ -142,7 +142,7 @@ px_write_select_media(stream *s, const gx_device *dev,
     float w = dev->width / dev->HWResolution[0],
 	h = dev->height / dev->HWResolution[1];
     int i;
-    pxeMediaSize_t size;
+    pxeMediaSize_t size = eDefaultPaperSize;
     byte tray = eAutoSelect;
     bool match_found = false;
 

@@ -380,11 +380,8 @@ zfcmap_glyph_name(const gs_memory_t *mem,
 		  gs_glyph glyph, gs_const_string *pstr, void *proc_data)
 {
     ref nref, nsref;
-    int code = 0;
 
-    /*code = */name_index_ref(mem, (uint)glyph, &nref);
-    if (code < 0)
-	return code;
+    name_index_ref(mem, (uint)glyph, &nref);
     name_string_ref(mem, &nref, &nsref);
     pstr->data = nsref.value.const_bytes;
     pstr->size = r_size(&nsref);

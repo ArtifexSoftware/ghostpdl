@@ -907,7 +907,7 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 			for (cx = x0; cx < x1; p += step, q += 3, ++cx)
 			    q[0] = p[2], q[1] = p[1], q[2] = p[0];
 		    }
-		} else if (image->depth == 16) {
+		} else if (image->depth == 16 || image->depth == 15) {
 		    int cx;
 		    const byte *p = source;
 		    byte *q = dest;

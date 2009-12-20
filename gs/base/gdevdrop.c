@@ -486,6 +486,8 @@ mem_default_strip_copy_rop(gx_device * dev,
 	rop_texture.size.x = rop_texture.rep_width;
 	rop_texture.id = gs_no_bitmap_id;
 	real_texture = &rop_texture;
+	if (rop_texture.size.y > rop_texture.rep_height)
+	    rop_texture.size.y = rop_texture.rep_height;   /* we only allocated one row_raster, no reps */
     }
     if (tcolors && uses_t) {
 	unpack_colors_to_standard(dev, texture_colors, tcolors, rop_depth);

@@ -23,6 +23,7 @@ typedef struct stream_A85D_state_s {
     stream_state_common;
     int odd;			/* # of odd digits */
     ulong word;			/* word being accumulated */
+    bool pdf_rules;             /* hacks and tweaks for PDF */
 } stream_A85D_state;
 
 #define private_st_A85D_state()	/* in sfilter2.c */\

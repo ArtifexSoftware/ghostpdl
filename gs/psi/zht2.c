@@ -67,12 +67,12 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     uint count;
-    gs_halftone_component *phtc;
+    gs_halftone_component *phtc = 0;
     gs_halftone_component *pc;
     int code = 0;
     int j;
-    gs_halftone *pht;
-    gx_device_halftone *pdht;
+    gs_halftone *pht = 0;
+    gx_device_halftone *pdht = 0;
     ref sprocs[GS_CLIENT_COLOR_MAX_COMPONENTS + 1];
     ref tprocs[GS_CLIENT_COLOR_MAX_COMPONENTS + 1];
     gs_memory_t *mem;
@@ -100,7 +100,9 @@ zsethalftone5(i_ctx_t *i_ctx_p)
      * the device color space, so we need to mark them
      * with a different internal halftone type.
      */
-    dict_int_param(op - 1, "HalftoneType", 1, 5, 0, &type);
+    code = dict_int_param(op - 1, "HalftoneType", 1, 100, 0, &type);
+    if (code < 0)
+          return code;
     halftonetype = (type == 2 || type == 4)
     			? ht_type_multiple_colorscreen
 			: ht_type_multiple;
@@ -146,7 +148,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	    break;
         }
     }
-
+    if (code >= 0) {
     check_estack(5);		/* for sampling Type 1 screens */
     refset_null(sprocs, count);
     refset_null(tprocs, count);
@@ -162,7 +164,9 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	          gs_note_error isn't necessarily identity, 
 		  so j could be left ununitialized. */
 	code = gs_note_error(e_VMerror);
-    } else {
+        }
+    }
+    if (code >= 0) {
         dict_enum = dict_first(op);
 	for (j = 0, pc = phtc; ;) {
 	    int type;

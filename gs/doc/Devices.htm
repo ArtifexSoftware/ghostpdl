@@ -675,6 +675,14 @@ it to RGB for display. It's intended for testing only.
 <dd>This is a device for 4 bpp (16-level) monochrome displays.
 </dl>
 
+<p>On Mac OS X as of 10.6, the X server (XQuartz) only supports color depth
+15 and 24. Depth 15 isn't well-tested, and it may be desirable, for serious
+use, to switch to depth 24 with:
+
+<blockquote><code>
+defaults write org.x.X11 depth 24
+</code></blockquote>
+
 <h3><a name="display_device"></a>display device (MS Windows, OS/2, gtk+)</h3>
 <p>
 The <code>display</code> device is used by the MS Windows, 

@@ -7,13 +7,16 @@ use Data::Dumper;
 
 my $verbose=0;
 
-my %products=('gs' =>1,
+my %products=('abort' =>1,
+              'gs' =>1,
               'pcl'=>1,
               'svg'=>1,
               'xps'=>1);
 
 my $product=shift;
 my $user=shift;
+
+unlink "cluster_command.run";
 
 my $host="casper.ghostscript.com";
 my $dir="/home/regression/cluster/users";
@@ -42,8 +45,6 @@ $product='gs pcl xps' if (!$product);
 print "$user $directory $product\n" if ($verbose);
 
 
-#           rsync -av -e "ssh -l ssh-user" rsync-user@host::module /dest
-
 if ($directory eq 'gs') {
   $directory='ghostpdl/gs';
 }
@@ -57,11 +58,14 @@ foreach my $i (@a) {
   }
 }
 
-my $cmd="rsync -avxc".
+
+my $cmd="rsync -avxcz".
 " --delete".
+" --max-size=2500000".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
-" --exclude bin --exclude obj --exclude debugobj".
+" --exclude .deps --exclude .libs --exclude autom4te.cache".
+" --exclude bin --exclude obj --exclude debugobj --exclude pgobj".
 " --exclude sobin --exclude soobj".
 " --exclude main/obj --exclude main/debugobj".
 " --exclude language_switch/obj --exclude language_switch/obj".
@@ -73,11 +77,8 @@ my $cmd="rsync -avxc".
 " .".
 " regression\@$host:$dir/$user/$directory";
 
-open(F,">cluster_command.run");
-print F "$user $product\n";
-close(F);
-
-print STDERR "syncing and queuing\n";
+if ($product ne "abort") {
+  print STDERR "syncing\n";
 print "$cmd\n" if ($verbose);
 #`$cmd`;
 open(T,"$cmd |");
@@ -85,6 +86,19 @@ while(<T>) {
   print $_;
 }
 close(T);
+}
+
+open(F,">cluster_command.run");
+print F "$user $product\n";
+close(F);
+
+if ($product ne "abort") {
+  print STDERR "\nqueueing\n";
+} else {
+  print STDERR "\ndequeueing\n";
+}
+print "$cmd\n" if ($verbose);
+`$cmd`;
 
 unlink "cluster_command.run";
 

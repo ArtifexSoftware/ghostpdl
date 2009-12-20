@@ -128,9 +128,19 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	     * And any other characters should raise an ioerror.
 	     * But Adobe Acrobat allows CR/LF between ~ and >.
 	     * So we allow CR/LF between them. */
+	    /* PDF further relaxes the requirements and accepts bare '~'.
+	     */
 	    while ((p[i] == 13 || p[i] == 10) && (p+i <= rlimit)) 
 		i++;
 	    if (p[i] != '>') {
+		if (ss->pdf_rules) {
+		    if (p[i] == 13 || p[i] == 10) {
+		        if (!last)
+		            break;
+		    } else {
+		        p--;
+		    }   
+		} else {
 		if (p+i == rlimit) {
 		    if (last)
 			status = ERRC;
@@ -138,6 +148,7 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 			p--;	/* we'll see the '~' after filling the buffer */
 		}
 		break;
+	    }
 	    }
 	    p += i;		/* advance to the '>' */
 	    pw->ptr = q;

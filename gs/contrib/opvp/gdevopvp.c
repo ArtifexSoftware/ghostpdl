@@ -609,7 +609,7 @@ QueryColorSpaceWrapper( opvp_dc_t printerContext, opvp_int_t *pnum,
     /* translate cspaces */
     for (i = 0;i < *pnum;i++) {
 	if (pcspace[i]
-	     > sizeof(cspace_0_2_to_1_0)/sizeof(opvp_cspace_t)) {
+	     >= sizeof(cspace_0_2_to_1_0)/sizeof(opvp_cspace_t)) {
 	    /* unknown color space */
 	    /* set DEVICERGB instead */
 	    pcspace[i] = OPVP_CSPACE_DEVICERGB;
@@ -629,7 +629,7 @@ SetColorSpaceWrapper(opvp_dc_t printerContext, opvp_cspace_t cspace)
 	return -1;
     }
     if (cspace
-	 > sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
+	 >= sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
 	/* unknown color space */
 	*ErrorNo = OPVP_PARAMERROR_0_2;
 	return -1;
@@ -649,7 +649,7 @@ GetColorSpaceWrapper(opvp_dc_t printerContext, opvp_cspace_t *pcspace)
 	return r;
     }
     if (*pcspace
-	 > sizeof(cspace_0_2_to_1_0)/sizeof(opvp_cspace_t)) {
+	 >= sizeof(cspace_0_2_to_1_0)/sizeof(opvp_cspace_t)) {
 	/* unknown color space */
 	/* set DEVICERGB instead */
 	*pcspace = OPVP_CSPACE_DEVICERGB;
@@ -673,7 +673,7 @@ SetStrokeColorWrapper(opvp_dc_t printerContext, const opvp_brush_t *brush)
 	return OPVP_NOTSUPPORTED;
     }
     if (brush->colorSpace
-	 > sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
+	 >= sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
 	/* unknown color space */
 	*ErrorNo = OPVP_PARAMERROR_0_2;
 	return -1;
@@ -700,7 +700,7 @@ SetFillColorWrapper(opvp_dc_t printerContext, const opvp_brush_t *brush)
 	return OPVP_NOTSUPPORTED;
     }
     if (brush->colorSpace
-	 > sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
+	 >= sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
 	/* unknown color space */
 	*ErrorNo = OPVP_PARAMERROR_0_2;
 	return -1;
@@ -728,7 +728,7 @@ SetBgColorWrapper(opvp_dc_t printerContext, const opvp_brush_t *brush)
 	return -1;
     }
     if (brush->colorSpace
-	 > sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
+	 >= sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
 	/* unknown color space */
 	*ErrorNo = OPVP_PARAMERROR_0_2;
 	return -1;
@@ -787,7 +787,7 @@ DrawImageWrapper(
     OPVP_I2FIX(0,rect.p0.y);
     OPVP_I2FIX(destinationWidth,rect.p1.x);
     OPVP_I2FIX(destinationHeight,rect.p1.y);
-    if (imageFormat > sizeof(iformat_1_0_to_0_2)/sizeof(OPVP_ImageFormat)) {
+    if (imageFormat >= sizeof(iformat_1_0_to_0_2)/sizeof(OPVP_ImageFormat)) {
 	/* illegal image format */
 	*ErrorNo = OPVP_PARAMERROR_0_2;
 	return -1;
@@ -848,7 +848,7 @@ StartDrawImageWrapper(
     OPVP_I2FIX(0,rect.p0.y);
     OPVP_I2FIX(destinationWidth,rect.p1.x);
     OPVP_I2FIX(destinationHeight,rect.p1.y);
-    if (imageFormat > sizeof(iformat_1_0_to_0_2)/sizeof(OPVP_ImageFormat)) {
+    if (imageFormat >= sizeof(iformat_1_0_to_0_2)/sizeof(OPVP_ImageFormat)) {
 	/* illegal image format */
 	*ErrorNo = OPVP_PARAMERROR_0_2;
 	return -1;

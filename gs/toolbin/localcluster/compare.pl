@@ -5,7 +5,9 @@ use warnings;
 
 use Data::Dumper;
 
-my $previousValues=20;
+my $verbose=1;
+
+my $previousValues=25;
 
 my @errorDescription=(
 "none",
@@ -23,8 +25,24 @@ my @errorDescription=(
 my $current=shift;
 my $previous=shift;
 my $elapsedTime=shift;
-my $machineCount=shift || die "usage: compare.pl current.tab previous.tab elapsedTime machineCount";
+my $machineCount=shift || die "usage: compare.pl current.tab previous.tab elapsedTime machineCount [skipMissing [products]]";
 my $skipMissing=shift;
+my $products=shift;
+
+$products="gs pcl xps svg" if (!$products);
+
+my %skip;
+
+if (open(F,"<skip.lst")) {
+  while(<F>) {
+    chomp;
+    s|__|/|g;
+    $skip{$_}=1;
+  }
+  close(F);
+}
+
+
 
 my %current;
 my %currentError;
@@ -39,6 +57,8 @@ my %archiveProduct;
 my %archiveMachine;
 my %archiveCount;
 
+my %archiveCache;
+
 my @filesRemoved;
 my @filesAdded;
 my @allErrors;
@@ -50,11 +70,14 @@ my @archiveMatch;
 
 my $t2;
 
+print STDERR "reading $current\n" if ($verbose);
 open(F,"<$current") || die "file $current not found";
 while(<F>) {
   chomp;
   s|__|/|g;
   my @a=split '\t';
+  next if (exists $skip{$a[0]});
+  $a[6]=$a[1] if ($a[1] ne "0");
   $current{$a[0]}=$a[6];
   $currentError{$a[0]}=0;
   if ($a[1]!=0) {
@@ -65,11 +88,14 @@ while(<F>) {
   $currentMachine{$a[0]}=$a[9];
 }
 
+print STDERR "reading $previous\n" if ($verbose);
 open(F,"<$previous") || die "file $previous not found";
 while(<F>) {
   chomp;
   s|__|/|g;
   my @a=split '\t';
+  next if (exists $skip{$a[0]});
+  $a[6]=$a[1] if ($a[1] ne "0");
   $previous{$a[0]}=$a[6];
   $previousError{$a[0]}=0;
   if ($a[1]!=0) {
@@ -81,18 +107,34 @@ while(<F>) {
 }
 close(F);
 
+if (open(F,"<md5sum.cache")) {
+  while(<F>) {
+    chomp;
+    if (m/(.+) \| (.+)/) {
+      $archiveCache{$1}=$2;
+    } elsif (m/^(\d+)$/) {
+      $previousValues=$1;
+    }
+  }
+  close(F);
+} else {
+
 # build list of archived files
+print STDERR "reading archive directory\n" if ($verbose);
 my %archives;
-opendir(DIR, 'archive') || die "can't opendir archive: $!";
+if (opendir(DIR, 'archive')) { # || die "can't opendir archive: $!";
 foreach (readdir(DIR)) {
   $archives{$_}=1 if (!(-d $_) && (m/.tab$/));
 }
 closedir DIR;
+}
 
 my $count=$previousValues;
+my %current;
 foreach my $i (sort {$b cmp $a} keys %archives) {
 # print STDERR "$i\n";
   if ($count>0) {
+    print STDERR "reading archive/$i\n" if ($verbose);
     open(F,"<archive/$i") || die "file archive/$i not found";
     while(<F>) {
       chomp;
@@ -100,40 +142,80 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
       my @a=split '\t';
       $i=~m/(.+)\.tab/;
       my $r=$1;
-      $archive{$r}{$a[0]}=$a[6];
-      $archiveProduct{$r}{$a[0]}=$a[8];
-      $archiveMachine{$r}{$a[0]}=$a[9];
-      $archiveMachine{$r}{$a[0]}="unknown" if (!$archiveMachine{$r}{$a[0]});
-      $archiveCount{$r}=$previousValues-$count+1;
+#     $archive{$r}{$a[0]}=$a[6];
+#     $archiveProduct{$r}{$a[0]}=$a[8];
+#     $archiveMachine{$r}{$a[0]}=$a[9];
+#     $archiveMachine{$r}{$a[0]}="unknown" if (!$archiveMachine{$r}{$a[0]});
+#     $archiveCount{$r}=$previousValues-$count+1;
+      $a[6]=$a[1] if ($a[1] ne "0");
+      my $key=$a[0].' '.$a[6];
+      if ($count==$previousValues) {
+        $current{$key}=1;
+      } else {
+        if (!exists $current{$key} && !exists $archiveCache{$key}) {
+          $archiveCache{$key}=$r."\t".$a[8]."\t".$a[9]."\t".($previousValues-$count+1);
+    }
+      }
+
     }
     close(F);
     $count--;
   }
 }
 
-#print Dumper(\%archive);
+}
+#print Dumper(\%archiveCache);
+
+#print "previous\n".Dumper(\%previous);
+#print "current \n".Dumper(\%current);
 
 foreach my $t (sort keys %previous) {
   if (exists $current{$t}) {
+    my $match=0;
     if ($currentError{$t}) {
       push @allErrors,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $currentError{$t}";
     }
     if ($currentError{$t} && !$previousError{$t}) {
+      if (exists $archiveCache{$t.' '.$current{$t}}) {
+            my @a=split "\t", $archiveCache{$t.' '.$current{$t}};
+            my $message="";
+            $message=$currentError{$t} if ($currentError{$t});
+            # die "happened" if ($currentError{$t});
+            push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3] $message";
+            $match=1;
+      } else {
       push @brokePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $currentError{$t}";
+      }
     } else {
       if (!$currentError{$t} && $previousError{$t}) {
+        if (exists $archiveCache{$t.' '.$current{$t}}) {
+            my @a=split "\t", $archiveCache{$t.' '.$current{$t}};
+            my $message="";
+            $message=$currentError{$t} if ($currentError{$t});
+            # die "happened" if ($currentError{$t});
+            push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3] $message";
+            $match=1;
+        } else {
         push @repairedPrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $previousError{$t}";
+        }
       } else {
         if ($current{$t} eq $previous{$t}) {
           #         print "$t match $previous and $current\n";
         } else {
-          my $match=0;
-          foreach my $p (sort {$b cmp $a} keys %archive) {
-            if (!$match && exists $archive{$p}{$t} && $archive{$p}{$t} eq $current{$t}) {
+#         foreach my $p (sort {$b cmp $a} keys %archive) {
+#           if (!$match && exists $archive{$p}{$t} && $archive{$p}{$t} eq $current{$t}) {
+#             $match=1;
+#             push @archiveMatch,"$t $archiveProduct{$p}{$t} $archiveMachine{$p}{$t} $currentMachine{$t} $p $archiveCount{$p}";
+#           }
+#         }
+          if (exists $archiveCache{$t.' '.$current{$t}}) {
+            my @a=split "\t", $archiveCache{$t.' '.$current{$t}};
+            my $message="";
+            $message=$currentError{$t} if ($currentError{$t});
+            # die "happened" if ($currentError{$t});
+            push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3] $message";
               $match=1;
-              push @archiveMatch,"$t $archiveProduct{$p}{$t} $archiveMachine{$p}{$t} $currentMachine{$t} $p $archiveCount{$p}";
             }
-          }
           if (!$match) {
 	    if ($currentProduct{$t} =~ m/pdfwrite/) {
               push @differencePreviousPdfwrite,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
@@ -162,14 +244,18 @@ foreach my $t (sort keys %current) {
       push @brokePrevious,"$t $currentMachine{$t} $currentError{$t}";
     }
   }
+  my $p=$currentProduct{$t};
+  $p =~ s/ pdfwrite//;
+  if ($products =~ m/$p/) {
   if ($currentProduct{$t} =~ m/pdfwrite/) {
     $pdfwriteTestCount++;
   } else {
     $notPdfwriteTestCount++;
 }
 }
+}
 
-print "ran ".scalar(keys %current)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
+print "ran ".($pdfwriteTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 
 if (@differencePrevious) {
   print "Differences in ".scalar(@differencePrevious)." of $notPdfwriteTestCount non-pdfwrite test(s):\n";
@@ -207,7 +293,7 @@ if (@repairedPrevious) {
   print "\n";
 }
 
-if (!$skipMissing) {
+if (!$skipMissing || $skipMissing eq "false" || $skipMissing eq "0") {
 
   if (@filesRemoved) {
     print "The following ".scalar(@filesRemoved)." regression file(s) have been removed:\n";
@@ -236,7 +322,8 @@ if (0) {
 }
 
   if (@archiveMatch) {
-    print "The following ".scalar(@archiveMatch)." regression file(s) had md5sum differences but matched at least once in the previous $previousValues runs:\n";
+    print "-------------------------------------------------------------------------------------------------------\n\n";
+    print "The following ".scalar(@archiveMatch)." regression file(s) had differences but matched at least once in the previous $previousValues runs:\n";
     while(my $t=shift @archiveMatch) {
       print "$t\n";
     }
