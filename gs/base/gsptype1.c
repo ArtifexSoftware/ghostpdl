@@ -735,8 +735,12 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 	pcspace = gs_cspace_new_DeviceGray(pgs->memory);
     } else
         pcspace = ppmap->pcspace;
-    gs_gsave(pgs);
-    gs_setcolorspace(pgs, pcspace);
+    code = gs_gsave(pgs);
+    if (code < 0)
+        return code;
+    code = gs_setcolorspace(pgs, pcspace);
+    if (code < 0)
+        return code;
     if (transparent)
         gs_image4_t_init( (gs_image4_t *) &image, pcspace);
     else
