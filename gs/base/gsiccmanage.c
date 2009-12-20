@@ -30,6 +30,7 @@
 #include "string_.h"
 #include "gxclist.h"
 #include "gxcldev.h"
+#include "gzstate.h"
 
 #if ICC_DUMP
 unsigned int global_icc_index = 0;
@@ -78,7 +79,20 @@ static const gs_color_space_type gs_color_space_type_icc = {
     true,                           /* can_be_alt_space */
     NULL                            /* This is going to be outside the norm. struct union*/
 
-}; 
+};
+
+typedef struct default_profile_def_s {
+    char *path;
+    gsicc_profile_t default_type;
+} default_profile_def_t;
+
+static const default_profile_def_t default_profile_params[] =
+{
+    {DEFAULT_GRAY_ICC, DEFAULT_GRAY},
+    {DEFAULT_RGB_ICC, DEFAULT_RGB},
+    {DEFAULT_CMYK_ICC, DEFAULT_CMYK},
+    {LAB_ICC, LAB_TYPE}
+};
 
 /* Get the size of the ICC profile that is in the buffer */
 unsigned int gsicc_getprofilesize(unsigned char *buffer)
@@ -516,7 +530,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc, gsicc_man
    device does not have a defined profile, then a default one
    is selected. */
 int
-gsicc_init_device_profile(const gs_imager_state * pis, gx_device * dev)
+gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
 {
     int code;
 
@@ -542,8 +556,8 @@ gsicc_init_device_profile(const gs_imager_state * pis, gx_device * dev)
     } 
 
     /* Set the manager */
-    if (pis->icc_manager->device_profile == NULL) {
-        code = gsicc_set_device_profile(pis->icc_manager, dev, pis->memory);
+    if (pgs->icc_manager->device_profile == NULL) {
+        code = gsicc_set_device_profile(pgs->icc_manager, dev, pgs->memory);
         return(code);
     }
     return(0);
@@ -714,19 +728,24 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     }
 }
 
-static int
-gsicc_init_iccmanager(gsicc_manager_t *iccmanager, const char *pname, gsicc_profile_t defaulttype)
+int
+gsicc_init_iccmanager(gs_state * pgs)
 {
-    int code;
+    int code, k;
+    const char *pname;
     int namelen;
+    gsicc_manager_t *iccmanager = pgs->icc_manager;
 
-    namelen = strlen(pname);
-    code = gsicc_set_profile(iccmanager, pname, namelen, defaulttype);
-    if (code < 0)
-        return gs_rethrow(code, "cannot find default icc profile");
-    return(code);
+    for (k = 0; k < 4; k++) {
+        pname = default_profile_params[k].path;
+        namelen = strlen(pname);
+        code = gsicc_set_profile(iccmanager, pname, namelen,
+            default_profile_params[k].default_type);
+        if (code < 0)
+            return gs_rethrow(code, "cannot find default icc profile");
+    }
+    return(0);
 }
-
 
 gsicc_manager_t *
 gsicc_manager_new(gs_memory_t *memory)
@@ -752,17 +771,6 @@ gsicc_manager_new(gs_memory_t *memory)
    result->memory = memory;
    result->profiledir = NULL;
    result->namelen = 0;
-
-   /* Set default profiles for the gray, rgb, cmyk and lab color spaces */
-
-   code = gsicc_init_iccmanager(result, DEFAULT_GRAY_ICC, DEFAULT_GRAY);
-   code = gsicc_init_iccmanager(result, DEFAULT_RGB_ICC, DEFAULT_RGB);
-   code = gsicc_init_iccmanager(result, DEFAULT_CMYK_ICC, DEFAULT_CMYK);
-   code = gsicc_init_iccmanager(result, LAB_ICC, LAB_TYPE);
-   if (code < 0) {
-        rc_decrement(result,"gsicc_manager_new");
-        return(NULL);
-   }
    return(result);
 }
 

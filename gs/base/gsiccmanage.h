@@ -38,9 +38,10 @@
 #include "gxclist.h"
 
 /* Prototypes */
+int gsicc_init_iccmanager(gs_state * pgs);
 void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data, 
                               cmm_profile_t *iccprofile);
-int gsicc_init_device_profile(const gs_imager_state * pis, gx_device * dev);
+int gsicc_init_device_profile(const gs_state *pgs, gx_device * dev);
 int gsicc_set_profile(gsicc_manager_t *icc_manager, const char *pname, 
                       int namelen, gsicc_profile_t defaulttype);
 cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem);

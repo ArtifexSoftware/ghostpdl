@@ -461,7 +461,7 @@ zsetdevice(i_ctx_t *i_ctx_p)
     /* If the device has a profile, this will get it to the manager.
        If it does not, then a default one appropriate for the device will be used */
 
-    code = gsicc_init_device_profile((gs_imager_state *) igs, op->value.pdevice);
+    code = gsicc_init_device_profile(igs, op->value.pdevice);
     if (code < 0)
         return code;
 

@@ -603,7 +603,7 @@ in:				/* Initialize for a new page. */
        The default profiles must be packed in the cfile. */
 
     if (target != 0)
-        code = gsicc_init_device_profile(&imager_state, target);
+        code = gsicc_init_device_profile((const gs_state *) &imager_state, target);
 
     if (code < 0)
 	goto out;
