@@ -975,7 +975,7 @@ static void split_line_4x2(eprn_Device *dev, const eprn_Octet *line,
   if (k != 0) {
     int shift = 8 - k;
     for (j = 0; j < 8; j++)
-      *(ptr[j]++) = *ptr[j] << shift;
+      *(ptr[j]++) <<= shift;
   }
 
   /* Set the lengths of the bit plane strings */
