@@ -550,8 +550,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
 	band_params = *params;
 	while ((y += lines_rasterized) < end_y) {
 	    /* Increment data pointer by lines_rasterized. */
-	    if (band_params.data)
-		band_params.data[0] += raster * lines_rasterized;
+	    band_params.data[0] += raster * lines_rasterized;
 	    line_count = end_y - y;
 	    code = clist_rasterize_lines(dev, y, line_count, bdev, NULL, &my);
 	    if (code < 0)
