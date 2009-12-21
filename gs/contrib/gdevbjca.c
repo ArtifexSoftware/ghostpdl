@@ -469,8 +469,7 @@ int bjc_treshold[1024];
 
 uint bjc_rand(void)
 {
-    uint ret=bjc_rand_seed[bjc_j] = bjc_rand_seed[bjc_j++] +
-                                        bjc_rand_seed[bjc_k++];
+    uint ret = (bjc_rand_seed[bjc_j++] += bjc_rand_seed[bjc_k++]);
     if(bjc_j==55) bjc_j = 0;
     if(bjc_k==55) bjc_k = 0;
     return ret & 0x03ff;
