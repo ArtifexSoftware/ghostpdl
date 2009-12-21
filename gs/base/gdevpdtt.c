@@ -359,8 +359,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
      * use a descendant font which is a type 3 (user-defined) so that we can properly
      * skip the caching below.
      */
-    if(font->FontType == ft_composite && ((gs_font_type0 *)font)->data.FMapType != fmap_CMap)
-    {
+    if(font->FontType == ft_composite && ((gs_font_type0 *)font)->data.FMapType != fmap_CMap) {
 	int font_code;
 	gs_char chr;
 	gs_glyph glyph;
@@ -376,6 +375,10 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	penum->output_char_code = GS_NO_CHAR;
 	code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
 			     dev, pis, text, font, path, pdcolor, pcpath, mem);
+	if (code < 0) {
+	    gs_free_object(mem, penum, "gdev_pdf_text_begin");
+	    return code;
+	}
 	do {
 	    font_code = penum->orig_font->procs.next_char_glyph
 		((gs_text_enum_t *)penum, &chr, &glyph);   
