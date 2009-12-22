@@ -11,11 +11,8 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
-
 #ifndef gsicc_create_INCLUDED
 #  define gsicc_create_INCLUDED
-
 
 void gsicc_create_fromcrd(unsigned char *buffer, gs_memory_t *memory);
 void gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory,
@@ -26,7 +23,6 @@ void gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t
                            bool has_defg_procs, bool has_abc_procs, bool has_lmn_procs);
 void gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memory, 
                           bool has_def_procs, bool has_abc_procs, bool has_lmn_procs);
-
 cmm_profile_t* gsicc_create_from_cal(float *white, float *black, float *gamma, 
                                      float *matrix, gs_memory_t *memory, int num_colors);
 
