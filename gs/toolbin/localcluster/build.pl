@@ -293,7 +293,8 @@ sub build($$$$) {
     #   $cmd1.=" -q" if ($product eq 'gs');
     $cmd1.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd1.=" -dNOPAUSE -dBATCH";  # -Z:
-    $cmd1.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
+#   $cmd1.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
+    $cmd1.=" -dJOBSERVER" if ($product eq 'gs');
 
     $cmd1.=" %rom%Resource/Init/gs_cet.ps" if ($filename =~ m/.PS$/ && $product eq 'gs');
 #   $cmd1.=" -dFirstPage=1 -dLastPage=1" if ($filename =~ m/.pdf$/i || $filename =~ m/.ai$/i);
@@ -327,7 +328,8 @@ sub build($$$$) {
     #   $cmd2.=" -q"
     $cmd2.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd2.=" -dNOPAUSE -dBATCH -K1000000";  # -Z:
-    $cmd2.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
+#   $cmd2.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
+    $cmd2.=" -dJOBSERVER";
 
     #   $cmd2.=" -dFirstPage=1 -dLastPage=1";
 
@@ -374,7 +376,8 @@ sub build($$$$) {
     #   $cmd2.=" -q" if ($product eq 'gs');
     $cmd2.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd2.=" -dNOPAUSE -dBATCH -K1000000";  # -Z:
-    $cmd2.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
+#   $cmd2.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
+    $cmd2.=" -dJOBSERVER" if ($product eq 'gs');
 
     $cmd2.=" %rom%Resource/Init/gs_cet.ps" if ($filename =~ m/.PS$/ && $product eq 'gs');
 #   $cmd2.=" -dFirstPage=1 -dLastPage=1" if ($filename =~ m/.pdf$/i || $filename =~ m/.ai$/i);
@@ -400,8 +403,19 @@ sub build($$$$) {
   return($cmd,$outputFilenames,$filename2);
 }
 
+my %quickFiles;
+if (open (F,"<quickfiles.lst")) {
+  while(<F>) {
+    chomp;
+    $quickFiles{$_}=1;
+  }
+  close(F);
+}
+
 my @commands;
 my @filenames;
+my @slowCommands;
+my @slowFilenames;
 
 foreach my $testfile (sort keys %testfiles) {
   foreach my $test (@{$tests{$testfiles{$testfile}}}) {
@@ -410,31 +424,25 @@ foreach my $testfile (sort keys %testfiles) {
     my $outputFilenames="";
     my $filename="";
     ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,1);
-    push @filenames,$filename;
-    push @commands,$cmd;
+    if (exists $quickFiles{$filename}) {
+      push @filenames,$filename;
+      push @commands,$cmd;
+    } else {
+      push @slowFilenames,$filename;
+      push @slowCommands,$cmd;
+    }
   }
 }
 
-#if (scalar keys %products>0) {
-#  print "pdl=";
-#  foreach (keys %products) {
-#    print "$_ ";
-#  }
-#  print "\n";
-#}
-my $subsetRemain=1;
+while (scalar(@slowCommands)) {
+  my $n=rand(scalar @slowCommands);
+  my $filename=$slowFilenames[$n];  splice(@slowFilenames,$n,1);
+  my $command=$slowCommands[$n];  splice(@slowCommands,$n,1);
+  print "$filename\t$command\n";
+}
+
 while (scalar(@commands)) {
-  my $n=-1;
-  if (scalar @commands<4900 && $subsetRemain) {
-    for (my $i=0;  $i<scalar @commands && $n==-1;  $i++) {
-       $n=$i if ($filenames[$i] =~ m/Subset/);
-    }
-    $subsetRemain=0 if ($n==-1);
-  } 
-  if ($n==-1) {
-    $n=rand(scalar @commands);
-  }
-# $n=0;
+  my $n=rand(scalar @commands);
   my $filename=$filenames[$n];  splice(@filenames,$n,1);
   my $command=$commands[$n];  splice(@commands,$n,1);
   print "$filename\t$command\n";
