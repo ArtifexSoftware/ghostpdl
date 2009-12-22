@@ -2981,7 +2981,7 @@ pdf14_update_device_color_procs(gx_device *dev,
                     /* Get the serialized data from the clist.  Not the whole profile. */
 
                     pcrdev = (gx_device_clist_reader *)(pdev->pclist_device);
-                    iccprofile = gsicc_read_serial_icc(pcrdev, icc_hashcode);
+                    iccprofile = gsicc_read_serial_icc((gx_device *) pcrdev, icc_hashcode);
 
                     if (iccprofile == NULL)
                         return gs_rethrow(-1,"ICC data not found in clist");

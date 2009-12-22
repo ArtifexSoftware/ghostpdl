@@ -35,7 +35,6 @@
 #define GSICC_NUMBER_STANDARD_PROFILES 2
 
 #include "gsicc_littlecms.h"
-#include "gxclist.h"
 
 /* Prototypes */
 int gsicc_init_iccmanager(gs_state * pgs);
@@ -54,7 +53,7 @@ gcmmhprofile_t gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_me
 gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer);
 void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, int namelen);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
-cmm_profile_t* gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc_hashcode);
+cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager);
 int gsicc_profile_clist_read(cmm_profile_t *icc_profile, const gs_imager_state * pis,
     uint offset, const byte *data, uint size, gs_memory_t *mem);

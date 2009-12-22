@@ -2485,7 +2485,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
         code = gs_cspace_build_ICC(&pcs, NULL, mem);
 
         /* Get the profile information from the clist */
-        picc_profile = gsicc_read_serial_icc(cdev, hash_code);
+        picc_profile = gsicc_read_serial_icc((gx_device *) cdev, hash_code);
 
         if (picc_profile == NULL)
             return gs_rethrow(-1, "Failed to find ICC profile during clist read");

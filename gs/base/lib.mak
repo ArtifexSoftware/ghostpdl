@@ -2473,7 +2473,7 @@ gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h)\
  $(gsdevice_h) $(stdint_h)
 gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)\
  $(std_h) $(gsmemory_h)
-gsiccmanage_h=$(GLSRC)gsiccmanage.h $(gsicc_littlecms_h) $(gxclist_h)
+gsiccmanage_h=$(GLSRC)gsiccmanage.h $(gsicc_littlecms_h)
 gsicccache_h=$(GLSRC)gsicccache.h $(GX)
 gsicc_profilecache_h=$(GLSRC)gsicc_profilecache.h
 

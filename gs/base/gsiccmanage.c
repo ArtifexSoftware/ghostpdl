@@ -1052,13 +1052,14 @@ gsicc_search_icc_table(clist_icctable_t *icc_table, int64_t icc_hashcode, int *s
    with the whole profile until we actually need it.  It may be that the link
    that we need is already in the link cache */
 cmm_profile_t*
-gsicc_read_serial_icc(gx_device_clist_reader *pcrdev, int64_t icc_hashcode)
+gsicc_read_serial_icc(gx_device *dev, int64_t icc_hashcode)
 {
     cmm_profile_t *profile;
     int64_t position;
     int size;
     int code;
-        
+    gx_device_clist_reader *pcrdev = (gx_device_clist_reader*) dev;
+
     /* Create a new ICC profile structure */
     profile = gsicc_profile_new(NULL, pcrdev->memory, NULL, 0);
     if (profile == NULL)
