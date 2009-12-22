@@ -128,6 +128,7 @@ Note: All profile data must be encoded as big-endian
 #include "gsicc_create.h"
 #include "gxarith.h"
 #include "gsiccmanage.h"
+#include "gsicccache.h"
 #include "math_.h"
 
 static void
@@ -282,7 +283,6 @@ double2XYZtype(float number_in)
 static unsigned short
 float2u8Fixed8(float number_in)
 {
-
     unsigned short m;
 
     m = (unsigned short) (number_in * 256);
@@ -764,7 +764,10 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  
         result->data_cs = gsRGB;
     } else {
         result->data_cs = gsGRAY;
-    }   
+    } 
+    /* Set the hash code  */
+    gsicc_get_icc_buff_hash(buffer,&(result->hashcode));
+    result->hash_is_valid = true;
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if (num_colors == 3)
