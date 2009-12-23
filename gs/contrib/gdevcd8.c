@@ -177,7 +177,7 @@
 
 #include "math_.h"
 #include <stdlib.h>		/* for rand() */
-#include <assert.h>
+#include "assert_.h"
 #include "gdevprn.h"
 #include "gdevpcl.h"
 #include "gsparam.h"

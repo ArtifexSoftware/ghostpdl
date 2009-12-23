@@ -16,7 +16,7 @@
 #ifndef pldebug_INCLUDED
 #  define pldebug_INCLUDED
 
-#include "assert.h"
+#include "assert_.h"
 
 #define PL_ASSERT assert
 

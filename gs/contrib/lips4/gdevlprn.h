@@ -137,9 +137,7 @@ struct gx_device_lprn_s
 #define ESC 0x1b		/* \033 */
 #define GS  0x1d		/* \035 */
 
-#ifndef assert
-# define assert(x)
-#endif
+#include "assert_.h"
 
 dev_proc_get_params(lprn_get_params);
 dev_proc_put_params(lprn_put_params);

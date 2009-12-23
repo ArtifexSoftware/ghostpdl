@@ -61,7 +61,7 @@ static const char
 #include "std.h"
 
 /* Standard headers */
-#include <assert.h>
+#include "assert_.h"
 #include <stdlib.h>
 
 /* Ghostscript headers */
