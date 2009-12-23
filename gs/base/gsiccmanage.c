@@ -32,6 +32,8 @@
 #include "gxcldev.h"
 #include "gzstate.h"
 
+#define ICC_HEADER_SIZE 128
+
 #if ICC_DUMP
 unsigned int global_icc_index = 0;
 #endif
@@ -824,6 +826,8 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, gs_memory_t *memory
     num_bytes = sfread(buffer_ptr,sizeof(unsigned char),4,s);
     profile_size = gsicc_getprofilesize(buffer_ptr);
 
+    if (profile_size < ICC_HEADER_SIZE)
+        return(-1);
     /* Allocate the buffer, stuff with the profile */
    buffer_ptr = gs_alloc_bytes(memory, profile_size,
 					"gsicc_load_profile");
