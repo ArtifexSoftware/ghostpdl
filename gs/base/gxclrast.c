@@ -127,7 +127,7 @@ typedef struct command_buf_s {
     byte *data;			/* actual buffer, guaranteed aligned */
     uint size;
     const byte *ptr;		/* next byte to be read (see above) */
-    const byte *limit;		/* refill warning point */
+    const byte *warn_limit;	/* refill warning point */
     const byte *end;		/* byte just beyond valid data */
     stream *s;			/* for refilling buffer */
     int end_status;
@@ -138,9 +138,11 @@ static void
 set_cb_end(command_buf_t *pcb, const byte *end)
 {
     pcb->end = end;
-    pcb->limit = pcb->data + (pcb->size - cmd_largest_size + 1);
-    if ( pcb->limit > pcb->end )
-	pcb->limit = pcb->end;
+    pcb->warn_limit = pcb->data + (pcb->size - cmd_largest_size + 1);
+    if ( pcb->warn_limit > pcb->end )
+	pcb->warn_limit = pcb->end;	/**** This is dangerous. Other places ****/
+					/**** assume that the limit is a soft ****/
+					/**** limit and should check 'end'    ****/
 }
 
 /* Read more data into a command buffer. */
@@ -621,7 +623,7 @@ in:				/* Initialize for a new page. */
 	gs_logical_operation_t log_op;
 
 	/* Make sure the buffer contains a full command. */
-	if (cbp >= cbuf.limit) {
+	if (cbp >= cbuf.warn_limit) {
 	    if (cbuf.end_status < 0) {	/* End of file or error. */
 		if (cbp >= cbuf.end) {
 		    code = (cbuf.end_status == EOFC ? 0 :
@@ -1457,7 +1459,7 @@ idata:			data_size = 0;
 				       for reducing time and memory expense. */
 				    int len;
 
-				    if (cbp >= cbuf.limit) {
+				    if (cbp >= cbuf.warn_limit) {
 					code = top_up_cbuf(&cbuf, &cbp);
 					if (code < 0)
 					    goto out;
@@ -1650,7 +1652,7 @@ idata:			data_size = 0;
 					    goto out;
 				    }
 				    while (left) {
-					if (cbuf.limit - cbp < left) {
+					if (cbuf.warn_limit - cbp < (int)left) {  /* cbp can be past warn_limit */
 					    code = top_up_cbuf(&cbuf, &cbp);
 					    if (code < 0)
 						return code;
@@ -2316,10 +2318,14 @@ read_ht_segment(
 
     /* get the segment size; refill command buffer if necessary */
     enc_u_getw(seg_size, cbp);
-    if (pcb->limit - cbp < seg_size) {
+    if (pcb->warn_limit - cbp < (int)seg_size) { /* cbp can be past warn_limit */
         code = top_up_cbuf(pcb, &cbp);
 	if (code < 0)
 	    return code;
+	if (pcb->end - cbp < (int)seg_size) {
+	    eprintf(" *** ht segment size doesn't fit in buffer ***\n");
+            return_error(gs_error_unknownerror);
+	}
     }
 
     if (pht_buff->pbuff == 0) {
@@ -2656,7 +2662,7 @@ read_create_compositor(
     
     /* If we read more than the maximum expected, return a rangecheck error */
     if ( code > MAX_CLIST_COMPOSITOR_SIZE )
- 		return_error(gs_error_rangecheck);
+	return_error(gs_error_rangecheck);
    	
     if (code > 0)
         cbp += code;
