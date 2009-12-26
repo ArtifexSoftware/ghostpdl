@@ -414,9 +414,10 @@ lips_put_params(gx_device * pdev, gs_param_list * plist)
 				     (param_name = LIPS_OPTION_USER_NAME),
 				     &usern)) {
 	case 0:
-	    if (usern.size > LIPS_USERNAME_MAX)
+	    if (usern.size > LIPS_USERNAME_MAX) {
 		ecode = gs_error_limitcheck;
-	    else {		/* Check the validity of ``User Name'' characters */
+                goto userne;
+	    } else {		/* Check the validity of ``User Name'' characters */
 		int i;
 
 		for (i = 0; i < usern.size; i++)
@@ -432,7 +433,6 @@ lips_put_params(gx_device * pdev, gs_param_list * plist)
 		    }
 	    }
 	    break;
-	    goto userne;
 	default:
 	    ecode = code;
 	  userne:param_signal_error(plist, param_name, ecode);
@@ -501,9 +501,10 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
 				     (param_name = LIPS_OPTION_MEDIATYPE),
 				     &pmedia)) {
 	case 0:
-	    if (pmedia.size > LIPS_MEDIACHAR_MAX)
+	    if (pmedia.size > LIPS_MEDIACHAR_MAX) {
 		ecode = gs_error_limitcheck;
-	    else {		/* Check the validity of ``MediaType'' characters */
+	        goto pmediae;
+	    } else {   /* Check the validity of ``MediaType'' characters */
 		if (strcmp(pmedia.data, "PlainPaper") != 0 &&
 		    strcmp(pmedia.data, "OHP") != 0 &&
 		    strcmp(pmedia.data, "TransparencyFilm") != 0 &&	/* same as OHP */
@@ -515,7 +516,6 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
 		}
 	    }
 	    break;
-	    goto pmediae;
 	default:
 	    ecode = code;
 	  pmediae:param_signal_error(plist, param_name, ecode);

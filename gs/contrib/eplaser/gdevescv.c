@@ -2053,9 +2053,10 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
 
   switch (code = param_read_string(plist, (param_name = ESCPAGE_OPTION_MEDIATYPE), &pmedia)) {
   case 0:
-    if (pmedia.size > ESCPAGE_MEDIACHAR_MAX)
-      ecode = gs_error_limitcheck;
-    else {		/* Check the validity of ``MediaType'' characters */
+    if (pmedia.size > ESCPAGE_MEDIACHAR_MAX) {
+        ecode = gs_error_limitcheck;
+        goto pmediae;
+    } else {   /* Check the validity of ``MediaType'' characters */
 
       if (strcmp(pmedia.data, "NM") == 0) {
 	pdev->MediaType = 0;
@@ -2085,7 +2086,6 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
       }
     }
     break;
-    goto pmediae;
   default:
     ecode = code;
   pmediae:
