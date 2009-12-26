@@ -15,6 +15,7 @@
 /* Text processing for pdfwrite. */
 #include "math_.h"
 #include "string_.h"
+#include <stdlib.h> /* abs() */
 #include "gx.h"
 #include "gserrors.h"
 #include "gscencs.h"
