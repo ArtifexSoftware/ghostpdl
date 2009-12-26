@@ -146,11 +146,12 @@ gp_monitor_sizeof(void)
 int
 gp_monitor_open(gp_monitor * mona)
 {
-    pthread_mutex_t * const mon = &((gp_pthread_recursive_t *)mona)->mutex;
+    pthread_mutex_t * const mon;
     int scode;
 
     if (!mona)
 	return -1;		/* monitors are not movable */
+    mon = &((gp_pthread_recursive_t *)mona)->mutex;
     ((gp_pthread_recursive_t *)mona)->self_id = 0;	/* Not valid unless mutex is locked */
     scode = pthread_mutex_init(mon, NULL);
     return SEM_ERROR_CODE(scode);
