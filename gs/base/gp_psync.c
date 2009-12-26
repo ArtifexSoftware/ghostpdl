@@ -146,7 +146,7 @@ gp_monitor_sizeof(void)
 int
 gp_monitor_open(gp_monitor * mona)
 {
-    pthread_mutex_t * const mon;
+    pthread_mutex_t *mon;
     int scode;
 
     if (!mona)
