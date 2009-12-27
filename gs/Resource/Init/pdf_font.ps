@@ -1658,19 +1658,24 @@ currentdict /CMap_read_dict undef
     pop
   } bdef
 
+% <stream> run-fonttypeproc <font>
+/run-fonttypeproc {
+  dup /Subtype knownoget not { 0 } if % res /subtype
+  //fonttypeprocs 1 index known not {
+    (   **** Warning: Font /Subtype attribute is wrong or missing, /Type1 assumed.\n)
+    pdfformaterror
+    pop /Type1
+  } if
+  //fonttypeprocs exch get exec
+} bdef
+
 % Prototype for all procedures: <res> <desc> <stream> foo <font>
 /font_tag_dict 13 dict begin
 
   % When the font stream is absent or cannot be read we load the font by the name.
   /no_stream 
     { pop pop 
-      dup /Subtype get  % res res /subtype
-      dup / eq {
-        (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
-	pdfformaterror
-        pop /Type1
-      } if
-      //fonttypeprocs exch get exec 
+      run-fonttypeproc
     } bdef
 
   /bad_stream 
@@ -1771,13 +1776,7 @@ currentdict /bndef undef
         put  % Save pointer to the font.
       } ifelse
     } {
-      dup /Subtype get
-      dup / eq {
-        (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
-        pdfformaterror
-        pop /Type1
-      } if 
-      //fonttypeprocs exch get exec
+      run-fonttypeproc
     } ifelse
         % Stack: font-res font
     1 index exch
