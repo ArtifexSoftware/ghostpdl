@@ -255,8 +255,14 @@ currentdict /known_symbolic_fonts undef
       } if
       div
                 % Stack: font font-res mscale
-      /FirstChar 2 index /FirstChar oget def
-      /LastChar  2 index /LastChar  oget def
+      /FirstChar 2 index /FirstChar knownoget not {
+        (   **** Warning: /FirstChar attribute is missing, assuming 0.\n) pdfformaterror
+        0
+      } if def
+      /LastChar  2 index /LastChar  knownoget not {
+        (   **** Warning: /LastChar attribute is missing, assuming 255.\n) pdfformaterror
+        255
+      } if def
 
       Encoding length LastChar le {
          (   **** Warning: Font Encoding array size is smaller than character range.\n)
