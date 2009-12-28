@@ -51,6 +51,7 @@
 #include "zicc.h"	/* For declaration of seticc */
 #include "gscspace.h"   /* Needed for checking if current pgs colorspace is CIE */
 #include "iddict.h"	/* for idict_put_string */
+#include "zfrsd.h"      /* for make_rss() */
 
 /* imported from gsht.c */
 extern  void    gx_set_effective_transfer(gs_state *);
@@ -5072,21 +5073,15 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		    code = dict_find_string(&ICCdict, "DataSource", &tempref);
 		    if (code < 0)
 			return code;
-		    /* Check for string based ICC and convert to a file (stage = 2) */
-		    if (!r_has_type(tempref, t_file)){
-			ref stref;
-			byte *body;
+		    /* Check for string based ICC and convert to a file */
+		    if (r_has_type(tempref, t_string)){
+                        uint n = r_size(tempref);
+                        ref rss;
 
-			(*stage)++;
-			body = ialloc_string(48, "string");
-			if (body == 0)
-			    return_error(e_VMerror);
-			memcpy(body, "{systemdict /.convertICCSource get exec} stopped",48);
-			make_string(&stref, a_all | icurrent_space, 48, body);
-			r_set_attrs(&stref, a_executable);
-			esp++;
-			ref_assign(esp, &stref);
-			return o_push_estack;
+                        code = make_rss(i_ctx_p, &rss, tempref->value.const_bytes, n, r_space(tempref), 0L, n, false);
+                        if (code < 0)
+                            return code;
+                        ref_assign(tempref, &rss);
 		    }
 		    /* Make space on operand stack to pass the ICC dictionary */
 		    push(1);

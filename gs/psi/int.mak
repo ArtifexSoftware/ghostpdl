@@ -263,7 +263,7 @@ ibnum_h=$(PSSRC)ibnum.h
 zcolor_h=$(PSSRC)zcolor.h
 zcie_h=$(PSSRC)zcie.h
 zicc_h=$(PSSRC)zicc.h
-
+zfrsd_h=$(PSSRC)zfrsd.h
 
 ### Initialization and scanning
 
@@ -458,7 +458,8 @@ $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
  $(gzstate_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxcmap_h)\
  $(gxcspace_h) $(gxcolor2_h) $(gxpcolor_h)\
  $(idict_h) $(icolor_h) $(idparam_h) $(iname_h) $(iutil_h) $(icsmap_h)\
- $(ifunc_h) $(zht2_h) $(zcolor_h) $(zcie_h) $(zicc_h) $(gscspace_h)
+ $(ifunc_h) $(zht2_h) $(zcolor_h) $(zcie_h) $(zicc_h) $(gscspace_h)\
+ $(zfrsd_h)
 	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c 
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
@@ -921,7 +922,7 @@ $(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
  $(gsfname_h) $(gxiodev_h)\
  $(sfilter_h) $(stream_h) $(strimpl_h)\
  $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(istruct_h) $(store_h)\
- $(zfile_h)
+ $(zfile_h) $(zfrsd_h)
 	$(PSCC) $(PSO_)zfrsd.$(OBJ) $(C_) $(PSSRC)zfrsd.c
 
 # ======================== PostScript Level 2 ======================== #
