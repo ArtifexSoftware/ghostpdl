@@ -889,7 +889,9 @@ $(PCLOBJ)pcfontpg.$(OBJ): $(PCLSRC)pcfontpg.c \
                           $(pcfont_h)         \
                           $(pcstate_h)	      \
                           $(pcursor_h)        \
-                          $(pcommand_h)       
+                          $(pcommand_h)       \
+                          $(plftable_h)       \
+                          $(pllfont_h)
 	$(PCLCCC) $(PCLSRC)pcfontpg.c $(PCLO_)pcfontpg.$(OBJ)
 
 PCL5_OPS1   = $(PCLOBJ)pcjob.$(OBJ) $(PCLOBJ)pcpage.$(OBJ)      \

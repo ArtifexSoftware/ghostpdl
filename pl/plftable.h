@@ -26,4 +26,6 @@ typedef struct font_resident {
 
 extern const font_resident_t resident_table[];
 
+extern const int pl_built_in_resident_font_table_count;
+
 #endif                       /* plftable_INCLUDED */

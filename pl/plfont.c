@@ -1056,3 +1056,18 @@ pl_store_resident_font_data_in_file(char *font_file, gs_memory_t *mem, pl_font_t
     plfont->font_file_loaded = false;
     return 0;
 }
+
+pl_font_t *
+pl_lookup_font_by_pjl_number(pl_dict_t *pfontdict, int pjl_font_number)
+{
+    pl_dict_enum_t dictp;
+    gs_const_string key;
+    void *value;
+    pl_dict_enum_begin(pfontdict, &dictp);
+    while ( pl_dict_enum_next(&dictp, &key, &value) ) {
+        pl_font_t *plfont = value;
+        if (plfont->params.pjl_font_number == pjl_font_number)
+            return value;
+    }
+    return (pl_font_t *)NULL;
+}
