@@ -55,11 +55,14 @@ orig_sqrt(double x)
 #include "gxfarith.h"
 #include "gxfixed.h"
 #include "stdint_.h"
+#include "stdio_.h"
 
 /* ------ Redirected stdout and stderr  ------ */
 
 #include <stdarg.h>
 #define PRINTF_BUF_LENGTH 1024
+
+static const char msg_truncated[] = "\n*** Previous line has been truncated.\n";
 
 int outprintf(const gs_memory_t *mem, const char *fmt, ...)
 {
@@ -68,14 +71,12 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-
-    count = vsprintf(buf, fmt, args);
-    outwrite(mem, buf, count);
-    if (count >= PRINTF_BUF_LENGTH) {
-	count = sprintf(buf, 
-	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
-	    PRINTF_BUF_LENGTH);
-	outwrite(mem, buf, count);
+    count = vsnprintf(buf, sizeof(buf), fmt, args);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        outwrite(mem, buf, sizeof(buf) - 1);
+        outwrite(mem, msg_truncated, sizeof(msg_truncated) - 1);
+    } else {
+        outwrite(mem, buf, count);
     }
     va_end(args);
     return count;
@@ -88,15 +89,15 @@ int errprintf(const char *fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-
-    count = vsprintf(buf, fmt, args);
-    errwrite(buf, count);
-    if (count >= PRINTF_BUF_LENGTH) {
-	count = sprintf(buf, 
-	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
-	    PRINTF_BUF_LENGTH);
-	errwrite(buf, count);
+    count = vsnprintf(buf, sizeof(buf), fmt, args);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        errwrite(buf, sizeof(buf) - 1);
+        errwrite(msg_truncated, sizeof(msg_truncated) - 1);
+    } else {
+        errwrite(buf, count);
     }
+    errwrite(buf, count);
+
     va_end(args);
     return count;
 }
