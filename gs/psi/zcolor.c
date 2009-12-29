@@ -343,11 +343,12 @@ zsetcolor(i_ctx_t * i_ctx_p)
    to the changing of UseCIEColor during transparency
    soft mask processing */
 
-static bool name_is_device_color( char *name )
+static bool name_is_device_color( char *cs_name )
 {
 
-    return( (strcmp(name, "DeviceGray") == 0) || 
-        (strcmp(name, "DeviceRGB") == 0) || (strcmp(name, "DeviceCMYK") == 0));
+    return( strcmp(cs_name, "DeviceGray") == 0 || 
+            strcmp(cs_name, "DeviceRGB")  == 0 ||
+            strcmp(cs_name, "DeviceCMYK") == 0);
 
 }
 
@@ -4988,18 +4989,34 @@ static int devicepvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     return 0;
 }
 
+static int set_dev_space(i_ctx_t * i_ctx_p, int components)
+{
+    int code, stage = 1, cont = 0;
+    switch(components) {
+	case 1:
+	    code = setgrayspace(i_ctx_p, (ref *)0, &stage, &cont, 1);
+	    break;
+	case 3:
+	    code = setrgbspace(i_ctx_p, (ref *)0, &stage, &cont, 1);
+	    break;
+	case 4:
+	    code = setcmykspace(i_ctx_p, (ref *)0, &stage, &cont, 1);
+	    break;
+	default:
+	    code = gs_note_error(e_rangecheck);
+	    break;
+    }
+    return code;
+}
+
 /* ICCBased */
 static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr);
 static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
 {
     os_ptr op = osp;
-    ref     ICCdict, *tempref, *altref=NULL, *icc, *nocie;
+    ref     ICCdict, *tempref, *altref=NULL, *nocie;
     int components, code;
     float range[8];
-
-    code = dict_find_string(systemdict, ".seticcspace", &icc);
-    if (code < 0)
-	return_error(e_undefined);
 
     code = dict_find_string(systemdict, "NOCIE", &nocie);
     if (code < 0)
@@ -5041,30 +5058,10 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 			/* There's no /Alternate (or it is null), set a default space
 			 * based on the number of components in the ICCBased space
 			 */
-			int stage1 = 1, cont1 = 0;
-			switch(components) {
-			    case 1:
-				code = setgrayspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
-				if (code != 0)
-				    return code;
-				*stage = 0;
-				break;
-			    case 3:
-				code = setrgbspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
-				if (code != 0)
-				    return code;
-				*stage = 0;
-				break;
-			    case 4:
-				code = setcmykspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
-				if (code != 0)
-				    return code;
-				*stage = 0;
-				break;
-			    default:
-				return_error(e_rangecheck);
-				break;
-			}
+			code = set_dev_space(i_ctx_p, components);
+			if (code != 0)
+			    return code;
+			*stage = 0;
 		    }
 		} else {
 		    code = iccrange(i_ctx_p, r, (float *)&range);
@@ -5105,30 +5102,10 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 			    /* We have no /Alternate in the ICC space, use hte /N key to
 			     * determine an 'appropriate' default space.
 			     */
-			    int stage1 = 1, cont1 = 0;
-			    switch(components) {
-				case 1:
-				    code = setgrayspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
-				    if (code != 0)
-					return code;
-				    *stage = 0;
-				    break;
-				case 3:
-				    code = setrgbspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
-				    if (code != 0)
-					return code;
-				    *stage = 0;
-				    break;
-				case 4:
-				    code = setcmykspace(i_ctx_p, (ref *)0x00, &stage1, &cont1, 1);
-				    if (code != 0)
-					return code;
-				    *stage = 0;
-				    break;
-				default:
-				    return_error(e_rangecheck);
-				    break;
-			    }
+			    code = set_dev_space(i_ctx_p, components);
+			    if (code != 0)
+			        return code;
+			    *stage = 0;
 			}
 			pop(1);
 		    }
@@ -5140,43 +5117,6 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		/* All done, exit */
 		*stage = 0;
 		code = 0;
-		break;
-	    case 2:
-		/* Converted a string DataSource ICC profile into a file
-		 * using ReusableStreamDecode. See gs_cspace.ps.
-		 */
-		*stage = 1;
-		code = array_get(imemory, r, 1, &ICCdict);
-		if (code < 0)
-		    return code;
-		code = iccrange(i_ctx_p, r, (float *)&range);
-		if (code < 0)
-		    return code;
-		code = dict_find_string(&ICCdict, "N", &tempref);
-		if (code < 0)
-		    return code;
-		components = tempref->value.intval;
-
-		/* Make space on operand stack to pass the ICC dictionary */
-		push (1);
-		ref_assign(op, &ICCdict);
-		code = seticc(i_ctx_p, components, op, (float *)&range);
-		if (code < 0) {
-    		    code = dict_find_string(&ICCdict, "Alternate", &altref);
-		    if (code < 0)
-			make_null(altref);	/* no Alternate -- just use null */
-		    /* Our dictionary still on operand stack, we can reuse the
-		     * slot on the stack to hold the alternate space.
-		     */
-		    ref_assign(op, altref);
-		    /* If CIESubst, we are already substituting for CIE, so use nosubst 
-		     * to prevent further substitution!
-		     */
-		    if (CIESubst) 
-		        return setcolorspace_nosubst(i_ctx_p);
-		    else
-		        return zsetcolorspace(i_ctx_p);
-		}
 		break;
 	    default:
 		return_error (e_rangecheck);

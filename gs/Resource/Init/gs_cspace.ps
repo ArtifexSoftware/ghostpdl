@@ -182,44 +182,6 @@ bind def
 end 
 
 %
-% used to convert the DataSource of an ICCBased colour space into a 
-% file, if it isn't one already. This is required because the current
-% implementation of ICC spaces requires the data source to be a file.
-% This routine is *only* called from the PostScript interpreter when
-% setting an ICCBased space with a string data source.
-%
-/.convertICCSource 
-{
-  % make DataSource a file
-  dup 1 get /DataSource get type /stringtype eq
-  {
-    % build all new structures in local VM
-    .currentglobal exch //false .setglobal
-
-    % check if we need to copy the color space and dictionary
-    2 copy eq
-    {
-      dup length array copy
-      dup 1 2 copy get dup length dict copy put
-    }
-    if
-
-    % fetch DataSource, setting up stack for multiple puts
-    dup 1 2 copy get dup /DataSource 2 copy get
-
-    % convert the string into a file
-    /ReusableStreamDecode filter
-
-    % put the file into the dictioary, the dictionary into the array
-    put put
-
-    % restore the VM mode
-    exch .setglobal
-  }
-  if
-} bind def
-
-%
 % Set the initial device space
 %
 systemdict /DeviceGray_array get setcolorspace
