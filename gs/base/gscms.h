@@ -48,9 +48,7 @@ typedef struct gs_range_icc_s {
 } gs_range_icc_t;  /* ICC profile input could be up to 15 bands */
 
 
-/*  The buffer description.  We
-    may need to handle a variety
-    of different types */
+/*  The buffer description.  We handle a variety of different types */
 
 typedef enum {
     gsGRAY,
@@ -62,7 +60,6 @@ typedef enum {
 } gsicc_colorbuffer_t;
 
 typedef struct gsicc_bufferdesc_s {
-
     unsigned char num_chan;
     unsigned char bytes_per_chan;
     bool has_alpha;
@@ -73,9 +70,7 @@ typedef struct gsicc_bufferdesc_s {
     int row_stride;
     int num_rows;
     int pixels_per_row; 
-
 } gsicc_bufferdesc_t;
-
 
 /* Enumerate the ICC rendering intents */
 typedef enum {
@@ -85,32 +80,22 @@ typedef enum {
     gsABSOLUTECOLORIMETRIC
 } gsicc_rendering_intents_t;
 
-/*  Doing this an an enum type for now.
-    There is alot going on with respect
-    to this and V2 versus V4 profiles */
+/*  Doing this an an enum type for now.  There is alot going on with respect
+ *  to this and V2 versus V4 profiles
+ */
 
 typedef enum {
     BP_ON,
     BP_OFF,
 } gsicc_black_point_comp_t;
 
-/* Used so that we can specify
-    if we want to link with
-    Device input color spaces 
-    during the link creation
-    process. For the DeviceN
-    case, the DeviceN profile
-    must match the DeviceN
-    profile in colorant
-    order and number of 
-    colorants.  Also, used to indicate if
-   the profile matches
-   one of the default 
-   profiles in the 
-   icc manager.  This is useful
-   for reducing clist size since
-   we will encode this value
-   instead of the ICC profile. */
+/*  Used so that we can specify if we want to link with Device input color spaces 
+    during the link creation process. For the DeviceN case, the DeviceN profile
+    must match the DeviceN profile in colorant order and number of colorants.
+    Also, used to indicate if the profile matches one of the default profiles in
+    the icc manager.  This is useful for reducing clist size since we will encode
+    this value instead of the ICC profile.
+*/
 
 typedef enum {
     DEFAULT_NONE,
@@ -126,82 +111,70 @@ typedef enum {
 
 
 #define gsicc_serial_data\
-    unsigned char num_comps;    /* number of device dependent values */\
-    unsigned char pcs_num_comps; /* usually 3 but could be more if device link type */\
-    bool islab;                 /* Needed since we want to detect this to avoid */\
-                                /*  expensive decode on LAB images.  Is true */\
-                                /* if PDF color space is \Lab */\
-    gsicc_profile_t default_match;  /* Used for detecting a match to a default space */\
-    gsicc_colorbuffer_t data_cs; /* The data color space of the profile (not the PCS) */\
+    unsigned char num_comps;		/* number of device dependent values */\
+    unsigned char pcs_num_comps;	/* usually 3 but could be more if device link type */\
+    bool islab;				/* Needed since we want to detect this to avoid */\
+					/*  expensive decode on LAB images.  Is true */\
+					/* if PDF color space is \Lab */\
+    gsicc_profile_t default_match;	/* Used for detecting a match to a default space */\
+    gsicc_colorbuffer_t data_cs;	/* The data color space of the profile (not the PCS) */\
     gs_range_icc_t Range;\
-    int64_t hashcode;           /* A hash code for the icc profile */\
-    bool hash_is_valid;         /* Is the code valid? */\
-    int devicen_permute[ICC_MAX_CHANNELS];  /* Permutation vector for deviceN laydown order */\
-    bool devicen_permute_needed;            /* Check if we need to permute the DeviceN values */\
-    int buffer_size            /* size of ICC profile buffer */
+    int64_t hashcode;			/* A hash code for the icc profile */\
+    bool hash_is_valid;			/* Is the code valid? */\
+    int devicen_permute[ICC_MAX_CHANNELS];	/* Permutation vector for deviceN laydown order */\
+    bool devicen_permute_needed;		/* Check if we need to permute the DeviceN values */\
+    int buffer_size			/* size of ICC profile buffer */
     
 
-/* A subset of the profile information 
-   which is used when writing and reading
-   out to the c-list */
+/* A subset of the profile information which is used when writing and reading
+ * out to the c-list
+ */
 
 typedef struct gsicc_serialized_profile_s {
-
     gsicc_serial_data;
-
 } gsicc_serialized_profile_t;
 
 
 typedef struct gsicc_colorname_s gsicc_colorname_t;
 
 struct gsicc_colorname_s {
-
     char *name;
     int length;
     gsicc_colorname_t *next;
-
 };
 
 typedef struct gsicc_namelist_s gsicc_namelist_t;
 
 struct gsicc_namelist_s {
-
     int count;
     gsicc_colorname_t *head;
-    
 };
 
 /* A structure for holding profile information.  A member variable
-   of the ghostscript color structure.   The item is reference counted. */
+ * of the ghostscript color structure.   The item is reference counted.
+ */
 struct cmm_profile_s {
-
     gsicc_serial_data;
     byte *buffer;               /* A buffer with ICC profile content */
-    gx_device *dev;             /* A pointer to the clist device in 
-                                   which the ICC data may be contained */
-                                   
-
+    gx_device *dev;             /* A pointer to the clist device in which the ICC data may be contained */
     gsicc_namelist_t *spotnames;  /* Only used with NCLR ICC input profiles with named color tag */
     void *profile_handle;       /* The profile handle */
     rc_header rc;               /* Reference count.  So we know when to free */ 
     int name_length;            /* Length of file name */
     char *name;                 /* Name of file name (if there is one) where profile is found.
-                                   If it was embedded in the stream, there will not be a file
-                                   name.  This is primarily here for the system profiles, and
-                                   so that we avoid resetting them everytime the user params
-                                   are reloaded. */
+				 * If it was embedded in the stream, there will not be a file
+				 * name.  This is primarily here for the system profiles, and
+				 * so that we avoid resetting them everytime the user params
+				 * are reloaded.
+				 */
     
 
 };
-
-
 
 #ifndef cmm_profile_DEFINED
 typedef struct cmm_profile_s cmm_profile_t;
 #define cmm_profile_DEFINED
 #endif
-
-
 
 /* A linked list structure for storing profiles in a table in which we
    can store and refer to from the clist and also when creating icc profiles
@@ -211,40 +184,34 @@ typedef struct cmm_profile_s cmm_profile_t;
    ICC profiles in a file).  The default GRAY, RGB, and CMYK profiles are not
    stored here but are maintained in the ICC manager.  This is for profiles
    that are in the content and for profiles we generate from PS and PDF CIE (NonICC)
-   color spaces.  */
+   color spaces.
+ */
 
 typedef struct gsicc_profile_entry_s gsicc_profile_entry_t;
 
 struct gsicc_profile_entry_s {
-
     cmm_profile_t *profile;               /* The profile  */
     gsicc_profile_entry_t *next;          /* next profile */
     gsicc_profile_entry_t *prev;          /* previous profile */
-
 };
 
 
-/* ProfileList. The size of the list is limited
-   by max_memory_size.  Profiles are added if there
-   is sufficient memory.  */
+/* ProfileList. The size of the list is limited by max_memory_size.
+ * Profiles are added if there is sufficient memory.
+ */
 
 typedef struct gsicc_profile_list_s {
-
     gsicc_profile_entry_t *icc_profile_entry;
     int num_entries;
     rc_header rc;
     gs_memory_t *memory;
-
 } gsicc_profile_list_t;
 
 
-/*  These are the types that we can
-    potentially have linked together
-    by the CMS.  If the CMS does
-    not have understanding of PS
-    color space types, then we 
-    will need to convert them to 
-    an ICC type. */
+/*  These are the types that we can potentially have linked together by the CMS.
+ *  If the CMS does not have understanding of PS color space types, then we 
+ *  will need to convert them to an ICC type.
+ */
 
 
 typedef enum {
@@ -262,16 +229,13 @@ typedef enum {
 typedef struct gsicc_link_s gsicc_link_t;
 
 typedef struct gsicc_hashlink_s {
-
     int64_t link_hashcode;  
     int64_t src_hash;
     int64_t des_hash;
     int64_t rend_hash;
-
 } gsicc_hashlink_t;
 
 struct gsicc_link_s {
-
     void *link_handle;
     void *contextptr;
     gsicc_hashlink_t hashcode;
@@ -280,63 +244,57 @@ struct gsicc_link_s {
     gsicc_link_t *prevlink;
     bool includes_softproof;
     bool is_identity;  /* Used for noting that this is an identity profile */
-
 };
 
 
-/* ICC Cache. The size of the cache is limited
-   by max_memory_size.  Links are added if there
-   is sufficient memory.  */
+/* ICC Cache. The size of the cache is limited by max_memory_size.
+ * Links are added if there is sufficient memory and if the number
+ * of links does not exceed a (soft) limit.
+ */
 
 typedef struct gsicc_link_cache_s {
-
     gsicc_link_t *icc_link;
     int num_links;
     rc_header rc;
     gs_memory_t *memory;
-
 } gsicc_link_cache_t;
 
 /* A linked list structure to keep DeviceN ICC profiles
-   that the user wishes to use to achieve accurate rendering
-   with DeviceN (typically non CMYK or CMYK + spot) colors.
-   The ICC profiles used for this will require a special
-   private tag in the ICC profile that defines the colorant
-   names and they must match those in the DeviceN color
-   space.  Note this is not to say that DeviceN color
-   management can only be achieved with ICC profiles.  If
-   a customer has a proprietary mixing model for inks, they
-   will be able to hook in their method in the location
-   in the code where the DeviceN colors are processed.  If
-   there is no ICC color management of the DeviceN colors
-   and the DeviceN colors are NOT the native colors
-   for the device, then the colors will be transformed to 
-   the alternate CS using the alternate tint transform */
+ * that the user wishes to use to achieve accurate rendering
+ * with DeviceN (typically non CMYK or CMYK + spot) colors.
+ * The ICC profiles used for this will require a special
+ * private tag in the ICC profile that defines the colorant
+ * names and they must match those in the DeviceN color
+ * space.  Note this is not to say that DeviceN color
+ * management can only be achieved with ICC profiles.  If
+ * a customer has a proprietary mixing model for inks, they
+ * will be able to hook in their method in the location
+ * in the code where the DeviceN colors are processed.  If
+ * there is no ICC color management of the DeviceN colors
+ * and the DeviceN colors are NOT the native colors
+ * for the device, then the colors will be transformed to 
+ * the alternate CS using the alternate tint transform
+ */
 
 typedef struct gsicc_devicen_entry_s gsicc_devicen_entry_t;
 
 struct gsicc_devicen_entry_s {
-
     cmm_profile_t *iccprofile;
     gsicc_devicen_entry_t *next;
-
 };
 
 
 typedef struct gsicc_devicen_s gsicc_devicen_t;
 
 struct gsicc_devicen_s {
-
     gsicc_devicen_entry_t *head;
     gsicc_devicen_entry_t *final;
     int count;
-
 };
 
 /* The manager object */
 
 typedef struct gsicc_manager_s {
-
     cmm_profile_t *device_named;    /* The named color profile for the device */
     cmm_profile_t *default_gray;    /* Default gray profile for device gray */
     cmm_profile_t *default_rgb;     /* Default RGB profile for device RGB */
@@ -344,27 +302,18 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *proof_profile;   /* Profiling profile */
     cmm_profile_t *output_link;     /* Output device Link profile */
     cmm_profile_t *device_profile;  /* The actual profile for the device */
-    cmm_profile_t *lab_profile;      /* Colorspace type ICC profile from LAB to LAB */
-    gsicc_devicen_t *device_n;       /* A linked list of profiles used for DeviceN support */ 
-
+    cmm_profile_t *lab_profile;     /* Colorspace type ICC profile from LAB to LAB */
+    gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */ 
     char *profiledir;               /* Directory used in searching for ICC profiles */
     uint namelen;
-
     gs_memory_t *memory;            
     rc_header rc;
-
 } gsicc_manager_t;
 
 typedef struct gsicc_rendering_param_s {
-
     gsicc_rendering_intents_t rendering_intent;
     gs_object_tag_type_t    object_type;
     gsicc_black_point_comp_t black_point_comp;    
-
 } gsicc_rendering_param_t;
 
-
-
-
-#endif
-
+#endif /* ifndef gscms_INCLUDED */
