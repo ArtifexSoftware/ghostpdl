@@ -189,7 +189,9 @@ LCMSBOOL _cmsValidateLUT(LPLUT NewLUT)
     unsigned int oldCalc;
     unsigned int power = NewLUT -> InputChan;
 
-    if (NewLUT -> cLutPoints > 100) return FALSE;
+    /* Allow gray input profiles to have 256 CLUT entries */
+    if (NewLUT -> cLutPoints > 256 && NewLUT ->InputChan == 1 ) return FALSE;
+    if (NewLUT -> cLutPoints > 100 && NewLUT ->InputChan > 1) return FALSE;
     if (NewLUT -> InputChan > MAXCHANNELS)  return FALSE;
     if (NewLUT -> OutputChan > MAXCHANNELS) return FALSE;
 

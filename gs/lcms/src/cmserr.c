@@ -35,7 +35,7 @@ void LCMSEXPORT cmsSetErrorHandler(cmsErrorHandlerFunction Fn);
 
 // ******************************************************************
 
-static int nDoAbort = LCMS_ERROR_ABORT;
+static int nDoAbort = LCMS_ERROR_SHOW;
 static cmsErrorHandlerFunction UserErrorHandler = (cmsErrorHandlerFunction) NULL;
 
 
