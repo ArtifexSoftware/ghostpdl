@@ -102,7 +102,6 @@ scan_number(const byte * str, const byte * end, int sign,
 	if (!IS_DIGIT(d, c))
 	    break;
         if (WOULD_OVERFLOW(((unsigned)ival), d, max_scan)) {
-            //goto i2l;
 	    if (ival == max_int / 10 && d == (max_int % 10) + 1 && sign < 0) {
 		GET_NEXT(c, sp, c = EOFC);
 		dval = -(double)min_int;

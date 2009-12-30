@@ -3361,11 +3361,9 @@ cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
 
     /* Color use */
     fprintf(prn_stream, "@PJL SET RENDERMODE = COLOR \n");
-//    fprintf(prn_stream, "@PJL SET RENDERMODE = TRUEBLACK \n");
 
     /* Color correction */
     fprintf(prn_stream, "@PJL SET COLORSPACE = SRGB \n");
-//    fprintf(prn_stream, "@PJL SET COLORSPACE = DEVICERGB \n");
 
     /* Predef qual set (TODO: need add options) */
     if (cdj850->quality == DRAFT) {
@@ -3381,16 +3379,6 @@ cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
         fprintf(prn_stream, "@PJL SET RET = OFF \n");
         fprintf(prn_stream, "@PJL SET MAXDETAIL = ON \n");
     }
-
-    /* Set "remove margins between pages" (need not separated pages) */
-//    fprintf(prn_stream, "@PJL SET NESTMODE = OFF \n");
-
-    /* Disable automatic cutter */
-//    fprintf(prn_stream, "@PJL SET CUTTER = OFF \n");
-
-    /* Set page size (useful for standart format cutting) */
-//    fprintf(prn_stream, "@PJL SET PAPERLENGTH = %d \n", (int)(y * 72.0));
-//    fprintf(prn_stream, "@PJL SET PAPERWIDTH = %d \n" , (int)(x * 72.0));
 
     /* Set the language to PCL3 enhanced */
     fprintf(prn_stream, "@PJL ENTER LANGUAGE=PCL3GUI \n");
