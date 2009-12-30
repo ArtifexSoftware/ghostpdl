@@ -633,7 +633,15 @@ currentdict /tt_tag_dict .undef
 	% No name available, /postnames will be defined as an empty
 	% array and the glyph won't get a name attached.
 	postglyphs postpos //get_from_stringarray exec
-        postglyphs postpos 1 add 2 index //getinterval_from_stringarray exec cvn
+        postglyphs postpos 1 add 2 index
+        2 copy add total_length gt {
+          TTFDEBUG { (post table ends in the middle of the entry.) print flush } if
+          pop pop pop pop
+          % Fill the rest with .notdef
+          1 numglyphs 1 sub { 1 index exch /.notdef put } for
+          exit
+        } if
+        //getinterval_from_stringarray exec cvn
 	exch postpos add 1 add /postpos exch def
         2 index 3 1 roll
         put
