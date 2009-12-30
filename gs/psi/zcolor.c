@@ -5447,7 +5447,7 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
                               3,
                               gamma,
                               dflt_gamma );
-     if (gamma[0] <= 0 || gamma[1] <= 1.0 || gamma[2] <= 0)
+     if (gamma[0] <= 0 || gamma[1] <= 0 || gamma[2] <= 0)
         return_error(e_rangecheck);
 
      code = dict_floats_param( imemory, 
