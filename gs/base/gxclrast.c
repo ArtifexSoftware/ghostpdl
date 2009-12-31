@@ -2463,6 +2463,11 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
     if_debug3('L', " %d%s%s\n", index,
 	      (b & 8 ? " (indexed)" : ""),
 	      (b & 4 ? "(proc)" : ""));
+    /* They all store a hash code even if it is NULL
+       In the ICC case it is used to look
+       up profile in clist */
+    memcpy(&hash_code, cbp, sizeof(hash_code));
+    cbp = cbp+sizeof(hash_code);
     switch (index) {
     case gs_color_space_index_DeviceGray:
         pcs = gs_cspace_new_DeviceGray(mem);
@@ -2474,32 +2479,19 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
         pcs = gs_cspace_new_DeviceCMYK(mem);
 	break;
     case gs_color_space_index_ICC:
-
-        /* Get the hash code.  Used to look
-           up profile in clist */
-
-        memcpy(&hash_code, cbp, sizeof(hash_code));
-        cbp = cbp+sizeof(hash_code);
-
         /* build the color space object */
         code = gs_cspace_build_ICC(&pcs, NULL, mem);
-
         /* Get the profile information from the clist */
         picc_profile = gsicc_read_serial_icc((gx_device *) cdev, hash_code);
-
         if (picc_profile == NULL)
             return gs_rethrow(-1, "Failed to find ICC profile during clist read");
-
         /* Store the clist reader address in the profile
            structure so that we can get to the buffer
            data if we really neeed it.  Ideally, we
            will use a cached link and only acess this once. */
-
         picc_profile->dev = (gx_device*) cdev;
-
         /* Assign it to the colorspace */
         code = gsicc_set_gscs_profile(pcs, picc_profile, mem);
-
         break;
     default:
 	code = gs_note_error(gs_error_rangecheck);	/* others are NYI */
