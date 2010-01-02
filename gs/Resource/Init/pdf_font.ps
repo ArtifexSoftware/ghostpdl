@@ -156,8 +156,10 @@ currentdict /known_symbolic_fonts undef
 % Get the (possibly modified) encoding of a font.
 /getfontencoding {	% <font-resource> <font> getfontencoding
 			%   <font-resource> <font> <Encoding|null>
-  //systemdict /IgnoreTTEncoding .knownget not { //false } if {
-  1 index /Subtype get /TrueType eq } { //false } ifelse {
+  % Ignore encoding when TrueType is requested
+  % and loaded. All other cases are left unchanged.
+  dup /FontType get 42 eq
+  2 index /Subtype get /TrueType eq and { 
     //null
   } {
     1 index /Encoding known {
@@ -1010,7 +1012,7 @@ currentdict /eexec_pdf_param_dict .undef
 /readtruetype {		% <font-resource> <stream-dict> readtruetype <font>
   1 index exch
   PDFfile fileposition 3 1 roll
-  true resolvestream readfontfilter
+  //true resolvestream readfontfilter
 		% Stack: filepos fontres stream
   1 index /Subtype get /CIDFontType2 eq {
     1 index /BaseFont get                 % Use the BaseFont name for the font. Otherwise we
@@ -1019,12 +1021,18 @@ currentdict /eexec_pdf_param_dict .undef
 		                          % Stack: filepos fontres cidfont
   } {
 		                          % filepos fontres stream
-    1 index /FontDescriptor oget          % filepos fontres stream fd   
-    /Flags get 4 and 0 ne                 % filepos fontres stream is_symbolic
-    dup { //null } { StandardEncoding } ifelse        
-    3 index /Encoding known {
-      3 index getencoding
-    } if                                  % filepos fontres stream is_symbolic Encoding
+    1 index /FontDescriptor oget
+    /Flags get 4 and 0 ne {
+       //true  %  symbolic
+    } {
+       1 index /Encoding oknown not  % no encoding => symbolic
+    } ifelse
+    dup {
+      //null
+    } {
+      StandardEncoding
+      3 index getencoding 
+    } ifelse                              % filepos fontres stream is_symbolic Encoding
     dup 4 index exch                      % filepos fontres stream is_symbolic Encoding fontres Encoding
     /prebuilt_encoding exch put           % filepos fontres stream is_symbolic Encoding
     .loadpdfttfont

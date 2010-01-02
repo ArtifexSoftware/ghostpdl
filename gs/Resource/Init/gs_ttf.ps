@@ -1788,94 +1788,47 @@ currentdict /postalias undef
 
 } bind def
 
+% <subtable> .pdfmapsymbolic  /Encoding [] /CharStrings <<>>
+/.pdfmapsymbolic {
+  cmaparray
+  dup length 1 add dict begin
+  [ 64 { /.notdef /.notdef /.notdef /.notdef } repeat ]
+  exch { % char glyph
+    exch 255 and                    % glyph char
+    dup 16 (01234567) cvrs cvn      % glyph char /char
+    3 1 roll                        % /char glyph char
+    3 index exch                    % /char glyph [] char
+    3 index put                     % /char glyph
+    def                             % -
+  } forall
+  /.notdef 0 def
+  /Encoding exch
+  /CharStrings currentdict end
+} bind def
+
 % - .pdfcharkeys /CharStrings <charstrings> /Encoding <encoding>
 /.pdfcharkeys {
-	% The following algorithms are per the PDF Reference, Second Edition
-	% (PDF 1.3 reference manual).
+	% The following algorithms are per the PDF 1.7 Reference.
   TTFDEBUG { (.pdfcharkeys beg) = } if
   is_symbolic {
-    <00030001> .findcmap {
-      %
-      % Adobe PDF spec says that symbolic fonts should contain exactly one 
-      % cmap subtable for Platform=1, Encoding=0.
-      % Perhaps "Adobe Acrobat PDFWriter 4.0 for Windows" sometimes embeds
-      % fonts with both subtables 3.1 and 1.0 (see comparefiles/159.pdf,
-      % the font "Arial,Bold" with the character "registered"),
-      % and both Acrobat Reader 4.0 and 5.0 choose 3.1.
-      % Therefore we try 3.1 first.
-      %
-      (   **** Warning: Embedded symbolic TT fonts should not contain a cmap for Platform=3 Encoding=1.\n)
-        pdfformaterror
-      prebuilt_encoding null ne {
-        % Bug 689083.
-        TTFDEBUG { (Using cmap 3.0 with prebuilt_encoding.) = } if
-        prebuilt_encoding .invert_encoding .pdfmapchars
-        /Encoding prebuilt_encoding
-      } {
-        TTFDEBUG { (Using cmap 3.1 with WinAnsiEncoding) = } if
-        AdobeGlyphList .pdfmapchars 
-        /Encoding /WinAnsiEncoding .findencoding
-      } ifelse
+    <00030000> .findcmap { //true } { <00010000> .findcmap } ifelse {
+      .pdfmapsymbolic
     } {
-      %
-      % Adobe PDF spec says that in this case PDF interpreter should
-      % map character codes directly to glyphs using
-      % the cmap <00010000>. But we use PS interpreter to emulate
-      % a PDF interpreter. Therefore we need to construct
-      % a type 42 font, which requires an Encoding and a Charstrings.
-      % We construct them with symbol_list, which
-      % includes all glyphs from SymbolEncoding and additional
-      % random names for 1-to-1 mapping.
-      %
-      % A real TT font may use a different characters than
-      % the Symbol charaster set. Perhaps our code
-      % will give a correct printing, because glyph names are not
-      % important for symbolic fonts in PDF.
-      %
-      <00010000> .findcmap {
-        prebuilt_encoding null ne {
-          TTFDEBUG { (Using cmap 1.0 with prebuilt_encoding.) = } if
-          prebuilt_encoding .invert_encoding .pdfmapchars
-          /Encoding prebuilt_encoding
-        } {
-          % This is a case, in which an obsolete software could stupidly specify Macintosh Roman
-          % for a random encoding. Particulatrly GPL Ghostscript 7.06 does so.
-          % Trying to recover with 'post'.
-          pop  % The table itself doesn't contain useful data.
-          TTFDEBUG { (Using cmap 1.0 with post or .GS_extended_SymbolEncoding) = } if
-          .charkeys
-        } ifelse
-      } {
-        % This is illegal with PDF spec.
-        (   **** Warning: Embedded symbolic TT fonts must contain a cmap for Platform=1 Encoding=0.\n)
-        pdfformaterror
-        % Apply the default algorithm. Hopely it has 'post'.
-        .charkeys
-        % check if the CharStrings dict contains glyphs needed by the
-        % prebuilt_encoding otherwise try the 3,0 cmap.
-	prebuilt_encoding null ne {
-	  false prebuilt_encoding {	% false means no missing glyphs
-	    4 index exch known not { pop true exit } if
-          } forall
-          {
-	    (   **** Warning: Encoding derived from 'post' is incomplete.\n)
-	    pdfformaterror
-	    % Try another cmap format 3,0 -- Adobe doesn't mention it, but does
-	    % use it apparently (empirically determined).
-	    <00030000> .findcmap {
-	      TTFDEBUG { (Adding cmap 3.0) = } if
-   	      5 1 roll pop pop pop pop             
-	      prebuilt_encoding null ne {
-	      prebuilt_encoding .invert_encoding .pdfmapchars
-	      /Encoding prebuilt_encoding
-	    } {
-	      AdobeGlyphList .pdfmapchars
-	      /Encoding /SymbolEncoding .findencoding
-	      } ifelse
-	    } if
-          } if
+      % This is illegal with PDF spec.
+      (   **** Warning: Embedded symbolic TT fonts must contain a cmap for Platform=1,3 Encoding=0.\n)
+      pdfformaterror
+      % Apply the default algorithm. Hopely it has 'post'.
+      .charkeys
+      % check if the CharStrings dict contains glyphs needed by the
+      % prebuilt_encoding otherwise try the 3,0 cmap.
+      prebuilt_encoding null ne {
+        false prebuilt_encoding {	% false means no missing glyphs
+	  4 index exch known not { pop true exit } if
+        } forall
+        {
+	  (   **** Warning: Encoding derived from 'post' is incomplete.\n) pdfformaterror
         } if
-      } ifelse
+      } if
     } ifelse
   } {
     <00030001> .findcmap {
@@ -1927,6 +1880,10 @@ currentdict /postalias undef
       } {
         % Apply the default algorithm for using the 'post'.
 	.charkeys
+        % But use PDF encoding when available.
+        prebuilt_encoding //null ne {
+          pop prebuilt_encoding
+        } if
       } ifelse
     } ifelse
   } ifelse
