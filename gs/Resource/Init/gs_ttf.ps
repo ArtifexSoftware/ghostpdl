@@ -691,7 +691,7 @@ currentdict /tt_tag_dict .undef
 	    % Get the name for this glyph
 	    258 sub dup postnames length ge {
 	      TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
-	      pop
+	      pop pop
 	      exit
 	    } if
 	    postnames exch get
