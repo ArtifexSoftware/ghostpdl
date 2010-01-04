@@ -141,6 +141,7 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 #define DATATYPE_SIZE 8
 #define CURVE_SIZE 512
 #define NUMBER_COMMON_TAGS 2 
+#define icMultiUnicodeText 0x6d6c7563    /* 'mluc' v4 text type */
 
 #if SAVEICCPROFILE
 unsigned int icc_debug_index = 0;
@@ -335,7 +336,8 @@ void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
 
     tag_list[curr_tag].offset = HEADER_SIZE+num_tags*TAG_SIZE + 4;
     tag_list[curr_tag].sig = icSigProfileDescriptionTag;
-    temp_size = DATATYPE_SIZE + 4 + strlen(desc_name) + 1 + 4 + 4 + 3 + 67;
+    /* temp_size = DATATYPE_SIZE + 4 + strlen(desc_name) + 1 + 4 + 4 + 3 + 67; */
+    temp_size = 2*strlen(desc_name) + 28;
     /* +1 for NULL + 4 + 4 for unicode + 3 + 67 script code */
     tag_list[curr_tag].byte_padding = get_padding(temp_size);
     tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
@@ -344,7 +346,8 @@ void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
 
     tag_list[curr_tag].offset = tag_list[curr_tag-1].offset + tag_list[curr_tag-1].size;
     tag_list[curr_tag].sig = icSigCopyrightTag;
-    temp_size = DATATYPE_SIZE + strlen(copy_right) + 1;
+    /* temp_size = DATATYPE_SIZE + strlen(copy_right) + 1; */
+    temp_size = 2*strlen(copy_right) + 28;
     tag_list[curr_tag].byte_padding = get_padding(temp_size);
     tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
     *last_tag = curr_tag;
@@ -390,6 +393,39 @@ add_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], int 
     memset(curr_ptr,0,tag_list[curr_tag].byte_padding);  /* padding */
 }
 
+/* Code to write out v4 text type which is a table of unicode text
+   for different regions */
+static void
+add_v4_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], int curr_tag)
+{
+    ulong value;
+    unsigned char *curr_ptr;
+    int k;
+
+    curr_ptr = buffer;
+    write_bigendian_4bytes(curr_ptr,icMultiUnicodeText);
+    curr_ptr += 4;
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+    write_bigendian_4bytes(curr_ptr,1); /* Number of names */
+    curr_ptr += 4;
+    write_bigendian_4bytes(curr_ptr,12); /* Record size */
+    curr_ptr += 4;
+    write_bigendian_2bytes(curr_ptr,0x656e); /* ISO 639-1, en */
+    curr_ptr += 2;
+    write_bigendian_2bytes(curr_ptr,0x5553); /* ISO 3166, US */
+    curr_ptr += 2;
+    write_bigendian_4bytes(curr_ptr,2*strlen(text)); /* String length */
+    curr_ptr += 4;
+    write_bigendian_4bytes(curr_ptr,28); /* Offset to string */
+    curr_ptr += 4;
+    /* String written as UTF-16BE. No NULL */
+    for (k = 0; k < strlen(text); k++) {
+        *curr_ptr ++= 0;
+        *curr_ptr ++= text[k];
+    }
+}
+
 static void
 add_common_tag_data(unsigned char *buffer,gsicc_tag tag_list[])
 {
@@ -420,7 +456,7 @@ setheader_common(icHeader *header)
 {
     /* This needs to all be predefined for a simple copy. MJV todo */
     header->cmmId = 0;
-    header->version = 0x03400000;  /* Back during a simplier time.... */
+    header->version = 0x04200000;
     setdatetime(&(header->date));
     header->magic = icMagicNumber;
     header->platform = icSigMacintosh;
