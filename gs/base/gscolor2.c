@@ -168,11 +168,7 @@ const gs_color_space_type gs_color_space_type_Indexed = {
     gx_init_paint_1, gx_restrict_Indexed,
     gx_concrete_space_Indexed,
     gx_concretize_Indexed, NULL,
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    gx_remap_IndexedSpace,
-#else
     gx_default_remap_color,
-#endif
     gx_install_Indexed,
     gx_set_overprint_Indexed,
     gx_final_Indexed, gx_no_adjust_color_count,

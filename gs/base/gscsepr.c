@@ -106,25 +106,6 @@ static int
 gx_install_Separation(gs_color_space * pcs, gs_state * pgs)
 {
     int code;
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /*
-     * Check if we want to use the custom color callback color processing for
-     * this color space.
-     */
-    bool use_custom_color_callback =
-	    custom_color_callback_install_Separation(pcs, pgs);
-
-    if (use_custom_color_callback) {
-	/*
-	 * We are using the callback instead of the alternate tint transform
-	 * for this color space.
-	 */
-        pgs->color_space->params.separation.use_alt_cspace =
-            pgs->color_component_map.use_alt_cspace = false;
-        pgs->color_component_map.cspace_id = pcs->id;
-        return 0;
-    }
-#endif
 
     code = check_Separation_component_name(pcs, pgs);
     if (code < 0)
@@ -350,15 +331,6 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
      */
     if (pcs->id != pis->color_component_map.cspace_id)
 	dprintf("gx_remap_concrete_Separation: color space id mismatch");
-#endif
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-	int code = gx_remap_concrete_custom_color_Separation(pconc, pcs, pdc,
-						       	pis, dev, select);
-	if (code >= 0)
-	    return code;
-    }
 #endif
 
     if (pis->color_component_map.use_alt_cspace) {

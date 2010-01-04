@@ -279,12 +279,6 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
 	    if (code < 0)
 		goto out;
     }
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /* The custom color callback pointer */
-    code = custom_color_callback_put_params(i_ctx_p->pgs, plist);
-    if (code < 0)
-	goto out;
-#endif
 
     code = setparams(i_ctx_p, plist, &system_param_set);
   out:
@@ -1091,13 +1085,6 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 	if (code < 0)
 	    return code;
     }
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    if (pset == &system_param_set) {
-        /* The custom_color callback pointer */
-	if (pname_matches(CustomColorCallbackParamName, psref))
-	    code = custom_color_callback_get_params(i_ctx_p->pgs, plist);
-    }
-#endif
     return code;
 }
 

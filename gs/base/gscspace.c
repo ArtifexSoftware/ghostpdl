@@ -95,15 +95,6 @@ gs_cspace_final(void *vptr)
     if (pcs->type->final)
 	pcs->type->final(pcs);
     if_debug2('c', "[c]cspace final %08x %d\n", pcs, pcs->id);
-    
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-	client_color_space_data_t *pclient_data = pcs->pclient_color_space_data;
-	if ( pclient_data )
-		pclient_data->client_adjust_cspace_count( pcs, -1 );
-    }
-#endif /*ENABLE_CUSTOM_COLOR_CALLBACK*/
-
     rc_decrement_only_cs(pcs->base_space, "gs_cspace_final");
 
     /* No need to decrement the ICC profile data.  It is handled
@@ -225,18 +216,6 @@ gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
 static int
 gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /*
-     * Check if we want to use the callback color processing for this
-     * color space.
-     */
-    client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-    if (pcb != NULL) 
-	pcb->client_procs->install_DeviceGray(pcb, pcs, pgs);
-#endif
-
     if (pcs->cmm_icc_profile_data == NULL) {
 
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
@@ -362,19 +341,7 @@ gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
 /* Install a DeviceRGB color space. */
 static int
 gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
-{
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /*
-     * Check if we want to use the callback color processing for this
-     * color space.
-     */
-    client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-    if (pcb != NULL) 
-	pcb->client_procs->install_DeviceRGB(pcb, pcs, pgs);
-#endif
-    
+{    
     if (pcs->cmm_icc_profile_data == NULL) {
 
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
@@ -390,18 +357,6 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 static int
 gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /*
-     * Check if we want to use the callback color processing for this
-     * color space.
-     */
-    client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-    if (pcb != NULL) 
-	pcb->client_procs->install_DeviceCMYK(pcb, pcs, pgs);
-#endif
-
     if (pcs->cmm_icc_profile_data == NULL) {
 
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;

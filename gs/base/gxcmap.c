@@ -619,21 +619,6 @@ gx_remap_concrete_DGray(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			gs_color_select_t select)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    int code = pcb->client_procs->remap_DeviceGray(pcb, pconc,
-						pcs, pdc, pis, dev, select);
-
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
-
     if (pis->alpha == gx_max_color_value)
 	(*pis->cmap_procs->map_gray)
 	    (pconc[0], pdc, pis, dev, select);
@@ -653,22 +638,6 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
     /* Save original color space and color info into dev color */
     pdc->ccolor.paint.values[0] = pc->paint.values[0];
     pdc->ccolor_valid = true;
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    int code = pcb->client_procs->remap_DeviceGray(pcb, &fgray,
-						pcs, pdc, pis, dev, select);
-
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
-
     if (pis->alpha == gx_max_color_value)
 	(*pis->cmap_procs->map_gray)
 	    (fgray, pdc, pis, dev, select);
@@ -693,20 +662,6 @@ gx_remap_concrete_DRGB(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    int code = pcb->client_procs->remap_DeviceRGB(pcb, pconc,
-						pcs, pdc, pis, dev, select);
-
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
     if (pis->alpha == gx_max_color_value)
 	gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2],
 			      pdc, pis, dev, select);
@@ -729,26 +684,6 @@ gx_remap_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->ccolor.paint.values[1] = pc->paint.values[1];
     pdc->ccolor.paint.values[2] = pc->paint.values[2];
     pdc->ccolor_valid = true;
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    frac conc[3];
-	    int code;
-
-	    conc[0] = fred;
-	    conc[1] = fgreen;
-	    conc[2] = fblue;
-	    code = pcb->client_procs->remap_DeviceRGB(pcb, conc,
-						pcs, pdc, pis, dev, select);
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
     if (pis->alpha == gx_max_color_value)
 	gx_remap_concrete_rgb(fred, fgreen, fblue,
 			      pdc, pis, dev, select);
@@ -775,20 +710,6 @@ gx_remap_concrete_DCMYK(const frac * pconc, const gs_color_space * pcs,
 			gs_color_select_t select)
 {
 /****** IGNORE alpha ******/
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    int code = pcb->client_procs->remap_DeviceCMYK(pcb, pconc,
-						pcs, pdc, pis, dev, select);
-
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
     gx_remap_concrete_cmyk(pconc[0], pconc[1], pconc[2], pconc[3], pdc,
 			   pis, dev, select);
     return 0;
@@ -805,27 +726,6 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->ccolor.paint.values[2] = pc->paint.values[2];
     pdc->ccolor.paint.values[3] = pc->paint.values[3];
     pdc->ccolor_valid = true;
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    frac conc[4];
-	    int code;
-
-	    conc[0] = gx_unit_frac(pc->paint.values[0]);
-	    conc[1] = gx_unit_frac(pc->paint.values[1]);
-	    conc[2] = gx_unit_frac(pc->paint.values[2]);
-	    conc[3] = gx_unit_frac(pc->paint.values[3]);
-	    code = pcb->client_procs->remap_DeviceCMYK(pcb, conc,
-						pcs, pdc, pis, dev, select);
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
     gx_remap_concrete_cmyk(gx_unit_frac(pc->paint.values[0]),
 			   gx_unit_frac(pc->paint.values[1]),
 			   gx_unit_frac(pc->paint.values[2]),

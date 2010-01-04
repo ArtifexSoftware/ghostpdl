@@ -63,10 +63,6 @@ static cs_proc_remap_concrete_color(gx_remap_concrete_ICC);
 static cs_proc_final(gx_final_ICC);
 static cs_proc_serialize(gx_serialize_ICC);
 
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-static cs_proc_remap_color(gx_remap_ICCBased);
-#endif
-
 const gs_color_space_type gs_color_space_type_ICC = {
     gs_color_space_index_ICC,       /* index */
     true,                           /* can_be_base_space */
@@ -78,11 +74,7 @@ const gs_color_space_type gs_color_space_type_ICC = {
     gx_same_concrete_space,         /* concrete_space */
     gx_concretize_ICC,              /* concreteize_color */
     gx_remap_concrete_ICC,          /* remap_concrete_color */
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    gx_remap_ICCBased,		    /* remap_color */
-#else
     gx_remap_ICC,                   /* remap_color */
-#endif
     gx_install_ICC,                 /* install_cpsace */
     gx_spot_colors_set_overprint,   /* set_overprint */
     gx_final_ICC,                   /* final */
@@ -316,33 +308,6 @@ gx_concretize_ICC(
     return 0;
 }
 
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-/*
- * This routine is only used if ENABLE_CUSTOM_COLOR_CALLBACK is true.
- * Otherwise we use gx_default_remap_color directly for CIEBasedDEFG color
- * spaces.
- *
- * Render a CIEBasedDEFG color.
- */
-int
-gx_remap_ICCBased(const gs_client_color * pc, const gs_color_space * pcs,
-	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
-		gs_color_select_t select)
-{
-    client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-    if (pcb != NULL) {
-	if (pcb->client_procs->remap_ICCBased(pcb, pc, pcs,
-			   			pdc, pis, dev, select) == 0)
-	    return 0;
-    }
-    /* Use default routine for non custom color processing. */
-    return gx_default_remap_color(pc, pcs, pdc, pis, dev, select);
-}
-
-#endif
-
 /*
  * Finalize the contents of an ICC color space. Now that color space
  * objects have straightforward reference counting discipline, there's
@@ -372,23 +337,6 @@ gx_final_ICC(const gs_color_space * pcs)
 static int
 gx_install_ICC(gs_color_space * pcs, gs_state * pgs)
 {
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        /*
-         * Check if we want to use the callback color processing for this
-         * color space.
-         */
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-        if (pcb != NULL) {
-	    if (pcb->client_procs->install_ICCBased(pcb, pcs, pgs))
-    	        /* Exit if the client will handle the colorspace completely */
-		return 0;
-        }
-    }
-#endif
     /* update the stub information used by the joint caches */
     return 0;
 }
