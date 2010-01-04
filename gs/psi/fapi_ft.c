@@ -568,6 +568,11 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
 		return e_VMerror;
 	    }
 	    a_font->server_font_data = face;
+	    /* FT will later check the glyph_index against num_glyphs in the face,
+	     * because we always use the incremental interface this is a spurious test
+	     * for us. We don't want to be burdened with book-keeping this, so just set
+	     * the value arbitrarily large to evade the test. (see SVN revision 10578)
+	     */
 	    if (ft_inc_int)
 		ft_face->num_glyphs = 65534;
 	}
