@@ -568,6 +568,8 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
 		return e_VMerror;
 	    }
 	    a_font->server_font_data = face;
+	    if (ft_inc_int)
+		ft_face->num_glyphs = 65534;
 	}
 	else
 	    a_font->server_font_data = NULL;	
