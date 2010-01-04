@@ -25,6 +25,7 @@
 #include "plftable.h"
 #include "plvalue.h"
 #include "gdebug.h"
+#include "gserror.h"
 #include "gsstate.h"
 #include "gxfont.h"
 #include "uconfig.h"
@@ -302,26 +303,17 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                    believe the font with internal number, NB, NB, NB  */
                 LPSB8               symname = "SymbPS";
                 int                 j;
+                bool                found;
                 if ( pfDesc->pcltFontNumber == 24463 )
                     pname = symname;
-                for ( j = 0;
-                      strlen(resident_table[j].full_font_name) &&
-                      strcmp(resident_table[j].full_font_name, pname) != 0;
-                      j++ )
-                    ;
-                if ( strlen(resident_table[j].full_font_name) ) {
+                for (j = 0; strlen(resident_table[j].full_font_name); j++) {
                     pl_font_t * plfont;
-                    int         err_cd = pl_load_mt_font( 
-                                                         fcoHandle,
-                                                         pdir,
-                                                          mem,
-                                                          i,
-                                                          &plfont );
-
+                    int         err_cd;
+                    if (strcmp(resident_table[j].full_font_name, pname) != 0)
+                        continue;
+                    err_cd = pl_load_mt_font(fcoHandle, pdir, mem, i, &plfont);
                     if (err_cd != 0)
-                        dprintf2("Error %d while loading font %s\n",
-                                 err_cd,
-                                 pname );
+                        return gs_throw1(err_cd, "An unrecoverable failure occurred while loading the resident font %s\n", pname);
                     else {
                         uint    pitch_cp = (pfDesc->spaceBand * 100.0)
                             / pfDesc->scaleFactor + 0.5;
@@ -331,11 +323,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 #endif
                         /* Record the differing points per inch value
                            for Intellifont derived fonts. */
-
+                        
                         if (pfDesc->scaleFactor == 8782) {
                             plfont->pts_per_inch = 72.307;
                             pitch_cp = (pfDesc->spaceBand * 100 * 72.0)
-                                         / (pfDesc->scaleFactor * 72.307) + 0.5;
+                                / (pfDesc->scaleFactor * 72.307) + 0.5;
                         }
 #ifdef DEBUG
                         if (gs_debug_c('=') )
@@ -354,29 +346,19 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                          * hard-coded information in the resident font
                          * initialization structure is used.
                          */
-                        memcpy( plfont->character_complement,
-                                resident_table[j].character_complement,
-                                8 );
+                        memcpy(plfont->character_complement,
+                               resident_table[j].character_complement, 8);
 
-			if ( use_unicode_names_for_keys )
-			    pl_dict_put( pfontdict, resident_table[j].unicode_fontname, 32, plfont );
-			else {
-			    key[2] = (byte)j;
-			    key[0] = key[1] = 0;
-			    pl_dict_put( pfontdict, key, sizeof(key), plfont );
-			}
+                        if ( use_unicode_names_for_keys )
+                            pl_dict_put( pfontdict, resident_table[j].unicode_fontname, 32, plfont );
+                        else {
+                            key[2] = (byte)j;
+                            key[0] = key[1] = 0;
+                            pl_dict_put( pfontdict, key, sizeof(key), plfont );
+                        }
                     }
-                } else {
-                    ;
-#ifdef DEBUG
-                        if (gs_debug_c('=') )
-                            dprintf1("%s found in FCO but not used by PCL\n", pname);
-
-#endif
                 }
-
             }
-
             gs_free_object(mem, pBuffer, "TTFONTINFO buffer");
         }
     } /* end enumerate fco loop */
@@ -394,72 +376,72 @@ int
 pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pdir, 
                          int storage, bool use_unicode_names_for_keys)
 {
-    const byte *header = pl_ulp_header;
-    const byte *char_data = pl_ulp_character_data;
+    int i;
 
-    pl_font_t *pplfont = pl_alloc_font(mem, "pl_load_ufst_lineprinter pplfont");
-    gs_font_base *pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
-                                          "pl_load_ufst_lineprinter pfont");
-    int code;
+    for (i = 0; strlen(resident_table[i].full_font_name); i++) {
+        if (resident_table[i].params.typeface_family == 0) {
+            const byte *header = pl_ulp_header;
+            const byte *char_data = pl_ulp_character_data;
+            pl_font_t *pplfont = pl_alloc_font(mem, "pl_load_ufst_lineprinter pplfont");
+            gs_font_base *pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
+                                                  "pl_load_ufst_lineprinter pfont");
+            int code;
+            /* these shouldn't happen during system setup */
+            if (pplfont == 0 || pfont == 0)
+                return -1;
+            if (pl_fill_in_font(pfont, pplfont, pdir, mem, "lineprinter fonts") < 0)
+                return -1;
+           
+            pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
+            pplfont->params = resident_table[i].params;
+            memcpy(pplfont->character_complement, resident_table[i].character_complement, 8);
+            /* make it msl */
+            pplfont->character_complement[7] |= 7;
+            if ( use_unicode_names_for_keys )
+                pl_dict_put(pfontdict, resident_table[i].unicode_fontname, 32, pplfont );
+            else {
+                byte key[3];
+                key[2] = (byte)i;
+                key[0] = key[1] = 0;
+                pl_dict_put(pfontdict, key, sizeof(key), pplfont);
+            }
+            pplfont->storage = storage; /* should be an internal font */
+            pplfont->data_are_permanent = true;
+            pplfont->header = (byte *)header;
+            pplfont->font_type = plft_MSL;
+            pplfont->scaling_technology = plfst_bitmap;
+            pplfont->is_xl_format = false;
+            pplfont->resolution.x = pplfont->resolution.y = 300;
 
-    /* these shouldn't happen during system setup */
-    if (pplfont == 0 || pfont == 0)
-        return -1;
-    if (pl_fill_in_font(pfont, pplfont, pdir, mem, "lineprinter fonts") < 0)
-        return -1;
-        
-    pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
+            code = pl_font_alloc_glyph_table(pplfont, 256, mem, 
+                                             "pl_load_ufst_lineprinter pplfont (glyph table)");
+            if ( code < 0 )
+                return code;
 
-    /* get lineprinter's parameters from the resident table and put
-       the font in the dictionary. */
-    {
-        int i = 0;
-        do i++; while (resident_table[i].params.typeface_family != 0);
-        pplfont->params = resident_table[i].params;
-        memcpy(pplfont->character_complement, resident_table[i].character_complement, 8);
-        /* make it msl */
-        pplfont->character_complement[7] |= 7;
-        if ( use_unicode_names_for_keys )
-            pl_dict_put(pfontdict, resident_table[i].unicode_fontname, 32, pplfont );
-        else {
-            byte key[3];
-            key[2] = (byte)i;
-            key[0] = key[1] = 0;
-            pl_dict_put(pfontdict, key, sizeof(key), pplfont);
+            while (1) {
+	
+                uint width = pl_get_uint16(char_data + 12);
+                uint height = pl_get_uint16(char_data + 14);
+                uint ccode_plus_header_plus_data = 2 + 16 + (((width + 7) >> 3) * height);
+                int code = pl_font_add_glyph(pplfont, pl_get_uint16(char_data), char_data + 2);
+                if (code < 0)
+                    /* shouldn't happen */
+                    return -1;
+                /* calculate the offset of the next character code in the table */
+                char_data += ccode_plus_header_plus_data;
+
+                /* char code 0 is end of table */
+                if (pl_get_uint16(char_data) == 0)
+                    break;
+            }
+            code = gs_definefont(pdir, (gs_font *)pfont);
+            if (code < 0)
+                /* shouldn't happen */
+                return -1;
         }
     }
-    pplfont->storage = storage; /* should be an internal font */
-    pplfont->data_are_permanent = true;
-    pplfont->header = (byte *)header;
-    pplfont->font_type = plft_MSL;
-    pplfont->scaling_technology = plfst_bitmap;
-    pplfont->is_xl_format = false;
-    pplfont->resolution.x = pplfont->resolution.y = 300;
-
-    code = pl_font_alloc_glyph_table(pplfont, 256, mem, 
-                                         "pl_load_ufst_lineprinter pplfont (glyph table)");
-    if ( code < 0 )
-        return code;
-
-    while (1) {
-	
-        uint width = pl_get_uint16(char_data + 12);
-        uint height = pl_get_uint16(char_data + 14);
-        uint ccode_plus_header_plus_data = 2 + 16 + (((width + 7) >> 3) * height);
-        int code = pl_font_add_glyph(pplfont, pl_get_uint16(char_data), char_data + 2);
-        if (code < 0)
-            /* shouldn't happen */
-            return -1;
-        /* calculate the offset of the next character code in the table */
-        char_data += ccode_plus_header_plus_data;
-
-        /* char code 0 is end of table */
-        if (pl_get_uint16(char_data) == 0)
-            break;
-    }
-    return gs_definefont(pdir, (gs_font *)pfont);
+    return 0;
 }
-     
 
 /*
  * Close the font collection objects for the built-in fonts. This should be

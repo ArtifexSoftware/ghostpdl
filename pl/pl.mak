@@ -227,7 +227,8 @@ $(uconfig_h): $(PLSRC)pl.mak
 	$(GLGEN)echogs$(XE) -e .h -w $(PLOBJ)uconfig -x 23 "define UFSTFONTDIR" -s -x 22 $(UFSTFONTDIR) -x 22
 
 $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(uconfig_h) $(AK)\
-	$(stdio__h) $(string__h) $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
+	$(stdio__h) $(string__h) $(gserror_h)\
+        $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
 	$(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
 	$(plftable_h) $(uconfig_h)
 	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
