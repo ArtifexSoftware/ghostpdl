@@ -45,8 +45,6 @@ static void cie_joint_caches_complete(gx_cie_joint_caches *,
 static void cie_cache_restrict(cie_cache_floats *, const gs_range *);
 static void cie_mult3(const gs_vector3 *, const gs_matrix3 *,
 		       gs_vector3 *);
-static void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
-			      gs_matrix3 *);
 static void cie_invert3(const gs_matrix3 *, gs_matrix3 *);
 static void cie_matrix_init(gs_matrix3 *);
 
@@ -1442,7 +1440,7 @@ cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
  * Multiply two matrices.  Note that the composition of the transformations
  * M1 followed by M2 is M2 * M1, not M1 * M2.  (See gscie.h for details.)
  */
-static void
+void
 cie_matrix_mult3(const gs_matrix3 *ma, const gs_matrix3 *mb, gs_matrix3 *mc)
 {
     gs_matrix3 mprod;

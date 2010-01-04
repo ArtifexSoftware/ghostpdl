@@ -130,11 +130,12 @@ Note: All profile data must be encoded as big-endian
 #include "gsiccmanage.h"
 #include "gsicccache.h"
 #include "math_.h"
+#include "gscolor2.h"
 
 static void
 add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 
-#define SAVEICCPROFILE 0
+#define SAVEICCPROFILE 1
 #define HEADER_SIZE 128
 #define TAG_SIZE 12
 #define XYZPT_SIZE 12
@@ -398,7 +399,6 @@ add_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], int 
 static void
 add_v4_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], int curr_tag)
 {
-    ulong value;
     unsigned char *curr_ptr;
     int k;
 
@@ -841,6 +841,8 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
     icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
     int trc_tag_size;
     int debug_catch = 1;
+    gs_matrix3 *matrix_input;
+    gs_matrix3 combined_matrix;
 
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
     gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
@@ -864,10 +866,24 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
        points through to verify that they
        get mapped to CIEXYZ.  */
     profile_size = HEADER_SIZE;
-
-    /* Check if we only have LMN methods */
-    if ( pcie->MatrixABC.is_identity && !has_abc_procs ) {
-        /* Only LMN parameters, we can do this with a very simple ICC profile */
+    /* Check if we only have LMN methods or ABC methods. In these
+       cases we can use a standard 3 channel input. Or, if we
+       do not have the LMN decode we can mash together the ABC and LMN
+       matrix */
+    if ((pcie->MatrixABC.is_identity && !has_abc_procs) || !has_lmn_procs) {
+        /* Determine the matrix that we will be using */
+        if (!(pcie->common.MatrixLMN.is_identity) && !(pcie->MatrixABC.is_identity)){
+            /* Use the product of the ABC and LMN matrices.
+               Must be LMN_Matrix*ABC_Matrix */
+            cie_matrix_mult3(&(pcie->common.MatrixLMN), &(pcie->MatrixABC), &(combined_matrix));
+            matrix_input = &(combined_matrix);
+        } else {
+            if (pcie->MatrixABC.is_identity) {
+                matrix_input = &(pcie->common.MatrixLMN);
+            } else {
+                matrix_input = &(pcie->MatrixABC);
+            }
+        }
         num_tags = 10;  /* common (2) + rXYZ,gXYZ,bXYZ,rTRC,gTRC,bTRC,bkpt,wtpt */     
         tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_fromabc");
         /* Let us precompute the sizes of everything and all our offsets */
@@ -884,11 +900,11 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
         /* Check it the procs are the identity.  If so, no need to create a 
            large curve. Just set num points to zero */
         for (k = 0; k < 3; k++) {
-            if (!has_lmn_procs) {
+            if (has_abc_procs || has_lmn_procs) {
+                trc_tag_size = CURVE_SIZE*2+4;  /* curv type */
+            } else {
                 /* when n = 0 we assume identity! */
                 trc_tag_size = 4;
-            } else {
-                trc_tag_size = CURVE_SIZE*2+4;  /* curv type */
             }
             init_tag(tag_list, &last_tag, TRC_Tags[k], trc_tag_size);
         }
@@ -913,15 +929,15 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
             curr_ptr += tag_list[k].size;
         }
         tag_location = NUMBER_COMMON_TAGS;
-        get_XYZ(temp_XYZ,pcie->common.MatrixLMN.cu);
+        get_XYZ(temp_XYZ,matrix_input->cu);
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
         tag_location++;
-        get_XYZ(temp_XYZ,pcie->common.MatrixLMN.cv);
+        get_XYZ(temp_XYZ,matrix_input->cv);
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
         tag_location++;
-        get_XYZ(temp_XYZ,pcie->common.MatrixLMN.cw);
+        get_XYZ(temp_XYZ,matrix_input->cw);
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
         tag_location++;
@@ -939,20 +955,19 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
         /* Now we need to create the curves from the PS procedures */
         /* Check for the case when they are the identity */
         for (k = 0; k < 3; k++) {
-            if (!has_lmn_procs) {
+            if (has_abc_procs || has_lmn_procs) {
+                /* Must sample the proc into a curve buffer */
+                debug_catch = 0;
+            } else {
                 /* No points! */
                 write_bigendian_4bytes(curr_ptr,icSigCurveType);
                 curr_ptr+=4;
                 memset(curr_ptr,0,8); /* reserved + number points */
                 curr_ptr+=8;
-            } else {
-                /* Must sample the proc into a curve buffer */
-                debug_catch = 0;
             }
         }
     } else {
-        /* This will be a bit more complex.  The ABC stuff is going
-           to be put into a 2x2 MLUT with TRCs */
+        /* This will be a bit more complex.  We  */
         debug_catch = 0;
     }
 #if SAVEICCPROFILE

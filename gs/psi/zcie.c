@@ -253,12 +253,10 @@ cie_lmnp_param(const gs_memory_t *mem, const ref * pdref, gs_cie_common * pcie,
 	(code = cie_points_param(mem, pdref, &pcie->points)) < 0
 	)
 	return code;
-
-    if ((code = dict_proc3_param(mem, pdref, "DecodeLMN", &pcprocs->DecodeLMN)) < 0)
+    code = dict_proc3_param(mem, pdref, "DecodeLMN", &pcprocs->DecodeLMN);
+    if (code < 0)
         return code;
-
     *has_lmn_procs = !code;  /* Need to know for efficient creation of ICC profile */  
-
     pcie->DecodeLMN = DecodeLMN_default;
     return 0;
 }
@@ -275,12 +273,10 @@ cie_abc_param(const gs_memory_t *mem, const ref * pdref, gs_cie_abc * pcie, ref_
 	(code = cie_lmnp_param(mem, pdref, &pcie->common, pcprocs, has_lmn_procs)) < 0
 	)
 	return code;
-
-    if (code = dict_proc3_param(mem, pdref, "DecodeABC", &pcprocs->Decode.ABC) < 0 )
+    code = dict_proc3_param(mem, pdref, "DecodeABC", &pcprocs->Decode.ABC);
+    if (code < 0)
         return code;
-
     *has_abc_procs = !code;
-
     pcie->DecodeABC = DecodeABC_default;
     return 0;
 }
