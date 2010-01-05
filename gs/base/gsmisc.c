@@ -96,8 +96,6 @@ int errprintf(const char *fmt, ...)
     } else {
         errwrite(buf, count);
     }
-    errwrite(buf, count);
-
     va_end(args);
     return count;
 }
