@@ -173,6 +173,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	goto cont;
     ipsp->cs_data = *pgd;
     cip = pgd->bits.data;
+    if (cip == 0)
+	return (gs_note_error(gs_error_invalidfont));
   call:state = crypt_charstring_seed;
     if (encrypted) {
 	int skip = pdata->lenIV;
@@ -182,7 +184,9 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    decrypt_skip_next(*cip, state);
     }
     goto top;
-  cont:cip = ipsp->ip;
+  cont:if (ipsp < pcis->ipstack || ipsp->ip == 0)
+	return (gs_note_error(gs_error_invalidfont));
+    cip = ipsp->ip;
     state = ipsp->dstate;
   top:for (;;) {
 	uint c0 = *cip++;

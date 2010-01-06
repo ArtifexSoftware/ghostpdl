@@ -454,6 +454,8 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 	case c_return:
 	    gs_glyph_data_free(&ipsp->cs_data, "gs_type1_piece_codes");
 	    --ipsp;
+	    if (ipsp < ipstack)
+		return (gs_note_error(gs_error_invalidfont));
 	    cip = ipsp->ip, state = ipsp->dstate;
 	    goto top;
 	case cx_hstem:
