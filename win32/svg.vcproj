@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="svg"
+	ProjectGUID="{EE2F2672-713B-4609-ABC2-67D3C56E82FB}"
+	RootNamespace="svg"
+	Keyword="MakeFileProj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="..\svg\debugobj"
+			IntermediateDirectory="..\svg\debugobj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="..\svg\obj"
+			IntermediateDirectory="..\svg\obj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak SBR=1 &amp;&amp; nmake -f svg_msvc.mak bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak SBR=1 &amp;&amp; nmake -f svg_msvc.mak bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="svg"
+			>
+			<File
+				RelativePath="..\svg\ghostsvg.h"
+				>
+			</File>
+			<File
+				RelativePath="..\svg\svgcolor.c"
+				>
+			</File>
+			<File
+				RelativePath="..\svg\svgcolorlist.h"
+				>
+			</File>
+			<File
+				RelativePath="..\svg\svgdoc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\svg\svgshapes.c"
+				>
+			</File>
+			<File
+				RelativePath="..\svg\svgtop.c"
+				>
+			</File>
+			<File
+				RelativePath="..\svg\svgtransform.c"
+				>
+			</File>
+			<File
+				RelativePath="..\svg\svgtypes.c"
+				>
+			</File>
+			<File
+				RelativePath="..\svg\svgxml.c"
+				>
+			</File>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

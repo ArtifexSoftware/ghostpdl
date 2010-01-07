@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="language_switch"
+	ProjectGUID="{135AA27A-6B97-41E4-B172-CD31A2D33C5E}"
+	RootNamespace="language_switch"
+	Keyword="MakeFileProj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="..\language_switch\debugobj"
+			IntermediateDirectory="..\language_switch\debugobj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 bsc"
+				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 bsc"
+				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="..\language_switch\obj"
+			IntermediateDirectory="..\language_switch\obj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak MSVC_VERSION=8 SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak bsc"
+				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak MSVC_VERSION=8 SBR=1  &amp;&amp; nmake -f pspcl6_msvc.mak bsc"
+				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
