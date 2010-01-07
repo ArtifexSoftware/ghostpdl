@@ -18,7 +18,11 @@ PLPLATFORM=ps
 
 # The build process will put all of its output in this directory:
 !ifndef GENDIR
+!if "$(DEBUG)"=="1"
+GENDIR=.\debugobj
+!else
 GENDIR=.\obj
+!endif
 !endif
 
 # The sources are taken from these directories:
@@ -183,6 +187,10 @@ PSICFLAGS=/DPSI_INCLUDED
 # based on application build.  PSI_INCLUDED is and example of this.
 !ifndef EXPERIMENT_CFLAGS
 EXPERIMENT_CFLAGS=
+!endif
+
+!ifndef BSCFILE
+BSCFILE=$(GENDIR)\language_switch.bsc
 !endif
 
 # Language and configuration.  These are actually platform-independent,

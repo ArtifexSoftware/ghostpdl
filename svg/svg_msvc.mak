@@ -28,7 +28,11 @@ PL_SCALER=afs
 # The build process will put all of its output in this directory:
 # GENDIR is defined in the 'base' makefile, but we need its value immediately
 !ifndef GENDIR
+!if "$(DEBUG)"=="1"
+GENDIR=.\debugobj
+!else
 GENDIR=.\obj
+!endif
 !endif
 
 # The sources are taken from these directories:
@@ -125,6 +129,10 @@ EXPATOBJDIR=$(GENDIR)
 # Executable path\name w/o the .EXE extension
 !ifndef TARGET_XE
 TARGET_XE=$(GENDIR)\gsvg
+!endif
+
+!ifndef BSCFILE
+BSCFILE=$(GENDIR)\svg.bsc
 !endif
 
 # Main file's name

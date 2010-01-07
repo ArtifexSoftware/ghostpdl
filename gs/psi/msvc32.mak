@@ -36,6 +36,12 @@
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
+!if "$(DEBUG)"=="1"
+DEFAULT_OBJ_DIR=.\debugobj
+!else
+DEFAULT_OBJ_DIR=.\obj
+!endif
+
 !ifndef BINDIR
 BINDIR=.\bin
 !endif
@@ -43,10 +49,10 @@ BINDIR=.\bin
 GLSRCDIR=.\base
 !endif
 !ifndef GLGENDIR
-GLGENDIR=.\obj
+GLGENDIR=$(DEFAULT_OBJ_DIR)
 !endif
 !ifndef GLOBJDIR
-GLOBJDIR=.\obj
+GLOBJDIR=$(DEFAULT_OBJ_DIR)
 !endif
 !ifndef PSSRCDIR
 PSSRCDIR=.\psi
@@ -58,10 +64,13 @@ PSLIBDIR=.\lib
 PSRESDIR=.\Resource
 !endif
 !ifndef PSGENDIR
-PSGENDIR=.\obj
+PSGENDIR=$(DEFAULT_OBJ_DIR)
 !endif
 !ifndef PSOBJDIR
-PSOBJDIR=.\obj
+PSOBJDIR=$(DEFAULT_OBJ_DIR)
+!endif
+!ifndef SBRDIR
+SBRDIR=$(DEFAULT_OBJ_DIR)
 !endif
 
 # Define the root directory for Ghostscript installation.
@@ -315,6 +324,10 @@ NUL=
 DD=$(GLGENDIR)\$(NUL)
 GLD=$(GLGENDIR)\$(NUL)
 PSD=$(PSGENDIR)\$(NUL)
+
+!ifdef SBR
+SBRFLAGS=/FR$(SBRDIR)\$(NUL)
+!endif
 
 # ------ Platform-specific options ------ #
 
@@ -706,7 +719,11 @@ TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLS
 BEGINFILES2=$(GLGENDIR)\lib32.rsp\
  $(GLOBJDIR)\*.exp $(GLOBJDIR)\*.ilk $(GLOBJDIR)\*.pdb $(GLOBJDIR)\*.lib\
  $(BINDIR)\*.exp $(BINDIR)\*.ilk $(BINDIR)\*.pdb $(BINDIR)\*.lib obj.pdb\
- obj.idb $(GLOBJDIR)\gs.pch
+ obj.idb $(GLOBJDIR)\gs.pch $(SBRDIR)\*.sbr
+
+!ifdef BSCFILE
+BEGINFILES2=$(BEGINFILES2) $(BSCFILE)
+!endif
 
 !include $(GLSRCDIR)\msvccmd.mak
 # psromfs.mak must precede lib.mak
@@ -825,11 +842,24 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def 
 
 !endif
 
-DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1
+# ---------------------- Debug targets ---------------------- #
+# Simply set some definitions and call ourselves back         #
+
+DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1 SBRDIR=.\debugobj
 debug:
 	nmake -f $(MAKEFILE) $(DEBUGDEFS)
 
 debugclean:
 	nmake -f $(MAKEFILE) $(DEBUGDEFS) clean
+
+debugbsc:
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) bsc
+
+
+
+# ---------------------- Browse information step ---------------------- #
+
+bsc:
+	bscmake /o $(SBRDIR)\ghostscript.bsc /v $(GLOBJDIR)\*.sbr
 
 # end of makefile

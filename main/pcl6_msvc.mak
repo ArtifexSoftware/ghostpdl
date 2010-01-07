@@ -6,7 +6,11 @@ MAKEFILE=$(MAKEFILE) ..\main\pcl6_msvc.mak
 
 # The build process will put all of its output in this directory:
 !ifndef GENDIR
+!if "$(DEBUG)"=="1"
+GENDIR=.\debugobj
+!else
 GENDIR=.\obj
+!endif
 !endif
 
 # The sources are taken from these directories:
@@ -129,6 +133,10 @@ XPSGENDIR=$(GENDIR)
 XPSOBJDIR=$(GENDIR)
 !endif
 
+!ifndef SBRDIR
+SBRDIR=$(GENDIR)
+!endif
+
 # Executable path\name w/o the .EXE extension
 !ifndef TARGET_XE
 TARGET_XE=$(GENDIR)\pcl6
@@ -209,6 +217,9 @@ XCFLAGS=$(XCFLAGS) $(PDL_INCLUDE_FLAGS)
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ)
 !endif
 
+!ifdef SBR
+SBRFLAGS="/FR$(SBRDIR)\ "
+!endif
 
 # Pick a font system technology.  PCL and XL do not need to use the
 # same scaler, but it is necessary to tinker with pl.mak to get it
@@ -392,3 +403,9 @@ $(PLOBJDIR)\dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
 	$(PLCCC_W) $(GLO_)dwreg.obj $(C_) $(GLSRC)dwreg.c
 
 
+!ifndef BSCFILE
+BSCFILE=$(GENDIR)\pcl.bsc
+!endif
+
+bsc:
+	bscmake /o $(BSCFILE) /v $(GENDIR)\*.sbr
