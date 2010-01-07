@@ -43,8 +43,8 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak SBR=1 &amp;&amp; nmake -f xps_msvc.mak bsd"
-				ReBuildCommandLine="cd ..\xps &amp;&amp; nmake /A -f xps_msvc.mak SBR=1 &amp;&amp; nmake -f xps_msvc.mak bsd"
+				BuildCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak SBR=1 &amp;&amp; nmake -f xps_msvc.mak bsc"
+				ReBuildCommandLine="cd ..\xps &amp;&amp; nmake /A -f xps_msvc.mak SBR=1 &amp;&amp; nmake -f xps_msvc.mak bsc"
 				CleanCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
