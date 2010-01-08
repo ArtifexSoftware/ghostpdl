@@ -2536,6 +2536,11 @@ currently necessary when redirecting device output to standard output.
 To redirect stdout to stderr use <code>-sstdout=%stderr</code>.
 To cancel redirection of stdout use <code>-sstdout=%stdout</code>
 or <code>-sstdout=-</code>.
+<p>
+Note that this redirects PostScript output to %stdout but <b>does not</b>
+change the destination FILE of device output as with <tt>-sOutputFile=-</tt>
+or even <tt>-sOutputFile=%stdout</tt> since devices write directly using
+the stdout FILE * pointer with C function calls such as fwrite or fputs.
 </dl>
 
 <dl>
