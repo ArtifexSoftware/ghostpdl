@@ -50,9 +50,11 @@ gs_glyph_data_substring(gs_glyph_data_t *pgd, uint offset, uint size)
 void
 gs_glyph_data_free(gs_glyph_data_t *pgd, client_name_t cname)
 {
-    if (pgd != 0 && pgd->procs != 0)
-	pgd->procs->free(pgd, cname);
-    gs_glyph_data_from_null(pgd);
+    if (pgd != 0) {
+	if (pgd->procs != 0)
+	    pgd->procs->free(pgd, cname);
+	gs_glyph_data_from_null(pgd);
+    }
 }
 
 /* ------ Implementor support ------ */
