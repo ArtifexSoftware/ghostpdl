@@ -5,12 +5,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MINX (300)
 #define MINY (320)
 #define MAXX (600)
 #define MAXY (960)
 
+typedef struct {
+    int xmin;
+    int ymin;
+    int xmax;
+    int ymax;
+} BBox;
+
+typedef struct ImageReader
+{
+  FILE *file;
+  void *(*read)(struct ImageReader *, int *w, int *h, int *s, int *bpp);
+} ImageReader;
+
+static void *Malloc(size_t size) {
+    void *block;
+    
+    block = malloc(size);
+    if (block == NULL) {
+        fprintf(stderr, "Failed to malloc %d bytes\n", size);
+        exit(EXIT_FAILURE);
+    }
+    return block;
+}
 
 static void putword(unsigned char *buf, int word) {
   buf[0] = word;
@@ -136,12 +160,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
   word_width += 3;
   word_width &= ~3;
 
-  dst = malloc(word_width * height);
-  if (dst == NULL)
-  {
-      fprintf(stderr, "Failed to malloc %d bytes\n", word_width*height);
-      return NULL;
-  }
+  dst = Malloc(word_width * height * 4);
 
   /* Now we do the actual conversion */
   if (comp == 0) {
@@ -249,61 +268,283 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
   return dst - word_width*height;
 }
 
-static void *bmp_load(char *filename,
-                      int  *width,
-                      int  *height,
-                      int  *span,
-                      int  *bpp)
+static void *bmp_read(ImageReader *im,
+                      int         *width,
+                      int         *height,
+                      int         *span,
+                      int         *bpp)
 {
-  int           type, offset;
-  FILE         *file;
-  long          filelen;
-  unsigned char *data;
-  unsigned char *bmp;
+    int            offset;
+    long           filelen, filepos;
+    unsigned char *data;
+    unsigned char *bmp;
 
-  /* Open file, find length, load */
-  file = fopen(filename, "rb");
-  if (file == NULL)
-  {
-      fprintf(stderr, "%s failed to open\n", filename);
-      return NULL;
-  }
-  fseek(file, 0, SEEK_END);
-  filelen = ftell(file);
-  fseek(file, 0, SEEK_SET);
-  bmp = malloc(filelen);
-  if (bmp == NULL)
-  {
-      fprintf(stderr, "Failed to allocate %d bytes\n", filelen);
-      return NULL;
-  }
-  fread(bmp, 1, filelen, file);
-  fclose(file);
+    filepos = ftell(im->file);
+    fseek(im->file, 0, SEEK_END);
+    filelen = ftell(im->file);
+    fseek(im->file, 0, SEEK_SET);
+    
+    /* If we were at the end to start, then we'd read our one and only
+     * image. */
+    if (filepos == filelen)
+        return NULL;
 
-  type = bmp[0] + (bmp[1]<<8);
-  if (type == 0) {
-    /* Win v1 DDB */
-    /* Unsupported for now */
-    data = NULL;
-  } else if (type == 0x4D42) {
-    /* BMP format; Win v2 or above */
+    /* Load the whole lot into memory */
+    bmp = Malloc(filelen);
+    fread(bmp, 1, filelen, im->file);
+
     offset = getdword(bmp+10);
     data = bmp_load_sub(bmp+14, width, height, span, bpp, offset-14);
-  } else {
-    /* Not a BMP file */
-    data = NULL;
-  }
-
-  free(bmp);
-  return data;
+    free(bmp);
+    return data;
 }
 
-typedef struct {
-    int xmin;
-    int ymin;
-    int xmax;
-    int ymax;
-} BBox;
+static void pbm_read(FILE          *file,
+                     int            width,
+                     int            height,
+                     int            maxval,
+                     unsigned char *bmp)
+{
+    int w;
+    int byte, mask, g;
+    
+    for (; height>0; height--) {
+        mask = 0;
+        for (w=width; w>0; w--) {
+            if (mask == 0)
+            {
+                byte = fgetc(file);
+                mask = 0x80;
+            }
+            g = byte & mask;
+            if (g != 0)
+                g = 255;
+            mask >>= 1;
+            *bmp++ = g;
+            *bmp++ = g;
+            *bmp++ = g;
+            *bmp++ = 0;
+        }
+    }
+}
+
+static void pgm_read(FILE          *file,
+                     int            width,
+                     int            height,
+                     int            maxval,
+                     unsigned char *bmp)
+{
+    int w;
+    
+    if (maxval == 255)
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = fgetc(file);
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+        }
+    } else if (maxval < 255) {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = fgetc(file)*255/maxval;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+        }
+    } else {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+        }
+    }
+}
+
+static void ppm_read(FILE          *file,
+                     int            width,
+                     int            height,
+                     int            maxval,
+                     unsigned char *bmp)
+{
+    int w;
+    
+    if (maxval == 255)
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                *bmp++ = fgetc(file);
+                *bmp++ = fgetc(file);
+                *bmp++ = fgetc(file);
+                *bmp++ = 0;
+            }
+        }
+    } else if (maxval < 255) {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                *bmp++ = fgetc(file)*255/maxval;
+                *bmp++ = fgetc(file)*255/maxval;
+                *bmp++ = fgetc(file)*255/maxval;
+                *bmp++ = 0;
+            }
+        }
+    } else {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                *bmp++ = 0;
+            }
+        }
+    }
+}
+
+static int get_uncommented_char(FILE *file)
+{
+    int c;
+    
+    do
+    {
+        c = fgetc(file);
+        if (c != '#')
+            return c;
+        do {
+            c = fgetc(file);
+        } while ((c != EOF) && (c != '\n') && (c != '\r'));
+    }
+    while (c != EOF);
+
+    return EOF;
+}
+
+static int get_pnm_num(FILE *file)
+{
+    int c;
+    int val = 0;
+    
+    /* Skip over any whitespace */
+    do {
+        c = get_uncommented_char(file);
+    } while (isspace(c));
+    
+    /* Read the number */
+    while (isdigit(c))
+    {
+        val = val*10 + c - '0';
+        c = get_uncommented_char(file);
+    }
+    
+    /* assume the last c is whitespace */
+    return val;
+}
+
+static void *pnm_read(ImageReader *im,
+                      int         *width,
+                      int         *height,
+                      int         *span,
+                      int         *bpp)
+{
+    unsigned char *bmp;
+    int            c, maxval;
+    void          (*read)(FILE *, int, int, int, unsigned char *);
+
+    c = fgetc(im->file);
+    /* Skip over any white space before the P */
+    while ((c != 'P') && (c != EOF)) {
+        c = fgetc(im->file);
+    }
+    if (c == EOF)
+        return NULL;
+    switch (get_pnm_num(im->file))
+    {
+        case 1:
+            /* Plain PBM - we don't support that */
+            fprintf(stderr, "Plain PBM unsupported!\n");
+            return NULL;
+        case 2:
+            /* Plain PGM - we don't support that */
+            fprintf(stderr, "Plain PGM unsupported!\n");
+            return NULL;
+        case 3:
+            /* Plain PPM - we don't support that */
+            fprintf(stderr, "Plain PPM unsupported!\n");
+            return NULL;
+        case 4:
+            read = pbm_read;
+            break;
+        case 5:
+            read = pgm_read;
+            break;
+        case 6:
+            read = ppm_read;
+            break;
+        default:
+            /* Eh? */
+            fprintf(stderr, "Unknown PxM format!\n");
+            return NULL;
+    }
+    *width  = get_pnm_num(im->file);
+    *span   = *width * 4;
+    *height = get_pnm_num(im->file);
+    if (read != pbm_read)
+        maxval = get_pnm_num(im->file);
+    else
+        maxval = 1;
+    *bpp = 32; /* We always convert to 32bpp */
+    
+    bmp = Malloc(*width * *height * 4);
+
+    read(im->file, *width, *height, maxval, bmp);
+    return bmp;
+}
+
+static void image_open(ImageReader *im,
+                       char        *filename)
+{
+    int type;
+    
+    im->file = fopen(filename, "rb");
+    if (im->file == NULL) {
+        fprintf(stderr, "%s failed to open\n", filename);
+        exit(EXIT_FAILURE);
+    }
+    
+    /* Identify the filetype */
+    type  = fgetc(im->file);
+    
+    if (type == 0x50) {
+        /* Starts with a P! Must be a P?M file. */
+        im->read = pnm_read;
+    } else {
+        type |= (fgetc(im->file)<<8);
+        if (type == 0x4d42) { /* BM */
+            /* BMP format; Win v2 or above */
+            im->read = bmp_read;
+        } else {
+            fprintf(stderr, "%s: Unrecognised image type\n", filename);
+            exit(EXIT_FAILURE);
+        }
+    }
+    
+    /* Seek back to the start */
+    fseek(im->file, 0, SEEK_SET);
+}
+
+static void image_close(ImageReader *im)
+{
+    fclose(im->file);
+    im->file = NULL;
+}
 
 static void find_changed_bbox(unsigned char *bmp,
                               unsigned char *bmp2,
@@ -452,6 +693,12 @@ static void rediff(unsigned char *bmp,
             ssrc2 += span;
         }
     }
+    if ((bbox.xmin > bbox.xmax) || (bbox.ymin > bbox.ymax))
+    {
+        /* No changes. Return with invalid bbox */
+        *bbox2 = bbox;
+        return;
+    }
     bbox.xmin += bbox2->xmin;
     bbox.ymin += bbox2->ymin;
     bbox.xmax += bbox2->xmin;
@@ -479,8 +726,7 @@ static void rediff(unsigned char *bmp,
             bbox.xmax  = bbox2->xmax;
         }
     }
-    if ((bbox.ymax-bbox.ymin > 0) &&
-        (bbox.ymax-bbox.ymin < MINY))
+    if ((bbox.ymax-bbox.ymin > 0) && (bbox.ymax-bbox.ymin < MINY))
     {
         int d = MINY;
         
@@ -558,7 +804,7 @@ static void diff_bmp(unsigned char *bmp,
                     if ((abs(r-r2) <= 3) && (abs(g-g2) <= 0x300) && (abs(b-b2)<= 0x30000))
                         isrc[-1] = 0x00FF00;
                     else
-                        isrc[-1] = 0xFF0000;
+                        isrc[-1] = 0x00FFFF;
                 }
             }
             isrc  += span;
@@ -690,6 +936,7 @@ int main(int argc, char *argv[])
     int            w2, h2, s2, bpp2;
     int            nx, ny, n;
     int            basenum;
+    int            imagecount;
     unsigned char *bmp;
     unsigned char *bmp2;
     BBox           bbox, bbox2;
@@ -697,10 +944,13 @@ int main(int argc, char *argv[])
     char           str1[256];
     char           str2[256];
     char           str3[256];
+    ImageReader    image1, image2;
 
     if (argc < 4)
     {
         fprintf(stderr, "Syntax: bmpcmp <file1> <file2> <outfile_root> [<basenum>]\n");
+        fprintf(stderr, "  <file1> and <file2> can be bmp, ppm, pgm or pbm files.\n");
+        fprintf(stderr, "  This will produce a series of <outfile_root>.<number>.bmp files.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -712,148 +962,161 @@ int main(int argc, char *argv[])
     {
         basenum = 0;
     }
-
-    bmp  = bmp_load(argv[1], &w,  &h,  &s,  &bpp);
-    if (bmp == NULL)
+    
+    image_open(&image1, argv[1]);
+    image_open(&image2, argv[2]);
+    
+    imagecount = 1;
+    while (((bmp2 = NULL,
+             bmp  = image1.read(&image1, &w,  &h,  &s,  &bpp )) != NULL) &&
+           ((bmp2 = image2.read(&image2, &w2, &h2, &s2, &bpp2)) != NULL))
     {
-        fprintf(stderr, "Failed to load '%s'\n", argv[1]);
-        exit(EXIT_FAILURE);
-    }
-    bmp2 = bmp_load(argv[2], &w2, &h2, &s2, &bpp2);
-    if (bmp2 == NULL)
-    {
-        fprintf(stderr, "Failed to load '%s'\n", argv[2]);
-        exit(EXIT_FAILURE);
-    }
+        /* Check images are compatible */
+        if ((w != w2) || (h != h2) || (s != s2) || (bpp != bpp2))
+        {
+            fprintf(stderr,
+                    "Can't compare images "
+                    "(w=%d,%d) (h=%d,%d) (s=%d,%d) (bpp=%d,%d)!\n",
+                    w, w2, h, h2, s, s2, bpp, bpp2);
+            exit(EXIT_FAILURE);
+        }
 
-    if ((w != w2) || (h != h2) || (s != s2) || (bpp != bpp2))
-    {
-        fprintf(stderr, "Can't compare bmps!\n");
-        exit(EXIT_FAILURE);
-    }
+        find_changed_bbox(bmp, bmp2, w, h, s, bpp, &bbox);
+        if ((bbox.xmin > bbox.xmax) && (bbox.ymin > bbox.ymax))
+        {
+            /* The script will scream for us */
+            /* fprintf(stderr, "No differences found!\n"); */
+            /* Unchanged */
+            exit(EXIT_SUCCESS);
+        }
+        /* Make the bbox sensibly exclusive */
+        bbox.xmax++;
+        bbox.ymax++;
 
-    find_changed_bbox(bmp, bmp2, w, h, s, bpp, &bbox);
+        /* Make bbox2.xmin/ymin be the centre of the changed area */
+        bbox2.xmin = (bbox.xmin + bbox.xmax + 1)/2;
+        bbox2.ymin = (bbox.ymin + bbox.ymax + 1)/2;
 
-    if ((bbox.xmin > bbox.xmax) && (bbox.ymin > bbox.ymax))
-    {
-        /* The script will scream for us */
-        /* fprintf(stderr, "No differences found!\n"); */
-        /* Unchanged */
-        exit(EXIT_SUCCESS);
-    }
-    /* Make the bbox sensibly exclusive */
-    bbox.xmax++;
-    bbox.ymax++;
+        /* Make bbox2.xmax/ymax be the width of the changed area */
+        nx = 1;
+        ny = 1;
+        bbox2.xmax = bbox.xmax - bbox.xmin;
+        if (bbox2.xmax < MINX)
+            bbox2.xmax = MINX;
+        if (bbox2.xmax > MAXX)
+        {
+            nx = 1+(bbox2.xmax/MAXX);
+            bbox2.xmax = MAXX*nx;
+        }
+        bbox2.ymax = bbox.ymax - bbox.ymin;
+        if (bbox2.ymax < MINY)
+            bbox2.ymax = MINY;
+        if (bbox2.ymax > MAXY)
+        {
+            ny = 1+(bbox2.ymax/MAXY);
+            bbox2.ymax = MAXY*ny;
+        }
 
-    /* Make bbox2.xmin/ymin be the centre of the changed area */
-    bbox2.xmin = (bbox.xmin + bbox.xmax + 1)/2;
-    bbox2.ymin = (bbox.ymin + bbox.ymax + 1)/2;
-
-    /* Make bbox2.xmax/ymax be the width of the changed area */
-    nx = 1;
-    ny = 1;
-    bbox2.xmax = bbox.xmax - bbox.xmin;
-    if (bbox2.xmax < MINX)
-        bbox2.xmax = MINX;
-    if (bbox2.xmax > MAXX)
-    {
-        nx = 1+(bbox2.xmax/MAXX);
-        bbox2.xmax = MAXX*nx;
-    }
-    bbox2.ymax = bbox.ymax - bbox.ymin;
-    if (bbox2.ymax < MINY)
-        bbox2.ymax = MINY;
-    if (bbox2.ymax > MAXY)
-    {
-        ny = 1+(bbox2.ymax/MAXY);
-        bbox2.ymax = MAXY*ny;
-    }
-
-    /* Now make the real bbox */
-    bbox2.xmin -= bbox2.xmax>>1;
-    if (bbox2.xmin < 0)
-        bbox2.xmin = 0;
-    bbox2.ymin -= bbox2.ymax>>1;
-    if (bbox2.ymin < 0)
-        bbox2.ymin = 0;
-    bbox2.xmax += bbox2.xmin;
-    if (bbox2.xmax > w)
-    {
-        bbox2.xmin -= bbox2.xmax-w;
+        /* Now make the real bbox */
+        bbox2.xmin -= bbox2.xmax>>1;
         if (bbox2.xmin < 0)
             bbox2.xmin = 0;
-        bbox2.xmax = w;
-    }
-    bbox2.ymax += bbox2.ymin;
-    if (bbox2.ymax > h)
-    {
-        bbox2.ymin -= bbox2.ymax-h;
+        bbox2.ymin -= bbox2.ymax>>1;
         if (bbox2.ymin < 0)
             bbox2.ymin = 0;
-        bbox2.ymax = h;
+        bbox2.xmax += bbox2.xmin;
+        if (bbox2.xmax > w)
+        {
+            bbox2.xmin -= bbox2.xmax-w;
+            if (bbox2.xmin < 0)
+                bbox2.xmin = 0;
+            bbox2.xmax = w;
+        }
+        bbox2.ymax += bbox2.ymin;
+        if (bbox2.ymax > h)
+        {
+            bbox2.ymin -= bbox2.ymax-h;
+            if (bbox2.ymin < 0)
+                bbox2.ymin = 0;
+            bbox2.ymax = h;
+        }
+
+        /* bbox */
+        boxlist = Malloc(sizeof(*boxlist) * nx * ny);
+
+        /* Now save the changed bmps */
+        n = basenum;
+        boxlist--;
+        for (w2=0; w2 < nx; w2++)
+        {
+            for (h2=0; h2 < ny; h2++)
+            {
+                boxlist++;
+                boxlist->xmin = bbox2.xmin + MAXX*w2;
+                boxlist->xmax = boxlist->xmin + MAXX;
+                if (boxlist->xmax > bbox2.xmax)
+                    boxlist->xmax = bbox2.xmax;
+                if (boxlist->xmin > boxlist->xmax-MINX)
+                {
+                    boxlist->xmin = boxlist->xmax-MINX;
+                    if (boxlist->xmin < 0)
+                        boxlist->xmin = 0;
+                }
+                boxlist->ymin = bbox2.ymin + MAXY*h2;
+                boxlist->ymax = boxlist->ymin + MAXY;
+                if (boxlist->ymax > bbox2.ymax)
+                    boxlist->ymax = bbox2.ymax;
+                if (boxlist->ymin > boxlist->ymax-MINY)
+                {
+                    boxlist->ymin = boxlist->ymax-MINY;
+                    if (boxlist->ymin < 0)
+                        boxlist->ymin = 0;
+                }
+                rediff(bmp, bmp2, s, bpp, boxlist);
+                if (!BBox_valid(boxlist))
+                    continue;
+                sprintf(str1, "%s.%d.bmp", argv[3], n);
+                sprintf(str2, "%s.%d.bmp", argv[3], n+1);
+                save_bmp(bmp,  boxlist, s, bpp, str1);
+                save_bmp(bmp2, boxlist, s, bpp, str2);
+                n += 3;
+            }
+        }
+        boxlist -= nx*ny;
+        diff_bmp(bmp, bmp2, w, h, s, bpp);
+        n = basenum;
+        for (w2=0; w2 < nx; w2++)
+        {
+            for (h2=0; h2 < ny; h2++)
+            {
+                boxlist++;
+                if (!BBox_valid(boxlist))
+                    continue;
+                sprintf(str3, "%s.%d.bmp", argv[3], n+2);
+                save_bmp(bmp, boxlist, s, bpp, str3);
+                n += 3;
+            }
+        }
+        basenum = n;
     }
 
-    /* bbox */
-    boxlist = malloc(sizeof(*boxlist) * nx * ny);
-    if (boxlist == NULL)
+    /* If one loaded, and the other didn't - that's an error */
+    if ((bmp2 != NULL) && (bmp == NULL))
     {
-        fprintf(stderr, "Improbable malloc failure!\n");
+        fprintf(stderr, "Failed to load image %d from '%s'\n",
+                imagecount, argv[1]);
+        exit(EXIT_FAILURE);
+    }
+    if ((bmp != NULL) && (bmp2 == NULL))
+    {
+        fprintf(stderr, "Failed to load image %d from '%s'\n",
+                imagecount, argv[2]);
         exit(EXIT_FAILURE);
     }
 
-    /* Now save the changed bmps */
-    n = basenum;
-    boxlist--;
-    for (w2=0; w2 < nx; w2++)
-    {
-        for (h2=0; h2 < ny; h2++)
-        {
-            boxlist++;
-            boxlist->xmin = bbox2.xmin + MAXX*w2;
-            boxlist->xmax = boxlist->xmin + MAXX;
-            if (boxlist->xmax > bbox2.xmax)
-                boxlist->xmax = bbox2.xmax;
-            if (boxlist->xmin > boxlist->xmax-MINX)
-            {
-                boxlist->xmin = boxlist->xmax-MINX;
-                if (boxlist->xmin < 0)
-                    boxlist->xmin = 0;
-            }
-            boxlist->ymin = bbox2.ymin + MAXY*h2;
-            boxlist->ymax = boxlist->ymin + MAXY;
-            if (boxlist->ymax > bbox2.ymax)
-                boxlist->ymax = bbox2.ymax;
-            if (boxlist->ymin > boxlist->ymax-MINY)
-            {
-                boxlist->ymin = boxlist->ymax-MINY;
-                if (boxlist->ymin < 0)
-                    boxlist->ymin = 0;
-            }
-            rediff(bmp, bmp2, s, bpp, boxlist);
-            if (!BBox_valid(boxlist))
-                continue;
-            sprintf(str1, "%s.%d.bmp", argv[3], n);
-            sprintf(str2, "%s.%d.bmp", argv[3], n+1);
-            save_bmp(bmp,  boxlist, s, bpp, str1);
-            save_bmp(bmp2, boxlist, s, bpp, str2);
-            n += 3;
-        }
-    }
-    boxlist -= nx*ny;
-    diff_bmp(bmp, bmp2, w, h, s, bpp);
-    n = basenum;
-    for (w2=0; w2 < nx; w2++)
-    {
-        for (h2=0; h2 < ny; h2++)
-        {
-            boxlist++;
-            if (!BBox_valid(boxlist))
-                continue;
-            sprintf(str3, "%s.%d.bmp", argv[3], n+2);
-            save_bmp(bmp, boxlist, s, bpp, str3);
-            n += 3;
-        }
-    }
+    image_close(&image1);
+    image_close(&image2);
+    
 
     return EXIT_SUCCESS;
 }
