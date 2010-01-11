@@ -1689,6 +1689,9 @@ static int nInstrCount=0;
 
     L = args[0];
 
+    if (L == 0)
+	return;
+
     if ( L<0 || L > CUR.args )
     {
       CUR.error = TT_Err_Invalid_Reference;
