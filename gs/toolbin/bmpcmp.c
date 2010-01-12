@@ -64,7 +64,8 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
                                    int           *height_ret,
                                    int           *span,
                                    int           *bpp,
-                                   int            image_offset)
+                                   int            image_offset,
+                                   int            filelen)
 {
   int size, src_bpp, dst_bpp, comp, xdpi, ydpi, i, x, y, cols;
   int masks, redmask, greenmask, bluemask, col, col2;
@@ -294,7 +295,7 @@ static void *bmp_read(ImageReader *im,
     fread(bmp, 1, filelen, im->file);
 
     offset = getdword(bmp+10);
-    data = bmp_load_sub(bmp+14, width, height, span, bpp, offset-14);
+    data = bmp_load_sub(bmp+14, width, height, span, bpp, offset-14, filelen);
     free(bmp);
     return data;
 }
@@ -857,6 +858,20 @@ static void diff_bmp(unsigned char *bmp,
     }
 }
 
+static void save_meta(BBox *bbox, char *str, int w, int h, int page)
+{
+    FILE *file;
+
+    file = fopen(str, "wb");
+    if (file == NULL)
+        return;
+
+    fprintf(file, "PW=%d\nPH=%d\nX=%d\nY=%d\nW=%d\nH=%d\nPAGE=%d\n",
+            w, h, bbox->xmin, h-bbox->ymax,
+            bbox->xmax-bbox->xmin, bbox->ymax-bbox->ymin, page);
+    fclose(file);
+}
+
 static void save_bmp(unsigned char *data,
                      BBox          *bbox,
                      int            span,
@@ -944,6 +959,7 @@ int main(int argc, char *argv[])
     char           str1[256];
     char           str2[256];
     char           str3[256];
+    char           str4[256];
     ImageReader    image1, image2;
 
     if (argc < 4)
@@ -1079,6 +1095,8 @@ int main(int argc, char *argv[])
                 sprintf(str2, "%s.%d.bmp", argv[3], n+1);
                 save_bmp(bmp,  boxlist, s, bpp, str1);
                 save_bmp(bmp2, boxlist, s, bpp, str2);
+                sprintf(str4, "%s.%d.meta", argv[3], n);
+                save_meta(boxlist, str4, w, h, imagecount-1);
                 n += 3;
             }
         }
