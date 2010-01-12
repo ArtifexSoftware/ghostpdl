@@ -1307,6 +1307,22 @@ currentdict /CMap_read_dict undef
     % <w1x> <w1y> <vx> <vy> won't be used and replaced, discard now
     5 1 roll pop pop pop pop
 
+    % get FontMatrix that applies to this CID
+    % (needs to convert [D]W[2] values to glyph space)
+    currentfont /FontMatrix get
+    % if the currentfont is a CIDFontType 0 CIDFont,
+    % we need FDArray font's FontMatrix too
+    FontType 9 eq {
+	currentfont 2 index .type9mapcid
+	% <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <FontMatrix> (charstring) <FDArray#>
+	exch pop currentfont /FDArray get exch get /FontMatrix get
+	% <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <FontMatrix> <FontMatrix2>
+	matrix concatmatrix 
+    } if
+    % preserve this FontMatrix at bottom of the stack
+    8 1 roll
+    % Stack: <FontMatrix> <w0x> <w0y> <llx> <lly> <urx> <ury> <cid>
+
     {
       currentdict /DW .knownget not {   % no DW
         .pdfDefaultDW exit              % replace <w0x> by defaultDW
@@ -1329,21 +1345,17 @@ currentdict /CMap_read_dict undef
 
       exit
     } loop
-
-    FontType 11 eq {
-      1000 div                  % <w0x'> (normalized W)
-    } if
     0                           % <w0y'>
 
-    % Stack: <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <w0x'> <w0y'>
+    % Stack: <FontMatrix> <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <w0x'> <w0y'>
     9 -2 roll pop pop           % discard <w0x> <w0y>
     7  2 roll                   % put <w0x'> <w0y'>
 
-    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <cid>
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury> <cid>
     0                           % <w1x'>
     exch                        % put <w1x'>
 
-    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <cid>
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <cid>
     {
       currentdict /DW2 .knownget not {  % no DW2, use defaultDW2
         .pdfDefaultDW2 exit
@@ -1370,14 +1382,28 @@ currentdict /CMap_read_dict undef
 
     exch pop                            % discard <cid>
 
-    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> { [<vy'> <w1y'>] | [<w1y'> <vx'> <vy'>] }
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury>
+    %                           <w1x'> { [<vy'> <w1y'>] | [<w1y'> <vx'> <vy'>] }
     dup length 2 eq {                   % this is DW2
-      FontType 11 eq {{1000 div}} {{}} ifelse forall exch
-      8 index 2 div                     % <vx'> = <w0x'> / 2
+      aload pop 
+      exch 8 index 2 div                % <vx'> = <w0x'> / 2
       exch
-    }{                                  % assume W2
-      FontType 11 eq {{1000 div}} {{}} ifelse forall
+    } {                                 % assume W2
+      aload pop
     } ifelse
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'>
+
+    % now, convert each metrics valude (1000th of text space) to glyph space
+    10 -2 roll
+    % Stack: <FontMatrix> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'> <w0x'> <w0y'>
+    3 {
+	10 index idtransform exch 1000 div exch 1000 div
+	6 2 roll
+    } repeat
+    10 2 roll
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'>
+    11 -1 roll pop
+    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'>
   end                                   % recover currentdict
 
 } def

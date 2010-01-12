@@ -397,7 +397,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 	    if (code < 0)
 	    	return code;
 	    subfont = scan.fstack.items[scan.fstack.depth].font;
-	    font_index = scan.fstack.items[scan.fstack.depth].index;
+	    font_index = scan.fstack.items[scan.fstack.depth - 1].index;
 	    scan.xy_index++;
 	    if (glyph == GS_NO_GLYPH)
 		glyph = GS_MIN_CID_GLYPH;

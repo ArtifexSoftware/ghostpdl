@@ -23,6 +23,7 @@
 #include "gxdevice.h"
 #include "gxfont.h"
 #include "gxfont0.h"
+#include "gxfcid.h"
 #include "gxtext.h"
 
 /* Stack up modal composite fonts, down to a non-modal or base font. */
@@ -42,7 +43,7 @@ gs_stack_modal_fonts(gs_text_enum_t *pte)
 	fdepth++;
 	cfont = cmfont->data.FDepVector[cmfont->data.Encoding[0]];
 	pte->fstack.items[fdepth].font = cfont;
-	pte->fstack.items[fdepth].index = 0;
+	pte->fstack.items[fdepth - 1].index = 0;
 	if_debug2('j', "[j]stacking depth=%d font=0x%lx\n",
 		  fdepth, (ulong) cfont);
     }
@@ -73,10 +74,12 @@ gs_type0_init_fstack(gs_text_enum_t *pte, gs_font * pfont)
   if (fdepth == MAX_FONT_STACK)\
     return_error(gs_error_invalidfont);\
   pfont = pdata->FDepVector[pdata->Encoding[fidx]];\
-  if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font ||\
-      orig_index != fidx)\
-    pte->fstack.items[fdepth].font = pfont, changed = 1;\
-  pte->fstack.items[fdepth].index = fidx
+  pte->fstack.items[fdepth].index = fidx;\
+  if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font) {\
+    pte->fstack.items[fdepth].font = pfont;\
+    changed = 1;\
+  } else {\
+  }
 
 /* Get the root EscChar of a composite font, which overrides the EscChar */
 /* of descendant fonts. */
@@ -99,7 +102,6 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
     const byte *end = str + pte->text.size;
     int fdepth = pte->fstack.depth;
     int orig_depth = fdepth;
-    int orig_index = pte->fstack.items[fdepth].index;
     gs_font *pfont;
 
 #define pfont0 ((gs_font_type0 *)pfont)
@@ -418,17 +420,37 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 	select_descendant(pfont, pdata, fidx, fdepth);
 	if_debug2('J', "... new depth=%d, new font=0x%lx\n",
 		  fdepth, (ulong) pfont);
-	/* FontBBox may be used as metrics2 with WMode=1 :
-	*/
-	if (pfont->FontType == ft_CID_encrypted ||
-	    pfont->FontType == ft_CID_TrueType
-	    ) {
-	    gs_font_base *pfb = (gs_font_base *)pfont;
-
-	    pte->FontBBox_as_Metrics2 = pfb->FontBBox.q;
-	}
     }
 done:
+    /* FontBBox may be used as metrics2 with WMode=1 :
+    */
+    if (pte->fstack.items[fdepth].font->FontType == ft_CID_encrypted ||
+	pte->fstack.items[fdepth].font->FontType == ft_CID_TrueType
+	) {
+	gs_font_base *pfb = (gs_font_base *)pte->fstack.items[fdepth].font;
+
+	pte->FontBBox_as_Metrics2 = pfb->FontBBox.q;
+    }
+
+    /* Set fstack.items[fdepth].index to CIDFont FDArray index or 0 otherwise */
+    fidx = 0;
+    if (pte->fstack.items[fdepth].font->FontType == ft_CID_encrypted) {
+	int code;
+	pfont = pte->fstack.items[fdepth].font;
+	code = ((gs_font_cid0 *)pfont)->cidata.glyph_data((gs_font_base *)pfont,
+			    glyph, NULL, &fidx);
+	if (code < 0) { /* failed to load glyph data, reload glyph for CID 0 */
+	   code = ((gs_font_cid0 *)pfont)->cidata.glyph_data((gs_font_base *)pfont,
+			(gs_glyph)(gs_min_cid_glyph + 0), NULL, &fidx);
+	   if (code < 0)
+	       return_error(gs_error_invalidfont);
+	}
+    }
+    if ( pte->fstack.items[fdepth].index != fidx ) {
+	pte->fstack.items[fdepth].index = fidx;
+	changed = 1;
+    }
+
     *pchr = chr;
     *pglyph = glyph;
     /* Update the pointer into the original string, but only if */

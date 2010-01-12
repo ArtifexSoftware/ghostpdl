@@ -42,18 +42,21 @@ typedef struct gs_text_returned_s {
  * If the current font is not composite, depth = -1.
  * If the current font is composite, 0 <= depth <= MAX_FONT_STACK.
  * items[0] through items[depth] are occupied.
- * items[0].font is the root font; items[0].index = 0.
+ * items[0].font is the root font.
  * The root font must be composite, but may be of any map type.
  * items[0..N-1] are modal composite fonts, for some N <= depth.
  * items[N..depth-1] are non-modal composite fonts.
- * items[depth] is a base (non-composite) font.
+ * items[depth] is a base font or a CIDFont (i.e. non-composite font).
  * Note that if depth >= 0, the font member of the graphics state
  * for a base font BuildChar/Glyph is the same as items[depth].font.
  */
 #define MAX_FONT_STACK 5
 typedef struct gx_font_stack_item_s {
     gs_font *font;		/* font at this level */
-    uint index;			/* index of this font in parent's Encoding */
+    uint index;			/* if *font is a composite font, this is a font number of
+				   selected discendant font (index in Encoding).
+				   if *font is a CIDFont, an index of selected FDArray font.
+				   zero otherwise. */
 } gx_font_stack_item_t;
 typedef struct gx_font_stack_s {
     int depth;
