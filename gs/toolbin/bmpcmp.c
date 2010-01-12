@@ -161,7 +161,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
   word_width += 3;
   word_width &= ~3;
 
-  dst = Malloc(word_width * height * 4);
+  dst = Malloc(word_width * height);
 
   /* Now we do the actual conversion */
   if (comp == 0) {
@@ -966,7 +966,8 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Syntax: bmpcmp <file1> <file2> <outfile_root> [<basenum>]\n");
         fprintf(stderr, "  <file1> and <file2> can be bmp, ppm, pgm or pbm files.\n");
-        fprintf(stderr, "  This will produce a series of <outfile_root>.<number>.bmp files.\n");
+        fprintf(stderr, "  This will produce a series of <outfile_root>.<number>.bmp files");
+        fprintf(stderr, "  and a series of <outfile_root>.<number>.meta files.\n");
         exit(EXIT_FAILURE);
     }
 
