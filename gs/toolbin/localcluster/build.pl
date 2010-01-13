@@ -434,17 +434,32 @@ foreach my $testfile (sort keys %testfiles) {
   }
 }
 
-while (scalar(@slowCommands)) {
-  my $n=rand(scalar @slowCommands);
-  my $filename=$slowFilenames[$n];  splice(@slowFilenames,$n,1);
-  my $command=$slowCommands[$n];  splice(@slowCommands,$n,1);
-  print "$filename\t$command\n";
+while (scalar(@slowCommands) || scalar(@commands)) {
+  if (scalar(@slowCommands)) {
+    my $n=rand(scalar @slowCommands);
+    my $filename=$slowFilenames[$n];  splice(@slowFilenames,$n,1);
+    my $command=$slowCommands[$n];  splice(@slowCommands,$n,1);
+    print "$filename\t$command\n";
+  }
+  if (scalar(@commands)) {
+    my $n=rand(scalar @commands);
+    my $filename=$filenames[$n];  splice(@filenames,$n,1);
+    my $command=$commands[$n];  splice(@commands,$n,1);
+    print "$filename\t$command\n";
+  }
 }
 
-while (scalar(@commands)) {
-  my $n=rand(scalar @commands);
-  my $filename=$filenames[$n];  splice(@filenames,$n,1);
-  my $command=$commands[$n];  splice(@commands,$n,1);
-  print "$filename\t$command\n";
-}
+#while (scalar(@slowCommands)) {
+#  my $n=rand(scalar @slowCommands);
+#  my $filename=$slowFilenames[$n];  splice(@slowFilenames,$n,1);
+#  my $command=$slowCommands[$n];  splice(@slowCommands,$n,1);
+#  print "$filename\t$command\n";
+#}
+
+#while (scalar(@commands)) {
+#  my $n=rand(scalar @commands);
+#  my $filename=$filenames[$n];  splice(@filenames,$n,1);
+#  my $command=$commands[$n];  splice(@commands,$n,1);
+#  print "$filename\t$command\n";
+#}
 

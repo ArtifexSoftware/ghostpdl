@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=1;
 
-my $previousValues=25;
+my $previousValues=50;
 
 my @errorDescription=(
 "none",
@@ -108,6 +108,7 @@ while(<F>) {
 close(F);
 
 if (open(F,"<md5sum.cache")) {
+print STDERR "reading md5sum.cache\n" if ($verbose);
   while(<F>) {
     chomp;
     if (m/(.+) \| (.+)/) {
