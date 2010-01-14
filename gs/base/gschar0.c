@@ -435,16 +435,17 @@ done:
     /* Set fstack.items[fdepth].index to CIDFont FDArray index or 0 otherwise */
     fidx = 0;
     if (pte->fstack.items[fdepth].font->FontType == ft_CID_encrypted) {
-	int code;
+	int code, font_index;
 	pfont = pte->fstack.items[fdepth].font;
 	code = ((gs_font_cid0 *)pfont)->cidata.glyph_data((gs_font_base *)pfont,
-			    glyph, NULL, &fidx);
+			    glyph, NULL, &font_index);
 	if (code < 0) { /* failed to load glyph data, reload glyph for CID 0 */
 	   code = ((gs_font_cid0 *)pfont)->cidata.glyph_data((gs_font_base *)pfont,
-			(gs_glyph)(gs_min_cid_glyph + 0), NULL, &fidx);
+			(gs_glyph)(gs_min_cid_glyph + 0), NULL, &font_index);
 	   if (code < 0)
 	       return_error(gs_error_invalidfont);
 	}
+	fidx = (uint)font_index;
     }
     if ( pte->fstack.items[fdepth].index != fidx ) {
 	pte->fstack.items[fdepth].index = fidx;
