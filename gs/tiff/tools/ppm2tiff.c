@@ -1,4 +1,4 @@
-/* $Id: ppm2tiff.c,v 1.13 2006/04/20 12:36:23 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler

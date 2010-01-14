@@ -1,4 +1,4 @@
-/* $Id: tiffinfo.c,v 1.8 2005/12/09 14:52:48 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

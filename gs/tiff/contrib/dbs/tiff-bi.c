@@ -1,4 +1,4 @@
-/* $Id: tiff-bi.c,v 1.2 2004/05/03 16:46:36 dron Exp $ */
+/* $Id$ */
 
 /*
  * tiff-bi.c -- create a Class B (bilevel) TIFF file

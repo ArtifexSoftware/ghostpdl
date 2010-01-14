@@ -1,4 +1,4 @@
-/* $Id: tif_luv.c,v 1.17.2.3 2009-06-30 17:06:25 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1997 Greg Ward Larson

@@ -1,4 +1,4 @@
-/* $Id: tif_predict.h,v 1.3.2.1 2007/11/22 21:24:51 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1995-1997 Sam Leffler

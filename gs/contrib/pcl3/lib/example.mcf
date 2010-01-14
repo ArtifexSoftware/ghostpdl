@@ -1,5 +1,5 @@
 #******************************************************************************
-# File:     @(#)$Id: example.mcf,v 2.1 2000/10/22 08:53:25 Martin Rel $
+# File:     @(#)$Id$
 # Contents: Example of a media configuration file for the ghostscript device
 #           "pcl3": supported media dimensions and their margins for "unspec"
 # Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,

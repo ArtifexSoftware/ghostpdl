@@ -1,4 +1,4 @@
-/* $Id: tif_thunder.c,v 1.5 2005/12/21 12:23:13 joris Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

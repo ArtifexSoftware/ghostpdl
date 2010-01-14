@@ -1,4 +1,4 @@
-/* $Id: tif_stream.cxx,v 1.6.2.1 2009-01-01 00:10:43 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1996 Sam Leffler

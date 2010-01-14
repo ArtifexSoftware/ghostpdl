@@ -1,4 +1,4 @@
-/* $Id: tiffdither.c,v 1.9 2005/04/27 18:37:19 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

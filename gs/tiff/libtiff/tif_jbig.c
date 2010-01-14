@@ -1,4 +1,4 @@
-/* $Id: tif_jbig.c,v 1.2.2.2 2008-10-21 13:13:07 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

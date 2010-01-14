@@ -1,4 +1,4 @@
-/* $Id: sgi2tiff.c,v 1.5 2006/01/11 16:59:36 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler

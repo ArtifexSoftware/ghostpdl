@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: eprnfs.c,v 1.6 2001/05/01 07:02:01 Martin Rel $
+  File:     $Id$
   Contents: Floyd-Steinberg error diffusion for eprn
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany; e-mail: Martin.Lottermoser@t-online.de.
@@ -25,7 +25,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: eprnfs.c,v 1.6 2001/05/01 07:02:01 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

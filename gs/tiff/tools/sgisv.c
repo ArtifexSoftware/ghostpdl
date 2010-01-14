@@ -1,4 +1,4 @@
-/* $Id: sgisv.c,v 1.5 2006/10/13 10:26:56 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler

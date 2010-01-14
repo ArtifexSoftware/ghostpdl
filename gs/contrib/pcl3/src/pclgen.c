@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pclgen.c,v 1.21 2001/04/29 10:37:08 Martin Rel $
+  File:     $Id$
   Contents: PCL-generating routines
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -52,7 +52,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: pclgen.c,v 1.21 2001/04/29 10:37:08 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

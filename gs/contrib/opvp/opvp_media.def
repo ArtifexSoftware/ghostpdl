@@ -1,4 +1,4 @@
-/* $Id: opvp_media.def 74 2005-06-10 16:53:36Z gishi $ */
+/* $Id$ */
 {"iso" ,"a10"          ,   26/MMPI*PS_DPI,   37/MMPI*PS_DPI},
 {"iso" ,"c10"          ,   28/MMPI*PS_DPI,   40/MMPI*PS_DPI},
 {"iso" ,"b10"          ,   31/MMPI*PS_DPI,   44/MMPI*PS_DPI},

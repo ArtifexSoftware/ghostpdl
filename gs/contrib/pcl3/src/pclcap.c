@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pclcap.c,v 1.17 2001/03/08 09:17:51 Martin Rel $
+  File:     $Id$
   Contents: Description of PCL printer capabilities and supporting functionality
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -14,7 +14,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: pclcap.c,v 1.17 2001/03/08 09:17:51 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

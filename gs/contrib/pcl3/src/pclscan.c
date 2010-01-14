@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pclscan.c,v 1.8 2000-10-22 11:05:34+02 Martin Rel $
+  File:     $Id$
   Contents: PCL scanner
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany, e-mail: Martin.Lottermoser@t-online.de
@@ -14,7 +14,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: pclscan.c,v 1.8 2000-10-22 11:05:34+02 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

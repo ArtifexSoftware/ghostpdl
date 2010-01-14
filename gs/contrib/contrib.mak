@@ -1,4 +1,4 @@
-# $Id: contrib.mak,v 1.28 2002/10/16 23:26:33 giles Exp $
+# $Id$
 
 # Makefile for device drivers which are not in the original GPL GhostScript
 # distributiion
@@ -1011,7 +1011,7 @@ $(GLOBJ)gdevfmlbp.$(OBJ) : $(JAPSRC)gdevfmlbp.c $(PDEVH)
 #
 #  by N.Tagawa
 #
-#  $Id: gdevml6.mak,v 1.2 1998/03/16 13:32:33 tagawa Exp $
+#  $Id$
 #
 
 ml6_=$(GLOBJ)gdevml6.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)

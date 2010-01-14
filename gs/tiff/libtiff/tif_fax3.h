@@ -1,4 +1,4 @@
-/* $Id: tif_fax3.h,v 1.5 2005/12/12 09:23:11 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler

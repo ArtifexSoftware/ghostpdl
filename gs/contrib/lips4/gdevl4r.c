@@ -18,7 +18,7 @@
    copies.
  */
 
-/*$Id: gdevl4r.c,v 1.5 2002/10/12 23:24:34 tillkamppeter Exp $ */
+/*$Id$ */
 /* Raster Version of LIPS driver */
 
 #include "gdevlprn.h"

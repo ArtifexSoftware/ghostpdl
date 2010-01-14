@@ -18,7 +18,7 @@
    copies.
  */
 
-/*$Id: gdevlips.h,v 1.4 2002/10/12 23:24:34 tillkamppeter Exp $ */
+/*$Id$ */
 /* Common header file for LIPS driver */
 
 #define	LIPS_ESC	0x1b

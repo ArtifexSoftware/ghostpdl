@@ -1,4 +1,4 @@
-/* $Id: tif_close.c,v 1.10 2006/03/25 03:09:24 joris Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

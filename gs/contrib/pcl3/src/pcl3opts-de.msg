@@ -1,5 +1,5 @@
 $ *****************************************************************************
-$ File:     @(#)$Id: pcl3opts-de.msg,v 1.9 2001/05/31 15:23:28 Martin Rel $
+$ File:     @(#)$Id$
 $ Contents: NLS message catalogue for pcl3opts in German
 $ Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
 $           Germany

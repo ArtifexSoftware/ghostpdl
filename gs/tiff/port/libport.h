@@ -1,4 +1,4 @@
-/* $Id: libport.h,v 1.2.2.2 2009-11-02 14:47:41 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 2009 Frank Warmerdam

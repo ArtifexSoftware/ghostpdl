@@ -19,12 +19,12 @@
 
 /* dviprlib.h */
 
-/* $Id: S_CFGBLD.H 1.1 1994/08/30 02:27:18 kaz Exp kaz $ */
+/* $Id$ */
 
 #ifndef s_cfgbld_h_INCLUDED
 
 
-/* $Id: S_CFG.H 1.1 1994/08/30 02:27:18 kaz Exp kaz $ */
+/* $Id$ */
 
 #ifndef s_cfg_h_INCLUDED
 #define CFG_MAGIC_NUMBER   ":K"

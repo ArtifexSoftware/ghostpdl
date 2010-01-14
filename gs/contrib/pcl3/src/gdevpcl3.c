@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: gdevpcl3.c,v 1.32 2001/08/14 15:22:35 Martin Rel $
+  File:     $Id$
   Contents: Ghostscript device 'pcl3' for PCL-3+ printers
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -26,7 +26,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: gdevpcl3.c,v 1.32 2001/08/14 15:22:35 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

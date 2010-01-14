@@ -1,4 +1,4 @@
-/* $Id: tiff2rgba.c,v 1.13.2.1 2009-08-20 20:23:53 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler

@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: eprnparm.c,v 1.24 2001/08/18 17:42:34 Martin Rel $
+  File:     $Id$
   Contents: Device parameter handling for the ghostscript device 'eprn'
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -34,7 +34,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: eprnparm.c,v 1.24 2001/08/18 17:42:34 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

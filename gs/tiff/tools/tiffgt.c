@@ -1,4 +1,4 @@
-/* $Id: tiffgt.c,v 1.7.2.1 2009-08-30 16:21:46 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

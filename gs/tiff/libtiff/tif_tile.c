@@ -1,4 +1,4 @@
-/* $Id: tif_tile.c,v 1.12 2006/02/09 16:15:43 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler

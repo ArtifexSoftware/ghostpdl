@@ -30,7 +30,7 @@
    copyright notice and this notice be preserved on all copies.
  */
 
-/*$Id: gdevdj9.c,v 1.4 2002/09/03 02:23:05 easysw Exp $*/
+/*$Id$*/
 
 /*
    A printer driver for the HP970Cxi color printer. 

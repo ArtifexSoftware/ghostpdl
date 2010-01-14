@@ -1,4 +1,4 @@
-/* $Id: tif_jpeg.c,v 1.50.2.4 2009-08-30 16:21:46 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1994-1997 Sam Leffler

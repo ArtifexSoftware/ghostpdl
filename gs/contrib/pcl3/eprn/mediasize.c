@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: mediasize.c,v 1.11 2001/04/12 18:35:26 Martin Rel $
+  File:     $Id$
   Contents: Operations and data for handling media sizes
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -14,7 +14,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: mediasize.c,v 1.11 2001/04/12 18:35:26 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

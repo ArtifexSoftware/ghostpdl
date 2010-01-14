@@ -1,4 +1,4 @@
-/* $Id: tiff-rgb.c,v 1.3 2004/09/03 08:29:16 dron Exp $ */
+/* $Id$ */
 
 /*
  * tiff-rgb.c -- create a 24-bit Class R (rgb) TIFF file

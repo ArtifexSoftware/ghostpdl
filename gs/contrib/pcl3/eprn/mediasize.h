@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: mediasize.h,v 1.11 2001/04/12 18:35:26 Martin Rel $
+  File:     $Id$
   Contents: Header file for working with various media sizes
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -15,7 +15,7 @@
 #define _mediasize_h
 
 /* Configuration management identification */
-#pragma ident "@(#)$Id: mediasize.h,v 1.11 2001/04/12 18:35:26 Martin Rel $"
+#pragma ident "@(#)$Id$"
 
 /*****************************************************************************/
 

@@ -1,4 +1,4 @@
-/* $Id: thumbnail.c,v 1.9 2005/06/23 10:54:02 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1994-1997 Sam Leffler

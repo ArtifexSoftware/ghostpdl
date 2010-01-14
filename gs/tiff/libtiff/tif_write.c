@@ -1,4 +1,4 @@
-/* $Id: tif_write.c,v 1.22.2.4 2009-08-28 02:23:19 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

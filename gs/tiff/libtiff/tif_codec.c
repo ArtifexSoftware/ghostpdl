@@ -1,4 +1,4 @@
-/* $Id: tif_codec.c,v 1.10.2.1 2008-12-18 19:50:41 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

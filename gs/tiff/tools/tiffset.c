@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tiffset.c,v 1.12 2007/02/24 17:14:14 dron Exp $
+ * $Id$
  *
  * Project:  libtiff tools
  * Purpose:  Mainline for setting metadata in existing TIFF files.

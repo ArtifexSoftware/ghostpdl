@@ -1,4 +1,4 @@
-/* $Id: tiffsplit.c,v 1.14.2.3 2009-01-21 04:49:44 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1992-1997 Sam Leffler

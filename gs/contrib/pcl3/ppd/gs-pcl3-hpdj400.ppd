@@ -1,6 +1,6 @@
 *PPD-Adobe: "4.3"
 *% ****************************************************************************
-*% File:     @(#)$Id: gs-pcl3-hpdj400.ppd,v 1.2 2001/03/23 15:50:13 Martin Rel $
+*% File:     @(#)$Id$
 *% Contents: PPD file for the ghostscript device "hpdj400" of the pcl3 driver
 *% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
 *%           Germany, Martin.Lottermoser@t-online.de

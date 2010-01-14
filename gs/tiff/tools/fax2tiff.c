@@ -1,4 +1,4 @@
-/* $Id: fax2tiff.c,v 1.19 2006/04/20 12:36:23 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler

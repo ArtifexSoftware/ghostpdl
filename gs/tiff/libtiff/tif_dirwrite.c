@@ -1,4 +1,4 @@
-/* $Id: tif_dirwrite.c,v 1.37.2.6 2009-10-31 21:51:08 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

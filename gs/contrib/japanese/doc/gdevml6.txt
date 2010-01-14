@@ -3,7 +3,7 @@
 
 					Mar. 16, 1998	N.Tagawa
 
-	$Id: README,v 1.1 1998/03/16 13:32:32 tagawa Exp $
+	$Id$
 
 
   このドライバは、沖データの MICROLINE620CL を ghostscript で使うため

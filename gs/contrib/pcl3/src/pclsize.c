@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pclsize.c,v 1.10 2001/08/18 17:41:49 Martin Rel $
+  File:     $Id$
   Contents: Maps between PCL Page Size codes und size information
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -14,7 +14,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: pclsize.c,v 1.10 2001/08/18 17:41:49 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gdevjbig2.c 6300 2005-12-28 19:56:24Z giles $ */
+/* $Id$ */
 /* JBIG2 encode filter test device */
 
 #include "gdevprn.h"

@@ -1,5 +1,5 @@
 #******************************************************************************
-# File:     @(#)$Id: reports.txt,v 2.13 2001/08/14 16:20:35 Martin Rel $
+# File:     @(#)$Id$
 # Contents: Hardware compatibility reports for pcl3
 # Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
 #           Germany. E-mail: Martin.Lottermoser@t-online.de.

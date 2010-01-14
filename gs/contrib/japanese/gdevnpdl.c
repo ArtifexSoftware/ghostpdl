@@ -28,7 +28,7 @@
  * 
  *  -- Osamu Watanabe <owatanab@ceres.dti.ne.jp>
  *
- * $Id: gdevnpdl.c,v 1.10 1998/09/28 16:20:04 watanabe Exp $
+ * $Id$
  *
  */
 

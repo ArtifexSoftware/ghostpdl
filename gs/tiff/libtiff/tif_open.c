@@ -1,4 +1,4 @@
-/* $Id: tif_open.c,v 1.33 2006/06/08 14:27:17 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

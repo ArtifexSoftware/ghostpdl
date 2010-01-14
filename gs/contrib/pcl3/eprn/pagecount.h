@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pagecount.h,v 1.3 2000/11/19 07:05:17 Martin Rel $
+  File:     $Id$
   Contents: Header for pagecount file functions
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany; e-mail: Martin.Lottermoser@t-online.de.
@@ -15,7 +15,7 @@
 #define _pagecount_h
 
 /* Configuration management identification */
-#pragma ident "@(#)$Id: pagecount.h,v 1.3 2000/11/19 07:05:17 Martin Rel $"
+#pragma ident "@(#)$Id$"
 
 /*****************************************************************************/
 

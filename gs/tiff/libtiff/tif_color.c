@@ -1,4 +1,4 @@
-/* $Id: tif_color.c,v 1.12 2006/02/09 15:42:20 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

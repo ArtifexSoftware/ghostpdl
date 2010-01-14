@@ -1,4 +1,4 @@
-/* $Id: tif_swab.c,v 1.4 2005/04/13 14:06:21 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

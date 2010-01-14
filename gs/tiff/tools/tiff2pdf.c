@@ -1,4 +1,4 @@
-/* $Id: tiff2pdf.c,v 1.37.2.7 2009-01-01 00:10:43 bfriesen Exp $
+/* $Id$
  *
  * tiff2pdf - converts a TIFF image to a PDF document
  *

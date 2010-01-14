@@ -35,7 +35,7 @@
 
 
 /***** From rcfg.c *****/
-/* $Id: RCFG.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
+/* $Id$ */
 
 
 /*--- forward declarations ---*/
@@ -410,7 +410,7 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 
 
 /***** From rsrc.c *****/
-/* $Id: RSRC.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
+/* $Id$ */
 
 
 typedef struct {
@@ -1425,7 +1425,7 @@ dviprt_printtokenerror(dviprt_cfg_i *pinfo,char *token,int len,int type)
 
 
 /***** From util.c *****/
-/* $Id: UTIL.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
+/* $Id$ */
 
 
 char *dviprt_integername[] = { CFG_INTEGER_NAME, NULL };
@@ -1568,7 +1568,7 @@ dviprt_printcfgwarning(dviprt_cfg_i *pinfo,char *msg,int len)
 
 
 /***** From print.c *****/
-/* $Id: PRINT.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
+/* $Id$ */
 
 
 /*--- forward declarations ---*/
@@ -2261,7 +2261,7 @@ dviprt_default_outputproc(uchar far *buf,long s,void *fp)
 
 
 /***** From encode.c *****/
-/* $Id: ENCODE.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
+/* $Id$ */
 
 
 #define DVIPRT_SUPPORT_FAX 1

@@ -1,6 +1,6 @@
 *PPD-Adobe: "4.3"
 *% ****************************************************************************
-*% File:     @(#)$Id: gs-pcl3-unspec.ppd,v 1.5 2001/03/29 14:50:08 Martin Rel $
+*% File:     @(#)$Id$
 *% Contents: PPD file for the ghostscript device "unspec" of the pcl3 driver
 *% Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
 *%           Germany; Martin.Lottermoser@t-online.de

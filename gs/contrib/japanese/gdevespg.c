@@ -17,7 +17,7 @@
    copies.
  */
 
-/*$Id: gdevespg.c $ */
+/*$Id$ */
 /* EPSON ESC/Page driver for Ghostscript */
 
 /*

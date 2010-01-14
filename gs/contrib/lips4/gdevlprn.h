@@ -17,7 +17,7 @@
    copies.
  */
 
-/*$Id: gdevlprn.h,v 1.4 2002/10/12 23:24:34 tillkamppeter Exp $ */
+/*$Id$ */
 /* Library for Laser Printer Driver */
 
 /*

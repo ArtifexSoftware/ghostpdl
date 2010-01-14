@@ -1,4 +1,4 @@
-/* $Id: tif_win32.c,v 1.21 2007/03/07 17:10:31 joris Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

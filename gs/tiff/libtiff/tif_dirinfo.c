@@ -1,4 +1,4 @@
-/* $Id: tif_dirinfo.c,v 1.65.2.7 2009-09-17 18:00:28 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

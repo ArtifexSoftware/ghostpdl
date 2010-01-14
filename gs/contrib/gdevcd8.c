@@ -28,7 +28,7 @@
    copyright notice and this notice be preserved on all copies.
  */
 
-/* 	$Id: gdevcd8.c,v 1.5 2002/07/30 18:53:21 easysw Exp $	 */
+/* 	$Id$	 */
 
 /*----------------------------------------------------------------
 

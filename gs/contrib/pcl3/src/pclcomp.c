@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pclcomp.c,v 1.11 2000/10/07 17:51:57 Martin Rel $
+  File:     $Id$
   Contents: Implementation of PCL compression routines
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -19,7 +19,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: pclcomp.c,v 1.11 2000/10/07 17:51:57 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

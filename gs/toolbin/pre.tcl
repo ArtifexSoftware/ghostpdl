@@ -242,7 +242,7 @@ foreach doc $manlist {
     # We must be careful not to include the string $,I,d,: in any pattern,
     # since CVS/RCS will substitute for it!
     if {![regexp {^\.\\" [$]Id: ([^ ]+) ([0-9.]+) ([0-9][0-9][0-9][0-9])/([0-9][0-9])/([0-9][0-9])} $idline skip file idrevision idyear idmonth idday]} {
-	message "In $doc, can't parse \$Id line: $idline"
+	message "In $doc, can't parse \$Id$idline"
 	continue
     }
     if {$file != [file tail $doc]} {

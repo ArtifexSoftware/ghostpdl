@@ -16,7 +16,7 @@
 
 */
 
-/* $Id: gdevopvp.c 728 2008-03-03 02:56:05Z sho-otani $ */
+/* $Id$ */
 /* gdevopvp.c  ver.1.00 rel.1.0     26 Nov 2004 */
 /* OpenPrinting Vector Printer Driver Glue Code */
 

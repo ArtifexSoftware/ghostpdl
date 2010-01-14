@@ -1,4 +1,4 @@
-/* $Id: t4.h,v 1.1.1.1 1999/07/27 21:50:27 mike Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

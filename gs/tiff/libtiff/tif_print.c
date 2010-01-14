@@ -1,4 +1,4 @@
-/* $Id: tif_print.c,v 1.36.2.2 2009-09-17 18:00:28 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

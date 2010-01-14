@@ -1,4 +1,4 @@
-/* $Id: tif_unix.c,v 1.12 2006/03/21 16:37:51 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

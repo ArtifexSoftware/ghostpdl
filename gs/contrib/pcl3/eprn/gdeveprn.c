@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: gdeveprn.c,v 1.25 2001/04/30 05:15:51 Martin Rel $
+  File:     $Id$
   Contents: Implementation of the abstract ghostscript device 'eprn':
             general functions and page layout
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
@@ -36,7 +36,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: gdeveprn.c,v 1.25 2001/04/30 05:15:51 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

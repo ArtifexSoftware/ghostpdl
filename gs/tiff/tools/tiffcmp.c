@@ -1,4 +1,4 @@
-/* $Id: tiffcmp.c,v 1.13 2006/06/08 11:52:27 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

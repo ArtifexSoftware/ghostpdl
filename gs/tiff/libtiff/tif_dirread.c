@@ -1,4 +1,4 @@
-/* $Id: tif_dirread.c,v 1.92.2.6 2009-10-29 20:04:32 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

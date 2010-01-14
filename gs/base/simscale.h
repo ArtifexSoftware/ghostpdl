@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: simscale.h 6651 2006-03-13 16:18:19Z raph $ */
+/* $Id$ */
 /* Definitions for image mask interpolation filter */
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 

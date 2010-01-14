@@ -1,4 +1,4 @@
-/* $Id: tiff.h,v 1.43 2006-10-05 15:20:40 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

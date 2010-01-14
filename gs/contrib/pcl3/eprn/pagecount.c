@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pagecount.c,v 1.6 2000/10/07 17:48:49 Martin Rel $
+  File:     $Id$
   Contents: Simple (page) count file facility on UNIX
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
 	    Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -14,7 +14,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: pagecount.c,v 1.6 2000/10/07 17:48:49 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

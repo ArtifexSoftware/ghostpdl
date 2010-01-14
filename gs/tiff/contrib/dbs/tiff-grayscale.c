@@ -1,4 +1,4 @@
-/* $Id: tiff-grayscale.c,v 1.4 2004/09/03 08:26:08 dron Exp $ */
+/* $Id$ */
 
 /*
  * tiff-grayscale.c -- create a Class G (grayscale) TIFF file

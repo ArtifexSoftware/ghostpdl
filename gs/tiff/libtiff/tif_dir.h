@@ -1,4 +1,4 @@
-/* $Id: tif_dir.h,v 1.30.2.1 2007/04/07 14:58:30 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

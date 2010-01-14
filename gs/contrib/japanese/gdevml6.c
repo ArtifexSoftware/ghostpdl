@@ -22,7 +22,7 @@ copies.  */
 /*
 	Mar. 14, 1998	N.Tagawa
 
-	$Id: gdevml6.c,v 1.4 2002/07/30 18:53:22 easysw Exp $
+	$Id$
 */
 
 #include "gdevprn.h"

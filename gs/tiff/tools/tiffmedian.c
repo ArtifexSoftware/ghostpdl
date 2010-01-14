@@ -1,4 +1,4 @@
-/* $Id: tiffmedian.c,v 1.8 2004/09/09 18:06:14 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Apply median cut on an image.

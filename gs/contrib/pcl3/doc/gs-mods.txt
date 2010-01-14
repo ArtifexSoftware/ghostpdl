@@ -1,5 +1,5 @@
 *******************************************************************************
-  File:     @(#)$Id: gs-mods.txt,v 2.3 2001/08/19 09:04:56 Martin Rel $
+  File:     @(#)$Id$
   Contents: Suggested changes to ghostscript's source code or configuration
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.

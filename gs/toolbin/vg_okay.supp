@@ -2,7 +2,7 @@
 #
 # This file supresses messages that are known not to be bugs.
 #
-# $Id: vg_okay.supp 7890 2007-05-02 19:56:24Z alexcher $
+# $Id$
 
 
 # Zlib examines the data past the end of the buffer by design

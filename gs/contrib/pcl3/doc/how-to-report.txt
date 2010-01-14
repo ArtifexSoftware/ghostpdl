@@ -1,5 +1,5 @@
 *******************************************************************************
-  File:     @(#)$Id: how-to-report.txt,v 1.13 2001/08/01 05:36:37 Martin Rel $
+  File:     @(#)$Id$
   Contents: How to report bugs and hardware compatibility for pcl3
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.

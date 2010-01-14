@@ -1,4 +1,4 @@
-/* $Id: tif_lzw.c,v 1.29.2.5 2009-06-22 04:57:31 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

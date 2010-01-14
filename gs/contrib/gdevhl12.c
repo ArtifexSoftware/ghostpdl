@@ -15,7 +15,7 @@
    (Legalese borrowed from the Mingw32 runtime libraries.)
  */
 
-/*$Id: gdevhl12.c,v 1.6 2002/07/30 18:53:21 easysw Exp $ */
+/*$Id$ */
 /* gdevhl12.c - Brother HL-1250 driver for Ghostscript */
 
 /*

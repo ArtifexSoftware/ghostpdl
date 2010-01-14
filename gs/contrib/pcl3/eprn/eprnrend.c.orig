@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: eprnrend.c,v 1.15 2001/08/01 05:12:56 Martin Rel $
+  File:     $Id$
   Contents: Colour rendering functionality for the ghostscript device 'eprn'
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
@@ -47,7 +47,7 @@
 /* Configuration management identification */
 #ifndef lint
 static const char
-  cm_id[] = "@(#)$Id: eprnrend.c,v 1.15 2001/08/01 05:12:56 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

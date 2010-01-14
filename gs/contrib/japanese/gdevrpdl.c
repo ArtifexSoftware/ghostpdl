@@ -17,7 +17,7 @@
    copies.
  */
 
-/*$Id: gdevrpdl.c,v 1.1 2002/10/12 23:24:34 tillkamppeter Exp $ */
+/*$Id$ */
 /* Ricoh RPDL driver for Ghostscript */
 
 #include "gdevlprn.h"

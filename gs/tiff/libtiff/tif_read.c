@@ -1,4 +1,4 @@
-/* $Id: tif_read.c,v 1.16 2007/02/22 11:33:44 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pclscan.h,v 1.6 2000-10-22 11:05:34+02 Martin Rel $
+  File:     $Id$
   Contents: Header for PCL scanner
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany, e-mail: Martin.Lottermoser@t-online.de
@@ -16,9 +16,9 @@
 
 /* Configuration management identification */
 #ifdef __GNUC__
-#ident "@(#)$Id: pclscan.h,v 1.6 2000-10-22 11:05:34+02 Martin Rel $"
+#ident "@(#)$Id$"
 #else
-#pragma ident "@(#)$Id: pclscan.h,v 1.6 2000-10-22 11:05:34+02 Martin Rel $"
+#pragma ident "@(#)$Id$"
 #endif
 
 /*****************************************************************************/

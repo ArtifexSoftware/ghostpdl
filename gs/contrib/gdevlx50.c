@@ -56,7 +56,7 @@
   
 */
 
-/*$Id: gdevlx50.c,v 1.4 2002/07/30 18:53:21 easysw Exp $*/
+/*$Id$*/
 /*
  * Lexmark 5000 ink-jet printer driver for Ghostscript
  *
@@ -237,7 +237,7 @@
  *		     R C S   I D E N T   S T R I N G S			*
  ************************************************************************/
 const char Id[]		=
-	"$Id: gdevlx50.c,v 1.4 2002/07/30 18:53:21 easysw Exp $";
+	"$Id$";
 const char RCSFile[]	= "$RCSFile$";
 const char Revision[]	= "$Revision: 1.4 $";
 const char Author[]	=

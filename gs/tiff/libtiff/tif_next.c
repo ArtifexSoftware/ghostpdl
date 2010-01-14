@@ -1,4 +1,4 @@
-/* $Id: tif_next.c,v 1.8 2006/10/12 15:00:49 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

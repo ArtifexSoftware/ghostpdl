@@ -1,6 +1,6 @@
 #!/bin/sh
 #******************************************************************************
-# File:     @(#)$Id: cups-pcl3,v 2.5 2001/05/18 14:58:24 Martin Rel $
+# File:     @(#)$Id$
 # Contents: CUPS filter converting application/vnd.cups-postscript to PCL-3
 #           using ghostscript with the pcl3 driver
 # Call:     cups-pcl3 <CUPS filter arguments>

@@ -10,7 +10,7 @@
 # Errors, detected in the system calls or CRTL are not suppressed
 # because this cannot be done in the platform-independent way.
 #
-# $Id: vg_bugs.supp 7890 2007-05-02 19:56:24Z alexcher $
+# $Id$
 
 # Type 1 to Type 2 conversion issues
 # pdfwrite - Bug687846.ps 401-01.ps

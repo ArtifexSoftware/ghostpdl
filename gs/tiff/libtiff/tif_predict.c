@@ -1,4 +1,4 @@
-/* $Id: tif_predict.c,v 1.11.2.3 2009-01-23 15:57:18 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

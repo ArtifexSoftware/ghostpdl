@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.16.2.1 2007/07/13 13:40:12 dron Exp $
+# $Id$
 #
 # Tag Image File Format (TIFF) Software
 #

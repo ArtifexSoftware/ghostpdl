@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pcl3opts.c,v 1.17 2001/05/31 15:19:16 Martin Rel $
+  File:     $Id$
   Contents: Program to convert information in PCL-3+ files into options to be
 	    used for the ghostscript device "pcl3" in order to produce a
 	    file using a similar configuration
@@ -16,7 +16,7 @@
 /* Configuration management identification */
 #ifndef lint
 static char
-  cm_id[] = "@(#)$Id: pcl3opts.c,v 1.17 2001/05/31 15:19:16 Martin Rel $";
+  cm_id[] = "@(#)$Id$";
 #endif
 
 /*****************************************************************************/

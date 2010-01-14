@@ -1,5 +1,5 @@
 /******************************************************************************
-  File:     $Id: pclsize.h,v 1.7 2000/11/19 07:05:17 Martin Rel $
+  File:     $Id$
   Contents: Header file for maps between PCL Page Size codes and size
 	    information
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
@@ -16,7 +16,7 @@
 #define _pclsize_h
 
 /* Configuration management identification */
-#pragma ident "@(#)$Id: pclsize.h,v 1.7 2000/11/19 07:05:17 Martin Rel $"
+#pragma ident "@(#)$Id$"
 
 /*****************************************************************************/
 

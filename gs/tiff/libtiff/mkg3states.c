@@ -1,4 +1,4 @@
-/* "$Id: mkg3states.c,v 1.10 2007/02/22 11:27:17 dron Exp $ */
+/* "$Id$ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler

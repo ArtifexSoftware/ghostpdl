@@ -1,4 +1,4 @@
-/* $Id: tif_compress.c,v 1.13 2007/02/24 15:03:50 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

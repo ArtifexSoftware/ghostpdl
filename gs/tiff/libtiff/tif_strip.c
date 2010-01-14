@@ -1,4 +1,4 @@
-/* $Id: tif_strip.c,v 1.19 2006/03/25 18:04:35 joris Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler

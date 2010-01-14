@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id: gdevmd2k.c,v 1.4 2002/07/12 20:46:29 tillkamppeter Exp $*/
+/*$Id$*/
 /* ALPS MD series printer driver for Ghostscript 5.xx */
 /*
  *  1999-04-18  Ver. 0.1   Masakazu Higaki <higamasa@dd.mbn.or.jp>

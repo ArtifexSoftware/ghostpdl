@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: addtiffo.c,v 1.6 2005/12/16 05:59:55 fwarmerdam Exp $
+ * $Id$
  *
  * Project:  GeoTIFF Overview Builder
  * Purpose:  Mainline for building overviews in a TIFF file.

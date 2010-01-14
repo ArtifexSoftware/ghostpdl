@@ -1,4 +1,4 @@
-/* $Id: gif2tiff.c,v 1.8 2004/09/02 14:36:33 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler

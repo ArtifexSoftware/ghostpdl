@@ -1,4 +1,4 @@
-/* $Id: tiff2bw.c,v 1.12 2006/01/11 17:03:43 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

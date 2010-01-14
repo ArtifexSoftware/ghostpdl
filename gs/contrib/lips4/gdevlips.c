@@ -18,7 +18,7 @@
    copies.
  */
 
-/*$Id: gdevlips.c,v 1.3 2002/07/20 21:03:21 tillkamppeter Exp $ */
+/*$Id$ */
 /* Common Utility for LIPS driver */
 
 #include "gx.h"

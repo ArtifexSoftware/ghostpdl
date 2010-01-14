@@ -1,6 +1,6 @@
 #!/bin/sh
 #******************************************************************************
-# File:     @(#)$Id: catppd,v 1.2 2001/03/16 07:57:12 Martin Rel $
+# File:     @(#)$Id$
 # Contents: Primitive *Include resolver for PPD files
 # Call:     catppd <top-level file> <target directory or file>
 # Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,

@@ -21,7 +21,7 @@
   does not depend on any other GNU software.
 */
 /*
- * $Id: gdevlx7.c,v 1.5 2002/08/03 03:08:26 tillkamppeter Exp $
+ * $Id$
  * Lexmark 7000 ink-jet  "GDI" printer driver
  *   * just started...
  * 

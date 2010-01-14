@@ -1,4 +1,4 @@
-/* $Id: tif_zip.c,v 1.11.2.3 2007/11/22 21:24:51 fwarmerdam Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1995-1997 Sam Leffler

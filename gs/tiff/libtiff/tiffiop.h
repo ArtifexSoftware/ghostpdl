@@ -1,4 +1,4 @@
-/* $Id: tiffiop.h,v 1.51.2.1 2009-01-06 19:08:09 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

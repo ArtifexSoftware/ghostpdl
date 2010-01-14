@@ -1,4 +1,4 @@
-/* $Id: ras2tiff.c,v 1.15 2006/04/20 12:36:23 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

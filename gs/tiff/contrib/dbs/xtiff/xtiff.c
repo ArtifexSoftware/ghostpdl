@@ -1,5 +1,5 @@
 /*
- * $Id: xtiff.c,v 1.2 2006/10/13 10:16:22 dron Exp $
+ * $Id$
  *
  * xtiff - view a TIFF file in an X window
  *

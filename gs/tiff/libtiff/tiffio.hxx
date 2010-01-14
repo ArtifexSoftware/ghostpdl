@@ -1,4 +1,4 @@
-/* $Id: tiffio.hxx,v 1.1 2004/11/21 16:12:08 dron Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler

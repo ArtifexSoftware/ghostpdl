@@ -18,7 +18,7 @@
    copies.
  */
 
-/*$Id: gdevl4v.c $ */
+/*$Id$ */
 /* Vector Version of LIPS driver */
 
 /*

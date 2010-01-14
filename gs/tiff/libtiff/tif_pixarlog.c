@@ -1,4 +1,4 @@
-/* $Id: tif_pixarlog.c,v 1.15.2.3 2009-01-01 00:10:43 bfriesen Exp $ */
+/* $Id$ */
 
 /*
  * Copyright (c) 1996-1997 Sam Leffler

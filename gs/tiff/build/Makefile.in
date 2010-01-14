@@ -15,7 +15,7 @@
 
 @SET_MAKE@
 
-# $Id: Makefile.am,v 1.1 2007/02/24 15:03:49 dron Exp $
+# $Id$
 #
 # Tag Image File Format (TIFF) Software
 #

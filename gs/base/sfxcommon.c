@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: sfxcommon.c 8250 2007-09-25 13:31:24Z giles $ */
+/* $Id$ */
 /* Common routines for stdio and fd file stream implementations. */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
