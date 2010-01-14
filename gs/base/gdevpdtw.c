@@ -521,7 +521,7 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     if (code < 0)
 	return code;
 
-    if (map_id && pdf_font_descriptor_embedding(pdfont->FontDescriptor) {
+    if (map_id && pdf_font_descriptor_embedding(pdfont->FontDescriptor)) {
 	pdf_data_writer_t writer;
 	int i;
 
