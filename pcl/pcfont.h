@@ -27,9 +27,9 @@
 void pcl_decache_font(pcl_state_t * pcs, int set);
 
 /*
- * Recompute the font if necessary. This is exported for resetting HMI.
+ * Recompute the font if necessary.
  */
-int pcl_recompute_font(pcl_state_t * pcs);
+int pcl_recompute_font(pcl_state_t * pcs, bool internal_only);
 
 /*
  * Do any underlining just before a break in motion (vertical motion or

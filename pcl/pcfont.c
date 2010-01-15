@@ -85,9 +85,9 @@ pcl_set_font(pcl_state_t *pcs, pcl_font_selection_t *pfs)
 /* Recompute the current font from the descriptive parameters. */
 /* This is exported for resetting HMI. */
 int
-pcl_recompute_font(pcl_state_t *pcs)
+pcl_recompute_font(pcl_state_t *pcs, bool internal_only)
 {	pcl_font_selection_t *pfs = &pcs->font_selection[pcs->font_selected];
-	int code = pcl_reselect_font(pfs, pcs);
+        int code = pcl_reselect_font(pfs, pcs, internal_only);
 
 	if ( code < 0 )
 	  return code;
@@ -315,7 +315,7 @@ pcl_select_default_font(pcl_args_t *pargs, pcl_state_t *pcs, int set)
     pcs->font_selection[set].params.typeface_family = 3;	/* courier */
     pcs->font_selection[set].font = 0;			/* not looked up yet */
     pcl_decache_font(pcs, set);
-    return e_Unimplemented;
+    return 0;
 }
 static int /* ESC ( 3 @ */
 pcl_select_default_font_primary(pcl_args_t *pargs, pcl_state_t *pcs)

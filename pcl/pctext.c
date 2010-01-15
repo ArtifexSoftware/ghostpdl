@@ -615,7 +615,7 @@ pcl_text(
     if (pcs->personality == rtl)
 	return 0;
     /* set up the current font and HMI */
-    if ((pcs->font == 0) && ((code = pcl_recompute_font(pcs)) < 0))
+    if ((pcs->font == 0) && ((code = pcl_recompute_font(pcs, false)) < 0))
         return code;
 
     /* set up the graphic state */

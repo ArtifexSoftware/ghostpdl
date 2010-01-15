@@ -239,7 +239,7 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 	   )
 	  hpgl_call(hpgl_select_stick_font(pgls));
 	else
-	  { int code = pcl_reselect_font(pfs, pgls);
+         { int code = pcl_reselect_font(pfs, pgls, false);
 
 	    if ( code < 0 )
 	      return code;

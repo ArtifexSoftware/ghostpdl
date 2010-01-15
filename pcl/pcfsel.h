@@ -22,7 +22,7 @@
 
 /* Recompute the font from the parameters if necessary. */
 /* This is used by both PCL and HP-GL/2. */
-int pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs);
+int pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intenal_only);
 
 /*
  * Select a font by ID, updating the selection parameters.  Return 0

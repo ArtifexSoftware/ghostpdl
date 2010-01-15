@@ -145,8 +145,10 @@ check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
     gv = pl_complement_to_vocab(fp->character_complement);
     *mapp = pcl_find_symbol_map(pcs, id, gv);
     if ( *mapp == 0 ) {
-	/* Default to Roman 8: 277 0x115 not the default symbol set!
-	 * Basically roman8
+	/* 
+         * Interestingly, if we look up a symbol set that does not
+         * exist the default symbol set is replaced with roman-8.
+         * This is certainly a bug in HP printers.
 	 */
 	id[0] = 0x01;
 	id[1] = 0x15;
@@ -339,7 +341,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 /* Recompute the current font from the descriptive parameters. */
 /* This is used by both PCL and HP-GL/2. */
 int
-pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
+pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool internal_only)
 {	if ( pfs->font == 0 )
 	  { pl_dict_enum_t dictp;
 	    gs_const_string key;
@@ -393,6 +395,9 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 	    while ( pl_dict_enum_next(&dictp, &key, &value) )
 	      { pl_font_t *fp = (pl_font_t *)value;
 		match_score_t match;
+                if ((internal_only) && fp->storage != pcds_internal)
+                    continue;
+
 		score_match(pcs, pfs, fp, &mapp, match);
 #ifdef DEBUG
                 if ( gs_debug_c('=') ) {
