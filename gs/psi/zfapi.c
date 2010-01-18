@@ -2026,7 +2026,7 @@ retry_oversampling:
     penum_s->fapi_glyph_shift.x = penum_s->fapi_glyph_shift.y = 0;
     if (sbw_state == SBW_FROM_RENDERER) {
 	sbw[2] = metrics.escapement / em_scale_x;
-	sbw[3] = metrics.v_escapement / em_scale_x;
+	sbw[3] = metrics.v_escapement / em_scale_y;
 	if (pbfont->FontType == 2) {
 	    gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
 
