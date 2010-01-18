@@ -394,28 +394,38 @@ static void write_private_dict(FAPI_font* a_fapi_font,WRF_output* a_output,unsig
 	 * on its value (because of number representation).
 	 */
 	if (count) {
-	    int n, n1 = a_output->m_count - initial + 2; /* One for the operator, one for the first try at the data representation */
+	    unsigned int n = 1, n1 = a_output->m_count - initial + 2; /* One for the operator, one for the first try at the data representation */
 
-	    /* We start by assuming one byte is sufficient for the data (less than 107 bytes)
-	     * We run round the loop checking to see if the data is OK to be represented in that many bytes, 
-	     * if it is we stop, otherwise we add the required amount for the representation, and test again.
-	     */
 	    do {
-		n = n1;
-		if (n >= -107 && n <= 107)
-		    n1 = n;
-		else 
-		    if (n >= -32768 && n <= 32767) {   
-			if (n >= 108 && n <= 1131)
-			    n1 = n + 1;
-			else if (n >= -1131 && n <= -108)
-			    n1 = n + 1;
-			else
-			    n1 = n + 2;
-		    } else
-			n1 = n + 3;
-	    } while (n1 != n);
-	    write_type2_int(a_output, n);
+		n1 = a_output->m_count - initial + 1 + n;
+		switch (n) {
+		    case 1:
+			if (n1 >= -107 && n <= 107) {
+			    write_type2_int(a_output, n1);
+			    n = 5;
+			}
+			break;
+		    case 2:
+			if ((n1 >= 108 && n <= 1131) || (n1 >= -1131 && n1 <= -108)) {
+			    write_type2_int(a_output, n1);
+			    n = 5;
+			}
+			break;
+		    case 3:
+			if (n1 >= -32768 && n <= 32767) {
+			    write_type2_int(a_output, n1);
+			    n = 5;
+			}
+			break;
+		    case 4:
+			break;
+		    case 5:
+			write_type2_int(a_output, n1);
+			break;
+		}
+		n++;
+	    } while (n < 5);
+
 	    WRF_wbyte(a_output,19);
 	}
 
