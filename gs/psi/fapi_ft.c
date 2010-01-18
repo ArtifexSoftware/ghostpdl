@@ -338,6 +338,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	a_metrics->bbox_x1 = a_metrics->bbox_x0 + ft_face->glyph->metrics.width;
 	a_metrics->bbox_y1 = a_metrics->bbox_y0 + ft_face->glyph->metrics.height;
 	a_metrics->escapement = ft_face->glyph->metrics.horiAdvance;
+	a_metrics->v_escapement = ft_face->glyph->metrics.vertAdvance;
 	a_metrics->em_x = ft_face->units_per_EM;
 	a_metrics->em_y = ft_face->units_per_EM;
     }

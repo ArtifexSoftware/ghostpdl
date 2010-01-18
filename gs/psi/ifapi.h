@@ -159,6 +159,7 @@ typedef struct FAPI_font_scale_s {
 typedef struct FAPI_metrics_s {
     int bbox_x0, bbox_y0, bbox_x1, bbox_y1; /* design units */
     int escapement; /* design units */
+    int v_escapement; /* design units */
     int em_x, em_y; /* design units */
 } FAPI_metrics;
 
