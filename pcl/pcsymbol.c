@@ -28,6 +28,27 @@ pcl_symbol_set_id_code(pcl_args_t *pargs, pcl_state_t *pcs)
 	return 0;
 }
 
+#ifdef DEBUG
+static void
+dump_dl_symbol_set(pl_symbol_map_t *psm)
+{
+    dprintf6("header size:%d id:%d format:%s type:%d first code:%d last code:%d\n",
+             pl_get_uint16(psm->header_size),
+             pl_get_uint16(psm->id),
+             (psm->format == 1 ? "MSL" : (psm->format == 3 ? "Unicode" : "Unknown")),
+             psm->type,
+             pl_get_uint16(psm->first_code),
+             pl_get_uint16(psm->last_code));
+    {
+        int i;
+        int num_codes = pl_get_uint16(psm->last_code) - pl_get_uint16(psm->first_code) + 1;
+        for (i = 0; i < num_codes; i++) {
+            dprintf2("index=%d, code:%d\n", i, psm->codes[i]);
+        }
+    }
+}
+#endif
+
 static int /* ESC ( f <count> W */
 pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint count = uint_arg(pargs);
@@ -85,6 +106,11 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 	      pl_get_uint16((byte *)psm + psm_header_size + i * 2);
 	}
 #undef psm_header_size
+
+#ifdef DEBUG
+        if ( gs_debug_c('=') )
+            dump_dl_symbol_set(psm);
+#endif
 
 	/* Symbol set may already exist; if so, we may be replacing one of
 	 * its existing maps or adding one for a new glyph vocabulary. */

@@ -47,7 +47,7 @@ typedef enum {
 typedef	int match_score_t[score_limit];
 
 #ifdef DEBUG
-
+#include "plvalue.h"
 static const char * const score_name[] = {
     "symbol",
     "spacing",
@@ -114,11 +114,23 @@ dprint_font_t(const pl_font_t *pfont)
 }
 
 static void
-dprintf_font_scoring(const char *type, const pl_font_t *pfont, match_score_t score)
+dprint_font_map(const pl_symbol_map_t *pmap)
+{
+    if (pmap != 0)
+        dprintf3("selected symbol set id:%d type:%d format:%s\n", pl_get_uint16(pmap->id),
+                 pmap->type, (pmap->format == 1 ? "MSL" : "Unicode"));
+    else
+        dprintf("selected symbol set NULL\n");
+
+}
+
+static void
+dprintf_font_scoring(const char *type, const pl_font_t *pfont, pl_symbol_map_t *pmap, match_score_t score)
 {
     int i;
     dprintf1("%s: ", type);
     dprint_font_t(pfont);
+    dprint_font_map(pmap);
     dputs("   score:");
     for ( i = 0; i < score_limit; ++i )
         dprintf2(" %s: %d", score_name[i], score[i]);
@@ -333,7 +345,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 
 #ifdef DEBUG
 	if ( gs_debug_c('=') )
-            dprintf_font_scoring("candidate", fp, score);
+            dprintf_font_scoring("candidate", fp, *mapp, score);
 #endif
 
 }
@@ -402,7 +414,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
 #ifdef DEBUG
                 if ( gs_debug_c('=') ) {
                     if (best_match[0] != -1) /* skip sentinel */
-                        dprintf_font_scoring("best", best_font, best_match);
+                        dprintf_font_scoring("best", best_font, mapp, best_match);
                 }
 #endif
 		for (i=(score_index_t)0; i<score_limit; i++)
@@ -416,7 +428,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
 			      sizeof(match));
 #ifdef DEBUG
                           if ( gs_debug_c('=') ) {
-                              dprintf_font_scoring("usurper", fp, best_match);
+                              dprintf_font_scoring("usurper", fp, mapp, best_match);
                               dprintf1("   better %s***)\n", score_name[i]);
 
                           }
@@ -430,7 +442,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
                 return -1;	/* no fonts */
 #ifdef DEBUG
             if ( gs_debug_c('=') ) {
-                dprintf_font_scoring("champion", best_font, best_match);
+                dprintf_font_scoring("champion", best_font, mapp, best_match);
             }
 #endif
 
