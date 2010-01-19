@@ -769,12 +769,33 @@ gx_default_fill_triangle(gx_device * dev,
 int
 gx_default_draw_thin_line(gx_device * dev,
 			  fixed fx0, fixed fy0, fixed fx1, fixed fy1,
-		  const gx_device_color * pdevc, gs_logical_operation_t lop)
+		    const gx_device_color * pdevc, gs_logical_operation_t lop,
+			  fixed adjustx, fixed adjusty)
 {
     int ix, iy, itox, itoy;
     fixed tf;
+    int epsilon;
     
     return_if_interrupt(dev->memory);
+    
+    /* This function was updated in revision 10391 to fix problems with
+     * mispositioned thin lines. This introduced a regression (see bug
+     * 691030). The code was then reworked to behave in what we believe is
+     * the correct manner, but this causes unacceptable problems with PCL
+     * output. While the current PCL work is underway, we have therefore
+     * amended this code to take note of the fill adjust values; if non-
+     * zero (i.e. postscript) we do "the correct thing". If zero, we do
+     * what we used to.
+     *
+     * The one case where this doesn't work is in the case where our PCL
+     * implementation thickens lines slightly to try and approximate HP
+     * printer behaviour. Here we do use a non-zero fill_adjust and hence
+     * have differences; tests show that these are acceptable though.
+     *
+     * It is hoped that this difference in behaviour will be short lived.
+     */
+    
+    epsilon = ((adjustx | adjusty) == 0 ? fixed_epsilon : 0);
     
     {
 	fixed h = fy1 - fy0;
@@ -820,8 +841,8 @@ gx_default_draw_thin_line(gx_device * dev,
                 }
 	    }
 	    /* Can we treat it as a vertical rectangle? */
-            ix   = fixed2int_var(fx0-fixed_epsilon);
-            itox = fixed2int_var(fx1-fixed_epsilon);
+            ix   = fixed2int_var(fx0-epsilon);
+            itox = fixed2int_var(fx1-epsilon);
             if (itox == ix) {
                 int sy, sh;
                 /* Figure out the start/height, allowing for our "covers
@@ -837,8 +858,10 @@ gx_default_draw_thin_line(gx_device * dev,
                 return gx_fill_rectangle_device_rop(ix, iy, 1, itoy,
                                                     pdevc, dev, lop);
             }
-	    right.start.x = (left.start.x = fx0 - fixed_half) + fixed_1;
-	    right.end.x = (left.end.x = fx1 - fixed_half) + fixed_1;
+	    left.start.x = fx0 - fixed_half + fixed_epsilon - epsilon;
+	    right.start.x = left.start.x + fixed_1;
+	    left.end.x = fx1 - fixed_half + fixed_epsilon - epsilon;
+	    right.end.x = left.end.x + fixed_1;
 	    left.start.y = right.start.y = fy0;
 	    left.end.y = right.end.y = fy1;
 	    swap_axes = false;
@@ -879,8 +902,8 @@ gx_default_draw_thin_line(gx_device * dev,
                 }
 	    }
             /* Can we treat this as a horizontal rectangle? */
-            iy   = fixed2int_var(fy0-fixed_epsilon);
-            itoy = fixed2int_var(fy1-fixed_epsilon);
+            iy   = fixed2int_var(fy0 - epsilon);
+            itoy = fixed2int_var(fy1 - epsilon);
             if (itoy == iy) {
                 /* Figure out the start/width, allowing for our "covers
                 * centre of pixel" rule. */
@@ -895,8 +918,10 @@ gx_default_draw_thin_line(gx_device * dev,
                 return gx_fill_rectangle_device_rop(ix, iy, itox, 1,
                                                     pdevc, dev, lop);
             }
-	    right.start.x = (left.start.x = fy0 - fixed_half) + fixed_1;
-	    right.end.x = (left.end.x = fy1 - fixed_half) + fixed_1;
+	    left.start.x = fy0 - fixed_half + fixed_epsilon - epsilon;
+	    right.start.x = left.start.x + fixed_1;
+	    left.end.x = fy1 - fixed_half + fixed_epsilon - epsilon;
+	    right.end.x = left.end.x + fixed_1;
 	    left.start.y = right.start.y = fx0;
 	    left.end.y = right.end.y = fx1;
 	    swap_axes = true;

@@ -241,7 +241,8 @@ static int
 trace_draw_thin_line(gx_device * dev,
 		     fixed fx0, fixed fy0, fixed fx1, fixed fy1,
 		     const gx_drawing_color * pdcolor,
-		     gs_logical_operation_t lop)
+		     gs_logical_operation_t lop,
+		     fixed adjustx, fixed adjusty)
 {
     dprintf4("draw_thin_line((%g,%g), (%g,%g)",
 	     fixed2float(fx0), fixed2float(fy0), fixed2float(fx1),

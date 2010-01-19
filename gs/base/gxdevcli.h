@@ -1021,10 +1021,16 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_fill_triangle(proc)\
   dev_t_proc_fill_triangle(proc, gx_device)
 
+		/* adjustx and adjusty were added in 8.71 to get around a
+		 * problem with PCL (Bug 691030). In the fullness of time
+		 * hopefully PCL can be fixed to not need them and they can
+		 * be removed again. */
+
 #define dev_t_proc_draw_thin_line(proc, dev_t)\
   int proc(dev_t *dev,\
     fixed fx0, fixed fy0, fixed fx1, fixed fy1,\
-    const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
+    const gx_drawing_color *pdcolor, gs_logical_operation_t lop,\
+    fixed adjustx, fixed adjusty)
 #define dev_proc_draw_thin_line(proc)\
   dev_t_proc_draw_thin_line(proc, gx_device)
 

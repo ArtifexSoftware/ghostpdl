@@ -484,7 +484,8 @@ gx_forward_fill_triangle(gx_device * dev,
 int
 gx_forward_draw_thin_line(gx_device * dev,
 			  fixed fx0, fixed fy0, fixed fx1, fixed fy1,
-	       const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
+	       const gx_drawing_color * pdcolor, gs_logical_operation_t lop,
+			  fixed adjustx, fixed adjusty)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
@@ -492,7 +493,7 @@ gx_forward_draw_thin_line(gx_device * dev,
 	(tdev == 0 ? (tdev = dev, gx_default_draw_thin_line) :
 	 dev_proc(tdev, draw_thin_line));
 
-    return proc(tdev, fx0, fy0, fx1, fy1, pdcolor, lop);
+    return proc(tdev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
 }
 
 int
@@ -1094,7 +1095,8 @@ static int
 null_draw_thin_line(gx_device * dev,
 		    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
 		    const gx_drawing_color * pdcolor,
-		    gs_logical_operation_t lop)
+		    gs_logical_operation_t lop,
+		    fixed adjustx, fixed adjusty)
 {
     return 0;
 }
