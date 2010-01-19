@@ -44,9 +44,9 @@ const font_resident_t resident_table[] = {
 #define cc_alphabetic\
 	  { C(0), C(0), C(0), C(0), C(0xff), C(0xc0), C(0), C(plgv_Unicode) }
 #define cc_symbol\
-	  { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_MSL) }
+	  { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_Unicode) }
 #define cc_dingbats\
-	  { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_MSL) }
+	  { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_Unicode) }
     /*
      * Per TRM 23-87, PCL5 printers are supposed to have Univers
      * and CG Times fonts.  Substitute Arial for Univers and
@@ -635,26 +635,26 @@ const font_resident_t resident_table[] = {
 
     /************** NB SEMI-WRONG the artifex lineprinter is unbound ****************/
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 82},
-     cc_alphabetic, plft_Unicode},
+     {14, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 82},
+     cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','6','N'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 88}, cc_alphabetic, plft_Unicode},
+     {206, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 88}, cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','9','N'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 89}, cc_alphabetic, plft_Unicode},
+     {302, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 89}, cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','0','U'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 80}, cc_alphabetic, plft_Unicode},
+     {341, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 80}, cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','1','U'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 83}, cc_alphabetic, plft_Unicode},
+     {373, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 83}, cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ','1','2','U'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 84}, cc_alphabetic, plft_Unicode},
+     {405, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 84}, cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','1','U'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 85}, cc_alphabetic, plft_Unicode},
+     {53, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 85}, cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','2','N'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 86}, cc_alphabetic, plft_Unicode},
+     {78, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 86}, cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','5','N'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 87}, cc_alphabetic, plft_Unicode},
+     {174, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 87}, cc_alphabetic, plft_8bit_printable},
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','8','U'},
-     {0, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 81}, cc_alphabetic, plft_Unicode},
+     {277, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 81}, cc_alphabetic, plft_8bit_printable},
     {fontnames("","", ""), {'0','0'},
      {0, 0, {0, 0}, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 0}
 #undef C
