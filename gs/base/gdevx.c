@@ -890,8 +890,10 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		/*
 		 * We need to swap byte order and/or bit order.  What a
 		 * totally unnecessary nuisance!  For the moment, the only
-		 * cases we deal with are 16- and 24-bit images with padding
+		 * cases we deal with are 15-, 16- and 24-bit images with padding
 		 * and/or byte swapping.
+		 * If we ever need to support other color depths, consider rewriting
+		 * all these byte swaps with XGetPixel() .
 		 */
 		if (image->depth == 24) {
 		    int cx;
