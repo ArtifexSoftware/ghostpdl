@@ -1809,7 +1809,20 @@ idata:			data_size = 0;
 				    clipper_dev_open = true;
 				}
 				if (clipper_dev_open)
-				    ttdev = (gx_device *)&clipper_dev;
+				    ttdev = (gx_device *)&clipper_dev;                                
+                                /* Note that if we have transparency present, the clipper device may need to have
+                                   its color information updated to be synced up with the target device.
+                                   This can occur if we had fills of a path first with a transparency mask to get
+                                   an XPS opacity followed by a fill with a transparency group. This occurs in
+                                   the XPS gradient code */
+                                if (tdev->color_info.num_components != ttdev->color_info.num_components){
+                                    /* Reset the clipper device color information. Only worry about
+                                       the information that is used in the trap code */
+                                    ttdev->color_info.num_components = tdev->color_info.num_components;
+                                    ttdev->color_info.depth = tdev->color_info.depth;
+                                    memcpy(&(ttdev->color_info.comp_bits),&(tdev->color_info.comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+                                    memcpy(&(ttdev->color_info.comp_shift),&(tdev->color_info.comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+                                }
 				cmd_getw(left.start.x, cbp);
 				cmd_getw(left.start.y, cbp);
 				cmd_getw(left.end.x, cbp);

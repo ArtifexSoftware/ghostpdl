@@ -190,8 +190,6 @@ is_linear_color_applicable(const patch_fill_state_t *pfs)
 	return false;
     if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
 	return false;
-    if (pfs->pis->has_transparency == true)
-        return false; /* set in pdf14 dev if we are in a trans group */
     if (gx_get_cmap_procs(pfs->pis, pfs->dev)->is_halftoned(pfs->pis, pfs->dev))
 	return false;
     return true;
@@ -215,7 +213,7 @@ alloc_patch_fill_memory(patch_fill_state_t *pfs, gs_memory_t *memory, const gs_c
     if (pfs->unlinear || pcs == NULL)
 	pfs->pcic = NULL;
     else {
-	pfs->pcic = gs_color_index_cache_create(memory, pcs, pfs->dev, pfs->pis, true);
+	pfs->pcic = gs_color_index_cache_create(memory, pcs, pfs->dev, pfs->pis, true, pfs->trans_device);
 	if (pfs->pcic == NULL)
 	    return_error(gs_error_VMerror);
     }
@@ -904,7 +902,11 @@ dc2fc(const patch_fill_state_t *pfs, gx_color_index c,
 	    frac31 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
 {
     int j;
-    const gx_device_color_info *cinfo = &pfs->dev->color_info;
+    const gx_device_color_info *cinfo = &pfs->trans_device->color_info;
+    /* Note trans device is actually either the transparency parent
+       device if transparency is present or the target device.  Basically
+       the device from which we want to get the color information from
+       for this */
 
     for (j = 0; j < cinfo->num_components; j++) {
 	    int shift = cinfo->comp_shift[j];
@@ -2677,6 +2679,7 @@ gx_init_patch_fill_state_for_clist(gx_device *dev, patch_fill_state_t *pfs, gs_m
     pfs->color_stack = NULL; /* fixme */
     pfs->color_stack_limit = NULL; /* fixme */
     pfs->pcic = NULL; /* Will do someday. */
+    pfs->trans_device = NULL;
     return alloc_patch_fill_memory(pfs, memory, NULL);
 }
 

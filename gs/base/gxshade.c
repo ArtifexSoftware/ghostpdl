@@ -368,6 +368,12 @@ top:
 	pfs->cc_max_error[ci] =
 	    (ranges == 0 ? max_error :
 	     max_error * (ranges[ci].rmax - ranges[ci].rmin));
+    if (pis->has_transparency && pis->trans_device != NULL) {
+        pfs->trans_device = pis->trans_device;
+    } else {
+        pfs->trans_device = dev;
+    }
+
 }
 
 /* Fill one piece of a shading. */

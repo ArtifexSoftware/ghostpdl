@@ -25,7 +25,7 @@ typedef struct gs_color_index_cache_s gs_color_index_cache_t;
 #endif
 
 gs_color_index_cache_t *gs_color_index_cache_create(gs_memory_t *memory, 
-		const gs_color_space *direct_space, gx_device *dev, gs_imager_state *pis, bool need_frac);
+		const gs_color_space *direct_space, gx_device *dev, gs_imager_state *pis, bool need_frac, gx_device *trans_dev);
 void gs_color_index_cache_destroy(gs_color_index_cache_t *this);
 
 int gs_cached_color_index(gs_color_index_cache_t *this, const float *paint_values, gx_device_color *pdevc, frac31 *frac_values);

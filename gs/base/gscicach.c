@@ -38,6 +38,7 @@ struct gs_color_index_cache_s {
     const gs_color_space *direct_space;
     gs_imager_state *pis;
     gx_device *dev;
+    gx_device *trans_dev;
     int client_num_components;
     int device_num_components;
     gs_memory_t *memory;
@@ -55,15 +56,16 @@ struct gs_color_index_cache_s {
 
 
 
-gs_private_st_ptrs5(st_color_index_cache, gs_color_index_cache_t, "gs_color_index_cache_t",
+gs_private_st_ptrs6(st_color_index_cache, gs_color_index_cache_t, "gs_color_index_cache_t",
 		    gs_color_index_cache_elem_ptrs, gs_color_index_cache_reloc_ptrs,
-		    direct_space, memory, buf, paint_values, frac_values);
+		    direct_space, memory, buf, paint_values, frac_values, trans_dev);
 
 gs_color_index_cache_t *
-gs_color_index_cache_create(gs_memory_t *memory, const gs_color_space *direct_space, gx_device *dev, gs_imager_state *pis, bool need_frac)
+gs_color_index_cache_create(gs_memory_t *memory, const gs_color_space *direct_space, gx_device *dev, 
+                            gs_imager_state *pis, bool need_frac, gx_device *trans_dev)
 {
     int client_num_components = cs_num_components(direct_space);
-    int device_num_components = dev->color_info.num_components;
+    int device_num_components = trans_dev->color_info.num_components;
     gs_color_index_cache_elem_t *buf = ( gs_color_index_cache_elem_t *)gs_alloc_byte_array(memory, COLOR_INDEX_CACHE_SIZE, 
 		    sizeof(gs_color_index_cache_elem_t), "gs_color_index_cache_create");
     float *paint_values = (float *)gs_alloc_byte_array(memory, COLOR_INDEX_CACHE_SIZE * client_num_components, 
@@ -84,6 +86,7 @@ gs_color_index_cache_create(gs_memory_t *memory, const gs_color_space *direct_sp
     pcic->direct_space = direct_space;
     pcic->pis = pis;
     pcic->dev = dev;
+    pcic->trans_dev = trans_dev;
     pcic->device_num_components = device_num_components;
     pcic->client_num_components = client_num_components;
     pcic->memory = memory;
@@ -232,7 +235,7 @@ static inline void
 compute_frac_values(gs_color_index_cache_t *this, uint i)
 {
     gx_color_index c = this->buf[i].cindex;
-    const gx_device_color_info *cinfo = &this->dev->color_info;
+    const gx_device_color_info *cinfo = &this->trans_dev->color_info;
     int device_num_components = this->device_num_components;
     int j;
 
