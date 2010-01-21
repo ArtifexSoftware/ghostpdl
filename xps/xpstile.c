@@ -198,7 +198,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
     xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
     
-    // TODO(tor): check viewport and tiling to see if we can set it to TILE_NONE
+    /* TODO(tor): check viewport and tiling to see if we can set it to TILE_NONE */
 
     if (tile_mode != TILE_NONE)
     {
