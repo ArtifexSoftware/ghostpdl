@@ -115,7 +115,8 @@ xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index)
 void
 xps_free_font(xps_context_t *ctx, xps_font_t *font)
 {
-    if (font->font)
+    /* TODO: make sure we can do this without giving pdfwrite a headache */
+    if (0 && font->font)
     {
 	gs_font_finalize(font->font);
 	gs_free_object(ctx->memory, font->font, "font object");

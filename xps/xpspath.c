@@ -67,6 +67,8 @@ xps_update_bounds(xps_context_t *ctx, gs_rect *save)
 
     /* get bounds of current path (that is about to be clipped) */
     /* the coordinates of the path segments are already in device space (yay!) */
+    if (!ctx->pgs->path)
+    	return;
 
     seg = (segment*)ctx->pgs->path->first_subpath;
     if (seg)

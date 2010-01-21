@@ -65,6 +65,16 @@ svg:
 svg-clean:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean
 
+mupdf-debug:
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-debug
+
+mupdf:
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-product
+
+mupdf-clean:
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-clean
+
+
 ####  UFST LIBRARY DEPENDENCY RULES ####
 
 ufst:
@@ -142,4 +152,4 @@ all-debug: pcl-debug udebug ls-debug ls-udebug xps-debug
 all-clean: clean uclean ls-uclean ls-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
-.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-test pcl-install pcl-uninstall pcl-clean xps xps-debug svg svg-debug ls-clean ls-test ls-install ls-product ls-profile ls-udebug udebug ufst
+.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-test pcl-install pcl-uninstall pcl-clean xps xps-debug svg svg-debug ls-clean ls-test ls-install ls-product ls-profile ls-udebug udebug ufst mupdf

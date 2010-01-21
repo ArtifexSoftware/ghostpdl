@@ -123,15 +123,12 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
 {
     xps_free_part_data(ctx, part);
 
-    /* Nu-uh, can't free fonts because pdfwrite needs them alive */
-    if (part->font || part->icc)
-	return;
+    if (part->font)
+    	xps_free_font(ctx, part->font);
 
     if (part->name)
 	xps_free(ctx, part->name);
     part->name = NULL;
-
-    /* TODO: remove from context part list */
 
     xps_free_relations(ctx, part->relations);
     xps_free(ctx, part);

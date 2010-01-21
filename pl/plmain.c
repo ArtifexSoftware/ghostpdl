@@ -420,10 +420,10 @@ pl_main(
 		    code = pl_process_file(curr_instance, filename);
 		    if (code < 0) {
 			dprintf1("Warning interpreter exited with error code %d\n", code);
-			if (close_job(&universe, &inst) < 0) {
-			    dprintf("Unable to deinit PJL.\n");
-			    return -1;
-			}
+		    }
+		    if (close_job(&universe, &inst) < 0) {
+			dprintf("Unable to deinit PJL.\n");
+			return -1;
 		    }
 		    if_debug0('|', "exiting job and proceeding to next file\n");
 		    break; /* break out of the loop to process the next file */

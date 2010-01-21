@@ -18,6 +18,7 @@
 #include "ghostxps.h"
 
 #include "pltop.h"
+#include "plparse.h" /* for e_ExitLanguage */
 
 #include "gxdevice.h" /* so we can include gxht.h below */
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
@@ -114,6 +115,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->pgs = pgs;
     ctx->fontdir = NULL;
     ctx->file = NULL;
+    ctx->zip_count = 0;
     ctx->zip_table = NULL;
 
     /* TODO: load some builtin ICC profiles here */
@@ -251,9 +253,15 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
     int code;
 
     code = xps_process_data(ctx, pcursor);
-    if (code < 0)
+    if (code == 1)
+    {
+	code = xps_process_end_of_data(ctx);
+	if (code < 0)
+	    gs_catch(code, "cannot process xps data");
+	return e_ExitLanguage;
+    }
+    else if (code < 0)
 	gs_catch(code, "cannot process xps data");
-
     return code;
 }
 
@@ -330,11 +338,12 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
+    int i;
 
     if (gs_debug_c('|'))
-        xps_debug_parts(ctx);
+	xps_debug_parts(ctx);
     if (gs_debug_c('|'))
-        xps_debug_fixdocseq(ctx);
+	xps_debug_fixdocseq(ctx);
 
     /* Free XPS parsing stuff */
     {
@@ -345,6 +354,10 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
 	    xps_free_part(ctx, part);
 	    part = next;
 	}
+
+	for (i = 0; i < ctx->zip_count; i++)
+	    xps_free(ctx, ctx->zip_table[i].name);
+	xps_free(ctx, ctx->zip_table);
 
 	xps_hash_free(ctx, ctx->part_table);
 	ctx->part_table = NULL;
