@@ -319,7 +319,7 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 gs$(GS_VERSION)src.zip:
 	-rmdir /s /q gs$(GS_DOT_VERSION)
 	-del temp.zip
-	zip -r -X temp.zip LICENSE doc examples icclib ijs jasper jbig2dec jpeg lib libpng base psi Resource zlib -x ".svn/*" -x "*/.svn/*" -x "*/*/.svn/*" -x "*/*/*/.svn/*" -x "*/*/*/*/.svn/*" -x "*/*/*/*/*/.svn/*"
+	zip -r -X temp.zip LICENSE doc examples icclib ijs jasper jbig2dec jpeg lib libpng base psi Resource tiff zlib -x ".svn/*" -x "*/.svn/*" -x "*/*/.svn/*" -x "*/*/*/.svn/*" -x "*/*/*/*/.svn/*" -x "*/*/*/*/*/.svn/*"
 	mkdir gs$(GS_DOT_VERSION)
 	cd gs$(GS_DOT_VERSION)
 	unzip -a ../temp.zip
