@@ -999,6 +999,11 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
 
 	if (code < 0) 
 	    return code;
+
+	code = psw_open_printer(dev);
+
+	if (code < 0) 
+	    return code;
     }
     return 0;
 }
