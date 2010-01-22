@@ -82,7 +82,6 @@ pdl-clean:
 	$(RMN_) $(ECHOGS_XE)
 	$(RMN_) $(GENCONF_XE)
 	$(RMN_) $(TARGET_XE)$(XE)
-	$(RMN_) $(PLSRCDIR)/plver.h
 
 
 # Build the configuration file.

@@ -63,17 +63,17 @@ PJLVERSION="8.71 (unreleased snapshot)"
 PJL_VOLUME_0=/tmp/pjl0
 PJL_VOLUME_1=/tmp/pjl1
 
-plver_h=$(PLSRC)plver.h
+plver_h=$(PLOBJ)plver.h
 
-$(PLSRC)plver.h: $(PLSRC)pl.mak
-	$(GLGEN)echogs$(XE) -e .h -w $(PLSRC)plver -n -x 23 "define PJLVERSION"
-	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 $(PJLVERSION) -x 22
-	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJLBUILDDATE"
-	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 -d -x 22
-	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJL_VOLUME_0"
-	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 $(PJL_VOLUME_0) -x 22
-	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJL_VOLUME_1"
-	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 $(PJL_VOLUME_1) -x 22
+$(PLOBJ)plver.h: $(PLSRC)pl.mak
+	$(GLGEN)echogs$(XE) -e .h -w $(PLOBJ)plver -n -x 23 "define PJLVERSION"
+	$(GLGEN)echogs$(XE) -e .h -a $(PLOBJ)plver -s -x 22 $(PJLVERSION) -x 22
+	$(GLGEN)echogs$(XE) -e .h -a $(PLOBJ)plver -n -x 23 "define PJLBUILDDATE"
+	$(GLGEN)echogs$(XE) -e .h -a $(PLOBJ)plver -s -x 22 -d -x 22
+	$(GLGEN)echogs$(XE) -e .h -a $(PLOBJ)plver -n -x 23 "define PJL_VOLUME_0"
+	$(GLGEN)echogs$(XE) -e .h -a $(PLOBJ)plver -s -x 22 $(PJL_VOLUME_0) -x 22
+	$(GLGEN)echogs$(XE) -e .h -a $(PLOBJ)plver -n -x 23 "define PJL_VOLUME_1"
+	$(GLGEN)echogs$(XE) -e .h -a $(PLOBJ)plver -s -x 22 $(PJL_VOLUME_1) -x 22
 
 pjparse_h=$(PLSRC)pjparse.h
 pjtop_h=$(PLSRC)pjtop.h $(pltop_h)

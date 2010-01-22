@@ -635,10 +635,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pl\plver.h"
-				>
-			</File>
-			<File
 				RelativePath="..\pl\plvocab.c"
 				>
 			</File>
