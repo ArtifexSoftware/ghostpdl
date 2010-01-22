@@ -2703,7 +2703,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   int			color_set;	/* Were the color attrs set? */
   gdev_prn_space_params	sp;		/* Space parameter data */
   int			width,		/* New width of page */
-			height;		/* New height of page */
+                        height;		/* New height of page */
+  static int            width_old = 0,  /* Previous width */
+                        height_old = 0; /* Previous height */
   ppd_attr_t            *backside = NULL,
                         *backsiderequiresflippedmargins = NULL;
   float                 swap;
@@ -2807,17 +2809,16 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   size_set    = param_read_float_array(plist, ".MediaSize", &arrayval) == 0 ||
                 param_read_float_array(plist, "PageSize", &arrayval) == 0;
   margins_set = param_read_float_array(plist, "Margins", &arrayval) == 0;
+  color_set   = param_read_int(plist, "cupsColorSpace", &intval) == 0 ||
+                param_read_int(plist, "cupsBitsPerColor", &intval) == 0;
   /* We also recompute page size and margins if we simply get onto a new
      page without necessarily having a page size change in the PostScript
      code, as for some printers margins have to flipped on the back sides of
      the sheets (even pages) when printing duplex */
   if (cups->page != lastpage) {
     size_set = 1;
-    margins_set = 1;
     lastpage = cups->page;
   }
-  color_set   = param_read_int(plist, "cupsColorSpace", &intval) == 0 ||
-                param_read_int(plist, "cupsBitsPerColor", &intval) == 0;
 
   stringoption(MediaClass, "MediaClass")
   stringoption(MediaColor, "MediaColor")
@@ -2916,7 +2917,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   * Update margins/sizes as needed...
   */
 
-  if (size_set || margins_set)
+  if (size_set)
   {
    /*
     * Compute the page margins...
@@ -3212,7 +3213,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   * Reallocate memory if the size or color depth was changed...
   */
 
-  if (color_set || size_set || margins_set)
+  if (color_set || size_set)
   {
    /*
     * Make sure the page image is the correct size - current Ghostscript
@@ -3244,12 +3245,17 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
    /*
     * Don't reallocate memory unless the device has been opened...
+    * Also reallocate only if the size has actually changed...
     */
 
-    if (pdev->is_open)
+    if (pdev->is_open && (width != width_old || height != height_old))
     {
+
+      width_old = width;
+      height_old = height;
+
      /*
-      * Device is open, so reallocate...
+      * Device is open and size has changed, so reallocate...
       */
 
       dprintf4("DEBUG2: Reallocating memory, [%.0f %.0f] = %dx%d pixels...\n",
