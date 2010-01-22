@@ -2586,11 +2586,10 @@ const pl_symbol_map_t map_26U_unicode = {
 };
 
 /*****************************************
- * ITC Zapf Dingbats MS (DZ) MSL mapping *
- * NOTE: because this is for a bound font, the map will never be used.
+ * ITC Zapf Dingbats MS (DZ) Unicode mapping *
  *****************************************/
-static const pl_symbol_map_t map_14L_msl = {
-    map_header(14, 'L', plgv_MSL, 1, 0, 0, 0, 1, 0, 0, 0, 0, PLGV_NO_MAPPING),
+static const pl_symbol_map_t map_14L_unicode = {
+    map_header(14, 'L', plgv_Unicode, 2, 0, 0, 0, 1, 0, 0, 0, 0, PLGV_U2M_MAPPING),
     {
         /*00*/
         ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
@@ -2599,7 +2598,7 @@ static const pl_symbol_map_t map_14L_msl = {
         ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
         ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
         /*20*/
-        ffff, 0xf021, 0xf022, 0xf023, 0xf024, 0xf025, 0xf026, 0xf027,
+        0x0020, 0xf021, 0xf022, 0xf023, 0xf024, 0xf025, 0xf026, 0xf027,
         0xf028, 0xf029, 0xf02a, 0xf02b, 0xf02c, 0xf02d, 0xf02e, 0xf02f,
         /*30*/
         0xf030, 0xf031, 0xf032, 0xf033, 0xf034, 0xf035, 0xf036, 0xf037,
@@ -2615,15 +2614,15 @@ static const pl_symbol_map_t map_14L_msl = {
         0xf068, 0xf069, 0xf06a, 0xf06b, 0xf06c, 0xf06d, 0xf06e, 0xf06f,
         /*70*/
         0xf070, 0xf071, 0xf072, 0xf073, 0xf074, 0xf075, 0xf076, 0xf077,
-        0xf078, 0xf079, 0xf07a, 0xf07b, 0xf07c, 0xf07d, 0xf07e, ffff,
+        0xf078, 0xf079, 0xf07a, 0xf07b, 0xf07c, 0xf07d, 0xf07e, 0xf07f,
         /*80*/
         0xf080, 0xf081, 0xf082, 0xf083, 0xf084, 0xf085, 0xf086, 0xf087,
-        0xf088, 0xf089, 0xf08a, 0xf08b, 0xf08c, 0xf08d, ffff, ffff,
+        0xf088, 0xf089, 0xf08a, 0xf08b, 0xf08c, 0xf08d, 0xf08e, 0xf08f,
         /*90*/
-        ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
-        ffff, ffff, ffff, ffff, ffff, ffff, ffff, ffff,
+        0xf090, 0xf091, 0xf092, 0xf093, 0xf094, 0xf095, 0xf096, 0xf097,
+        0xf098, 0xf099, 0xf09a, 0xf09b, 0xf09c, 0xf09d, 0xf09e, 0xf09f,
         /*a0*/
-        ffff, 0xf0a1, 0xf0a2, 0xf0a3, 0xf0a4, 0xf0a5, 0xf0a6, 0xf0a7,
+        0xf0a0, 0xf0a1, 0xf0a2, 0xf0a3, 0xf0a4, 0xf0a5, 0xf0a6, 0xf0a7,
         0xf0a8, 0xf0a9, 0xf0aa, 0xf0ab, 0xf0ac, 0xf0ad, 0xf0ae, 0xf0af,
         /*b0*/
         0xf0b0, 0xf0b1, 0xf0b2, 0xf0b3, 0xf0b4, 0xf0b5, 0xf0b6, 0xf0b7,
@@ -2638,8 +2637,9 @@ static const pl_symbol_map_t map_14L_msl = {
         0xf0e0, 0xf0e1, 0xf0e2, 0xf0e3, 0xf0e4, 0xf0e5, 0xf0e6, 0xf0e7,
         0xf0e8, 0xf0e9, 0xf0ea, 0xf0eb, 0xf0ec, 0xf0ed, 0xf0ee, 0xf0ef,
         /*f0*/
-        ffff, 0xf0f1, 0xf0f2, 0xf0f3, 0xf0f4, 0xf0f5, 0xf0f6, 0xf0f7,
-        0xf0f8, 0xf0f9, 0xf0fa, 0xf0fb, 0xf0fc, 0xf0fd, 0xf0fe, ffff
+        0xf0f0, 0xf0f1, 0xf0f2, 0xf0f3, 0xf0f4, 0xf0f5, 0xf0f6, 0xf0f7,
+        0xf0f8, 0xf0f9, 0xf0fa, 0xf0fb, 0xf0fc, 0xf0fd, 0xf0fe, 0xf0ff,
+
     }
 };
 
@@ -2753,7 +2753,7 @@ const pl_symbol_map_t *pl_built_in_symbol_maps[] = {
     &map_9N_unicode,
     &map_4U_unicode,
     &map_26U_unicode,
-    &map_14L_msl,
+    &map_14L_unicode,
     0                 /* end marker */
 };
 
@@ -2801,7 +2801,7 @@ pl_map_symbol(const pl_symbol_map_t *psm,
                      chr, code, pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]));
         }
 #endif
-        return pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]);
+        code = pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]);
     } else if (!is_MSL && (code != 0xffff) &&
         (pl_symbol_map_vocabulary(psm) == plgv_MSL)) {
 #ifdef DEBUG
@@ -2810,7 +2810,7 @@ pl_map_symbol(const pl_symbol_map_t *psm,
                      chr, code, pl_map_MSL_to_Unicode(code, (psm->id[0] << 8) + psm->id[1]));
         }
 #endif
-        return pl_map_MSL_to_Unicode(code, (psm->id[0] << 8) + psm->id[1]);
+        code = pl_map_MSL_to_Unicode(code, (psm->id[0] << 8) + psm->id[1]);
     }
     return code;
 }
