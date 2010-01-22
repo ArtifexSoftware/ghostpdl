@@ -157,7 +157,10 @@ get_next_char(
     const byte *    pb = *ppb;
     int             len = *plen;
     pl_font_t *     plfont = pcs->font;
+    bool            substituting = false;
     gs_char         chr;
+    gs_char         mapped_chr; /* NB wrong type */
+
     if (len <= 0)
         return 2;
     *pis_space = false;
@@ -179,19 +182,26 @@ get_next_char(
 
     /* map the symbol. If it fails to map, quit now.  Unless we have a
        galley character */
-    chr = pl_map_symbol(pcs->map, chr,
-                        plfont->storage == pcds_internal,
-                        pl_complement_to_vocab(plfont->character_complement) == plgv_MSL, false);
-    *pchr = chr;
-    if (chr == 0xffff) {
+    mapped_chr = pl_map_symbol(pcs->map, chr,
+                               plfont->storage == pcds_internal,
+                               pl_complement_to_vocab(plfont->character_complement) == plgv_MSL, false);
+    *pchr = mapped_chr;
+    if (mapped_chr == 0xffff) {
         *pis_space = true;
+        return 0;
+    }
+    
+        /* NB we assume all internal fonts use unicode */
+    if (plfont->storage == pcds_internal && mapped_chr == 0x0020 && !substituting) {
+        *pis_space = true;
+        *pchr = 0xffff;
         return 0;
      }
 
     /* check if the character is in the font and get the character
        width at the same time */
     if ( *pis_space == false )
-        if ( pl_font_char_width(plfont, (void *)(pcs->pgs), chr, pwidth) == 0 )
+        if ( pl_font_char_width(plfont, (void *)(pcs->pgs), mapped_chr, pwidth) == 0 )
             return 0;
     /*
      * If we get to this point deem the character an undefined
