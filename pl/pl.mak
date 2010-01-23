@@ -230,7 +230,7 @@ $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(uconfig_h) $(AK)\
 	$(stdio__h) $(string__h) $(gserror_h)\
         $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
 	$(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
-	$(plftable_h) $(uconfig_h)
+	$(plftable_h) $(plvocab_h) $(uconfig_h)
 	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
 
 # artifex font loading module.
