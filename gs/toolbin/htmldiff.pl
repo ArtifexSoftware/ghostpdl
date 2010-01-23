@@ -61,6 +61,10 @@ $redir = " ";
 # Set the following to true if you want to use parallel dispatch of jobs
 $parallel = true;
 
+# If set, use iframes rather than copying the content of the frames into
+# the top html file.
+$iframes = false;
+
 # Finally, allow a user to override any of these by having their own
 # config file.
 #
@@ -71,7 +75,7 @@ $parallel = true;
 # The config file should contain perl commands to override any of the
 # above variables. Most probably just $fileadjust and $reference will
 # need to be set.
-do "~/.htmldiff/htmldiff.cfg";
+do $ENV{'HOME'}."/.htmldiff/htmldiff.cfg";
 do $ENV{'HOMEPATH'}.$ENV{'HOMEDRIVE'}."htmldiff.cfg";
 
 # END SETUP SECTION
@@ -80,6 +84,7 @@ do $ENV{'HOMEPATH'}.$ENV{'HOMEDRIVE'}."htmldiff.cfg";
 ########################################################################
 # EXTERNAL USES
 use Errno qw(EAGAIN);
+
 ########################################################################
 
 ########################################################################
@@ -97,55 +102,82 @@ sub getfilename {
     return $filename;
 }
 
+sub openiframe {
+    $framedir = sprintf("%05d",$framenum);
+    $outdir   = $basedir."/".$framedir;
+
+    if ($iframes)
+    {
+        print $html "<IFRAME src=\"".$framedir."/frame.html\" WIDTH=\"100%\" FRAMEBORDER=\"0\" id=\"iframe".$framedir."\" scrolling=\"off\"></IFRAME><BR>";
+    }
+
+    mkdir $outdir;
+    open($iframe, ">", $outdir."/frame.html");
+        
+    print $iframe "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE>";
+    print $iframe "<SCRIPT LANGUAGE=\"JavaScript\">";
+    print $iframe "function swap(n){";
+    print $iframe   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
+    print $iframe   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
+    print $iframe   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
+    print $iframe "}";
+    print $iframe "var undef;";
+    print $iframe "function findPosX(obj){";
+    print $iframe   "var curLeft = 0;";
+    print $iframe   "if (obj.offsetParent){";
+    print $iframe     "while(1) {";
+    print $iframe       "curLeft += obj.offsetLeft;";
+    print $iframe       "if (!obj.offsetParent)";
+    print $iframe         "break;";
+    print $iframe       "obj = obj.offsetParent;";
+    print $iframe     "}";
+    print $iframe   "} else if (obj.x)";
+    print $iframe     "curLeft += obj.x;";
+    print $iframe   "return curLeft;";
+    print $iframe "}";
+    print $iframe "function findPosY(obj){";
+    print $iframe   "var curTop = 0;";
+    print $iframe   "if (obj.offsetParent){";
+    print $iframe     "while(1) {";
+    print $iframe       "curTop += obj.offsetTop;";
+    print $iframe       "if (!obj.offsetParent)";
+    print $iframe         "break;";
+    print $iframe       "obj = obj.offsetParent;";
+    print $iframe     "}";
+    print $iframe   "} else if (obj.x)";
+    print $iframe     "curTop += obj.x;";
+    print $iframe   "return curTop;";
+    print $iframe "}";
+    print $iframe "function coord(event,obj,n,x,y){";
+    print $iframe   "if (event.offsetX == undef) {";
+    print $iframe     "x += event.pageX-findPosX(obj)-1;";
+    print $iframe     "y += event.pageY-findPosY(obj)-1;";
+    print $iframe   "} else {";
+    print $iframe     "x += event.offsetX;";
+    print $iframe     "y += event.offsetY;";
+    print $iframe   "}";
+    print $iframe   "document['Coord'+n].X.value = x;";
+    print $iframe   "document['Coord'+n].Y.value = y;";
+    print $iframe "}</SCRIPT></HEAD><BODY onLoad=\"parent.document.getElementById('iframe".$framedir."').style.height=document.getElementById('content').offsetHeight;parent.document.getElementById('iframe".$framedir."').style.width=document.getElementById('content').offsetWidth;\">";
+    print $iframe "<DIV id=\"content\">";
+}
+
+sub closeiframe {
+    if ($iframes)
+    {
+        print $iframe "</DIV></BODY>";
+        close $iframe;
+    
+        $framenum++;
+    }
+}
+
 sub openhtml {
     $setsthisfile = 0;
-    open($html, ">", $outdir."/".getfilename($filenum));
+    open($html, ">", $basedir."/".getfilename($filenum));
 
     print $html "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE></HEAD>";
-    print $html "<SCRIPT LANGUAGE=\"JavaScript\">";
-    print $html "function swap(n){";
-    print $html   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
-    print $html   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
-    print $html   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
-    print $html "}";
-    print $html "var undef;";
-    print $html "function findPosX(obj){";
-    print $html   "var curLeft = 0;";
-    print $html   "if (obj.offsetParent){";
-    print $html     "while(1) {";
-    print $html       "curLeft += obj.offsetLeft;";
-    print $html       "if (!obj.offsetParent)";
-    print $html         "break;";
-    print $html       "obj = obj.offsetParent;";
-    print $html     "}";
-    print $html   "} else if (obj.x)";
-    print $html     "curLeft += obj.x;";
-    print $html   "return curLeft;";
-    print $html "}";
-    print $html "function findPosY(obj){";
-    print $html   "var curTop = 0;";
-    print $html   "if (obj.offsetParent){";
-    print $html     "while(1) {";
-    print $html       "curTop += obj.offsetTop;";
-    print $html       "if (!obj.offsetParent)";
-    print $html         "break;";
-    print $html       "obj = obj.offsetParent;";
-    print $html     "}";
-    print $html   "} else if (obj.x)";
-    print $html     "curTop += obj.x;";
-    print $html   "return curTop;";
-    print $html "}";
-    print $html "function coord(event,obj,n,x,y){";
-    print $html   "if (event.offsetX == undef) {";
-    print $html     "x += event.pageX-findPosX(obj)-1;";
-    print $html     "y += event.pageY-findPosY(obj)-1;";
-    print $html   "} else {";
-    print $html     "x += event.offsetX;";
-    print $html     "y += event.offsetY;";
-    print $html   "}";
-    print $html   "document['Coord'+n].X.value = x;";
-    print $html   "document['Coord'+n].Y.value = y;";
-    print $html "}</SCRIPT><BODY>";
+    print $html "<BODY>";
     
     if ($filenum > 0) {
         print $html "<P>";
@@ -170,8 +202,17 @@ sub nexthtml {
     openhtml();
 }
 
+sub dprint {
+    my ($f1, $f2, $str) = @_;
+    
+    if (!$iframes) {
+        print $f1 $str;
+    }
+    print $f2 $str;
+}
+
 sub runjobs {
-    my ($cmd, $cmd2, $html, $pre1, $pre2, $post) = @_;
+    my ($cmd, $cmd2, $html, $html2, $pre1, $pre2, $post) = @_;
     my $ret, $ret2, $pid;
     
     if ($parallel) {
@@ -198,16 +239,16 @@ sub runjobs {
     {
         print $pre1." ".$post." failed with exit code ".$ret."\n";
         print "Command was: ".$cmd."\n";
-        print $html "<P>".$pre1." ".$post." failed with exit code ";
-        print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        dprint($html,$html2,"<P>".$pre1." ".$post." failed with exit code ");
+        dprint($html,$html2,$ret."<br>Command was: ".$cmd."</P>\n");
         next;
     }
     if ($ret2 != 0)
     {
         print $pre2." ".$post." failed with exit code ".$ret2."\n";
         print "Command was: ".$cmd2."\n";
-        print $html "<P>Ref bitmap generation failed with exit code ";
-        print $html $ret2."<br>Command was: ".$cmd2."</P>\n";
+        dprint($html,$html2,"<P>Ref bitmap generation failed with exit code ");
+        dprint($html,$html2,$ret2."<br>Command was: ".$cmd2."</P>\n");
         next;
     }
     
@@ -215,7 +256,7 @@ sub runjobs {
 }
 
 sub runjobs3 {
-    my ($cmd, $cmd2, $cmd3, $html) = @_;
+    my ($cmd, $cmd2, $cmd3, $html, $html2) = @_;
     my $ret, $ret2, $ret3, $pid;
     
     if ($parallel) {
@@ -259,16 +300,16 @@ sub runjobs3 {
     {
         print "Bitmap conversion failed with exit code ".$ret."\n";
         print "Command was: ".$cmd."\n";
-        print $html "<P>Bitmap conversion failed with exit code ";
-        print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        dprint($html,$html2,"<P>Bitmap conversion failed with exit code ");
+        dprint($html,$html2,$ret."<br>Command was: ".$cmd."</P>\n");
         next;
     }
     if ($ret2 != 0)
     {
         print "Bitmap conversion failed with exit code ".$ret2."\n";
         print "Command was: ".$cmd2." or ".$cmd3."\n";
-        print $html "<P>Bitmap conversion failed with exit code ";
-        print $html $ret2."<br>Command was: ".$cmd2." or ".$cmd3."</P>\n";
+        dprint($html,$html2,"<P>Bitmap conversion failed with exit code ");
+        dprint($html,$html2,$ret2."<br>Command was: ".$cmd2." or ".$cmd3."</P>\n");
         next;
     }
 }
@@ -278,12 +319,13 @@ sub runjobs3 {
 
 ########################################################################
 # Here follows todays lesson. Abandon hope all who enter here. Etc. Etc.
-$outdir       = $ARGV[0];
+$basedir      = $ARGV[0];
 $ARGV         = shift @ARGV;
 $filenum      = 0;
+$framenum     = 0;
 
 # Create the output dir/html file
-mkdir $outdir;
+mkdir $basedir;
 openhtml();
 
 # Keep a list of files we've done, so we don't repeat
@@ -332,9 +374,12 @@ while (<>)
     {
         nexthtml();
     }
+    
+    # Open the iframe
+    openiframe();
 
     # Output the title
-    print $html "<H1>".$file." (".$res."dpi)</H1></BR>";
+    dprint($html,$iframe,"<H1>".$framenum.": ".$file." (".$res."dpi)</H1></BR>");
     
     # Generate the appropriate bmps to diff
     print $exe.": ".$file."\n";
@@ -352,7 +397,8 @@ while (<>)
         $cmd2 .= " ".$gsargs;
         if ($file =~ m/\.PS$/) { $cmd2 .= " ".$gsargsPS; }
         $cmd2 .= $redir.$file;
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "bitmap generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
     }
@@ -368,7 +414,8 @@ while (<>)
         $cmd2 .= " -r".$res;
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
         $cmd2 .= " ".$file;
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "bitmap generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
     }
@@ -384,7 +431,8 @@ while (<>)
         $cmd2 .= " -r".$res;
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
         $cmd2 .= " ".$file;
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "bitmap generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
     }
@@ -400,7 +448,8 @@ while (<>)
         $cmd2 .= " -r".$res;
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
         $cmd2 .= " ".$file;
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "bitmap generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
     }
@@ -418,7 +467,8 @@ while (<>)
         $cmd2 .= " ".$pwgsargs;
         if ($file2 =~ m/\.PS$/) { $cmd2 .= " ".$gsargsPS; }
         $cmd2 .= $redir.$file2;
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "pdf generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "pdf generation")) {
             next;
         }
 
@@ -432,7 +482,8 @@ while (<>)
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
         $cmd2 .= " ".$gsargs;
         $cmd2 .= $redir.$outdir."/tmp2.pdf";
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "bitmap generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -450,7 +501,8 @@ while (<>)
         $cmd2 .= " -r".$res;
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
         $cmd2 .= " ".$file2;
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "pdf generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "pdf generation")) {
             next;
         }
 
@@ -464,7 +516,8 @@ while (<>)
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
         $cmd2 .= " ".$gsargs;
         $cmd2 .= $redir.$outdir."/tmp2.pdf";
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "bitmap generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -482,7 +535,8 @@ while (<>)
         $cmd2 .= " -r".$res;
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
         $cmd2 .= " ".$file2;
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "pdf generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "pdf generation")) {
             next;
         }
 
@@ -496,7 +550,8 @@ while (<>)
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
         $cmd2 .= " ".$gsargs;
         $cmd2 .= $redir.$outdir."/tmp2.pdf";
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "bitmap generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -514,7 +569,8 @@ while (<>)
         $cmd2 .= " -r".$res;
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
         $cmd2 .= " ".$file2;
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "pdf generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "pdf generation")) {
             next;
         }
 
@@ -528,7 +584,8 @@ while (<>)
         $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
         $cmd2 .= " ".$gsargs;
         $cmd2 .= $redir.$outdir."/tmp2.pdf";
-        if (runjobs($cmd, $cmd2, $html, "New", "Ref", "bitmap generation")) {
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -555,7 +612,7 @@ while (<>)
         if ($ret != 0)
         {
             print "Image differ failed!\n";
-            print $html "<p>Image differ failed!</p>\n";
+            dprint($html,$html2,"<p>Image differ failed!</p>\n");
         }
         # Delete the temporary files
         unlink $tmp1;
@@ -576,7 +633,7 @@ while (<>)
                 $cmd3  = $convertexe." ";
                 $cmd3 .= $outdir."/out.".($images+2).".bmp ";
                 $cmd3 .= $outdir."/out.".($images+2).".png";
-                runjobs3($cmd, $cmd2, $cmd3, $html, "convert");
+                runjobs3($cmd, $cmd2, $cmd3, $html, $iframe, "convert");
                 unlink $outdir."/out.".$images.".bmp";
                 unlink $outdir."/out.".($images+1).".bmp";
                 unlink $outdir."/out.".($images+2).".bmp";
@@ -608,10 +665,10 @@ while (<>)
             
             $mousemove = "onmousemove=\"coord(event,this,".$images.",".$meta{"X"}.",".$meta{"Y"}.")\"";
             
-            print $html "<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate<->Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
-           print $html "<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
-           print $html "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD></TR>";
-           print $html "<TR><TD COLSPAN=3><FORM name=\"Coord".$images."\"><LABEL for=\"X\">Page=".$page." PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=".$res." TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
+            dprint($html,$iframe,"<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate<->Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>");
+           dprint($html,$iframe,"<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>");
+           dprint($html,$iframe,"<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD></TR>");
+           dprint($html,$iframe,"<TR><TD COLSPAN=3><FORM name=\"Coord".$images."\"><LABEL for=\"X\">Page=".$page." PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=".$res." TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>");
            $images += 3;
            $diffs++;
            $setsthisfile++;
@@ -619,6 +676,8 @@ while (<>)
 
         $page++;
     }
+    
+    closeiframe();
     
     if ($diffs == 0)
     {
