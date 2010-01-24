@@ -113,52 +113,9 @@ sub openiframe {
 
     mkdir $outdir;
     open($iframe, ">", $outdir."/frame.html");
-        
+
     print $iframe "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE>";
-    print $iframe "<SCRIPT LANGUAGE=\"JavaScript\">";
-    print $iframe "function swap(n){";
-    print $iframe   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
-    print $iframe   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
-    print $iframe   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
-    print $iframe "}";
-    print $iframe "var undef;";
-    print $iframe "function findPosX(obj){";
-    print $iframe   "var curLeft = 0;";
-    print $iframe   "if (obj.offsetParent){";
-    print $iframe     "while(1) {";
-    print $iframe       "curLeft += obj.offsetLeft;";
-    print $iframe       "if (!obj.offsetParent)";
-    print $iframe         "break;";
-    print $iframe       "obj = obj.offsetParent;";
-    print $iframe     "}";
-    print $iframe   "} else if (obj.x)";
-    print $iframe     "curLeft += obj.x;";
-    print $iframe   "return curLeft;";
-    print $iframe "}";
-    print $iframe "function findPosY(obj){";
-    print $iframe   "var curTop = 0;";
-    print $iframe   "if (obj.offsetParent){";
-    print $iframe     "while(1) {";
-    print $iframe       "curTop += obj.offsetTop;";
-    print $iframe       "if (!obj.offsetParent)";
-    print $iframe         "break;";
-    print $iframe       "obj = obj.offsetParent;";
-    print $iframe     "}";
-    print $iframe   "} else if (obj.x)";
-    print $iframe     "curTop += obj.x;";
-    print $iframe   "return curTop;";
-    print $iframe "}";
-    print $iframe "function coord(event,obj,n,x,y){";
-    print $iframe   "if (event.offsetX == undef) {";
-    print $iframe     "x += event.pageX-findPosX(obj)-1;";
-    print $iframe     "y += event.pageY-findPosY(obj)-1;";
-    print $iframe   "} else {";
-    print $iframe     "x += event.offsetX;";
-    print $iframe     "y += event.offsetY;";
-    print $iframe   "}";
-    print $iframe   "document['Coord'+n].X.value = x;";
-    print $iframe   "document['Coord'+n].Y.value = y;";
-    print $iframe "}</SCRIPT></HEAD><BODY onLoad=\"parent.document.getElementById('iframe".$framedir."').style.height=document.getElementById('content').offsetHeight;parent.document.getElementById('iframe".$framedir."').style.width=document.getElementById('content').offsetWidth;\">";
+    print $iframe "$javascript</HEAD><BODY onLoad=\"parent.document.getElementById('iframe".$framedir."').style.height=document.getElementById('content').offsetHeight;parent.document.getElementById('iframe".$framedir."').style.width=document.getElementById('content').offsetWidth;\">";
     print $iframe "<DIV id=\"content\">";
 }
 
@@ -175,8 +132,53 @@ sub openhtml {
     $setsthisfile = 0;
     open($html, ">", $basedir."/".getfilename($filenum));
 
+    $javascript  = "<SCRIPT LANGUAGE=\"JavaScript\">";
+    $javascript .= "function swap(n){";
+    $javascript .=   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
+    $javascript .=   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
+    $javascript .=   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
+    $javascript .= "}";
+    $javascript .= "var undef;";
+    $javascript .= "function findPosX(obj){";
+    $javascript .=   "var curLeft = 0;";
+    $javascript .=   "if (obj.offsetParent){";
+    $javascript .=     "while(1) {";
+    $javascript .=       "curLeft += obj.offsetLeft;";
+    $javascript .=       "if (!obj.offsetParent)";
+    $javascript .=         "break;";
+    $javascript .=       "obj = obj.offsetParent;";
+    $javascript .=     "}";
+    $javascript .=   "} else if (obj.x)";
+    $javascript .=     "curLeft += obj.x;";
+    $javascript .=   "return curLeft;";
+    $javascript .= "}";
+    $javascript .= "function findPosY(obj){";
+    $javascript .=   "var curTop = 0;";
+    $javascript .=   "if (obj.offsetParent){";
+    $javascript .=     "while(1) {";
+    $javascript .=       "curTop += obj.offsetTop;";
+    $javascript .=       "if (!obj.offsetParent)";
+    $javascript .=         "break;";
+    $javascript .=       "obj = obj.offsetParent;";
+    $javascript .=     "}";
+    $javascript .=   "} else if (obj.x)";
+    $javascript .=     "curTop += obj.x;";
+    $javascript .=   "return curTop;";
+    $javascript .= "}";
+    $javascript .= "function coord(event,obj,n,x,y){";
+    $javascript .=   "if (event.offsetX == undef) {";
+    $javascript .=     "x += event.pageX-findPosX(obj)-1;";
+    $javascript .=     "y += event.pageY-findPosY(obj)-1;";
+    $javascript .=   "} else {";
+    $javascript .=     "x += event.offsetX;";
+    $javascript .=     "y += event.offsetY;";
+    $javascript .=   "}";
+    $javascript .=   "document['Coord'+n].X.value = x;";
+    $javascript .=   "document['Coord'+n].Y.value = y;";
+    $javascript .= "}</SCRIPT>";
+
     print $html "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE></HEAD>";
-    print $html "<BODY>";
+    print $html "$javascript</HEAD><BODY>";
     
     if ($filenum > 0) {
         print $html "<P>";
@@ -664,13 +666,20 @@ while (<>)
             
             $mousemove = "onmousemove=\"coord(event,this,".$images.",".$meta{"X"}.",".$meta{"Y"}.")\"";
             
-            dprint($html,$iframe,"<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate<->Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>");
-           dprint($html,$iframe,"<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>");
-           dprint($html,$iframe,"<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD></TR>");
-           dprint($html,$iframe,"<TR><TD COLSPAN=3><FORM name=\"Coord".$images."\"><LABEL for=\"X\">Page=".$page." PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=".$res." TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>");
-           $images += 3;
-           $diffs++;
-           $setsthisfile++;
+            if (!$iframes) {
+                print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate<->Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
+               print $html "<TD><IMG SRC=\"$framedir/out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
+               print $html "<TD><IMG SRC=\"$framedir/out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD></TR>";
+               print $html "<TR><TD COLSPAN=3><FORM name=\"Coord".$images."\"><LABEL for=\"X\">Page=".$page." PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=".$res." TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
+            }
+
+            print $iframe "<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate<->Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
+            print $iframe "<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
+            print $iframe "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD></TR>";
+            print $iframe "<TR><TD COLSPAN=3><FORM name=\"Coord".$images."\"><LABEL for=\"X\">Page=".$page." PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=".$res." TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
+            $images += 3;
+            $diffs++;
+            $setsthisfile++;
         }
 
         $page++;
