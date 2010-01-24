@@ -805,7 +805,7 @@ static const string_param_def_t user_string_params[] =
 {
     {"DefaultGrayProfile", current_default_gray_icc, set_default_gray_icc},
     {"DefaultRGBProfile", current_default_rgb_icc, set_default_rgb_icc},
-    {"DefaultCMKYProfile", current_default_cmyk_icc, set_default_cmyk_icc},
+    {"DefaultCMYKProfile", current_default_cmyk_icc, set_default_cmyk_icc},
     {"ProofProfile", current_default_proof_icc, set_proof_profile_icc},
     {"NamedProfile", current_default_named_icc, set_named_profile_icc},
     {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc},
