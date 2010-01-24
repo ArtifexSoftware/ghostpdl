@@ -41,7 +41,7 @@ $pwsvgargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 # should be put into a single HTML file.
 $maxsets = 100;
 
-# Set the following to true to convert bmps to pngs (useful to save space
+# Set the following to 1 to convert bmps to pngs (useful to save space
 # if you want to show people this across the web).
 $pngize = 1;
 
@@ -58,12 +58,12 @@ $reference = "..\\ghostpdlREF\\";
 # $redir = " - < ";
 $redir = " ";
 
-# Set the following to true if you want to use parallel dispatch of jobs
-$parallel = true;
+# Set the following to 1 if you want to use parallel dispatch of jobs
+$parallel = 1;
 
 # If set, use iframes rather than copying the content of the frames into
 # the top html file.
-$iframes = false;
+$iframes = 0;
 
 # Finally, allow a user to override any of these by having their own
 # config file.
@@ -167,9 +167,8 @@ sub closeiframe {
     {
         print $iframe "</DIV></BODY>";
         close $iframe;
-    
-        $framenum++;
     }
+    $framenum++;
 }
 
 sub openhtml {
