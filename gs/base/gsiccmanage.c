@@ -384,6 +384,13 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen, 
        be the same, due to a resetting of the user params.
        To avoid recreating the profile data, we compare the 
        string names. */
+    /* Also, we want to avoid the default blowing away
+       the -s settings for the gray, rgb and cmyk
+       profile following a vmreclaim so test if it is set
+       and if it is one of those default types */
+    if (defaulttype < PROOF_TYPE && (*manager_default_profile) != NULL) {
+        return 0;
+    }
     if ((*manager_default_profile) != NULL) {
         /* Check if this is what we already have */
         icc_profile = *manager_default_profile;
