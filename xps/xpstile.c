@@ -247,9 +247,9 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 	    gspat.YStep *= 2;
 	}
 
-	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
-	gs_scale(ctx->pgs, scalex, scaley);
-	gs_translate(ctx->pgs, -viewbox.p.x, -viewbox.p.y);
+	gs_matrix_translate(&transform, viewport.p.x, viewport.p.y, &transform);
+	gs_matrix_scale(&transform, scalex, scaley, &transform);
+	gs_matrix_translate(&transform, -viewbox.p.x, -viewbox.p.y, &transform);
 
 	cs = ctx->srgb;
 	gs_setcolorspace(ctx->pgs, cs);
@@ -274,7 +274,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
 	gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
 	gs_scale(ctx->pgs, scalex, scaley);
-	gs_translate(ctx->pgs, -viewbox.p.x, viewbox.p.y);
+	gs_translate(ctx->pgs, -viewbox.p.x, -viewbox.p.y);
 
 	gs_moveto(ctx->pgs, viewbox.p.x, viewbox.p.y);
 	gs_lineto(ctx->pgs, viewbox.p.x, viewbox.q.y);
