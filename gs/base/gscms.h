@@ -56,7 +56,8 @@ typedef enum {
     gsCMYK,
     gsNCHANNEL,
     gsCIEXYZ,
-    gsCIELAB
+    gsCIELAB,
+    gsUNDEFINED
 } gsicc_colorbuffer_t;
 
 typedef struct gsicc_bufferdesc_s {

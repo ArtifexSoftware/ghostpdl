@@ -333,21 +333,23 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen, 
     gs_memory_t *mem_gc = icc_manager->memory; 
     int code;
     int k;
+    gsicc_colorbuffer_t default_space; /* Used to verify that we have the correct type */
         
-       /* For now only let this be set once. 
-       We could have this changed dynamically
-       in which case we need to do some 
-       deaallocations prior to replacing 
-       it */
+    /* For now only let this be set once. We could have this changed dynamically
+       in which case we need to do some deaallocations prior to replacing it */
+    default_space = gsUNDEFINED;
     switch(defaulttype) {
         case DEFAULT_GRAY:
             manager_default_profile = &(icc_manager->default_gray);
+            default_space = gsGRAY;
             break;
         case DEFAULT_RGB:
             manager_default_profile = &(icc_manager->default_rgb);
+            default_space = gsRGB;
             break;
         case DEFAULT_CMYK:
              manager_default_profile = &(icc_manager->default_cmyk);
+             default_space = gsCMYK;
              break;
         case PROOF_TYPE:
              manager_default_profile = &(icc_manager->proof_profile);
@@ -433,12 +435,17 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen, 
         icc_profile->pcs_num_comps = gscms_get_pcs_channel_count(icc_profile->profile_handle);
         icc_profile->data_cs = gscms_get_profile_data_space(icc_profile->profile_handle);
 
+        /* Check that we have the proper color space for the ICC profiles that can be externally set */
+        if (default_space != gsUNDEFINED) {
+            if (icc_profile->data_cs != default_space) {
+                return gs_rethrow(-1, "A default profile has an incorrect color space");
+            }
+        }
         /* Initialize the range to default values */
         for ( k = 0; k < icc_profile->num_comps; k++) {
             icc_profile->Range.ranges[k].rmin = 0.0;
             icc_profile->Range.ranges[k].rmax = 1.0;
         }
-
         if (defaulttype == LAB_TYPE) 
             icc_profile->islab = true;
         if ( defaulttype == DEVICEN_TYPE ) {
