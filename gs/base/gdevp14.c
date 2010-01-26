@@ -973,17 +973,12 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     buf->mask_id = mask_id;
     {	/* If replacing=false, we start the mask for an image with SMask.
 	   In this case the image's SMask temporary replaces the 
-	   mask of the containing group. 
-	   Save the containing droup's mask in buf->maskbuf : */
+	   mask of the containing group. Save the containing droup's mask in buf->maskbuf */
 	buf->maskbuf = ctx->maskbuf;
-
         if (buf->maskbuf){
             rc_increment(buf->maskbuf->rc_mask);
         }
-
     }
-
-
 #if RAW_DUMP
   
     /* Dump the current buffer to see what we have. */
@@ -1056,14 +1051,17 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
     tos->saved = NULL;  /* To avoid issues with GC */
 
     if (tos->maskbuf) {
-
-        /* During the soft mask push, the mask buf was copied
-           (not moved) from the ctx to the tos maskbuf. We 
-           are done with this now */
-            
-        rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask");
+        /* During the soft mask push, the maskbuf was copied (not moved) from the ctx to the tos maskbuf. We 
+           are done with this now so it is safe to just set to NULL.  However, before we do that we must perform 
+           rc decrement to match the increment that occured was made.  Also, if this is the last ref
+           count of the rc_mask, we should free the buffer now since no other groups need it. */
+        rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask(tos->maskbuf->rc_mask)");
+        if (tos->maskbuf->rc_mask) {
+            if (tos->maskbuf->rc_mask->rc.ref_count == 1){
+                rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask(tos->maskbuf->rc_mask)");
+            }
+        }
 	tos->maskbuf = NULL;
-
     }
 
     if (tos->data == NULL ) {
