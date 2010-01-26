@@ -188,6 +188,12 @@ get_next_char(
         return 0;
      }
 
+    if (plfont->storage == pcds_internal && chr == 0x0020) {
+        *pis_space = true;
+        *pchr = 0xffff;
+        return 0;
+     }
+
     /* check if the character is in the font and get the character
        width at the same time */
     if ( *pis_space == false )
