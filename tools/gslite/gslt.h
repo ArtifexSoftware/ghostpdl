@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gslt.h 2713 2007-01-02 22:22:14Z henrys $ */
+/* $Id$ */
 /* gslt "Ghostscript Lite" convenience header */
 
 /*
