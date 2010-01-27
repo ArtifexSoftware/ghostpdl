@@ -1176,7 +1176,7 @@ gs_cie_cs_common(const gs_state * pgs)
 {
     const gs_cie_abc *ignore_pabc;
 
-    return cie_cs_common_abc(pgs->color_space, &ignore_pabc);
+    return cie_cs_common_abc(gs_currentcolorspace_inline(pgs), &ignore_pabc);
 }
 
 /*

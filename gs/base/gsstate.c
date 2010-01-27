@@ -140,14 +140,19 @@ typedef struct gs_state_parts_s {
     gx_path *path;
     gx_clip_path *clip_path;
     gx_clip_path *effective_clip_path;
-    gs_client_color *ccolor;
-    gx_device_color *dev_color;
+    struct {
+        gs_client_color *ccolor;
+        gx_device_color *dev_color;
+    } color[2];
 } gs_state_parts;
 
 #define GSTATE_ASSIGN_PARTS(pto, pfrom)\
   ((pto)->path = (pfrom)->path, (pto)->clip_path = (pfrom)->clip_path,\
    (pto)->effective_clip_path = (pfrom)->effective_clip_path,\
-   (pto)->ccolor = (pfrom)->ccolor, (pto)->dev_color = (pfrom)->dev_color)
+   (pto)->color[0].ccolor = (pfrom)->color[0].ccolor,\
+   (pto)->color[0].dev_color = (pfrom)->color[0].dev_color,\
+   (pto)->color[1].ccolor = (pfrom)->color[1].ccolor,\
+   (pto)->color[1].dev_color = (pfrom)->color[1].dev_color)
 
 /* GC descriptors */
 extern_st(st_imager_state);
@@ -247,8 +252,12 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->effective_clip_path = pgs->clip_path;
     pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
-    pgs->color_space = gs_cspace_new_DeviceGray(pgs->memory);
+    pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
+    pgs->color[1].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     pgs->in_cachedevice = 0;
+    pgs->current_color = 1;
+    gx_set_device_color_1(pgs); /* sets colorspace and client color */
+    pgs->current_color = 0;
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */
     gs_nulldevice(pgs);
@@ -649,8 +658,8 @@ gs_state_update_overprint(gs_state * pgs, const gs_overprint_params_t * pparams)
 int
 gs_do_set_overprint(gs_state * pgs)
 {
-    const gs_color_space *  pcs = pgs->color_space;
-    const gs_client_color * pcc = pgs->ccolor;
+    const gs_color_space *  pcs = gs_currentcolorspace_inline(pgs);
+    const gs_client_color * pcc = gs_currentcolor_inline(pgs);
     int                     code = 0;
 
     if (cs_num_components(pcs) < 0 && pcc->pattern != 0)
@@ -813,8 +822,12 @@ gs_currenttextrenderingmode(const gs_state * pgs)
 static void
 gstate_free_parts(const gs_state * parts, gs_memory_t * mem, client_name_t cname)
 {
-    gs_free_object(mem, parts->dev_color, cname);
-    gs_free_object(mem, parts->ccolor, cname);
+    if (parts->color[0].dev_color != parts->color[1].dev_color)
+        gs_free_object(mem, parts->color[1].dev_color, cname);
+    if (parts->color[0].ccolor != parts->color[1].ccolor)
+        gs_free_object(mem, parts->color[1].ccolor, cname);
+    gs_free_object(mem, parts->color[0].dev_color, cname);
+    gs_free_object(mem, parts->color[0].ccolor, cname);
     if (!parts->effective_clip_shared)
 	gx_cpath_free(parts->effective_clip_path, cname);
     gx_cpath_free(parts->clip_path, cname);
@@ -847,14 +860,20 @@ gstate_alloc_parts(gs_state * parts, const gs_state * shared,
 				  "gstate_alloc_parts(effective_clip_path)");
 	parts->effective_clip_shared = false;
     }
-    parts->color_space = NULL;
-    parts->ccolor =
+    parts->color[0].color_space = NULL;
+    parts->color[1].color_space = NULL;
+    parts->color[0].ccolor =
 	gs_alloc_struct(mem, gs_client_color, &st_client_color, cname);
-    parts->dev_color =
+    parts->color[1].ccolor =
+	gs_alloc_struct(mem, gs_client_color, &st_client_color, cname);
+    parts->color[0].dev_color =
+	gs_alloc_struct(mem, gx_device_color, &st_device_color, cname);
+    parts->color[1].dev_color =
 	gs_alloc_struct(mem, gx_device_color, &st_device_color, cname);
     if (parts->path == 0 || parts->clip_path == 0 ||
 	parts->effective_clip_path == 0 ||
-	parts->ccolor == 0 || parts->dev_color == 0
+	parts->color[0].ccolor == 0 || parts->color[0].dev_color == 0 ||
+	parts->color[1].ccolor == 0 || parts->color[1].dev_color == 0
 	) {
 	gstate_free_parts(parts, mem, cname);
 	return_error(gs_error_VMerror);
@@ -929,8 +948,10 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     gs_imager_state_copied((gs_imager_state *)pgs);
     /* Don't do anything to clip_stack. */
     rc_increment(pgs->device);
-    *parts.ccolor = *pfrom->ccolor;
-    *parts.dev_color = *pfrom->dev_color;
+    *parts.color[0].ccolor    = *pfrom->color[0].ccolor;
+    *parts.color[0].dev_color = *pfrom->color[0].dev_color;
+    *parts.color[1].ccolor    = *pfrom->color[1].ccolor;
+    *parts.color[1].dev_color = *pfrom->color[1].dev_color;
     if (reason == copy_for_gsave) {
 	float *dfrom = pfrom->line_params.dash.pattern;
 	float *dto = pgs->line_params.dash.pattern;
@@ -941,7 +962,11 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     } else {
 	GSTATE_ASSIGN_PARTS(pgs, &parts);
     }
+    pgs->current_color = 0;
     cs_adjust_counts(pgs, 1);
+    pgs->current_color = 1;
+    cs_adjust_counts(pgs, 1);
+    pgs->current_color = pfrom->current_color;
     return pgs;
   fail:
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -973,11 +998,17 @@ gstate_free_contents(gs_state * pgs)
 {
     gs_memory_t *mem = pgs->memory;
     const char *const cname = "gstate_free_contents";
+    int current_col;
 
     rc_decrement(pgs->device, cname);
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
     rc_decrement(pgs->dfilter_stack, cname);
+    current_col = pgs->current_color;
+    pgs->current_color = 0;
     cs_adjust_counts(pgs, -1);
+    pgs->current_color = 1;
+    cs_adjust_counts(pgs, -1);
+    pgs->current_color = current_col;
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -1007,6 +1038,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
      * Handle references from contents.
      */
     cs_adjust_counts(pto, -1);
+    pto->current_color ^= 1;
+    cs_adjust_counts(pto, -1);
+    pto->current_color ^= 1;
     gx_path_assign_preserve(pto->path, pfrom->path);
     gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
     /*
@@ -1024,8 +1058,10 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     } else
 	gx_cpath_assign_preserve(pto->effective_clip_path,
 				 pfrom->effective_clip_path);
-    *parts.ccolor = *pfrom->ccolor;
-    *parts.dev_color = *pfrom->dev_color;
+    *parts.color[0].ccolor    = *pfrom->color[0].ccolor;
+    *parts.color[0].dev_color = *pfrom->color[0].dev_color;
+    *parts.color[1].ccolor    = *pfrom->color[1].ccolor;
+    *parts.color[1].dev_color = *pfrom->color[1].dev_color;
     /* Handle references from gstate object. */
     rc_pre_assign(pto->device, pfrom->device, cname);
     rc_pre_assign(pto->dfilter_stack, pfrom->dfilter_stack, cname);
@@ -1057,6 +1093,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
     cs_adjust_counts(pto, 1);
+    pto->current_color ^= 1;
+    cs_adjust_counts(pto, 1);
+    pto->current_color ^= 1;
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;

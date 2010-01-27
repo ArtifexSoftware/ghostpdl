@@ -64,7 +64,7 @@ gx_stroke_fill(gx_path * ppath, gs_state * pgs)
     params.traditional = false;
     return (*dev_proc(dev, stroke_path))
 	(dev, (const gs_imager_state *)pgs, ppath, &params,
-	 pgs->dev_color, pcpath);
+	 gs_currentdevicecolor_inline(pgs), pcpath);
 }
 
 int

@@ -189,7 +189,7 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
     uint rcount = count;
     int code;
     gx_device * pdev = pgs->device;
-    gx_device_color *pdc = pgs->dev_color;
+    gx_device_color *pdc = gs_currentdevicecolor_inline(pgs);
     const gs_imager_state *pis = (const gs_imager_state *)pgs;
     bool hl_color_available = gx_hld_is_hl_color_available(pis, pdc);
     gs_fixed_rect empty = {{0, 0}, {0, 0}};

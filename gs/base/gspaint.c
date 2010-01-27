@@ -81,7 +81,8 @@ gs_fillpage(gs_state * pgs)
 
     gx_set_dev_color(pgs);
 
-    code = (*dev_proc(dev, fillpage))(dev, (gs_imager_state *)pgs, pgs->dev_color);
+    code = (*dev_proc(dev, fillpage))(dev, (gs_imager_state *)pgs,
+				      gs_currentdevicecolor_inline(pgs));
     if (code < 0)
 	return code;
     return (*dev_proc(dev, sync_output)) (dev);
@@ -96,7 +97,7 @@ alpha_buffer_bits(gs_state * pgs)
 {
     gx_device *dev;
 
-    if (!color_is_pure(pgs->dev_color))
+    if (!color_is_pure(gs_currentdevicecolor_inline(pgs)))
 	return 0;
     dev = gs_currentdevice_inline(pgs);
     if (gs_device_is_abuf(dev)) {
@@ -307,7 +308,7 @@ fill_with_rule(gs_state * pgs, int rule)
 		return acode;
 	} else
 	    acode = 0;
-	code = gx_fill_path(pgs->path, pgs->dev_color, pgs, rule,
+	code = gx_fill_path(pgs->path, gs_currentdevicecolor_inline(pgs), pgs, rule,
 			    pgs->fill_adjust.x, pgs->fill_adjust.y);
 	if (acode > 0)
 	    rcode = alpha_buffer_release(pgs, code >= 0);
@@ -446,7 +447,7 @@ gs_stroke(gs_state * pgs)
 	    gs_setlinewidth(pgs, orig_width);
 	    scale_dash_pattern(pgs, 1.0 / scale);
 	    if (code >= 0)
-		code = gx_fill_path(&spath, pgs->dev_color, pgs,
+		code = gx_fill_path(&spath, gs_currentdevicecolor_inline(pgs), pgs,
 				    gx_rule_winding_number,
 				    pgs->fill_adjust.x,
 				    pgs->fill_adjust.y);

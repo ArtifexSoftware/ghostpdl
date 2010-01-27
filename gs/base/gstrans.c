@@ -210,11 +210,8 @@ gs_begin_transparency_group(gs_state *pgs,
         device space.  However, if the device is a sep device it will blend
         in DeviceN color space as required.  */
 
-    if (gs_color_space_get_index(pgs->color_space) <= gs_color_space_index_DeviceCMYK) {
-
-        blend_color_space = pgs->color_space;
-
-    } else {
+    blend_color_space = gs_currentcolorspace_inline(pgs);
+    if (gs_color_space_get_index(blend_color_space) > gs_color_space_index_DeviceCMYK) {
 
        /* ICC and CIE based color space.  Problem right now is that the 
        current code does a concretization to the color space
@@ -227,7 +224,7 @@ gs_begin_transparency_group(gs_state *pgs,
        concrete space for the ICC space, which is defined by
        the output (or default) CRD. */
 
-        blend_color_space = cs_concrete_space(pgs->color_space, pis);
+        blend_color_space = cs_concrete_space(blend_color_space, pis);
 
     }
 
@@ -516,7 +513,7 @@ gs_begin_transparency_mask(gs_state * pgs,
     params.replacing = ptmp->replacing;
     /* Note that the SMask buffer may have a different 
        numcomps than the device buffer */
-    params.group_color_numcomps = cs_num_components(pgs->color_space);
+    params.group_color_numcomps = cs_num_components(gs_currentcolorspace_inline(pgs));
 
     if_debug9('v', "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  Background_components = %d Num_grp_clr_comp = %d  %s\n",
@@ -571,12 +568,8 @@ gs_begin_transparency_mask(gs_state * pgs,
         to the fact that things are done
         in device space always. */
 
-
-        if(!gs_color_space_is_CIE(pgs->color_space)){
-
-            blend_color_space = pgs->color_space;
-
-        } else {
+        blend_color_space = gs_currentcolorspace_inline(pgs);
+        if(gs_color_space_is_CIE(blend_color_space)){
 
            /* ICC or CIE based color space.  Problem right now is that the 
            current code does a concretization to the color space
@@ -589,7 +582,7 @@ gs_begin_transparency_mask(gs_state * pgs,
            concrete space for the ICC space, which is defined by
            the output (or default) CRD. */
 
-            blend_color_space = cs_concrete_space(pgs->color_space, pis);
+            blend_color_space = cs_concrete_space(blend_color_space, pis);
 
         }
 

@@ -110,7 +110,7 @@ gs_setgray(gs_state * pgs, floatp gray)
     if (pcs == NULL)
 	return_error(gs_error_VMerror);
     if ((code = gs_setcolorspace(pgs, pcs)) >= 0) {
-        gs_client_color *   pcc = pgs->ccolor;
+        gs_client_color *pcc = gs_currentcolor_inline(pgs);
 
         cs_adjust_color_count(pgs, -1); /* not strictly necessary */
         pcc->paint.values[0] = FORCE_UNIT(gray);
@@ -132,7 +132,7 @@ gs_setrgbcolor(gs_state * pgs, floatp r, floatp g, floatp b)
     if (pcs == NULL)
 	return_error(gs_error_VMerror);
     if ((code = gs_setcolorspace(pgs, pcs)) >= 0) {
-       gs_client_color *    pcc = pgs->ccolor;
+       gs_client_color *pcc = gs_currentcolor_inline(pgs);
 
         cs_adjust_color_count(pgs, -1); /* not strictly necessary */
         pcc->paint.values[0] = FORCE_UNIT(r);
@@ -153,7 +153,7 @@ gs_setnullcolor(gs_state * pgs)
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
     gs_setgray(pgs, 0.0);	/* set color space to something harmless */
-    color_set_null(pgs->dev_color);
+    color_set_null(gs_currentdevicecolor_inline(pgs));
     return 0;
 }
 
@@ -223,7 +223,7 @@ gx_set_device_color_1(gs_state * pgs)
     } else {
 	/* {csrc} really need to signal an error here */
     }
-    set_nonclient_dev_color(pgs->dev_color, 1);
+    set_nonclient_dev_color(gs_currentdevicecolor_inline(pgs), 1);
     pgs->log_op = lop_default;
     /*
      * In the unlikely event that  overprint mode is in effect,

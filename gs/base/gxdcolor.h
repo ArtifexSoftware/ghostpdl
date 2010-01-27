@@ -291,7 +291,7 @@ extern  dev_color_proc_get_phase(gx_dc_ht_get_phase);
 
 
 #define gs_color_writes_pure(pgs)\
-  color_writes_pure((pgs)->dev_color, (pgs)->log_op)
+  color_writes_pure(gs_currentdevicecolor_inline(pgs), (pgs)->log_op)
 
 /* Set up device color 1 for writing into a mask cache */
 /* (e.g., the character cache). */
@@ -301,14 +301,14 @@ void gx_set_device_color_1(gs_state * pgs);
 int gx_remap_color(gs_state *);
 
 #define gx_set_dev_color(pgs)\
-  if ( !color_is_set((pgs)->dev_color) )\
+  if ( !color_is_set(gs_currentdevicecolor_inline(pgs)) )\
    { int code_dc = gx_remap_color(pgs);\
      if ( code_dc != 0 ) return code_dc;\
    }
 
 /* Indicate that the device color needs remapping. */
 #define gx_unset_dev_color(pgs)\
-  color_unset((pgs)->dev_color)
+  color_unset(gs_currentdevicecolor_inline(pgs))
 
 /* Load the halftone cache in preparation for drawing. */
 #define gx_color_load_select(pdevc, pis, dev, select)\
@@ -316,7 +316,7 @@ int gx_remap_color(gs_state *);
 #define gx_color_load(pdevc, pis, dev)\
   gx_color_load_select(pdevc, pis, dev, gs_color_select_texture)
 #define gs_state_color_load(pgs)\
-  gx_color_load((pgs)->dev_color, (const gs_imager_state *)(pgs),\
+  gx_color_load(gs_currentdevicecolor_inline(pgs), (const gs_imager_state *)(pgs),\
 		(pgs)->device)
 
 /* Fill a rectangle with a color. */

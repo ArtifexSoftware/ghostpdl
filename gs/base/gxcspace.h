@@ -177,14 +177,14 @@ struct gs_color_space_type_s {
 #define cs_proc_adjust_color_count(proc)\
   void proc(const gs_client_color *, const gs_color_space *, int)
 #define cs_adjust_color_count(pgs, delta)\
-  (*(pgs)->color_space->type->adjust_color_count)\
-    ((pgs)->ccolor, (pgs)->color_space, delta)
+  (*gs_currentcolorspace_inline(pgs)->type->adjust_color_count)\
+    (gs_currentcolor_inline(pgs), gs_currentcolorspace_inline(pgs), delta)
 	cs_proc_adjust_color_count((*adjust_color_count));
 
 /* Adjust both reference counts. */
 #define cs_adjust_counts(pgs, delta)\
     cs_adjust_color_count(pgs, delta);					\
-	rc_adjust_const(pgs->color_space, delta, "cs_adjust_counts")
+	rc_adjust_const(gs_currentcolorspace_inline(pgs), delta, "cs_adjust_counts")
 
     /* Serialization. */
     /*
