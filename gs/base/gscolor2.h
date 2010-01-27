@@ -34,6 +34,7 @@ gs_color_space *gs_currentcolorspace(const gs_state *);
 int gs_setcolorspace(gs_state *, gs_color_space *);
 const gs_client_color *gs_currentcolor(const gs_state *);
 int gs_setcolor(gs_state *, const gs_client_color *);
+const gx_device_color *gs_currentdevicecolor(const gs_state *);
 
 /* Look up with restriction */
 int

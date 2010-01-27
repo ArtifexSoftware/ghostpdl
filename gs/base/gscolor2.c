@@ -95,6 +95,13 @@ gs_currentcolor(const gs_state * pgs)
     return pgs->ccolor;
 }
 
+/* currentdevicecolor */
+const gx_device_color *
+gs_currentdevicecolor(const gs_state * pgs)
+{
+    return pgs->dev_color;
+}
+
 /* ------ Internal procedures ------ */
 
 /* GC descriptors */

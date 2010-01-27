@@ -282,7 +282,8 @@ image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
         gx_set_dev_color(pgs);
         code = (*dev_proc(dev, begin_image))
           (dev, (const gs_imager_state *)pgs, pim, gs_image_format_chunky,
-           NULL, pgs->dev_color, pgs->clip_path, pgs->memory, (gx_image_enum_common_t **)&iinfo);
+           NULL, gs_currentdevicecolor_inline(pgs), pgs->clip_path,
+           pgs->memory, (gx_image_enum_common_t **)&iinfo);
         if ( code < 0 )
           return code;
         if ( bold )

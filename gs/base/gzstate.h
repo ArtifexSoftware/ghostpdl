@@ -111,6 +111,8 @@ struct gs_state_s {
 
     /* Color caches: */
 
+#define gs_currentdevicecolor_inline(pgs) ((pgs)->dev_color)
+
     gx_device_color *dev_color;
 
     /* Font: */

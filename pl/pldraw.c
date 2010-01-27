@@ -31,5 +31,6 @@ pl_begin_image(gs_state *pgs, const gs_image_t *pim,
 	return (*dev_proc(dev, begin_image))
 	    (dev, (const gs_imager_state *)pgs, pim,
 	     gs_image_format_chunky, (const gs_int_rect *)0,
-	     pgs->dev_color, pgs->clip_path, pgs->memory, (gx_image_enum_common_t **)pinfo);
+	     gs_currentdevicecolor_inline(pgs), pgs->clip_path, pgs->memory,
+	     (gx_image_enum_common_t **)pinfo);
 }
