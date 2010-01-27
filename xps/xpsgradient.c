@@ -474,6 +474,7 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
 	yrad = atof(radius_y_att);
 
     /* scale the ctm to make ellipses */
+    gs_gsave(ctx->pgs);
     gs_scale(ctx->pgs, 1.0, yrad / xrad);
 
     invscale = xrad / yrad;
@@ -577,6 +578,8 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
 	    y1 += dy;
 	}
     }
+
+    gs_grestore(ctx->pgs);
 
     return 0;
 }
