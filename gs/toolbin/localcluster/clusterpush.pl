@@ -16,7 +16,7 @@ my %products=('abort' =>1,
 my $lowres="";
 
 my $product=shift;
-if ($product eq "lowres") {
+if ($product && $product eq "lowres") {
   $product=shift;
   $lowres="lowres";
 }
