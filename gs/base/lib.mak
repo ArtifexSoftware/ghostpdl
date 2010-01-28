@@ -2427,7 +2427,7 @@ $(GLOBJ)gscie.$(OBJ) : $(GLSRC)gscie.c $(GXERR) $(math__h) $(memory__h)\
 
 $(GLOBJ)gsciemap.$(OBJ) : $(GLSRC)gsciemap.c $(GXERR) $(math__h)\
  $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) \
- $(gxistate_h) $(gscolor2_h)
+ $(gxistate_h) $(gscolor2_h) $(gsicc_create_h) $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gsciemap.$(OBJ) $(C_) $(GLSRC)gsciemap.c
 
 $(GLOBJ)gscrd.$(OBJ) : $(GLSRC)gscrd.c $(GXERR)\

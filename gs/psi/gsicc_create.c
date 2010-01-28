@@ -135,7 +135,8 @@ Note: All profile data must be encoded as big-endian
 static void
 add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 
-#define SAVEICCPROFILE 1
+#define SAVEICCPROFILE 0
+#define USE_V4 1
 #define HEADER_SIZE 128
 #define TAG_SIZE 12
 #define XYZPT_SIZE 12
@@ -143,6 +144,7 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 #define CURVE_SIZE 512
 #define NUMBER_COMMON_TAGS 2 
 #define icMultiUnicodeText 0x6d6c7563    /* 'mluc' v4 text type */
+#define icMultiFunctionAtoBType 0x6d414220   /* 'mAB ' v4 lutAtoBtype type */
 
 #if SAVEICCPROFILE
 unsigned int icc_debug_index = 0;
@@ -429,12 +431,21 @@ add_v4_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], i
 static void
 add_common_tag_data(unsigned char *buffer,gsicc_tag tag_list[])
 {
+#if USE_V4   
+    unsigned char *curr_ptr;
+
+    curr_ptr = buffer;
+    add_v4_text_tag(curr_ptr, desc_name, tag_list, 0);
+    curr_ptr += tag_list[0].size;
+    add_v4_text_tag(curr_ptr, copy_right, tag_list, 1);
+#else
     unsigned char *curr_ptr;
 
     curr_ptr = buffer;
     add_desc_tag(curr_ptr, desc_name, tag_list, 0);
     curr_ptr += tag_list[0].size;
     add_text_tag(curr_ptr, copy_right, tag_list, 1);
+#endif
 }
 
 static
@@ -605,6 +616,189 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[])
     for (j = 0; j < 3; j++) {
         write_bigendian_4bytes(curr_ptr, temp_XYZ[j]);
         curr_ptr += 4;
+    }
+}
+
+/* If abc matrix is identity the abc and lmn curves can be mashed together  */
+static void
+merge_abc_lmn_curves(gx_cie_vector_cache *DecodeABC_caches, gx_cie_scalar_cache *DecodeLMN)
+{
+    
+
+
+}
+
+static void 
+add_matrixwithbias(unsigned char *input_ptr, gs_matrix3 *input_matrix)
+{
+    unsigned char *curr_ptr;
+    float *float_ptr;
+    int k;
+
+    /* GS Matrix is coming in with data arranged in row ordered form */
+    curr_ptr = input_ptr;
+    float_ptr = &(input_matrix->cu.u);
+    for (k = 0; k < 9; k++ ){
+        write_bigendian_4bytes(curr_ptr, double2XYZtype(*float_ptr));
+        curr_ptr += 4;
+        float_ptr++;
+    }
+    /* bias */
+    memset(curr_ptr,0,4*3);
+}
+
+static void
+add_curve(unsigned char *input_ptr, float *curve_data, int num_samples)
+{
+    unsigned char *curr_ptr;
+    unsigned short value;
+    int k;
+
+   /* Signature */
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,icSigCurveType);
+    curr_ptr += 4;
+    /* Reserved */
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+    /* Count */
+    write_bigendian_4bytes(curr_ptr, num_samples);
+    curr_ptr += 4;
+    /* Now the data uInt16 Number 0 to 65535.  For now assume input is 0 to 1.  Need to fix this.  MJV */
+    for (k = 0; k < num_samples; k++) {
+        if (curve_data[k] < 0) curve_data[k] = 0;
+        if (curve_data[k] > 1) curve_data[k] = 1; 
+        value = curve_data[k]*0xFFFF;
+        write_bigendian_2bytes(curr_ptr,value);
+        curr_ptr+=2;
+    }
+}
+
+static int
+getsize_lutAtoBtype(float *a_curves, float *clut, int clut_grid_size, float *m_curves, 
+               gs_matrix3 *matrix_input, float *b_curves,int numin, int numout)
+{
+    int data_offset, mlut_size;
+
+    data_offset = 32; 
+    if (b_curves != NULL) {
+        data_offset += (numout*(CURVE_SIZE*2+12));
+    } 
+    if (matrix_input != NULL) {
+        data_offset += (12*4);
+    }
+    if (m_curves != NULL) {
+        data_offset += (numout*(CURVE_SIZE*2+12));
+    } 
+    /* a curves only present if clut is present */
+    if (clut != NULL) {
+        mlut_size = (long) pow((float) clut_grid_size, (long) numin)*numout*2;
+        data_offset += mlut_size;
+        if (a_curves != NULL) {
+            data_offset += (numin*(CURVE_SIZE*2+12));
+        } 
+    }
+    return(data_offset);
+}
+
+
+static void
+add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut_grid_size, float *m_curves, 
+               gs_matrix3 *input_matrix, float *b_curves,int numin, int numout)
+{
+/* We need to figure out all the offsets to the various objects based upon which ones are actually present */
+    unsigned char *curr_ptr;
+    long mlut_size;
+    int data_offset;
+    int k;
+
+   /* Signature */
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,icMultiFunctionAtoBType);
+    curr_ptr += 4;
+    /* Reserved */
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+    /* Padded sizes */
+    *curr_ptr++ = numin;
+    *curr_ptr++ = numout;
+    memset(curr_ptr,0,2);
+    curr_ptr += 2;
+    /* Note if data offset is zero, element is not present */
+    /* offset to B curves (last curves) */
+    data_offset = 32; 
+    if (b_curves == NULL) {
+        memset(curr_ptr,0,4);
+    } else {
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        data_offset += (numout*(CURVE_SIZE*2+12));
+    }
+    curr_ptr += 4;
+    /* offset to matrix */
+    if (input_matrix == NULL) {
+        memset(curr_ptr,0,4);
+    } else {
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        data_offset += (12*4);
+    }
+    curr_ptr += 4;
+    /* offset to M curves (middle curves) */
+    if (m_curves == NULL) {
+        memset(curr_ptr,0,4);
+    } else {
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        data_offset += (numout*(CURVE_SIZE*2+12));
+    }
+    curr_ptr += 4;
+    /* offset to CLUT */
+    if (clut == NULL) {
+        memset(curr_ptr,0,4);
+    } else {
+        mlut_size = 0;
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        mlut_size = (long) pow((float) clut_grid_size, (long) numin)*numout*2;
+        data_offset += mlut_size;
+    }    
+    curr_ptr += 4;
+    /* offset to A curves (first curves) */
+    if (a_curves == NULL || clut == NULL) {
+        memset(curr_ptr,0,4);
+    } else {
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        data_offset += (numin*(CURVE_SIZE*2+12));
+    }    
+    curr_ptr += 4;
+    /* Header is completed */
+    /* Now write out the various parts (i.e. curves, matrix and clut)
+    /* First the B curves */
+    if (b_curves != NULL) {
+        for (k = 0; k < numout; k++) {
+            add_curve(curr_ptr, b_curves+k*CURVE_SIZE, CURVE_SIZE);
+            curr_ptr += (12 + CURVE_SIZE*2);
+        }
+    }
+    /* Then the matrix */
+    if (input_matrix != NULL) {
+        add_matrixwithbias(curr_ptr,input_matrix);
+        curr_ptr += (12*4);
+    }
+    /* Then the m curves */
+    if (m_curves != NULL) {
+        for (k = 0; k < numout; k++) {
+            add_curve(curr_ptr, m_curves+k*CURVE_SIZE, CURVE_SIZE);
+            curr_ptr += (12 + CURVE_SIZE*2);
+        }
+    }
+    /* Then the clut */
+    if (clut != NULL) {
+
+    }
+    /* Then the a curves */
+    if (clut != NULL && a_curves != NULL) {
+        for (k = 0; k < numin; k++) {
+            add_curve(curr_ptr, a_curves+k*CURVE_SIZE, CURVE_SIZE);
+            curr_ptr += (12 + CURVE_SIZE*2);
+        }
     }
 }
 
@@ -814,19 +1008,11 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  
     return(result);
 }
 
-/* The ABC matrix and decode ABC parameters
-   are optional in the PS spec.  If they
-   are not present, we will use a standard
-   TRC and Matrix to CIEXYZ ICC profile to 
-   model the LMN decode and MatrixLMN, which 
-   ARE required parameters.  If the ABC
-   matrix and decode ABC parameters ARE present,
-   we will need to use a small MLUT with 1-D 
-   LUTs to model the ABC portion since
-   the ICC profile cannot have multiple matrices */
-
-void
-gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memory, 
+/* The ABC color space is modeled using the V4 lutAtoBType which has the flexibility to model 
+   the various parameters.  Simplified versions are used it possible when certain parameters
+   in the ABC color space definition are the identity. */
+int
+gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, int *profile_size_out, gs_memory_t *memory, 
                      bool has_abc_procs, bool has_lmn_procs)
 {
     icProfile iccprofile;
@@ -839,42 +1025,37 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
     icS15Fixed16Number temp_XYZ[3];
     int tag_location;
     icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
-    int trc_tag_size;
     int debug_catch = 1;
     gs_matrix3 *matrix_input;
     gs_matrix3 combined_matrix;
+    float *m_curves, *b_curves, *curr_pos;
+    int tag_size;
 
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
     gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
     /* Fill in the common stuff */
     setheader_common(header);
 
-    /* We will use an input type class 
-       which keeps us from having to
-       create an inverse.  We will keep
-       the data a generic 3 color.  
-       Since we are doing PS color management
-       the PCS is XYZ */
+    /* We will use an input type class which keeps us from having to
+       create an inverse.  We will keep the data a generic 3 color.  
+       Since we are doing PS color management the PCS is XYZ */
     header->deviceClass = icSigInputClass;
     header->colorSpace = icSig3colorData;
     header->pcs = icSigXYZData;
-
-    /* We really will want to consider adding a detection for 
-       a PS definition of CIELAB.  This could 
-       be achieved by looking at the
-       /RangeABC and then running a couple 
-       points through to verify that they
-       get mapped to CIEXYZ.  */
     profile_size = HEADER_SIZE;
-    /* Check if we only have LMN methods or ABC methods. In these
-       cases we can use a standard 3 channel input. Or, if we
+
+    /* Check what combination we have with respect to the various
+       LMN and ABC parameters. Depending upon the situation we
+       may be able to use a standard 3 channel input profile type. If we
        do not have the LMN decode we can mash together the ABC and LMN
-       matrix */
-    if ((pcie->MatrixABC.is_identity && !has_abc_procs) || !has_lmn_procs) {
+       matrix. Also, if ABC is identity we can mash the ABC and LMN
+       decode procs.  If we have an ABC matrix, LMN procs and an LMN 
+       matrix we will need to create a small (2x2x2) CLUT for the ICC format. */
+    if (pcie->MatrixABC.is_identity || !has_lmn_procs || pcie->common.MatrixLMN.is_identity) {
         /* Determine the matrix that we will be using */
         if (!(pcie->common.MatrixLMN.is_identity) && !(pcie->MatrixABC.is_identity)){
-            /* Use the product of the ABC and LMN matrices.
-               Must be LMN_Matrix*ABC_Matrix */
+            /* Use the product of the ABC and LMN matrices, since lmn_procs identity.
+               Product must be LMN_Matrix*ABC_Matrix */
             cie_matrix_mult3(&(pcie->common.MatrixLMN), &(pcie->MatrixABC), &(combined_matrix));
             matrix_input = &(combined_matrix);
         } else {
@@ -884,33 +1065,54 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
                 matrix_input = &(pcie->MatrixABC);
             }
         }
-        num_tags = 10;  /* common (2) + rXYZ,gXYZ,bXYZ,rTRC,gTRC,bTRC,bkpt,wtpt */     
+        num_tags = 5;  /* common (2), AToB0Tag,bkpt,wtpt.  AToB0Tag here is implemented as lutAtoBType (V4)
+                          with no CLUT or A curves */     
         tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_fromabc");
         /* Let us precompute the sizes of everything and all our offsets */
         profile_size += TAG_SIZE*num_tags;
         profile_size += 4; /* number of tags.... */
         last_tag = -1;
         init_common_tags(tag_list, num_tags, &last_tag);  
-        init_tag(tag_list, &last_tag, icSigRedColorantTag, XYZPT_SIZE);
-        init_tag(tag_list, &last_tag, icSigGreenColorantTag, XYZPT_SIZE);
-        init_tag(tag_list, &last_tag, icSigBlueColorantTag, XYZPT_SIZE);
         init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
         init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
-
-        /* Check it the procs are the identity.  If so, no need to create a 
-           large curve. Just set num points to zero */
-        for (k = 0; k < 3; k++) {
-            if (has_abc_procs || has_lmn_procs) {
-                trc_tag_size = CURVE_SIZE*2+4;  /* curv type */
-            } else {
-                /* when n = 0 we assume identity! */
-                trc_tag_size = 4;
-            }
-            init_tag(tag_list, &last_tag, TRC_Tags[k], trc_tag_size);
+        /* Now the AToB0Tag. Here this may include the M curves, the Matrix and the B curves */
+        /* First clean up and merge the curves */
+        if (has_abc_procs && has_lmn_procs && pcie->MatrixABC.is_identity) {
+            /* Merge the curves into the abc curves.  Set LMN curves to identity  */
+            merge_abc_lmn_curves(&(pcie->caches.DecodeABC.caches[0]),&(pcie->common.caches.DecodeLMN[0]));
+            has_lmn_procs = false;
         }
+        if (has_abc_procs) {
+            m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+            curr_pos = m_curves;
+            memcpy(curr_pos,&(pcie->caches.DecodeABC.caches->floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&((pcie->caches.DecodeABC.caches[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&((pcie->caches.DecodeABC.caches[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
+        } else {
+            m_curves = NULL;
+        }
+        if (has_lmn_procs) {
+            b_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+            curr_pos = b_curves;
+            memcpy(curr_pos,&(pcie->common.caches.DecodeLMN->floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
+        } else {
+            b_curves = NULL;
+        }
+        /* Get the tag size of the A2B0 with the lutAtoBType */
+        tag_size = getsize_lutAtoBtype(NULL, NULL, 0, m_curves, matrix_input, b_curves,3,3);
+        init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
+        /* Add all the tag sizes to get the new profile size */
         for(k = 0; k < num_tags; k++) {
             profile_size += tag_list[k].size;
         }
+        /* End of tag table information */
+
         /* Now we can go ahead and fill our buffer with the data */
         buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_fromabc");
         curr_ptr = buffer;
@@ -929,19 +1131,6 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
             curr_ptr += tag_list[k].size;
         }
         tag_location = NUMBER_COMMON_TAGS;
-        get_XYZ(temp_XYZ,matrix_input->cu);
-        add_xyzdata(curr_ptr,temp_XYZ);
-        curr_ptr += tag_list[tag_location].size;
-        tag_location++;
-        get_XYZ(temp_XYZ,matrix_input->cv);
-        add_xyzdata(curr_ptr,temp_XYZ);
-        curr_ptr += tag_list[tag_location].size;
-        tag_location++;
-        get_XYZ(temp_XYZ,matrix_input->cw);
-        add_xyzdata(curr_ptr,temp_XYZ);
-        curr_ptr += tag_list[tag_location].size;
-        tag_location++;
-
         /* Need to adjust for the D65/D50 issue */
         get_XYZ(temp_XYZ,pcie->common.points.WhitePoint);
         add_xyzdata(curr_ptr,temp_XYZ);
@@ -951,30 +1140,25 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, gs_memory_t *memor
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
         tag_location++;
-
-        /* Now we need to create the curves from the PS procedures */
-        /* Check for the case when they are the identity */
-        for (k = 0; k < 3; k++) {
-            if (has_abc_procs || has_lmn_procs) {
-                /* Must sample the proc into a curve buffer */
-                debug_catch = 0;
-            } else {
-                /* No points! */
-                write_bigendian_4bytes(curr_ptr,icSigCurveType);
-                curr_ptr+=4;
-                memset(curr_ptr,0,8); /* reserved + number points */
-                curr_ptr+=8;
-            }
-        }
+        /* Now the AToB0Tag Data. Here this will include the M curves, the matrix and the B curves.
+           We may need to do some adustements with respect to encode and decode.  For now
+           assume all is between 0 and 1. */
+        add_lutAtoBtype(curr_ptr, NULL, NULL, 0, m_curves, matrix_input, b_curves, 3, 3);
+        gs_free_object(memory, m_curves, "gsicc_create_fromabc");
+        gs_free_object(memory, b_curves, "gsicc_create_fromabc");
     } else {
-        /* This will be a bit more complex.  We  */
-        debug_catch = 0;
+        /* This will be a bit more complex as we have an ABC matrix, LMN decode
+           and an LMN matrix.  We will need to create an MLUT
+           to handle this properly */
+        return gs_rethrow(-1, "Conversion of CIEABC color space type to ICC form not yet implemented");
     }
+    *profile_size_out = profile_size;
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if(debug_catch)
         save_profile(buffer,"fromabc",profile_size);
 #endif
+    return(0);
 }
 
 void

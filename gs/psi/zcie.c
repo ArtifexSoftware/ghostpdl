@@ -32,6 +32,15 @@
 #include "store.h"		/* for make_null */
 #include "zcie.h"
 #include "gsicc_create.h"
+#include "gsiccmanage.h"
+
+/* Prototype */
+int cieicc_prepare_caches(i_ctx_t *i_ctx_p, const gs_range * domains,
+		     const ref * procs,
+		     cie_cache_floats * pc0, cie_cache_floats * pc1,
+		     cie_cache_floats * pc2, cie_cache_floats * pc3,
+		     void *container,
+		     gs_ref_memory_t * imem, client_name_t cname);
 
 /* Empty procedures */
 static const ref empty_procs[4] =
@@ -486,26 +495,53 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     pcie = pcs->params.abc;
     code = cie_abc_param(imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs);
 
-    /* At this point, we have all the parameters in pcie.
-       Go ahead and create the ICC profile for this thing.
-       Later we will want to disable the creation of the CIE joint cache.
-       MJV to do.  Also,  we will likely want to wait on 
-       creating this until we obtain a request to actually
-       do the transformation.  We are doing it here for now
-       for testing purposes.  The union member pcs->params
-       will have all the data that we will need like it is here
-       in pcie. */
-
-    gsicc_create_fromabc(pcie, NULL, imemory, has_abc_procs, has_lmn_procs);
-
-    if (code < 0 ||
-	(code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
-	(code = cie_cache_push_finish(i_ctx_p, cie_abc_finish, imem, pcie)) < 0 ||
-	(code = cache_abc_common(i_ctx_p, pcie, &procs, pcie, imem)) < 0
-	)
-	DO_NOTHING;
-    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    /* At this point, we have all the parameters in pcie including knowing if there
+       are procedures present.  If there are no procedures, life is simple for us.
+       If there are procedures, we have to do this a bit different since we can not
+       create the ICC profile until we have the procedures sampled, which requires
+       pushing the appropriate commands upon the postscript execution stack to create
+       the sampled procs and then having a follow up operation to create the ICC profile.
+       Because the procs may have to be merged with other operators and/or packed
+       in a particular form, we will have the PS operators stuff them in the already
+       existing static buffers that already exist for this purpose in the cie structures
+       e.g. gx_cie_vector_cache3_t that are in the common (params.abc.common.caches.DecodeLMN) 
+       and unique entries (e.g. params.abc.caches.DecodeABC.caches) */
+    if (!has_abc_procs && !has_lmn_procs) {
+        /* Go ahead and create it now */
+        pcs->cmm_icc_profile_data = gsicc_profile_new(NULL, imemory, NULL, 0);
+        code = gsicc_create_fromabc(pcie, pcs->cmm_icc_profile_data->buffer, 
+            &(pcs->cmm_icc_profile_data->buffer_size), imemory, has_abc_procs, has_lmn_procs);
+    } else {
+        if (has_abc_procs) {
+            cieicc_prepare_caches(i_ctx_p, (&pcie->RangeABC)->ranges,
+                     procs.Decode.ABC.value.const_refs,
+                     &(pcie->caches.DecodeABC.caches)->floats,
+                     &(pcie->caches.DecodeABC.caches)[1].floats,
+                     &(pcie->caches.DecodeABC.caches)[2].floats,
+                     NULL, pcie, imem, "Decode.ABC(ICC)");
+        } else {
+            pcie->caches.DecodeABC.caches->floats.params.is_identity = true;
+            (pcie->caches.DecodeABC.caches)[1].floats.params.is_identity = true;
+            (pcie->caches.DecodeABC.caches)[2].floats.params.is_identity = true;
+        }
+        if (has_lmn_procs) {
+            cieicc_prepare_caches(i_ctx_p, (&pcie->common.RangeLMN)->ranges,
+		     procs.DecodeLMN.value.const_refs,
+                     &(pcie->common.caches.DecodeLMN)->floats,
+                     &(pcie->common.caches.DecodeLMN)[1].floats,
+                     &(pcie->common.caches.DecodeLMN)[2].floats,
+                     NULL, pcie, imem, "Decode.LMN(ICC)");
+        } else {
+            pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
+            (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
+            (pcie->common.caches.DecodeLMN)[2].floats.params.is_identity = true;
+        }
+    }
+    /* Set the color space in the graphic state.  The ICC profile may be set after this
+       due to the needed sampled procs */
+    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code); 
 }
+
 static int
 cie_abc_finish(i_ctx_t *i_ctx_p)
 {
@@ -742,3 +778,108 @@ cie_cache_push_finish(i_ctx_t *i_ctx_p, op_proc_t finish_proc,
     return o_push_estack;
 }
 
+/* Special functions related to the creation of ICC profiles
+   from the PS CIE color management objects.  These basically
+   make use of the existing objects in the CIE stuctures to
+   store the sampled procs.  These sampled procs are then
+   used in the creation of the ICC profiles */
+
+/* Push the sequence of commands onto the execution stack
+   so that we sample the procs */
+static int cie_create_icc(i_ctx_t *);
+int
+cie_prepare_iccproc(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
+		  cie_cache_floats * pcache, void *container,
+		  gs_ref_memory_t * imem, client_name_t cname)
+{
+    int space = imemory_space(imem);
+    gs_sample_loop_params_t lp;
+    es_ptr ep;
+
+    gs_cie_cache_init(&pcache->params, &lp, domain, cname);
+    pcache->params.is_identity = r_size(proc) == 0;
+    check_estack(9);
+    ep = esp;
+    make_real(ep + 9, lp.A);
+    make_int(ep + 8, lp.N);
+    make_real(ep + 7, lp.B);
+    ep[6] = *proc;
+    r_clear_attrs(ep + 6, a_executable);
+    make_op_estack(ep + 5, zcvx);
+    make_op_estack(ep + 4, zfor_samples);
+    make_op_estack(ep + 3, cie_create_icc);
+    esp += 9;
+    /*
+     * The caches are embedded in the middle of other
+     * structures, so we represent the pointer to the cache
+     * as a pointer to the container plus an offset.
+     */
+    make_int(ep + 2, (char *)pcache - (char *)container);
+    make_struct(ep + 1, space, container);
+    return o_push_estack;
+}
+
+int
+cieicc_prepare_caches(i_ctx_t *i_ctx_p, const gs_range * domains,
+		     const ref * procs,
+		     cie_cache_floats * pc0, cie_cache_floats * pc1,
+		     cie_cache_floats * pc2, cie_cache_floats * pc3,
+		     void *container,
+		     gs_ref_memory_t * imem, client_name_t cname)
+{
+    cie_cache_floats *pcn[4];
+    int i, n, code = 0;
+
+    pcn[0] = pc0, pcn[1] = pc1, pcn[2] = pc2;
+    if (pc3 == 0)
+	n = 3;
+    else
+	pcn[3] = pc3, n = 4;
+    for (i = 0; i < n && code >= 0; ++i)
+	code = cie_prepare_iccproc(i_ctx_p, domains + i, procs + i, pcn[i],
+				 container, imem, cname);
+    return code;
+}
+
+/* We have sampled the procs. Go ahead and create the ICC profile.  */
+static int
+cie_create_icc(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    cie_cache_floats *pcache;
+    int code;
+
+    check_esp(2);
+    /* See above for the container + offset representation of */
+    /* the pointer to the cache. */
+    pcache = (cie_cache_floats *) (r_ptr(esp - 1, char) + esp->value.intval);
+
+    pcache->params.is_identity = false;	/* cache_set_linear computes this */
+    if_debug3('c', "[c]icc_sample_proc 0x%lx base=%g, factor=%g:\n",
+	      (ulong) pcache, pcache->params.base, pcache->params.factor);
+    if ((code = float_params(op, gx_cie_cache_size, &pcache->values[0])) < 0) {
+	/* We might have underflowed the current stack block. */
+	/* Handle the parameters one-by-one. */
+	uint i;
+
+	for (i = 0; i < gx_cie_cache_size; i++) {
+	    code = float_param(ref_stack_index(&o_stack,gx_cie_cache_size - 1 - i),
+			       &pcache->values[i]);
+	    if (code < 0)
+		return code;
+	}
+    }
+#ifdef DEBUG
+    if (gs_debug_c('c')) {
+	int i;
+
+	for (i = 0; i < gx_cie_cache_size; i += 4)
+	    dlprintf5("[c]  icc_sample_proc[%3d]=%g, %g, %g, %g\n", i,
+		      pcache->values[i], pcache->values[i + 1],
+		      pcache->values[i + 2], pcache->values[i + 3]);
+    }
+#endif
+    ref_stack_pop(&o_stack, gx_cie_cache_size);
+    esp -= 2;			/* pop pointer to cache */
+    return o_pop_estack;
+}

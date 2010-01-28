@@ -23,6 +23,8 @@
 #include "gxcmap.h"
 #include "gxistate.h"
 #include "gscolor2.h"
+#include "gsicc_create.h"       /* Needed for delayed creation of ICC profiles from CIE color spaces */
+#include "gsiccmanage.h"
 
 /*
  * Compute a cache index as (vin - base) * factor.
@@ -262,6 +264,28 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2]);
 
+    /* If we are comming in here then we have not completed
+       the conversion of the ABC space to an ICC type.  We
+       will finish that process now. */
+    if (pcs->cmm_icc_profile_data == NULL) {
+        gs_color_space *pcs_new = pcs;  /* const break */
+        gx_cie_vector_cache *abc_caches = &(pcs_new->params.abc->caches.DecodeABC.caches[0]);
+        gx_cie_scalar_cache    *lmn_caches = &(pcs_new->params.abc->common.caches.DecodeLMN[0]); 
+        bool has_no_abc_procs = (abc_caches->floats.params.is_identity &&
+                             (abc_caches)[1].floats.params.is_identity && 
+                             (abc_caches)[2].floats.params.is_identity);
+        bool has_no_lmn_procs = (lmn_caches->floats.params.is_identity &&
+                             (lmn_caches)[1].floats.params.is_identity && 
+                             (lmn_caches)[2].floats.params.is_identity);
+
+        pcs_new->cmm_icc_profile_data = gsicc_profile_new(NULL, pis->memory, NULL, 0);
+        code = gsicc_create_fromabc(pcs_new->params.abc, pcs_new->cmm_icc_profile_data->buffer, 
+                        &pcs_new->cmm_icc_profile_data->buffer_size, pis->memory, 
+                        !has_no_abc_procs, !has_no_lmn_procs);
+        /* Change the color space type to ICC.  Clean up all the CIE Joint Cache stuff */
+    } else {
+        return gs_rethrow(-1, "Error ICC CIEABC profile already set");
+    }
     code = gx_cie_check_rendering_inline(pcs, conc, pis);
     if (code < 0)
 	return code;
