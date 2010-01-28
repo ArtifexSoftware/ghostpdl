@@ -188,6 +188,10 @@ struct FAPI_server_s {
     int frac_shift; /* The number of fractional bits in coordinates. */
     FAPI_face face;
     FAPI_font ff;
+    gs_matrix initial_FontMatrix; /* Font Matrix at the time the font is defined */
+				  /* Used to use the stored 'OrigFont' entry but */
+				  /* this did not change f a font was defined    */
+				  /* using an existing base font */
     FAPI_retcode (*ensure_open)(FAPI_server *server, const byte * param, int param_size);
     FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, const FAPI_font_scale *scale, const char *xlatmap, FAPI_descendant_code dc);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
