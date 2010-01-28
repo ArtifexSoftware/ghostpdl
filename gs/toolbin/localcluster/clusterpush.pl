@@ -13,8 +13,18 @@ my %products=('abort' =>1,
               'svg'=>1,
               'xps'=>1);
 
+my $lowres="";
+
 my $product=shift;
+if ($product eq "lowres") {
+  $product=shift;
+  $lowres="lowres";
+}
 my $user=shift;
+if ($user && $user eq "lowres") {
+  $user=shift;
+  $lowres="lowres";
+}
 
 unlink "cluster_command.run";
 
@@ -89,7 +99,7 @@ if ($product ne "abort") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product\n";
+print F "$user $product $lowres\n";
 close(F);
 
 if ($product ne "abort") {

@@ -11,6 +11,7 @@ use Data::Dumper;
 
 my $verbose=1;
 
+
 my $runningSemaphore="./clustermaster.pid";
 my $queue="./queue.lst";
 my $lock="./queue.lck";
@@ -23,6 +24,7 @@ my $maxTransferTime=600;  # how many seconds after the last transfer before a ma
 my $jobsPerRequest=250;
 
 my %machines;
+
 
 my $footer="";
 
@@ -289,6 +291,7 @@ sub checkProblem {
       unlink "$usersDir/$user/ghostpdl/gs/cluster_command.run";
     }
     if ($product) {
+      $product =~ s/ +$//;
       mylog "user $product\n";
       open(LOCK,">$lock") || die "can't write to $lock";
       flock(LOCK,LOCK_EX);
@@ -427,6 +430,7 @@ if (!$regression) {
 my $normalRegression=0;
 my $userRegression="";
 my $mupdfRegression=0;
+my $updateBaseline=0;
 my $userName="";
 my $rev1;
 my $rev2;
@@ -506,11 +510,14 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
   chomp $rev1;
 # $mupdfRegression=1;
   $product="mupdf";
+} elsif ($regression=~/updatebaseline/) {
+  mylog "found updatebaseline in regression: $regression\n";
+  $updateBaseline=1;
 } else {
   mylog "found unknown entry in queue.lst, removing.\n";
 }
 
-if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
+if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $updateBaseline==1) {
 
   if ($userRegression ne "") {
     mylog "running: $userRegression\n" if ($verbose);
@@ -526,6 +533,10 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
     open(F,">revision.mudpf");
     print F "local cluster regression mupdf-r$rev1 (xefitra)\n";
     close(F);
+  }
+
+  if ($updateBaseline) {
+    mylog "running: updateBaseline\n" if ($verbose);
   }
 
   my @machines = <*.up>;
@@ -573,7 +584,10 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
       $footer="\n\nUser regression options: $product\n";
     }
 
-    `./build.pl $product >$jobs`;
+    my $baseline="";
+    $baseline="baseline" if ($updateBaseline);  # mhw
+
+    `./build.pl $product $baseline >$jobs`;
     if ($? != 0) {
       # horrible hack, fix later
       mylog "build.pl $product failed\n";
@@ -595,6 +609,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
         print F "svn\t$rev1 $rev2\t$product\n";
       } elsif ($mupdfRegression) {
         print F "mupdf\t$rev1\t$product";
+      } elsif ($updateBaseline) {
+        print F "svn\thead\t$product";
       } else {
         print F "user\t$userName\t$product\n";
       }
@@ -609,6 +625,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
       print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC";
     } elsif ($mupdfRegression) {
       print F "Regression mupdf-r$rev1 started at $startText UTC";
+    } elsif ($updateBaseline) {
+      print F "Update baseline started at $startText UTC";
     } else {
       print F "Regression $userRegression started at $startText UTC";
     }
@@ -660,7 +678,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
         local $SIG{ALRM} = sub { die "alarm\n" };
         alarm 30;
 
-        while ((!$tempDone) && ($client = $server->accept())) {
+        while (!$failOccured && !$tempDone && ($client = $server->accept())) {
           alarm 30;
 
           #print "doneCount=$doneCount machines=".(scalar(keys %machines))."\n";
@@ -715,6 +733,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
             print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($mupdfRegression) {
             print F "Regression mupdf-r$rev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+          } elsif ($updateBaseline) {
           } else {
             print F "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           }
@@ -743,13 +762,15 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
         $abort=0;
         mylog "fail occured, setting tempDone to 1 and abort to 0\n";
         my $startTime=time;
-        my $count=0;;
+        my $count=0;
+        my %tempMachines=%machines;
         while ($count<scalar keys %machines && time-$startTime<60) {
           foreach my $m (keys %machines) {
             if (-e "$m.fail") {
               mylog "$m is reporting fail\n";
               $count++;
               unlink "$m.fail";
+              delete $machines{$m};
             }
           }
         }
@@ -757,6 +778,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
           mylog "aborting all machines\n";
           abortAll();
         }
+        %machines=%tempMachines;
       }
 
 
@@ -810,6 +832,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
     print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC - finished at $s";
   } elsif ($mupdfRegression) {
     print F "Regression mupdf-r$rev1 started at $startText UTC - finished at $s";
+  } elsif ($updateBaseline) {
+    print F "Update baseline started at $startText UTC - finished at $s";
   } else {
     print F "Regression $userRegression started at $startText UTC - finished at $s";
   }
@@ -821,6 +845,9 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1) {
   my $failMessage="";
   my $logs="";
   my $tabs="";
+
+sleep(10);
+
   foreach (keys %machines) {
     if (-e "$_.log.gz" && -e "$_.out.gz") {
       mylog "reading log for $_\n";
@@ -907,6 +934,7 @@ mylog "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
       #  `gzip archive/$rev2-$rev1.tab`;
       # unlink "log";
     } elsif ($mupdfRegression) {
+    } elsif ($updateBaseline) {
     } else {
       my @a=split ' ',$product;
       my $filter="cat current.tab";
@@ -972,6 +1000,7 @@ mylog("calling cachearchive.pl");
     `./cachearchive.pl >md5sum.cache`;
 mylog("finished cachearchive.pl");
   } elsif ($mupdfRegression) {
+  } elsif ($updateBaseline) {
   } else {
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
