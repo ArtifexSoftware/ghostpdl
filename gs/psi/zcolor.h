@@ -58,7 +58,8 @@ typedef struct PS_colour_space_s PS_colour_space_t;
 struct PS_colour_space_s {
     char *name;					/* C string representing the name of the space */
     int (*setproc)(i_ctx_t * i_ctx_p, ref *r,	/* Routine to set the color space, if CIESubst */ 
-	int *stage, int *cont, int CIESubst);	/* is true then we are already doing CIE substitution */
+	int *stage, int *cont, int CIESubst,	/* is true then we are already doing CIE substitution */
+	int flags);
     int (*validateproc)(i_ctx_t * i_ctx_p,	/* Validates the color space operands */
 	ref **r);	
     int (*alternateproc)(i_ctx_t * i_ctx_p,	/* Retrieve the alternate color space (if any) */ 

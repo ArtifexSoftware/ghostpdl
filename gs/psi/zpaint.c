@@ -17,6 +17,7 @@
 #include "oper.h"
 #include "gspaint.h"
 #include "igstate.h"
+#include "gzstate.h"		/* for accessing path */
 
 /* - fill - */
 static int
@@ -36,7 +37,12 @@ zeofill(i_ctx_t *i_ctx_p)
 static int
 zstroke(i_ctx_t *i_ctx_p)
 {
-    return gs_stroke(igs);
+    int code;
+    
+    igs->current_color = 1;
+    code = gs_stroke(igs);
+    igs->current_color = 0;
+    return code;
 }
 
 /* ------ Non-standard operators ------ */

@@ -358,6 +358,18 @@ zsetcolor(i_ctx_t * i_ctx_p)
     return zsetcolor_aux(i_ctx_p, 3);
 }
 
+static int
+zsetcolor0(i_ctx_t * i_ctx_p)
+{
+    return zsetcolor_aux(i_ctx_p, 1);
+}
+
+static int
+zsetcolor1(i_ctx_t * i_ctx_p)
+{
+    return zsetcolor_aux(i_ctx_p, 2);
+}
+
 /* This is used to detect color space changes due
    to the changing of UseCIEColor during transparency
    soft mask processing */
@@ -542,6 +554,18 @@ static int
 zsetcolorspace(i_ctx_t * i_ctx_p)
 {
     return zsetcolorspace_aux(i_ctx_p, 3);
+}
+
+static int
+zsetcolorspace0(i_ctx_t * i_ctx_p)
+{
+    return zsetcolorspace_aux(i_ctx_p, 1);
+}
+
+static int
+zsetcolorspace1(i_ctx_t * i_ctx_p)
+{
+    return zsetcolorspace_aux(i_ctx_p, 2);
 }
 
 /*
@@ -759,8 +783,10 @@ zcolor_reset_transfer(i_ctx_t *i_ctx_p)
 int
 zcolor_remap_color(i_ctx_t *i_ctx_p)
 {
-    /* FIXME: Always work on color 0? */
-    igs->current_color = 0;
+    /* Remap both colors. This should never hurt. */
+    igs->current_color ^= 1;
+    gx_unset_dev_color(igs);
+    igs->current_color ^= 1;
     gx_unset_dev_color(igs);
     return 0;
 }
@@ -1130,7 +1156,7 @@ static int hsb2rgb(float *HSB)
  */
 
 /* DeviceGray */
-static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     os_ptr op = osp;
     gs_color_space  *pcs;
@@ -1208,8 +1234,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 		pop(1);
 		*cont = 1;
     		*stage = 3;
-		/* FIXME: Set both colors for now */
-		code = setcolorspace_nosubst(i_ctx_p, 3);
+		code = setcolorspace_nosubst(i_ctx_p, flags);
 		if (code != 0)
 		    return code;
 		break;
@@ -1235,8 +1260,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 		*cont = 1;
 		if (op->value.boolval) {
 		    *stage = 5;
-		    /* FIXME: Set both colors for now */
-		    code = setcolorspace_nosubst(i_ctx_p, 3);
+		    code = setcolorspace_nosubst(i_ctx_p, flags);
 		    if (code != 0)
 			return code;
 		} 
@@ -1356,7 +1380,7 @@ static int grayinitialproc(i_ctx_t *i_ctx_p, ref *space)
 }
 
 /* DeviceRGB */
-static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     os_ptr op = osp;
     gs_color_space  *pcs;
@@ -1434,8 +1458,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		}
 		pop(1);
     		*stage = 3;
-		/* FIXME: Set both colors for now */
-		code = setcolorspace_nosubst(i_ctx_p, 3);
+		code = setcolorspace_nosubst(i_ctx_p, flags);
 		if (code != 0)
 		    return code;
 		break;
@@ -1461,8 +1484,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		*cont = 1;
 		if (op->value.boolval) {
 		    *stage = 5;
-		    /* FIXME: Set both colors for now */
-		    code = setcolorspace_nosubst(i_ctx_p, 3);
+		    code = setcolorspace_nosubst(i_ctx_p, flags);
 		    if (code != 0)
 			return code;
 		} 
@@ -1692,7 +1714,7 @@ static int rgbinitialproc(i_ctx_t *i_ctx_p, ref *space)
 }
 
 /* DeviceCMYK */
-static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     os_ptr op = osp;
     gs_color_space  *pcs;
@@ -1771,8 +1793,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 		}
 		pop(1);
     		*stage = 3;
-		/* FIXME: Set both colors for now */
-		code = setcolorspace_nosubst(i_ctx_p, 3);
+		code = setcolorspace_nosubst(i_ctx_p, flags);
 		if (code != 0)
 		    return code;
 		break;
@@ -1798,8 +1819,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 		*cont = 1;
 		if (op->value.boolval) {
 		    *stage = 5;
-		    /* FIXME: Set both colors for now */
-		    code = setcolorspace_nosubst(i_ctx_p, 3);
+		    code = setcolorspace_nosubst(i_ctx_p, flags);
 		    if (code != 0)
 			return code;
 		} 
@@ -2199,7 +2219,7 @@ static int checkMatrixLMN(i_ctx_t * i_ctx_p, ref *CIEdict)
 }
 
 /* CIEBasedA */
-static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     int code = 0;
     ref CIEDict, *nocie;
@@ -2213,7 +2233,7 @@ static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
     if (!r_has_type(nocie, t_boolean))
 	return_error(e_typecheck);
     if (nocie->value.boolval)
-	return setgrayspace(i_ctx_p, r, stage, cont, 1);
+	return setgrayspace(i_ctx_p, r, stage, cont, 1, flags);
 
     *cont = 0;
     code = array_get(imemory, r, 1, &CIEDict);
@@ -2433,7 +2453,7 @@ static int cieacompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
 }
 
 /* CIEBasedABC */
-static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     int code = 0;
     ref CIEDict, *nocie;
@@ -2447,7 +2467,7 @@ static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
     if (!r_has_type(nocie, t_boolean))
 	return_error(e_typecheck);
     if (nocie->value.boolval)
-	return setrgbspace(i_ctx_p, r, stage, cont, 1);
+	return setrgbspace(i_ctx_p, r, stage, cont, 1, flags);
 
     *cont = 0;
     code = array_get(imemory, r, 1, &CIEDict);
@@ -2684,7 +2704,7 @@ static int cieabccompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
 }
 
 /* CIEBasedDEF */
-static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     int code = 0;
     ref CIEDict, *nocie;
@@ -2698,7 +2718,7 @@ static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
     if (!r_has_type(nocie, t_boolean))
 	return_error(e_typecheck);
     if (nocie->value.boolval)
-	return setrgbspace(i_ctx_p, r, stage, cont, 1);
+	return setrgbspace(i_ctx_p, r, stage, cont, 1, flags);
 
     *cont = 0;
     code = array_get(imemory, r, 1, &CIEDict);
@@ -2968,7 +2988,7 @@ static int ciedefcompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
 }
 
 /* CIEBasedDEFG */
-static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     int code = 0;
     ref CIEDict, *nocie;
@@ -2982,7 +3002,7 @@ static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     if (!r_has_type(nocie, t_boolean))
 	return_error(e_typecheck);
     if (nocie->value.boolval)
-	return setcmykspace(i_ctx_p, r, stage, cont, 1);
+	return setcmykspace(i_ctx_p, r, stage, cont, 1, flags);
 
     *cont = 0;
     code = array_get(imemory, r, 1, &CIEDict);
@@ -3372,7 +3392,7 @@ static int convert_transform(i_ctx_t * i_ctx_p, ref *arr, ref *pproc)
 }
 
 /* Separation */
-static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int *cont, int CIESubst)
+static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int *cont, int CIESubst, int flags)
 {
     os_ptr op = osp;   /* required by "push" macro */
     int code = 0;
@@ -3854,7 +3874,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
     while(1);
 }
 
-static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int *cont, int CIESubst)
+static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int *cont, int CIESubst, int flags)
 {
     os_ptr  op = osp;   /* required by "push" macro */
     int code = 0, num_components, i;
@@ -4481,7 +4501,7 @@ indexed_cont(i_ctx_t *i_ctx_p)
     esp = ep + 2;
     return o_push_estack;
 }
-static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     ref *pproc = &istate->colorspace.procs.special.index_proc;
     int code = 0;
@@ -4762,7 +4782,7 @@ static int indexedvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
 }
 
 /* Pattern */
-static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     gs_color_space *pcs;
     gs_color_space *pcs_base;
@@ -4943,7 +4963,7 @@ static int patternvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
 }
 
 /* DevicePixel */
-static int setdevicepspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setdevicepspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     int code = 0;
     gs_color_space *pcs;
@@ -5035,18 +5055,18 @@ static int devicepvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     return 0;
 }
 
-static int set_dev_space(i_ctx_t * i_ctx_p, int components)
+static int set_dev_space(i_ctx_t * i_ctx_p, int components, int flags)
 {
     int code, stage = 1, cont = 0;
     switch(components) {
 	case 1:
-	    code = setgrayspace(i_ctx_p, (ref *)0, &stage, &cont, 1);
+	    code = setgrayspace(i_ctx_p, (ref *)0, &stage, &cont, 1, flags);
 	    break;
 	case 3:
-	    code = setrgbspace(i_ctx_p, (ref *)0, &stage, &cont, 1);
+	    code = setrgbspace(i_ctx_p, (ref *)0, &stage, &cont, 1, flags);
 	    break;
 	case 4:
-	    code = setcmykspace(i_ctx_p, (ref *)0, &stage, &cont, 1);
+	    code = setcmykspace(i_ctx_p, (ref *)0, &stage, &cont, 1, flags);
 	    break;
 	default:
 	    code = gs_note_error(e_rangecheck);
@@ -5057,7 +5077,7 @@ static int set_dev_space(i_ctx_t * i_ctx_p, int components)
 
 /* ICCBased */
 static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr);
-static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst, int flags)
 {
     os_ptr op = osp;
     ref     ICCdict, *tempref, *altref=NULL, *nocie;
@@ -5099,13 +5119,12 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 			/* If CIESubst, we are already substituting for CIE, so use nosubst 
 			 * to prevent further substitution!
 			 */
-			/* FIXME: Set both colors for now */
-			return setcolorspace_nosubst(i_ctx_p, 3);
+			return setcolorspace_nosubst(i_ctx_p, flags);
 		    } else {
 			/* There's no /Alternate (or it is null), set a default space
 			 * based on the number of components in the ICCBased space
 			 */
-			code = set_dev_space(i_ctx_p, components);
+			code = set_dev_space(i_ctx_p, components, flags);
 			if (code != 0)
 			    return code;
 			*stage = 0;
@@ -5142,15 +5161,14 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 			     * to prevent further substitution!
 			     */
 			    if (CIESubst) 
-				/* FIXME: Set both colors for now */
-				return setcolorspace_nosubst(i_ctx_p, 3);
+				return setcolorspace_nosubst(i_ctx_p, flags);
 			    else
-				return zsetcolorspace(i_ctx_p);
+				return zsetcolorspace_aux(i_ctx_p, flags);
 			} else {
 			    /* We have no /Alternate in the ICC space, use hte /N key to
 			     * determine an 'appropriate' default space.
 			     */
-			    code = set_dev_space(i_ctx_p, components);
+			    code = set_dev_space(i_ctx_p, components, flags);
 			    if (code != 0)
 			        return code;
 			    *stage = 0;
@@ -5675,7 +5693,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
 	    }
 	}
 
-	code = obj->setproc(i_ctx_p, parr, &stage, &cont, CIESubst);
+	code = obj->setproc(i_ctx_p, parr, &stage, &cont, CIESubst, flags);
 	make_int(pstage, stage);
 	if (code != 0) 
 	    return code;
@@ -5719,9 +5737,10 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     es_ptr ep = esp, pstage;
-    int code = 0, stage, base;
+    int code = 0, stage, base, flags;
 
     pstage = ep;
+    flags = (int)ep[-2].value.intval;
     base = (int)ep[-1].value.intval;
     stage = (int)pstage->value.intval;
     /* If we get a continuation from a sub-procedure, we will want to come back
@@ -5763,7 +5782,7 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
 		    return code;
 		break;
 	    case 2:
-		esp -= 3;
+		esp -= 4;
 		return o_pop_estack;
 		break;
         }
@@ -5776,7 +5795,7 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
  * Previously these were implemented in PostScript.
  */
 static int
-zsetgray(i_ctx_t * i_ctx_p)
+zsetgray_aux(i_ctx_t * i_ctx_p, int flags)
 {
     os_ptr  op = osp;   /* required by "push" macro */
     float value;
@@ -5797,8 +5816,11 @@ zsetgray(i_ctx_t * i_ctx_p)
 
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
-    check_estack(5);
+    check_estack(6);
     push_mark_estack(es_other, 0);
+    esp++;
+    /* Store the flags */
+    make_int(esp, flags);
     esp++;
     /* variable to hold base type (0 = gray) */
     make_int(esp, 0);
@@ -5809,8 +5831,27 @@ zsetgray(i_ctx_t * i_ctx_p)
     push_op_estack(setdevicecolor_cont);
     return o_push_estack;
 }
+
 static int
-zsethsbcolor(i_ctx_t * i_ctx_p)
+zsetgray(i_ctx_t * i_ctx_p)
+{
+    return zsetgray_aux(i_ctx_p, 3);
+}
+
+static int
+zsetgray0(i_ctx_t * i_ctx_p)
+{
+    return zsetgray_aux(i_ctx_p, 1);
+}
+
+static int
+zsetgray1(i_ctx_t * i_ctx_p)
+{
+    return zsetgray_aux(i_ctx_p, 2);
+}
+
+static int
+zsethsbcolor_aux(i_ctx_t * i_ctx_p, int flags)
 {
     os_ptr  op = osp;   /* required by "push" macro */
     int code, i;
@@ -5836,8 +5877,11 @@ zsethsbcolor(i_ctx_t * i_ctx_p)
 
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
-    check_estack(5);
+    check_estack(6);
     push_mark_estack(es_other, 0);
+    esp++;
+    /* Store the flags */
+    make_int(esp, flags);
     esp++;
     /* variable to hold base type (1 = RGB) */
     make_int(esp, 1);
@@ -5848,8 +5892,27 @@ zsethsbcolor(i_ctx_t * i_ctx_p)
     push_op_estack(setdevicecolor_cont);
     return o_push_estack;
 }
+
 static int
-zsetrgbcolor(i_ctx_t * i_ctx_p)
+zsethsbcolor(i_ctx_t * i_ctx_p)
+{
+    return zsethsbcolor_aux(i_ctx_p, 3);
+}
+
+static int
+zsethsbcolor0(i_ctx_t * i_ctx_p)
+{
+    return zsethsbcolor_aux(i_ctx_p, 1);
+}
+
+static int
+zsethsbcolor1(i_ctx_t * i_ctx_p)
+{
+    return zsethsbcolor_aux(i_ctx_p, 2);
+}
+
+static int
+zsetrgbcolor_aux(i_ctx_t * i_ctx_p, int flags)
 {
     os_ptr  op = osp;   /* required by "push" macro */
     int code, i;
@@ -5873,8 +5936,11 @@ zsetrgbcolor(i_ctx_t * i_ctx_p)
 
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
-    check_estack(5);
+    check_estack(6);
     push_mark_estack(es_other, 0);
+    esp++;
+    /* Store the flags */
+    make_int(esp, flags);
     esp++;
     /* variable to hold base type (1 = RGB) */
     make_int(esp, 1);
@@ -5885,8 +5951,27 @@ zsetrgbcolor(i_ctx_t * i_ctx_p)
     push_op_estack(setdevicecolor_cont);
     return o_push_estack;
 }
+
 static int
-zsetcmykcolor(i_ctx_t * i_ctx_p)
+zsetrgbcolor(i_ctx_t * i_ctx_p)
+{
+    return zsetrgbcolor_aux(i_ctx_p, 3);
+}
+
+static int
+zsetrgbcolor0(i_ctx_t * i_ctx_p)
+{
+    return zsetrgbcolor_aux(i_ctx_p, 1);
+}
+
+static int
+zsetrgbcolor1(i_ctx_t * i_ctx_p)
+{
+    return zsetrgbcolor_aux(i_ctx_p, 2);
+}
+
+static int
+zsetcmykcolor_aux(i_ctx_t * i_ctx_p, int flags)
 {
     os_ptr  op = osp;   /* required by "push" macro */
     int code, i;
@@ -5910,8 +5995,11 @@ zsetcmykcolor(i_ctx_t * i_ctx_p)
 
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
-    check_estack(5);
+    check_estack(6);
     push_mark_estack(es_other, 0);
+    esp++;
+    /* Store the flags */
+    make_int(esp, flags);
     esp++;
     /* variable to hold base type (2 = CMYK) */
     make_int(esp, 2);
@@ -5922,6 +6010,25 @@ zsetcmykcolor(i_ctx_t * i_ctx_p)
     push_op_estack(setdevicecolor_cont);
     return o_push_estack;
 }
+
+static int
+zsetcmykcolor(i_ctx_t * i_ctx_p)
+{
+    return zsetcmykcolor_aux(i_ctx_p, 3);
+}
+
+static int
+zsetcmykcolor0(i_ctx_t * i_ctx_p)
+{
+    return zsetcmykcolor_aux(i_ctx_p, 1);
+}
+
+static int
+zsetcmykcolor1(i_ctx_t * i_ctx_p)
+{
+    return zsetcmykcolor_aux(i_ctx_p, 2);
+}
+
 /*
  * The routine which does all the dispatching for the device-space specific
  * 'current color' routines currentgray, currentrgbcolo and currentcmykcolor.
@@ -6163,14 +6270,33 @@ const op_def    zcolor_op_defs[] =
 
 const op_def    zcolor_ext_op_defs[] = 
 {
-    {"0currentgray", zcurrentgray },
-    {"1setgray", zsetgray },
-    {"0currenthsbcolor", zcurrenthsbcolor },
-    {"3sethsbcolor", zsethsbcolor },
-    {"0currentrgbcolor", zcurrentrgbcolor },
-    {"3setrgbcolor", zsetrgbcolor },
-    {"0currentcmykcolor", zcurrentcmykcolor },
-    {"4setcmykcolor", zsetcmykcolor },
+    { "0currentgray", zcurrentgray },
+    { "1setgray", zsetgray },
+    { "0currenthsbcolor", zcurrenthsbcolor },
+    { "3sethsbcolor", zsethsbcolor },
+    { "0currentrgbcolor", zcurrentrgbcolor },
+    { "3setrgbcolor", zsetrgbcolor },
+    { "0currentcmykcolor", zcurrentcmykcolor },
+    { "4setcmykcolor", zsetcmykcolor },
+    
+    /* Operators to deal with setting stroking/non-stroking colors
+     * individually */
+    { "1.setcolor0", zsetcolor0 },
+    { "1.setcolorspace0", zsetcolorspace0 },
+    { "1.setgray0", zsetgray0 },
+    { "3.sethsbcolor0", zsethsbcolor0 },
+    { "3.setrgbcolor0", zsetrgbcolor0 },
+    { "4.setcmykcolor0", zsetcmykcolor0 },
+    { "1.setcolor1", zsetcolor1 },
     op_def_end(0)
 };
 
+const op_def    zcolor_ext2_op_defs[] = 
+{
+    { "1.setcolorspace1", zsetcolorspace1 },
+    { "1.setgray1", zsetgray1 },
+    { "3.sethsbcolor1", zsethsbcolor1 },
+    { "3.setrgbcolor1", zsetrgbcolor1 },
+    { "4.setcmykcolor1", zsetcmykcolor1 },
+    op_def_end(0)
+};

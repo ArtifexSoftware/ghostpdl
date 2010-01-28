@@ -405,7 +405,11 @@ zustroke(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     if ((code = npop = upath_stroke(i_ctx_p, NULL, CPSI_mode)) >= 0)
+    {
+	igs->current_color = 1;
 	code = gs_stroke(igs);
+	igs->current_color = 0;
+    }
     gs_grestore(igs);
     if (code < 0)
 	return code;
