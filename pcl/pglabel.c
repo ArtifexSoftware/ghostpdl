@@ -111,7 +111,7 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
     
     return pl_map_symbol(psm, chr,
                          pfs->font->storage == pcds_internal,
-                         pl_complement_to_vocab(pfs->font->character_complement) == plgv_MSL,
+                         pfs->font->font_type == plgv_MSL,
                          false);
 }
 
@@ -201,7 +201,8 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	    id[0] = pfs->params.symbol_set >> 8;
 	    id[1] = pfs->params.symbol_set & 0xff;
 	    pfs->map = pcl_find_symbol_map(pgls,
-					   id, plgv_Unicode);
+					   id, plgv_Unicode,
+                                           font->font_type == plft_16bit);
 	} 
 	return 0;
 }
@@ -217,7 +218,7 @@ hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
 
     id[0] = symbol_set >> 8;
     id[1] = symbol_set & 0xff;
-    if ( (map = pcl_find_symbol_map(pcs, id, gv)) == 0 )
+    if ( (map = pcl_find_symbol_map(pcs, id, gv, false)) == 0 )
         return false;
     return pcl_check_symbol_support(map->character_requirements,
                                     stick_character_complement);
