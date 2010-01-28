@@ -458,32 +458,32 @@ static const pl_glyph_mapping_t pl_map_m2u[] = {
     {520, 0xFFFF}, /* Underline, Composite */
     {521, 0xFFFF}, /* Because */
     {522, 0x03B1}, /* Lowercase Greek Alpha */
-    {523, 0xFFFF}, /* Lowercase Greek Beta */
-    {524, 0xFFFF}, /* Lowercase Greek Gamma */
+    {523, 0x03B2}, /* Lowercase Greek Beta */
+    {524, 0x03B3}, /* Lowercase Greek Gamma */
     {525, 0x03B4}, /* Lowercase Greek Delta */
     {526, 0x03B5}, /* Lowercase Greek Epsilon */
-    {527, 0xFFFF}, /* Lowercase Greek Zeta */
-    {528, 0xFFFF}, /* Lowercase Greek Eta */
-    {529, 0xFFFF}, /* Lowercase Greek Theta */
-    {530, 0xFFFF}, /* Lowercase Greek Iota */
-    {531, 0xFFFF}, /* Lowercase Greek Kappa */
-    {532, 0xFFFF}, /* Lowercase Greek Lambda */
-    {533, 0xFFFF}, /* Lowercase Greek Mu */
-    {534, 0xFFFF}, /* Lowercase Greek Nu */
+    {527, 0x03B6}, /* Lowercase Greek Zeta */
+    {528, 0x03B7}, /* Lowercase Greek Eta */
+    {529, 0x03B8}, /* Lowercase Greek Theta */
+    {530, 0x03B9}, /* Lowercase Greek Iota */
+    {531, 0x03BA}, /* Lowercase Greek Kappa */
+    {532, 0x03BB}, /* Lowercase Greek Lambda */
+    {533, 0x03BC}, /* Lowercase Greek Mu */
+    {534, 0x03BD}, /* Lowercase Greek Nu */
     {535, 0x03BE}, /* Lowercase Greek Xi */
     {536, 0x03BF}, /* Lowercase Greek Omicron */
     {537, 0x03C0}, /* Lowercase Greek Pi */ /* u */
-    {538, 0xFFFF}, /* Lowercase Greek Rho */
+    {538, 0x03C1}, /* Lowercase Greek Rho */
     {539, 0x03C3}, /* Lowercase Greek Sigma */
     {540, 0x03C4}, /* Lowercase Greek Tau */
-    {541, 0xFFFF}, /* Lowercase Greek Upsilon */
+    {541, 0x03C5}, /* Lowercase Greek Upsilon */
     {542, 0x03C6}, /* Lowercase Greek Phi */
-    {543, 0xFFFF}, /* Lowercase Greek Chi */
-    {544, 0xFFFF}, /* Lowercase Greek Psi */
-    {545, 0xFFFF}, /* Lowercase Greek Omega */
-    {546, 0xFFFF}, /* Open LC Greek Theta */
-    {547, 0x03C6}, /* Open LC Greek Phi */
-    {548, 0xFFFF}, /* Alternate LC Pi */
+    {543, 0x03C7}, /* Lowercase Greek Chi */
+    {544, 0x03C8}, /* Lowercase Greek Psi */
+    {545, 0x03C9}, /* Lowercase Greek Omega */
+    {546, 0x03D1}, /* Open LC Greek Theta */
+    {547, 0x03D5}, /* Open LC Greek Phi */
+    {548, 0x03D6}, /* Alternate LC Pi */
     {549, 0x2243}, /* Wavy/Straight Approx */
     {550, 0x2262}, /* Not Exactly Equal To */
     {551, 0xFFFF}, /* Up Arrow Dbl Stroke */
