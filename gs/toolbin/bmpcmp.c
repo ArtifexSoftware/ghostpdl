@@ -526,6 +526,7 @@ static void image_open(ImageReader *im,
     if (type == 0x50) {
         /* Starts with a P! Must be a P?M file. */
         im->read = pnm_read;
+        ungetc(0x50, im->file);
     } else {
         type |= (fgetc(im->file)<<8);
         if (type == 0x4d42) { /* BM */
@@ -536,9 +537,6 @@ static void image_open(ImageReader *im,
             exit(EXIT_FAILURE);
         }
     }
-    
-    /* Seek back to the start */
-    fseek(im->file, 0, SEEK_SET);
 }
 
 static void image_close(ImageReader *im)
@@ -1131,6 +1129,7 @@ int main(int argc, char *argv[])
         basenum = n;
 
         boxlist -= nx*ny;
+	boxlist++;
         free(boxlist);
         free(bmp);
         free(bmp2);
