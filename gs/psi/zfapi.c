@@ -1613,7 +1613,6 @@ retry_oversampling:
 	I->face.HWResolution[1] != dev->HWResolution[1]
        ) {
 	FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
-//        gs_matrix *base_font_matrix = &pbfont->base->orig_FontMatrix;
         gs_matrix *base_font_matrix = &I->initial_FontMatrix;
         double dx, dy;
 
