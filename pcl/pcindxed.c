@@ -707,6 +707,10 @@ pcl_cs_indexed_set_num_entries(
         return code;
     pindexed = *ppindexed;
     pindexed->num_entries = new_num;
+    /* syncronize pcl's copy of the palette with the graphics
+       library's color index.  The need for parallel tables is
+       dubious. */
+    pindexed->pcspace->params.indexed.hival = new_num - 1;
     pindexed->cid.bits_per_index = bits;
 
     /* check if the Decode array must be updated */
