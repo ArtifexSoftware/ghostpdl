@@ -1457,6 +1457,25 @@ cie_matrix_mult3(const gs_matrix3 *ma, const gs_matrix3 *mb, gs_matrix3 *mc)
 	*mc = *mp;
 }
 
+/*
+ * Transpose a 3x3 matrix. In and out can not be the same
+ */
+void
+cie_matrix_transpose3(const gs_matrix3 *in, gs_matrix3 *out)
+{
+    out->cu.u = in->cu.u;
+    out->cu.v = in->cv.u;
+    out->cu.w = in->cw.u;
+
+    out->cv.u = in->cu.v;
+    out->cv.v = in->cv.v;
+    out->cv.w = in->cw.v;
+
+    out->cw.u = in->cu.w;
+    out->cw.v = in->cv.w;
+    out->cw.w = in->cw.w;
+}
+
 /* Invert a matrix. */
 /* The output must not be an alias for the input. */
 static void

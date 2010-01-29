@@ -1027,7 +1027,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
     icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
     int debug_catch = 1;
     gs_matrix3 *matrix_input;
-    gs_matrix3 combined_matrix;
+    gs_matrix3 combined_matrix, matrix_input_trans;
     float *m_curves, *b_curves, *curr_pos;
     int tag_size;
 
@@ -1065,6 +1065,8 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
                 matrix_input = &(pcie->MatrixABC);
             }
         }
+        cie_matrix_transpose3(matrix_input, &matrix_input_trans);
+        matrix_input = &matrix_input_trans;
         num_tags = 5;  /* common (2), AToB0Tag,bkpt,wtpt.  AToB0Tag here is implemented as lutAtoBType (V4)
                           with no CLUT or A curves */     
         tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_fromabc");

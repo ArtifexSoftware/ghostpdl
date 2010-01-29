@@ -845,5 +845,6 @@ float abc_identity(floatp in, const gs_cie_abc * pcie);
 float a_identity(floatp in, const gs_cie_a * pcie);
 void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
 			      gs_matrix3 *);
+void  cie_matrix_transpose3(const gs_matrix3 *, gs_matrix3 *);
 
 #endif /* gscie_INCLUDED */
