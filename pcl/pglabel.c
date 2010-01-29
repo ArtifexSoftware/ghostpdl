@@ -87,9 +87,12 @@ static bool
 hpgl_is_printable(
     const pl_symbol_map_t * psm,
     gs_char                 chr,
-    bool                    is_stick
+    bool                    is_stick,
+    bool                    transparent
 )
 {    
+    if (transparent)
+        return true;
     if ( is_stick )
 	return (chr >= ' ') && (chr <= 0xff);
     if ((psm == 0) || (psm->type >= 2))
@@ -1294,7 +1297,8 @@ print:	     {
                 const pcl_font_selection_t *pfs =
                     &pgls->g.font_selection[pgls->g.font_selected];
                 if ( !hpgl_is_printable(pfs->map, ch, 
-                                        (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
+                                        (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE,
+                                        pgls->g.transparent_data) )
                     continue;
             }
             hpgl_call(hpgl_ensure_font(pgls));
