@@ -467,33 +467,42 @@ gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem)
 {
     cmm_profile_t *result;
     stream* str;
-    int code, k;
+    int code;
 
     /* First see if we can get the stream.  NOTE  icc directory not used! */
     str = gsicc_open_search(pname, namelen, mem, NULL);
     if (str != NULL) {
         result = gsicc_profile_new(str, mem, pname, namelen);
         code = sfclose(str);
-
-        /* Get the profile handle */
-        result->profile_handle = gsicc_get_profile_handle_buffer(result->buffer);
-
-        /* Compute the hash code of the profile. */
-        gsicc_get_icc_buff_hash(result->buffer, &(result->hashcode));
-        result->hash_is_valid = true;
-        result->default_match = DEFAULT_NONE;
-        result->num_comps = gscms_get_channel_count(result->profile_handle);
-        result->pcs_num_comps = gscms_get_pcs_channel_count(result->profile_handle);
-        result->data_cs = gscms_get_profile_data_space(result->profile_handle);
-
-        /* Initialize the range to default values */
-        for ( k = 0; k < result->num_comps; k++) {
-            result->Range.ranges[k].rmin = 0.0;
-            result->Range.ranges[k].rmax = 1.0;
-        }
+        gsicc_init_profile_info(result);
         return(result);
     }
     return(NULL);
+}
+
+/* Given that we already have a profile in a buffer (e.g. generated from a PS object)
+   this gets the handle and initializes the various member variables that we need */
+void
+gsicc_init_profile_info(cmm_profile_t *profile)
+{
+    int k;
+
+    /* Get the profile handle */
+    profile->profile_handle = gsicc_get_profile_handle_buffer(profile->buffer);
+
+    /* Compute the hash code of the profile. */
+    gsicc_get_icc_buff_hash(profile->buffer, &(profile->hashcode));
+    profile->hash_is_valid = true;
+    profile->default_match = DEFAULT_NONE;
+    profile->num_comps = gscms_get_channel_count(profile->profile_handle);
+    profile->pcs_num_comps = gscms_get_pcs_channel_count(profile->profile_handle);
+    profile->data_cs = gscms_get_profile_data_space(profile->profile_handle);
+
+    /* Initialize the range to default values */
+    for ( k = 0; k < profile->num_comps; k++) {
+        profile->Range.ranges[k].rmin = 0.0;
+        profile->Range.ranges[k].rmax = 1.0;
+    }
 }
 
 /* This is used to try to find the specified or default ICC profiles */
@@ -767,7 +776,6 @@ gsicc_manager_t *
 gsicc_manager_new(gs_memory_t *memory)
 {
     gsicc_manager_t *result;
-    int code;
 
     /* Allocated in gc memory */
     result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,

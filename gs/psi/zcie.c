@@ -509,7 +509,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     if (!has_abc_procs && !has_lmn_procs) {
         /* Go ahead and create it now */
         pcs->cmm_icc_profile_data = gsicc_profile_new(NULL, imemory, NULL, 0);
-        code = gsicc_create_fromabc(pcie, pcs->cmm_icc_profile_data->buffer, 
+        code = gsicc_create_fromabc(pcie, &(pcs->cmm_icc_profile_data->buffer), 
             &(pcs->cmm_icc_profile_data->buffer_size), imemory, has_abc_procs, has_lmn_procs);
     } else {
         if (has_abc_procs) {

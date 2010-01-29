@@ -25,6 +25,7 @@
 #include "gscolor2.h"
 #include "gsicc_create.h"       /* Needed for delayed creation of ICC profiles from CIE color spaces */
 #include "gsiccmanage.h"
+#include "gsicc.h"
 
 /*
  * Compute a cache index as (vin - base) * factor.
@@ -256,21 +257,20 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		gs_color_select_t select)
 {
-    frac conc[4];
-    cie_cached_vector3 vec3;
     int code;
 
     if_debug3('c', "[c]remap CIEABC [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2]);
-
     /* If we are comming in here then we have not completed
        the conversion of the ABC space to an ICC type.  We
        will finish that process now. */
     if (pcs->cmm_icc_profile_data == NULL) {
-        gs_color_space *pcs_new = pcs;  /* const break */
-        gx_cie_vector_cache *abc_caches = &(pcs_new->params.abc->caches.DecodeABC.caches[0]);
-        gx_cie_scalar_cache    *lmn_caches = &(pcs_new->params.abc->common.caches.DecodeLMN[0]); 
+        gs_color_space *pcs_icc;
+        gs_color_space *palt_cs = pcs->base_space;
+        gs_state *pgs = (gs_state*) pis;
+        gx_cie_vector_cache *abc_caches = &(pcs->params.abc->caches.DecodeABC.caches[0]);
+        gx_cie_scalar_cache    *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]); 
         bool has_no_abc_procs = (abc_caches->floats.params.is_identity &&
                              (abc_caches)[1].floats.params.is_identity && 
                              (abc_caches)[2].floats.params.is_identity);
@@ -278,56 +278,24 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
                              (lmn_caches)[1].floats.params.is_identity && 
                              (lmn_caches)[2].floats.params.is_identity);
 
-        pcs_new->cmm_icc_profile_data = gsicc_profile_new(NULL, pis->memory, NULL, 0);
-        code = gsicc_create_fromabc(pcs_new->params.abc, pcs_new->cmm_icc_profile_data->buffer, 
-                        &pcs_new->cmm_icc_profile_data->buffer_size, pis->memory, 
+        /* build the ICC color space object */
+        code = gs_cspace_build_ICC(&pcs_icc, NULL, pis->memory);
+        /* record the cie alt space as the icc alternative color space */
+        pcs_icc->base_space = palt_cs;
+        rc_increment_cs(palt_cs);
+        pcs_icc->cmm_icc_profile_data = gsicc_profile_new(NULL, pis->memory, NULL, 0);
+        code = gsicc_create_fromabc(pcs->params.abc, &(pcs_icc->cmm_icc_profile_data->buffer), 
+                        &pcs_icc->cmm_icc_profile_data->buffer_size, pis->memory, 
                         !has_no_abc_procs, !has_no_lmn_procs);
-        /* Change the color space type to ICC.  Clean up all the CIE Joint Cache stuff */
+        gsicc_init_profile_info(pcs_icc->cmm_icc_profile_data);
+        /* Now we can blow away the CIEABC color space and replace it with the ICC color space.
+           Question is do we need to worry if pis is a pgs?  */
+        code = gs_setcolorspace_only(pgs, pcs_icc); /* Retains current color in graphic state */
+        return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     } else {
-        return gs_rethrow(-1, "Error ICC CIEABC profile already set");
+        /* Once the ICC color space is set, we should be doing all the remaps through the ICC remap */
+        return gs_rethrow(-1, "Error ICC CIEABC profile already set.  Should not ever be here.");
     }
-    code = gx_cie_check_rendering_inline(pcs, conc, pis);
-    if (code < 0)
-	return code;
-    if (code == 1)
-	goto map3;
-    vec3.u = float2cie_cached(pc->paint.values[0]);
-    vec3.v = float2cie_cached(pc->paint.values[1]);
-    vec3.w = float2cie_cached(pc->paint.values[2]);
-
-    /* Apply DecodeABC and MatrixABC. */
-    if (!pis->cie_joint_caches->skipDecodeABC) {
-	const gs_cie_abc *pcie = pcs->params.abc;
-
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
-			"Decode/MatrixABC");
-    }
-    switch (GX_CIE_REMAP_FINISH(vec3 /* LMN */, conc, pis, pcs)) {
-	case 4:
-	    if_debug4('c', "[c]=CMYK [%g %g %g %g]\n",
-		      frac2float(conc[0]), frac2float(conc[1]),
-		      frac2float(conc[2]), frac2float(conc[3]));
-	    gx_remap_concrete_cmyk(conc[0], conc[1], conc[2], conc[3],
-				   pdc, pis, dev, select);
-	    goto done;
-	default:	/* Can't happen. */
-	    return_error(gs_error_unknownerror);
-	case 3:
-	    ;
-    }
-map3:
-    if_debug3('c', "[c]=RGB [%g %g %g]\n",
-	      frac2float(conc[0]), frac2float(conc[1]),
-	      frac2float(conc[2]));
-    gx_remap_concrete_rgb(conc[0], conc[1], conc[2], pdc, pis,
-			  dev, select);
-done:
-    /* Save original color space and color info into dev color */
-    pdc->ccolor.paint.values[0] = pc->paint.values[0];
-    pdc->ccolor.paint.values[1] = pc->paint.values[1];
-    pdc->ccolor.paint.values[2] = pc->paint.values[2];
-    pdc->ccolor_valid = true;
-    return 0;
 }
 int
 gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,

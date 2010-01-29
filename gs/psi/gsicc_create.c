@@ -1012,7 +1012,7 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  
    the various parameters.  Simplified versions are used it possible when certain parameters
    in the ABC color space definition are the identity. */
 int
-gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, int *profile_size_out, gs_memory_t *memory, 
+gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
                      bool has_abc_procs, bool has_lmn_procs)
 {
     icProfile iccprofile;
@@ -1020,7 +1020,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, int *profile_size_
     int profile_size,k;
     int num_tags;
     gsicc_tag *tag_list;
-    unsigned char *curr_ptr;
+    unsigned char *curr_ptr, *buffer;
     int last_tag;
     icS15Fixed16Number temp_XYZ[3];
     int tag_location;
@@ -1146,6 +1146,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char *buffer, int *profile_size_
         add_lutAtoBtype(curr_ptr, NULL, NULL, 0, m_curves, matrix_input, b_curves, 3, 3);
         gs_free_object(memory, m_curves, "gsicc_create_fromabc");
         gs_free_object(memory, b_curves, "gsicc_create_fromabc");
+        *pp_buffer_in = buffer;
     } else {
         /* This will be a bit more complex as we have an ABC matrix, LMN decode
            and an LMN matrix.  We will need to create an MLUT

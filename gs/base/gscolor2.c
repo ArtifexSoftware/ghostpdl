@@ -28,12 +28,10 @@
 #include "gxfrac.h"
 
 /* ---------------- General colors and color spaces ---------------- */
-
-/* setcolorspace */
 int
-gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
+gs_setcolorspace_only(gs_state * pgs, gs_color_space * pcs)
 {
-    int             code = 0;
+    int code = 0;
     gs_color_space  *cs_old = pgs->color_space;
     gs_client_color cc_old = *pgs->ccolor;
 
@@ -52,14 +50,22 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 	    rc_decrement_only_cs(cs_old, "gs_setcolorspace");
 	}
     }
+    return(code);
+}
 
+/* setcolorspace */
+int
+gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
+{
+    int             code = 0;
+
+    code = gs_setcolorspace_only(pgs, pcs);
     if (code >= 0) {
 	pgs->color_space->pclient_color_space_data =
 	    pcs->pclient_color_space_data;
         cs_full_init_color(pgs->ccolor, pcs);
         gx_unset_dev_color(pgs);
     }
-
     return code;
 }
 
