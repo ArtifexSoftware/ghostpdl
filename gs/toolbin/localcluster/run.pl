@@ -99,6 +99,17 @@ mylog "starting run.pl:  pid=$$\n";
 #`killall pcl6`;  # horrible, horrible hack
 #mylog "running 'killall pcl6'\n";
 
+{
+  mylog "about to kill any jobs still running from previous regression\n";
+  my $a=`ps -ef | grep nice | grep temp | grep true`;
+  my @a=split '\n',$a;
+  foreach (@a) {
+    if (m/\S+ +(\d+)/) {
+      mylog "killing $1\n";
+      kill 9, $1;
+    }
+  }
+}
 
 if (open(F,"<$machine.start")) {
   my $t=<F>;
@@ -126,7 +137,8 @@ if (open(F,"<$machine.start")) {
   die "oops 2";  # hack
 }
 
-#mylog "revs=$revs products=$products user=$user\n";
+mylog "user products=$products user=$user\n" if ($user);
+mylog "svn products=$products revs=$revs\n" if ($revs);
 
 my $host="casper3.ghostscript.com";
 

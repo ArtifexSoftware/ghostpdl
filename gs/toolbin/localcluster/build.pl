@@ -7,7 +7,7 @@ use Data::Dumper;
 use POSIX ":sys_wait_h";
 
 my $updateBaseline=0;
-my $rerunIfMd5sumDifferences=0;
+my $rerunIfMd5sumDifferences=1;
 
 
 my %allowedProducts=(
@@ -18,8 +18,8 @@ my %allowedProducts=(
   'mupdf' => 1
 );
 
-
 my $lowres=0;
+my $highres=0;
 my %products;
 
 my $t;
@@ -30,6 +30,8 @@ while ($t=shift) {
     $rerunIfMd5sumDifferences=0;
   } elsif ($t eq "lowres") {
     $lowres=1;
+  } elsif ($t eq "highres") {
+    $highres=1;
   } else {
     $products{$t}=1;
     die "usage: build.pl [gs] [pcl] [xps] [svg] [mupdf]" if (!exists $allowedProducts{$t});
@@ -406,7 +408,7 @@ sub build($$$$) {
     $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
 
     if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile=$rasterFilename $cmd2c >>/dev/null 2>&1; gunzip $baselineFilename ; ./bmpcmp $rasterFilename $baselineFilename $bmpcmpFilename ; rm $bmpcmpFilename.???.bmp $bmpcmpFilename.???.meta ; gzip $bmpcmpFilename.* ; gzip $baselineFilename ; fi";
+      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gzcat $rasterFilename.gz) <(gzcat $baselineFilename.gz) $bmpcmpFilename\" ; gzip $bmpcmpFilename.* ; fi";
     }
 
     #   $cmd.=" ; gzip -f $inputFilename >>$logFilename 2>&1";
@@ -468,7 +470,7 @@ sub build($$$$) {
     $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
 
     if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile=$rasterFilename $cmd2c >>/dev/null 2>&1; gunzip $baselineFilename ; ./bmpcmp $rasterFilename $baselineFilename $bmpcmpFilename ; rm $bmpcmpFilename.???.bmp $bmpcmpFilename.???.meta ; gzip $bmpcmpFilename.* ; gzip $baselineFilename ; fi";
+      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gzcat $rasterFilename) <($baselineFilename).gz $bmpcmpFilename\" ; gzip $bmpcmpFilename.* ; fi";
     }
 
 
@@ -509,7 +511,9 @@ my @slowFilenames;
 
 foreach my $testfile (sort keys %testfiles) {
   foreach my $test (@{$tests{$testfiles{$testfile}}}) {
-    if ($lowres==0 || ($test =~ m/\.72\./ || $test =~ m/\.75\./)) {
+    if (($lowres==1  && ($test =~ m/\.72\./ || $test =~ m/\.75\./)) ||
+        ($highres==1 && ($test =~ m/\.300\./ || $test =~ m/\.600\./)) ||
+        ($lowres==0  && $highres==0)) {
     my $t=$testfile.".".$test;
     my $cmd="";
     my $outputFilenames="";
