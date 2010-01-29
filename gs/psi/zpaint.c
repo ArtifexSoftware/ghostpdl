@@ -37,15 +37,24 @@ zeofill(i_ctx_t *i_ctx_p)
 static int
 zstroke(i_ctx_t *i_ctx_p)
 {
-    int code;
-    
-    igs->current_color = 1;
-    code = gs_stroke(igs);
-    igs->current_color = 0;
-    return code;
+    return gs_stroke(igs);
 }
 
 /* ------ Non-standard operators ------ */
+
+/* - .fillstroke - */
+static int
+zfillstroke(i_ctx_t *i_ctx_p)
+{
+    return gs_fillstroke(igs);
+}
+
+/* - .eofillstroke - */
+static int
+zeofillstroke(i_ctx_t *i_ctx_p)
+{
+    return gs_eofillstroke(igs);
+}
 
 /* - .fillpage - */
 static int
@@ -84,5 +93,7 @@ const op_def zpaint_op_defs[] =
 		/* Non-standard operators */
     {"0.fillpage", zfillpage},
     {"3.imagepath", zimagepath},
+    {"0.fillstroke", zfillstroke},
+    {"0.eofillstroke", zeofillstroke},
     op_def_end(0)
 };

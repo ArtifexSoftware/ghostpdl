@@ -23,6 +23,8 @@ int gs_erasepage(gs_state *),
     gs_fillpage(gs_state *),
     gs_fill(gs_state *),
     gs_eofill(gs_state *),
+    gs_fillstroke(gs_state *),
+    gs_eofillstroke(gs_state *),
     gs_stroke(gs_state *);
 
 /* Image tracing */
