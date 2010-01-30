@@ -1328,6 +1328,8 @@ end readonly def
   } bind def
   /Link {
     mark exch
+    dup /BS knownoget { << exch { oforce } forall >> /BS exch 3 -1 roll } if
+    dup /F knownoget { /F exch 3 -1 roll } if
     dup /C knownoget { /Color exch 3 -1 roll } if
     dup /Rect knownoget { /Rect exch 3 -1 roll } if
     dup /Border knownoget {
