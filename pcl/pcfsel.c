@@ -180,6 +180,7 @@ check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
                 id[0] = 0x01;
                 id[1] = 0x15;
                 *mapp = pcl_find_symbol_map(pcs, id, gv, fp->font_type == plft_16bit);
+                return 1;
             }
             return 0; /* worst */
         }
