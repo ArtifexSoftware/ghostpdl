@@ -509,7 +509,7 @@ NOMEDIAATTRS {
        {	% Stack: <orig> <request> <merged> <failed> <attrkey>
 	 3 index 1 index .knownget
 	  { 5 index 2 index .knownget { ne } { pop //true } ifelse }
-	  { //true }
+	  { //false }
 	 ifelse		% Stack: ... <failed> <attrkey> <report>
 	  { 2 copy /rangecheck put }
 	 if pop
