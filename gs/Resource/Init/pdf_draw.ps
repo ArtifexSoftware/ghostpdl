@@ -1542,7 +1542,11 @@ drawopdict begin
     PDFfile fileposition exch                      % pos /Name
     dup Page /XObject rget { 
       exch pop                                     % pos obj
-      dup /OC knownoget { ocg-is-visible } { //true } ifelse {
+      OFFlevels length 0 eq {
+        dup /OC knownoget { ocg-is-visible } { //true } ifelse
+      } {
+        //false
+      } ifelse {
         dup /Subtype get //xobjectprocs exch get   % pos obj {proc}
         % Don't leave extra objects on the stack while executing
         % the definition of the form.
