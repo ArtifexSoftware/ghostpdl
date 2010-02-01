@@ -572,11 +572,11 @@ get_D50(icS15Fixed16Number XYZ[])
 }
 
 static void
-get_XYZ(icS15Fixed16Number XYZ[], gs_vector3 vector)
+get_XYZ(icS15Fixed16Number XYZ[], gs_vector3 *vector)
 {
-    XYZ[0] = double2XYZtype(vector.u);
-    XYZ[1] = double2XYZtype(vector.v);
-    XYZ[2] = double2XYZtype(vector.w);
+    XYZ[0] = double2XYZtype(vector->u);
+    XYZ[1] = double2XYZtype(vector->v);
+    XYZ[2] = double2XYZtype(vector->w);
 }
 
 static void
@@ -1004,7 +1004,6 @@ add_tabledata(unsigned char *input_ptr, cielab_t *cielab, int num_colors, int nu
     }
 }
 
-
 /* This creates an ICC profile from the PDF calGray and calRGB definitions */
 cmm_profile_t*
 gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  gs_memory_t *memory, int num_colors)
@@ -1128,6 +1127,76 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  
     return(result);
 }
 
+/* A common form used for most of the PS CIE color spaces */
+static void
+create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, float *a_curves, float *clut, int clut_grid_size, 
+                      float *m_curves, gs_matrix3 *matrix_input, float *b_curves, int num_in, int num_out, 
+                      gs_vector3 *white_point, gs_vector3 *black_point, gs_memory_t *memory)
+{
+    int num_tags = 5;  /* common (2), AToB0Tag,bkpt,and wtpt.*/
+    int k;
+    gsicc_tag *tag_list;
+    int profile_size, last_tag, tag_location, tag_size;
+    unsigned char *buffer,*curr_ptr;
+    icS15Fixed16Number temp_XYZ[3];
+
+    profile_size = HEADER_SIZE;
+    tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"create_lutAtoBprofile");
+    /* Let us precompute the sizes of everything and all our offsets */
+    profile_size += TAG_SIZE*num_tags;
+    profile_size += 4; /* number of tags.... */
+    last_tag = -1;
+    init_common_tags(tag_list, num_tags, &last_tag);  
+    init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
+    init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
+    /* init_tag(tag_list, &last_tag, icSigChromaticAdaptationTag, 9*4);  */  /* chad tag */
+    /* Get the tag size of the A2B0 with the lutAtoBType */
+    tag_size = getsize_lutAtoBtype(NULL, NULL, 0, m_curves, matrix_input, b_curves,num_in,num_out);
+    init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
+    /* Add all the tag sizes to get the new profile size */
+    for(k = 0; k < num_tags; k++) {
+        profile_size += tag_list[k].size;
+    }
+    /* End of tag table information */
+    /* Now we can go ahead and fill our buffer with the data */
+    buffer = gs_alloc_bytes(memory,profile_size,"create_lutAtoBprofile");
+    curr_ptr = buffer;
+    /* The header */
+    header->size = profile_size;
+    copy_header(curr_ptr,header);
+    curr_ptr += HEADER_SIZE;
+    /* Tag table */
+    copy_tagtable(curr_ptr,tag_list,num_tags);
+    curr_ptr += TAG_SIZE*num_tags;
+    curr_ptr += 4;
+    /* Now the data.  Must be in same order as we created the tag table */
+    /* First the common tags */
+    add_common_tag_data(curr_ptr, tag_list);
+    for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
+        curr_ptr += tag_list[k].size;
+    }
+    tag_location = NUMBER_COMMON_TAGS;
+     /* get_D50(temp_XYZ); */
+    get_XYZ(temp_XYZ,white_point);
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    get_XYZ(temp_XYZ,black_point);
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+ /* add_chad_data(curr_ptr);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++; */  
+    /* Now the AToB0Tag Data. Here this will include the M curves, the matrix and the B curves.
+       We may need to do some adustements with respect to encode and decode.  For now
+       assume all is between 0 and 1. */
+    add_lutAtoBtype(curr_ptr, a_curves, clut, clut_grid_size, m_curves, matrix_input, b_curves, num_in, num_out);
+    *pp_buffer_in = buffer;
+    gs_free_object(memory, tag_list, "gsicc_create_fromabc");
+
+}
+
 /* The ABC color space is modeled using the V4 lutAtoBType which has the flexibility to model 
    the various parameters.  Simplified versions are used it possible when certain parameters
    in the ABC color space definition are the identity. */
@@ -1137,18 +1206,11 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
 {
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
-    int profile_size,k;
-    int num_tags;
-    gsicc_tag *tag_list;
-    unsigned char *curr_ptr, *buffer;
-    int last_tag;
-    icS15Fixed16Number temp_XYZ[3];
-    int tag_location;
     int debug_catch = 1;
     gs_matrix3 *matrix_input;
     gs_matrix3 combined_matrix, matrix_input_trans;
-    float *m_curves, *b_curves, *curr_pos;
-    int tag_size;
+    float *a_curves, *m_curves, *b_curves, *curr_pos, *clut;
+    int clut_grid_size;
 
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
     gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
@@ -1162,7 +1224,6 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
     header->colorSpace = icSigRgbData;
     header->deviceClass = icSigInputClass;
     header->pcs = icSigXYZData;
-    profile_size = HEADER_SIZE;
 
     /* Check what combination we have with respect to the various
        LMN and ABC parameters. Depending upon the situation we
@@ -1173,6 +1234,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
        matrix we will need to create a small (2x2x2) CLUT for the ICC format. */
     if (pcie->MatrixABC.is_identity || !has_lmn_procs || pcie->common.MatrixLMN.is_identity) {
         /* Determine the matrix that we will be using */
+        /* AToB0Tag here is implemented as lutAtoBType (V4) with no CLUT or A curves. */     
         if (!(pcie->common.MatrixLMN.is_identity) && !(pcie->MatrixABC.is_identity)){
             /* Use the product of the ABC and LMN matrices, since lmn_procs identity.
                Product must be LMN_Matrix*ABC_Matrix */
@@ -1187,17 +1249,6 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         }
         cie_matrix_transpose3(matrix_input, &matrix_input_trans);
         matrix_input = &matrix_input_trans;
-        num_tags = 5;  /* common (2), AToB0Tag,bkpt,wtpt and chad.  AToB0Tag here is implemented as lutAtoBType (V4)
-                          with no CLUT or A curves */     
-        tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_fromabc");
-        /* Let us precompute the sizes of everything and all our offsets */
-        profile_size += TAG_SIZE*num_tags;
-        profile_size += 4; /* number of tags.... */
-        last_tag = -1;
-        init_common_tags(tag_list, num_tags, &last_tag);  
-        init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
-        init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
-        /* init_tag(tag_list, &last_tag, icSigChromaticAdaptationTag, 9*4);  */  /* chad tag */
         /* Now the AToB0Tag. Here this may include the M curves, the Matrix and the B curves */
         /* First clean up and merge the curves */
         if (has_abc_procs && has_lmn_procs && pcie->MatrixABC.is_identity) {
@@ -1227,6 +1278,9 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         } else {
             b_curves = NULL;
         }
+        a_curves = NULL;
+        clut = NULL;
+        clut_grid_size = 0;
         /* Note that if the b_curves are null and we have a matrix we need to scale the matrix values by 2.
            Otherwise an input value of 50% gray, which is 32767 would get mapped to 32767 by the matrix.  This
            will be interpreted as a max XYZ value (s15.16) when it is eventually mapped to u16.16 due to the
@@ -1234,64 +1288,50 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         if (b_curves == NULL && matrix_input != NULL) {
             scale_matrix(&(matrix_input->cu.u),2.0);
         }
-        /* Get the tag size of the A2B0 with the lutAtoBType */
-        tag_size = getsize_lutAtoBtype(NULL, NULL, 0, m_curves, matrix_input, b_curves,3,3);
-        init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
-        /* Add all the tag sizes to get the new profile size */
-        for(k = 0; k < num_tags; k++) {
-            profile_size += tag_list[k].size;
-        }
-        /* End of tag table information */
-
-        /* Now we can go ahead and fill our buffer with the data */
-        buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_fromabc");
-        curr_ptr = buffer;
-        /* The header */
-        header->size = profile_size;
-        copy_header(curr_ptr,header);
-        curr_ptr += HEADER_SIZE;
-        /* Tag table */
-        copy_tagtable(curr_ptr,tag_list,num_tags);
-        curr_ptr += TAG_SIZE*num_tags;
-        curr_ptr += 4;
-        /* Now the data.  Must be in same order as we created the tag table */
-        /* First the common tags */
-        add_common_tag_data(curr_ptr, tag_list);
-        for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
-            curr_ptr += tag_list[k].size;
-        }
-        tag_location = NUMBER_COMMON_TAGS;
-        /* Need to adjust for the D65/D50 issue */
-        /* get_D50(temp_XYZ); */
-        get_XYZ(temp_XYZ,pcie->common.points.WhitePoint);
-        add_xyzdata(curr_ptr,temp_XYZ);
-        curr_ptr += tag_list[tag_location].size;
-        tag_location++;
-        get_XYZ(temp_XYZ,pcie->common.points.BlackPoint);
-        add_xyzdata(curr_ptr,temp_XYZ);
-        curr_ptr += tag_list[tag_location].size;
-        tag_location++;
-     /* add_chad_data(curr_ptr);
-        curr_ptr += tag_list[tag_location].size;
-        tag_location++; */  
-        /* Now the AToB0Tag Data. Here this will include the M curves, the matrix and the B curves.
-           We may need to do some adustements with respect to encode and decode.  For now
-           assume all is between 0 and 1. */
-        add_lutAtoBtype(curr_ptr, NULL, NULL, 0, m_curves, matrix_input, b_curves, 3, 3);
+        /* Create the profile.  This is for the common generic form we will use for almost everything. */
+        create_lutAtoBprofile(pp_buffer_in, header,a_curves, clut, clut_grid_size, m_curves, 
+               matrix_input, b_curves, 3, 3, &(pcie->common.points.WhitePoint), 
+               &(pcie->common.points.BlackPoint), memory);
+        *profile_size_out = header->size;
         gs_free_object(memory, m_curves, "gsicc_create_fromabc");
         gs_free_object(memory, b_curves, "gsicc_create_fromabc");
-        *pp_buffer_in = buffer;
     } else {
         /* This will be a bit more complex as we have an ABC matrix, LMN decode
-           and an LMN matrix.  We will need to create an MLUT
-           to handle this properly */
+           and an LMN matrix.  We will need to create an MLUT to handle this properly.
+           Any ABC decode will be handled as the A curves.  ABC matrix will be the
+           MLUT, LMN decode will be the M curves.  LMN matrix will be the Matrix
+           and b curves will be identity. */
+        if (has_abc_procs) {
+            a_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+            curr_pos = a_curves;
+            memcpy(curr_pos,&(pcie->caches.DecodeABC.caches->floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&((pcie->caches.DecodeABC.caches[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&((pcie->caches.DecodeABC.caches[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
+        } else {
+            a_curves = NULL;
+        }
+        if (has_lmn_procs) {
+            m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+            curr_pos = m_curves;
+            memcpy(curr_pos,&(pcie->common.caches.DecodeLMN->floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
+        } else {
+            m_curves = NULL;
+        }
+        b_curves = NULL;  /* No b_curves.  They will be identity */
+
         return gs_rethrow(-1, "Conversion of CIEABC color space type to ICC form not yet implemented");
     }
-    *profile_size_out = profile_size;
+    *profile_size_out = header->size;
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if(debug_catch)
-        save_profile(buffer,"fromabc",profile_size);
+        save_profile(buffer,"fromabc",header->size);
 #endif
     return(0);
 }
@@ -1395,11 +1435,11 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory,
         }
         tag_location = NUMBER_COMMON_TAGS;
         /* Need to adjust for the D65/D50 issue */
-        get_XYZ(temp_XYZ,pcie->common.points.WhitePoint);
+        get_XYZ(temp_XYZ,&(pcie->common.points.WhitePoint));
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
         tag_location++;
-        get_XYZ(temp_XYZ,pcie->common.points.BlackPoint);
+        get_XYZ(temp_XYZ,&(pcie->common.points.BlackPoint));
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
         write_bigendian_4bytes(curr_ptr,icSigCurveType);
