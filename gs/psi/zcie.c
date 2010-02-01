@@ -507,10 +507,12 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
        e.g. gx_cie_vector_cache3_t that are in the common (params.abc.common.caches.DecodeLMN) 
        and unique entries (e.g. params.abc.caches.DecodeABC.caches) */
     if (!has_abc_procs && !has_lmn_procs) {
-        /* Go ahead and create it now */
-        pcs->cmm_icc_profile_data = gsicc_profile_new(NULL, imemory, NULL, 0);
-        code = gsicc_create_fromabc(pcie, &(pcs->cmm_icc_profile_data->buffer), 
-            &(pcs->cmm_icc_profile_data->buffer_size), imemory, has_abc_procs, has_lmn_procs);
+        pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
+        (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
+        (pcie->common.caches.DecodeLMN)[2].floats.params.is_identity = true;
+        pcie->caches.DecodeABC.caches->floats.params.is_identity = true;
+        (pcie->caches.DecodeABC.caches)[1].floats.params.is_identity = true;
+        (pcie->caches.DecodeABC.caches)[2].floats.params.is_identity = true;
     } else {
         if (has_abc_procs) {
             cieicc_prepare_caches(i_ctx_p, (&pcie->RangeABC)->ranges,

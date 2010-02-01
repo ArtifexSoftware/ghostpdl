@@ -142,9 +142,11 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 #define XYZPT_SIZE 12
 #define DATATYPE_SIZE 8
 #define CURVE_SIZE 512
+#define IDENT_CURVE_SIZE 0
 #define NUMBER_COMMON_TAGS 2 
-#define icMultiUnicodeText 0x6d6c7563    /* 'mluc' v4 text type */
-#define icMultiFunctionAtoBType 0x6d414220   /* 'mAB ' v4 lutAtoBtype type */
+#define icMultiUnicodeText 0x6d6c7563           /* 'mluc' v4 text type */
+#define icMultiFunctionAtoBType 0x6d414220      /* 'mAB ' v4 lutAtoBtype type */
+#define icSigChromaticAdaptationTag 0x63686164  /* 'chad' */
 
 #if SAVEICCPROFILE
 unsigned int icc_debug_index = 0;
@@ -284,6 +286,28 @@ double2XYZtype(float number_in)
     return((icS15Fixed16Number) ((s << 16) | m) );
 }
 
+static icS15Fixed16Number
+double2icS15Fixed16Number(float number_in)
+{
+    short s;
+    unsigned short m;
+    icS15Fixed16Number temp;
+    float number;
+
+    if (number_in < 0) {
+        number = -number_in;
+        s = (short) number;
+        m = (unsigned short) ((number - s) * 65536.0);
+        temp = (icS15Fixed16Number) ((s << 16) | m);
+        temp = -temp;
+        return(temp);
+    } else {
+        s = (short) number_in;
+        m = (unsigned short) ((number_in - s) * 65536.0);
+        return((icS15Fixed16Number) ((s << 16) | m) );
+    }
+}
+
 static unsigned short
 float2u8Fixed8(float number_in)
 {
@@ -327,8 +351,7 @@ static
 void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
 {
  /*    profileDescriptionTag
-       copyrightTag
-       mediaWhitePointTag  */
+       copyrightTag  */
 
     int curr_tag, temp_size;
 
@@ -476,7 +499,7 @@ setheader_common(icHeader *header)
     header->model = 0;
     header->attributes[0] = 0;
     header->attributes[1] = 0;
-    header->renderingIntent = 0;
+    header->renderingIntent = 3;
     header->illuminant.X = double2XYZtype((float) 0.9642);
     header->illuminant.Y = double2XYZtype((float) 1.0);
     header->illuminant.Z = double2XYZtype((float) 0.8249);
@@ -541,6 +564,14 @@ copy_tagtable(unsigned char *buffer,gsicc_tag *tag_list, ulong num_tags)
 }
 
 static void
+get_D50(icS15Fixed16Number XYZ[])
+{
+    XYZ[0] = double2XYZtype(0.9642);
+    XYZ[1] = double2XYZtype(1.0);
+    XYZ[2] = double2XYZtype(0.8249);
+}
+
+static void
 get_XYZ(icS15Fixed16Number XYZ[], gs_vector3 vector)
 {
     XYZ[0] = double2XYZtype(vector.u);
@@ -576,6 +607,16 @@ add_matrixdata(unsigned char *input_ptr, icS15Fixed16Number matrix_fixed[])
     for (j = 0; j < 9; j++) {
         write_bigendian_4bytes(curr_ptr, matrix_fixed[j]);
         curr_ptr += 4;
+    }
+}
+
+static void
+scale_matrix(float *matrix_input,float scale_factor)
+{
+    int k;
+
+    for (k = 0; k < 9; k++) {
+        matrix_input[k] = matrix_input[k]/2.0;
     }
 }
 
@@ -629,22 +670,64 @@ merge_abc_lmn_curves(gx_cie_vector_cache *DecodeABC_caches, gx_cie_scalar_cache 
 }
 
 static void 
-add_matrixwithbias(unsigned char *input_ptr, gs_matrix3 *input_matrix)
+add_matrixwithbias(unsigned char *input_ptr, float *float_ptr_in, bool has_bias)
 {
     unsigned char *curr_ptr;
-    float *float_ptr;
+    float *float_ptr = float_ptr_in;
     int k;
 
     /* GS Matrix is coming in with data arranged in row ordered form */
     curr_ptr = input_ptr;
-    float_ptr = &(input_matrix->cu.u);
     for (k = 0; k < 9; k++ ){
-        write_bigendian_4bytes(curr_ptr, double2XYZtype(*float_ptr));
+        write_bigendian_4bytes(curr_ptr, double2icS15Fixed16Number(*float_ptr));
         curr_ptr += 4;
         float_ptr++;
     }
-    /* bias */
-    memset(curr_ptr,0,4*3);
+    if (has_bias){
+        memset(curr_ptr,0,4*3);
+    }
+}
+
+/* Hardcoded chad for D65 to D50. This should be computed on the fly
+   based upon the PS specified white point and ICC D50. We don't use
+   the chad tag with littleCMS since it takes care of the chromatic
+   adaption itself based upon D50 and the media white point.  */
+static void
+add_chad_data(unsigned char *input_ptr)
+{
+    unsigned char *curr_ptr = input_ptr;
+    float data[] = {1.04790738171017, 0.0229333845542104, -0.0502016347980104,
+                 0.0296059594177168, 0.990456039910785, -0.01707552919587, 
+                 -0.00924679432678241, 0.0150626801401488, 0.751791232609078};
+
+    /* Signature should be sf32 */
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,icSigS15Fixed16ArrayType);
+    curr_ptr += 4;
+    /* Reserved */
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+    add_matrixwithbias(curr_ptr,  &(data[0]), false);
+}
+
+static void
+add_ident_curves(unsigned char *input_ptr,int number_of_curves)
+{
+    unsigned char *curr_ptr;
+    int k;
+
+    curr_ptr = input_ptr;
+    for (k = 0; k < number_of_curves; k++) {
+       /* Signature */
+        write_bigendian_4bytes(curr_ptr,icSigCurveType);
+        curr_ptr += 4;
+        /* Reserved */
+        memset(curr_ptr,0,4);
+        curr_ptr += 4;
+        /* Count */
+        write_bigendian_4bytes(curr_ptr, 0);
+        curr_ptr += 4;
+    }
 }
 
 static void
@@ -674,6 +757,8 @@ add_curve(unsigned char *input_ptr, float *curve_data, int num_samples)
     }
 }
 
+/* See comments before add_lutAtoBtype about allowable forms, which will explain much
+   of these size calculations */
 static int
 getsize_lutAtoBtype(float *a_curves, float *clut, int clut_grid_size, float *m_curves, 
                gs_matrix3 *matrix_input, float *b_curves,int numin, int numout)
@@ -681,27 +766,43 @@ getsize_lutAtoBtype(float *a_curves, float *clut, int clut_grid_size, float *m_c
     int data_offset, mlut_size;
 
     data_offset = 32; 
+    /* B curves always present */
     if (b_curves != NULL) {
         data_offset += (numout*(CURVE_SIZE*2+12));
-    } 
+    } else {
+        data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+    }
+    /* M curves present if Matrix is present */
     if (matrix_input != NULL) {
         data_offset += (12*4);
-    }
-    if (m_curves != NULL) {
-        data_offset += (numout*(CURVE_SIZE*2+12));
+        /* M curves */
+        if (m_curves != NULL) {
+            data_offset += (numout*(CURVE_SIZE*2+12));
+        } else {
+            data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+        }
     } 
-    /* a curves only present if clut is present */
+    /* A curves present if clut is present */
     if (clut != NULL) {
         mlut_size = (long) pow((float) clut_grid_size, (long) numin)*numout*2;
         data_offset += mlut_size;
         if (a_curves != NULL) {
             data_offset += (numin*(CURVE_SIZE*2+12));
-        } 
+        } else {
+            data_offset += (numin*(IDENT_CURVE_SIZE*2+12));
+        }
     }
     return(data_offset);
 }
 
-
+/* Note:  ICC V4 fomat allows ONLY these forms 
+B
+M - Matrix - B
+A - CLUT - B
+A - CLUT - M - Matrix - B
+Other forms are created by making some of these items identity.  In other words the B curves must always
+be included.  If CLUT is present, A curves must be present.  Also, if Matrix is present M curves must be 
+present.  A curves cannot be present if CLUT is not present. */
 static void
 add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut_grid_size, float *m_curves, 
                gs_matrix3 *input_matrix, float *b_curves,int numin, int numout)
@@ -728,44 +829,53 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
     /* offset to B curves (last curves) */
     data_offset = 32; 
     if (b_curves == NULL) {
-        memset(curr_ptr,0,4);
+        /* identity curve must be present */
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
     } else {
         write_bigendian_4bytes(curr_ptr,data_offset);
         data_offset += (numout*(CURVE_SIZE*2+12));
     }
     curr_ptr += 4;
-    /* offset to matrix */
+    /* offset to matrix and M curves */
     if (input_matrix == NULL) {
-        memset(curr_ptr,0,4);
+        memset(curr_ptr,0,4);  /* Matrix */
+        curr_ptr += 4;
+        memset(curr_ptr,0,4);  /* M curves */
     } else {
         write_bigendian_4bytes(curr_ptr,data_offset);
         data_offset += (12*4);
+        curr_ptr += 4;
+        /* offset to M curves (Matrix curves -- only come with matrix) */
+        if (m_curves == NULL) {
+            /* identity curve must be present */
+            write_bigendian_4bytes(curr_ptr,data_offset);
+            data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+        } else {
+            write_bigendian_4bytes(curr_ptr,data_offset);
+            data_offset += (numout*(CURVE_SIZE*2+12));
+        }
     }
     curr_ptr += 4;
-    /* offset to M curves (middle curves) */
-    if (m_curves == NULL) {
-        memset(curr_ptr,0,4);
-    } else {
-        write_bigendian_4bytes(curr_ptr,data_offset);
-        data_offset += (numout*(CURVE_SIZE*2+12));
-    }
-    curr_ptr += 4;
-    /* offset to CLUT */
+    /* offset to CLUT and A curves */
     if (clut == NULL) {
-        memset(curr_ptr,0,4);
+        memset(curr_ptr,0,4); /* CLUT */
+        curr_ptr += 4;
+        memset(curr_ptr,0,4); /* A curves */
     } else {
-        mlut_size = 0;
         write_bigendian_4bytes(curr_ptr,data_offset);
         mlut_size = (long) pow((float) clut_grid_size, (long) numin)*numout*2;
         data_offset += mlut_size;
-    }    
-    curr_ptr += 4;
-    /* offset to A curves (first curves) */
-    if (a_curves == NULL || clut == NULL) {
-        memset(curr_ptr,0,4);
-    } else {
-        write_bigendian_4bytes(curr_ptr,data_offset);
-        data_offset += (numin*(CURVE_SIZE*2+12));
+        curr_ptr += 4;
+        /* offset to A curves (first curves) */
+        if (a_curves == NULL || clut == NULL) {
+            /* identity curve must be present */
+            write_bigendian_4bytes(curr_ptr,data_offset);
+            data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+        } else {
+            write_bigendian_4bytes(curr_ptr,data_offset);
+            data_offset += (numin*(CURVE_SIZE*2+12));
+        }    
     }    
     curr_ptr += 4;
     /* Header is completed */
@@ -776,29 +886,39 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
             add_curve(curr_ptr, b_curves+k*CURVE_SIZE, CURVE_SIZE);
             curr_ptr += (12 + CURVE_SIZE*2);
         }
+    } else {
+        add_ident_curves(curr_ptr,numout);
+        curr_ptr += numout*(12 + IDENT_CURVE_SIZE*2);
     }
     /* Then the matrix */
     if (input_matrix != NULL) {
-        add_matrixwithbias(curr_ptr,input_matrix);
+        add_matrixwithbias(curr_ptr,&(input_matrix->cu.u),true);
         curr_ptr += (12*4);
-    }
-    /* Then the m curves */
-    if (m_curves != NULL) {
-        for (k = 0; k < numout; k++) {
-            add_curve(curr_ptr, m_curves+k*CURVE_SIZE, CURVE_SIZE);
-            curr_ptr += (12 + CURVE_SIZE*2);
+        /* M curves */
+        if (m_curves != NULL) {
+            for (k = 0; k < numout; k++) {
+                add_curve(curr_ptr, m_curves+k*CURVE_SIZE, CURVE_SIZE);
+                curr_ptr += (12 + CURVE_SIZE*2);
+            }
+        } else {
+            add_ident_curves(curr_ptr,numout);
+            curr_ptr += numout*(12 + IDENT_CURVE_SIZE*2);
         }
     }
     /* Then the clut */
     if (clut != NULL) {
 
-    }
-    /* Then the a curves */
-    if (clut != NULL && a_curves != NULL) {
-        for (k = 0; k < numin; k++) {
-            add_curve(curr_ptr, a_curves+k*CURVE_SIZE, CURVE_SIZE);
-            curr_ptr += (12 + CURVE_SIZE*2);
+        /* The A curves */
+        if (a_curves != NULL) {
+            for (k = 0; k < numin; k++) {
+                add_curve(curr_ptr, a_curves+k*CURVE_SIZE, CURVE_SIZE);
+                curr_ptr += (12 + CURVE_SIZE*2);
+            }
+        } else {
+            add_ident_curves(curr_ptr,numin);
+            curr_ptr += numin*(12 + IDENT_CURVE_SIZE*2);
         }
+
     }
 }
 
@@ -1024,7 +1144,6 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
     int last_tag;
     icS15Fixed16Number temp_XYZ[3];
     int tag_location;
-    icTagSignature TRC_Tags[3] = {icSigRedTRCTag, icSigGreenTRCTag, icSigBlueTRCTag};
     int debug_catch = 1;
     gs_matrix3 *matrix_input;
     gs_matrix3 combined_matrix, matrix_input_trans;
@@ -1039,8 +1158,9 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
     /* We will use an input type class which keeps us from having to
        create an inverse.  We will keep the data a generic 3 color.  
        Since we are doing PS color management the PCS is XYZ */
+    header->deviceClass = icSigDisplayClass;
+    header->colorSpace = icSigRgbData;
     header->deviceClass = icSigInputClass;
-    header->colorSpace = icSig3colorData;
     header->pcs = icSigXYZData;
     profile_size = HEADER_SIZE;
 
@@ -1067,7 +1187,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         }
         cie_matrix_transpose3(matrix_input, &matrix_input_trans);
         matrix_input = &matrix_input_trans;
-        num_tags = 5;  /* common (2), AToB0Tag,bkpt,wtpt.  AToB0Tag here is implemented as lutAtoBType (V4)
+        num_tags = 5;  /* common (2), AToB0Tag,bkpt,wtpt and chad.  AToB0Tag here is implemented as lutAtoBType (V4)
                           with no CLUT or A curves */     
         tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_fromabc");
         /* Let us precompute the sizes of everything and all our offsets */
@@ -1077,6 +1197,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         init_common_tags(tag_list, num_tags, &last_tag);  
         init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
         init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
+        /* init_tag(tag_list, &last_tag, icSigChromaticAdaptationTag, 9*4);  */  /* chad tag */
         /* Now the AToB0Tag. Here this may include the M curves, the Matrix and the B curves */
         /* First clean up and merge the curves */
         if (has_abc_procs && has_lmn_procs && pcie->MatrixABC.is_identity) {
@@ -1106,6 +1227,13 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         } else {
             b_curves = NULL;
         }
+        /* Note that if the b_curves are null and we have a matrix we need to scale the matrix values by 2.
+           Otherwise an input value of 50% gray, which is 32767 would get mapped to 32767 by the matrix.  This
+           will be interpreted as a max XYZ value (s15.16) when it is eventually mapped to u16.16 due to the
+           mapping of X=Y by the identity table.  If there are b_curves these have an output that is 16 bit. */
+        if (b_curves == NULL && matrix_input != NULL) {
+            scale_matrix(&(matrix_input->cu.u),2.0);
+        }
         /* Get the tag size of the A2B0 with the lutAtoBType */
         tag_size = getsize_lutAtoBtype(NULL, NULL, 0, m_curves, matrix_input, b_curves,3,3);
         init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
@@ -1134,6 +1262,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         }
         tag_location = NUMBER_COMMON_TAGS;
         /* Need to adjust for the D65/D50 issue */
+        /* get_D50(temp_XYZ); */
         get_XYZ(temp_XYZ,pcie->common.points.WhitePoint);
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
@@ -1142,6 +1271,9 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         add_xyzdata(curr_ptr,temp_XYZ);
         curr_ptr += tag_list[tag_location].size;
         tag_location++;
+     /* add_chad_data(curr_ptr);
+        curr_ptr += tag_list[tag_location].size;
+        tag_location++; */  
         /* Now the AToB0Tag Data. Here this will include the M curves, the matrix and the B curves.
            We may need to do some adustements with respect to encode and decode.  For now
            assume all is between 0 and 1. */
