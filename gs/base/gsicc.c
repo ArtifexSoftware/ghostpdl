@@ -43,7 +43,6 @@ cie_icc_finalize(void * pvicc_info)
 
 }
 
-
 /*
  * Color space methods for ICCBased color spaces.
    ICC spaces are now considered to be concrete in that
@@ -86,7 +85,6 @@ const gs_color_space_type gs_color_space_type_ICC = {
 /*
  * Return the number of components used by a ICCBased color space - 1, 3, or 4
  */
-
 static int
 gx_num_components_ICC(const gs_color_space * pcs)
 {
@@ -134,7 +132,6 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
    be to potentially apply alpha, apply the transfer function, and
    do any halftoning.  The remap is based upon the ICC profile defined
    in the device profile entry of the profile manager. */
-
 int
 gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
@@ -146,33 +143,22 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
     int code;
 
     switch( num_colorants ) {
-
         case 1: 
-            
             code = gx_remap_concrete_DGray(pconc, pcs, pdc, pis, dev, select);
             break;
-
         case 3:
-
             code = gx_remap_concrete_DRGB(pconc, pcs, pdc, pis, dev, select);
             break;
-
         case 4:
-
             code = gx_remap_concrete_DCMYK(pconc, pcs, pdc, pis, dev, select);
             break;
-
         default:
-
             /* Need to do some work on integrating DeviceN and the new ICC flow */
             /* code = gx_remap_concrete_DeviceN(pconc, pcs, pdc, pis, dev, select); */
             code = -1;
             break;
-
     } 
-
     return(code);
-
 }
 
 /*
@@ -197,47 +183,32 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 
     /* Need to clear out psrc_cm in case we have separation bands that are
        not color managed */
-
     memset(psrc_cm,0,sizeof(unsigned short)*GS_CLIENT_COLOR_MAX_COMPONENTS);
 
      /* This needs to be optimized. And range corrected */
-
    for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
-    
         psrc[k] = pcc->paint.values[k]*65535;
-           
     }
 
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
-
     if (icc_link->is_identity) {
-
         psrc_temp = &(psrc[0]);
-
     } else {
-
         /* Transform the color */
         psrc_temp = &(psrc_cm[0]);
         gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
-
     }
 
     /* Release the link */
     gsicc_release_link(icc_link);
-
     /* Now do the remap for ICC which amounts to the alpha application
        the transfer function and potentially the halftoning */
-
     /* Right now we need to go from unsigned short to frac.  I really
        would like to avoid this sort of stuff.  That will come. */
-
     for ( k = 0; k< pis->icc_manager->device_profile->num_comps; k++){
-
         conc[k] = ushort2frac(psrc_temp[k]);
-
     }
-
     gx_remap_concrete_ICC(conc, pcs, pdc, pis, dev, select);
 
     /* Save original color space and color info into dev color */
@@ -246,8 +217,6 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 	pdc->ccolor.paint.values[i] = pcc->paint.values[i];
     pdc->ccolor_valid = true;
     return 0;
-
-
 }
 
 /*
@@ -272,39 +241,25 @@ gx_concretize_ICC(
     rendering_params.rendering_intent = pis->renderingintent;
 
      /* This needs to be optimized */
-
     if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB) {
-
-            psrc[0] = pcc->paint.values[0]*65535.0/100.0;
-            psrc[1] = (pcc->paint.values[1]+128)/255.0*65535.0;
-            psrc[2] = (pcc->paint.values[2]+128)/255.0*65535.0;
-
+        psrc[0] = pcc->paint.values[0]*65535.0/100.0;
+        psrc[1] = (pcc->paint.values[1]+128)/255.0*65535.0;
+        psrc[2] = (pcc->paint.values[2]+128)/255.0*65535.0;
     } else {
-
         for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
-
             psrc[k] = pcc->paint.values[k]*65535.0;
-               
         }
-
     }
-
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
-
     /* Transform the color */
     gscms_transform_color(icc_link, psrc, psrc_cm, 2, NULL);
-
     /* This needs to be optimized */
     for (k = 0; k < pis->icc_manager->device_profile->num_comps; k++){
-    
         pconc[k] = float2frac(((float) psrc_cm[k])/65535.0);
-           
     }
-
     /* Release the link */
     gsicc_release_link(icc_link);
-
     return 0;
 }
 
@@ -318,13 +273,9 @@ gx_concretize_ICC(
 static void
 gx_final_ICC(const gs_color_space * pcs)
 {
-
   /*  if (pcs->cmm_icc_profile_data != NULL) {
-
         rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_ICC");
-
     } */
-
     /* rc_decrement_only(pcs->params.icc.picc_info, "gx_final_ICC"); */
 }
 
@@ -341,7 +292,6 @@ gx_install_ICC(gs_color_space * pcs, gs_state * pgs)
     return 0;
 }
 
-
 /*
  * Constructor for ICCBased color space. As with the other color space
  * constructors, this provides only minimal initialization.
@@ -352,7 +302,6 @@ gs_cspace_build_ICC(
     void *              client_data,
     gs_memory_t *       pmem )
 {
-
     gs_color_space *pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_ICC);
     *ppcspace = pcspace;
 
@@ -373,5 +322,4 @@ gx_serialize_ICC(const gs_color_space * pcs, stream * s)
     profile__serial = (gsicc_serialized_profile_t*) pcs->cmm_icc_profile_data;
     code = sputs(s, (byte *)profile__serial, sizeof(gsicc_serialized_profile_t), &n);
     return(code);
-
 }
