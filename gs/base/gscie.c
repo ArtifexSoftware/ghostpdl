@@ -43,8 +43,6 @@ static void cie_joint_caches_complete(gx_cie_joint_caches *,
 				       const gs_cie_abc *,
 				       const gs_cie_render *);
 static void cie_cache_restrict(cie_cache_floats *, const gs_range *);
-static void cie_mult3(const gs_vector3 *, const gs_matrix3 *,
-		       gs_vector3 *);
 static void cie_invert3(const gs_matrix3 *, gs_matrix3 *);
 static void cie_matrix_init(gs_matrix3 *);
 
@@ -1420,7 +1418,7 @@ gx_cie_to_xyz_free(gs_imager_state *pis)
 
 /* Multiply a vector by a matrix. */
 /* Note that we are computing M * V where v is a column vector. */
-static void
+void
 cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
 	  gs_vector3 * out)
 {

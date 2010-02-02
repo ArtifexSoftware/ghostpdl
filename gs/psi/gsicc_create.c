@@ -186,21 +186,37 @@ gsicc_matrix_init(register gs_matrix3 * mat)
 	mat->cw.w == 1.0 && is_fzero2(mat->cw.u, mat->cw.v);
 }
 
-/* This function maps a gs matrix type to an ICC MLUT.
+/* This function maps a gs matrix type to an ICC CLUT.
    This is required due to the multiple matrix and 1-D LUT
    forms for postscript management, which the ICC does not
-   support (at least the older versions) */
+   support (at least the older versions).  clut is allocated
+   externally */
 
 static void 
-gsicc_matrix_to_mlut(gs_matrix3 mat, icLut16Type *mlut)
+gsicc_matrix3_to_mlut(gs_matrix3 *mat, float *clut)
 {
-    mlut->base.reserved[0] = 0;
-    mlut->base.reserved[1] = 0;
-    mlut->base.reserved[2] = 0;
-    mlut->base.reserved[3] = 0;
-    mlut->base.sig = icSigLut16Type;
+    /* Step through the grid values */
+    float grid_points[8][3]={0,0,0,
+                             0,0,1,
+                             0,1,0,
+                             0,1,1,
+                             1,0,0,
+                             1,0,1,
+                             1,1,0,
+                             1,1,1};
+    int k;
+    gs_vector3 input,output;
+    float *curr_ptr = clut;
 
-    /* Much to do here */
+    for (k = 0; k < 8; k++) {
+        input.u = grid_points[k][0];
+        input.v = grid_points[k][1];
+        input.w = grid_points[k][2];
+        cie_mult3(&input, mat, &output);
+        *curr_ptr ++= output.u;
+        *curr_ptr ++= output.v;
+        *curr_ptr ++= output.w;
+    } 
 }
 
 #if SAVEICCPROFILE
@@ -731,6 +747,36 @@ add_ident_curves(unsigned char *input_ptr,int number_of_curves)
 }
 
 static void
+add_clutAtoB(unsigned char *input_ptr, float *clut, int clut_grid_size, int num_channels_in, int mlut_size)
+{
+    unsigned char *curr_ptr = input_ptr;
+    int k;
+    int number_samples = mlut_size/2;
+    short value;
+
+    /* First write out the dimensions that are the same for each channel. */
+    memset(curr_ptr, clut_grid_size, num_channels_in);
+    curr_ptr += num_channels_in;
+    /* Set the remainder of the dimenensions */
+    memset(curr_ptr, 0, 16-num_channels_in);
+    curr_ptr += (16-num_channels_in);
+    /* word size */
+    memset(curr_ptr, 2, 1);
+    curr_ptr++;
+    /* padding */
+    memset(curr_ptr, 0, 3);
+    curr_ptr += 3;
+    /* Now the actual table data */
+    for ( k = 0; k < number_samples; k++ ) {
+        if (clut[k] < 0) clut[k] = 0;
+        if (clut[k] > 1) clut[k] = 1; 
+        value = clut[k]*0xFFFF;
+        write_bigendian_2bytes(curr_ptr,value);
+        curr_ptr += 2;
+    }
+}
+
+static void
 add_curve(unsigned char *input_ptr, float *curve_data, int num_samples)
 {
     unsigned char *curr_ptr;
@@ -785,7 +831,7 @@ getsize_lutAtoBtype(float *a_curves, float *clut, int clut_grid_size, float *m_c
     /* A curves present if clut is present */
     if (clut != NULL) {
         mlut_size = (long) pow((float) clut_grid_size, (long) numin)*numout*2;
-        data_offset += mlut_size;
+        data_offset += (mlut_size + 20);
         if (a_curves != NULL) {
             data_offset += (numin*(CURVE_SIZE*2+12));
         } else {
@@ -865,13 +911,13 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
     } else {
         write_bigendian_4bytes(curr_ptr,data_offset);
         mlut_size = (long) pow((float) clut_grid_size, (long) numin)*numout*2;
-        data_offset += mlut_size;
+        data_offset += (mlut_size + 20);
         curr_ptr += 4;
         /* offset to A curves (first curves) */
         if (a_curves == NULL || clut == NULL) {
             /* identity curve must be present */
             write_bigendian_4bytes(curr_ptr,data_offset);
-            data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+            data_offset += (numin*(IDENT_CURVE_SIZE*2+12));
         } else {
             write_bigendian_4bytes(curr_ptr,data_offset);
             data_offset += (numin*(CURVE_SIZE*2+12));
@@ -907,7 +953,8 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
     }
     /* Then the clut */
     if (clut != NULL) {
-
+        add_clutAtoB(curr_ptr, clut, clut_grid_size, numin, mlut_size);
+        curr_ptr += (20 + mlut_size);
         /* The A curves */
         if (a_curves != NULL) {
             for (k = 0; k < numin; k++) {
@@ -1151,7 +1198,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, float *a_c
     init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
     /* init_tag(tag_list, &last_tag, icSigChromaticAdaptationTag, 9*4);  */  /* chad tag */
     /* Get the tag size of the A2B0 with the lutAtoBType */
-    tag_size = getsize_lutAtoBtype(NULL, NULL, 0, m_curves, matrix_input, b_curves,num_in,num_out);
+    tag_size = getsize_lutAtoBtype(a_curves, clut, clut_grid_size, m_curves, matrix_input, b_curves, num_in, num_out);
     init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
     /* Add all the tag sizes to get the new profile size */
     for(k = 0; k < num_tags; k++) {
@@ -1324,7 +1371,19 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
             m_curves = NULL;
         }
         b_curves = NULL;  /* No b_curves.  They will be identity */
-
+        /* Convert ABC matrix to 2x2x2 MLUT type */
+        clut = (float*) gs_alloc_bytes(memory,9*sizeof(float),"gsicc_create_fromabc");
+        gsicc_matrix3_to_mlut(&(pcie->MatrixABC), clut);
+        cie_matrix_transpose3(&(pcie->common.MatrixLMN), &matrix_input_trans);
+        matrix_input = &matrix_input_trans;
+        /* Create the profile */
+        create_lutAtoBprofile(pp_buffer_in, header,a_curves, clut, 2, m_curves, 
+               matrix_input, b_curves, 3, 3, &(pcie->common.points.WhitePoint), 
+               &(pcie->common.points.BlackPoint), memory);
+        *profile_size_out = header->size;
+        gs_free_object(memory, m_curves, "gsicc_create_fromabc");
+        gs_free_object(memory, a_curves, "gsicc_create_fromabc");
+        gs_free_object(memory, clut, "gsicc_create_fromabc");
         return gs_rethrow(-1, "Conversion of CIEABC color space type to ICC form not yet implemented");
     }
     *profile_size_out = header->size;
