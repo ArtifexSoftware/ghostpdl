@@ -188,7 +188,16 @@ get_next_char(
         return 0;
      }
 
-    if (plfont->storage == pcds_internal && chr == 0x0020) {
+    /* For internal fonts we simulate the font missing the space
+       character here.  The character complement is checked to see if
+       the the font is Western Latin and Unicode 0020.  We could
+       also check for an MSL space here but we know the internal
+       reportoire will never contain an MSL font that requires
+       simulating a missing space character. */
+    if (plfont->storage == pcds_internal && 
+        chr == 0x0020 &&
+        plfont->character_complement[5] == 0x3f &&
+        pl_complement_to_vocab(plfont->character_complement) == plgv_Unicode) {
         *pis_space = true;
         *pchr = 0xffff;
         return 0;
