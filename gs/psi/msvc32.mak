@@ -479,7 +479,14 @@ DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 9.0
 COMPBASE=
 SHAREDBASE=
 !else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+! ifdef MSSDK
+RCDIR=$(MSSDK)\bin
+! else
 RCDIR=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+! endif
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
