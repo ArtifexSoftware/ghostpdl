@@ -540,15 +540,16 @@ def
 /01_4 [0 1 0 1 0 1 0 1] readonly def
 
 % The keys here are resolved (PostScript, not PDF) color space names.
-/csncompdict 8 dict begin
+/csncompdict 9 dict begin
   /DeviceGray { pop 1 } bdef
   /DeviceRGB { pop 3 } bdef
   /DeviceCMYK { pop 4 } bdef
-  /CIEBasedA { pop 1 } bdef
-  /CIEBasedABC { pop 3 } bdef
+  /CIEBasedA //DeviceGray def
+  /CIEBasedABC //DeviceRGB def
   /ICCBased { 1 oget /N oget } bdef
-  /Separation { pop 1 } bdef
+  /Separation //DeviceGray def
   /DeviceN { 1 oget length } bdef
+  /Indexed  //DeviceGray def
 currentdict end readonly def
 
 /csrdict 13 dict begin 
@@ -956,12 +957,12 @@ drawopdict begin
   /m /moveto load def
   /l /lineto load def
   /c /curveto load def
-  /v { currentpoint 6 2 roll curveto } def
-  /y { 2 copy curveto } def
+  /v { currentpoint 6 2 roll curveto } bdef
+  /y { 2 copy curveto } bdef
   /re {
    4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
    closepath
-  } def
+  } bdef
   /h /closepath load def
 			% Path painting and clipping
   /n { n } def
@@ -975,7 +976,9 @@ drawopdict begin
   /b* { b* } def
   /W { W } def
   /W* { W* } def
-  /sh { setfillstate resolvesh 
+  /sh {
+      OFFlevels length 0 eq {
+        setfillstate resolvesh 
         gsave 0 .setoverprintmode 
         dup /.shading .knownget {
           exch 
@@ -985,8 +988,11 @@ drawopdict begin
           .buildshading
           dup 3 1 roll /.shading exch put
         } ifelse
-        .shfill grestore 
-      } def
+        .shfill grestore
+      } {
+        pop
+      } ifelse
+    } bdef
 end
 
 % ---------------- XObjects ---------------- %
@@ -1610,8 +1616,22 @@ drawopdict begin
     } repeat pop
     /IDFlag true def  % flag for stream processing.
     /File PDFsource def
-    currentdict makeimagekeys doimage	
-	% The Adobe documentation says that the data following ID
+    currentdict makeimagekeys
+    OFFlevels length 0 eq {
+      doimage
+    } {
+      Width
+      1 index /ImageMask knownoget dup { and } if not {
+        1 index /ColorSpace oget
+        dup type /arraytype eq { 0 oget } if
+        //csncompdict exch get exec
+        BitsPerComponent mul
+      } if
+      7 add 8 idiv Height mul
+      DataSource exch () /SubFileDecode filter flushfile
+      end
+    } ifelse  	
+       	% The Adobe documentation says that the data following ID
 	% consists of "lines", and some PDF files (specifically, some files
 	% produced by PCL2PDF from Visual Software) contain garbage bytes
 	% between the last byte of valid data and an EOL.

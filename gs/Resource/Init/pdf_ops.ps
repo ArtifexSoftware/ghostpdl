@@ -421,22 +421,62 @@ end def
 
 % ---------------- Path painting and clipping ---------------- %
 
-/S { setstrokestate /stroke fsexec } bdef
-/f { setfillstate /fill fsexec } bdef
-/f* { setfillstate /eofill fsexec } bdef
+/S {
+  OFFlevels length 0 eq {
+    setstrokestate /stroke fsexec
+  } {
+    newpath
+  } ifelse
+} bdef
+
+/f {
+  OFFlevels length 0 eq {
+    setfillstate /fill fsexec
+  } {
+    newpath
+  } ifelse
+} bdef
+
+/f* {
+  OFFlevels length 0 eq {
+    setfillstate /eofill fsexec
+  } {
+    newpath
+  } ifelse
+} bdef
+
 /n { newpath } bdef		% don't allow n to get bound in
+
 /s { closepath S } bdef
-/B { gsave setfillstate fill grestore S } bdef
+
+/B {
+  OFFlevels length 0 eq {
+    gsave setfillstate fill grestore
+    setstrokestate /stroke fsexec
+  } {
+    newpath
+  } ifelse
+} bdef
+
 /b { closepath B } bdef
-/B* { gsave setfillstate eofill grestore S } bdef
+
+/B* {
+  OFFlevels length 0 eq {
+    gsave setfillstate eofill grestore
+    setstrokestate /stroke fsexec
+  } {
+    newpath
+  } ifelse
+} bdef
+
 /b* { closepath B* } bdef
 
 % Clipping:
 
 /Wdict 4 dict dup begin
-/S { gsave setstrokestate stroke grestore n } bdef
-/f { gsave setfillstate fill grestore n } bdef
-/f* { gsave setfillstate eofill grestore n } bdef
+/S { OFFlevels length 0 eq { gsave setstrokestate stroke grestore } if n } bdef
+/f { OFFlevels length 0 eq { gsave setfillstate fill grestore } if n } bdef
+/f* { OFFlevels length 0 eq { gsave setfillstate eofill grestore } if n } bdef
 /n { end { currentpoint } stopped not { pop pop clip } if newpath } bdef
 end readonly def
 /W { //Wdict begin } bdef
@@ -854,19 +894,34 @@ end readonly def
 /showfirst { setshowstate Show } def
 
 /Tj {
-  0 0 moveto Show settextposition
+  { 0 0 moveto Show settextposition }
+  OFFlevels length 0 eq {
+    exec
+  } {
+    gsave get-gs-attrs nulldevice set-gs-attrs
+    exec
+    get-gs-attrs grestore set-gs-attrs
+  } ifelse
 } bdef
 /' { T* Tj } bdef
 /" { exch Tc exch Tw T* Tj } bdef
 /TJ {
-  0 0 moveto {
-    dup type /stringtype eq {
-      Show
-    } { -1000 div
-      currentfont /ScaleMatrix .knownget { 0 get mul } if
-      0 Vexch rmoveto
-    } ifelse
-  } forall settextposition
+  { 0 0 moveto {
+      dup type /stringtype eq {
+        Show
+      } { -1000 div
+        currentfont /ScaleMatrix .knownget { 0 get mul } if
+        0 Vexch rmoveto
+      } ifelse
+    } forall settextposition
+  }
+  OFFlevels length 0 eq {
+    exec
+  } {
+    gsave get-gs-attrs nulldevice set-gs-attrs
+    exec
+    get-gs-attrs grestore set-gs-attrs
+  } ifelse
 } bdef
 
 /tf { setfillstate currentpoint fill moveto } bdef
