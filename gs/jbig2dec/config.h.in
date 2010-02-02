@@ -3,6 +3,9 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
 /* Define if the local libc includes getopt_long() */
 #undef HAVE_GETOPT_LONG
 
@@ -53,6 +56,10 @@
 
 /* set by configure if an alternate header with the stdint.h types is found */
 #undef JBIG2_REPLACE_STDINT_H
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O

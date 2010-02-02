@@ -312,6 +312,15 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		IBO = IB;
 		refimage = jbig2_image_new(ctx, IBO->width + RDW,
 						IBO->height + RDH);
+		if (refimage == NULL) {
+		  jbig2_image_release(ctx, IBO);
+		  if (params->SBHUFF) {
+		    jbig2_release_huffman_table(ctx, SBSYMCODES);
+		  }
+		  return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, 
+			segment->number,
+			"couldn't allocate reference image");
+	        }
 
 		/* Table 12 */
 		rparams.GRTEMPLATE = params->SBRTEMPLATE;
@@ -345,7 +354,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
 	    /* (3c.viii) */
 	    if (!params->TRANSPOSED) {
-		switch (params->REFCORNER) {  /* FIXME: double check offsets */
+		switch (params->REFCORNER) {
 		case JBIG2_CORNER_TOPLEFT: x = S; y = T; break;
 		case JBIG2_CORNER_TOPRIGHT: x = S - IB->width + 1; y = T; break;
 		case JBIG2_CORNER_BOTTOMLEFT: x = S; y = T - IB->height + 1; break;
@@ -353,10 +362,10 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		}
 	    } else { /* TRANSPOSED */
 		switch (params->REFCORNER) {
-		case JBIG2_CORNER_TOPLEFT: y = S; x = T; break;
-		case JBIG2_CORNER_TOPRIGHT: y = S - IB->width + 1; x = T; break;
-		case JBIG2_CORNER_BOTTOMLEFT: y = S; x = T - IB->height + 1; break;
-		case JBIG2_CORNER_BOTTOMRIGHT: y = S - IB->width + 1; x = T - IB->height + 1; break;
+		case JBIG2_CORNER_TOPLEFT: x = T; y = S; break;
+		case JBIG2_CORNER_TOPRIGHT: x = T - IB->width + 1; y = S; break;
+		case JBIG2_CORNER_BOTTOMLEFT: x = T; y = S - IB->height + 1; break;
+		case JBIG2_CORNER_BOTTOMRIGHT: x = T - IB->width + 1; y = S - IB->height + 1; break;
 		}
 	    }
 
@@ -393,10 +402,10 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 }
 
 /**
- * jbig2_parse_text_region: read a text region segment header
+ * jbig2_text_region: read a text region segment header
  **/
 int
-jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
+jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 {
     int offset = 0;
     Jbig2RegionSegmentInfo region_info;
@@ -676,6 +685,22 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     }
 
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
+    if (image == NULL) {
+      if (!params.SBHUFF && params.SBREFINE) {
+	jbig2_free(ctx->allocator, GR_stats);
+      } else if (params.SBHUFF) {
+	jbig2_release_huffman_table(ctx, params.SBHUFFFS);
+	jbig2_release_huffman_table(ctx, params.SBHUFFDS);
+	jbig2_release_huffman_table(ctx, params.SBHUFFDT);
+	jbig2_release_huffman_table(ctx, params.SBHUFFRDX);
+	jbig2_release_huffman_table(ctx, params.SBHUFFRDY);
+	jbig2_release_huffman_table(ctx, params.SBHUFFRDW);
+	jbig2_release_huffman_table(ctx, params.SBHUFFRDH);
+	jbig2_release_huffman_table(ctx, params.SBHUFFRSIZE);
+      }
+      return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"couldn't allocate text region image");
+    }
 
     ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
     if (!params.SBHUFF) {
