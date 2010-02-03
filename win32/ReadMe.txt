@@ -89,11 +89,11 @@ settings are as follows:
   pcl
     Debug
       Cmd     ..\main\debugobj\pcl6.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp test.pcl
+      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.px3
       Dir     ..
     Release
       Cmd     ..\main\obj\pcl6.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp test.pcl
+      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.px3
       Dir     ..
   svg
     Debug
@@ -107,11 +107,11 @@ settings are as follows:
   xps
     Debug
       Cmd     ..\xps\debugobj\gxps.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp test.xps
+      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.xps
       Dir     ..
     Release
       Cmd     ..\xps\obj\gxps.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp test.xps
+      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.xps
       Dir     ..
 
 To start one of these debugging, either reset the active project, or
