@@ -186,12 +186,32 @@ gsicc_matrix_init(register gs_matrix3 * mat)
 	mat->cw.w == 1.0 && is_fzero2(mat->cw.u, mat->cw.v);
 }
 
+static void
+gsicc_make_diag_matrix(gs_matrix3 *matrix, gs_vector3 * vec)
+{
+    matrix->cu.u = vec->u;
+    matrix->cv.v = vec->v;
+    matrix->cw.w = vec->w;
+    matrix->cu.v = 0;
+    matrix->cu.w = 0;
+    matrix->cw.u = 0;
+    matrix->cw.v = 0;
+    matrix->cv.u = 0;
+    matrix->cv.w = 0;
+    matrix->is_identity = (vec->u == 1.0) && (vec->v == 1.0) && (vec->w == 1.0);
+}
+
+static bool
+gsicc_diagmatrix_init(gs_vector3 * vec)
+{
+    return(vec->u == 1.0 && vec->v == 1.0 && vec->w == 1.0);
+}
+
 /* This function maps a gs matrix type to an ICC CLUT.
    This is required due to the multiple matrix and 1-D LUT
    forms for postscript management, which the ICC does not
    support (at least the older versions).  clut is allocated
    externally */
-
 static void 
 gsicc_matrix3_to_mlut(gs_matrix3 *mat, float *clut)
 {
@@ -218,6 +238,23 @@ gsicc_matrix3_to_mlut(gs_matrix3 *mat, float *clut)
         *curr_ptr ++= output.w;
     } 
 }
+
+/* This function maps a gs vector type to an ICC CLUT.
+   This is used in the CIEA type.  clut is allocated
+   externally. We may need to replace this with a range value... */
+static void 
+gsicc_vec_to_mlut(gs_vector3 *vec, float *clut)
+{
+    float *curr_ptr = clut;
+
+    *curr_ptr ++= 0;
+    *curr_ptr ++= 0;
+    *curr_ptr ++= 0;
+    *curr_ptr ++= vec->u;
+    *curr_ptr ++= vec->v;
+    *curr_ptr ++= vec->w;
+}
+
 
 #if SAVEICCPROFILE
 /* Debug dump of internally created ICC profile for testing */
@@ -1240,7 +1277,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, float *a_c
        assume all is between 0 and 1. */
     add_lutAtoBtype(curr_ptr, a_curves, clut, clut_grid_size, m_curves, matrix_input, b_curves, num_in, num_out);
     *pp_buffer_in = buffer;
-    gs_free_object(memory, tag_list, "gsicc_create_fromabc");
+    gs_free_object(memory, tag_list, "create_lutAtoBprofile");
 
 }
 
@@ -1267,7 +1304,6 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
     /* We will use an input type class which keeps us from having to
        create an inverse.  We will keep the data a generic 3 color.  
        Since we are doing PS color management the PCS is XYZ */
-    header->deviceClass = icSigDisplayClass;
     header->colorSpace = icSigRgbData;
     header->deviceClass = icSigInputClass;
     header->pcs = icSigXYZData;
@@ -1339,7 +1375,6 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         create_lutAtoBprofile(pp_buffer_in, header,a_curves, clut, clut_grid_size, m_curves, 
                matrix_input, b_curves, 3, 3, &(pcie->common.points.WhitePoint), 
                &(pcie->common.points.BlackPoint), memory);
-        *profile_size_out = header->size;
         gs_free_object(memory, m_curves, "gsicc_create_fromabc");
         gs_free_object(memory, b_curves, "gsicc_create_fromabc");
     } else {
@@ -1372,7 +1407,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         }
         b_curves = NULL;  /* No b_curves.  They will be identity */
         /* Convert ABC matrix to 2x2x2 MLUT type */
-        clut = (float*) gs_alloc_bytes(memory,9*sizeof(float),"gsicc_create_fromabc");
+        clut = (float*) gs_alloc_bytes(memory,8*3*sizeof(float),"gsicc_create_fromabc"); /* 8 grid points, 3 outputs */
         gsicc_matrix3_to_mlut(&(pcie->MatrixABC), clut);
         cie_matrix_transpose3(&(pcie->common.MatrixLMN), &matrix_input_trans);
         matrix_input = &matrix_input_trans;
@@ -1380,17 +1415,79 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
         create_lutAtoBprofile(pp_buffer_in, header,a_curves, clut, 2, m_curves, 
                matrix_input, b_curves, 3, 3, &(pcie->common.points.WhitePoint), 
                &(pcie->common.points.BlackPoint), memory);
-        *profile_size_out = header->size;
         gs_free_object(memory, m_curves, "gsicc_create_fromabc");
         gs_free_object(memory, a_curves, "gsicc_create_fromabc");
         gs_free_object(memory, clut, "gsicc_create_fromabc");
-        return gs_rethrow(-1, "Conversion of CIEABC color space type to ICC form not yet implemented");
     }
     *profile_size_out = header->size;
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if(debug_catch)
-        save_profile(buffer,"fromabc",header->size);
+        save_profile(*pp_buffer_in,"fromabc",header->size);
+#endif
+    return(0);
+}
+
+int
+gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
+                   bool has_a_proc, bool has_lmn_procs)
+{
+    icProfile iccprofile;
+    icHeader  *header = &(iccprofile.header);
+    int debug_catch = 1;
+    gs_matrix3 *matrix_input;
+    gs_matrix3 matrix_input_trans;
+    float *a_curve, *m_curves, *b_curves, *curr_pos, *clut;
+    
+    /* Fill in the common stuff */
+    setheader_common(header);
+
+    /* We will use an input type class which keeps us from having to
+       create an inverse.  We will keep the data a generic 3 color.  
+       Since we are doing PS color management the PCS is XYZ */
+    header->colorSpace = icSigGrayData;
+    header->deviceClass = icSigInputClass;
+    header->pcs = icSigXYZData;
+
+    /* Since we are going from 1 gray input to 3 XYZ values, we will need to include the MLUT for the 1 to 3 conversion
+       applied by the matrix A.  Depending upon the other parameters we may have simpiler forms, but this
+       is required even when Matrix A is the identity. */
+    if (has_a_proc) {
+        a_curve = (float*) gs_alloc_bytes(memory,CURVE_SIZE*sizeof(float),"gsicc_create_froma");
+        memcpy(a_curve,&(pcie->caches.DecodeA.floats.values[0]),CURVE_SIZE*sizeof(float));
+    } else {
+        a_curve = NULL;
+    }
+    if (has_lmn_procs) {
+        m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_froma");
+        curr_pos = m_curves;
+        memcpy(curr_pos,&(pcie->common.caches.DecodeLMN->floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
+    } else {
+        m_curves = NULL;
+    }
+    b_curves = NULL;  /* No b_curves.  They will be identity */
+    /* Convert diagonal A matrix to 2x1 MLUT type */
+    clut = (float*) gs_alloc_bytes(memory,2*3*sizeof(float),"gsicc_create_froma"); /* 2 grid points 3 outputs */
+    gsicc_vec_to_mlut(&(pcie->MatrixA), clut);
+    cie_matrix_transpose3(&(pcie->common.MatrixLMN), &matrix_input_trans);
+    matrix_input = &matrix_input_trans;
+    /* Create the profile */
+    create_lutAtoBprofile(pp_buffer_in, header,a_curve, clut, 2, m_curves, 
+           matrix_input, b_curves, 1, 3, &(pcie->common.points.WhitePoint), 
+           &(pcie->common.points.BlackPoint), memory);
+    *profile_size_out = header->size;
+    gs_free_object(memory, m_curves, "gsicc_create_froma");
+    gs_free_object(memory, a_curve, "gsicc_create_froma");
+    gs_free_object(memory, clut, "gsicc_create_froma");
+    *profile_size_out = header->size;
+#if SAVEICCPROFILE
+    /* Dump the buffer to a file for testing if its a valid ICC profile */
+    if(debug_catch)
+        save_profile(*pp_buffer_in,"froma",header->size);
 #endif
     return(0);
 }
@@ -1423,99 +1520,6 @@ gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *mem
    to do an MLUT.  If all are absent, we end up doing a linear
    mapping between the black point and the white point.  A very simple
    gray input profile with a linear TRC curve */
-void
-gsicc_create_froma(gs_cie_a *pcie, unsigned char *buffer, gs_memory_t *memory, 
-                   bool has_a_proc, bool has_lmn_procs)
-{
-    icProfile iccprofile;
-    icHeader  *header = &(iccprofile.header);
-    int profile_size,k;
-    int num_tags;
-    gsicc_tag *tag_list;
-    unsigned char *curr_ptr;
-    int last_tag;
-    icS15Fixed16Number temp_XYZ[3];
-    int tag_location;
-    int trc_tag_size;
-    int debug_catch = 1;
-
-    gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
-    /* Fill in the common stuff */
-    setheader_common(header);
-    /* We will use an input type class 
-       which keeps us from having to
-       create an inverse. */
-    header->deviceClass = icSigInputClass;
-    header->colorSpace = icSigGrayData;
-    header->pcs = icSigXYZData;  /* If MLUT do we want CIELAB? */
-    profile_size = HEADER_SIZE;
-
-    /* Check if we have no LMN or A methods.  A simple profile.  The ICC format is 
-       a bit limited in its options for monochrome color. */
-    if(pcie->MatrixA.u == 1.0 && pcie->MatrixA.v == 1.0 && pcie->MatrixA.w == 1.0
-        && pcie->common.MatrixLMN.is_identity && !has_lmn_procs) {
-        num_tags = 5;  /* common (2) + grayTRC,bkpt,wtpt */     
-        tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,"gsicc_create_froma");
-        /* Let us precompute the sizes of everything and all our offsets */
-        profile_size += TAG_SIZE*num_tags;
-        profile_size += 4; /* number of tags.... */
-        last_tag = -1;
-        init_common_tags(tag_list, num_tags, &last_tag);  
-        init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
-        init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
-
-        if (!has_a_proc) {
-            trc_tag_size = 4;
-        } else {
-            trc_tag_size = CURVE_SIZE*2+4;  /* curv type */
-            /* This will be populated during by the interpolator */
-            debug_catch = 0;
-        }
-        init_tag(tag_list, &last_tag, icSigGrayTRCTag, trc_tag_size);
-        for(k = 0; k < num_tags; k++) {
-            profile_size += tag_list[k].size;
-        }
-        /* Now we can go ahead and fill our buffer with the data */
-        buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_froma");
-        curr_ptr = buffer;
-        /* The header */
-        header->size = profile_size;
-        copy_header(curr_ptr,header);
-        curr_ptr += HEADER_SIZE;
-        /* Tag table */
-        copy_tagtable(curr_ptr,tag_list,num_tags);
-        curr_ptr += TAG_SIZE*num_tags;
-        curr_ptr += 4;
-        /* Now the data.  Must be in same order as we created the tag table */
-        /* First the common tags */
-        add_common_tag_data(curr_ptr, tag_list);
-        for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
-            curr_ptr += tag_list[k].size;
-        }
-        tag_location = NUMBER_COMMON_TAGS;
-        /* Need to adjust for the D65/D50 issue */
-        get_XYZ(temp_XYZ,&(pcie->common.points.WhitePoint));
-        add_xyzdata(curr_ptr,temp_XYZ);
-        curr_ptr += tag_list[tag_location].size;
-        tag_location++;
-        get_XYZ(temp_XYZ,&(pcie->common.points.BlackPoint));
-        add_xyzdata(curr_ptr,temp_XYZ);
-        curr_ptr += tag_list[tag_location].size;
-        write_bigendian_4bytes(curr_ptr,icSigCurveType);
-        curr_ptr+=4;
-        memset(curr_ptr,0,8); /* reserved + number points */
-        curr_ptr+=8;
-    } else {
-        /* We will need to create a small 2x2 MLUT */
-        debug_catch = 0;
-    }
-#if SAVEICCPROFILE
-    /* Dump the buffer to a file for testing if its a valid ICC profile */
-    if (debug_catch)
-        save_profile(buffer,"froma",profile_size);
-#endif
-}
-
 void
 gsicc_create_fromcrd(unsigned char *buffer, gs_memory_t *memory)
 {

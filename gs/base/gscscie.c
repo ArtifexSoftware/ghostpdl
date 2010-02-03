@@ -110,7 +110,7 @@ const gs_color_space_type gs_color_space_type_CIEA = {
     gx_init_CIE, gx_restrict_CIEA,
     gx_concrete_space_CIE,
     gx_concretize_CIEA, NULL,
-    gx_default_remap_color,
+    gx_remap_CIEA,
     gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_final_CIEA, gx_no_adjust_color_count,

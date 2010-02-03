@@ -41,6 +41,10 @@ int cieicc_prepare_caches(i_ctx_t *i_ctx_p, const gs_range * domains,
 		     cie_cache_floats * pc2, cie_cache_floats * pc3,
 		     void *container,
 		     gs_ref_memory_t * imem, client_name_t cname);
+static int
+cie_prepare_iccproc(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
+		  cie_cache_floats * pcache, void *container,
+		  gs_ref_memory_t * imem, client_name_t cname);
 
 /* Empty procedures */
 static const ref empty_procs[4] =
@@ -267,6 +271,28 @@ cie_lmnp_param(const gs_memory_t *mem, const ref * pdref, gs_cie_common * pcie,
         return code;
     *has_lmn_procs = !code;  /* Need to know for efficient creation of ICC profile */  
     pcie->DecodeLMN = DecodeLMN_default;
+    return 0;
+}
+
+/* Get objects associated with cie color space */
+static int
+cie_a_param(const gs_memory_t *mem, const ref * pdref, gs_cie_a * pcie, ref_cie_procs * pcprocs, 
+              bool *has_a_procs, bool *has_lmn_procs)
+{
+    int code;
+
+    code = dict_floats_param(mem, pdref, "RangeA", 2, (float *)&pcie->RangeA, (const float *)&RangeA_default);
+    if (code < 0)
+	return code;
+    code = dict_floats_param(mem, pdref, "MatrixA", 3, (float *)&pcie->MatrixA, (const float *)&MatrixA_default);
+    if (code < 0)
+	return code;
+    code = cie_lmnp_param(mem, pdref, &pcie->common, pcprocs, has_lmn_procs);
+    if (code < 0)
+	return code;
+    if ((code = dict_proc_param(pdref, "DecodeA", &(pcprocs->Decode.A), true)) < 0)
+	return code;
+    *has_a_procs = !code;
     return 0;
 }
 
@@ -573,44 +599,46 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
     bool has_a_procs;
     bool has_lmn_procs;
 
-    push(1); /* Sacrificial. cie_a_finish does a pop... */
     procs = istate->colorspace.procs.cie;
     if ((code = dict_proc_param(CIEdict, "DecodeA", &procs.Decode.A, true)) < 0)
 	return code;
-
-    /* Note that if code == 1 then there was not a DecodeA procedure */
-    /* If code == 0 then there was a DecodeA procedure */
-
-    has_a_procs = !code;
-
+    push(1); /* Sacrificial */
+    procs = istate->colorspace.procs.cie;
     code = gs_cspace_build_CIEA(&pcs, NULL, mem);
     if (code < 0)
 	return code;
     pcie = pcs->params.a;
-
-    code = dict_floats_param(imemory, CIEdict, "RangeA", 2, (float *)&pcie->RangeA, (const float *)&RangeA_default);
-    if (code < 0)
-	return code;
-    code = dict_floats_param(imemory, CIEdict, "MatrixA", 3, (float *)&pcie->MatrixA, (const float *)&MatrixA_default);
-    if (code < 0)
-	return code;
-    code = cie_lmnp_param(imemory, CIEdict, &pcie->common, &procs, &has_lmn_procs);
-    if (code < 0)
-	return code;
-
-    /* Pulled the above out of the if below to make some ICC conversion testing easier */
-
-    gsicc_create_froma(pcie, NULL, imemory, has_a_procs, has_lmn_procs);
-
-    if ((code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs, (gs_cie_common *)pcie, igs)) < 0 ||	/* do this last */
-	(code = cie_cache_push_finish(i_ctx_p, cie_a_finish, imem, pcie)) < 0 ||
-	(code = cie_prepare_cache(i_ctx_p, &pcie->RangeA, &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A")) < 0 ||
-	(code = cache_common(i_ctx_p, &pcie->common, &procs, pcie, imem)) < 0
-	)
-	DO_NOTHING;
-    pcie->DecodeA = DecodeA_default;
-    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    code = cie_a_param(imemory, CIEdict, pcie, &procs, &has_a_procs, &has_lmn_procs);
+    if (!has_a_procs && !has_lmn_procs) {
+        pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
+        (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
+        (pcie->common.caches.DecodeLMN)[2].floats.params.is_identity = true;
+        pcie->caches.DecodeA.floats.params.is_identity = true;
+    } else {
+        if (has_a_procs) {
+            code = cie_prepare_iccproc(i_ctx_p, &pcie->RangeA, 
+                &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A");
+        } else {
+            pcie->caches.DecodeA.floats.params.is_identity = true;
+        }
+        if (has_lmn_procs) {
+            cieicc_prepare_caches(i_ctx_p, (&pcie->common.RangeLMN)->ranges,
+		     procs.DecodeLMN.value.const_refs,
+                     &(pcie->common.caches.DecodeLMN)->floats,
+                     &(pcie->common.caches.DecodeLMN)[1].floats,
+                     &(pcie->common.caches.DecodeLMN)[2].floats,
+                     NULL, pcie, imem, "Decode.LMN(ICC)");
+        } else {
+            pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
+            (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
+            (pcie->common.caches.DecodeLMN)[2].floats.params.is_identity = true;
+        }
+    }
+    /* Set the color space in the graphic state.  The ICC profile may be set after this
+       due to the needed sampled procs */
+    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code); 
 }
+
 static int
 cie_a_finish(i_ctx_t *i_ctx_p)
 {
@@ -789,7 +817,7 @@ cie_cache_push_finish(i_ctx_t *i_ctx_p, op_proc_t finish_proc,
 /* Push the sequence of commands onto the execution stack
    so that we sample the procs */
 static int cie_create_icc(i_ctx_t *);
-int
+static int
 cie_prepare_iccproc(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
 		  cie_cache_floats * pcache, void *container,
 		  gs_ref_memory_t * imem, client_name_t cname)
