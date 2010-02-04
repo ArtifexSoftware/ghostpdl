@@ -458,32 +458,20 @@ compression modes:
 <h4>Options</h4>
 
 <p>
-The black-and-white TIFF drivers support creation of files that are
-comprised of more than a single strip.  Multi-strip files reduce the memory
-requirement on the reader, since readers need only store and process one
-strip at a time.  These drivers provide two parameters beyond the standard
-set:
+All TIFF drivers support creation of files that are comprised of more than a
+single strip.  Multi-strip files reduce the memory requirement on the reader,
+since readers need only store and process one strip at a time.  The
+<code>MaxStripSize</code> parameter controls the strip size:
 
 <blockquote>
 <dl>
-<dt><code>-dMaxStripSize=<em>N</em></code> (non-negative integer; default = 0)
+<dt><code>-dMaxStripSize=<em>N</em></code> (non-negative integer; default = 8192)
 <dd>Set the maximum (uncompressed) size of a strip.
-
-<dt><code>-dAdjustWidth=<em>state</em></code> (0 or 1; default = 1)
-<dd>If this option set then if the requested page width is in the range of either
-1680..1736 or 2000..2056 columns, set the page width to A4 (1728 columns)
-or B4 (2048 columns) respectively.
-This behavior is the default. Pass -dAdjustWidth=0 to turn off this behavior.
 </dl></blockquote>
 
 <p>
 The TIFF 6.0 specification, Section 7, page 27, recommends that the size of
-each strip be about 8 Kbytes.  As an example, to generate the 'tiger' in
-tiffg4 format that has the recommended strip size, use:
-
-<blockquote><pre>
-gs -sDEVICE=tiffg4 -sOutputFile=tiger.tiff -dMaxStripSize=8192 examples/tiger.eps
-</pre></blockquote>
+each strip be about 8 Kbytes.
 
 <p>
 If the value of the <tt>MaxStripSize</tt> parameter is smaller than a
@@ -494,8 +482,8 @@ StripByteCounts tables, and by reducing the effectiveness of the compression
 which must start over for each strip.
 
 <p>
-If the value of MaxStripSize is 0 (the default), then the entire image will
-be a single strip.
+If the value of MaxStripSize is 0, then the entire image will be a single strip.
+
 
 <p>
 Since v. 8.51 the logical order of bits within a byte, FillOrder, tag = 266 is
@@ -531,6 +519,18 @@ For the <code>tiffsep</code> device, it only changes the compression scheme
 of the separation files (which is <code>lzw</code> by default), not the
 composite cmyk file.  It defaults to <code>g4</code> for the
 <code>tiffsep1</code> device.
+
+<p>
+The black-and-white TIFF drivers also provide this parameter:
+
+<blockquote><dl>
+<dt><code>-dAdjustWidth=<em>state</em></code> (0 or 1; default = 1)
+<dd>If this option set then if the requested page width is in the range of either
+1680..1736 or 2000..2056 columns, set the page width to A4 (1728 columns)
+or B4 (2048 columns) respectively.
+This behavior is the default. Pass -dAdjustWidth=0 to turn off this behavior.
+</dl></blockquote>
+
 
 <h3><a name="fax"></a>FAX</h3>
 

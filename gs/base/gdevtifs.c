@@ -113,6 +113,8 @@ tiff_get_params(gx_device * dev, gs_param_list * plist)
     if ((code = tiff_compression_param_string(&comprstr, tfdev->Compression)) < 0 ||
 	(code = param_write_string(plist, "Compression", &comprstr)) < 0)
 	ecode = code;
+    if ((code = param_write_long(plist, "MaxStripSize", &tfdev->MaxStripSize)) < 0)
+        ecode = code;
     return ecode;
 }
 
@@ -126,6 +128,7 @@ tiff_put_params(gx_device * dev, gs_param_list * plist)
     bool big_endian = tfdev->BigEndian;
     uint16 compr = tfdev->Compression;
     gs_param_string comprstr;
+    long mss = tfdev->MaxStripSize;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &big_endian)) {
@@ -150,6 +153,23 @@ tiff_put_params(gx_device * dev, gs_param_list * plist)
 	    param_signal_error(plist, param_name, ecode);
     }
 
+    switch (code = param_read_long(plist, (param_name = "MaxStripSize"), &mss)) {
+        case 0:
+	    /*
+	     * Strip must be large enough to accommodate a raster line.
+	     * If the max strip size is too small, we still write a single
+	     * line per strip rather than giving an error.
+	     */
+	    if (mss >= 0)
+	        break;
+	    code = gs_error_rangecheck;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 1:
+	    break;
+    }
+
     if (ecode < 0)
 	return ecode;
     code = gdev_prn_put_params(dev, plist);
@@ -158,6 +178,7 @@ tiff_put_params(gx_device * dev, gs_param_list * plist)
 
     tfdev->BigEndian = big_endian;
     tfdev->Compression = compr;
+    tfdev->MaxStripSize = mss;
     return code;
 }
 
@@ -179,8 +200,7 @@ tiff_from_filep(const char *name, FILE *filep, int big_endian)
 }
 
 int gdev_tiff_begin_page(gx_device_tiff *tfdev,
-			 FILE *file,
-			 long max_strip_size)
+			 FILE *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)tfdev;
 
@@ -191,29 +211,36 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
 	    return_error(gs_error_invalidfileaccess);
     }
 
-    return tiff_set_fields_for_printer(pdev, tfdev->tif, max_strip_size);
+    return tiff_set_fields_for_printer(pdev, tfdev->tif);
 }
 
-
-int tiff_set_fields_for_printer(gx_device_printer *pdev,
-				TIFF *tif,
-				long max_strip_size)
+int tiff_set_compression(gx_device_printer *pdev,
+			 TIFF *tif,
+			 uint compression,
+			 long max_strip_size)
 {
-    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, pdev->width);
-    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, pdev->height);
-    TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-    TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(tif, TIFFTAG_COMPRESSION, compression);
 
     if (max_strip_size == 0) {
 	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, pdev->height);
     }
     else {
-	int max_strip_rows =
-	    max_strip_size / gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-        int rps = max(1, max_strip_rows);
-
-	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, rps);
+	int rows = max_strip_size /
+	    gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+	TIFFSetField(tif,
+		     TIFFTAG_ROWSPERSTRIP,
+		     TIFFDefaultStripSize(tif, max(1, rows)));
     }
+
+    return 0;
+}
+
+int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif)
+{
+    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, pdev->width);
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, pdev->height);
+    TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+    TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
     TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
     TIFFSetField(tif, TIFFTAG_XRESOLUTION, pdev->x_pixels_per_inch);

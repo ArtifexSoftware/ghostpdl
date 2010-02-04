@@ -56,20 +56,25 @@ const gx_device_tiff gs_tiffgray_device = {
 		    0, 0, 0, 0,	/* Margins */
 		    1, 8, 255, 0, 256, 0, tiffgray_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
-    COMPRESSION_NONE
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE
 };
 
 
 /* ------ Private functions ------ */
 
 static void
-tiff_set_gray_fields(TIFF *tif, unsigned short bits_per_sample, int compression)
+tiff_set_gray_fields(gx_device_printer *pdev, TIFF *tif,
+		     unsigned short bits_per_sample,
+		     int compression,
+		     long max_strip_size)
 {
     TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bits_per_sample);
-    TIFFSetField(tif, TIFFTAG_COMPRESSION, compression);
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
     TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
     TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+
+    tiff_set_compression(pdev, tif, compression, max_strip_size);
 }
 
 static int
@@ -81,11 +86,11 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
     if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
 	return_error(gs_error_rangecheck);  /* this will overflow max_long */
 
-    code = gdev_tiff_begin_page(tfdev, file, 0);
+    code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
 	return code;
 
-    tiff_set_gray_fields(tfdev->tif, 8, tfdev->Compression);
+    tiff_set_gray_fields(pdev, tfdev->tif, 8, tfdev->Compression, tfdev->MaxStripSize);
 
     return tiff_print_page(pdev, tfdev->tif);
 }
@@ -113,7 +118,8 @@ const gx_device_tiff gs_tiff32nc_device = {
 		    0, 0, 0, 0,	/* Margins */
 		    4, 32, 255, 255, 256, 256, tiffcmyk_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
-    COMPRESSION_NONE
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE
 };
 
 /* 16-bit-per-plane separated CMYK color. */
@@ -129,19 +135,24 @@ const gx_device_tiff gs_tiff64nc_device = {
 		    0, 0, 0, 0,	/* Margins */
 		    4, 64, 255, 255, 256, 256, tiffcmyk_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
-    COMPRESSION_NONE
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE
 };
 
 /* ------ Private functions ------ */
 
 static void
-tiff_set_cmyk_fields(TIFF *tif, short bits_per_sample, uint16 compression)
+tiff_set_cmyk_fields(gx_device_printer *pdev, TIFF *tif,
+		     short bits_per_sample,
+		     uint16 compression,
+		     long max_strip_size)
 {
     TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bits_per_sample);
-    TIFFSetField(tif, TIFFTAG_COMPRESSION, compression);
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_SEPARATED);
     TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
     TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 4);
+
+    tiff_set_compression(pdev, tif, compression, max_strip_size);
 }
 
 static int
@@ -153,13 +164,15 @@ tiffcmyk_print_page(gx_device_printer * pdev, FILE * file)
     if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
 	return_error(gs_error_rangecheck);  /* this will overflow max_long */
 
-    code = gdev_tiff_begin_page(tfdev, file, 0);
+    code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
 	return code;
 
-    tiff_set_cmyk_fields(tfdev->tif,
+    tiff_set_cmyk_fields(pdev,
+			 tfdev->tif,
 			 pdev->color_info.depth / pdev->color_info.num_components,
-			 tfdev->Compression);
+			 tfdev->Compression,
+			 tfdev->MaxStripSize);
 
     return tiff_print_page(pdev, tfdev->tif);
 }
@@ -199,6 +212,7 @@ static dev_proc_fill_path(sep1_fill_path);
     bool  BigEndian;            /* true = big endian; false = little endian */\
     uint16 Compression;		/* for the separation files, same values as
 				   TIFFTAG_COMPRESSION */\
+    long MaxStripSize;\
     gs_devn_params devn_params;		/* DeviceN generated parameters */\
     equivalent_cmyk_color_params equiv_cmyk_colors
 
@@ -353,7 +367,8 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 	{ 0 },			/* tiff state for separation files */\
 	{ 0 },			/* separation files */\
 	arch_is_big_endian      /* true = big endian; false = little endian */,\
-	compr			/* COMPRESSION_* */
+	compr			/* COMPRESSION_* */,\
+	TIFF_DEFAULT_STRIP_SIZE	/* MaxStripSize */
 
 /*
  * Select the default number of components based upon the number of bits
@@ -595,6 +610,8 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
     if ((code = tiff_compression_param_string(&comprstr, pdevn->Compression)) < 0 ||
 	(code = param_write_string(plist, "Compression", &comprstr)) < 0)
 	ecode = code;
+    if ((code = param_write_long(plist, "MaxStripSize", &pdevn->MaxStripSize)) < 0)
+        ecode = code;
     
     return ecode;
 }
@@ -633,6 +650,22 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
 	default:
 	    param_signal_error(plist, param_name, code);
 	    return code;
+    }
+    switch (code = param_read_long(plist, (param_name = "MaxStripSize"), &pdevn->MaxStripSize)) {
+        case 0:
+	    /*
+	     * Strip must be large enough to accommodate a raster line.
+	     * If the max strip size is too small, we still write a single
+	     * line per strip rather than giving an error.
+	     */
+	    if (pdevn->MaxStripSize >= 0)
+	        break;
+	    code = gs_error_rangecheck;
+	default:
+	    param_signal_error(plist, param_name, code);
+	    return code;
+	case 1:
+	    break;
     }
     
     return devn_printer_put_params(pdev, plist,
@@ -1334,8 +1367,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	if (!tfdev->tiff_comp)
 	    return_error(gs_error_invalidfileaccess);
     }
-    code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, 0);
-    tiff_set_cmyk_fields(tfdev->tiff_comp, 8, COMPRESSION_NONE);
+    code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp);
+    tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 8, COMPRESSION_NONE, tfdev->MaxStripSize);
     pdev->color_info.depth = save_depth;
     if (code < 0)
 	return code;
@@ -1376,8 +1409,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
 	    return_error(gs_error_rangecheck);  /* this will overflow max_long */
 
-	code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 0);
-	tiff_set_gray_fields(tfdev->tiff[comp_num], 8, tfdev->Compression);
+	code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num]);
+	tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 8, tfdev->Compression, tfdev->MaxStripSize);
 	pdev->color_info.depth = save_depth;
         if (code < 0)
 	    return code;
@@ -1545,8 +1578,8 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 	}
 
 	pdev->color_info.depth = 8;	/* Create files for 8 bit gray */
-	code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 0);
-	tiff_set_gray_fields(tfdev->tiff[comp_num], 1, tfdev->Compression);
+	code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num]);
+	tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 1, tfdev->Compression, tfdev->MaxStripSize);
 	pdev->color_info.depth = save_depth;
         if (code < 0)
 	    return code;

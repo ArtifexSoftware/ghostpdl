@@ -1,3 +1,6 @@
+/* Show errors and warnings on stderr instead of a MessageBox */
+#define TIF_PLATFORM_CONSOLE 1
+
 /* Define to 1 if you have the <assert.h> header file. */
 #define HAVE_ASSERT_H 1
 
