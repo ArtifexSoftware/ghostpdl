@@ -28,9 +28,15 @@
  ---
 
   The set of truetype fonts in the urwfonts directory are necessary for 
-  the PCL/XL interpreter to function propery but they ARE NOT FREE 
+  the PCL/XL interpreter to function properly but they ARE NOT FREE 
   SOFTWARE and are NOT distributed under the GNU GPL. They can instead 
   be redistributed under the AFPL licence which bars commercial use.
+
+  If your copy of GhostPDL includes these fonts, you should have
+  received a copy of the the Aladdin Free Pubilc License, usually
+  in a file called COPYING.AFPL. If not, please contact Artifex
+  Software, Inc. 7 Mt. Lassen Drive, Suite A-134, San Rafael CA
+  94903 USA, or visit http://www.artifex.com/
 
  ---
 
