@@ -1492,34 +1492,35 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_si
     return(0);
 }
 
-void
-gsicc_create_fromdef(gs_cie_def *pcie, unsigned char *buffer, gs_memory_t *memory,
-                     bool has_def_procs, bool has_abc_procs, bool has_lmn_procs)
+static int
+gsicc_create_defg_common(  )
 {
-    icProfile iccprofile;
-    icHeader  *header = &(iccprofile.header);
 
-    setheader_common(header);
+
+    return(0);
 }
 
-void
-gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char *buffer, gs_memory_t *memory,
-                       bool has_defg_procs, bool has_abc_procs, bool has_lmn_procs)
+/* If we have an ABC matrix, a DecodeLMN and an LMN matrix we have to mash together the table, Decode ABC (if present) and
+   ABC matrix. */
+gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
+                   bool has_a_proc, bool has_lmn_procs)
 {
-    icProfile iccprofile;
-    icHeader  *header = &(iccprofile.header);
 
-    setheader_common(header);
+
+
+    return(0);
 }
 
-/* CIEA PS profiles can result in a surprisingly complex ICC profile.
-   The Decode A and Matrix A (which
-   is diagonal) are optional.  The Decode LMN and MatrixLMN are
-   also optional.  If the Matrix LMN is present, this will map the
-   gray value to CIEXYZ.  In any of those are present, we will need
-   to do an MLUT.  If all are absent, we end up doing a linear
-   mapping between the black point and the white point.  A very simple
-   gray input profile with a linear TRC curve */
+int
+gsicc_create_fromdef(gs_cie_def *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
+                   bool has_a_proc, bool has_lmn_procs)
+{
+
+
+
+    return(0);
+}
+
 void
 gsicc_create_fromcrd(unsigned char *buffer, gs_memory_t *memory)
 {
