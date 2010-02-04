@@ -512,7 +512,7 @@ gx_ht_write(
     byte *                      data,
     uint *                      psize )
 {
-    int                         num_dev_comps = pdht->num_dev_comp;
+    int                         num_dev_comps;
     int                         i, code;
     uint                        req_size = 2, used_size = 2;
                                 /* 1 for halftone type, 1 for num_dev_comps */
@@ -527,6 +527,7 @@ gx_ht_write(
      */
     if (pdht == 0 || pdht->components == 0)
 	return_error(gs_error_unregistered); /* Must not happen. */
+    num_dev_comps = pdht->num_dev_comp;
 
     /*
      * The following fields do not need to be transmitted:

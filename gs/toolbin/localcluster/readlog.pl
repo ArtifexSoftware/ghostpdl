@@ -70,8 +70,8 @@ while(<F>) {
     $results{$file}{"error"}=$error;
   }
   if (m/killed: timeout/) {
-    $error=3 if ($divider==0 && $error==0);
-    $error=4 if ($divider==1 && $error==0);
+    $error=3 if ($divider==0); # && $error==0);
+    $error=4 if ($divider==1); # && $error==0);
     $results{$file}{"error"}=$error;
   }
   if (m/Unable to open/) {

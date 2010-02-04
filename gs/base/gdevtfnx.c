@@ -46,7 +46,8 @@ const gx_device_tiff gs_tiff12nc_device = {
 			0, 0, 0, 0,
 			24, tiff12_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
-    COMPRESSION_NONE
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE
 };
 
 const gx_device_tiff gs_tiff24nc_device = {
@@ -56,7 +57,8 @@ const gx_device_tiff gs_tiff24nc_device = {
 			0, 0, 0, 0,
 			24, tiff_rgb_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
-    COMPRESSION_NONE
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE
 };
 
 const gx_device_tiff gs_tiff48nc_device = {
@@ -66,7 +68,8 @@ const gx_device_tiff gs_tiff48nc_device = {
 			0, 0, 0, 0,
 			48, tiff_rgb_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
-    COMPRESSION_NONE
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE
 };
 
 /* ------ Private functions ------ */
@@ -74,10 +77,12 @@ const gx_device_tiff gs_tiff48nc_device = {
 static void
 tiff_set_rgb_fields(gx_device_tiff *tfdev)
 {
-    TIFFSetField(tfdev->tif, TIFFTAG_COMPRESSION, tfdev->Compression);
     TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
     TIFFSetField(tfdev->tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
     TIFFSetField(tfdev->tif, TIFFTAG_SAMPLESPERPIXEL, 3);
+
+    tiff_set_compression((gx_device_printer *)tfdev, tfdev->tif,
+			 tfdev->Compression, tfdev->MaxStripSize);
 }
 
 static int
@@ -93,12 +98,12 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 	    return_error(gs_error_invalidfileaccess);
     }
 
-    code = gdev_tiff_begin_page(tfdev, file, 0);
+    code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
 	return code;
 
-    tiff_set_rgb_fields(tfdev);
     TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE, 4);
+    tiff_set_rgb_fields(tfdev);
 
     /* Write the page data. */
     {
@@ -150,13 +155,13 @@ tiff_rgb_print_page(gx_device_printer * pdev, FILE * file)
 	    return_error(gs_error_invalidfileaccess);
     }
 
-    code = gdev_tiff_begin_page(tfdev, file, 0);
+    code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
 	return code;
 
-    tiff_set_rgb_fields(tfdev);
     TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE,
 		 pdev->color_info.depth / pdev->color_info.num_components);
+    tiff_set_rgb_fields(tfdev);
 
     /* Write the page data. */
     return tiff_print_page(pdev, tfdev->tif);

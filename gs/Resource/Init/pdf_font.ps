@@ -156,8 +156,10 @@ currentdict /known_symbolic_fonts undef
 % Get the (possibly modified) encoding of a font.
 /getfontencoding {	% <font-resource> <font> getfontencoding
 			%   <font-resource> <font> <Encoding|null>
-  //systemdict /IgnoreTTEncoding .knownget not { //false } if {
-  1 index /Subtype get /TrueType eq } { //false } ifelse {
+  % Ignore encoding when TrueType is requested
+  % and loaded. All other cases are left unchanged.
+  dup /FontType get 42 eq
+  2 index /Subtype get /TrueType eq and { 
     //null
   } {
     1 index /Encoding known {
@@ -255,8 +257,14 @@ currentdict /known_symbolic_fonts undef
       } if
       div
                 % Stack: font font-res mscale
-      /FirstChar 2 index /FirstChar oget def
-      /LastChar  2 index /LastChar  oget def
+      /FirstChar 2 index /FirstChar knownoget not {
+        (   **** Warning: /FirstChar attribute is missing, assuming 0.\n) pdfformaterror
+        0
+      } if def
+      /LastChar  2 index /LastChar  knownoget not {
+        (   **** Warning: /LastChar attribute is missing, assuming 255.\n) pdfformaterror
+        255
+      } if def
 
       Encoding length LastChar le {
          (   **** Warning: Font Encoding array size is smaller than character range.\n)
@@ -1004,7 +1012,7 @@ currentdict /eexec_pdf_param_dict .undef
 /readtruetype {		% <font-resource> <stream-dict> readtruetype <font>
   1 index exch
   PDFfile fileposition 3 1 roll
-  true resolvestream readfontfilter
+  //true resolvestream readfontfilter
 		% Stack: filepos fontres stream
   1 index /Subtype get /CIDFontType2 eq {
     1 index /BaseFont get                 % Use the BaseFont name for the font. Otherwise we
@@ -1013,12 +1021,18 @@ currentdict /eexec_pdf_param_dict .undef
 		% Stack: filepos fontres cidfont
   } {
 		                          % filepos fontres stream
-    1 index /FontDescriptor oget          % filepos fontres stream fd   
-    /Flags get 4 and 0 ne                 % filepos fontres stream is_symbolic
-    dup { //null } { StandardEncoding } ifelse        
-    3 index /Encoding known {
+    1 index /FontDescriptor oget
+    /Flags get 4 and 0 ne {
+       //true  %  symbolic
+    } {
+       1 index /Encoding oknown not  % no encoding => symbolic
+    } ifelse
+    dup {
+      //null
+    } {
+      StandardEncoding
       3 index getencoding
-    } if                                  % filepos fontres stream is_symbolic Encoding
+    } ifelse                              % filepos fontres stream is_symbolic Encoding
     dup 4 index exch                      % filepos fontres stream is_symbolic Encoding fontres Encoding
     /prebuilt_encoding exch put           % filepos fontres stream is_symbolic Encoding
     .loadpdfttfont
@@ -1293,6 +1307,22 @@ currentdict /CMap_read_dict undef
     % <w1x> <w1y> <vx> <vy> won't be used and replaced, discard now
     5 1 roll pop pop pop pop
 
+    % get FontMatrix that applies to this CID
+    % (needs to convert [D]W[2] values to glyph space)
+    currentfont /FontMatrix get
+    % if the currentfont is a CIDFontType 0 CIDFont,
+    % we need FDArray font's FontMatrix too
+    FontType 9 eq {
+	currentfont 2 index .type9mapcid
+	% <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <FontMatrix> (charstring) <FDArray#>
+	exch pop currentfont /FDArray get exch get /FontMatrix get
+	% <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <FontMatrix> <FontMatrix2>
+	matrix concatmatrix 
+    } if
+    % preserve this FontMatrix at bottom of the stack
+    8 1 roll
+    % Stack: <FontMatrix> <w0x> <w0y> <llx> <lly> <urx> <ury> <cid>
+
     {
       currentdict /DW .knownget not {   % no DW
         .pdfDefaultDW exit              % replace <w0x> by defaultDW
@@ -1315,21 +1345,17 @@ currentdict /CMap_read_dict undef
 
       exit
     } loop
-
-    FontType 11 eq {
-      1000 div                  % <w0x'> (normalized W)
-    } if
     0                           % <w0y'>
 
-    % Stack: <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <w0x'> <w0y'>
+    % Stack: <FontMatrix> <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <w0x'> <w0y'>
     9 -2 roll pop pop           % discard <w0x> <w0y>
     7  2 roll                   % put <w0x'> <w0y'>
 
-    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <cid>
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury> <cid>
     0                           % <w1x'>
     exch                        % put <w1x'>
 
-    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <cid>
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <cid>
     {
       currentdict /DW2 .knownget not {  % no DW2, use defaultDW2
         .pdfDefaultDW2 exit
@@ -1356,14 +1382,28 @@ currentdict /CMap_read_dict undef
 
     exch pop                            % discard <cid>
 
-    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> { [<vy'> <w1y'>] | [<w1y'> <vx'> <vy'>] }
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury>
+    %                           <w1x'> { [<vy'> <w1y'>] | [<w1y'> <vx'> <vy'>] }
     dup length 2 eq {                   % this is DW2
-      FontType 11 eq {{1000 div}} {{}} ifelse forall exch
-      8 index 2 div                     % <vx'> = <w0x'> / 2
+      aload pop 
+      exch 8 index 2 div                % <vx'> = <w0x'> / 2
       exch
     }{                                  % assume W2
-      FontType 11 eq {{1000 div}} {{}} ifelse forall
+      aload pop
     } ifelse
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'>
+
+    % now, convert each metrics valude (1000th of text space) to glyph space
+    10 -2 roll
+    % Stack: <FontMatrix> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'> <w0x'> <w0y'>
+    3 {
+	10 index idtransform exch 1000 div exch 1000 div
+	6 2 roll
+    } repeat
+    10 2 roll
+    % Stack: <FontMatrix> <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'>
+    11 -1 roll pop
+    % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'>
   end                                   % recover currentdict
 
 } def
@@ -1658,19 +1698,24 @@ currentdict /CMap_read_dict undef
     pop
   } bdef
 
+% <stream> run-fonttypeproc <font>
+/run-fonttypeproc {
+  dup /Subtype knownoget not { 0 } if % res /subtype
+  //fonttypeprocs 1 index known not {
+    (   **** Warning: Font /Subtype attribute is wrong or missing, /Type1 assumed.\n)
+    pdfformaterror
+    pop /Type1
+  } if
+  //fonttypeprocs exch get exec
+} bdef
+
 % Prototype for all procedures: <res> <desc> <stream> foo <font>
 /font_tag_dict 13 dict begin
 
   % When the font stream is absent or cannot be read we load the font by the name.
   /no_stream 
     { pop pop 
-      dup /Subtype get  % res res /subtype
-      dup / eq {
-        (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
-	pdfformaterror
-        pop /Type1
-      } if
-      //fonttypeprocs exch get exec 
+      run-fonttypeproc
     } bdef
 
   /bad_stream 
@@ -1771,13 +1816,7 @@ currentdict /bndef undef
         put  % Save pointer to the font.
       } ifelse
     } {
-      dup /Subtype get
-      dup / eq {
-        (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
-        pdfformaterror
-        pop /Type1
-      } if 
-      //fonttypeprocs exch get exec
+      run-fonttypeproc
     } ifelse
         % Stack: font-res font
     1 index exch

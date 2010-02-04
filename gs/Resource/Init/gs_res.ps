@@ -990,11 +990,11 @@ userdict /.localcsdefaults false put
 } bind
 
 /.loadfontresource {
-	dup vmstatus pop exch pop exch
+	dup .vmused exch
 		% Hack: rebind .currentresourcefile so that all calls of
 		% definefont will know these are built-in fonts.
 	currentfile {pop //findfont exec} .execasresource  % (findfont is a procedure)
-	exch vmstatus pop exch pop exch sub
+	exch .vmused exch sub
 		% stack: name font vmused
 		% findfont has the prerogative of not calling definefont
 		% in certain obscure cases of font substitution.

@@ -1,22 +1,27 @@
 
 /* png.c - location for general purpose libpng functions
  *
- * Last changed in libpng 1.2.34 [December 18, 2008]
- * For conditions of distribution and use, see copyright notice in png.h
- * Copyright (c) 1998-2008 Glenn Randers-Pehrson
+ * Last changed in libpng 1.2.42 [January 3, 2010]
+ * Copyright (c) 1998-2010 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
+ *
+ * This code is released under the libpng license.
+ * For conditions of distribution and use, see the disclaimer
+ * and license in png.h
  */
 
 #define PNG_INTERNAL
 #define PNG_NO_EXTERN
+#define PNG_NO_PEDANTIC_WARNINGS
 #include "png.h"
 
 /* Generate a compiler error if there is an old png.h in the search path. */
-typedef version_1_2_35 Your_png_h_is_not_version_1_2_35;
+typedef version_1_2_42 Your_png_h_is_not_version_1_2_42;
 
 /* Version information for C files.  This had better match the version
- * string defined in png.h.  */
+ * string defined in png.h.
+ */
 
 #ifdef PNG_USE_GLOBAL_ARRAYS
 /* png_libpng_ver was changed to a function in version 1.0.5c */
@@ -53,18 +58,18 @@ PNG_tRNS;
 PNG_zTXt;
 
 #ifdef PNG_READ_SUPPORTED
-/* arrays to facilitate easy interlacing - use pass (0 - 6) as index */
+/* Arrays to facilitate easy interlacing - use pass (0 - 6) as index */
 
-/* start of interlace block */
+/* Start of interlace block */
 PNG_CONST int FARDATA png_pass_start[] = {0, 4, 0, 2, 0, 1, 0};
 
-/* offset to next interlace block */
+/* Offset to next interlace block */
 PNG_CONST int FARDATA png_pass_inc[] = {8, 8, 4, 4, 2, 2, 1};
 
-/* start of interlace block in the y direction */
+/* Start of interlace block in the y direction */
 PNG_CONST int FARDATA png_pass_ystart[] = {0, 0, 4, 0, 2, 0, 1};
 
-/* offset to next interlace block in the y direction */
+/* Offset to next interlace block in the y direction */
 PNG_CONST int FARDATA png_pass_yinc[] = {8, 8, 8, 4, 4, 2, 2};
 
 /* Height of interlace block.  This is not currently used - if you need
@@ -92,8 +97,11 @@ PNG_CONST int FARDATA png_pass_dsp_mask[]
 void PNGAPI
 png_set_sig_bytes(png_structp png_ptr, int num_bytes)
 {
-   if (png_ptr == NULL) return;
    png_debug(1, "in png_set_sig_bytes");
+
+   if (png_ptr == NULL)
+      return;
+
    if (num_bytes > 8)
       png_error(png_ptr, "Too many bytes for PNG signature.");
 
@@ -144,7 +152,7 @@ png_check_sig(png_bytep sig, int num)
 #ifdef PNG_1_0_X
 voidpf PNGAPI
 #else
-voidpf /* private */
+voidpf /* PRIVATE */
 #endif
 png_zalloc(voidpf png_ptr, uInt items, uInt size)
 {
@@ -153,7 +161,8 @@ png_zalloc(voidpf png_ptr, uInt items, uInt size)
    png_uint_32 save_flags=p->flags;
    png_uint_32 num_bytes;
 
-   if (png_ptr == NULL) return (NULL);
+   if (png_ptr == NULL)
+      return (NULL);
    if (items > PNG_UINT_32_MAX/size)
    {
      png_warning (p, "Potential overflow in png_zalloc()");
@@ -183,11 +192,11 @@ png_zalloc(voidpf png_ptr, uInt items, uInt size)
    return ((voidpf)ptr);
 }
 
-/* function to free memory for zlib */
+/* Function to free memory for zlib */
 #ifdef PNG_1_0_X
 void PNGAPI
 #else
-void /* private */
+void /* PRIVATE */
 #endif
 png_zfree(voidpf png_ptr, voidpf ptr)
 {
@@ -241,7 +250,10 @@ png_create_info_struct(png_structp png_ptr)
    png_infop info_ptr;
 
    png_debug(1, "in png_create_info_struct");
-   if (png_ptr == NULL) return (NULL);
+
+   if (png_ptr == NULL)
+      return (NULL);
+
 #ifdef PNG_USER_MEM_SUPPORTED
    info_ptr = (png_infop)png_create_struct_2(PNG_STRUCT_INFO,
       png_ptr->malloc_fn, png_ptr->mem_ptr);
@@ -263,9 +275,12 @@ void PNGAPI
 png_destroy_info_struct(png_structp png_ptr, png_infopp info_ptr_ptr)
 {
    png_infop info_ptr = NULL;
-   if (png_ptr == NULL) return;
 
    png_debug(1, "in png_destroy_info_struct");
+
+   if (png_ptr == NULL)
+      return;
+
    if (info_ptr_ptr != NULL)
       info_ptr = *info_ptr_ptr;
 
@@ -302,9 +317,10 @@ png_info_init_3(png_infopp ptr_ptr, png_size_t png_info_struct_size)
 {
    png_infop info_ptr = *ptr_ptr;
 
-   if (info_ptr == NULL) return;
-
    png_debug(1, "in png_info_init_3");
+
+   if (info_ptr == NULL)
+      return;
 
    if (png_sizeof(png_info) > png_info_struct_size)
      {
@@ -313,7 +329,7 @@ png_info_init_3(png_infopp ptr_ptr, png_size_t png_info_struct_size)
        *ptr_ptr = info_ptr;
      }
 
-   /* set everything to 0 */
+   /* Set everything to 0 */
    png_memset(info_ptr, 0, png_sizeof(png_info));
 }
 
@@ -323,8 +339,10 @@ png_data_freer(png_structp png_ptr, png_infop info_ptr,
    int freer, png_uint_32 mask)
 {
    png_debug(1, "in png_data_freer");
+
    if (png_ptr == NULL || info_ptr == NULL)
       return;
+
    if (freer == PNG_DESTROY_WILL_FREE_DATA)
       info_ptr->free_me |= mask;
    else if (freer == PNG_USER_WILL_FREE_DATA)
@@ -340,11 +358,12 @@ png_free_data(png_structp png_ptr, png_infop info_ptr, png_uint_32 mask,
    int num)
 {
    png_debug(1, "in png_free_data");
+
    if (png_ptr == NULL || info_ptr == NULL)
       return;
 
-#if defined(PNG_TEXT_SUPPORTED)
-/* free text item num or (if num == -1) all text items */
+#ifdef PNG_TEXT_SUPPORTED
+   /* Free text item num or (if num == -1) all text items */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_TEXT) & info_ptr->free_me)
 #else
@@ -371,8 +390,8 @@ if (mask & PNG_FREE_TEXT)
 }
 #endif
 
-#if defined(PNG_tRNS_SUPPORTED)
-/* free any tRNS entry */
+#ifdef PNG_tRNS_SUPPORTED
+   /* Free any tRNS entry */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_TRNS) & info_ptr->free_me)
 #else
@@ -388,8 +407,8 @@ if ((mask & PNG_FREE_TRNS) && (png_ptr->flags & PNG_FLAG_FREE_TRNS))
 }
 #endif
 
-#if defined(PNG_sCAL_SUPPORTED)
-/* free any sCAL entry */
+#ifdef PNG_sCAL_SUPPORTED
+   /* Free any sCAL entry */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_SCAL) & info_ptr->free_me)
 #else
@@ -406,8 +425,8 @@ if (mask & PNG_FREE_SCAL)
 }
 #endif
 
-#if defined(PNG_pCAL_SUPPORTED)
-/* free any pCAL entry */
+#ifdef PNG_pCAL_SUPPORTED
+   /* Free any pCAL entry */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_PCAL) & info_ptr->free_me)
 #else
@@ -433,8 +452,8 @@ if (mask & PNG_FREE_PCAL)
 }
 #endif
 
-#if defined(PNG_iCCP_SUPPORTED)
-/* free any iCCP entry */
+#ifdef PNG_iCCP_SUPPORTED
+   /* Free any iCCP entry */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_ICCP) & info_ptr->free_me)
 #else
@@ -449,8 +468,8 @@ if (mask & PNG_FREE_ICCP)
 }
 #endif
 
-#if defined(PNG_sPLT_SUPPORTED)
-/* free a given sPLT entry, or (if num == -1) all sPLT entries */
+#ifdef PNG_sPLT_SUPPORTED
+   /* Free a given sPLT entry, or (if num == -1) all sPLT entries */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_SPLT) & info_ptr->free_me)
 #else
@@ -484,7 +503,7 @@ if (mask & PNG_FREE_SPLT)
 }
 #endif
 
-#if defined(PNG_UNKNOWN_CHUNKS_SUPPORTED)
+#ifdef PNG_UNKNOWN_CHUNKS_SUPPORTED
   if (png_ptr->unknown_chunk.data)
   {
     png_free(png_ptr, png_ptr->unknown_chunk.data);
@@ -522,8 +541,8 @@ if (mask & PNG_FREE_UNKN)
 }
 #endif
 
-#if defined(PNG_hIST_SUPPORTED)
-/* free any hIST entry */
+#ifdef PNG_hIST_SUPPORTED
+   /* Free any hIST entry */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_HIST)  & info_ptr->free_me)
 #else
@@ -539,7 +558,7 @@ if ((mask & PNG_FREE_HIST) && (png_ptr->flags & PNG_FLAG_FREE_HIST))
 }
 #endif
 
-/* free any PLTE entry that was internally allocated */
+   /* Free any PLTE entry that was internally allocated */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_PLTE) & info_ptr->free_me)
 #else
@@ -555,8 +574,8 @@ if ((mask & PNG_FREE_PLTE) && (png_ptr->flags & PNG_FLAG_FREE_PLTE))
     info_ptr->num_palette = 0;
 }
 
-#if defined(PNG_INFO_IMAGE_SUPPORTED)
-/* free any image bits attached to the info structure */
+#ifdef PNG_INFO_IMAGE_SUPPORTED
+   /* Free any image bits attached to the info structure */
 #ifdef PNG_FREE_ME_SUPPORTED
 if ((mask & PNG_FREE_ROWS) & info_ptr->free_me)
 #else
@@ -597,7 +616,7 @@ png_info_destroy(png_structp png_ptr, png_infop info_ptr)
 
    png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
 
-#if defined(PNG_UNKNOWN_CHUNKS_SUPPORTED)
+#ifdef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
    if (png_ptr->num_chunk_list)
    {
        png_free(png_ptr, png_ptr->chunk_list);
@@ -617,12 +636,13 @@ png_info_destroy(png_structp png_ptr, png_infop info_ptr)
 png_voidp PNGAPI
 png_get_io_ptr(png_structp png_ptr)
 {
-   if (png_ptr == NULL) return (NULL);
+   if (png_ptr == NULL)
+      return (NULL);
    return (png_ptr->io_ptr);
 }
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
-#if !defined(PNG_NO_STDIO)
+#ifdef PNG_STDIO_SUPPORTED
 /* Initialize the default input/output functions for the PNG file.  If you
  * use your own read or write routines, you can call either png_set_read_fn()
  * or png_set_write_fn() instead of png_init_io().  If you have defined
@@ -633,12 +653,15 @@ void PNGAPI
 png_init_io(png_structp png_ptr, png_FILE_p fp)
 {
    png_debug(1, "in png_init_io");
-   if (png_ptr == NULL) return;
+
+   if (png_ptr == NULL)
+      return;
+
    png_ptr->io_ptr = (png_voidp)fp;
 }
 #endif
 
-#if defined(PNG_TIME_RFC1123_SUPPORTED)
+#ifdef PNG_TIME_RFC1123_SUPPORTED
 /* Convert the supplied time into an RFC 1123 string suitable for use in
  * a "Creation Time" or other text-based time string.
  */
@@ -649,14 +672,15 @@ png_convert_to_rfc1123(png_structp png_ptr, png_timep ptime)
         {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-   if (png_ptr == NULL) return (NULL);
+   if (png_ptr == NULL)
+      return (NULL);
    if (png_ptr->time_buffer == NULL)
    {
       png_ptr->time_buffer = (png_charp)png_malloc(png_ptr, (png_uint_32)(29*
          png_sizeof(char)));
    }
 
-#if defined(_WIN32_WCE)
+#ifdef _WIN32_WCE
    {
       wchar_t time_buf[29];
       wsprintf(time_buf, TEXT("%d %S %d %02d:%02d:%02d +0000"),
@@ -693,11 +717,24 @@ png_convert_to_rfc1123(png_structp png_ptr, png_timep ptime)
 png_charp PNGAPI
 png_get_copyright(png_structp png_ptr)
 {
-   png_ptr = png_ptr;  /* silence compiler warning about unused png_ptr */
-   return ((png_charp) "\n libpng version 1.2.35 - February 14, 2009\n\
-   Copyright (c) 1998-2008 Glenn Randers-Pehrson\n\
-   Copyright (c) 1996-1997 Andreas Dilger\n\
-   Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.\n");
+   png_ptr = png_ptr;  /* Silence compiler warning about unused png_ptr */
+#ifdef PNG_STRING_COPYRIGHT
+      return PNG_STRING_COPYRIGHT
+#else
+#ifdef __STDC__
+   return ((png_charp) PNG_STRING_NEWLINE \
+     "libpng version 1.2.42 - January 3, 2010" PNG_STRING_NEWLINE \
+     "Copyright (c) 1998-2010 Glenn Randers-Pehrson" PNG_STRING_NEWLINE \
+     "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
+     "Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc." \
+     PNG_STRING_NEWLINE);
+#else
+      return ((png_charp) "libpng version 1.2.42 - January 3, 2010\
+      Copyright (c) 1998-2010 Glenn Randers-Pehrson\
+      Copyright (c) 1996-1997 Andreas Dilger\
+      Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.");
+#endif
+#endif
 }
 
 /* The following return the library version as a short string in the
@@ -712,7 +749,7 @@ png_charp PNGAPI
 png_get_libpng_ver(png_structp png_ptr)
 {
    /* Version of *.c files used when building libpng */
-   png_ptr = png_ptr;  /* silence compiler warning about unused png_ptr */
+   png_ptr = png_ptr;  /* Silence compiler warning about unused png_ptr */
    return ((png_charp) PNG_LIBPNG_VER_STRING);
 }
 
@@ -720,7 +757,7 @@ png_charp PNGAPI
 png_get_header_ver(png_structp png_ptr)
 {
    /* Version of *.h files used when building libpng */
-   png_ptr = png_ptr;  /* silence compiler warning about unused png_ptr */
+   png_ptr = png_ptr;  /* Silence compiler warning about unused png_ptr */
    return ((png_charp) PNG_LIBPNG_VER_STRING);
 }
 
@@ -728,12 +765,16 @@ png_charp PNGAPI
 png_get_header_version(png_structp png_ptr)
 {
    /* Returns longer string containing both version and date */
-   png_ptr = png_ptr;  /* silence compiler warning about unused png_ptr */
+   png_ptr = png_ptr;  /* Silence compiler warning about unused png_ptr */
+#ifdef __STDC__
    return ((png_charp) PNG_HEADER_VERSION_STRING
 #ifndef PNG_READ_SUPPORTED
    "     (NO READ SUPPORT)"
 #endif
-   "\n");
+   PNG_STRING_NEWLINE);
+#else
+   return ((png_charp) PNG_HEADER_VERSION_STRING);
+#endif
 }
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
@@ -741,7 +782,7 @@ png_get_header_version(png_structp png_ptr)
 int PNGAPI
 png_handle_as_unknown(png_structp png_ptr, png_bytep chunk_name)
 {
-   /* check chunk_name and return "keep" value if it's on the list, else 0 */
+   /* Check chunk_name and return "keep" value if it's on the list, else 0 */
    int i;
    png_bytep p;
    if (png_ptr == NULL || chunk_name == NULL || png_ptr->num_chunk_list<=0)
@@ -758,7 +799,8 @@ png_handle_as_unknown(png_structp png_ptr, png_bytep chunk_name)
 int PNGAPI
 png_reset_zstream(png_structp png_ptr)
 {
-   if (png_ptr == NULL) return Z_STREAM_ERROR;
+   if (png_ptr == NULL)
+      return Z_STREAM_ERROR;
    return (inflateReset(&png_ptr->zstream));
 }
 #endif /* defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED) */
@@ -773,12 +815,12 @@ png_access_version_number(void)
 
 
 #if defined(PNG_READ_SUPPORTED) && defined(PNG_ASSEMBLER_CODE_SUPPORTED)
-#if !defined(PNG_1_0_X)
-/* this function was added to libpng 1.2.0 */
+#ifndef PNG_1_0_X
+/* This function was added to libpng 1.2.0 */
 int PNGAPI
 png_mmx_support(void)
 {
-   /* obsolete, to be removed from libpng-1.4.0 */
+   /* Obsolete, to be removed from libpng-1.4.0 */
     return -1;
 }
 #endif /* PNG_1_0_X */
@@ -798,24 +840,26 @@ png_convert_size(size_t size)
 #endif /* PNG_SIZE_T */
 
 /* Added at libpng version 1.2.34 and 1.4.0 (moved from pngset.c) */
-#if defined(PNG_cHRM_SUPPORTED)
-#if !defined(PNG_NO_CHECK_cHRM)
+#ifdef PNG_cHRM_SUPPORTED
+#ifdef PNG_CHECK_cHRM_SUPPORTED
+
 /*
- Multiply two 32-bit numbers, V1 and V2, using 32-bit
- arithmetic, to produce a 64 bit result in the HI/LO words.
-
-          A B
-        x C D
-       ------
-      AD || BD
-AC || CB || 0
-
- where A and B are the high and low 16-bit words of V1,
- C and D are the 16-bit words of V2, AD is the product of
- A and D, and X || Y is (X << 16) + Y.
+ *    Multiply two 32-bit numbers, V1 and V2, using 32-bit
+ *    arithmetic, to produce a 64 bit result in the HI/LO words.
+ *
+ *                  A B
+ *                x C D
+ *               ------
+ *              AD || BD
+ *        AC || CB || 0
+ *
+ *    where A and B are the high and low 16-bit words of V1,
+ *    C and D are the 16-bit words of V2, AD is the product of
+ *    A and D, and X || Y is (X << 16) + Y.
 */
 
-void png_64bit_product (long v1, long v2, unsigned long *hi_product,
+void /* PRIVATE */
+png_64bit_product (long v1, long v2, unsigned long *hi_product,
    unsigned long *lo_product)
 {
  int a, b, c, d;
@@ -838,7 +882,8 @@ void png_64bit_product (long v1, long v2, unsigned long *hi_product,
  *hi_product = (unsigned long)hi;
  *lo_product = (unsigned long)lo;
 }
-int /* private */
+
+int /* PRIVATE */
 png_check_cHRM_fixed(png_structp png_ptr,
    png_fixed_point white_x, png_fixed_point white_y, png_fixed_point red_x,
    png_fixed_point red_y, png_fixed_point green_x, png_fixed_point green_y,
@@ -848,6 +893,7 @@ png_check_cHRM_fixed(png_structp png_ptr,
    unsigned long xy_hi,xy_lo,yx_hi,yx_lo;
 
    png_debug(1, "in function png_check_cHRM_fixed");
+
    if (png_ptr == NULL)
       return 0;
 
@@ -906,6 +952,148 @@ png_check_cHRM_fixed(png_structp png_ptr,
 
    return ret;
 }
-#endif /* NO_PNG_CHECK_cHRM */
+#endif /* PNG_CHECK_cHRM_SUPPORTED */
 #endif /* PNG_cHRM_SUPPORTED */
+
+void /* PRIVATE */
+png_check_IHDR(png_structp png_ptr,
+   png_uint_32 width, png_uint_32 height, int bit_depth,
+   int color_type, int interlace_type, int compression_type,
+   int filter_type)
+{
+   int error = 0;
+
+   /* Check for width and height valid values */
+   if (width == 0)
+   {
+      png_warning(png_ptr, "Image width is zero in IHDR");
+      error = 1;
+   }
+
+   if (height == 0)
+   {
+      png_warning(png_ptr, "Image height is zero in IHDR");
+      error = 1;
+   }
+
+#ifdef PNG_SET_USER_LIMITS_SUPPORTED
+   if (width > png_ptr->user_width_max || width > PNG_USER_WIDTH_MAX)
+#else
+   if (width > PNG_USER_WIDTH_MAX)
+#endif
+   {
+      png_warning(png_ptr, "Image width exceeds user limit in IHDR");
+      error = 1;
+   }
+
+#ifdef PNG_SET_USER_LIMITS_SUPPORTED
+   if (height > png_ptr->user_height_max || height > PNG_USER_HEIGHT_MAX)
+#else
+   if (height > PNG_USER_HEIGHT_MAX)
+#endif
+   {
+      png_warning(png_ptr, "Image height exceeds user limit in IHDR");
+      error = 1;
+   }
+
+   if (width > PNG_UINT_31_MAX)
+   {
+      png_warning(png_ptr, "Invalid image width in IHDR");
+      error = 1;
+   }
+
+   if ( height > PNG_UINT_31_MAX)
+   {
+      png_warning(png_ptr, "Invalid image height in IHDR");
+      error = 1;
+   }
+
+   if ( width > (PNG_UINT_32_MAX
+                 >> 3)      /* 8-byte RGBA pixels */
+                 - 64       /* bigrowbuf hack */
+                 - 1        /* filter byte */
+                 - 7*8      /* rounding of width to multiple of 8 pixels */
+                 - 8)       /* extra max_pixel_depth pad */
+      png_warning(png_ptr, "Width is too large for libpng to process pixels");
+
+   /* Check other values */
+   if (bit_depth != 1 && bit_depth != 2 && bit_depth != 4 &&
+       bit_depth != 8 && bit_depth != 16)
+   {
+      png_warning(png_ptr, "Invalid bit depth in IHDR");
+      error = 1;
+   }
+
+   if (color_type < 0 || color_type == 1 ||
+       color_type == 5 || color_type > 6)
+   {
+      png_warning(png_ptr, "Invalid color type in IHDR");
+      error = 1;
+   }
+
+   if (((color_type == PNG_COLOR_TYPE_PALETTE) && bit_depth > 8) ||
+       ((color_type == PNG_COLOR_TYPE_RGB ||
+         color_type == PNG_COLOR_TYPE_GRAY_ALPHA ||
+         color_type == PNG_COLOR_TYPE_RGB_ALPHA) && bit_depth < 8))
+   {
+      png_warning(png_ptr, "Invalid color type/bit depth combination in IHDR");
+      error = 1;
+   }
+
+   if (interlace_type >= PNG_INTERLACE_LAST)
+   {
+      png_warning(png_ptr, "Unknown interlace method in IHDR");
+      error = 1;
+   }
+
+   if (compression_type != PNG_COMPRESSION_TYPE_BASE)
+   {
+      png_warning(png_ptr, "Unknown compression method in IHDR");
+      error = 1;
+   }
+
+#ifdef PNG_MNG_FEATURES_SUPPORTED
+   /* Accept filter_method 64 (intrapixel differencing) only if
+    * 1. Libpng was compiled with PNG_MNG_FEATURES_SUPPORTED and
+    * 2. Libpng did not read a PNG signature (this filter_method is only
+    *    used in PNG datastreams that are embedded in MNG datastreams) and
+    * 3. The application called png_permit_mng_features with a mask that
+    *    included PNG_FLAG_MNG_FILTER_64 and
+    * 4. The filter_method is 64 and
+    * 5. The color_type is RGB or RGBA
+    */
+   if ((png_ptr->mode & PNG_HAVE_PNG_SIGNATURE) &&
+       png_ptr->mng_features_permitted)
+      png_warning(png_ptr, "MNG features are not allowed in a PNG datastream");
+
+   if (filter_type != PNG_FILTER_TYPE_BASE)
+   {
+      if (!((png_ptr->mng_features_permitted & PNG_FLAG_MNG_FILTER_64) &&
+         (filter_type == PNG_INTRAPIXEL_DIFFERENCING) &&
+         ((png_ptr->mode & PNG_HAVE_PNG_SIGNATURE) == 0) &&
+         (color_type == PNG_COLOR_TYPE_RGB ||
+         color_type == PNG_COLOR_TYPE_RGB_ALPHA)))
+      {
+         png_warning(png_ptr, "Unknown filter method in IHDR");
+         error = 1;
+      }
+
+      if (png_ptr->mode & PNG_HAVE_PNG_SIGNATURE)
+      {
+         png_warning(png_ptr, "Invalid filter method in IHDR");
+         error = 1;
+      }
+   }
+
+#else
+   if (filter_type != PNG_FILTER_TYPE_BASE)
+   {
+      png_warning(png_ptr, "Unknown filter method in IHDR");
+      error = 1;
+   }
+#endif
+
+   if (error == 1)
+      png_error(png_ptr, "Invalid IHDR data");
+}
 #endif /* defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED) */

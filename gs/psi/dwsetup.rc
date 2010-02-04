@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2009 Artifex Software, Inc.
+/* Copyright (C) 2001-2010 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -35,7 +35,7 @@ BEGIN
     ICON            IDR_MAIN,IDC_STATIC,11,17,20,20
     LTEXT           "This installs",IDC_STATIC,56,6,232,8
     LTEXT           "Product Name",IDC_PRODUCT_NAME,72,16,216,8
-    LTEXT           "Copyright (C) 1994-2009 Artifex Software, Inc. All rights reserved.\n\nRequires 40 Mbytes disk space.",
+    LTEXT           "Copyright (C) 1994-2010 Artifex Software, Inc. All rights reserved.\n\nRequires 40 Mbytes disk space.",
                     IDC_COPYRIGHT,56,30,232,40
 
     LTEXT           "Install to directory",IDC_STATIC,8,72,56,8

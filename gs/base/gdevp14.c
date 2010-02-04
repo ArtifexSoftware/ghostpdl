@@ -1104,17 +1104,12 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     buf->mask_id = mask_id;
     {	/* If replacing=false, we start the mask for an image with SMask.
 	   In this case the image's SMask temporary replaces the 
-	   mask of the containing group. 
-	   Save the containing droup's mask in buf->maskbuf : */
+	   mask of the containing group. Save the containing droup's mask in buf->maskbuf */
 	buf->maskbuf = ctx->maskbuf;
-
         if (buf->maskbuf){
             rc_increment(buf->maskbuf->rc_mask);
         }
-
     }
-
-
 #if RAW_DUMP
   
     /* Dump the current buffer to see what we have. */
@@ -1187,14 +1182,17 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
     tos->saved = NULL;  /* To avoid issues with GC */
 
     if (tos->maskbuf) {
-
-        /* During the soft mask push, the mask buf was copied
-           (not moved) from the ctx to the tos maskbuf. We 
-           are done with this now */
-            
-        rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask");
+        /* During the soft mask push, the maskbuf was copied (not moved) from the ctx to the tos maskbuf. We 
+           are done with this now so it is safe to just set to NULL.  However, before we do that we must perform 
+           rc decrement to match the increment that occured was made.  Also, if this is the last ref
+           count of the rc_mask, we should free the buffer now since no other groups need it. */
+        rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask(tos->maskbuf->rc_mask)");
+        if (tos->maskbuf->rc_mask) {
+            if (tos->maskbuf->rc_mask->rc.ref_count == 1){
+                rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask(tos->maskbuf->rc_mask)");
+            }
+        }
 	tos->maskbuf = NULL;
-
     }
 
     if (tos->data == NULL ) {
@@ -2839,51 +2837,38 @@ pdf14_end_transparency_group(gx_device *dev,
     vd_erase(RGB(192, 192, 192));
     code = pdf14_pop_transparency_group(pis, pdev->ctx, pdev->blend_procs,pdev->color_info.num_components, curr_device_profile);
 
-
-   /* May need to reset some color stuff related
+    /* May need to reset some color stuff related
      * to a mismatch between the parents color space
      * and the group blending space */
-	
-	parent_color = pdev->ctx->stack->parent_color_info_procs;
-
-	if (!(parent_color->parent_color_mapping_procs == NULL && 
-		parent_color->parent_color_comp_index == NULL)) {
-
-	    pis->get_cmap_procs = parent_color->get_cmap_procs;
-	    gx_set_cmap_procs(pis, dev);
-
-	    pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
-	    pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
-	    pdev->color_info.polarity = parent_color->polarity;
-	    pdev->color_info.num_components = parent_color->num_components;
-	    pdev->blend_procs = parent_color->parent_blending_procs;
-	    pdev->ctx->additive = parent_color->isadditive;
-	    pdev->pdf14_procs = parent_color->unpack_procs;
-                    pdev->color_info.depth = parent_color->depth;
-                    
-            if (parent_color->icc_profile != NULL){
-                rc_decrement(pis->icc_manager->device_profile,"pdf14_end_transparency_group");
-                pis->icc_manager->device_profile = parent_color->icc_profile;
-            }
-	
-	    parent_color->get_cmap_procs = NULL;
-	    parent_color->parent_color_comp_index = NULL;
-	    parent_color->parent_color_mapping_procs = NULL;
-            parent_color->icc_profile = NULL;
-
-	}
-
+    parent_color = pdev->ctx->stack->parent_color_info_procs;
+    if (!(parent_color->parent_color_mapping_procs == NULL && 
+        parent_color->parent_color_comp_index == NULL)) {
+        pis->get_cmap_procs = parent_color->get_cmap_procs;
+        gx_set_cmap_procs(pis, dev);
+        pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
+        pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+        pdev->color_info.polarity = parent_color->polarity;
+        pdev->color_info.num_components = parent_color->num_components;
+        pdev->blend_procs = parent_color->parent_blending_procs;
+        pdev->ctx->additive = parent_color->isadditive;
+        pdev->pdf14_procs = parent_color->unpack_procs;
+        pdev->color_info.depth = parent_color->depth;
+        memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        parent_color->get_cmap_procs = NULL;
+        parent_color->parent_color_comp_index = NULL;
+        parent_color->parent_color_mapping_procs = NULL;
+        parent_color->icc_profile = NULL;
+    }
     vd_release_dc;
     return code;
 }
-
 
 static int
 pdf14_update_device_color_procs(gx_device *dev,
 			      gs_transparency_color_t group_color, int64_t icc_hashcode,
 			      gs_imager_state *pis, cmm_profile_t *iccprofile)
 {
-
     pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
     const pdf14_procs_t *new_14procs;
@@ -2893,22 +2878,19 @@ pdf14_update_device_color_procs(gx_device *dev,
     bool new_additive;
     byte new_depth;
     gx_device_clist_reader *pcrdev;
+    byte comp_bits[] = {0,0,0,0};
+    byte comp_shift[] = {0,0,0,0};
+    int k;
 
     if (pdev->ctx->stack != NULL){
-
         parent_color_info = pdev->ctx->stack->parent_color_info_procs;
-
     } else {
-
         /* This should not occur */
         return_error(gs_error_undefined);
-
     }
-
     if_debug0('v', "[v]pdf14_update_device_color_procs\n");
 
-
-   /* Update the device procs at this
+    /* Update the device procs at this
        stage.  Many of the procs are based upon the color
        space of the device.  We want to remain in 
        the color space defined by the color space of
@@ -2922,56 +2904,51 @@ pdf14_update_device_color_procs(gx_device *dev,
        space and then transform the data when we pop the group. 
        Remember that only isolated groups can have color spaces
        that are different than their parent. */
-
 	parent_color_info->get_cmap_procs = NULL;
         parent_color_info->parent_color_mapping_procs = NULL;
         parent_color_info->parent_color_comp_index = NULL;
-
         switch (group_color) {
-
             case GRAY_SCALE:
-
                 new_polarity = GX_CINFO_POLARITY_ADDITIVE;
                 new_num_comps = 1;
                 pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
                 new_additive = true;
                 new_14procs = &gray_pdf14_procs;
                 new_depth = 8;
-
+                comp_bits[0] = 8;
+                comp_shift[0] = 0; 
                 break;
-
             case DEVICE_RGB:			 	
             case CIE_XYZ:				
-
                 new_polarity = GX_CINFO_POLARITY_ADDITIVE;
                 new_num_comps = 3;
                 pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
                 new_additive = true;
                 new_14procs = &rgb_pdf14_procs;
                 new_depth = 24;
-
+                for (k = 0; k < 3; k++) {
+                    comp_bits[k] = 8;
+                    comp_shift[k] = (2-k)*8; 
+                }
                 break; 
-
             case DEVICE_CMYK:				
-
                 new_polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
                 new_num_comps = 4;                
                 pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
                 new_additive = false;
-
                 /* This is needed due to the mismatched compressed encode decode
                    between the device procs and the pdf14 procs */
-
                 if (dev->color_info.num_components > 4){
                     new_14procs = &cmykspot_pdf14_procs;
                 } else {
                     new_14procs = &cmyk_pdf14_procs;
                 }
-
                 new_depth = 32;
-
+                for (k = 0; k < 4; k++) {
+                    comp_bits[k] = 8;
+                    comp_shift[k] = (3-k)*8; 
+                }
                 break;
-
             case ICC:
 
                 /* If we are coming from the clist reader, then we need to get the ICC data now  */
@@ -3037,14 +3014,11 @@ pdf14_update_device_color_procs(gx_device *dev,
             default:			
 	        return_error(gs_error_rangecheck);
 	        break;
-
          }    
-
         if_debug2('v', "[v]pdf14_update_device_color_procs,num_components_old = %d num_components_new = %d\n", 
             pdev->color_info.num_components,new_num_comps);
 
         /* Save the old information */
-
         parent_color_info->get_cmap_procs = pis->get_cmap_procs;
         parent_color_info->parent_color_mapping_procs = 
             pdev->procs.get_color_mapping_procs;
@@ -3056,6 +3030,8 @@ pdf14_update_device_color_procs(gx_device *dev,
         parent_color_info->isadditive = pdev->ctx->additive;
         parent_color_info->unpack_procs = pdev->pdf14_procs;
         parent_color_info->depth = pdev->color_info.depth;
+        memcpy(&(parent_color_info->comp_bits),&(pdev->color_info.comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(parent_color_info->comp_shift),&(pdev->color_info.comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
 
         /* Don't increment the space since we are going to remove it from the 
            ICC manager anyway.  */
@@ -3064,7 +3040,6 @@ pdf14_update_device_color_procs(gx_device *dev,
         }
 
         /* Set new information */
-
         pis->get_cmap_procs = pdf14_get_cmap_procs_group;
         gx_set_cmap_procs(pis, dev);
         pdev->procs.get_color_mapping_procs = 
@@ -3077,7 +3052,10 @@ pdf14_update_device_color_procs(gx_device *dev,
         pdev->ctx->additive = new_additive; 
         pdev->pdf14_procs = new_14procs;
         pdev->color_info.depth = new_depth;
-
+        memset(&(pdev->color_info.comp_bits),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memset(&(pdev->color_info.comp_shift),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(pdev->color_info.comp_bits),comp_bits,4);
+        memcpy(&(pdev->color_info.comp_shift),comp_shift,4);
         /* If the CS was ICC based, we need to update the device ICC profile 
            in the ICC manager, since that is the profile that is used for the
            PDF14 device */
@@ -3088,18 +3066,15 @@ pdf14_update_device_color_procs(gx_device *dev,
         }
 
         return(1);  /* Lets us detect that we did do an update */
-
 }
 
 /* A new version that works with the color_procs stack 
    for transparency groups */
-
 static int
 pdf14_update_device_color_procs_push_c(gx_device *dev,
 			      gs_transparency_color_t group_color,
 			      gs_imager_state *pis)
 {
-
     pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
     gx_device_clist_writer * cldev = (gx_device_clist_writer *)pdev->pclist_device;
@@ -3109,6 +3084,9 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     int new_num_comps;
     bool new_additive;
     byte new_depth;
+    byte comp_bits[] = {0,0,0,0};
+    byte comp_shift[] = {0,0,0,0};
+    int k;
     gs_state *pgs;
     cmm_profile_t *cmm_icc_profile_data;
     
@@ -3163,6 +3141,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                     new_additive = true;
                     new_14procs = &gray_pdf14_procs;
                     new_depth = 8;
+                    comp_bits[0] = 8;
+                    comp_shift[0] = 0; 
 
                 }
 
@@ -3180,6 +3160,10 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                     new_additive = true;
                     new_14procs = &rgb_pdf14_procs;
                     new_depth = 24;
+                    for (k = 0; k < 3; k++) {
+                        comp_bits[k] = 8;
+                        comp_shift[k] = (2-k)*8; 
+                    }
                 }
 
                 break; 
@@ -3204,6 +3188,10 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                     }
 
                     new_depth = 32;
+                    for (k = 0; k < 4; k++) {
+                        comp_bits[k] = 8;
+                        comp_shift[k] = (3-k)*8; 
+                    }
 
                 }
 
@@ -3282,7 +3270,10 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->color_info.num_components = new_num_comps;
             pdev->pdf14_procs = new_14procs;
             pdev->color_info.depth = new_depth;
-
+            memset(&(pdev->color_info.comp_bits),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
+            memset(&(pdev->color_info.comp_shift),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
+            memcpy(&(pdev->color_info.comp_bits),comp_bits,4);
+            memcpy(&(pdev->color_info.comp_shift),comp_shift,4);
             cldev->clist_color_info.depth = pdev->color_info.depth;
             cldev->clist_color_info.polarity = pdev->color_info.polarity;
             cldev->clist_color_info.num_components = pdev->color_info.num_components;
@@ -3340,6 +3331,8 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev, gs_imager_state *pis)
         pdev->color_info.num_components = parent_color->num_components;
         pdev->blend_procs = parent_color->parent_blending_procs;
         pdev->pdf14_procs = parent_color->unpack_procs;
+        memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
 
         /* clist writer fill rect has no access to imager state */
         /* and it forwards the target device.  this information */
@@ -3348,6 +3341,8 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev, gs_imager_state *pis)
         cldev->clist_color_info.depth = pdev->color_info.depth;
         cldev->clist_color_info.polarity = pdev->color_info.polarity;
         cldev->clist_color_info.num_components = pdev->color_info.num_components;
+        memcpy(&(cldev->clist_color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(cldev->clist_color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
 
         if (pdev->ctx){
             pdev->ctx->additive = parent_color->isadditive;
@@ -3407,7 +3402,6 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     pdev->trans_group_parent_cmap_procs = new_parent_color;
 
     /* Initialize with values */
-
     new_parent_color->get_cmap_procs = pis->get_cmap_procs;
     new_parent_color->parent_color_mapping_procs = 
         pdev->procs.get_color_mapping_procs;
@@ -3418,6 +3412,8 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     new_parent_color->num_components = pdev->color_info.num_components;
     new_parent_color->unpack_procs = pdev->pdf14_procs;
     new_parent_color->depth = pdev->color_info.depth;
+    memcpy(&(new_parent_color->comp_bits),&(pdev->color_info.comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+    memcpy(&(new_parent_color->comp_shift),&(pdev->color_info.comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
     
     /* The ICC manager has the ICC profile for the device */
 
@@ -3588,6 +3584,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
                 parent_color->get_cmap_procs = NULL;
                 parent_color->parent_color_comp_index = NULL;
                 parent_color->parent_color_mapping_procs = NULL;
+                memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+                memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
 
                 /* Take care of the ICC profile */
 

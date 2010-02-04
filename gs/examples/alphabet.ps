@@ -6,6 +6,7 @@
 
 /FontName where { pop } { /FontName (Palatino-Italic) def } ifelse
 /FirstSize where { pop } { /FirstSize 15 def } ifelse
+/CurrentSize FirstSize def
 /Ratio where { pop } { /Ratio 1.6 def } ifelse
 /NumSizes where { pop } { /NumSizes 3 def } ifelse
 /UseOutline where { pop } { /UseOutline false def } ifelse
@@ -41,8 +42,17 @@ FontName findfont FirstSize scalefont setfont
 clippath pathbbox /top exch def pop pop pop newpath
 10 10 moveto
 NumSizes
- { gsave nulldevice (Q) false charpath pathbbox grestore
+ { 
+   gsave
+   CurrentSize 50 lt {
+	FontName findfont 50 scalefont setfont
+   	(Q) false charpath pathbbox 
+      exch pop exch sub exch pop 1.25 mul CurrentSize 50 div mul /height exch def
+   }{
+      (Q) false charpath pathbbox 
      exch pop exch sub exch pop 1.25 mul /height exch def
+   } ifelse 
+   grestore
    Strings
     { currentpoint exch pop top height 3 mul sub gt
        { showpage 10 10 height sub moveto
@@ -54,7 +64,9 @@ NumSizes
       if
       0 height rmoveto
     } forall
-   Ratio dup scale
+   /CurrentSize FirstSize Ratio mul def
+   FontName findfont CurrentSize scalefont setfont
+   /Ratio Ratio dup mul def
  } repeat
 showpage
 

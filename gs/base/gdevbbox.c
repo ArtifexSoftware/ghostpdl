@@ -706,7 +706,8 @@ bbox_fill_triangle(gx_device * dev,
 static int
 bbox_draw_thin_line(gx_device * dev,
 		    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
-		    const gx_device_color * pdevc, gs_logical_operation_t lop)
+		    const gx_device_color * pdevc, gs_logical_operation_t lop,
+		    fixed adjustx, fixed adjusty)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* Skip the call if there is no target. */
@@ -714,7 +715,7 @@ bbox_draw_thin_line(gx_device * dev,
     int code =
 	(tdev == 0 ? 0 :
 	 dev_proc(tdev, draw_thin_line)
-	 (tdev, fx0, fy0, fx1, fy0, pdevc, lop));
+	 (tdev, fx0, fy0, fx1, fy0, pdevc, lop, adjustx, adjusty));
 
     if (!GX_DC_IS_TRANSPARENT(pdevc, bdev)) {
 	fixed xmin, ymin, xmax, ymax;

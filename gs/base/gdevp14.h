@@ -107,6 +107,8 @@ struct pdf14_parent_color_s {
     int num_components;
     bool isadditive;
     gx_color_polarity_t polarity;
+    byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* These are needed for the shading code */
+    byte comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte depth;  /* used in clist writer cmd_put_color */
     const gx_color_map_procs *(*get_cmap_procs)(const gs_imager_state *,
 						     const gx_device *);

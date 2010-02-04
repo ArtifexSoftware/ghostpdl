@@ -19,7 +19,7 @@
 
 # The path to the executables.
 #$gsexe     = "gs/bin/gswin32c.exe";
-$gsexe     = "gs\\debugbin\\gswin32c.exe";
+$gsexe     = "gs\\bin\\gswin32c.exe";
 $pclexe    = "main\\obj\\pcl6.exe";
 $xpsexe    = "xps\\obj\\gxps.exe";
 $svgexe    = "svg\\obj\\gsvg.exe";
@@ -41,7 +41,7 @@ $pwsvgargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 # should be put into a single HTML file.
 $maxsets = 100;
 
-# Set the following to true to convert bmps to pngs (useful to save space
+# Set the following to 1 to convert bmps to pngs (useful to save space
 # if you want to show people this across the web).
 $pngize = 1;
 
@@ -58,7 +58,33 @@ $reference = "..\\ghostpdlREF\\";
 # $redir = " - < ";
 $redir = " ";
 
+# Set the following to 1 if you want to use parallel dispatch of jobs
+$parallel = 1;
+
+# If set, use iframes rather than copying the content of the frames into
+# the top html file.
+$iframes = 0;
+
+# Finally, allow a user to override any of these by having their own
+# config file.
+#
+# The config file is expected to live in ~/.htmldiff/htmldiff.cfg
+# on a unix based system, and just as htmldiff.cfg in a users home
+# directory on windows.
+#
+# The config file should contain perl commands to override any of the
+# above variables. Most probably just $fileadjust and $reference will
+# need to be set.
+do $ENV{'HOME'}."/.htmldiff/htmldiff.cfg";
+do $ENV{'HOMEPATH'}.$ENV{'HOMEDRIVE'}."htmldiff.cfg";
+
 # END SETUP SECTION
+########################################################################
+
+########################################################################
+# EXTERNAL USES
+use Errno qw(EAGAIN);
+
 ########################################################################
 
 ########################################################################
@@ -76,17 +102,83 @@ sub getfilename {
     return $filename;
 }
 
+sub openiframe {
+    $framedir = sprintf("%05d",$framenum);
+    $outdir   = $basedir."/".$framedir;
+
+    if ($iframes)
+    {
+        print $html "<IFRAME src=\"".$framedir."/frame.html\" WIDTH=\"100%\" FRAMEBORDER=\"0\" id=\"iframe".$framedir."\" scrolling=\"off\"></IFRAME><BR>";
+    }
+
+    mkdir $outdir;
+    open($iframe, ">", $outdir."/frame.html");
+
+    print $iframe "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE>";
+    print $iframe "$javascript</HEAD><BODY onLoad=\"parent.document.getElementById('iframe".$framedir."').style.height=document.getElementById('content').offsetHeight;parent.document.getElementById('iframe".$framedir."').style.width=document.getElementById('content').offsetWidth;\">";
+    print $iframe "<DIV id=\"content\">";
+}
+
+sub closeiframe {
+    if ($iframes)
+    {
+        print $iframe "</DIV></BODY>";
+        close $iframe;
+    }
+    $framenum++;
+}
+
 sub openhtml {
     $setsthisfile = 0;
-    open($html, ">", $outdir."/".getfilename($filenum));
+    open($html, ">", $basedir."/".getfilename($filenum));
+
+    $javascript  = "<SCRIPT LANGUAGE=\"JavaScript\">";
+    $javascript .= "function swap(n){";
+    $javascript .=   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
+    $javascript .=   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
+    $javascript .=   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
+    $javascript .= "}";
+    $javascript .= "var undef;";
+    $javascript .= "function findPosX(obj){";
+    $javascript .=   "var curLeft = 0;";
+    $javascript .=   "if (obj.offsetParent){";
+    $javascript .=     "while(1) {";
+    $javascript .=       "curLeft += obj.offsetLeft;";
+    $javascript .=       "if (!obj.offsetParent)";
+    $javascript .=         "break;";
+    $javascript .=       "obj = obj.offsetParent;";
+    $javascript .=     "}";
+    $javascript .=   "} else if (obj.x)";
+    $javascript .=     "curLeft += obj.x;";
+    $javascript .=   "return curLeft;";
+    $javascript .= "}";
+    $javascript .= "function findPosY(obj){";
+    $javascript .=   "var curTop = 0;";
+    $javascript .=   "if (obj.offsetParent){";
+    $javascript .=     "while(1) {";
+    $javascript .=       "curTop += obj.offsetTop;";
+    $javascript .=       "if (!obj.offsetParent)";
+    $javascript .=         "break;";
+    $javascript .=       "obj = obj.offsetParent;";
+    $javascript .=     "}";
+    $javascript .=   "} else if (obj.x)";
+    $javascript .=     "curTop += obj.x;";
+    $javascript .=   "return curTop;";
+    $javascript .= "}";
+    $javascript .= "function coord(event,obj,n,x,y){";
+    $javascript .=   "if (event.offsetX == undef) {";
+    $javascript .=     "x += event.pageX-findPosX(obj)-1;";
+    $javascript .=     "y += event.pageY-findPosY(obj)-1;";
+    $javascript .=   "} else {";
+    $javascript .=     "x += event.offsetX;";
+    $javascript .=     "y += event.offsetY;";
+    $javascript .=   "}";
+    $javascript .=   "document['Coord'+n].X.value = x;";
+    $javascript .=   "document['Coord'+n].Y.value = y;";
+    $javascript .= "}</SCRIPT>";
 
 print $html "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE></HEAD>";
-print $html "<SCRIPT LANGUAGE=\"JavaScript\">";
-print $html "function swap(n){";
-print $html   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
-print $html   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
-print $html   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
-print $html "}</SCRIPT><BODY>";
+    print $html "$javascript</HEAD><BODY>";
 
     if ($filenum > 0) {
         print $html "<P>";
@@ -111,17 +203,130 @@ sub nexthtml {
     openhtml();
 }
 
+sub dprint {
+    my ($f1, $f2, $str) = @_;
+    
+    if (!$iframes) {
+        print $f1 $str;
+    }
+    print $f2 $str;
+}
+
+sub runjobs {
+    my ($cmd, $cmd2, $html, $html2, $pre1, $pre2, $post) = @_;
+    my $ret, $ret2, $pid;
+    
+    if ($parallel) {
+        FORK: {
+            if ($pid = fork) {
+                $ret  = system($cmd);
+                waitpid($pid, 0);
+                $ret2 = $?;
+            } elsif (defined $pid) {
+                exec($cmd2);
+            } elsif ($! == EAGAIN) {
+                sleep 5;
+                redo FORK;
+            } else {
+                die "Can't fork!: $!\n";
+            }
+        }
+    } else {
+        $ret  = system($cmd);
+        $ret2 = system($cmd2);
+    }
+        
+    if ($ret != 0)
+    {
+        print $pre1." ".$post." failed with exit code ".$ret."\n";
+        print "Command was: ".$cmd."\n";
+        dprint($html,$html2,"<P>".$pre1." ".$post." failed with exit code ");
+        dprint($html,$html2,$ret."<br>Command was: ".$cmd."</P>\n");
+        next;
+    }
+    if ($ret2 != 0)
+    {
+        print $pre2." ".$post." failed with exit code ".$ret2."\n";
+        print "Command was: ".$cmd2."\n";
+        dprint($html,$html2,"<P>Ref bitmap generation failed with exit code ");
+        dprint($html,$html2,$ret2."<br>Command was: ".$cmd2."</P>\n");
+        next;
+    }
+    
+    return (($ret | $ret2) != 0);
+}
+
+sub runjobs3 {
+    my ($cmd, $cmd2, $cmd3, $html, $html2) = @_;
+    my $ret, $ret2, $ret3, $pid;
+    
+    if ($parallel) {
+        FORK: {
+            if ($pid = fork) {
+                $ret  = system($cmd);
+                waitpid($pid, 0);
+                $ret2 = $?;
+            } elsif (defined $pid) {
+                FORK2 : {
+                    if ($pid = fork) {
+                        $ret2 = system($cmd2);
+                        waitpid($pid, 0);
+                        $ret3 = $?;
+                        if ($ret2 = 0) {
+                            $ret2 = $ret3;
+                        }
+                        exit($ret2);
+                    } elsif (defined $pid) {
+                        exec($cmd3);
+                    } elsif ($! == EAGAIN) {
+                        sleep 5;
+                        redo FORK2;
+                    } else {
+                        die "Can't fork!: $!\n";
+                    }
+                }
+            } elsif ($! == EAGAIN) {
+                sleep 5;
+                redo FORK;
+            } else {
+                die "Can't fork!: $!\n";
+            }
+        }
+    } else {
+        $ret  = system($cmd);
+        $ret2 = system($cmd2);
+    }
+        
+    if ($ret != 0)
+    {
+        print "Bitmap conversion failed with exit code ".$ret."\n";
+        print "Command was: ".$cmd."\n";
+        dprint($html,$html2,"<P>Bitmap conversion failed with exit code ");
+        dprint($html,$html2,$ret."<br>Command was: ".$cmd."</P>\n");
+        next;
+    }
+    if ($ret2 != 0)
+    {
+        print "Bitmap conversion failed with exit code ".$ret2."\n";
+        print "Command was: ".$cmd2." or ".$cmd3."\n";
+        dprint($html,$html2,"<P>Bitmap conversion failed with exit code ");
+        dprint($html,$html2,$ret2."<br>Command was: ".$cmd2." or ".$cmd3."</P>\n");
+        next;
+    }
+}
+
 # END FUNCTIONS
 ########################################################################
 
 ########################################################################
 # Here follows todays lesson. Abandon hope all who enter here. Etc. Etc.
-$outdir       = $ARGV[0];
+$basedir      = $ARGV[0];
 $ARGV         = shift @ARGV;
 $filenum      = 0;
+$framenum     = 0;
 
 # Create the output dir/html file
-mkdir $outdir;
+mkdir $basedir;
 openhtml();
 
 # Keep a list of files we've done, so we don't repeat
@@ -171,8 +376,11 @@ while (<>)
         nexthtml();
     }
 
+    # Open the iframe
+    openiframe();
+
     # Output the title
-    print $html "<H1>".$file." (".$res."dpi)</H1></BR>";
+    dprint($html,$iframe,"<H1>".$framenum.": ".$file." (".$res."dpi)</H1></BR>");
     
     # Generate the appropriate bmps to diff
     print $exe.": ".$file."\n";
@@ -182,33 +390,19 @@ while (<>)
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
         $cmd .= " ".$gsargs;
-        if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS };
+        if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; };
         $cmd .= $redir.$file;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$gsexe;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd2 .= " ".$gsargs;
+        if ($file =~ m/\.PS$/) { $cmd2 .= " ".$gsargsPS; }
+        $cmd2 .= $redir.$file;
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
-        $cmd  = $reference.$gsexe;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$gsargs;
-        if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS }
-        $cmd .= $redir.$file;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
         }
-    }
     elsif ($exe eq "pcl")
     {
         $cmd  =     $pclexe;
@@ -216,30 +410,16 @@ while (<>)
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
         $cmd .= " ".$file;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$pclexe;
+        $cmd2 .= " ".$pclargs;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd2 .= " ".$file;
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
-        $cmd  = $reference.$pclexe;
-        $cmd .= " ".$pclargs;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$file;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
         }
-    }
     elsif ($exe eq "xps")
     {
         $cmd  =     $xpsexe;
@@ -247,30 +427,16 @@ while (<>)
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
         $cmd .= " ".$file;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$xpsexe;
+        $cmd2 .= " ".$xpsargs;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd2 .= " ".$file;
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
-        $cmd  = $reference.$xpsexe;
-        $cmd .= " ".$xpsargs;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$file;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
         }
-    }
     elsif ($exe eq "svg")
     {
         $cmd  =     $svgexe;
@@ -278,30 +444,16 @@ while (<>)
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
         $cmd .= " ".$file;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$svgexe;
+        $cmd2 .= " ".$svgargs;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd2 .= " ".$file;
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
-        $cmd  = $reference.$svgexe;
-        $cmd .= " ".$svgargs;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$file;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
         }
-    }
     elsif ($exe eq "pwgs")
     {
         $cmd  =     $gsexe;
@@ -310,56 +462,29 @@ while (<>)
         $cmd .= " ".$pwgsargs;
         if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
         $cmd .= $redir.$file2;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New pdf generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New pdf generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$gsexe;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        $cmd2 .= " ".$pwgsargs;
+        if ($file2 =~ m/\.PS$/) { $cmd2 .= " ".$gsargsPS; }
+        $cmd2 .= $redir.$file2;
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "pdf generation")) {
             next;
         }
-        $cmd  = $reference.$gsexe;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
-        $cmd .= " ".$pwgsargs;
-        if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
-        $cmd .= $redir.$file2;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref pdf generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref pdf generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
-        }
+
         $cmd  =     $gsexe;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
         $cmd .= " ".$gsargs;
         $cmd .= $redir.$outdir."/tmp1.pdf";
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
-        }
-        $cmd  =     $gsexe;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$gsargs;
-        $cmd .= $redir.$outdir."/tmp2.pdf";
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  =     $gsexe;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd2 .= " ".$gsargs;
+        $cmd2 .= $redir.$outdir."/tmp2.pdf";
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -372,55 +497,28 @@ while (<>)
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1.pdf";
         $cmd .= " ".$file2;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New pdf generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New pdf generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$pclexe;
+        $cmd2 .= " ".$pwpclargs;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        $cmd2 .= " ".$file2;
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "pdf generation")) {
             next;
         }
-        $cmd  = $reference.$pclexe;
-        $cmd .= " ".$pwpclargs;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
-        $cmd .= " ".$file2;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref pdf generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref pdf generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
-        }
+
         $cmd  =     $gsexe;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
         $cmd .= " ".$gsargs;
         $cmd .= $redir.$outdir."/tmp1.pdf";
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
-        }
-        $cmd  = $reference.$gsexe;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$gsargs;
-        $cmd .= $redir.$outdir."/tmp2.pdf";
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$gsexe;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd2 .= " ".$gsargs;
+        $cmd2 .= $redir.$outdir."/tmp2.pdf";
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -433,55 +531,28 @@ while (<>)
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1.pdf";
         $cmd .= " ".$file2;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New pdf generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New pdf generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$xpsexe;
+        $cmd2 .= " ".$pwxpsargs;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        $cmd2 .= " ".$file2;
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "pdf generation")) {
             next;
         }
-        $cmd  = $reference.$xpsexe;
-        $cmd .= " ".$pwxpsargs;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
-        $cmd .= " ".$file2;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref pdf generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref pdf generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
-        }
+
         $cmd  =     $gsexe;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
         $cmd .= " ".$gsargs;
         $cmd .= $redir.$outdir."/tmp1.pdf";
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
-        }
-        $cmd  = $reference.$gsexe;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$gsargs;
-        $cmd .= $redir.$outdir."/tmp2.pdf";
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$gsexe;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd2 .= " ".$gsargs;
+        $cmd2 .= $redir.$outdir."/tmp2.pdf";
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -494,55 +565,28 @@ while (<>)
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1.pdf";
         $cmd .= " ".$file2;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New pdf generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New pdf generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$svgexe;
+        $cmd2 .= " ".$pwsvgargs;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
+        $cmd2 .= " ".$file2;
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "pdf generation")) {
             next;
         }
-        $cmd  = $reference.$svgexe;
-        $cmd .= " ".$pwsvgargs;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2.pdf";
-        $cmd .= " ".$file2;
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref pdf generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref pdf generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
-        }
+
         $cmd  =     $gsexe;
         $cmd .= " -r".$res;
         $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
         $cmd .= " ".$gsargs;
         $cmd .= $redir.$outdir."/tmp1.pdf";
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "New bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>New bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
-            next;
-        }
-        $cmd  = $reference.$gsexe;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd .= " ".$gsargs;
-        $cmd .= $redir.$outdir."/tmp2.pdf";
-        $ret = system($cmd);
-        if ($ret != 0)
-        {
-            print "Ref bitmap generation failed with exit code ".$ret."\n";
-            print "Command was: ".$cmd;
-            print $html "<P>Ref bitmap generation failed with exit code ";
-            print $html $ret."<br>Command was: ".$cmd."</P>\n";
+        $cmd2  = $reference.$gsexe;
+        $cmd2 .= " -r".$res;
+        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
+        $cmd2 .= " ".$gsargs;
+        $cmd2 .= $redir.$outdir."/tmp2.pdf";
+        if (runjobs($cmd, $cmd2, $html, $iframe,
+                    "New", "Ref", "bitmap generation")) {
             next;
         }
         unlink $outdir."/tmp1.pdf";
@@ -569,53 +613,73 @@ while (<>)
         if ($ret != 0)
         {
             print "Image differ failed!\n";
-            print $html "<p>Image differ failed!</p>\n";
+            dprint($html,$html2,"<p>Image differ failed!</p>\n");
         }
         # Delete the temporary files
         unlink $tmp1;
         unlink $tmp2;
 
         # Add the files to the HTML, converting to PNG if required.
-        while (stat($outdir."/out.".$images.".bmp"))
+        while (stat($outdir."/out.".sprintf("%05d",$images).".bmp"))
         {
             $suffix = ".bmp";
+            $imstr1 = sprintf("%05d",$images);
+            $imstr2 = sprintf("%05d",$images+1);
+            $imstr3 = sprintf("%05d",$images+2);
             if ($pngize)
             {
                 $cmd  = $convertexe." ";
-                $cmd .= $outdir."/out.".$images.".bmp ";
-                $cmd .= $outdir."/out.".$images.".png";
-                $ret = system($cmd);
-                if ($ret != 0)
-                {
-                    print "Conversion to png failed!\n";
-                    print $html "<p>Conversion to png failed!</p>\n";
-                }
-                unlink $outdir."/out.".$images.".bmp";
-                $cmd  = $convertexe." ";
-                $cmd .= $outdir."/out.".($images+1).".bmp ";
-                $cmd .= $outdir."/out.".($images+1).".png";
-                $ret = system($cmd);
-                if ($ret != 0)
-                {
-                    print "Conversion to png failed!\n";
-                    print $html "<p>Conversion to png failed!</p>\n";
-                }
-                unlink $outdir."/out.".($images+1).".bmp";
-                $cmd  = $convertexe." ";
-                $cmd .= $outdir."/out.".($images+2).".bmp ";
-                $cmd .= $outdir."/out.".($images+2).".png";
-                $ret = system($cmd);
-                if ($ret != 0)
-                {
-                    print "Conversion to png failed!\n";
-                    print $html "<p>Conversion to png failed</p>\n";
-                }
-                unlink $outdir."/out.".($images+2).".bmp";
+                $cmd  .= $outdir."/out.$imstr1.bmp ";
+                $cmd  .= $outdir."/out.$imstr1.png";
+                $cmd2  = $convertexe." ";
+                $cmd2 .= $outdir."/out.$imstr2.bmp ";
+                $cmd2 .= $outdir."/out.$imstr2.png";
+                $cmd3  = $convertexe." ";
+                $cmd3 .= $outdir."/out.$imstr3.bmp ";
+                $cmd3 .= $outdir."/out.$imstr3.png";
+                runjobs3($cmd, $cmd2, $cmd3, $html, $iframe, "convert");
+                unlink $outdir."/out.$imstr1.bmp";
+                unlink $outdir."/out.$imstr2.bmp";
+                unlink $outdir."/out.$imstr3.bmp";
                 $suffix = ".png";
+                }
+            
+            $metafile = $outdir."/out.$imstr.meta";
+            $meta{"X"}    = 0;
+            $meta{"Y"}    = 0;
+            $meta{"PW"}   = 0;
+            $meta{"PH"}   = 0;
+            $meta{"W"}    = 0;
+            $meta{"H"}    = 0;
+            if (stat($metafile))
+                {
+                open(METADATA, $metafile);
+                while (<METADATA>) {
+                    chomp;
+                    s/#.*//;
+                    s/^\s+//;
+                    s/\s+$//;
+                    next unless length;
+                    my ($var,$value) = split(/\s*=\s*/, $_, 2);
+                    $meta{$var}=$value;
+                }
+                close METADATA;
+                unlink $metafile;
+                }
+            
+            $mousemove = "onmousemove=\"coord(event,this,".$images.",".$meta{"X"}.",".$meta{"Y"}.")\"";
+            
+            if (!$iframes) {
+                print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$imstr1$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap($images)\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>";
+               print $html "<TD><IMG SRC=\"$framedir/out.$imstr2$suffix\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>";
+               print $html "<TD><IMG SRC=\"$framedir/out.$imstr3$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>";
+               print $html "<TR><TD COLSPAN=3><FORM name=\"Coord$images\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
             }
-            print $html "<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate: ".$file." page=".$page." res=".$res."\"></TD>";
-           print $html "<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\"></TD>";
-           print $html "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\"></TD></TR></TABLE><BR>";
+
+            print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$imstr1$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap($images)\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>";
+            print $iframe "<TD><IMG SRC=\"out.$imstr2$suffix\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>";
+            print $iframe "<TD><IMG SRC=\"out.$imstr3$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>";
+            print $iframe "<TR><TD COLSPAN=3><FORM name=\"Coord$images\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
            $images += 3;
            $diffs++;
            $setsthisfile++;
@@ -623,6 +687,8 @@ while (<>)
 
         $page++;
     }
+    
+    closeiframe();
     
     if ($diffs == 0)
     {

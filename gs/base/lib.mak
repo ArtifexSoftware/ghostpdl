@@ -251,7 +251,7 @@ $(GLOBJ)gsargs.$(OBJ) : $(GLSRC)gsargs.c\
 $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
  $(vmsmath_h)\
  $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
- $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h)
+ $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(GXERR)\
@@ -2456,7 +2456,8 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
 # ---------------- ICCBased color ---------------- #
 
 gsicc_=$(GLOBJ)gsiccmanage.$(OBJ) $(GLOBJ)gsicccache.$(OBJ)\
- $(GLOBJ)gsicc_littlecms.$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)
+ $(GLOBJ)gsicc_littlecms.$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
+ $(GLOBJ)gsicc_create.$(OBJ)
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
@@ -2500,6 +2501,17 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
 $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
  $(gsicc_littlecms_h)
 	$(GLLCMSCC) $(GLO_)gsicc_littlecms.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
+	
+# Note that gsicc_create requires compile with lcms to obtain icc34.h 
+# header file that is used for creating ICC structures from PS objects.
+# This is needed even if PDF/PS interpreter is built with a different CMS.
+# This object is here instead of in psi since it is used lazily by the
+# remap operations. 
+$(GLOBJ)gsicc_create.$(OBJ) : $(GLSRC)gsicc_create.c $(GX) $(string__h)\
+ $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
+ $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsiccmanage_h) $(gsicccache_h)\
+ $(math__h)
+	$(GLLCMSCC) $(GLO_)gsicc_create.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
 
 # ---------------- Separation colors ---------------- #
 

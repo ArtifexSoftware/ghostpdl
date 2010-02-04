@@ -59,13 +59,9 @@ pdfdict begin
         PDFfile fileposition exch                      % pos /Name
         Page /Properties rget {
           ocg-is-visible not {
-            OFFlevels
-            dup length 0 eq {
-              gsave get-gs-attrs nulldevice set-gs-attrs
+            OFFlevels BMClevel dup put
             } if
-            BMClevel dup put
           } if
-        } if
         PDFfile exch setfileposition
       } {
         pop
@@ -78,10 +74,7 @@ pdfdict begin
     OFFlevels BMClevel
     2 copy known {
        2 copy undef
-       1 index length 0 eq {
-          get-gs-attrs grestore set-gs-attrs
        } if
-    } if
     1 sub /BMClevel exch store
     pop
   } bind
@@ -1328,6 +1321,8 @@ end readonly def
   } bind def
   /Link {
     mark exch
+    dup /BS knownoget { << exch { oforce } forall >> /BS exch 3 -1 roll } if
+    dup /F knownoget { /F exch 3 -1 roll } if
     dup /C knownoget { /Color exch 3 -1 roll } if
     dup /Rect knownoget { /Rect exch 3 -1 roll } if
     dup /Border knownoget {

@@ -754,14 +754,15 @@ BOOL CInstall::WriteUninstall(const char *szProg, BOOL bNoCopy)
 		if (RegCreateKey(hkey, m_szUninstallName, &hsubkey) == ERROR_SUCCESS) {
 			RegSetValueEx(hsubkey, DISPLAYNAMEKEY, 0, REG_SZ,
 				(CONST BYTE *)m_szUninstallName, lstrlen(m_szUninstallName)+1);
-			lstrcpy(buffer, ungsprog);
-			lstrcat(buffer, " \042");
+			lstrcpy(buffer, "\042");	// leading " before ungsprog which may have spaces in the path
+			lstrcat(buffer, ungsprog);
+			lstrcat(buffer, "\042 \042");	// ending " for ungsprog, leading " before UNINSTALL_FILE path
 			lstrcat(buffer, m_szTargetDir);
 			lstrcat(buffer, "\\");
 			lstrcat(buffer, m_szMainDir);
 			lstrcat(buffer, "\\");
 			lstrcat(buffer, UNINSTALL_FILE);
-			lstrcat(buffer, "\042");
+			lstrcat(buffer, "\042");	// ending " after UNINSTALL_FILE path
 			AddMessage("   ");
 			AddMessage(m_szUninstallName);
 			AddMessage("=");

@@ -28,6 +28,7 @@
 #include "istruct.h"
 #include "store.h"
 #include "zfile.h"
+#include "zfrsd.h"
 
 /* ---------------- Reusable streams ---------------- */
 
@@ -118,9 +119,6 @@ zrsdparams(i_ctx_t *i_ctx_p)
  * Reusable streams are also reusable sources, but they look just like
  * ordinary file or string streams.
  */
-static int make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
-		     uint size, uint space, long offset, long length,
-		     bool is_bytestring);
 static int make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
 		     long offset, long length);
 
@@ -232,7 +230,7 @@ rs:
 }
 
 /* Make a reusable string stream. */
-static int
+int
 make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
 	 uint string_space, long offset, long length, bool is_bytestring)
 {

@@ -18,10 +18,27 @@ my $wordSize="64";
 my $timeOut=240;
 my $maxTimeout=20;
 
+my $maxCount=12;
+#$maxCount=16;
+
+my $maxRaster=5;
+
 my %pids;
 my %timeOuts;
 
 my $machine=shift || die "usage: run.pl machine_name";
+
+open (LOG,">>$machine.dbg");
+print LOG "\n\n";
+
+sub mylog($) {
+  my $d=`date`;
+  chomp $d;
+  my $s=shift;
+  chomp $s;
+  print LOG "$d: $s\n";
+}
+
 
 my $user;
 my $revs;
@@ -49,19 +66,20 @@ sub checkPID {
     if ($t == $$) {
       return(1);
     }
+    mylog "terminating: $runningSemaphore pid mismatch $t $$\n";
     print "terminating: $runningSemaphore pid mismatch $t $$\n";
     exit;
   }
+  mylog "terminating: $runningSemaphore missing\n";
   print "terminating: $runningSemaphore missing\n";
   exit;
 }
 
-if (open(F,"<$runningSemaphore")) {
-  close(F);
+if (-e $runningSemaphore) {
   my $fileTime = stat($runningSemaphore)->mtime;
   my $t=time;
   if ($t-$fileTime>7200) {
-    print "semaphore file too old, removing\n";
+    mylog "semaphore file too old, removing\n";
     open(F,">status");
     print F "Regression terminated due to timeout";
     close(F);
@@ -73,6 +91,25 @@ if (open(F,"<$runningSemaphore")) {
 open(F,">$runningSemaphore");
 print F "$$\n";
 close(F);
+
+mylog "starting run.pl:  pid=$$\n";
+
+#`killall gs`;  # horrible, horrible hack
+#mylog "running 'killall gs'\n";
+#`killall pcl6`;  # horrible, horrible hack
+#mylog "running 'killall pcl6'\n";
+
+{
+  mylog "about to kill any jobs still running from previous regression\n";
+  my $a=`ps -ef | grep nice | grep temp | grep true`;
+  my @a=split '\n',$a;
+  foreach (@a) {
+    if (m/\S+ +(\d+)/) {
+      mylog "killing $1\n";
+      kill 9, $1;
+    }
+  }
+}
 
 if (open(F,"<$machine.start")) {
   my $t=<F>;
@@ -87,22 +124,26 @@ if (open(F,"<$machine.start")) {
       $user=$a[1];
       $products=$a[2];
     } else {
+      mylog "oops 3";
       die "oops 3";  # hack
     }
   } else {
+    mylog "oops 1";  # hack
     die "oops 1";  # hack
   }
   unlink("$machine.start");
 } else {
+  mylog "oops 2";  # hack
   die "oops 2";  # hack
 }
+
+mylog "user products=$products user=$user\n" if ($user);
+mylog "svn products=$products revs=$revs\n" if ($revs);
 
 my $host="casper3.ghostscript.com";
 
 my $desiredRev;
 
-my $maxCount=12;
-$maxCount=16;
 
 my $baseDirectory=`pwd`;
 chomp $baseDirectory;
@@ -110,6 +151,9 @@ my $usersDir="/home/regression/cluster/users";
 
 my $temp="./temp";
 my $temp2="./temp.tmp";
+my $raster="./temp/raster";
+my $bmpcmpOutput="./temp/bmpcmp";
+my $baselineRaster="./baselineraster";
 
 my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
@@ -175,13 +219,14 @@ foreach (@products) {
   $products{$_}=1;
 }
 
+
 my $cmd;
 my $s;
 
 my %spawnPIDs;
 
 sub killAll() {
-  print "in killAll()\n";
+  mylog "in killAll()\n";
   my $a=`ps -ef`;
   my @a=split '\n',$a;
   my %children;
@@ -191,15 +236,21 @@ sub killAll() {
     }
   }
 
+  my @pids;
   foreach my $pid (keys %pids) {
     #     kill 1, $pid;
     my $p=$pid;
+    push @pids,$p;
     while (exists $children{$p}) {
       print "$p->$children{$p}\n";
       $p=$children{$p};
+      push @pids,$p;
     }
-    kill 1, $p;
   }
+  foreach my $p (@pids) {
+    mylog ("killing (killAll) $p\n");
+    kill 9, $p;
+}
 }
 
 sub spawn($$) {
@@ -210,9 +261,10 @@ sub spawn($$) {
   while (!$done) {
     my $pid = fork();
     if (not defined $pid) {
+      mylog "fork() failed";
       die "fork() failed";
     } elsif ($pid == 0) {
-      `$s`;
+      exec($s);
       exit(0);
     } else {
       if ($timeout==0) {
@@ -228,6 +280,7 @@ sub spawn($$) {
         } while($status>=0 && $t<abs($timeout*10));
         $done=1 if ($timeout<0);
         if ($status>=0) {
+          mylog ("killing (spawn) $pid\n");
           kill 9, $pid;
         } else {
           $done=1;
@@ -242,6 +295,8 @@ sub checkAbort {
   return (1) if ($abort==1);
   spawn(60,"scp -i ~/.ssh/cluster_key  regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.abort . >/dev/null 2>/dev/null");
   if (-e "$machine.abort") {
+    mylog("found $machine.abort on casper\n");
+    mylog("removing $machine.abort on casper\n");
     spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
     killAll();
     return(1);
@@ -253,6 +308,7 @@ sub updateStatus($) {
   my $message=shift;
   `echo '$message' >$machine.status`;
   spawn(0,"scp -i ~/.ssh/cluster_key $machine.status regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.status");
+  mylog($message);
 }
 
 if ($user) {
@@ -297,10 +353,14 @@ if (!$abort) {
       # get update
     my $pdlrev;
     my $gsrev;
-    if ($revs =~ m/(\d+) (\d+)/) {
+    if ($revs eq "head") {
+      $pdlrev="head";
+      $gsrev="head";
+    } elsif ($revs =~ m/(\d+) (\d+)/) {
       $pdlrev=$1;
       $gsrev=$2;
       } else {
+      mylog "oops 4: revs=$revs";
       die "oops 4";  # hack
       }
     $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$pdlrev ; cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$gsrev";
@@ -310,7 +370,7 @@ if (!$abort) {
       }
       }
 
-$cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; rm -fr $temp2 &";
+$cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; mkdir $raster ; mkdir $bmpcmpOutput ; touch raster.yes ; rm -fr $temp2 &";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 
@@ -343,7 +403,7 @@ $abort=checkAbort;
       updateStatus('Building Ghostscript');
 
       # build ghostscript
-    $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; nice make >>makegs.out 2>&1";
+    $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; echo >>makegs.out ; nice make >>makegs.out 2>&1";
       print "$cmd\n" if ($verbose);
       `$cmd`;
 
@@ -371,7 +431,7 @@ $abort=checkAbort;
       $abort=checkAbort;
 if ($products{'pcl'} && !$abort) {
         updateStatus('Building GhostPCL');
-  $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
+  $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; echo >>makepcl.out ;  nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
   if (-e "$gpdlSource/main/obj/pcl6") {
@@ -386,7 +446,7 @@ if ($products{'pcl'} && !$abort) {
       $abort=checkAbort;
 if ($products{'xps'} && !$abort) {
         updateStatus('Building GhostXPS');
-  $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
+  $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; echo >>makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
   if (-e "$gpdlSource/xps/obj/gxps") {
@@ -401,7 +461,7 @@ if ($products{'xps'} && !$abort) {
       $abort=checkAbort;
 if ($products{'svg'} && !$abort) {
         updateStatus('Building GhostSVG');
-  $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
+  $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; echo >>makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
         print "$cmd\n" if ($verbose);
         `$cmd`;
   if (-e "$gpdlSource/svg/obj/gsvg") {
@@ -423,10 +483,12 @@ print "$cmd\n" if ($verbose);
 
 if ($md5sumFail ne "") {
   updateStatus('md5sum fail');
+mylog("setting $machine.fail on casper3\n");
 spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } elsif ($compileFail ne "") {
   updateStatus('Compile fail');
+mylog("setting $machine.fail on casper3\n");
 spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } else {
@@ -438,7 +500,7 @@ my $jobs=0;
 
 my $startTime=time;
 
-while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
+while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
   my $count=0;
 
   if ($poll==1 && scalar(@commands)==0) {
@@ -455,6 +517,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
 #       my $s=`date +\"%y_%m_%d_%H_%M_%S\"`;
 #       $s.="_$retry";
 #       `touch $s`;
+        mylog("retrying connection\n");
         $abort=checkAbort;
         $retry=0 if ($abort);
       }
@@ -464,12 +527,17 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
       $handle = IO::Socket::INET->new(Proto     => "tcp",
         PeerAddr  => $host,
         PeerPort  => $port);
-      } until (($handle) || ($retry--<=0));
+    } until (($abort) || ($handle) || ($retry--<=0));
     if (!$handle) {
       unlink $runningSemaphore;
       updateStatus("Can not connect to $host, quitting");
+      mylog "can not connect to port $port on $host: $!";
       die "can not connect to port $port on $host: $!";  # hack
     }
+
+    if ($abort) {
+      close($handle) if ($handle);
+    } else {
 
     print $handle "$machine\n";
 
@@ -490,10 +558,11 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
       # die unless $@ eq "alarm\n";
       # unlink $runningSemaphore;
       $s="";
-      updateStatus('Connection timed out, quitting');
+      updateStatus('Connection timed out, quitting: $@');
       @commands=();
       $maxCount=0;
       killAll();
+      checkAbort();
       $poll=0;
       $abort=1;
       # die "timed out";  # hack
@@ -507,6 +576,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
       @commands=();
       $maxCount=0;
       killAll();
+      checkAbort();
       $poll=0;
       $abort=1;
       # die "sysread returned null";  # hack
@@ -514,11 +584,15 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
 
     @commands = split '\n',$s;
     $totalJobs=scalar(@commands);
+    mylog("received ".scalar(@commands)." commands\n");
+    mylog("commands[0] eq 'done'\n") if ($commands[0] eq "done");
     if ((scalar @commands==0) || $commands[0] eq "done") {
       $poll=0;
       @commands=();
     }
   }
+  }
+  mylog("end of loop: scalar(commands)=".scalar(@commands)." poll=$poll abort=$abort\n") if (scalar(@commands)==0 || $poll==0 || $abort!=0);
 
   my $a=`ps -ef`;
   my @a=split '\n',$a;
@@ -537,18 +611,23 @@ while (($poll==1 || scalar(@commands)) && !$abort && !$compileFail) {
         print "$p->$children{$p}\n";
         $p=$children{$p};
       }
-      kill 1, $p;
+      mylog ("killing (timeout 1) $p\n");
+      kill 9, $p;
 
       $timeOuts{$pids{$pid}{'filename'}}=1;
       my $count=scalar (keys %timeOuts);
       print "\nkilled:  $p ($pid) $pids{$pid}{'filename'}  total $count\n";
       if ($count>=$maxTimeout) {
         $timeoutFail="too many timeouts";
+mylog("setting $machine.fail on casper3\n");
 spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
         updateStatus('Timeout fail');
         @commands=();
         $maxCount=0;
         killAll();
+        checkAbort();
+        $poll=0;
+        $abort=1;
       }
     } else {
 #print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
@@ -578,22 +657,30 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
       }
 
       my $elapsedTime=time-$startTime;
-      if ($elapsedTime>=60) {
+      if ($elapsedTime>=30) {
         my $t=sprintf "%d tests completed",$jobs;
         updateStatus($t);
         $abort=checkAbort;
         $startTime=time;
+
+my @files = <$raster/*>;
+my $count = @files;
+my $count2=scalar (keys %timeOuts);
+unlink('raster.yes') if ($count>$maxRaster);
+$maxCount=16 if ($count>$maxRaster);
+mylog("$raster file count=$count timeOuts=$count2");
+
 
       }
 #     printf "\n$t1 $t2 $t3  %5d %5d  %3d",$jobs,$totalJobs, $percentage if ($debug);
     }
     my $pid = fork();
     if (not defined $pid) {
+      mylog "fork() failed";
       die "fork() failed";
     } elsif ($pid == 0) {
-      system("$cmd");
-      #     `rm -f $outputFilenames` if (length($outputFilenames));
-
+      exec($cmd);
+#     system("$cmd");  marcos
       exit(0);
     } else {
       $pids{$pid}{'time'}=time;
@@ -611,7 +698,7 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
   # }
 }
 
-if (!$abort) {
+if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
 
 
   print "\n" if ($debug);
@@ -620,7 +707,7 @@ if (!$abort) {
   my $lastCount=-1;
   do {
     my $tempCount=scalar keys %pids;
-    if ($tempCount != $lastCount) {
+    if ($tempCount != $lastCount && $tempCount>0) {
       my $message=("Waiting for $tempCount jobs to finish");
       if ($tempCount<=3) {
         if ($tempCount==1) {
@@ -659,7 +746,8 @@ if (!$abort) {
           print "$p->$children{$p}\n";
           $p=$children{$p};
         }
-        kill 1, $p;
+        mylog ("killing (timeout 2) $p\n");
+        kill 9, $p;
 
         $timeOuts{$pids{$pid}{'filename'}}=1;
         my $count=scalar (keys %timeOuts);
@@ -667,10 +755,14 @@ if (!$abort) {
         if ($count>=$maxTimeout) {
           $timeoutFail="too many timeouts";
           updateStatus('Timeout fail');
+mylog("setting $machine.fail on casper3\n");
 spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
           @commands=();
           $maxCount=0;
           killAll();
+          checkAbort();
+          $poll=0;
+          $abort=1;
         }
       } else {
 #print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
@@ -685,7 +777,7 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
   } while ($count>0 && !$abort);
   print "\n" if ($debug);
 
-  if (!$abort) {
+# if (!$abort) {
   updateStatus('Collecting log files');
 
   my %logfiles;
@@ -717,11 +809,11 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
 	  $count++;
         }
         close(F3);
-      }
         my $t1=$count;
       $count-=20;
         $count=$start-5 if ($start!=-1);
         $count=$t1-10 if ($t1-$count<10);
+          $count=$t1-250 if ($t1-$count>250);
         $t1-=$count;
         print F2 "\n$i (last $t1 lines):\n\n";
       if (open(F3,"<$dir/$i")) {
@@ -731,11 +823,10 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
 	  }
         }
         close(F3);
-      } else {
-        #       print F2 "missing\n";
       }
     }
   }
+    }
   if ($timeoutFail ne "") {
     print F2 "timeoutFail: $timeoutFail\n";
   }
@@ -775,14 +866,17 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
 
   system("date") if ($debug2);
   updateStatus('idle');
-  }
+# }
 } # if (!$abort)
 
 if ($abort) {
   updateStatus('Abort command received');
 }
 
+mylog("setting $machine.done on casper3\n");
 spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
+mylog("removing $machine.abort on casper\n");
+spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
 
 system("date") if ($debug2);
 #`rm -fr $temp`;
@@ -799,4 +893,6 @@ if (0) {
   }
   print "\n";
 }
+
+close(LOG);
 

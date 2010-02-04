@@ -837,9 +837,8 @@ static int free_aux(ttfMemory *mem, void *ptr)
 
   TT_Error  Face_Destroy( PFace face )
   {
+    if ( face ) {
     ttfMemory *mem = face->font->tti->ttf_memory;
-    if ( !face )
-      return TT_Err_Ok;
 
     /* freeing the CVT */
     FREE( face->cvt );
@@ -850,7 +849,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
     FREE( face->cvtProgram );
     face->fontPgmSize = 0;
     face->cvtPgmSize  = 0;
-
+    }
     return TT_Err_Ok;
   }
 

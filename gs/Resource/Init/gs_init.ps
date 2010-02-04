@@ -437,7 +437,7 @@ userdict /.echo.mode true put
 	       /handleerror .systemvar exec //null		% ioerror??
 	     }
 	    if
-	    cvx { .runexec } execute
+	    cvx { .runexec } .execute pop
 	  } loop
 	} bind def
 /filter

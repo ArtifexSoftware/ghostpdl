@@ -626,16 +626,6 @@ PDF files.
 </dl>
 
 <dl>
-<dt><code>-dIgnoreTTEncoding</code>
-<dd>
-Force the PDF interpreter to use an encoding specified in the 'cmap' table
-of embedded TrueType fonts and ignore the Encoding dictionary.
-This is a last resort measure for the files that have an incorrect Encoding
-entry for a TrueType font dictionary. This option is known to cause
-regressions and should not be used routinely.
-</dl>
-
-<dl>
 <dt><code>-dShowAnnots=false</code>
 <dd>
 Don't enumerate anntoations associated with the page objects through
@@ -2546,6 +2536,11 @@ currently necessary when redirecting device output to standard output.
 To redirect stdout to stderr use <code>-sstdout=%stderr</code>.
 To cancel redirection of stdout use <code>-sstdout=%stdout</code>
 or <code>-sstdout=-</code>.
+<p>
+Note that this redirects PostScript output to %stdout but <b>does not</b>
+change the destination FILE of device output as with <tt>-sOutputFile=-</tt>
+or even <tt>-sOutputFile=%stdout</tt> since devices write directly using
+the stdout FILE * pointer with C function calls such as fwrite or fputs.
 </dl>
 
 <dl>
@@ -3690,7 +3685,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.70, 31 July 2009
+<small>Ghostscript version 8.71, 3 February 2010
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

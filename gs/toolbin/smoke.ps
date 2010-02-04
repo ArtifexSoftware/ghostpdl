@@ -23,7 +23,7 @@
       (---------------- ) print dup print ( ----------------) = flush
       /JOB save def
 %(BEFORE: ) print currentpagedevice === flush
-      { run } execute flush
+      { run } .execute pop flush
       count { clear } exch 2 .execn
       countdictstack cleardictstack
       (Stack depths: ) print 2 array astore == flush

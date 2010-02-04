@@ -491,11 +491,11 @@ gs_state_copy(gs_state * pgs, gs_memory_t * mem)
 
     pgs->view_clip = 0;
     pnew = gstate_clone(pgs, mem, "gs_gstate", copy_for_gstate);
+    if (pnew == 0)
+	return 0;
     clip_stack_rc_adjust(pnew->clip_stack, 1, "gs_state_copy");
     rc_increment(pnew->dfilter_stack);
     pgs->view_clip = view_clip;
-    if (pnew == 0)
-	return 0;
     pnew->saved = 0;
     /*
      * Prevent dangling references from the show_gstate pointer.  If

@@ -264,7 +264,7 @@ ibnum_h=$(PSSRC)ibnum.h
 zcolor_h=$(PSSRC)zcolor.h
 zcie_h=$(PSSRC)zcie.h
 zicc_h=$(PSSRC)zicc.h
-
+zfrsd_h=$(PSSRC)zfrsd.h
 
 ### Initialization and scanning
 
@@ -459,7 +459,8 @@ $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
  $(gzstate_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxcmap_h)\
  $(gxcspace_h) $(gxcolor2_h) $(gxpcolor_h)\
  $(idict_h) $(icolor_h) $(idparam_h) $(iname_h) $(iutil_h) $(icsmap_h)\
- $(ifunc_h) $(zht2_h) $(zcolor_h) $(zcie_h) $(zicc_h) $(gscspace_h)
+ $(ifunc_h) $(zht2_h) $(zcolor_h) $(zcie_h) $(zicc_h) $(gscspace_h)\
+ $(zfrsd_h)
 	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c 
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
@@ -922,7 +923,7 @@ $(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
  $(gsfname_h) $(gxiodev_h)\
  $(sfilter_h) $(stream_h) $(strimpl_h)\
  $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(istruct_h) $(store_h)\
- $(zfile_h)
+ $(zfile_h) $(zfrsd_h)
 	$(PSCC) $(PSO_)zfrsd.$(OBJ) $(C_) $(PSSRC)zfrsd.c
 
 # ======================== PostScript Level 2 ======================== #
@@ -1675,7 +1676,7 @@ $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(memory__h) $(string__h)\
 
 # ---------------- ICCBased color spaces ---------------- #
 
-iccread_=$(PSOBJ)zicc.$(OBJ) $(PSOBJ)gsicc_create.$(OBJ)
+iccread_=$(PSOBJ)zicc.$(OBJ)
 $(PSD)icc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
                 $(GLD)sicclib.dev
 	$(SETMOD) $(PSD)icc $(iccread_)
@@ -1689,15 +1690,6 @@ $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(icie_h) $(ialloc_h) $(zicc_h) $(gsiccmanage_h) $(GX) $(gxistate_h)\
  $(gserror_h) $(gsicc_create_h)
 	$(PSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
-
-# Note that gsicc_create requires compile with lcms to obtain icc34.h 
-# header file that is used for creating ICC structures from PS objects.
-# This is needed even if PDF/PS interpreter is built with a different CMS
-$(PSOBJ)gsicc_create.$(OBJ) : $(PSSRC)gsicc_create.c $(GX) $(string__h)\
- $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
- $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsiccmanage_h) $(gsicccache_h)\
- $(math__h)
-	$(PSLCMSCC) $(PSO_)gsicc_create.$(OBJ) $(C_) $(PSSRC)gsicc_create.c
 
 # ---------------- Support for %disk IODevices ---------------- #
 

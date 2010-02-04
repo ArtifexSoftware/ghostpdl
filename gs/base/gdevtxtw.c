@@ -318,7 +318,8 @@ txtwrite_fill_triangle(gx_device * dev,
 static int
 txtwrite_draw_thin_line(gx_device * dev,
 		    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
-		    const gx_device_color * pdevc, gs_logical_operation_t lop)
+		    const gx_device_color * pdevc, gs_logical_operation_t lop,
+		    fixed adjustx, fixed adjusty)
 {
     return 0;
 }

@@ -1357,7 +1357,9 @@ stroke_fill(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     if (plp->thin) {
 	/* Minimum-width line, don't have to be careful with caps/joins. */
 	return (*dev_proc(dev, draw_thin_line))(dev, lix, liy, litox, litoy,
-						pdevc, pis->log_op);
+						pdevc, pis->log_op,
+						pis->fill_adjust.x,
+						pis->fill_adjust.y);
     }
     /* Check for being able to fill directly. */
     {
