@@ -1,4 +1,4 @@
-#    Copyright (C) 1996-2008 Artifex Software. Inc. All rights reserved.
+#    Copyright (C) 1996-2010 Artifex Software. Inc. All rights reserved.
 #    See the file LICENSE for use and distribution terms.
 
 # makefile for PCL* interpreter libraries and for PJL.
@@ -52,7 +52,7 @@ plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)
 ################ PJL ################
 
 
-PJLVERSION="8.71 (unreleased snapshot)"
+PJLVERSION="8.71 (release candidate)"
 
 # Translate pjl file system volume "0:" to a directory of your choice 
 # Use forward slash '/' not '\\'; no trailing slash 
