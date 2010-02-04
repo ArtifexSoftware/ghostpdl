@@ -85,5 +85,5 @@ $(SVGOBJ)svg.dev: $(SVG_MAK) $(ECHOGS_XE) $(SVG_OBJS) \
 		$(SVGGEN)pl.dev $(SVGGEN)$(PL_SCALER).dev $(SVGGEN)pjl.dev
 	$(SETMOD) $(SVGOBJ)svg $(SVG_OBJS)
 	$(ADDMOD) $(SVGOBJ)svg -include $(SVGGEN)expat $(SVGGEN)pl $(SVGGEN)$(PL_SCALER) $(SVGGEN)pjl.dev
-	$(ADDMOD) $(SVGOBJ)svg -lib profiler
+#	$(ADDMOD) $(SVGOBJ)svg -lib profiler
 

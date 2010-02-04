@@ -137,9 +137,12 @@ BSCFILE=$(GENDIR)\svg.bsc
 
 # Main file's name
 # this is already in pcl6_gcc.mak
-#SVG_TOP_OBJ=$(SVGOBJDIR)\svgtop.$(OBJ)
-#TOP_OBJ+= $(SVG_TOP_OBJ)
-#XCFLAGS=-DSVG_INCLUDED
+SVG_TOP_OBJ=$(SVGOBJDIR)\svgtop.$(OBJ)
+TOP_OBJ= $(SVG_TOP_OBJ)
+
+# Target SVG
+TARGET_DEVS=$(SVGOBJDIR)\svg.dev
+PDL_INCLUDE_FLAGS=/DSVG_INCLUDED
 
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
 !ifndef COMPILE_INITS
@@ -155,6 +158,5 @@ GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long long"
 !include $(MAINSRCDIR)\pcl6_msvc.mak
 
 # Subsystems
-# this is already in pcl6_gcc.mak
-#include $(SVGSRCDIR)\svg.mak
+!include $(SVGSRCDIR)\svg.mak
 !include $(GLSRCDIR)\expat.mak
