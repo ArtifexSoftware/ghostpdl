@@ -1502,22 +1502,17 @@ gsicc_create_defg_common(  )
 
 /* If we have an ABC matrix, a DecodeLMN and an LMN matrix we have to mash together the table, Decode ABC (if present) and
    ABC matrix. */
-gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
-                   bool has_a_proc, bool has_lmn_procs)
+gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory,
+                      bool has_a_proc, bool has_lmn_procs, bool has_def_procs)
 {
-
-
 
     return(0);
 }
 
 int
 gsicc_create_fromdef(gs_cie_def *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
-                   bool has_a_proc, bool has_lmn_procs)
+                   bool has_a_proc, bool has_lmn_procs, bool had_def_procs)
 {
-
-
-
     return(0);
 }
 

@@ -92,10 +92,10 @@ cs_proc_concretize_color(gx_concretize_CIEDEFG);
 cs_proc_concretize_color(gx_concretize_CIEDEF);
 cs_proc_concretize_color(gx_concretize_CIEABC);
 #if ENABLE_CUSTOM_COLOR_CALLBACK
-cs_proc_remap_color(gx_remap_CIEDEFG);
-cs_proc_remap_color(gx_remap_CIEDEF);
 cs_proc_remap_color(gx_remap_IndexedSpace);
 #endif
+cs_proc_remap_color(gx_remap_CIEDEF);
+cs_proc_remap_color(gx_remap_CIEDEFG);
 cs_proc_remap_color(gx_remap_CIEA);
 cs_proc_remap_color(gx_remap_CIEABC);
 cs_proc_concretize_color(gx_concretize_CIEA);
