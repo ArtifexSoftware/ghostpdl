@@ -45,7 +45,7 @@ svg_parse_length(char *str, float percent, float font_size)
     char *end;
     float val;
 
-    val = strtof(str, &end);
+    val = (float)strtod(str, &end);
     if (end == str)
 	return 0; /* failed */
 
@@ -76,7 +76,7 @@ svg_parse_angle(char *str)
     char *end;
     float val;
 
-    val = strtof(str, &end);
+    val = (float)strtod(str, &end);
     if (end == str)
 	return 0; /* failed */
 
