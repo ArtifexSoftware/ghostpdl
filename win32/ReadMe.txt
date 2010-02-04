@@ -98,11 +98,11 @@ settings are as follows:
   svg
     Debug
       Cmd     ..\svg\debugobj\gsvg.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp test.svg
+      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.svg
       Dir     ..
     Release
       Cmd     ..\svg\obj\gsvg.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp test.svg
+      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.svg
       Dir     ..
   xps
     Debug
