@@ -153,14 +153,23 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
+    /* For now, to avoid problems just use default CMYK for this */
+    (*ppcs_icc)->cmm_icc_profile_data = pis->icc_manager->default_cmyk;
+    rc_increment(pis->icc_manager->default_cmyk);
+#if 0
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, pis->memory, NULL, 0);
     code = gsicc_create_fromdefg(pcs->params.defg, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), pis->memory, 
                     !has_no_abc_procs, !has_no_lmn_procs, !has_no_defg_procs);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+#endif
     /* Now we can blow away the CIEABC color space and replace it with the ICC color space.
        Question is do we need to worry if pis is a pgs?  */
     code = gs_setcolorspace_only(pgs, (*ppcs_icc)); /* Retains current color in graphic state */
+    /* If current color space is still active, assign profile to it too */
+    if (pcs->type != NULL) {
+        code = gsicc_set_gscs_profile(pcs, (*ppcs_icc)->cmm_icc_profile_data, pis->memory);
+    }
     return(0);
 }
 
@@ -181,7 +190,10 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
         return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     } else {
         /* Once the ICC color space is set, we should be doing all the remaps through the ICC remap */
-        return gs_rethrow(-1, "Error ICC CIEDEF profile already set.  Should not ever be here.");
+        /* Use the color space that is set in the graphic state. Since we just set that one.... */
+        gs_state *pgs = (gs_state*) pis;
+        gs_color_space *pcs_icc = gs_currentcolorspace(pgs);
+        return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     }
 }
 
@@ -204,8 +216,11 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
         code = gx_ciedefg_to_icc(&pcs_icc, pcs, pis);
         return((*pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     } else {
-        /* Once the ICC color space is set, we should be doing all the remaps through the ICC remap */
-        return gs_rethrow(-1, "Error ICC CIEDEFG profile already set.  Should not ever be here.");
+        /* Once the ICC color space is set, we should be doing all the concrete ops through the ICC */
+        /* Use the color space that is set in the graphic state. Since we just set that one.... */
+        gs_state *pgs = (gs_state*) pis;
+        gs_color_space *pcs_icc = gs_currentcolorspace(pgs);
+        return((*pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     }
 }
 
@@ -229,20 +244,28 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs_
     bool has_no_def_procs = (def_caches->floats.params.is_identity &&
                          (def_caches)[1].floats.params.is_identity && 
                          (def_caches)[2].floats.params.is_identity);
-
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, pis->memory);
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
+    /* For now, to avoid problems just use default RGB for this */
+    (*ppcs_icc)->cmm_icc_profile_data = pis->icc_manager->default_rgb;
+    rc_increment(pis->icc_manager->default_rgb);
+#if 0
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, pis->memory, NULL, 0);
     code = gsicc_create_fromdef(pcs->params.def, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), pis->memory, 
                     !has_no_abc_procs, !has_no_lmn_procs, !has_no_def_procs);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+#endif
     /* Now we can blow away the CIEABC color space and replace it with the ICC color space.
        Question is do we need to worry if pis is a pgs?  */
     code = gs_setcolorspace_only(pgs, (*ppcs_icc)); /* Retains current color in graphic state */
+    /* If current color space is still active, assign profile to it too */
+    if (pcs->type != NULL) {
+        code = gsicc_set_gscs_profile(pcs, (*ppcs_icc)->cmm_icc_profile_data, pis->memory);
+    }
     return(0);
 }
 
@@ -263,7 +286,10 @@ gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
         return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     } else {
         /* Once the ICC color space is set, we should be doing all the remaps through the ICC remap */
-        return gs_rethrow(-1, "Error ICC CIEDEF profile already set.  Should not ever be here.");
+        /* Use the color space that is set in the graphic state. Since we just set that one.... */
+        gs_state *pgs = (gs_state*) pis;
+        gs_color_space *pcs_icc = gs_currentcolorspace(pgs);
+        return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     }
 }
 
@@ -321,6 +347,10 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs_
     /* Now we can blow away the CIEABC color space and replace it with the ICC color space.
        Question is do we need to worry if pis is a pgs?  */
     code = gs_setcolorspace_only(pgs, (*ppcs_icc)); /* Retains current color in graphic state */
+    /* If current color space is still active, assign profile to it too */
+    if (pcs->type != NULL) {
+        code = gsicc_set_gscs_profile(pcs, (*ppcs_icc)->cmm_icc_profile_data, pis->memory);
+    }
     return(0);
 }
 
@@ -344,7 +374,10 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
         return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     } else {
         /* Once the ICC color space is set, we should be doing all the remaps through the ICC remap */
-        return gs_rethrow(-1, "Error ICC CIEABC profile already set.  Should not ever be here.");
+        /* Use the color space that is set in the graphic state. Since we just set that one.... */
+        gs_state *pgs = (gs_state*) pis;
+        gs_color_space *pcs_icc = gs_currentcolorspace(pgs);
+        return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     }
 }
 
@@ -365,8 +398,11 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
         gx_cieabc_to_icc(&pcs_icc, pcs, pis);
         return((*pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     } else {
-        /* Once the ICC color space is set, we should be doing all the remaps through the ICC remap */
-        return gs_rethrow(-1, "Error ICC CIEABC profile already set.  Should not ever be here.");
+        /* Once the ICC color space is set, we should be doing all the concrete ops through the ICC */
+        /* Use the color space that is set in the graphic state. Since we just set that one.... */
+        gs_state *pgs = (gs_state*) pis;
+        gs_color_space *pcs_icc = gs_currentcolorspace(pgs);
+        return((*pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     }
 }
 
@@ -397,6 +433,10 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs_im
     /* Now we can blow away the CIEA color space and replace it with the ICC color space.
        Question is do we need to worry if pis is a pgs?  */
     code = gs_setcolorspace_only(pgs, (*ppcs_icc)); /* Retains current color in graphic state */
+    /* If current color space is still active, assign profile to it too */
+    if (pcs->type != NULL) {
+        code = gsicc_set_gscs_profile(pcs, (*ppcs_icc)->cmm_icc_profile_data, pis->memory);
+    }
     return(code);
 }
 
@@ -417,7 +457,10 @@ gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
         return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     } else {
         /* Once the ICC color space is set, we should be doing all the remaps through the ICC remap */
-        return gs_rethrow(-1, "Error ICC CIEA profile already set.  Should not ever be here.");
+        /* Use the color space that is set in the graphic state. Since we just set that one.... */
+        gs_state *pgs = (gs_state*) pis;
+        gs_color_space *pcs_icc = gs_currentcolorspace(pgs);
+        return((*pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     }
 }
 
@@ -439,8 +482,11 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
         code = gx_ciea_to_icc(&pcs_icc, pcs, pis);
         return((*pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     } else {
-        /* Once the ICC color space is set, we should be doing all the remaps through the ICC remap */
-        return gs_rethrow(-1, "Error ICC CIEA profile already set.  Should not ever be here.");
+        /* Once the ICC color space is set, we should be doing all the concrete ops through the ICC */
+        /* Use the color space that is set in the graphic state. Since we just set that one.... */
+        gs_state *pgs = (gs_state*) pis;
+        gs_color_space *pcs_icc = gs_currentcolorspace(pgs);
+        return((*pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     }
 }
 
