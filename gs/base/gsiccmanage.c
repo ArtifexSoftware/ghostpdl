@@ -643,8 +643,10 @@ gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, gs_memor
 {
     if (pcs != NULL) {
 #if ICC_DUMP
-        dump_icc_buffer(icc_profile->buffer_size, "set_gscs", icc_profile->buffer);
-        global_icc_index++;
+        if (icc_profile->buffer) {
+            dump_icc_buffer(icc_profile->buffer_size, "set_gscs", icc_profile->buffer);
+            global_icc_index++;
+        }
 #endif
         if (pcs->cmm_icc_profile_data != NULL) {
             /* There is already a profile set there */

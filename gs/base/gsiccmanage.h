@@ -16,7 +16,7 @@
 #ifndef gsiccmanage_INCLUDED
 #  define gsiccmanage_INCLUDED
 
-#define ICC_DUMP 1
+#define ICC_DUMP 0
 
 /* Define the default ICC profiles in the file system */
 #define DEFAULT_GRAY_ICC  "iccprofiles/default_gray.icc"
