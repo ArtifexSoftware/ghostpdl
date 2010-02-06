@@ -2858,7 +2858,11 @@ pdf14_end_transparency_group(gx_device *dev,
         parent_color->get_cmap_procs = NULL;
         parent_color->parent_color_comp_index = NULL;
         parent_color->parent_color_mapping_procs = NULL;
-        parent_color->icc_profile = NULL;
+        if (parent_color->icc_profile != NULL){
+            pis->icc_manager->device_profile = parent_color->icc_profile;
+            rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_group");
+            parent_color->icc_profile = NULL;
+       }
     }
     vd_release_dc;
     return code;
@@ -3571,32 +3575,29 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
         if (!(parent_color->parent_color_mapping_procs == NULL && 
             parent_color->parent_color_comp_index == NULL)) {
 
-                pis->get_cmap_procs = parent_color->get_cmap_procs;
-                gx_set_cmap_procs(pis, dev);
-                pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
-                pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
-                pdev->color_info.polarity = parent_color->polarity;
-                pdev->color_info.num_components = parent_color->num_components;
-                pdev->color_info.depth = parent_color->depth;
-                pdev->blend_procs = parent_color->parent_blending_procs;
-                pdev->ctx->additive = parent_color->isadditive;
-                pdev->pdf14_procs = parent_color->unpack_procs;
-                parent_color->get_cmap_procs = NULL;
-                parent_color->parent_color_comp_index = NULL;
-                parent_color->parent_color_mapping_procs = NULL;
-                memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
-                memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
-
-                /* Take care of the ICC profile */
-
-                if (parent_color->icc_profile != NULL){
-                    pis->icc_manager->device_profile = parent_color->icc_profile;
-                }
-                
-
+            pis->get_cmap_procs = parent_color->get_cmap_procs;
+            gx_set_cmap_procs(pis, dev);
+            pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
+            pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+            pdev->color_info.polarity = parent_color->polarity;
+            pdev->color_info.num_components = parent_color->num_components;
+            pdev->color_info.depth = parent_color->depth;
+            pdev->blend_procs = parent_color->parent_blending_procs;
+            pdev->ctx->additive = parent_color->isadditive;
+            pdev->pdf14_procs = parent_color->unpack_procs;
+            parent_color->get_cmap_procs = NULL;
+            parent_color->parent_color_comp_index = NULL;
+            parent_color->parent_color_mapping_procs = NULL;
+            memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+            memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+            /* Take care of the ICC profile */
+            if (parent_color->icc_profile != NULL){
+                pis->icc_manager->device_profile = parent_color->icc_profile;
+                rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_mask");
+                parent_color->icc_profile = NULL;
+            }
         }
     }
-
     return ok;
 }
 
