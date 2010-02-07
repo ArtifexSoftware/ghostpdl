@@ -456,6 +456,7 @@ gscolor_h=$(GLSRC)gscolor.h $(gxtmap_h)
 gsstate_h=$(GLSRC)gsstate.h\
  $(gscolor_h) $(gscpm_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
 gscolorbuffer_h=$(GLSRC)gscolorbuffer.h
+gsicc_create_h=$(GLSRC)gsicc_create.h $(gscie_h)  
 
 gzacpath_h=$(GLSRC)gzacpath.h $(GLSRC)gxcpath.h
 gzcpath_h=$(GLSRC)gzcpath.h $(gxcpath_h) $(gzpath_h)
@@ -2483,7 +2484,7 @@ $(GLOBJ)gsiccmanage.$(OBJ) : $(GLSRC)gsiccmanage.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
  $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)\
  $(gsicc_profilecache_h) $(gserrors_h) $(string__h) $(gxclist_h) $(gxcldev_h)\
- $(gzstate_h)
+ $(gzstate_h) $(gsicc_create_h)
 	$(GLCC) $(GLO_)gsiccmanage.$(OBJ) $(C_) $(GLSRC)gsiccmanage.c
 
 $(GLOBJ)gsicccache.$(OBJ) : $(GLSRC)gsicccache.c $(GX) $(stdpre_h)\

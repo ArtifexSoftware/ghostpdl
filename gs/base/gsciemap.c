@@ -326,13 +326,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs_
     gs_color_space *palt_cs = pcs->base_space;
     gs_state *pgs = (gs_state*) pis;
     gx_cie_vector_cache *abc_caches = &(pcs->params.abc->caches.DecodeABC.caches[0]);
-    gx_cie_scalar_cache    *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]); 
-    bool has_no_abc_procs = (abc_caches->floats.params.is_identity &&
-                         (abc_caches)[1].floats.params.is_identity && 
-                         (abc_caches)[2].floats.params.is_identity);
-    bool has_no_lmn_procs = (lmn_caches->floats.params.is_identity &&
-                         (lmn_caches)[1].floats.params.is_identity && 
-                         (lmn_caches)[2].floats.params.is_identity);
+    gx_cie_scalar_cache *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]); 
 
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, pis->memory);
@@ -342,7 +336,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs_
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, pis->memory, NULL, 0);
     code = gsicc_create_fromabc(pcs->params.abc, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), pis->memory, 
-                    !has_no_abc_procs, !has_no_lmn_procs);
+                    abc_caches, lmn_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
     /* Now we can blow away the CIEABC color space and replace it with the ICC color space.
        Question is do we need to worry if pis is a pgs?  */
@@ -414,11 +408,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs_im
     gs_color_space *palt_cs = pcs->base_space;
     gs_state *pgs = (gs_state*) pis;
     gx_cie_vector_cache *a_cache = &(pcs->params.a->caches.DecodeA);
-    gx_cie_scalar_cache    *lmn_caches = &(pcs->params.a->common.caches.DecodeLMN[0]); 
-    bool has_no_a_procs = a_cache->floats.params.is_identity;
-    bool has_no_lmn_procs = (lmn_caches->floats.params.is_identity &&
-                         (lmn_caches)[1].floats.params.is_identity && 
-                         (lmn_caches)[2].floats.params.is_identity);
+    gx_cie_scalar_cache    *lmn_caches = &(pcs->params.a->common.caches.DecodeLMN[0]);
 
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, pis->memory);
@@ -428,7 +418,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs_im
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, pis->memory, NULL, 0);
     code = gsicc_create_froma(pcs->params.a, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), pis->memory, 
-                    !has_no_a_procs, !has_no_lmn_procs);
+                    a_cache, lmn_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
     /* Now we can blow away the CIEA color space and replace it with the ICC color space.
        Question is do we need to worry if pis is a pgs?  */
@@ -439,7 +429,6 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, const gs_color_space *pcs, const gs_im
     }
     return(code);
 }
-
 
 gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,

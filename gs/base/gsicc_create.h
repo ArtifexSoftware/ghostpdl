@@ -14,11 +14,13 @@
 #ifndef gsicc_create_INCLUDED
 #  define gsicc_create_INCLUDED
 
+#include "gscie.h"
+
 void gsicc_create_fromcrd(unsigned char *buffer, gs_memory_t *memory);
 int gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
-                   bool has_a_proc, bool has_lmn_procs);
+                   gx_cie_vector_cache *a_cache, gx_cie_scalar_cache *lmn_caches);
 int gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **buffer, int *profile_size_out, gs_memory_t *memory,
-                          bool has_abc_procs, bool has_lmn_procs);
+                          gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches);
 int gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
                    bool has_abc_proc, bool has_lmn_procs, bool has_defg_procs);
 int gsicc_create_fromdef(gs_cie_def *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 

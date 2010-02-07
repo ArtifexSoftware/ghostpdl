@@ -1286,7 +1286,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, float *a_c
    in the ABC color space definition are the identity. */
 int
 gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
-                     bool has_abc_procs, bool has_lmn_procs)
+                     gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches)
 {
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
@@ -1295,6 +1295,12 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
     gs_matrix3 combined_matrix, matrix_input_trans;
     float *a_curves, *m_curves, *b_curves, *curr_pos, *clut;
     int clut_grid_size;
+    bool has_abc_procs = !((abc_caches->floats.params.is_identity &&
+                         (abc_caches)[1].floats.params.is_identity && 
+                         (abc_caches)[2].floats.params.is_identity));
+    bool has_lmn_procs = !((lmn_caches->floats.params.is_identity &&
+                         (lmn_caches)[1].floats.params.is_identity && 
+                         (lmn_caches)[2].floats.params.is_identity));
 
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
     gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
@@ -1430,7 +1436,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
 
 int
 gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
-                   bool has_a_proc, bool has_lmn_procs)
+                   gx_cie_vector_cache *a_cache, gx_cie_scalar_cache *lmn_caches)
 {
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
@@ -1438,10 +1444,13 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_si
     gs_matrix3 *matrix_input;
     gs_matrix3 matrix_input_trans;
     float *a_curve, *m_curves, *b_curves, *curr_pos, *clut;
-    
+    bool has_a_proc = !(a_cache->floats.params.is_identity);
+    bool has_lmn_procs = !(lmn_caches->floats.params.is_identity &&
+                         (lmn_caches)[1].floats.params.is_identity && 
+                         (lmn_caches)[2].floats.params.is_identity);
+
     /* Fill in the common stuff */
     setheader_common(header);
-
     /* We will use an input type class which keeps us from having to
        create an inverse.  We will keep the data a generic 3 color.  
        Since we are doing PS color management the PCS is XYZ */

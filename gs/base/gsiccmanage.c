@@ -31,6 +31,7 @@
 #include "gxclist.h"
 #include "gxcldev.h"
 #include "gzstate.h"
+#include "gsicc_create.h"
 
 #define ICC_HEADER_SIZE 128
 
@@ -969,15 +970,15 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer)
      If we do not have one then we will use data from 
      the ICC manager that is based upon the current color space. */
  cmm_profile_t*
- gsicc_get_gscs_profile(const gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
+ gsicc_get_gscs_profile(gs_color_space *gs_colorspace, gsicc_manager_t *icc_manager)
  {
      cmm_profile_t *profile = gs_colorspace->cmm_icc_profile_data;
      gs_color_space_index color_space_index = gs_color_space_get_index(gs_colorspace);
+     int code;
 
      if (profile != NULL )
         return(profile);
-
-     /* Else, return the default types */
+     /* else, return the default types */
      switch( color_space_index ) {
 	case gs_color_space_index_DeviceGray:
             return(icc_manager->default_gray);
@@ -988,8 +989,8 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer)
 	case gs_color_space_index_DeviceCMYK:
             return(icc_manager->default_cmyk);
             break;
-	case gs_color_space_index_DevicePixel:
             /* Not sure yet what our response to 
+	case gs_color_space_index_DevicePixel:
                this should be */
             return(0);
             break;
@@ -999,16 +1000,33 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer)
             return(0);
             break;
        case gs_color_space_index_CIEDEFG:
+           /* For now just use default CMYK to avoid segfault.  MJV to fix */
+           gs_colorspace->cmm_icc_profile_data = icc_manager->default_cmyk;
+           rc_increment(icc_manager->default_cmyk);
+           return(gs_colorspace->cmm_icc_profile_data);
            /* Need to convert to an ICC form */
             break;
         case gs_color_space_index_CIEDEF:
+           /* For now just use default RGB to avoid segfault.  MJV to fix */
+           gs_colorspace->cmm_icc_profile_data = icc_manager->default_rgb;
+           rc_increment(icc_manager->default_rgb);
+           return(gs_colorspace->cmm_icc_profile_data);
            /* Need to convert to an ICC form */
             break;
         case gs_color_space_index_CIEABC:
-           /* Need to convert to an ICC form */
+            gs_colorspace->cmm_icc_profile_data = gsicc_profile_new(NULL, icc_manager->memory, NULL, 0);
+            code = gsicc_create_fromabc(gs_colorspace->params.a, &(gs_colorspace->cmm_icc_profile_data->buffer), 
+                            &(gs_colorspace->cmm_icc_profile_data->buffer_size), icc_manager->memory, 
+                            &(gs_colorspace->params.a->caches.DecodeA),&(gs_colorspace->params.a->common.caches.DecodeLMN[0]));
+            return(gs_colorspace->cmm_icc_profile_data);
             break;
         case gs_color_space_index_CIEA:
-           /* Need to convert to an ICC form */
+            gs_colorspace->cmm_icc_profile_data = gsicc_profile_new(NULL, icc_manager->memory, NULL, 0);
+            code = gsicc_create_froma(gs_colorspace->params.abc, &(gs_colorspace->cmm_icc_profile_data->buffer), 
+                            &(gs_colorspace->cmm_icc_profile_data->buffer_size), icc_manager->memory, 
+                            &(gs_colorspace->params.abc->caches.DecodeABC.caches[0]), 
+                            &(gs_colorspace->params.abc->common.caches.DecodeLMN[0]));
+            return(gs_colorspace->cmm_icc_profile_data);
             break;
         case gs_color_space_index_Separation:
             /* Caller should use named color path */
