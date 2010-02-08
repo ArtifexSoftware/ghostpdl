@@ -2298,21 +2298,19 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
 #endif
     if (cdevproc_result == NULL) {
+	info.members = 0;
 	code = ofont->procs.glyph_info(ofont, glyph, NULL,
 					    (GLYPH_INFO_WIDTH0 << wmode) |
 					    (GLYPH_INFO_VVECTOR0 << wmode) | 
 					    allow_cdevproc_callout,
 					    &info);
-	if (code == 0) {
 	/* fixme : Move this call before cfont->procs.glyph_info. */
-	    if (info.members & GLYPH_INFO_CDEVPROC) {
-		if (allow_cdevproc_callout)
-		    return TEXT_PROCESS_CDEVPROC;
-		else
-		    return_error(gs_error_rangecheck);
-	    }
-	} else
-	    info.members = 0;
+	if (info.members & GLYPH_INFO_CDEVPROC) {
+	    if (allow_cdevproc_callout)
+		return TEXT_PROCESS_CDEVPROC;
+	else
+	    return_error(gs_error_rangecheck);
+	}
     } else {
 	info.width[0].x = cdevproc_result[0];
 	info.width[0].y = cdevproc_result[1];
