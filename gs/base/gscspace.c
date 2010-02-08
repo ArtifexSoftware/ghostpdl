@@ -118,6 +118,7 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
     pcs->base_space = NULL;
     pcs->pclient_color_space_data = NULL;
     pcs->cmm_icc_profile_data = NULL;
+    pcs->icc_equivalent = NULL;
     return pcs;
 }
 
@@ -170,25 +171,32 @@ gs_color_space_get_index(const gs_color_space * pcs)
 /* See if the space is CIE based */
 bool gs_color_space_is_CIE(const gs_color_space * pcs)
 {
-
     switch(gs_color_space_get_index(pcs)){
-
         case gs_color_space_index_CIEDEFG:
         case gs_color_space_index_CIEDEF:
         case gs_color_space_index_CIEABC:
         case gs_color_space_index_CIEA:
         case gs_color_space_index_ICC:
-
             return true;
-
         break;
-
         default:
-            
             return false;
-
     }
+}
 
+/* See if the space is Postscript CIE based */
+bool gs_color_space_is_PSCIE(const gs_color_space * pcs)
+{
+    switch(gs_color_space_get_index(pcs)){
+        case gs_color_space_index_CIEDEFG:
+        case gs_color_space_index_CIEDEF:
+        case gs_color_space_index_CIEABC:
+        case gs_color_space_index_CIEA:
+            return true;
+        break;
+        default:            
+            return false;
+    }
 }
 
 /* See if the space is ICC based */
@@ -196,7 +204,6 @@ bool gs_color_space_is_ICC(const gs_color_space * pcs)
 {
     return(gs_color_space_get_index(pcs) == gs_color_space_index_ICC);
 }
-
 
 /* Get the number of components in a color space. */
 int
@@ -738,7 +745,9 @@ ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
 	return ENUM_OBJ(pcs->pclient_color_space_data);
     if (index == 2)
  	return ENUM_OBJ(pcs->cmm_icc_profile_data);
-    return ENUM_USING(*pcs->type->stype, vptr, size, index - 3);
+    if (index == 3)
+        return ENUM_OBJ(pcs->icc_equivalent);
+    return ENUM_USING(*pcs->type->stype, vptr, size, index - 4);
     ENUM_PTRS_END_PROC
 }
 static 
@@ -747,6 +756,7 @@ RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
     RELOC_VAR(pcs->base_space);
     RELOC_VAR(pcs->pclient_color_space_data);
     RELOC_VAR(pcs->cmm_icc_profile_data);
+    RELOC_VAR(pcs->icc_equivalent);
     RELOC_USING(*pcs->type->stype, vptr, size);
 }
 RELOC_PTRS_END

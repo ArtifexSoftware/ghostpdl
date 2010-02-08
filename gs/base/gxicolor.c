@@ -118,7 +118,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     fixed xprev, yprev;
     fixed pdyx, pdyy;		/* edge of parallelogram */
     int vci, vdi;
-    const gs_color_space *pcs = penum->pcs;
+    const gs_color_space *pcs;
     gs_client_color cc;
     gx_device_color devc1;
     gx_device_color devc2;
@@ -146,6 +146,11 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
 
+    if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
+        pcs = penum->pcs->icc_equivalent;
+    } else {
+        pcs = penum->pcs;
+    }
     pdevc = &devc1;
     pdevc_next = &devc2;
     /* These used to be set by init clues */

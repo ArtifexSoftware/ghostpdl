@@ -51,10 +51,7 @@ cs_proc_install_cspace(gx_install_CIEA);
 extern	int	gx_cie_to_xyz_alloc(gs_imager_state **,
 				    const gs_color_space *, gs_memory_t *);
 extern	void	gx_cie_to_xyz_free(gs_imager_state *);
-
-
 extern int gx_cie_to_xyz_alloc2(gs_color_space * pcs, gs_state * pgs);
-
 
 /* Defined in gsciemap.c */
 

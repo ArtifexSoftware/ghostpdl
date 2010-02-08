@@ -169,7 +169,6 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
 {
-
     gsicc_link_t *icc_link;
     gsicc_rendering_param_t rendering_params;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];

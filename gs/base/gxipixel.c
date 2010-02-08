@@ -35,6 +35,7 @@
 #include "gximage.h"
 #include "gxiparam.h"
 #include "gdevmrop.h"
+#include "gscspace.h"
 
 /* Structure descriptors */
 private_st_gx_image_enum();
@@ -322,6 +323,12 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 
 	image_init_colors(penum, bps, spp, format, decode, pis, dev,
 			  pcs, &device_color);
+        /* If we have a CIE based color space and the icc equivalent profile
+           is not yet set, go ahead and handle that now.  It may already
+           be done due to the above init_colors which may go through remap. */
+        if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
+            gs_colorspace_set_icc_equivalent(pcs, pis->memory);
+        }
 	/* Try to transform non-default RasterOps to something */
 	/* that we implement less expensively. */
 	if (!pim->CombineWithColor)

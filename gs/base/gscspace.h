@@ -299,6 +299,7 @@ struct gs_color_space_s {
     rc_header                  rc;
     gs_id                      id;
     gs_color_space             *base_space;
+    gs_color_space             *icc_equivalent;
     client_color_space_data_t  *pclient_color_space_data;
     cmm_profile_t              *cmm_icc_profile_data;
     union {
@@ -344,6 +345,8 @@ gs_color_space_index gs_color_space_get_index(const gs_color_space *);
 /* Tell if the space is CIE or ICC based */
 bool gs_color_space_is_CIE(const gs_color_space * pcs);
 bool gs_color_space_is_ICC(const gs_color_space * pcs);
+bool gs_color_space_is_PSCIE(const gs_color_space * pcs);
+int gs_colorspace_set_icc_equivalent(gs_color_space *pcs, gs_memory_t *memory);
 
 /* Get the number of components in a color space. */
 int gs_color_space_num_components(const gs_color_space *);
