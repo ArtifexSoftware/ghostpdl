@@ -1309,13 +1309,13 @@ currentdict /CMap_read_dict undef
 
     % get FontMatrix that applies to this CID
     % (needs to convert [D]W[2] values to glyph space)
-    currentfont /FontMatrix get
+    currentdict /FontMatrix get
     % if the currentfont is a CIDFontType 0 CIDFont,
     % we need FDArray font's FontMatrix too
     FontType 9 eq {
-	currentfont 2 index .type9mapcid
+	currentdict 2 index .type9mapcid
 	% <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <FontMatrix> (charstring) <FDArray#>
-	exch pop currentfont /FDArray get exch get /FontMatrix get
+	exch pop currentdict /FDArray get exch get /FontMatrix get
 	% <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <FontMatrix> <FontMatrix2>
 	matrix concatmatrix 
     } if
@@ -1405,7 +1405,6 @@ currentdict /CMap_read_dict undef
     11 -1 roll pop
     % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'>
   end                                   % recover currentdict
-
 } def
 
 % <string> <match> tailmatch ==> <pre> true
