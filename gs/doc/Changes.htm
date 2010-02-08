@@ -8,6 +8,121 @@
 </head>
 <body>
 
+
+<p><strong><a name="2010-02-08T220322.755385Z"></a>
+2010-02-08T22:03:22.755385Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add some notes on what's new in the 8.71 release.
+</pre>
+<p>[doc/News.htm]</p>
+</blockquote>
+
+<p><strong><a name="2010-02-08T200658.778484Z"></a>
+2010-02-08T20:06:58.778484Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the the release dates for the second 8.71 release candidate.
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm man/dvipdf.1 base/gscdef.c man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm man/ps2epsi.1 doc/Install.htm doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm man/gs.1 man/pf2afm.1 doc/Fonts.htm doc/Ps2ps2.htm man/printafm.1 doc/Ps2pdf.htm doc/Develop.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp man/font2c.1 man/gsnd.1 base/version.mak man/pdfopt.1 doc/News.htm man/pdf2ps.1 man/ps2pdf.1 doc/Make.htm doc/Details8.htm doc/Unix-lpr.htm doc/C-style.htm doc/Ps-style.htm doc/History1.htm doc/History2.htm man/gslp.1 man/wftopfa.1 doc/History3.htm man/ps2ps.1 doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 doc/History5.htm doc/History6.htm]</p>
+</blockquote>
+
+<p><strong><a name="2010-02-08T173532.033134Z"></a>
+2010-02-08T17:35:32.033134Z Robin Watts</strong></p>
+<blockquote>
+<pre>
+Update Visual Studio solutions to use the DEVSTUDIO= form of makefile
+invocation, rather than MSVC_STUDIO=8 version. This should isolate the
+solution/projects entirely from the version of visual studio in use.
+
+Simplify the ReadMe.txt file accordingly.
+
+Take the opportunity to add the resource files to the list in the
+ghostscript.vcproj file. This makes no difference to the project in
+terms of building, but enables easy navigation/editing of files
+within VS.
+
+</pre>
+<p>[/trunk/ghostpdl/win32/ReadMe.txt /trunk/ghostpdl/win32/xps.vcproj ghostscript.vcproj /trunk/ghostpdl/win32/pcl.vcproj /trunk/ghostpdl/win32/svg.vcproj /trunk/ghostpdl/win32/language_switch.vcproj]</p>
+</blockquote>
+
+<p><strong><a name="2010-02-08T164547.345828Z"></a>
+2010-02-08T16:45:47.345828Z Ken Sharp</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) bug #691101 (part 2 of 2)
+
+The revisions 10474 and 10476 were intended to address an indeterminism but actually
+introduced a fairly serious regression. The code was changed to return any error value
+from the glyph_info method before testing the members of the 'info' structure passed to
+the method. Previously one of the member could be examined when an error had meant that
+the member was still uniinitialised.
+
+However, these revision missed the fact that the glyph_info method can return a
+'rangecheck' error when they require a CDevProc to be executed. Because the error code
+was tested before checking for a CDevProc, the pdfwrite code never executed the
+CDevproc.
+
+This resulted in a (very) few regressions, this is because the PDF interpreter uses
+a CDevProc to alter the widths of glyphs if a /W array is present in a PDF file.
+
+The code now initialises the member of the structure to 0, which we then test before
+checking the return code. If we need to run a CDevProc we now do so.
+
+Part 2 of this commit explains some further issues with CDevProcs.
+
+</pre>
+<p>[base/gdevpdtt.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-02-08T164518.598274Z"></a>
+2010-02-08T16:45:18.598274Z Ken Sharp</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) bug #691101 (part 1 of 2)
+
+The revision 10603 fixed a number of issues relating to FontMatrix and descendant fonts
+of CIDFonts. However part of the fix, in CIDWProc, used 'currentfont' to address the
+font dictionary instead of 'currentdict', as is done in the rest of the routine.
+
+For rendering devices this works well, but for pdfwrite the two dictionaries are not 
+the same, and this causes PostScript errors.
+
+This error was initially hidden by the revisions 10474 and 10476 which inadvertently 
+caused all CDevProc routines not to execute when using pdfwrite.
+
+This patch alters the CIDWProc to use currentdict instead of currentfont, there are no
+differences with rendering devices but with pdfwrite this causes the CDevProc to 
+execute properly, eliminating a number of errors (when the faulty revisiions 10474
+and 10476 are rolled back)
+
+</pre>
+<p>[Resource/Init/pdf_font.ps]</p>
+</blockquote>
+
+<p><strong><a name="2010-02-04T174757.663462Z"></a>
+2010-02-04T17:47:57.663462Z Lars Uebernickel</strong></p>
+<blockquote>
+<pre>
+Changed MaxStripSize for TIFF devices to default to 8 KB.
+
+This is necessary, because libtiff keeps a whole strip in memory at a time,
+which resulted in very large buffers for big files.  Support of MaxStripSize for
+all TIFF devices which didn't have it before was also added.
+
+</pre>
+<p>[base/gdevtifs.c base/gdevtifs.h tiff/libtiff/tif_config.vc.h base/gdevtsep.c doc/Devices.htm base/gdevtfnx.c base/gdevtfax.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-02-04T033854.455593Z"></a>
+2010-02-04T03:38:54.455593Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update change logs for the 8.71 release candidate.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/Details8.htm doc/Details.htm]</p>
+</blockquote>
+
 <p><strong><a name="2010-02-03T224615.528358Z"></a>
 2010-02-03T22:46:15.528358Z Ralph Giles</strong></p>
 <blockquote>
