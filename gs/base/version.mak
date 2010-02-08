@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2009 Artifex Software, Inc.
+#  Copyright (C) 2001-2010 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -19,7 +19,7 @@ GS_VERSION_MAJOR=8
 GS_VERSION_MINOR=71
 GS_VERSION_MINOR0=71
 # Revision date: year x 10000 + month x 100 + day.
-GS_REVISIONDATE=20100203
+GS_REVISIONDATE=20100208
 # Derived values
 GS_VERSION=$(GS_VERSION_MAJOR)$(GS_VERSION_MINOR0)
 GS_DOT_VERSION=$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR0)
