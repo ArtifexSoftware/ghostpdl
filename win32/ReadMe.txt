@@ -138,15 +138,5 @@ How to use later versions of Visual Studio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Later versions of Visual Studio should import the Solution/Project files
-without any problems. The one area where manual tweaking may be required
-is in the language_switch build.
-
-  In Solution Explorer, right hand click on language_switch
-  Choose Properties from the menu.
-  Choose Configuration: Debug
-  In Configuration Properties -> NMake examine "Build Command Line" and
-  "Rebuild Command Line".
-  Both of these commands contain MSVC_VERSION=8. This may need to be updated
-  to 9 for VS2008, 10 for VS2010 and presumably higher values for later
-  versions.
-  The same change will need to be made under Configuration: Release
+without any problems. When you first open the file, a wizard should allow
+you to convert to the latest version. No manual editing should be required.

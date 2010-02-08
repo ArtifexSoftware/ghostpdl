@@ -23,9 +23,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 bsc"
-				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 clean"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;"
 				IncludeSearchPath=""
@@ -43,9 +43,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak SBR=1 &amp;&amp; nmake -f svg_msvc.mak bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak SBR=1 &amp;&amp; nmake -f svg_msvc.mak bsc"
-				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak clean"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""

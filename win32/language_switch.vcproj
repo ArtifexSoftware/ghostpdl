@@ -23,9 +23,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 bsc"
-				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 bsc"
-				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 MSVC_VERSION=8 clean"
+				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;"
 				IncludeSearchPath=""
@@ -43,9 +43,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak MSVC_VERSION=8 SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak bsc"
-				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak MSVC_VERSION=8 SBR=1  &amp;&amp; nmake -f pspcl6_msvc.mak bsc"
-				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak clean"
+				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak DEVSTUDIO= SBR=1  &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
