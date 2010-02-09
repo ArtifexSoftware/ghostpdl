@@ -149,7 +149,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
                          (defg_caches)[3].floats.params.is_identity);
 
     /* build the ICC color space object */
-    code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
+    code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
@@ -179,7 +179,7 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the DEFG space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory);
+        gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         /* For now assign default CMYK.  MJV to fix */
         pcs_icc->cmm_icc_profile_data = pis->icc_manager->default_cmyk;
         rc_increment(pis->icc_manager->default_cmyk);
@@ -206,7 +206,7 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the DEFG space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        code = gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory);
+        code = gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         /* For now assign default CMYK.  MJV to fix */
         pcs_icc->cmm_icc_profile_data = pis->icc_manager->default_cmyk;
         rc_increment(pis->icc_manager->default_cmyk);
@@ -237,7 +237,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
                          (def_caches)[1].floats.params.is_identity && 
                          (def_caches)[2].floats.params.is_identity);
     /* build the ICC color space object */
-    code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
+    code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
@@ -269,7 +269,7 @@ gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the DEF space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        gx_ciedef_to_icc(&pcs_icc, pcs, pis->memory);
+        gx_ciedef_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         /* MJV to fix.  Using default RGB here */
         pcs_icc->cmm_icc_profile_data = pis->icc_manager->default_rgb;
         rc_increment(pis->icc_manager->default_rgb);
@@ -296,7 +296,7 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the DEF space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        code = gx_ciedef_to_icc(&pcs_icc, pcs, pis->memory);
+        code = gx_ciedef_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         /* MJV to fix.  Using default RGB here */
         pcs_icc->cmm_icc_profile_data = pis->icc_manager->default_rgb;
         rc_increment(pis->icc_manager->default_rgb);
@@ -349,7 +349,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the ABC space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        gx_cieabc_to_icc(&pcs_icc, pcs, pis->memory);
+        gx_cieabc_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         return((pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     } else {
         pcs_icc = pcs->icc_equivalent;
@@ -371,7 +371,7 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the ABC space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        gx_cieabc_to_icc(&pcs_icc, pcs, pis->memory);
+        gx_cieabc_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         return((*pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     } else {
         gs_color_space *pcs_icc = pcs->icc_equivalent;
@@ -415,7 +415,7 @@ gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the CIE A space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        code = gx_ciea_to_icc(&pcs_icc, pcs, pis->memory);
+        code = gx_ciea_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         return((pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     } else {
         /* Once the ICC color space is set, we should be doing all the remaps through the ICC equivalent */
@@ -439,7 +439,7 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the CIE A space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        code = gx_ciea_to_icc(&pcs_icc, pcs, pis->memory);
+        code = gx_ciea_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         return((pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     } else {
         /* Once the ICC color space is set, we should be doing all the remaps through the ICC equivalent */
@@ -460,16 +460,16 @@ gs_colorspace_set_icc_equivalent(gs_color_space *pcs, gs_memory_t *memory)
      }
      switch( color_space_index ) {
        case gs_color_space_index_CIEDEFG:
-            gx_ciedefg_to_icc(&picc_cs, pcs, memory);
+            gx_ciedefg_to_icc(&picc_cs, pcs, memory->stable_memory);
             break;
         case gs_color_space_index_CIEDEF:
-            gx_ciedef_to_icc(&picc_cs, pcs, memory);
+            gx_ciedef_to_icc(&picc_cs, pcs, memory->stable_memory);
             break;
         case gs_color_space_index_CIEABC:
-            gx_cieabc_to_icc(&picc_cs, pcs, memory);
+            gx_cieabc_to_icc(&picc_cs, pcs, memory->stable_memory);
             break;
         case gs_color_space_index_CIEA:
-            gx_ciea_to_icc(&picc_cs, pcs, memory);
+            gx_ciea_to_icc(&picc_cs, pcs, memory->stable_memory);
             break;
      } 
     return(0);
