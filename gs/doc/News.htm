@@ -62,8 +62,9 @@ This is a candidate release for the version 8.71.
 
 <p>This is the second release in the stable 8.7x series. It features
 improved handling of fonts, nesting and color fixes with
-transparency objects and improvements to the pxl output devices,
-as well as the usual number of bug and robustness fixes.
+transparency objects, reduced memory footprint for the halftone cache,
+as well as improvements to the pxl output devices,
+and the usual number of bug and robustness fixes.
 
 <p>New in this release is an experimental project file for Microsoft Visual Studio. This wraps the normal nmake build, and makes it easier for developers on that platform to get started building Ghostscript.</p>
 
@@ -74,11 +75,11 @@ which produces halftoned separations at 1 bit-per-pixel, in contrast
 to the 'tiffsep' device which produces 8 bit-per-pixel plates.
 
 <p>Support for using FreeType as a type rasterizer has been greatly improved.
-We do no recommend its use as of this release, but it is much more functional
+We do not recommend its use as of this release, but it is much more functional
 than previously and our intent is that it eventually become the default.
 
 <p>The graphics library has been updated to provide more accurate scan
-conversion of vector art include fixes to dash behaviour, transparent
+conversion of vector art including fixes to dash behavior, transparent
 stroked paths, thick stroked paths, radial shadings, xps cap handling,
 "pie" joins, degenerate beziers, improved handling of dropouts in
 thin strokes and better thin axis-aligned strokes.
