@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version8.71">Version 8.71 (2010-02-03)</a>
+<li><a href="#Version8.71">Version 8.71 (2010-02-10)</a>
 <li><a href="#Version8.70">Version 8.70 (2009-07-31)</a>
 <li><a href="#Version8.64">Version 8.64 (2009-02-03)</a>
 <li><a href="#Version8.63">Version 8.63 (2008-08-01)</a>
@@ -83,17 +83,18 @@ overview</a>.
 <!-- [2.0 begin contents] ================================================== -->
 
 
-<h2><a name="Version8.71"></a>Version 8.71 (2010-02-08)</h2>
-
-<p>
-This is a candidate release for the version 8.71.
+<h2><a name="Version8.71"></a>Version 8.71 (2010-02-10)</h2>
 
 <p>This is the second release in the stable 8.7x series. It features
 improved handling of fonts, nesting and color fixes with
-transparency objects and improvements to the pxl output devices,
-as well as the usual number of bug and robustness fixes.
+transparency objects, reduced memory footprint for the halftone cache,
+as well as improvements to the pxl output devices,
+and the usual number of bug and robustness fixes.
 
-<p>New in this release is an experimental project file for Microsoft Visual Studio. This wraps the normal nmake build, and makes it easier for developers on that platform to get started building Ghostscript.</p>
+<p>New in this release is an experimental project file for
+Microsoft Visual Studio. This wraps the normal nmake build,
+and makes it easier for developers to get started building
+Ghostscript with that compiler.</p>
 
 <p>Support for tiff file output is now provided using the libtiff
 implementation rather than our more limited native code as in
@@ -102,11 +103,12 @@ which produces halftoned separations at 1 bit-per-pixel, in contrast
 to the 'tiffsep' device which produces 8 bit-per-pixel plates.
 
 <p>Support for using FreeType as a type rasterizer has been greatly improved.
-We do no recommend its use as of this release, but it is much more functional
-than previously and our intent is that it eventually become the default.
+We do not recommend its use as of this release, but it is much more functional
+than previously and our intent is that it will become the default in a future
+release.
 
 <p>The graphics library has been updated to provide more accurate scan
-conversion of vector art include fixes to dash behaviour, transparent
+conversion of vector art including fixes to dash behavior, transparent
 stroked paths, thick stroked paths, radial shadings, xps cap handling,
 "pie" joins, degenerate beziers, improved handling of dropouts in
 thin strokes and better thin axis-aligned strokes.
@@ -120,6 +122,25 @@ please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 No recorded incompatible changes.
 
 <h3><a name="8.71_changelog"></a>Changelog</h3>
+
+<p><strong><a name="2010-02-09T161339.643382Z"></a>
+2010-02-09T16:13:39.643382Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Clean up some typos in the release notes, and mention the reduced memory
+footprint of the halftone cache from r10006.
+</pre>
+<p>[doc/News.htm]</p>
+</blockquote>
+
+<p><strong><a name="2010-02-08T221030.586772Z"></a>
+2010-02-08T22:10:30.586772Z Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the change logs for the second 8.71 release candidate.
+</pre>
+<p>[doc/Changes.htm doc/History8.htm doc/News.htm doc/Details8.htm doc/Details.htm]</p>
+</blockquote>
 
 <p><strong><a name="2010-02-08T220322.755385Z"></a>
 2010-02-08T22:03:22.755385Z Ralph Giles</strong></p>
@@ -62028,7 +62049,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 8.71, 8 February 2010
+<small>Ghostscript version 8.71, 10 February 2010
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
