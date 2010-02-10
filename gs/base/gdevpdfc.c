@@ -32,6 +32,7 @@
 #include "sstring.h"
 #include "gxcspace.h"
 #include "gxcdevn.h"
+#include "gscspace.h"
 
 /*
  * PDF doesn't have general CIEBased color spaces.  However, it provides
@@ -527,11 +528,12 @@ pdf_find_cspace_resource(gx_device_pdf *pdev, const byte *serialized, uint seria
 int
 pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		const gs_range_t **ppranges,
-		const gs_color_space *pcs,
+		const gs_color_space *pcs_in,
 		const pdf_color_space_names_t *pcsn,
 		bool by_name, const byte *res_name, int name_length)
 {
-    gs_color_space_index csi = gs_color_space_get_index(pcs);
+    const gs_color_space *pcs;
+    gs_color_space_index csi;
     cos_array_t *pca;
     cos_dict_t *pcd;
     cos_value_t v;
@@ -543,6 +545,19 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     pdf_resource_t *pres = NULL;
     int code;
 
+    /* If color space is CIE based and we have compatibility then go ahead and use the ICC alternative */
+    if ((pdev->CompatibilityLevel < 1.3) || !gs_color_space_is_PSCIE(pcs_in) ) {
+        pcs = pcs_in;
+    } else {
+        if (pcs_in->icc_equivalent != NULL) {
+            pcs = pcs_in->icc_equivalent;
+        } else {
+            /* Need to create the equivalent object */
+            gs_colorspace_set_icc_equivalent(pcs_in, pdev->memory);
+            pcs = pcs_in->icc_equivalent;
+        }
+    }
+    csi = gs_color_space_get_index(pcs);
     if (ppranges)
 	*ppranges = 0;		/* default */
     switch (csi) {
