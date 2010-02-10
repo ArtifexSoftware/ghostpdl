@@ -146,6 +146,8 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
 
+    /* Needed for device N */
+    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
         pcs = penum->pcs->icc_equivalent;
     } else {
