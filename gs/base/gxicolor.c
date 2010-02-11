@@ -194,7 +194,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
            less than or equal to the new one.  We will do that soon. */
         psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, "image_render_color");
         psrc_cm_start = psrc_cm;
-        bufend = psrc_cm +  w * dev->color_info.num_components/spp;
+        bufend = psrc_cm +  w * spp_cm/spp;
         gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
                                  psrc,psrc_cm);
     }
