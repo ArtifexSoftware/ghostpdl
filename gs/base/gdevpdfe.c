@@ -292,6 +292,9 @@ decode_escape(const byte *data, int data_length, int *index)
 	return 0; /* Must_not_happen, because the string is PS encoded. */
     c = data[*index];
     switch (c) {
+	case '(': (*index)++; return '(';
+	case ')': (*index)++; return ')';
+	case '\\': (*index)++; return '\\';
 	case 'n': (*index)++; return '\n';
 	case 'r': (*index)++; return '\r';
 	case 't': (*index)++; return '\t';
@@ -307,8 +310,11 @@ decode_escape(const byte *data, int data_length, int *index)
 	    if (*index >= data_length)
 		return v;
 	    c = data[*index];
-	    if (c < '0' || c > '7')
+	    if (c < '0' || c > '7') {
+		/* Need to 'unget' the non-numeric character */
+		(*index)--;
 		break;
+	    }
 	    v = v * 8 + (c - '0');
 	}
 	return v;	
@@ -337,7 +343,43 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 	    buf0[j] = c;
 	    j++;
 	}
-	write(s, buf0, j);
+	if (buf0[0] == 0xfe && buf0[1] == 0xff) {
+	    /* Its a Unicode (UTF-16BE) string, convert to UTF-8 */
+	    UTF16 *buf0b, U16;
+	    UTF8 *buf1, *buf1b;
+	    char datab;
+
+	    buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char), 
+			"pdf_xmp_write_translated");
+	    if (buf1 == NULL)
+		return_error(gs_error_VMerror);
+	    buf1b = buf1;
+	    /* Skip the Byte Order Mark (0xfe 0xff) */
+	    buf0b = buf0 + 2;
+	    /* ConvertUTF16to UTF8 expects a buffer of UTF16s in the local
+	     * endian-ness, but the data is big-endian. In case this is a little-endian
+	     * machine, process the buffer from big-endian to whatever is right for this platform.
+	     */
+	    for (i = 2; i < j; i+=2) {
+		U16 = (buf0[i] << 8) + buf0[i + 1];
+		*(buf0b++) = U16;
+	    }
+	    buf0b = buf0 + 2;
+	    switch (ConvertUTF16toUTF8(&buf0b, (UTF16 *)(buf0 + j),
+			     &buf1b, buf1 + j, strictConversion)) {
+		case conversionOK:
+		    write(s, buf1, buf1b - buf1);
+		    gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
+		    break;
+		case sourceExhausted:
+		case targetExhausted:
+		case sourceIllegal:
+		default:
+		    gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
+		    return_error(gs_error_rangecheck);
+	    }
+	} else
+	    write(s, buf0, j);
 	gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
 	return 0;
     } else {
@@ -352,8 +394,10 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 	    return_error(gs_error_VMerror);
 	buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * 2, 
 			"pdf_xmp_write_translated");
-	if (buf1 == NULL)
+	if (buf1 == NULL) {
+	    gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
 	    return_error(gs_error_VMerror);
+	}
 	buf0b = buf0;
 	buf1b = buf1;
 	for (i = 0; i < data_length; i++) {
@@ -362,8 +406,11 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 
 	    if (c == '\\') 
 		c = decode_escape(data, data_length, &i);
-	    if (c > pdev->DSCEncodingToUnicode.size)
+	    if (c > pdev->DSCEncodingToUnicode.size) {
+		gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+		gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
 		return_error(gs_error_rangecheck);
+	    }
 
 	    v = pdev->DSCEncodingToUnicode.data[c];
 	    if (v == -1)
@@ -380,6 +427,8 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 	    case targetExhausted:
 	    case sourceIllegal:
 	    default:
+		gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+		gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
 		return_error(gs_error_rangecheck);
 	}
 	gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
