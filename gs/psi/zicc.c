@@ -67,10 +67,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     if (code < 0)
         return gs_rethrow(code, "building color space object");
 
-    /* record the current space as the alternative color space */
-    pcs->base_space = palt_cs;
-    rc_increment_cs(palt_cs);
-
     /*  For now, dump the profile into a buffer
         and obtain handle from the buffer when we need it. 
         We may want to change this later.
