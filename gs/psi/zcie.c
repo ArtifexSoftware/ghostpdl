@@ -378,7 +378,7 @@ static int cie_defg_finish(i_ctx_t *);
 
 static int
 cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_cie_defg * pcie, ref_cie_procs * pcprocs, 
-              bool *has_abc_procs, bool *has_lmn_procs, bool *has_defg_procs)
+              bool *has_abc_procs, bool *has_lmn_procs, bool *has_defg_procs, ref *ptref)
 {
     int code; 
 
@@ -392,7 +392,7 @@ cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_c
     code = dict_ranges_param(mem, pdref, "RangeHIJK", 4, pcie->RangeHIJK.ranges);
     if (code < 0) 
         return code;
-    code = cie_table_param(pdref, &pcie->Table, mem);
+    code = cie_table_param(ptref, &pcie->Table, mem);
     if (code < 0) 
         return code;
     code = dict_proc_array_param(mem, pdref, "DecodeDEFG", 4, &(pcprocs->PreDecode.DEFG));
@@ -442,7 +442,7 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     pcie = pcs->params.defg;
     pcie->Table.n = 4;
     pcie->Table.m = 3;
-    code = cie_defg_param(i_ctx_p, imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs, &has_defg_procs);
+    code = cie_defg_param(i_ctx_p, imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs, &has_defg_procs,ptref);
     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 
@@ -462,7 +462,7 @@ cie_defg_finish(i_ctx_t *i_ctx_p)
 
 static int
 cie_def_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_cie_def * pcie, ref_cie_procs * pcprocs, 
-              bool *has_abc_procs, bool *has_lmn_procs, bool *has_def_procs)
+              bool *has_abc_procs, bool *has_lmn_procs, bool *has_def_procs, ref *ptref)
 {
     int code; 
 
@@ -476,7 +476,7 @@ cie_def_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_ci
     code = dict_range3_param(mem, pdref, "RangeHIJ", &pcie->RangeHIJ);
     if (code < 0) 
         return code;
-    code = cie_table_param(pdref, &pcie->Table, mem);
+    code = cie_table_param(ptref, &pcie->Table, mem);
     if (code < 0)
         return code;
     /* The DEF procs */
@@ -527,7 +527,7 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     pcie = pcs->params.def;
     pcie->Table.n = 3;
     pcie->Table.m = 3;
-    code = cie_def_param(i_ctx_p, imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs, &has_def_procs);
+    code = cie_def_param(i_ctx_p, imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs, &has_def_procs, ptref);
     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 
