@@ -1082,8 +1082,17 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
         code = gs_type42_append(glyph, pgs, pgs->path,
                                 (gs_text_enum_t *)penum, pfont,
                                 gs_show_in_charpath(penum) != cpm_show);
-        if ( code >= 0 )
-          code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
+        if ( code >= 0 ) {
+            /* Save the current value of fill adjust and use the
+               special value of -1 to indicate dropout prevention
+               should be enabled, later restore the old fill adjust
+               value.  Similar code for the PDF and PS interpreter is
+               in zchar42.c */
+            gs_fixed_point fa = pgs->fill_adjust;
+            pgs->fill_adjust.x = pgs->fill_adjust.y = -1;
+            code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
+            pgs->fill_adjust = fa;
+        }
         if (ctm_modified)
             gs_setmatrix(pgs, &save_ctm);
         if ( bold_added )
