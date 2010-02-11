@@ -1699,13 +1699,16 @@ tcg:    if ( plfont->char_glyphs.table )
           }
 fg:     pfg = pl_font_lookup_glyph(plfont, key);
         if ( pfg->data != 0 )
-          { /* Remove the glyph from the character cache. */
+          { /* Remove the glyph and a possible cached representation. */
             font_glyph_t match_fg;
 
             match_fg.font = pfont;
             match_fg.glyph = key;
             gx_purge_selected_cached_chars(pfont->dir, match_font_glyph,
                                            &match_fg);
+            /* replacing a read only glyph nothing we can do, so return. */
+            if (plfont->data_are_permanent)
+                return 0;
             gs_free_object(pfont->memory, (void *)pfg->data,
                            "pl_font_add_glyph(old data)");
           }

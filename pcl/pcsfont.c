@@ -187,7 +187,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
         {
             int code;
             if ( pcs->font == 0 ) { 
-                code = pcl_recompute_font(pcs);
+                code = pcl_recompute_font(pcs, false);
                 if ( code < 0 )
                     return code;
             }

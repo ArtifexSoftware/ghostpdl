@@ -87,9 +87,12 @@ static bool
 hpgl_is_printable(
     const pl_symbol_map_t * psm,
     gs_char                 chr,
-    bool                    is_stick
+    bool                    is_stick,
+    bool                    transparent
 )
 {    
+    if (transparent)
+        return true;
     if ( is_stick )
 	return (chr >= ' ') && (chr <= 0xff);
     if ((psm == 0) || (psm->type >= 2))
@@ -111,7 +114,7 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
     
     return pl_map_symbol(psm, chr,
                          pfs->font->storage == pcds_internal,
-                         pl_complement_to_vocab(pfs->font->character_complement) == plgv_MSL,
+                         pfs->font->font_type == plgv_MSL,
                          false);
 }
 
@@ -201,7 +204,8 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	    id[0] = pfs->params.symbol_set >> 8;
 	    id[1] = pfs->params.symbol_set & 0xff;
 	    pfs->map = pcl_find_symbol_map(pgls,
-					   id, plgv_Unicode);
+					   id, plgv_Unicode,
+                                           font->font_type == plft_16bit);
 	} 
 	return 0;
 }
@@ -217,7 +221,7 @@ hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
 
     id[0] = symbol_set >> 8;
     id[1] = symbol_set & 0xff;
-    if ( (map = pcl_find_symbol_map(pcs, id, gv)) == 0 )
+    if ( (map = pcl_find_symbol_map(pcs, id, gv, false)) == 0 )
         return false;
     return pcl_check_symbol_support(map->character_requirements,
                                     stick_character_complement);
@@ -239,7 +243,7 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 	   )
 	  hpgl_call(hpgl_select_stick_font(pgls));
 	else
-	  { int code = pcl_reselect_font(pfs, pgls);
+         { int code = pcl_reselect_font(pfs, pgls, false);
 
 	    if ( code < 0 )
 	      return code;
@@ -576,6 +580,16 @@ static bool
 hpgl_use_show(hpgl_state_t *pgls, pl_font_t *pfont)
 {
 
+    /* NB opaque source must go through the gl/2 line drawing code and
+       treated as a special effect because the normal text processing
+       does not support rendering the background of characters.
+       Bitmap characters must be rendered with the library's "show"
+       machinery, so opaque bitmaps are not properly supported in
+       gl/2.  Fortunately we don't expect to see them in the real
+       world */
+    if (pgls->g.source_transparent == 0 && pfont->scaling_technology != plfst_bitmap)
+        return false;
+        
     /* Show cannot be used if CF is not default since the character
        may require additional processing by the line drawing code. */
     if ( (pgls->g.character.fill_mode == 0 && pgls->g.character.edge_pen == 0) ||
@@ -1293,7 +1307,8 @@ print:	     {
                 const pcl_font_selection_t *pfs =
                     &pgls->g.font_selection[pgls->g.font_selected];
                 if ( !hpgl_is_printable(pfs->map, ch, 
-                                        (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
+                                        (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE,
+                                        pgls->g.transparent_data) )
                     continue;
             }
             hpgl_call(hpgl_ensure_font(pgls));

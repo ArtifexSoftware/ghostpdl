@@ -39,6 +39,7 @@ bool pcl_check_symbol_support(const byte *symset_req,
 /* Find a symbol map, given its ID and glyph vocabulary. */
 pl_symbol_map_t *pcl_find_symbol_map(const pcl_state_t *pcs,
                                      const byte *id,
-                                     pl_glyph_vocabulary_t gv);
+                                     pl_glyph_vocabulary_t gv,
+                                     bool wide16);
 
 #endif				/* pcsymbol_INCLUDED */

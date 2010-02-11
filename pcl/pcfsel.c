@@ -47,7 +47,7 @@ typedef enum {
 typedef	int match_score_t[score_limit];
 
 #ifdef DEBUG
-
+#include "plvalue.h"
 static const char * const score_name[] = {
     "symbol",
     "spacing",
@@ -114,11 +114,23 @@ dprint_font_t(const pl_font_t *pfont)
 }
 
 static void
-dprintf_font_scoring(const char *type, const pl_font_t *pfont, match_score_t score)
+dprint_font_map(const pl_symbol_map_t *pmap)
+{
+    if (pmap != 0)
+        dprintf3("selected symbol set id:%d type:%d format:%s\n", pl_get_uint16(pmap->id),
+                 pmap->type, (pmap->format == 1 ? "MSL" : "Unicode"));
+    else
+        dprintf("selected symbol set NULL\n");
+
+}
+
+static void
+dprintf_font_scoring(const char *type, const pl_font_t *pfont, pl_symbol_map_t *pmap, match_score_t score)
 {
     int i;
     dprintf1("%s: ", type);
     dprint_font_t(pfont);
+    dprint_font_map(pmap);
     dputs("   score:");
     for ( i = 0; i < score_limit; ++i )
         dprintf2(" %s: %d", score_name[i], score[i]);
@@ -128,30 +140,53 @@ dprintf_font_scoring(const char *type, const pl_font_t *pfont, match_score_t sco
 #endif
 
 /* Decide whether an unbound font supports a symbol set (mostly
-   convenient setup for pcl_check_symbol_support(). (HAS) Has the
-   peculiar side effect of setting the symbol table to the default if
+   convenient setup for pcl_check_symbol_support(). Has the
+   side effect of setting the symbol table to the default if
    the requested map is not available or to the requested symbol set
    if it is available. 2 is returned for no matching symbol set, 1 for
    mismatched vocabulary and 0 if the sets match. */
 static int
 check_support(const pcl_state_t *pcs, uint symbol_set, const pl_font_t *fp,
-    pl_symbol_map_t **mapp)
+              pl_symbol_map_t **mapp, bool id_selection)
 {
     pl_glyph_vocabulary_t gv;
     byte id[2];
 
     id[0] = symbol_set >> 8;
     id[1] = symbol_set;
-    gv = pl_complement_to_vocab(fp->character_complement);
-    *mapp = pcl_find_symbol_map(pcs, id, gv);
-    if ( *mapp == 0 ) {
-	/* Default to Roman 8: 277 0x115 not the default symbol set!
-	 * Basically roman8
-	 */
-	id[0] = 0x01;
-	id[1] = 0x15;
-	*mapp = pcl_find_symbol_map(pcs, id, gv);
-	return 0; /* worst */
+
+    /* a bound font is really neither unicode or MSL, setting the
+       vocabulary to unicode is arbritrary to satisfy the call to
+       "pcl_find_symbol_map" */
+    gv = pl_font_is_bound(fp) ? plgv_Unicode :
+        pl_complement_to_vocab(fp->character_complement);
+
+    *mapp = pcl_find_symbol_map(pcs, id, gv, fp->font_type == plft_16bit);
+
+    if (pl_font_is_bound(fp))
+        return fp->params.symbol_set == symbol_set ? 2 : 0;
+        
+
+    if (*mapp == 0) {
+        /* selecting by id and did not find the symbol map specified
+           by the font (punt) or if this is a wide encoding no map is
+           needed. */
+        if (id_selection || pl_wide_encoding(symbol_set))
+            return 2;
+        else {
+            /* 
+             * Interestingly, if we look up a symbol set that does not
+             * exist the default symbol set is replaced with roman-8.
+             * This is certainly a bug in HP printers.
+             */
+            if (!pl_font_is_bound(fp)) {
+                id[0] = 0x01;
+                id[1] = 0x15;
+                *mapp = pcl_find_symbol_map(pcs, id, gv, fp->font_type == plft_16bit);
+                return 1;
+            }
+            return 0; /* worst */
+        }
     }
 
     if ( pcl_check_symbol_support((*mapp)->character_requirements,
@@ -188,15 +223,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 
 	/* 1.  Symbol set.  2 for exact match or full support, 1 for
 	 * default supported, 0 for no luck. */
-	if ( pl_font_is_bound(fp) )
-	  {
-	    score[score_symbol_set] =
-		pfs->params.symbol_set == fp->params.symbol_set? 2:
-		    (fp->params.symbol_set == pcs->default_symbol_set_value);
-	    *mapp = 0;		/* bound fonts have no map */
-	  }
-	else
-	  score[score_symbol_set] = check_support(pcs, pfs->params.symbol_set, fp, mapp);
+        score[score_symbol_set] = check_support(pcs, pfs->params.symbol_set, fp, mapp, false);
 	/* 2.  Spacing. */
 	score[score_spacing] =
 	  pfs->params.proportional_spacing == fp->params.proportional_spacing;
@@ -331,7 +358,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 
 #ifdef DEBUG
 	if ( gs_debug_c('=') )
-            dprintf_font_scoring("candidate", fp, score);
+            dprintf_font_scoring("candidate", fp, *mapp, score);
 #endif
 
 }
@@ -339,7 +366,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 /* Recompute the current font from the descriptive parameters. */
 /* This is used by both PCL and HP-GL/2. */
 int
-pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
+pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool internal_only)
 {	if ( pfs->font == 0 )
 	  { pl_dict_enum_t dictp;
 	    gs_const_string key;
@@ -368,21 +395,8 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 		if ( pl_dict_find((pl_dict_t *)&pcs->soft_fonts, id_key, 2, &value) ) {
 
 		    pfs->font = (pl_font_t *)value;
-		    /* probably not necessary */
-		    if ( !pl_font_is_bound(pfs->font) ) { 
-			if ( check_support(pcs, pfs->params.symbol_set, pfs->font, &pfs->map) )
-			    DO_NOTHING;
-			else if ( check_support(pcs, pcs->default_symbol_set_value,
-						pfs->font, &pfs->map)
-				  )
-			    DO_NOTHING;
-			else { /*
-				* This font doesn't support the required symbol set.
-				* Punt -- map 1-for-1.
-				*/
-			}
-		    }
-		    return 0;
+                    (void)check_support(pcs, pfs->params.symbol_set, pfs->font, &pfs->map, true);
+                    return 0;
 		}
 	    }
 	    /* Initialize the best match to be worse than any real font. */
@@ -393,11 +407,14 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 	    while ( pl_dict_enum_next(&dictp, &key, &value) )
 	      { pl_font_t *fp = (pl_font_t *)value;
 		match_score_t match;
+                if ((internal_only) && fp->storage != pcds_internal)
+                    continue;
+
 		score_match(pcs, pfs, fp, &mapp, match);
 #ifdef DEBUG
                 if ( gs_debug_c('=') ) {
                     if (best_match[0] != -1) /* skip sentinel */
-                        dprintf_font_scoring("best", best_font, best_match);
+                        dprintf_font_scoring("best", best_font, mapp, best_match);
                 }
 #endif
 		for (i=(score_index_t)0; i<score_limit; i++)
@@ -411,7 +428,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 			      sizeof(match));
 #ifdef DEBUG
                           if ( gs_debug_c('=') ) {
-                              dprintf_font_scoring("usurper", fp, best_match);
+                              dprintf_font_scoring("usurper", fp, mapp, best_match);
                               dprintf1("   better %s***)\n", score_name[i]);
 
                           }
@@ -425,7 +442,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
                 return -1;	/* no fonts */
 #ifdef DEBUG
             if ( gs_debug_c('=') ) {
-                dprintf_font_scoring("champion", best_font, best_match);
+                dprintf_font_scoring("champion", best_font, mapp, best_match);
             }
 #endif
 
@@ -448,20 +465,18 @@ pcl_set_id_parameters(const pcl_state_t *pcs,
 	pfs->map = 0;
 	if ( pl_font_is_bound(fp) )
 	  pfs->params.symbol_set = fp->params.symbol_set;
-	else
-	  { if ( check_support(pcs, pfs->params.symbol_set, fp, &pfs->map) )
+
+	if ( check_support(pcs, pfs->params.symbol_set, fp, &pfs->map, true) )
 	      DO_NOTHING;
-	    else if ( check_support(pcs, pcs->default_symbol_set_value,
-				    fp, &pfs->map)
+        else if ( check_support(pcs, pcs->default_symbol_set_value,
+                                fp, &pfs->map, true)
 		    )
-	      DO_NOTHING;
-	    else
-	      { /*
+            DO_NOTHING;
+        else { /*
 		 * This font doesn't support the required symbol set.
 		 * Punt -- map 1-for-1.
 		 */
-	      }
-	  }
+        }
 	pfs->params.proportional_spacing = fp->params.proportional_spacing;
 	if ( !pfs->params.proportional_spacing && !pl_font_is_scalable(fp) )
 	  pfs->params.pitch = fp->params.pitch;

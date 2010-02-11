@@ -52,32 +52,23 @@ pxfont_init(px_state_t *pxs)
 
 /* ---------------- Operator utilities ---------------- */
 
+static pl_symbol_map_t *
+pxl_find_symbol_map(uint symbol_set)
+{
+    const pl_symbol_map_t **ppsm = pl_built_in_symbol_maps;
+
+    while ( *ppsm != 0 && pl_get_uint16((*ppsm)->id) != symbol_set )
+        ++ppsm;
+    return (*ppsm ? *ppsm : NULL);
+}
+
+
 /* Compute the symbol map from the font and symbol set. */
 static void
-set_symbol_map(px_state_t *pxs)
+set_symbol_map(px_state_t *pxs, bool wide16)
 {	px_gstate_t *pxgs = pxs->pxgs;
-	px_font_t *pxfont = pxgs->base_font;
 	uint symbol_set = pxgs->symbol_set;
-
-	if ( ( symbol_set == pxfont->params.symbol_set ) ||
-             ( symbol_set == 590 ) )
-	  { /* Exact match, no mapping required. */
-	    pxgs->symbol_map = 0;
-	  }
-	else if ( pl_font_is_bound(pxfont) )
-	  { /****** CAN'T REMAP YET ******/
-	    pxgs->symbol_map = 0;
-	  }
-	else
-	  { /* See if we know about the requested symbol set. */
-	    /****** ASSUME UNICODE ******/
-	    const pl_symbol_map_t **ppsm = pl_built_in_symbol_maps;
-
-	    while ( *ppsm != 0 && pl_get_uint16((*ppsm)->id) != symbol_set )
-	      ++ppsm;
-	    /* If we didn't find it, default to Roman-8. */
-	    pxgs->symbol_map = (*ppsm ? *ppsm : pl_built_in_symbol_maps[0]);
-	  }
+        pxgs->symbol_map = pxl_find_symbol_map(symbol_set);
 }
 
 static int
@@ -283,11 +274,17 @@ px_concat_font_name(char *message, uint max_message, const px_value_t *pfnv)
 	*mptr = 0;
 }
 
+static inline bool
+px_downloaded_and_bound(pl_font_t *plfont)
+{
+    return (plfont->storage != pxfsInternal && pl_font_is_bound(plfont));
+}
+
 /** Convert pxl text arguments into an array of gs_chars 
  * caller must allocate the correct size array pchar and free it later
  */
 static void
-px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr, bool is_MSL)
+px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
 {
     const px_value_t *pstr = par->pv[0];
     const unsigned char *str = (const unsigned char *)pstr->value.array.data;
@@ -296,15 +293,16 @@ px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr, bool is_MSL)
     gs_char chr;
     const pl_symbol_map_t *psm = pxs->pxgs->symbol_map;
     uint symbol_set = pxs->pxgs->symbol_set;
+    bool db = px_downloaded_and_bound(pxs->pxgs->base_font);
     for (i=0; i < len; i++) {
         if (pstr->type & pxd_ubyte) {
             chr = str[i];
         } else {
             chr = uint16at(&str[i << 1], (pstr->type & pxd_big_endian));
         }
-        pchr[i] = pl_map_symbol(psm, chr,
+        pchr[i] = pl_map_symbol((db ? NULL : psm), chr,
                                 pxs->pxgs->base_font->storage == pxfsInternal,
-                                is_MSL,
+                                false /* pxl does not support MSL */,
                                 symbol_set == 590);
     }
 }
@@ -357,7 +355,6 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     int code = 0;
     gs_char *pchr = 0;
     pl_font_t *plfont;
-    gs_matrix save_ctm;
 
     if ( pfont == 0 )
 	return_error(errorNoCurrentFont);
@@ -412,8 +409,8 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
                                           "px_text gs_char[]");
     if (pchr == 0) 
 	return_error(errorInsufficientMemory);
-    px_str_to_gschars(par, pxs, pchr, 
-                      pl_complement_to_vocab(plfont->character_complement) == plgv_MSL);
+
+    px_str_to_gschars(par, pxs, pchr);
 
     {
         uint i;
@@ -493,7 +490,7 @@ undef:	      px_concat_font_name(pxs->error_line, px_max_error_line, pfnv);
 	pxgs->char_size = real_value(par->pv[1], 0);
 	pxgs->symbol_set = symbol_set;
 	pxgs->base_font = pxfont;
-	set_symbol_map(pxs);
+	set_symbol_map(pxs, pxfont->font_type == plft_16bit);
 	pxgs->char_matrix_set = false;
 	return 0;
 }
@@ -695,16 +692,18 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 	      code = gs_note_error(errorUnsupportedCharacterFormat);
 	    }
 	  if ( code >= 0 )
-	    { code = pl_font_add_glyph(pxs->download_font, char_code, (byte *)data); /* const cast */
-	      if ( code < 0 )
-		code = gs_note_error(errorInternalOverflow);
-	    }
-	  if ( code < 0 )
-	    gs_free_object(pxs->memory, pxs->download_bytes.data,
-			   "pxReadChar");
-	  pxs->download_bytes.data = 0;
-	  return code;
-	}
+	    { 
+                code = pl_font_add_glyph(pxs->download_font, char_code, (byte *)data); /* const cast */
+                if ( code < 0 )
+                    code = gs_note_error(errorInternalOverflow);
+            }
+                                                    
+          if ( code < 0 )
+              gs_free_object(pxs->memory, pxs->download_bytes.data,
+                             "pxReadChar");
+          pxs->download_bytes.data = 0;
+          return code;
+        }
 }
 
 const byte apxEndChar[] = {0, 0};

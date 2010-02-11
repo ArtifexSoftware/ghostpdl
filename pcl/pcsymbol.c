@@ -21,12 +21,41 @@
 #include "pcsymbol.h"
 
 
+
+/* HP printers will not convert MSL coded symbol table to unicode.  An
+   MSL based font must be used with an MSL symbol set.  We think this
+   is a bug.  The following definition can be uncommented to support
+   the feature anyway */
+
+/* #define SUPPORT_MSL_TO_UNICODE */
+
 static int /* ESC * c <id> R */
 pcl_symbol_set_id_code(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint id = uint_arg(pargs);
 	id_set_value(pcs->symbol_set_id, id);
 	return 0;
 }
+
+#ifdef DEBUG
+static void
+dump_dl_symbol_set(pl_symbol_map_t *psm)
+{
+    dprintf6("header size:%d id:%d format:%s type:%d first code:%d last code:%d\n",
+             pl_get_uint16(psm->header_size),
+             pl_get_uint16(psm->id),
+             (psm->format == 1 ? "MSL" : (psm->format == 3 ? "Unicode" : "Unknown")),
+             psm->type,
+             pl_get_uint16(psm->first_code),
+             pl_get_uint16(psm->last_code));
+    {
+        int i;
+        int num_codes = pl_get_uint16(psm->last_code) - pl_get_uint16(psm->first_code) + 1;
+        for (i = 0; i < num_codes; i++) {
+            dprintf2("index=%d, code:%d\n", i, psm->codes[i]);
+        }
+    }
+}
+#endif
 
 static int /* ESC ( f <count> W */
 pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
@@ -52,14 +81,17 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 	switch ( psm->format )
 	  {
 	  case 1:
+              gv = plgv_MSL;
+              break;
 	  case 3:
-	    break;
+              gv = plgv_Unicode;
+              break;
 	  default:
 	    return e_Range;
 	  }
 	first_code = pl_get_uint16(psm->first_code);
 	last_code = pl_get_uint16(psm->last_code);
-	gv = (psm->character_requirements[7] & 07)==1? plgv_Unicode: plgv_MSL;
+        /* NB fixme should check psm->Format to identify the vocabulary. */
 	{ int num_codes = last_code - first_code + 1;
 	  int i;
 
@@ -73,9 +105,16 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 	  if ( header == 0 )
 	    return_error(e_Memory);
 	  memcpy((void *)header, (void *)psm, psm_header_size);
-	  /* specify that we do not allow these sets to map to and fro
-             msl and unicode */
-	  header->mapping_type = PLGV_NO_MAPPING;
+	  /* allow mapping to and from msl and unicode */
+          if (psm->format == 1)
+#ifdef SUPPORT_MSL_TO_UNICODE
+              header->mapping_type = PLGV_M2U_MAPPING;
+#else
+              header->mapping_type = PLGV_NO_MAPPING;
+#endif
+          else
+              header->mapping_type = PLGV_U2M_MAPPING;
+
 	  /*
 	   * Byte swap the codes now, so that we don't have to byte swap
 	   * them every time we access them.
@@ -85,6 +124,11 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 	      pl_get_uint16((byte *)psm + psm_header_size + i * 2);
 	}
 #undef psm_header_size
+
+#ifdef DEBUG
+        if ( gs_debug_c('=') )
+            dump_dl_symbol_set(psm);
+#endif
 
 	/* Symbol set may already exist; if so, we may be replacing one of
 	 * its existing maps or adding one for a new glyph vocabulary. */
@@ -237,16 +281,20 @@ pcl_check_symbol_support(const byte *symset_req, const byte *font_sup)
  * present for a symbol set may overlap between soft and built-in. */
 pl_symbol_map_t *
 pcl_find_symbol_map(const pcl_state_t *pcs, const byte *id,
-  pl_glyph_vocabulary_t gv)
+                    pl_glyph_vocabulary_t gv, bool wide16)
 {	
     pcl_symbol_set_t *setp;
 	
+
     if ( pl_dict_find((pl_dict_t *)&pcs->soft_symbol_sets,
-		      id, 2, (void **)&setp) &&
-	 setp->maps[gv] != NULL )
-	return setp->maps[gv];
-    if ( pl_dict_find((pl_dict_t *)&pcs->built_in_symbol_sets,
+		      id, 2, (void **)&setp) ||
+         pl_dict_find((pl_dict_t *)&pcs->built_in_symbol_sets,
 		      id, 2, (void**)&setp) ) {
+
+        /* 16 bit sets are not supported, they aren't strictly
+           necessary, yet. */
+        if (wide16)
+            return NULL;
 	/* simple case we found a matching symbol set */
 	if ( setp->maps[gv] != NULL )
 	    return setp->maps[gv];

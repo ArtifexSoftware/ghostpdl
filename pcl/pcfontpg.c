@@ -48,7 +48,7 @@ process_font(pcl_state_t *pcs, pl_font_t *fp)
     {
         /* TODO we should print out the font name here to be more like
            the HP font page */
-        const char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWYZ";
+        const char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         /* current parameters */
         pl_font_params_t *pfp = &pfs->params;
         char buff[150];
@@ -60,15 +60,17 @@ process_font(pcl_state_t *pcs, pl_font_t *fp)
         pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
 
         pcl_decache_font(pcs, -1);
+
         /* reset to default font and print the select font string and pjl number */
-        code = pcl_set_current_font_environment(pcs);
-        if (code < 0)
-            return gs_rethrow(code, "failed to set default font");
         /* create the string command for font selection */
         sprintf(buff, "<esc>(%u<esc>(s%dp%uv%us%db%dT\n",
                 pfp->symbol_set, (pfp->proportional_spacing ? 1 : 0),
                 pfp->height_4ths / 10, pfp->style, pfp->stroke_weight,
                 pfp->typeface_family);
+
+        code = pcl_set_current_font_environment(pcs);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set default font");
 
         code = pcl_text((byte *)buff, strlen(buff), pcs, false);
         if (code < 0)
@@ -76,8 +78,8 @@ process_font(pcl_state_t *pcs, pl_font_t *fp)
 
         pcl_set_cap_x(pcs, pcs->margins.right / (16.0/15.0), false, false);
         sprintf(buff, "%d", fp->params.pjl_font_number);
-        code = pcl_text((byte *)buff, strlen(buff), pcs, false);
 
+        code = pcl_text((byte *)buff, strlen(buff), pcs, false);
         if (code < 0)
             return gs_rethrow(code, "failed to display font number");
     }

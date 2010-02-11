@@ -75,32 +75,6 @@ px_widen_font_name(px_value_t *pfnv, px_state_t *pxs)
 	return 0;
 }
 
-/** It seems that PXL has 10 different names for the lineprinter font 
- * one for each of the font symbol set pairs in pcl.
- * this maps all PXL lineprinter requests to the 0N version 
- * saves ram/rom not storing 10 different versions.
- */
-
-static int
-px_lineprinter_font_alias_name(px_value_t *pfnv, px_state_t *pxs)
-{	
-    /* NB:coupling: depends on this being the first LinePrinter font in plftable.c */
-    static  const unsigned short linePrinter[16] = 
-	{'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'};
-    unsigned short *ptr = (unsigned short *)&pfnv->value.array.data[0];
-    uint i;
-
-    if ( pfnv->value.array.size != 16 )
-	return 0;
-    for( i = 0; i < 12; i++) {
-	if ( ptr[i] != linePrinter[i] )
-	    return 0; /* no match */
-    }
-    for( i = 12; i < 16; i++) 
-	ptr[i] = linePrinter[i];  /* front matched now make it identical */
-    return 0;
-}
-
 /* ---------------- Operator implementations ---------------- */
 
 /* Look up a font name and return an existing font. */
@@ -115,11 +89,6 @@ px_find_existing_font(px_value_t *pfnv, px_font_t **ppxfont,
 
 	/* Normalize the font name to Unicode. */
 	code = px_widen_font_name(pfnv, pxs);
-	if ( code < 0 )
-	  return code;
-
-	/* Do pxl font aliasing */
-	code = px_lineprinter_font_alias_name(pfnv, pxs);
 	if ( code < 0 )
 	  return code;
 
@@ -157,8 +126,8 @@ px_find_font(px_value_t *pfnv, uint symbol_set, px_font_t **ppxfont,
     /* Check if we know the font already. */
     /* Note that px_find_existing_font normalizes the font name. */
     code = px_find_existing_font(pfnv, ppxfont, pxs);
-    /* substitute for missing builtin font */
 
+    /* substitute for missing builtin font */
     if (code < 0) {
         px_value_t default_font_value;
         /* the documentation states the default font chosen here

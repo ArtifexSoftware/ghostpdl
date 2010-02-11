@@ -61,6 +61,13 @@ set_gs_font(
     pfont->FontMatrix = pfont->orig_FontMatrix;
 }
 
+static inline bool
+pcl_downloaded_and_bound(pl_font_t *plfont)
+{
+    return (plfont->storage != pcds_internal && pl_font_is_bound(plfont));
+}
+
+
 /* uncomment the following definition to treat map type 0 as defined
    in the specification.  The default is to use the behavior we have
    observed on several HP devices.  Map type 0 is treated as map type
@@ -84,15 +91,15 @@ is_printable(
     if (literal) /* transparent data */
 	printable = true;
     else {
-	if (pcs->map != 0) {
+	if (pcs->map == 0 || pcl_downloaded_and_bound(pcs->font)) {
+	    /* PCL TRM 11-18 */
+	    map_type = pcs->font->font_type;
+	}
+	else {
 	    /* PCL TRM 10-7 
 	     * symbol map type overrides, font map type
 	     */
 	    map_type = pcs->map->type;
-	}
-	else {
-	    /* PCL TRM 11-18 */
-	    map_type = pcs->font->font_type;
 	}
 
 #ifndef USE_MAP_TYPE_IN_SPECIFICATION
@@ -116,6 +123,57 @@ is_printable(
 	}
     }
     return printable; 
+}
+
+static bool
+substituting_allowed(pcl_state_t *pcs, gs_char mapped_chr)
+{
+    gs_char         remapped_chr; /* NB wrong type */
+    if (
+        /* msl not yet supported. */
+        (pcs->map && pcs->map->format == 1) ||
+        /* by experiment HP does not support substitution with bitmap fonts */
+        (pcs->font->scaling_technology == plfst_bitmap) ||
+        /* the font must be downloaded */
+        (!(pcs->font->storage & pcds_downloaded)) )
+        return false;
+
+    /* mapped chr is something of a misnomer, if the font is bound and
+       downloaded it has been identity mappped. */
+
+    remapped_chr = pl_map_symbol(pcs->map, mapped_chr,
+                                 false, /* storage not internal */
+                                 false, /* unicode not msl */
+                                 false  /* is_590 */);
+
+    /* now we can assume the characters are unicode */
+    if (
+        /* arrows */
+        ((remapped_chr >= 0x2190) && (remapped_chr <= 0x21FF)) ||
+        /* coptic */
+        ((remapped_chr >= 0x0370) && (remapped_chr <= 0x03FF)) || 
+        /* math operators */
+        ((remapped_chr >= 0x2200) && (remapped_chr <= 0x22FF)) ||
+        /* box drawing characters */
+        ((remapped_chr >= 0x2500) && (remapped_chr <= 0x257F)) ||
+        /* block elements (contiguous with box drawing) */
+        ((remapped_chr >= 0x2580) && (remapped_chr <= 0x259F)) ||
+        /* Geometric shapes (contiguos with block elements) */
+        ((remapped_chr >= 0x25A0) && (remapped_chr <= 0x25FF)) ||
+        /* miscellaneous symbols */
+        ((remapped_chr >= 0x2600) && (remapped_chr <= 0x26FF)) ||
+        /* miscellaneous technical */
+        ((remapped_chr >= 0x2300) && (remapped_chr <= 0x23FF)) ||
+        /* general punctuation */
+        ((remapped_chr >= 0x2000) && (remapped_chr <= 0x206F)) ||
+        /* vertical line,  less than, greater than, low line, or micro sign character,  */
+        ((remapped_chr == 0x007C) || (remapped_chr == 0x003C) ||
+
+         (remapped_chr == 0x003E) || (remapped_chr == 0x005F) ||
+         (remapped_chr == 0x00B5))
+        )
+        return true;
+    return false;
 }
 
 /*
@@ -151,16 +209,22 @@ get_next_char(
     gs_char *       porig_char,
     bool *          pis_space,
     bool            literal,
-    gs_point *      pwidth
+    gs_point *      pwidth,
+    bool *          unstyled_substitution
 )
 {
     const byte *    pb = *ppb;
     int             len = *plen;
     pl_font_t *     plfont = pcs->font;
+    bool            substituting = false;
     gs_char         chr;
+    gs_char         mapped_chr; /* NB wrong type */
+    bool            db;
+
     if (len <= 0)
         return 2;
     *pis_space = false;
+    *unstyled_substitution = false;
     chr = *pb++;
     len--;
     if (pcl_char_is_2_byte(chr, pcs->text_parsing_method) && (len > 0)) {
@@ -177,14 +241,23 @@ get_next_char(
         return 0;
     }
 
-    /* map the symbol. If it fails to map, quit now.  Unless we have a
-       galley character */
-    chr = pl_map_symbol(pcs->map, chr,
-                        plfont->storage == pcds_internal,
-                        pl_complement_to_vocab(plfont->character_complement) == plgv_MSL, false);
-    *pchr = chr;
-    if (chr == 0xffff) {
+    /* map the symbol.  If the font is downloaded and bound there is
+       no symbol set.  We do use the symbol set for internal bound
+       fonts. NB WE AREN'T HAPPY WITH THIS LABEL & GOTO. */
+ r: db = pcl_downloaded_and_bound(plfont);
+    mapped_chr = pl_map_symbol((db ? NULL : pcs->map), chr,
+                               plfont->storage == pcds_internal,
+                               plfont->font_type == plft_MSL, false);
+    *pchr = mapped_chr;
+    if (mapped_chr == 0xffff) {
         *pis_space = true;
+        return 0;
+    }
+    
+        /* NB we assume all internal fonts use unicode */
+    if (plfont->storage == pcds_internal && mapped_chr == 0x0020 && !substituting) {
+        *pis_space = true;
+        *pchr = 0xffff;
         return 0;
      }
 
@@ -206,8 +279,31 @@ get_next_char(
     /* check if the character is in the font and get the character
        width at the same time */
     if ( *pis_space == false )
-        if ( pl_font_char_width(plfont, (void *)(pcs->pgs), chr, pwidth) == 0 )
+        if ( pl_font_char_width(plfont, (void *)(pcs->pgs), mapped_chr, pwidth) == 0 )
             return 0;
+
+    /*
+     * Try an unstyled substitution
+     */
+    if (!substituting && 
+        substituting_allowed(pcs, db ? mapped_chr : chr)) {
+        pcl_decache_font(pcs, -1);
+        pcl_recompute_font(pcs, true);
+        substituting = true;
+        *unstyled_substitution = true;
+        plfont = pcs->font;
+        set_gs_font(pcs);
+        goto r;
+    }
+    
+    /* we substituted and didn't find the character in the font.
+       Restore the old font */
+    if (substituting) {
+        pcl_decache_font(pcs, -1);
+        pcl_recompute_font(pcs, false);
+        set_gs_font(pcs);
+    }
+
     /*
      * If we get to this point deem the character an undefined
      * character - a space in pcl.
@@ -480,11 +576,14 @@ pcl_show_chars_slow(
     floatp                  width;
     gs_point                cpt;
     gs_point                advance_vector;
+    bool                    unstyled_substitution;
 
     cpt.x = pcs->cap.x;
     cpt.y = pcs->cap.y;
 
-    while (get_next_char(pcs, &str, &size, &chr, &orig_chr, &is_space, literal, &advance_vector) == 0) {
+    while (get_next_char(pcs, &str, &size, &chr, 
+                         &orig_chr, &is_space, literal, 
+                         &advance_vector, &unstyled_substitution) == 0) {
         floatp  tmp_x;
 
         /* check if a character was found */
@@ -592,6 +691,11 @@ pcl_show_chars_slow(
                 break;
 	    }
 	}
+        if (unstyled_substitution) {
+            pcl_decache_font(pcs, -1);
+            pcl_recompute_font(pcs, false);
+            set_gs_font(pcs);
+        }
     }
 
     /* record the last width */
@@ -630,7 +734,7 @@ pcl_text(
     if (pcs->personality == rtl)
 	return 0;
     /* set up the current font and HMI */
-    if ((pcs->font == 0) && ((code = pcl_recompute_font(pcs)) < 0))
+    if ((pcs->font == 0) && ((code = pcl_recompute_font(pcs, false)) < 0))
         return code;
 
     /* set up the graphic state */

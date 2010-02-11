@@ -392,7 +392,7 @@ pcl_updated_hmi(
     coord                           hmi;
     const pcl_font_selection_t *    pfs = 
                                      &(pcs->font_selection[pcs->font_selected]);
-    int                             code = pcl_recompute_font(pcs);
+    int                             code = pcl_recompute_font(pcs, false);
     const pl_font_t *               plfont = pcs->font;
 
     if (code < 0)

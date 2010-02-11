@@ -24,6 +24,7 @@
 #include "pllfont.h"
 #include "plftable.h"
 #include "plvalue.h"
+#include "plvocab.h"
 #include "gdebug.h"
 #include "gserror.h"
 #include "gsstate.h"
@@ -395,8 +396,8 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
             pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
             pplfont->params = resident_table[i].params;
             memcpy(pplfont->character_complement, resident_table[i].character_complement, 8);
-            /* make it msl */
-            pplfont->character_complement[7] |= 7;
+
+
             if ( use_unicode_names_for_keys )
                 pl_dict_put(pfontdict, resident_table[i].unicode_fontname, 32, pplfont );
             else {
@@ -408,7 +409,7 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
             pplfont->storage = storage; /* should be an internal font */
             pplfont->data_are_permanent = true;
             pplfont->header = (byte *)header;
-            pplfont->font_type = plft_MSL;
+            pplfont->font_type = plft_8bit_printable;
             pplfont->scaling_technology = plfst_bitmap;
             pplfont->is_xl_format = false;
             pplfont->resolution.x = pplfont->resolution.y = 300;
@@ -423,7 +424,14 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
                 uint width = pl_get_uint16(char_data + 12);
                 uint height = pl_get_uint16(char_data + 14);
                 uint ccode_plus_header_plus_data = 2 + 16 + (((width + 7) >> 3) * height);
-                int code = pl_font_add_glyph(pplfont, pl_get_uint16(char_data), char_data + 2);
+                uint ucode = pl_map_MSL_to_Unicode(pl_get_uint16(char_data), 0);
+                int code = 0;
+
+                /* NB this shouldn't happen but it does, should be
+                   looked at */
+                if (ucode != 0xffff)
+                     code = pl_font_add_glyph(pplfont, ucode, char_data + 2);
+
                 if (code < 0)
                     /* shouldn't happen */
                     return -1;

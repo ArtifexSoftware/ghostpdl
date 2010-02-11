@@ -85,4 +85,18 @@ extern const int pl_built_in_symbol_map_count;
 ulong pl_map_symbol(const pl_symbol_map_t *psm, uint chr, bool is_resident_font, 
                     bool is_MSL, bool is_590);
 
+/* supported pcl and xl wide encodings - 4 Asian encodings and an an
+   undocumented unicode variant which we haven't conclusively
+   identified (maybe ucs/2 or utf-16).
+
+    619 Japanese WIN31J
+    579 Simplified Chinese GB2312
+    616 Korean KSC5601
+    596 Traditional Chinese BIG5
+    590 unicode
+*/
+
+#define pl_wide_encoding(ss) \
+    ((ss) == 619 || (ss) == 579 || (ss) == 616 || (ss) == 596 || (ss) == 590)
+
 #endif				/* plsymbol_INCLUDED */
