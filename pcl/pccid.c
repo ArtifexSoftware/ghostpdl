@@ -21,6 +21,13 @@
 #include "pccid.h"
 #include "plsrgb.h"
 
+/* The HP Color Laserjet 4550 and forward replace all requests for
+   device independent color spaces with sRGB.  Luminance-Chrominance
+   and CIE Lab along with all their parameters are simply ignored and
+   sRGB is installed.  Comment out the following definition to follow
+   the specification and not emulate the printers */
+
+#define ALL_TO_SRGB
 
 /* CID accessors */
 pcl_cspace_type_t
@@ -298,6 +305,13 @@ check_cid_hdr(
         pcidh->bits_per_primary[2] = 8;
     }
 
+#ifdef ALL_TO_SRGB
+    /* the short form of CIE Lab and "LumChrom" are replaced with sRGB
+       on the HP 4600 */
+    if (pcid->len == 6 && pcidh->cspace > pcl_cspace_Colorimetric)
+        pcidh->cspace = pcl_cspace_Colorimetric;
+#endif
+    
     /* if the device handles color conversion remap the colorimetric color space to rgb */
     if (pl_device_does_color_conversion() && pcidh->cspace == pcl_cspace_Colorimetric) {
         pcidh->cspace = pcl_cspace_RGB;
