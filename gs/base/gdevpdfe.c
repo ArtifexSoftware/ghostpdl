@@ -336,7 +336,6 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 	    return_error(gs_error_VMerror);
 	for (i = 0; i < data_length; i++) {
 	    byte c = data[i];
-	    int v;
 
 	    if (c == '\\') 
 		c = decode_escape(data, data_length, &i);
@@ -347,7 +346,6 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 	    /* Its a Unicode (UTF-16BE) string, convert to UTF-8 */
 	    UTF16 *buf0b, U16;
 	    UTF8 *buf1, *buf1b;
-	    char datab;
 
 	    buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char), 
 			"pdf_xmp_write_translated");
@@ -355,7 +353,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 		return_error(gs_error_VMerror);
 	    buf1b = buf1;
 	    /* Skip the Byte Order Mark (0xfe 0xff) */
-	    buf0b = buf0 + 2;
+	    buf0b = (UTF16 *)(buf0 + 2);
 	    /* ConvertUTF16to UTF8 expects a buffer of UTF16s in the local
 	     * endian-ness, but the data is big-endian. In case this is a little-endian
 	     * machine, process the buffer from big-endian to whatever is right for this platform.
@@ -364,8 +362,8 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 		U16 = (buf0[i] << 8) + buf0[i + 1];
 		*(buf0b++) = U16;
 	    }
-	    buf0b = buf0 + 2;
-	    switch (ConvertUTF16toUTF8(&buf0b, (UTF16 *)(buf0 + j),
+	    buf0b = (UTF16 *)(buf0 + 2);
+	    switch (ConvertUTF16toUTF8((const UTF16**)&buf0b, (UTF16 *)(buf0 + j),
 			     &buf1b, buf1 + j, strictConversion)) {
 		case conversionOK:
 		    write(s, buf1, buf1b - buf1);
