@@ -5884,6 +5884,7 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
    
     while (code == 0 && cont) {
 	ref_assign(&arr, ep);
+	parr = &arr;
 	/* Run along the nested color spaces until we get to the lowest one
 	 * that we haven't yet processed (given by 'depth')
 	 */
