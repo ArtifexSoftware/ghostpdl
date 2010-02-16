@@ -257,6 +257,7 @@ xps_true_callback_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     gs_font_type42 *p42 = (gs_font_type42*)pfont;
     const gs_rect *pbbox;
     float sbw[4], w2[6];
+    gs_fixed_point saved_adjust;
     int code;
 
     // dprintf1("build char ttf %d\n", glyph);
@@ -295,9 +296,17 @@ xps_true_callback_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     if (code < 0)
 	return code;
 
+    /* Indicate that dropout prevention should be enabled by setting
+	fill_adjust to the special value -1. */
+    saved_adjust = pgs->fill_adjust;
+    pgs->fill_adjust.x = -1;
+    pgs->fill_adjust.y = -1;
+
     code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
     if (code < 0)
 	return code;
+
+    pgs->fill_adjust = saved_adjust;
 
     return 0;
 }
