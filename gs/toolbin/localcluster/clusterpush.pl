@@ -43,6 +43,16 @@ if (!$user) {
   chomp $user;
 }
 
+# This is horrid, but it works. Replace it when I find a better way
+if ($user eq 'Robin Watts')
+{
+    $user = "robin";
+}
+if ($user eq 'eberly')
+{
+    $user = "deberly";
+}
+
 my $directory=`pwd`;
 chomp $directory;
 
@@ -91,7 +101,7 @@ my $cmd="rsync -avxcz".
 " --exclude svg/obj --exclude svg/debugobj".
 " --exclude ufst --exclude ufst-obj".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
-" -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\"".
+" -e \"ssh -l regression -i \\\"\$HOME/.ssh/cluster_key\\\"\"".
 " .".
 " regression\@$host:$dir/$user/$directory";
 
