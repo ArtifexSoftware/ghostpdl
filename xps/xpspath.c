@@ -30,30 +30,24 @@ xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user)
     gs_matrix ctm;
     gs_matrix inv;
     gs_point a, b, c, d;
+    gs_rect bbox;
 
     gs_currentmatrix(ctx->pgs, &ctm);
     gs_matrix_invert(&ctm, &inv);
-
-    gs_point_transform(ctx->bounds.p.x, ctx->bounds.p.y, &inv, &a);
-    gs_point_transform(ctx->bounds.p.x, ctx->bounds.q.y, &inv, &b);
-    gs_point_transform(ctx->bounds.q.x, ctx->bounds.q.y, &inv, &c);
-    gs_point_transform(ctx->bounds.q.x, ctx->bounds.p.y, &inv, &d);
+    
+    bbox = ctx->bounds;
+    gs_point_transform(bbox.p.x, bbox.p.y, &inv, &a);
+    gs_point_transform(bbox.p.x, bbox.q.y, &inv, &b);
+    gs_point_transform(bbox.q.x, bbox.q.y, &inv, &c);
+    gs_point_transform(bbox.q.x, bbox.p.y, &inv, &d);
 
     user->p.x = MIN(MIN(a.x, b.x), MIN(c.x, d.x));
     user->p.y = MIN(MIN(a.y, b.y), MIN(c.y, d.y));
     user->q.x = MAX(MAX(a.x, b.x), MAX(c.x, d.x));
     user->q.y = MAX(MAX(a.y, b.y), MAX(c.y, d.y));
-
-#if 0
-    user->p.x = 0.0;
-    user->p.y = 0.0;
-    user->q.x = 1000.0;
-    user->q.y = 1000.0;
-#endif
-
 }
 
-static void
+void
 xps_update_bounds(xps_context_t *ctx, gs_rect *save)
 {
     segment *seg;
@@ -114,7 +108,7 @@ xps_update_bounds(xps_context_t *ctx, gs_rect *save)
 	ctx->bounds.q.y = ctx->bounds.p.y;
 }
 
-static void
+void
 xps_restore_bounds(xps_context_t *ctx, gs_rect *save)
 {
     ctx->bounds.p.x = save->p.x;
@@ -158,14 +152,7 @@ xps_debug_bounds(xps_context_t *ctx)
 }
 #endif
 
-int
-xps_unclip(xps_context_t *ctx, gs_rect *saved_bounds)
-{
-    xps_restore_bounds(ctx, saved_bounds);
-    return 0;
-}
-
-int
+void
 xps_clip(xps_context_t *ctx, gs_rect *saved_bounds)
 {
     xps_update_bounds(ctx, saved_bounds);
@@ -176,11 +163,9 @@ xps_clip(xps_context_t *ctx, gs_rect *saved_bounds)
 	gs_clip(ctx->pgs);
 
     gs_newpath(ctx->pgs);
-
-    return 0;
 }
 
-int
+void
 xps_fill(xps_context_t *ctx)
 {
     if (gs_currentopacityalpha(ctx->pgs) < 0.001)
@@ -189,7 +174,6 @@ xps_fill(xps_context_t *ctx)
 	gs_eofill(ctx->pgs);
     else
 	gs_fill(ctx->pgs);
-    return 0;
 }
 
 
@@ -956,7 +940,8 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     float samples[32];
     gs_color_space *colorspace;
 
-    gs_rect saved_bounds;
+    gs_rect saved_bounds_clip;
+    gs_rect saved_bounds_opacity;
 
     gs_gsave(ctx->pgs);
 
@@ -1101,10 +1086,21 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 	if (clip_tag)
 	    xps_parse_path_geometry(ctx, dict, clip_tag, 0);
 
-	xps_clip(ctx, &saved_bounds);
+	xps_clip(ctx, &saved_bounds_clip);
     }
 
-    xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    if (opacity_att || opacity_mask_tag)
+    {
+	/* clip the bounds with the actual path */
+	if (data_att)
+	    xps_parse_abbreviated_geometry(ctx, data_att);
+	if (data_tag)
+	    xps_parse_path_geometry(ctx, dict, data_tag, 0);
+	xps_update_bounds(ctx, &saved_bounds_opacity);
+	gs_newpath(ctx->pgs);
+ 
+ 	xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    }
 
     if (fill_att)
     {
@@ -1163,15 +1159,20 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 	    gs_catch(code, "cannot parse stroke brush. ignoring error.");
     }
 
-    if (clip_att || clip_tag)
+    if (opacity_att || opacity_mask_tag)
     {
-	xps_unclip(ctx, &saved_bounds);
-    }
+	xps_restore_bounds(ctx, &saved_bounds_opacity);
 
-    xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    }
 
     gs_grestore(ctx->pgs);
 
-    return 0;
+    if (clip_att || clip_tag)
+    {
+	xps_restore_bounds(ctx, &saved_bounds_clip);
+    }
+
+   return 0;
 }
 

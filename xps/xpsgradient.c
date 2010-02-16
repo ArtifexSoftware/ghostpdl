@@ -800,7 +800,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
 
     gs_grestore(ctx->pgs);
 
-    xps_unclip(ctx, &saved_bounds);
+    xps_restore_bounds(ctx, &saved_bounds);
 
     xps_free_gradient_stop_function(ctx, opacity_func);
     xps_free_gradient_stop_function(ctx, color_func);

@@ -676,7 +676,7 @@ xps_parse_glyphs(xps_context_t *ctx,
 
     if (clip_att || clip_tag)
     {
-	xps_unclip(ctx, &saved_bounds);
+	xps_restore_bounds(ctx, &saved_bounds);
     }
 
     xps_release_part(ctx, part);

@@ -286,7 +286,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
 	func(ctx, base_uri, dict, root, user);
 
-	xps_unclip(ctx, &saved_bounds);
+	xps_restore_bounds(ctx, &saved_bounds);
     }
 
     xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);

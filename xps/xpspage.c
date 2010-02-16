@@ -91,7 +91,7 @@ int xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, x
 
     if (clip_att || clip_tag)
     {
-	xps_unclip(ctx, &saved_bounds);
+	xps_restore_bounds(ctx, &saved_bounds);
     }
 
     xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);

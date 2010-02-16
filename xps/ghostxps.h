@@ -424,9 +424,10 @@ int xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, ch
 int xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_element(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 
-int xps_clip(xps_context_t *ctx, gs_rect *saved_bounds);
-int xps_unclip(xps_context_t *ctx, gs_rect *saved_bounds);
-int xps_fill(xps_context_t *ctx);
+void xps_update_bounds(xps_context_t *ctx, gs_rect *save);
+void xps_restore_bounds(xps_context_t *ctx, gs_rect *save);
+void xps_clip(xps_context_t *ctx, gs_rect *saved_bounds);
+void xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
 
 int xps_parse_color(xps_context_t *ctx, char *base_uri, char *hexstring, gs_color_space **csp, float *samples);
