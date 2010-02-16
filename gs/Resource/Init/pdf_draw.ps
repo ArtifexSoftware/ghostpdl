@@ -1289,9 +1289,14 @@ currentdict /jp2_csp_dict .undef
     //false 1 index {
       type /integertype ne or
     } forall {
-      (\n   **** Warning: Some elements of Mask array are not integers.\n)
-      pdfformaterror
-      [ exch { 0.5 add cvi } forall ]  % following AR4, 5, 6 implementation
+      oforce_array
+      //false 1 index {
+        type /integertype ne or
+      } forall {
+        (\n   **** Warning: Some elements of Mask array are not integers.\n)
+        pdfformaterror
+        [ exch { 0.5 add cvi } forall ]  % following AR4, 5, 6 implementation
+      } if
     } if
 	% Check elements of array are within 0::(2**BitsPerComponent)-1
 	% This is a PostScript error, but AR ignores Mask in that case
