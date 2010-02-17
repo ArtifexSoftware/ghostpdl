@@ -1565,6 +1565,7 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_si
     icc_luta2bparts.clut->clut_dims[0] = 2;
     icc_luta2bparts.clut->clut_num_input = 1;
     icc_luta2bparts.clut->clut_num_output = 3;
+    icc_luta2bparts.clut->clut_word_width = 2;
     gsicc_create_initialize_clut(icc_luta2bparts.clut);
     icc_luta2bparts.clut->data_float = (float*) gs_alloc_bytes(memory,2*3*sizeof(float),"gsicc_create_froma"); /* 2 grid points 3 outputs */
     gsicc_vec_to_mlut(&(pcie->MatrixA), icc_luta2bparts.clut->data_float);
