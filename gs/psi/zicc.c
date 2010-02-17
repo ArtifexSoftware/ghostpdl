@@ -107,7 +107,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     return cie_set_finish( i_ctx_p,
                            pcs,
-                           &istate->colorspace.procs.cie,
+                           &istate->colorspace[0].procs.cie,
                            edepth,
                            code );
 }

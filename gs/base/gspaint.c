@@ -346,9 +346,6 @@ do_stroke(gs_state * pgs)
 {
     int code, abits, acode, rcode = 0;
 
-    /* Use the stroking color */
-    pgs->current_color = 1;
-
     /* to distinguish text from vectors we hackly look at the
        target device 1 bit per component is a cache and this is
        text else it is a path */
@@ -389,12 +386,11 @@ do_stroke(gs_state * pgs)
     else {
 	gs_set_object_tag(pgs, GS_TEXT_TAG);
     }
+    /* Evil: The following call is a macro that might return! */
     gx_set_dev_color(pgs);
     code = gs_state_color_load(pgs);
-    if (code < 0) {
-	pgs->current_color = 0;
+    if (code < 0)
 	return code;
-    }
     abits = alpha_buffer_bits(pgs);
     if (abits > 1) {
 	/*
@@ -419,10 +415,8 @@ do_stroke(gs_state * pgs)
 				  pgs->fill_adjust.x + extra_adjust,
 				  pgs->fill_adjust.y + extra_adjust,
 				  abits);
-	if (acode < 0) {
-	    pgs->current_color = 0;
+	if (acode < 0)
 	    return acode;
-	}
 	gs_setlinewidth(pgs, new_width);
 	scale_dash_pattern(pgs, scale);
 	gs_setflat(pgs, orig_flatness * scale);
@@ -447,7 +441,6 @@ do_stroke(gs_state * pgs)
 	code = gx_stroke_fill(pgs->path, pgs);
     if (code >= 0 && rcode < 0)
 	code = rcode;
-    pgs->current_color = 0;
     return code;
 }
 

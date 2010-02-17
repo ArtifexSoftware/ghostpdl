@@ -255,11 +255,14 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     pgs->color[1].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     pgs->in_cachedevice = 0;
-    pgs->current_color = 1;
+    gs_swapcolors(pgs); /* To color 1 */
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
-    pgs->current_color = 0;
+    gs_swapcolors(pgs); /* To color 0 */
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */
+    pgs->dev_ht_alt = 0;
+    pgs->cie_joint_caches_alt = 0;
+    pgs->pattern_cache_alt = 0;
     gs_nulldevice(pgs);
     gs_setalpha(pgs, 1.0);
     gs_settransfer(pgs, gs_identity_transfer);
@@ -822,10 +825,8 @@ gs_currenttextrenderingmode(const gs_state * pgs)
 static void
 gstate_free_parts(const gs_state * parts, gs_memory_t * mem, client_name_t cname)
 {
-    if (parts->color[0].dev_color != parts->color[1].dev_color)
-        gs_free_object(mem, parts->color[1].dev_color, cname);
-    if (parts->color[0].ccolor != parts->color[1].ccolor)
-        gs_free_object(mem, parts->color[1].ccolor, cname);
+    gs_free_object(mem, parts->color[1].dev_color, cname);
+    gs_free_object(mem, parts->color[1].ccolor, cname);
     gs_free_object(mem, parts->color[0].dev_color, cname);
     gs_free_object(mem, parts->color[0].ccolor, cname);
     if (!parts->effective_clip_shared)
@@ -946,6 +947,8 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	    goto fail;
     }
     gs_imager_state_copied((gs_imager_state *)pgs);
+    rc_increment(pgs->dev_ht_alt);
+    rc_increment(pgs->cie_joint_caches_alt);
     /* Don't do anything to clip_stack. */
     rc_increment(pgs->device);
     *parts.color[0].ccolor    = *pfrom->color[0].ccolor;
@@ -962,11 +965,10 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     } else {
 	GSTATE_ASSIGN_PARTS(pgs, &parts);
     }
-    pgs->current_color = 0;
+    gs_swapcolors(pgs);
     cs_adjust_counts(pgs, 1);
-    pgs->current_color = 1;
+    gs_swapcolors(pgs);
     cs_adjust_counts(pgs, 1);
-    pgs->current_color = pfrom->current_color;
     return pgs;
   fail:
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -999,21 +1001,29 @@ gstate_free_contents(gs_state * pgs)
     gs_memory_t *mem = pgs->memory;
     const char *const cname = "gstate_free_contents";
     int current_col;
+    gx_device_halftone *pdhta = pgs->dev_ht_alt;
 
     rc_decrement(pgs->device, cname);
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
     rc_decrement(pgs->dfilter_stack, cname);
-    current_col = pgs->current_color;
-    pgs->current_color = 0;
+    gs_swapcolors(pgs);
     cs_adjust_counts(pgs, -1);
-    pgs->current_color = 1;
+    gs_swapcolors(pgs);
     cs_adjust_counts(pgs, -1);
-    pgs->current_color = current_col;
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     gstate_free_parts(pgs, mem, cname);
     gs_imager_state_release((gs_imager_state *)pgs);
+    /*
+     * If we're going to free the device halftone, make sure we free the
+     * dependent structures as well.
+     */
+    if (pdhta != 0 && pdhta->rc.ref_count == 1) {
+	gx_device_halftone_release(pdhta, pdhta->rc.memory);
+    }
+    rc_decrement(pgs->dev_ht_alt, "gstate_free_contents");
+    rc_decrement(pgs->cie_joint_caches_alt, "gstate_free_contents");
 }
 
 /* Copy one gstate to another. */
@@ -1038,9 +1048,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
      * Handle references from contents.
      */
     cs_adjust_counts(pto, -1);
-    pto->current_color ^= 1;
+    gs_swapcolors(pto);
     cs_adjust_counts(pto, -1);
-    pto->current_color ^= 1;
+    gs_swapcolors(pto);
     gx_path_assign_preserve(pto->path, pfrom->path);
     gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
     /*
@@ -1078,6 +1088,8 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 
 	gs_imager_state_pre_assign((gs_imager_state *)pto,
 				   (const gs_imager_state *)pfrom);
+	rc_pre_assign(pto->dev_ht_alt, pfrom->dev_ht_alt, "gstate_copy");
+	rc_pre_assign(pto->cie_joint_caches_alt, pfrom->cie_joint_caches_alt, "gstate_copy");
 	*pto = *pfrom;
 	pto->client_data = pdata;
 	pto->memory = mem;
@@ -1093,9 +1105,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
     cs_adjust_counts(pto, 1);
-    pto->current_color ^= 1;
+    gs_swapcolors(pto);
     cs_adjust_counts(pto, 1);
-    pto->current_color ^= 1;
+    gs_swapcolors(pto);
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;
@@ -1105,4 +1117,44 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 gs_id gx_get_clip_path_id(gs_state *pgs)
 {
     return pgs->clip_path->id;
+}
+
+void gs_swapcolors(gs_state *pgs)
+{
+    struct gx_cie_joint_caches_s *tmp_cie;
+    gx_device_halftone           *tmp_ht;
+    gs_devicen_color_map          tmp_ccm;
+    struct gx_pattern_cache_s    *tmp_pc;
+    gs_client_color              *tmp_cc;
+    gx_device_color              *tmp_dc;
+    gs_color_space               *tmp_cs;
+    
+    tmp_cc               = pgs->color[0].ccolor;
+    pgs->color[0].ccolor = pgs->color[1].ccolor;
+    pgs->color[1].ccolor = tmp_cc;
+
+    tmp_dc                  = pgs->color[0].dev_color;
+    pgs->color[0].dev_color = pgs->color[1].dev_color;
+    pgs->color[1].dev_color = tmp_dc;
+
+    tmp_cs                    = pgs->color[0].color_space;
+    pgs->color[0].color_space = pgs->color[1].color_space;
+    pgs->color[1].color_space = tmp_cs;
+
+    /* Swap the bits of the imager state that depend on the current color */
+    tmp_ht          = pgs->dev_ht;
+    pgs->dev_ht     = pgs->dev_ht_alt;
+    pgs->dev_ht_alt = tmp_ht;
+    
+    tmp_cie                   = pgs->cie_joint_caches;
+    pgs->cie_joint_caches     = pgs->cie_joint_caches_alt;
+    pgs->cie_joint_caches_alt = tmp_cie;
+    
+    tmp_ccm                      = pgs->color_component_map;
+    pgs->color_component_map     = pgs->color_component_map_alt;
+    pgs->color_component_map_alt = tmp_ccm;
+
+    tmp_pc                 = pgs->pattern_cache;
+    pgs->pattern_cache     = pgs->pattern_cache_alt;
+    pgs->pattern_cache_alt = tmp_pc;
 }

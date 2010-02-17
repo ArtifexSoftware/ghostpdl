@@ -160,8 +160,8 @@ gs_setpatternspace(gs_state * pgs)
 	/* reference to base space shifts from pgs to pcs with no net change */
 	pcs->base_space = ccs_old;
 	pcs->params.pattern.has_base_space = true;
-	pgs->color[pgs->current_color].color_space = pcs;
-	cs_full_init_color(pgs->color[pgs->current_color].ccolor, pcs);
+	pgs->color[0].color_space = pcs;
+	cs_full_init_color(pgs->color[0].ccolor, pcs);
 	gx_unset_dev_color(pgs);
     }
     return code;

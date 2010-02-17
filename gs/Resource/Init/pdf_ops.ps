@@ -323,8 +323,10 @@ nodict readonly pop
   FillColor FillColorSpace setgcolor setfillblend
 } def
 /setstrokestate {
+  .swapcolors
   StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
   StrokeConstantAlpha SoftMask .settransparencyparams
+  .swapcolors
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
   /DeviceGray { pop setgray } bdef
@@ -421,7 +423,7 @@ end def
 
 % ---------------- Path painting and clipping ---------------- %
 
-/S { setstrokestate /stroke fsexec } bdef
+/S { setstrokestate .swapcolors /stroke fsexec .swapcolors } bdef
 /f { setfillstate /fill fsexec } bdef
 /f* { setfillstate /eofill fsexec } bdef
 /n { newpath } bdef		% don't allow n to get bound in
@@ -434,7 +436,7 @@ end def
 % Clipping:
 
 /Wdict 4 dict dup begin
-/S { gsave setstrokestate stroke grestore n } bdef
+/S { gsave setstrokestate .swapcolors stroke .swapcolors grestore n } bdef
 /f { gsave setfillstate fill grestore n } bdef
 /f* { gsave setfillstate eofill grestore n } bdef
 /n { end { currentpoint } stopped not { pop pop clip } if newpath } bdef
@@ -705,7 +707,7 @@ end readonly def
 
 /pdfwrite_textrenderingprocs [
 	{ setfillstate show } bind
-	{ setstrokestate 
+	{ setstrokestate
         % Need to set the stroke width to a value which gives the correct
         % width under pdfwrite. Pdfwrite uses (in text mode) an identity
         % CTM, so we need to calculate the stroke width which would result
@@ -722,13 +724,15 @@ end readonly def
         show } bind
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show currentpoint 3 -1 roll 
-	  grestore gsave setstrokestate 
+	  grestore gsave setstrokestate
         false charpath 
         % We need to make sure the matrix used for the stroke
         % and therefore stroke width does not include the 
         % Text Matrix Tm.
         TextSaveMatrix setmatrix
+        .swapcolors
         stroke 
+        .swapcolors
 	  grestore moveto
 	} bind
 	{ setfillstate show } bind
@@ -744,7 +748,8 @@ end readonly def
         % and therefore stroke width does not include the 
         % Text Matrix Tm.
         TextSaveMatrix setmatrix
-        stroke grestore 
+        .swapcolors
+        stroke .swapcolors grestore 
 	  true charpath } bind
 	{ true charpath } bind
 ] readonly def
@@ -876,7 +881,7 @@ end readonly def
 /Tmatrix matrix def
 /tS
  { setstrokestate
-   currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix stroke
+   currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke .swapcolors
    setmatrix moveto
  } bdef
 /tB { gsave tf grestore tS } bdef

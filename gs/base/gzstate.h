@@ -105,11 +105,11 @@ struct gs_state_s {
     bool effective_clip_shared;	/* true iff e.c.p. = c.p. or v.c. */
 
 #define gs_currentdevicecolor_inline(pgs) \
-    ((pgs)->color[(pgs)->current_color].dev_color)
+    ((pgs)->color[0].dev_color)
 #define gs_currentcolor_inline(pgs) \
-    ((pgs)->color[(pgs)->current_color].ccolor)
+    ((pgs)->color[0].ccolor)
 #define gs_currentcolorspace_inline(pgs) \
-    ((pgs)->color[(pgs)->current_color].color_space)
+    ((pgs)->color[0].color_space)
 
     /* Current colors (non-stroking, and stroking) */
     struct {
@@ -118,7 +118,12 @@ struct gs_state_s {
         gx_device_color *dev_color;
     } color[2];
     
-    int current_color; /* Which color is in force */
+    /* Stores for cached values which correspond to whichever of the
+     * above colors isn't in force at the moment */
+    struct gx_cie_joint_caches_s *cie_joint_caches_alt;
+    gx_device_halftone *dev_ht_alt;
+    gs_devicen_color_map color_component_map_alt;
+    struct gx_pattern_cache_s *pattern_cache_alt;
 
     /* Font: */
 
@@ -163,13 +168,17 @@ struct gs_state_s {
   m(6,color[0].color_space) m(7,color[0].ccolor) m(8,color[0].dev_color)\
   m(9,color[1].color_space) m(10,color[1].ccolor) m(11,color[1].dev_color)\
   m(12,font) m(13,root_font) m(14,show_gstate) /*m(---,device)*/\
-  m(15,transparency_group_stack)
-#define gs_state_num_ptrs 16
+  m(15,transparency_group_stack)\
+  m(16,cie_joint_caches_alt) m(17,pattern_cache_alt)\
+  m(18,dev_ht_alt)
+#define gs_state_num_ptrs 19
 
 /* The following macro is used for development purpose for designating places 
    where current point is changed. Clients must not use it. */
 #define gx_setcurrentpoint(pgs, xx, yy)\
     (pgs)->current_point.x = xx;\
     (pgs)->current_point.y = yy;
+
+void gs_swapcolors(gs_state *);
 
 #endif /* gzstate_INCLUDED */
