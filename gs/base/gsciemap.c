@@ -137,30 +137,16 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
     gx_cie_scalar_cache *defg_caches = &(pcs->params.defg->caches_defg.DecodeDEFG[0]);
 
-    bool has_no_abc_procs = (abc_caches->floats.params.is_identity &&
-                         (abc_caches)[1].floats.params.is_identity && 
-                         (abc_caches)[2].floats.params.is_identity);
-    bool has_no_lmn_procs = (lmn_caches->floats.params.is_identity &&
-                         (lmn_caches)[1].floats.params.is_identity && 
-                         (lmn_caches)[2].floats.params.is_identity);
-    bool has_no_defg_procs = (defg_caches->floats.params.is_identity &&
-                         (defg_caches)[1].floats.params.is_identity && 
-                         (defg_caches)[2].floats.params.is_identity &&
-                         (defg_caches)[3].floats.params.is_identity);
-
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
-    /* For now, to avoid problems just use default CMYK for this */
-#if 0
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
     code = gsicc_create_fromdefg(pcs->params.defg, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
-                    !has_no_abc_procs, !has_no_lmn_procs, !has_no_defg_procs);
+                    abc_caches, lmn_caches, defg_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
-#endif
     pcs->icc_equivalent = *ppcs_icc;
     return(0);
 }
@@ -227,30 +213,16 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
     gx_cie_scalar_cache *def_caches = &(pcs->params.def->caches_def.DecodeDEF[0]);
 
-    bool has_no_abc_procs = (abc_caches->floats.params.is_identity &&
-                         (abc_caches)[1].floats.params.is_identity && 
-                         (abc_caches)[2].floats.params.is_identity);
-    bool has_no_lmn_procs = (lmn_caches->floats.params.is_identity &&
-                         (lmn_caches)[1].floats.params.is_identity && 
-                         (lmn_caches)[2].floats.params.is_identity);
-    bool has_no_def_procs = (def_caches->floats.params.is_identity &&
-                         (def_caches)[1].floats.params.is_identity && 
-                         (def_caches)[2].floats.params.is_identity);
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
-    /* For now, to avoid problems just use default RGB for this */
-    /* (*ppcs_icc)->cmm_icc_profile_data = pis->icc_manager->default_rgb;
-    rc_increment(pis->icc_manager->default_rgb); */
-#if 0
-    (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
     code = gsicc_create_fromdef(pcs->params.def, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
-                    !has_no_abc_procs, !has_no_lmn_procs, !has_no_def_procs);
+                    abc_caches, lmn_caches, def_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
-#endif
+    /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
     return(0);
 }

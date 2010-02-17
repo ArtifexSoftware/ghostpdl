@@ -169,6 +169,35 @@ typedef struct {
     icUInt32Number      size;           /* Size in bytes */
     unsigned char       byte_padding;
 } gsicc_tag;
+/* In generating 2x2x2 approximations as well as cases 
+   where we will need to squash components together we
+   will go to float and then to 16 bit tables, hence the
+   float pointer.  Otherwise we will keep the data
+   in the existing byte form that it is in the CIEDEF(G)
+   tables of postscript */
+typedef struct {
+    float   *data_float;              /* Used for cases where we have to squash
+                                   or where we generate a table */
+    unsigned char *data_byte;  /* Used for cases where we can 
+                                   use the table as is */
+    int     clut_dims[4];
+    int     clut_num_input;  
+    int     clut_num_output;
+    int     clut_num_entries;   /* Number of entries */
+    int     clut_word_width;    /* Word width of table, 1 or 2 */
+} gsicc_clut;
+
+typedef struct {
+    float   *a_curves;
+    gsicc_clut *clut;
+    float   *m_curves;
+    gs_matrix3 *matrix;
+    float   *b_curves;
+    int num_in;
+    int num_out;
+    gs_vector3 *white_point;
+    gs_vector3 *black_point;
+} gsicc_lutatob;
 
 static int
 get_padding(int x)
@@ -784,32 +813,42 @@ add_ident_curves(unsigned char *input_ptr,int number_of_curves)
 }
 
 static void
-add_clutAtoB(unsigned char *input_ptr, float *clut, int clut_grid_size, int num_channels_in, int mlut_size)
+add_clutAtoB(unsigned char *input_ptr, gsicc_clut *clut)
 {
     unsigned char *curr_ptr = input_ptr;
     int k;
-    int number_samples = mlut_size/2;
     short value;
+    int num_channels_in = clut->clut_num_input;
+    int number_samples = clut->clut_num_entries;
+    float valueflt;
 
-    /* First write out the dimensions that are the same for each channel. */
-    memset(curr_ptr, clut_grid_size, num_channels_in);
-    curr_ptr += num_channels_in;
+    /* First write out the dimensions for each channel */
+    for (k = 0; k < num_channels_in; k++) {
+        memset(curr_ptr, clut->clut_dims[k], 1);
+        curr_ptr++;
+    }
     /* Set the remainder of the dimenensions */
     memset(curr_ptr, 0, 16-num_channels_in);
     curr_ptr += (16-num_channels_in);
     /* word size */
-    memset(curr_ptr, 2, 1);
+    memset(curr_ptr, clut->clut_word_width, 1);
     curr_ptr++;
     /* padding */
     memset(curr_ptr, 0, 3);
     curr_ptr += 3;
-    /* Now the actual table data */
-    for ( k = 0; k < number_samples; k++ ) {
-        if (clut[k] < 0) clut[k] = 0;
-        if (clut[k] > 1) clut[k] = 1; 
-        value = clut[k]*0xFFFF;
-        write_bigendian_2bytes(curr_ptr,value);
-        curr_ptr += 2;
+    if (clut->data_byte != NULL) {
+        /* A byte table */
+        memcpy(curr_ptr,clut->data_byte,number_samples);
+    } else {
+        /* A float table */
+        for ( k = 0; k < number_samples; k++ ) {
+            valueflt = clut->data_float[k];
+            if (valueflt < 0) valueflt = 0;
+            if (valueflt > 1) valueflt = 1; 
+            value = valueflt*0xFFFF;
+            write_bigendian_2bytes(curr_ptr,value);
+            curr_ptr += 2;
+        }
     }
 }
 
@@ -843,33 +882,34 @@ add_curve(unsigned char *input_ptr, float *curve_data, int num_samples)
 /* See comments before add_lutAtoBtype about allowable forms, which will explain much
    of these size calculations */
 static int
-getsize_lutAtoBtype(float *a_curves, float *clut, int clut_grid_size, float *m_curves, 
-               gs_matrix3 *matrix_input, float *b_curves,int numin, int numout)
+getsize_lutAtoBtype(gsicc_lutatob *lutatobparts)
 {
     int data_offset, mlut_size;
+    int numout = lutatobparts->num_out;
+    int numin = lutatobparts->num_in;
 
     data_offset = 32; 
     /* B curves always present */
-    if (b_curves != NULL) {
+    if (lutatobparts->b_curves != NULL) {
         data_offset += (numout*(CURVE_SIZE*2+12));
     } else {
         data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
     }
     /* M curves present if Matrix is present */
-    if (matrix_input != NULL) {
+    if (lutatobparts->matrix != NULL) {
         data_offset += (12*4);
         /* M curves */
-        if (m_curves != NULL) {
+        if (lutatobparts->m_curves != NULL) {
             data_offset += (numout*(CURVE_SIZE*2+12));
         } else {
             data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
         }
     } 
     /* A curves present if clut is present */
-    if (clut != NULL) {
-        mlut_size = (long) pow((float) clut_grid_size, (long) numin)*numout*2;
+    if (lutatobparts->clut != NULL) {
+        mlut_size = lutatobparts->clut->clut_num_entries*lutatobparts->clut->clut_word_width;
         data_offset += (mlut_size + 20);
-        if (a_curves != NULL) {
+        if (lutatobparts->a_curves != NULL) {
             data_offset += (numin*(CURVE_SIZE*2+12));
         } else {
             data_offset += (numin*(IDENT_CURVE_SIZE*2+12));
@@ -887,16 +927,17 @@ Other forms are created by making some of these items identity.  In other words 
 be included.  If CLUT is present, A curves must be present.  Also, if Matrix is present M curves must be 
 present.  A curves cannot be present if CLUT is not present. */
 static void
-add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut_grid_size, float *m_curves, 
-               gs_matrix3 *input_matrix, float *b_curves,int numin, int numout)
+add_lutAtoBtype(unsigned char *input_ptr, gsicc_lutatob *lutatobparts)
 {
 /* We need to figure out all the offsets to the various objects based upon which ones are actually present */
     unsigned char *curr_ptr;
     long mlut_size;
     int data_offset;
     int k;
+    int numout = lutatobparts->num_out;
+    int numin = lutatobparts->num_in;
 
-   /* Signature */
+    /* Signature */
     curr_ptr = input_ptr;
     write_bigendian_4bytes(curr_ptr,icMultiFunctionAtoBType);
     curr_ptr += 4;
@@ -911,7 +952,7 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
     /* Note if data offset is zero, element is not present */
     /* offset to B curves (last curves) */
     data_offset = 32; 
-    if (b_curves == NULL) {
+    if (lutatobparts->b_curves == NULL) {
         /* identity curve must be present */
         write_bigendian_4bytes(curr_ptr,data_offset);
         data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
@@ -921,7 +962,7 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
     }
     curr_ptr += 4;
     /* offset to matrix and M curves */
-    if (input_matrix == NULL) {
+    if (lutatobparts->matrix == NULL) {
         memset(curr_ptr,0,4);  /* Matrix */
         curr_ptr += 4;
         memset(curr_ptr,0,4);  /* M curves */
@@ -930,7 +971,7 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
         data_offset += (12*4);
         curr_ptr += 4;
         /* offset to M curves (Matrix curves -- only come with matrix) */
-        if (m_curves == NULL) {
+        if (lutatobparts->m_curves == NULL) {
             /* identity curve must be present */
             write_bigendian_4bytes(curr_ptr,data_offset);
             data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
@@ -941,17 +982,17 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
     }
     curr_ptr += 4;
     /* offset to CLUT and A curves */
-    if (clut == NULL) {
+    if (lutatobparts->clut == NULL) {
         memset(curr_ptr,0,4); /* CLUT */
         curr_ptr += 4;
         memset(curr_ptr,0,4); /* A curves */
     } else {
         write_bigendian_4bytes(curr_ptr,data_offset);
-        mlut_size = (long) pow((float) clut_grid_size, (long) numin)*numout*2;
+        mlut_size = lutatobparts->clut->clut_num_entries*lutatobparts->clut->clut_word_width;
         data_offset += (mlut_size + 20);
         curr_ptr += 4;
         /* offset to A curves (first curves) */
-        if (a_curves == NULL || clut == NULL) {
+        if (lutatobparts->a_curves == NULL || lutatobparts->clut == NULL) {
             /* identity curve must be present */
             write_bigendian_4bytes(curr_ptr,data_offset);
             data_offset += (numin*(IDENT_CURVE_SIZE*2+12));
@@ -964,9 +1005,9 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
     /* Header is completed */
     /* Now write out the various parts (i.e. curves, matrix and clut)
     /* First the B curves */
-    if (b_curves != NULL) {
+    if (lutatobparts->b_curves != NULL) {
         for (k = 0; k < numout; k++) {
-            add_curve(curr_ptr, b_curves+k*CURVE_SIZE, CURVE_SIZE);
+            add_curve(curr_ptr, (lutatobparts->b_curves)+k*CURVE_SIZE, CURVE_SIZE);
             curr_ptr += (12 + CURVE_SIZE*2);
         }
     } else {
@@ -974,13 +1015,13 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
         curr_ptr += numout*(12 + IDENT_CURVE_SIZE*2);
     }
     /* Then the matrix */
-    if (input_matrix != NULL) {
-        add_matrixwithbias(curr_ptr,&(input_matrix->cu.u),true);
+    if (lutatobparts->matrix != NULL) {
+        add_matrixwithbias(curr_ptr,&(lutatobparts->matrix->cu.u),true);
         curr_ptr += (12*4);
         /* M curves */
-        if (m_curves != NULL) {
+        if (lutatobparts->m_curves != NULL) {
             for (k = 0; k < numout; k++) {
-                add_curve(curr_ptr, m_curves+k*CURVE_SIZE, CURVE_SIZE);
+                add_curve(curr_ptr, (lutatobparts->m_curves)+k*CURVE_SIZE, CURVE_SIZE);
                 curr_ptr += (12 + CURVE_SIZE*2);
             }
         } else {
@@ -989,13 +1030,13 @@ add_lutAtoBtype(unsigned char *input_ptr, float *a_curves, float *clut, int clut
         }
     }
     /* Then the clut */
-    if (clut != NULL) {
-        add_clutAtoB(curr_ptr, clut, clut_grid_size, numin, mlut_size);
+    if (lutatobparts->clut != NULL) {
+        add_clutAtoB(curr_ptr, lutatobparts->clut);
         curr_ptr += (20 + mlut_size);
         /* The A curves */
-        if (a_curves != NULL) {
+        if (lutatobparts->a_curves != NULL) {
             for (k = 0; k < numin; k++) {
-                add_curve(curr_ptr, a_curves+k*CURVE_SIZE, CURVE_SIZE);
+                add_curve(curr_ptr, (lutatobparts->a_curves)+k*CURVE_SIZE, CURVE_SIZE);
                 curr_ptr += (12 + CURVE_SIZE*2);
             }
         } else {
@@ -1211,11 +1252,42 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,  
     return(result);
 }
 
+static void
+gsicc_create_free_luta2bpart(gs_memory_t *memory, gsicc_lutatob *icc_luta2bparts)
+{
+        gs_free_object(memory, icc_luta2bparts->a_curves, "gsicc_create_free_luta2bpart");
+        gs_free_object(memory, icc_luta2bparts->b_curves, "gsicc_create_free_luta2bpart");
+        /* Note, data_byte is handled externally.  We do not free that member here */
+        gs_free_object(memory, icc_luta2bparts->clut->data_float, "gsicc_create_free_luta2bpart");
+        gs_free_object(memory, icc_luta2bparts->clut, "gsicc_create_free_luta2bpart");
+        gs_free_object(memory, icc_luta2bparts->m_curves, "gsicc_create_free_luta2bpart");
+}
+
+static void
+gsicc_create_init_luta2bpart(gsicc_lutatob *icc_luta2bparts)
+{
+    icc_luta2bparts->a_curves = NULL;
+    icc_luta2bparts->b_curves = NULL;
+    icc_luta2bparts->clut = NULL;
+    icc_luta2bparts->m_curves = NULL;
+}
+
+static void
+gsicc_create_initialize_clut(gsicc_clut *clut)
+{
+    int k;
+
+    clut->clut_num_entries = clut->clut_dims[0];
+    for (k = 1; k < clut->clut_num_input; k++) {
+        clut->clut_num_entries *= clut->clut_dims[k];
+    }
+    clut->data_byte =  NULL;
+    clut->data_float =  NULL;
+}
+
 /* A common form used for most of the PS CIE color spaces */
 static void
-create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, float *a_curves, float *clut, int clut_grid_size, 
-                      float *m_curves, gs_matrix3 *matrix_input, float *b_curves, int num_in, int num_out, 
-                      gs_vector3 *white_point, gs_vector3 *black_point, gs_memory_t *memory)
+create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, gsicc_lutatob *lutatobparts, gs_memory_t *memory)
 {
     int num_tags = 5;  /* common (2), AToB0Tag,bkpt,and wtpt.*/
     int k;
@@ -1235,7 +1307,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, float *a_c
     init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
     /* init_tag(tag_list, &last_tag, icSigChromaticAdaptationTag, 9*4);  */  /* chad tag */
     /* Get the tag size of the A2B0 with the lutAtoBType */
-    tag_size = getsize_lutAtoBtype(a_curves, clut, clut_grid_size, m_curves, matrix_input, b_curves, num_in, num_out);
+    tag_size = getsize_lutAtoBtype(lutatobparts);
     init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
     /* Add all the tag sizes to get the new profile size */
     for(k = 0; k < num_tags; k++) {
@@ -1261,11 +1333,11 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, float *a_c
     }
     tag_location = NUMBER_COMMON_TAGS;
      /* get_D50(temp_XYZ); */
-    get_XYZ(temp_XYZ,white_point);
+    get_XYZ(temp_XYZ,lutatobparts->white_point);
     add_xyzdata(curr_ptr,temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
-    get_XYZ(temp_XYZ,black_point);
+    get_XYZ(temp_XYZ,lutatobparts->black_point);
     add_xyzdata(curr_ptr,temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
@@ -1275,10 +1347,68 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, float *a_c
     /* Now the AToB0Tag Data. Here this will include the M curves, the matrix and the B curves.
        We may need to do some adustements with respect to encode and decode.  For now
        assume all is between 0 and 1. */
-    add_lutAtoBtype(curr_ptr, a_curves, clut, clut_grid_size, m_curves, matrix_input, b_curves, num_in, num_out);
+    add_lutAtoBtype(curr_ptr, lutatobparts);
     *pp_buffer_in = buffer;
     gs_free_object(memory, tag_list, "create_lutAtoBprofile");
 
+}
+
+/* Shared code by ABC, DEF and DEFG compaction of ABC/LMN parts.  This is used
+   when we either MatrixABC is identity, LMN Decode is identity or MatrixLMN is identity */
+static
+gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN, gs_matrix3 *matrixABC, bool has_abc_procs,
+                       bool has_lmn_procs, gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches, gs_memory_t *memory)   
+{
+    gs_matrix3 temp_matrix;
+    gs_matrix3 *matrix_ptr;
+    float *curr_pos;
+
+    /* Determine the matrix that we will be using */
+    if (!(matrixLMN->is_identity) && !(matrixABC->is_identity)){
+        /* Use the product of the ABC and LMN matrices, since lmn_procs identity.
+           Product must be LMN_Matrix*ABC_Matrix */
+        cie_matrix_mult3(matrixLMN, matrixABC, &temp_matrix);
+        cie_matrix_transpose3(&temp_matrix, atob_parts->matrix);
+    } else {
+        /* Either ABC matrix or LMN matrix is identity */
+        if (matrixABC->is_identity) {
+            matrix_ptr = matrixLMN;
+        } else {
+            matrix_ptr = matrixABC;
+        }
+        cie_matrix_transpose3(matrix_ptr, atob_parts->matrix);
+    }
+    /* Merge the curves */
+    if (has_abc_procs && has_lmn_procs && matrixABC->is_identity) {
+        /* Merge the curves into the abc curves. no b curves */
+        merge_abc_lmn_curves(abc_caches, lmn_caches);
+        has_lmn_procs = false;
+    }
+    if (has_abc_procs) {
+        atob_parts->m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+        curr_pos = atob_parts->m_curves;
+        memcpy(curr_pos,&(abc_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&(abc_caches[1].floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&(abc_caches[2].floats.values[0]),CURVE_SIZE*sizeof(float));
+    }
+    if (has_lmn_procs) {
+        atob_parts->b_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+        curr_pos = atob_parts->b_curves;
+        memcpy(curr_pos,&(lmn_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&(lmn_caches[1].floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&(lmn_caches[2].floats.values[0]),CURVE_SIZE*sizeof(float));
+    }
+    /* Note that if the b_curves are null and we have a matrix we need to scale the matrix values by 2.
+       Otherwise an input value of 50% gray, which is 32767 would get mapped to 32767 by the matrix.  This
+       will be interpreted as a max XYZ value (s15.16) when it is eventually mapped to u16.16 due to the
+       mapping of X=Y by the identity table.  If there are b_curves these have an output that is 16 bit. */
+    if (atob_parts->b_curves == NULL) {
+        scale_matrix(&(atob_parts->matrix->cu.u),2.0);
+    }
 }
 
 /* The ABC color space is modeled using the V4 lutAtoBType which has the flexibility to model 
@@ -1291,10 +1421,10 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
     int debug_catch = 1;
-    gs_matrix3 *matrix_input;
-    gs_matrix3 combined_matrix, matrix_input_trans;
-    float *a_curves, *m_curves, *b_curves, *curr_pos, *clut;
-    int clut_grid_size;
+    int k;
+    gs_matrix3 matrix_input_trans;
+    gsicc_lutatob icc_luta2bparts;
+    float *curr_pos;
     bool has_abc_procs = !((abc_caches->floats.params.is_identity &&
                          (abc_caches)[1].floats.params.is_identity && 
                          (abc_caches)[2].floats.params.is_identity));
@@ -1302,6 +1432,7 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
                          (lmn_caches)[1].floats.params.is_identity && 
                          (lmn_caches)[2].floats.params.is_identity));
 
+    gsicc_create_init_luta2bpart(&icc_luta2bparts);
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
     gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
     /* Fill in the common stuff */
@@ -1313,6 +1444,10 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
     header->colorSpace = icSigRgbData;
     header->deviceClass = icSigInputClass;
     header->pcs = icSigXYZData;
+    icc_luta2bparts.num_in = 3;
+    icc_luta2bparts.num_out = 3;
+    icc_luta2bparts.white_point = &(pcie->common.points.WhitePoint);
+    icc_luta2bparts.black_point = &(pcie->common.points.BlackPoint);
 
     /* Check what combination we have with respect to the various
        LMN and ABC parameters. Depending upon the situation we
@@ -1322,67 +1457,15 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
        decode procs.  If we have an ABC matrix, LMN procs and an LMN 
        matrix we will need to create a small (2x2x2) CLUT for the ICC format. */
     if (pcie->MatrixABC.is_identity || !has_lmn_procs || pcie->common.MatrixLMN.is_identity) {
-        /* Determine the matrix that we will be using */
-        /* AToB0Tag here is implemented as lutAtoBType (V4) with no CLUT or A curves. */     
-        if (!(pcie->common.MatrixLMN.is_identity) && !(pcie->MatrixABC.is_identity)){
-            /* Use the product of the ABC and LMN matrices, since lmn_procs identity.
-               Product must be LMN_Matrix*ABC_Matrix */
-            cie_matrix_mult3(&(pcie->common.MatrixLMN), &(pcie->MatrixABC), &(combined_matrix));
-            matrix_input = &(combined_matrix);
-        } else {
-            if (pcie->MatrixABC.is_identity) {
-                matrix_input = &(pcie->common.MatrixLMN);
-            } else {
-                matrix_input = &(pcie->MatrixABC);
-            }
-        }
-        cie_matrix_transpose3(matrix_input, &matrix_input_trans);
-        matrix_input = &matrix_input_trans;
-        /* Now the AToB0Tag. Here this may include the M curves, the Matrix and the B curves */
-        /* First clean up and merge the curves */
-        if (has_abc_procs && has_lmn_procs && pcie->MatrixABC.is_identity) {
-            /* Merge the curves into the abc curves.  Set LMN curves to identity  */
-            merge_abc_lmn_curves(&(pcie->caches.DecodeABC.caches[0]),&(pcie->common.caches.DecodeLMN[0]));
-            has_lmn_procs = false;
-        }
-        if (has_abc_procs) {
-            m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
-            curr_pos = m_curves;
-            memcpy(curr_pos,&(pcie->caches.DecodeABC.caches->floats.values[0]),CURVE_SIZE*sizeof(float));
-            curr_pos += CURVE_SIZE;
-            memcpy(curr_pos,&((pcie->caches.DecodeABC.caches[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
-            curr_pos += CURVE_SIZE;
-            memcpy(curr_pos,&((pcie->caches.DecodeABC.caches[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
-        } else {
-            m_curves = NULL;
-        }
-        if (has_lmn_procs) {
-            b_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
-            curr_pos = b_curves;
-            memcpy(curr_pos,&(pcie->common.caches.DecodeLMN->floats.values[0]),CURVE_SIZE*sizeof(float));
-            curr_pos += CURVE_SIZE;
-            memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
-            curr_pos += CURVE_SIZE;
-            memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
-        } else {
-            b_curves = NULL;
-        }
-        a_curves = NULL;
-        clut = NULL;
-        clut_grid_size = 0;
-        /* Note that if the b_curves are null and we have a matrix we need to scale the matrix values by 2.
-           Otherwise an input value of 50% gray, which is 32767 would get mapped to 32767 by the matrix.  This
-           will be interpreted as a max XYZ value (s15.16) when it is eventually mapped to u16.16 due to the
-           mapping of X=Y by the identity table.  If there are b_curves these have an output that is 16 bit. */
-        if (b_curves == NULL && matrix_input != NULL) {
-            scale_matrix(&(matrix_input->cu.u),2.0);
-        }
+        /* The merging of these parts into the curves/matrix/curves of the lutAtoBtype portion
+           can be used by abc, def and defg */
+        icc_luta2bparts.matrix = &matrix_input_trans;
+        gsicc_create_abc_merge(&(icc_luta2bparts), &(pcie->common.MatrixLMN), &(pcie->MatrixABC), has_abc_procs,
+                       has_lmn_procs, pcie->caches.DecodeABC.caches, pcie->common.caches.DecodeLMN, memory);
+        icc_luta2bparts.clut =  NULL;
         /* Create the profile.  This is for the common generic form we will use for almost everything. */
-        create_lutAtoBprofile(pp_buffer_in, header,a_curves, clut, clut_grid_size, m_curves, 
-               matrix_input, b_curves, 3, 3, &(pcie->common.points.WhitePoint), 
-               &(pcie->common.points.BlackPoint), memory);
-        gs_free_object(memory, m_curves, "gsicc_create_fromabc");
-        gs_free_object(memory, b_curves, "gsicc_create_fromabc");
+        create_lutAtoBprofile(pp_buffer_in, header,&icc_luta2bparts,memory);
+        gsicc_create_free_luta2bpart(memory, &icc_luta2bparts);
     } else {
         /* This will be a bit more complex as we have an ABC matrix, LMN decode
            and an LMN matrix.  We will need to create an MLUT to handle this properly.
@@ -1390,40 +1473,40 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
            MLUT, LMN decode will be the M curves.  LMN matrix will be the Matrix
            and b curves will be identity. */
         if (has_abc_procs) {
-            a_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
-            curr_pos = a_curves;
+            icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+            curr_pos = icc_luta2bparts.a_curves;
             memcpy(curr_pos,&(pcie->caches.DecodeABC.caches->floats.values[0]),CURVE_SIZE*sizeof(float));
             curr_pos += CURVE_SIZE;
             memcpy(curr_pos,&((pcie->caches.DecodeABC.caches[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
             curr_pos += CURVE_SIZE;
             memcpy(curr_pos,&((pcie->caches.DecodeABC.caches[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
-        } else {
-            a_curves = NULL;
         }
         if (has_lmn_procs) {
-            m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
-            curr_pos = m_curves;
+            icc_luta2bparts.m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+            curr_pos = icc_luta2bparts.m_curves;
             memcpy(curr_pos,&(pcie->common.caches.DecodeLMN->floats.values[0]),CURVE_SIZE*sizeof(float));
             curr_pos += CURVE_SIZE;
             memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
             curr_pos += CURVE_SIZE;
             memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
-        } else {
-            m_curves = NULL;
         }
-        b_curves = NULL;  /* No b_curves.  They will be identity */
         /* Convert ABC matrix to 2x2x2 MLUT type */
-        clut = (float*) gs_alloc_bytes(memory,8*3*sizeof(float),"gsicc_create_fromabc"); /* 8 grid points, 3 outputs */
-        gsicc_matrix3_to_mlut(&(pcie->MatrixABC), clut);
+        icc_luta2bparts.clut = (gsicc_clut*) gs_alloc_bytes(memory,sizeof(gsicc_clut),"gsicc_create_fromabc");
+        for (k = 0; k < 3; k++) {
+            icc_luta2bparts.clut->clut_dims[k] = 2;
+        }
+        icc_luta2bparts.clut->clut_num_input = 3;
+        icc_luta2bparts.clut->clut_num_output = 3;
+        gsicc_create_initialize_clut(icc_luta2bparts.clut);
+        /* 8 grid points, 3 outputs */
+        icc_luta2bparts.clut->data_float = (float*) gs_alloc_bytes(memory,8*3*sizeof(float),"gsicc_create_fromabc"); 
+        gsicc_matrix3_to_mlut(&(pcie->MatrixABC), icc_luta2bparts.clut->data_float);
+        /* LMN Matrix */
         cie_matrix_transpose3(&(pcie->common.MatrixLMN), &matrix_input_trans);
-        matrix_input = &matrix_input_trans;
+        icc_luta2bparts.matrix = &matrix_input_trans;
         /* Create the profile */
-        create_lutAtoBprofile(pp_buffer_in, header,a_curves, clut, 2, m_curves, 
-               matrix_input, b_curves, 3, 3, &(pcie->common.points.WhitePoint), 
-               &(pcie->common.points.BlackPoint), memory);
-        gs_free_object(memory, m_curves, "gsicc_create_fromabc");
-        gs_free_object(memory, a_curves, "gsicc_create_fromabc");
-        gs_free_object(memory, clut, "gsicc_create_fromabc");
+        create_lutAtoBprofile(pp_buffer_in, header, &icc_luta2bparts, memory);
+        gsicc_create_free_luta2bpart(memory, &icc_luta2bparts);
     }
     *profile_size_out = header->size;
 #if SAVEICCPROFILE
@@ -1441,14 +1524,15 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_si
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
     int debug_catch = 1;
-    gs_matrix3 *matrix_input;
-    gs_matrix3 matrix_input_trans;
-    float *a_curve, *m_curves, *b_curves, *curr_pos, *clut;
+    gs_matrix3 matrix_input;
+    float *curr_pos;
     bool has_a_proc = !(a_cache->floats.params.is_identity);
     bool has_lmn_procs = !(lmn_caches->floats.params.is_identity &&
                          (lmn_caches)[1].floats.params.is_identity && 
                          (lmn_caches)[2].floats.params.is_identity);
+    gsicc_lutatob icc_luta2bparts;
 
+    gsicc_create_init_luta2bpart(&icc_luta2bparts);
     /* Fill in the common stuff */
     setheader_common(header);
     /* We will use an input type class which keeps us from having to
@@ -1462,37 +1546,36 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_si
        applied by the matrix A.  Depending upon the other parameters we may have simpiler forms, but this
        is required even when Matrix A is the identity. */
     if (has_a_proc) {
-        a_curve = (float*) gs_alloc_bytes(memory,CURVE_SIZE*sizeof(float),"gsicc_create_froma");
-        memcpy(a_curve,&(pcie->caches.DecodeA.floats.values[0]),CURVE_SIZE*sizeof(float));
-    } else {
-        a_curve = NULL;
+        icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,CURVE_SIZE*sizeof(float),"gsicc_create_froma");
+        memcpy(icc_luta2bparts.a_curves,&(pcie->caches.DecodeA.floats.values[0]),CURVE_SIZE*sizeof(float));
     }
     if (has_lmn_procs) {
-        m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_froma");
-        curr_pos = m_curves;
+        icc_luta2bparts.m_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_froma");
+        curr_pos = icc_luta2bparts.m_curves;
         memcpy(curr_pos,&(pcie->common.caches.DecodeLMN->floats.values[0]),CURVE_SIZE*sizeof(float));
         curr_pos += CURVE_SIZE;
         memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
         curr_pos += CURVE_SIZE;
         memcpy(curr_pos,&((pcie->common.caches.DecodeLMN[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
-    } else {
-        m_curves = NULL;
     }
-    b_curves = NULL;  /* No b_curves.  They will be identity */
     /* Convert diagonal A matrix to 2x1 MLUT type */
-    clut = (float*) gs_alloc_bytes(memory,2*3*sizeof(float),"gsicc_create_froma"); /* 2 grid points 3 outputs */
-    gsicc_vec_to_mlut(&(pcie->MatrixA), clut);
-    cie_matrix_transpose3(&(pcie->common.MatrixLMN), &matrix_input_trans);
-    matrix_input = &matrix_input_trans;
+    icc_luta2bparts.clut = (gsicc_clut*) gs_alloc_bytes(memory,sizeof(gsicc_clut),"gsicc_create_froma"); /* 2 grid points 3 outputs */
+    icc_luta2bparts.clut->clut_dims[0] = 2;
+    icc_luta2bparts.clut->clut_num_input = 1;
+    icc_luta2bparts.clut->clut_num_output = 3;
+    gsicc_create_initialize_clut(icc_luta2bparts.clut);
+    icc_luta2bparts.clut->data_float = (float*) gs_alloc_bytes(memory,2*3*sizeof(float),"gsicc_create_froma"); /* 2 grid points 3 outputs */
+    gsicc_vec_to_mlut(&(pcie->MatrixA), icc_luta2bparts.clut->data_float);
+    cie_matrix_transpose3(&(pcie->common.MatrixLMN), &matrix_input);
+    icc_luta2bparts.matrix = &matrix_input;
+    icc_luta2bparts.num_in = 1;
+    icc_luta2bparts.num_out = 3;
+    icc_luta2bparts.white_point = &(pcie->common.points.WhitePoint);
+    icc_luta2bparts.black_point = &(pcie->common.points.BlackPoint);
     /* Create the profile */
-    create_lutAtoBprofile(pp_buffer_in, header,a_curve, clut, 2, m_curves, 
-           matrix_input, b_curves, 1, 3, &(pcie->common.points.WhitePoint), 
-           &(pcie->common.points.BlackPoint), memory);
+    create_lutAtoBprofile(pp_buffer_in, header, &icc_luta2bparts, memory);
     *profile_size_out = header->size;
-    gs_free_object(memory, m_curves, "gsicc_create_froma");
-    gs_free_object(memory, a_curve, "gsicc_create_froma");
-    gs_free_object(memory, clut, "gsicc_create_froma");
-    *profile_size_out = header->size;
+    gsicc_create_free_luta2bpart(memory, &icc_luta2bparts);
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if(debug_catch)
@@ -1501,28 +1584,157 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_si
     return(0);
 }
 
+/* Common code shared by def and defg generation */
 static int
-gsicc_create_defg_common(  )
+gsicc_create_defg_common(gs_cie_defg *pcie, gsicc_lutatob *icc_luta2bparts, bool has_lmn_procs,
+                         bool has_abc_procs, icHeader *header, unsigned char **pp_buffer_in, 
+                         int *profile_size_out, gs_memory_t* memory) 
 {
+    gs_matrix3 matrix_input_trans;
+    int k;
 
+    gsicc_create_init_luta2bpart(icc_luta2bparts);
+    gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
+    gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
+    setheader_common(header);
 
+    /* We will use an input type class which keeps us from having to
+       create an inverse.  We will keep the data a generic 3 color.  
+       Since we are doing PS color management the PCS is XYZ */
+    header->deviceClass = icSigInputClass;
+    header->pcs = icSigXYZData;
+    icc_luta2bparts->num_out = 3;
+    icc_luta2bparts->white_point = &(pcie->common.points.WhitePoint);
+    icc_luta2bparts->black_point = &(pcie->common.points.BlackPoint);
+
+    /* question now is, can we keep the table as it is, or do we need to merge 
+     some of the def(g) parts.  Some merging or operators into the table must occur
+     if we have MatrixABC, LMN Decode and Matrix LMN, otherwise we can encode 
+     the table directly and squash the rest into the curves matrix curve portion
+     of the ICC form */
+    if ( !(pcie->MatrixABC.is_identity) && has_lmn_procs && !(pcie->common.MatrixLMN.is_identity) ) {
+        /* Table must take over some of the other elements. We are going to 
+           go to a 16 bit table in this case.  Later we may find that we
+           need a higher resolution if we run into serious nonlinearity 
+           issues. */
+
+    } else { 
+        /* Table can stay as is. Handle the ABC/LMN portions via the curves 
+           matrix curves operation */
+        icc_luta2bparts->matrix = &matrix_input_trans;
+        gsicc_create_abc_merge(icc_luta2bparts, &(pcie->common.MatrixLMN), &(pcie->MatrixABC), has_abc_procs,
+                       has_lmn_procs, pcie->caches.DecodeABC.caches, pcie->common.caches.DecodeLMN, memory);
+        /* Get the table data */
+        icc_luta2bparts->clut = (gsicc_clut*) gs_alloc_bytes(memory,sizeof(gsicc_clut),"gsicc_create_fromabc");
+        for (k = 0; k < 3; k++) {
+            icc_luta2bparts->clut->clut_dims[k] = pcie->Table.dims[k];
+        }
+        icc_luta2bparts->clut->clut_num_input = icc_luta2bparts->num_in;
+        icc_luta2bparts->clut->clut_num_output = 3;
+        gsicc_create_initialize_clut(icc_luta2bparts->clut);
+        /* Get the PS table data directly */
+        icc_luta2bparts->clut->data_byte = (byte*) pcie->Table.table->data;
+        /* Create the profile. */
+        create_lutAtoBprofile(pp_buffer_in, header, icc_luta2bparts, memory);
+        gsicc_create_free_luta2bpart(memory, icc_luta2bparts);
+    }
+    *profile_size_out = header->size;
     return(0);
 }
 
 /* If we have an ABC matrix, a DecodeLMN and an LMN matrix we have to mash together the table, Decode ABC (if present) and
    ABC matrix. */
 gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory,
-                      bool has_a_proc, bool has_lmn_procs, bool has_def_procs)
+                   gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches, gx_cie_scalar_cache *defg_caches)
 {
+    gsicc_lutatob icc_luta2bparts;
+    icProfile iccprofile;
+    icHeader  *header = &(iccprofile.header);
+    int debug_catch = 1;
+    float *curr_pos;
+    bool has_abc_procs = !((abc_caches->floats.params.is_identity &&
+                         (abc_caches)[1].floats.params.is_identity && 
+                         (abc_caches)[2].floats.params.is_identity));
+    bool has_lmn_procs = !((lmn_caches->floats.params.is_identity &&
+                         (lmn_caches)[1].floats.params.is_identity && 
+                         (lmn_caches)[2].floats.params.is_identity));
+    bool has_defg_procs = !((defg_caches->floats.params.is_identity &&
+                         (defg_caches)[1].floats.params.is_identity && 
+                         (defg_caches)[2].floats.params.is_identity &&
+                         (defg_caches)[3].floats.params.is_identity));
+    int code;
+    
+    /* Fill in the uncommon stuff */
+    header->colorSpace = icSig4colorData;
+    icc_luta2bparts.num_in = 4;
 
-    return(0);
+    /* The a curves stored as def procs */
+    if (has_defg_procs) {
+        icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromdef");
+        curr_pos = icc_luta2bparts.a_curves;
+        memcpy(curr_pos,&(pcie->caches_defg.DecodeDEFG->floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&((pcie->caches_defg.DecodeDEFG[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&((pcie->caches_defg.DecodeDEFG[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&((pcie->caches_defg.DecodeDEFG[3]).floats.values[0]),CURVE_SIZE*sizeof(float));
+    }
+    /* Note the recast.  Should be OK since we only access common stuff in there */
+    code = gsicc_create_defg_common((gs_cie_defg*) pcie, &icc_luta2bparts, 
+                                    has_lmn_procs, has_abc_procs,
+                                    header, pp_buffer_in, 
+                                    profile_size_out, memory);  
+#if SAVEICCPROFILE
+    /* Dump the buffer to a file for testing if its a valid ICC profile */
+    if(debug_catch)
+        save_profile(*pp_buffer_in,"fromdefg",header->size);
+#endif
+    return(code);
 }
 
 int
 gsicc_create_fromdef(gs_cie_def *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
-                   bool has_a_proc, bool has_lmn_procs, bool had_def_procs)
+                   gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches, gx_cie_scalar_cache *def_caches)
 {
-    return(0);
+    gsicc_lutatob icc_luta2bparts;
+    icProfile iccprofile;
+    icHeader  *header = &(iccprofile.header);
+    int debug_catch = 1;
+    float *curr_pos;
+    bool has_abc_procs = !((abc_caches->floats.params.is_identity &&
+                         (abc_caches)[1].floats.params.is_identity && 
+                         (abc_caches)[2].floats.params.is_identity));
+    bool has_lmn_procs = !((lmn_caches->floats.params.is_identity &&
+                         (lmn_caches)[1].floats.params.is_identity && 
+                         (lmn_caches)[2].floats.params.is_identity));
+    bool has_def_procs = !((def_caches->floats.params.is_identity &&
+                         (def_caches)[1].floats.params.is_identity && 
+                         (def_caches)[2].floats.params.is_identity));
+    int code;
+
+    header->colorSpace = icSig3colorData;
+    icc_luta2bparts.num_in = 3;
+
+    /* The a curves stored as def procs */
+    if (has_def_procs) {
+        icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromdef");
+        curr_pos = icc_luta2bparts.a_curves;
+        memcpy(curr_pos,&(pcie->caches_def.DecodeDEF->floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&((pcie->caches_def.DecodeDEF[1]).floats.values[0]),CURVE_SIZE*sizeof(float));
+        curr_pos += CURVE_SIZE;
+        memcpy(curr_pos,&((pcie->caches_def.DecodeDEF[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
+    } 
+    code = gsicc_create_defg_common((gs_cie_defg*) pcie, &icc_luta2bparts, 
+                                    has_lmn_procs, has_abc_procs, header, pp_buffer_in, 
+                                    profile_size_out, memory);  
+#if SAVEICCPROFILE
+    /* Dump the buffer to a file for testing if its a valid ICC profile */
+    if(debug_catch)
+        save_profile(*pp_buffer_in,"fromdef",header->size);
+#endif
+    return(code);
 }
 
 void
