@@ -218,6 +218,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
+    (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
     code = gsicc_create_fromdef(pcs->params.def, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
                     abc_caches, lmn_caches, def_caches);

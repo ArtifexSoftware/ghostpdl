@@ -1257,10 +1257,12 @@ gsicc_create_free_luta2bpart(gs_memory_t *memory, gsicc_lutatob *icc_luta2bparts
 {
         gs_free_object(memory, icc_luta2bparts->a_curves, "gsicc_create_free_luta2bpart");
         gs_free_object(memory, icc_luta2bparts->b_curves, "gsicc_create_free_luta2bpart");
-        /* Note, data_byte is handled externally.  We do not free that member here */
-        gs_free_object(memory, icc_luta2bparts->clut->data_float, "gsicc_create_free_luta2bpart");
-        gs_free_object(memory, icc_luta2bparts->clut, "gsicc_create_free_luta2bpart");
         gs_free_object(memory, icc_luta2bparts->m_curves, "gsicc_create_free_luta2bpart");
+        if (icc_luta2bparts->clut) {
+            /* Note, data_byte is handled externally.  We do not free that member here */
+            gs_free_object(memory, icc_luta2bparts->clut->data_float, "gsicc_create_free_luta2bpart");
+            gs_free_object(memory, icc_luta2bparts->clut, "gsicc_create_free_luta2bpart");
+        }
 }
 
 static void
@@ -1586,9 +1588,9 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_si
 
 /* Common code shared by def and defg generation */
 static int
-gsicc_create_defg_common(gs_cie_defg *pcie, gsicc_lutatob *icc_luta2bparts, bool has_lmn_procs,
-                         bool has_abc_procs, icHeader *header, unsigned char **pp_buffer_in, 
-                         int *profile_size_out, gs_memory_t* memory) 
+gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts, bool has_lmn_procs,
+                         bool has_abc_procs, icHeader *header, gx_color_lookup_table *Table,
+                         unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t* memory) 
 {
     gs_matrix3 matrix_input_trans;
     int k;
@@ -1617,7 +1619,7 @@ gsicc_create_defg_common(gs_cie_defg *pcie, gsicc_lutatob *icc_luta2bparts, bool
            go to a 16 bit table in this case.  Later we may find that we
            need a higher resolution if we run into serious nonlinearity 
            issues. */
-
+        return(-1);
     } else { 
         /* Table can stay as is. Handle the ABC/LMN portions via the curves 
            matrix curves operation */
@@ -1626,14 +1628,15 @@ gsicc_create_defg_common(gs_cie_defg *pcie, gsicc_lutatob *icc_luta2bparts, bool
                        has_lmn_procs, pcie->caches.DecodeABC.caches, pcie->common.caches.DecodeLMN, memory);
         /* Get the table data */
         icc_luta2bparts->clut = (gsicc_clut*) gs_alloc_bytes(memory,sizeof(gsicc_clut),"gsicc_create_fromabc");
-        for (k = 0; k < 3; k++) {
-            icc_luta2bparts->clut->clut_dims[k] = pcie->Table.dims[k];
+        for (k = 0; k < icc_luta2bparts->num_in; k++) {
+            icc_luta2bparts->clut->clut_dims[k] = Table->dims[k];
         }
         icc_luta2bparts->clut->clut_num_input = icc_luta2bparts->num_in;
         icc_luta2bparts->clut->clut_num_output = 3;
+        icc_luta2bparts->clut->clut_word_width = 1;
         gsicc_create_initialize_clut(icc_luta2bparts->clut);
         /* Get the PS table data directly */
-        icc_luta2bparts->clut->data_byte = (byte*) pcie->Table.table->data;
+        icc_luta2bparts->clut->data_byte = (byte*) Table->table->data;
         /* Create the profile. */
         create_lutAtoBprofile(pp_buffer_in, header, icc_luta2bparts, memory);
         gsicc_create_free_luta2bpart(memory, icc_luta2bparts);
@@ -1670,7 +1673,7 @@ gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char **pp_buffer_in, int *prof
 
     /* The a curves stored as def procs */
     if (has_defg_procs) {
-        icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,3*CURVE_SIZE*sizeof(float),"gsicc_create_fromdef");
+        icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,4*CURVE_SIZE*sizeof(float),"gsicc_create_fromdef");
         curr_pos = icc_luta2bparts.a_curves;
         memcpy(curr_pos,&(pcie->caches_defg.DecodeDEFG->floats.values[0]),CURVE_SIZE*sizeof(float));
         curr_pos += CURVE_SIZE;
@@ -1681,9 +1684,9 @@ gsicc_create_fromdefg(gs_cie_defg *pcie, unsigned char **pp_buffer_in, int *prof
         memcpy(curr_pos,&((pcie->caches_defg.DecodeDEFG[3]).floats.values[0]),CURVE_SIZE*sizeof(float));
     }
     /* Note the recast.  Should be OK since we only access common stuff in there */
-    code = gsicc_create_defg_common((gs_cie_defg*) pcie, &icc_luta2bparts, 
+    code = gsicc_create_defg_common((gs_cie_abc*) pcie, &icc_luta2bparts, 
                                     has_lmn_procs, has_abc_procs,
-                                    header, pp_buffer_in, 
+                                    header, &(pcie->Table), pp_buffer_in, 
                                     profile_size_out, memory);  
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
@@ -1726,8 +1729,9 @@ gsicc_create_fromdef(gs_cie_def *pcie, unsigned char **pp_buffer_in, int *profil
         curr_pos += CURVE_SIZE;
         memcpy(curr_pos,&((pcie->caches_def.DecodeDEF[2]).floats.values[0]),CURVE_SIZE*sizeof(float));
     } 
-    code = gsicc_create_defg_common((gs_cie_defg*) pcie, &icc_luta2bparts, 
-                                    has_lmn_procs, has_abc_procs, header, pp_buffer_in, 
+    code = gsicc_create_defg_common((gs_cie_abc*) pcie, &icc_luta2bparts, 
+                                    has_lmn_procs, has_abc_procs, header, 
+                                    &(pcie->Table), pp_buffer_in, 
                                     profile_size_out, memory);  
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
