@@ -405,9 +405,7 @@ zustroke(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     if ((code = npop = upath_stroke(i_ctx_p, NULL, CPSI_mode)) >= 0)
-    {
 	code = gs_stroke(igs);
-    }
     gs_grestore(igs);
     if (code < 0)
 	return code;
