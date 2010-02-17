@@ -106,11 +106,17 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
  */
 #define IMAGE_SET_GRAY(sample_value)\
   BEGIN\
-    if ((uint)(sample_value - mask_base) < mask_limit)\
-        color_set_null(pdevc);\
-    else {\
-        decode_sample(sample_value, cc, 0);\
-        code = (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
+    if (!masked) {\
+        if ((uint)(sample_value - mask_base) < mask_limit)\
+            color_set_null(pdevc);\
+        else {\
+            decode_sample(sample_value, cc, 0);\
+            code = (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
+            if (code < 0)\
+	        goto err;\
+        }\
+    } else {\
+        code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);\
         if (code < 0)\
 	    goto err;\
     }\
