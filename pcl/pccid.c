@@ -308,8 +308,10 @@ check_cid_hdr(
 #ifdef ALL_TO_SRGB
     /* the short form of CIE Lab and "LumChrom" are replaced with sRGB
        on the HP 4600 */
-    if (pcid->len == 6 && pcidh->cspace > pcl_cspace_Colorimetric)
+    if (pcidh->cspace > pcl_cspace_Colorimetric) {
         pcidh->cspace = pcl_cspace_Colorimetric;
+        pcid->len = 6;
+    }
 #endif
     
     /* if the device handles color conversion remap the colorimetric color space to rgb */
