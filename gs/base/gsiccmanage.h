@@ -18,6 +18,9 @@
 
 #define ICC_DUMP 0
 
+/* A temporary definition to allow the icc branch to work with
+   trunk */
+#define ICCBRANCH
 /* Define the default ICC profiles in the file system */
 #define DEFAULT_GRAY_ICC  "iccprofiles/default_gray.icc"
 #define DEFAULT_RGB_ICC   "iccprofiles/default_rgb.icc"
