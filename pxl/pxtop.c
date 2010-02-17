@@ -38,6 +38,7 @@
 #include "pxptable.h"
 #include "pxstate.h"
 #include "pltop.h"
+#include "gsiccmanage.h"
 
 /* Define the table of pointers to initialization data. */
 
@@ -314,7 +315,12 @@ pxl_impl_set_device(
 	stage = Ssetdevice;
 	if ((code = gs_setdevice_no_erase(pxli->pgs, device)) < 0)	/* can't erase yet */
 	  goto pisdEnd;
-
+        /* Initialize device ICC profile  */
+#ifdef ICCBRANCH
+        code = gsicc_init_device_profile(pxli->pgs, device);
+        if (code < 0)
+            return code;
+#endif
 	/* Init XL graphics */
 	stage = Sinitg;
 	if ((code = px_initgraphics(pxli->pxs)) < 0)
@@ -322,6 +328,10 @@ pxl_impl_set_device(
 
 	/* Do inits of gstate that may be reset by setdevice */
 	gs_setaccuratecurves(pxli->pgs, true);	/* All H-P languages want accurate curves. */
+
+#ifdef ICCBRANCH
+        gsicc_init_iccmanager(pxli->pgs);
+#endif
 
 	/* gsave and grestore (among other places) assume that */
 	/* there are at least 2 gstates on the graphics stack. */

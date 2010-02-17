@@ -677,6 +677,7 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(pjparse_h)                \
                         $(pltop_h)                  \
                         $(pctop_h)                  \
+                        $(gsiccmanage_h)			\
                         $(PCLGEN)pconf.h
 	$(CP_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
 	$(PCLCCC) $(PCLSRC)pctop.c $(PCLO_)pctop.$(OBJ)

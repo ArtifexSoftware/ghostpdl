@@ -37,6 +37,7 @@
 #include "pctop.h"
 #include "pccrd.h"
 #include "pcpalet.h"
+#include "gsiccmanage.h"
 
 
 
@@ -369,7 +370,12 @@ pcl_impl_set_device(
     stage = Ssetdevice;
     if ((code = gs_setdevice_no_erase(pcli->pcs.pgs, device)) < 0)	/* can't erase yet */
         goto pisdEnd;
-
+#ifdef ICCBRANCH
+    /* Initialize device ICC profile  */
+    code = gsicc_init_device_profile(pcli->pcs.pgs, device);
+    if (code < 0)
+        return code;
+#endif
     stage = Sinitg;
     /* Do inits of gstate that may be reset by setdevice */
     /* PCL no longer uses the graphic library transparency mechanism */
@@ -377,6 +383,11 @@ pcl_impl_set_device(
     gs_settexturetransparent(pcli->pcs.pgs, false);
     gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
     gs_setfilladjust(pcli->pcs.pgs, 0, 0);
+
+#ifdef ICCBRANCH
+    gsicc_init_iccmanager(pcli->pcs.pgs);
+#endif
+
     stage = Sgsave1;
     if ( (code = gs_gsave(pcli->pcs.pgs)) < 0 )
 	goto pisdEnd;

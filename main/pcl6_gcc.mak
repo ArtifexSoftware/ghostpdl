@@ -44,6 +44,9 @@ PNGSRCDIR?=../gs/libpng
 # only relevant if not shared
 PNGCCFLAGS?=-DPNG_USER_MEM_SUPPORTED
 
+LCMSSRCDIR?=../gs/lcms
+SHARE_LCMS?=0
+
 IMDISRCDIR?=../gs/imdi
 
 # PCL_INCLUDED means pcl + pcl xl

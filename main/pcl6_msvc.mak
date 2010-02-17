@@ -62,6 +62,10 @@ SHARE_LIBPNG=0
 IMDISRCDIR=..\gs\imdi
 !endif
 
+!ifndef LCMSSRCDIR
+LCMSSRCDIR=..\gs\lcms
+!endif
+
 !ifndef COMPILE_INITS
 COMPILE_INITS=1
 !endif
