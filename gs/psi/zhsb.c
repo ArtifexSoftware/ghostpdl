@@ -34,7 +34,7 @@ zcurrenthsbcolor(i_ctx_t *i_ctx_p)
 
 /* <hue> <saturation> <brightness> sethsbcolor - */
 static int
-zsethsbcolor(i_ctx_t *i_ctx_p, int flags)
+zsethsbcolor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double par[3];
