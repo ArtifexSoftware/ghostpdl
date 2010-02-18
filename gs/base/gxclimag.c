@@ -431,6 +431,18 @@ clist_begin_typed_image(gx_device * dev,
 	    pie->color_space.space = 0;
 	    pie->color_space.id = gs_no_id;
 	} else {
+            /* Check for presence of ICC profiles in standard Device Color Spaces
+               This can happen if a default space was initialized. It should
+               typically have assigned to it one of the default ICC profiles */
+            if (indexed) {
+                if (pim->ColorSpace->base_space->cmm_icc_profile_data) {
+                    base_index = gs_color_space_index_ICC;
+                }
+            } else {
+                if (pim->ColorSpace->cmm_icc_profile_data) {
+                    base_index = gs_color_space_index_ICC;
+                }
+            }
 	    pie->color_space.byte1 = (base_index << 4) |
 		(indexed ? (pim->ColorSpace->params.indexed.use_proc ? 12 : 8) : 0);
 	    pie->color_space.id =
