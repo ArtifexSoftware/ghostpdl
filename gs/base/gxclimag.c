@@ -435,35 +435,22 @@ clist_begin_typed_image(gx_device * dev,
 		(indexed ? (pim->ColorSpace->params.indexed.use_proc ? 12 : 8) : 0);
 	    pie->color_space.id =
 		(pie->color_space.space = pim->ColorSpace)->id;
-
             /* Get the hash code of the ICC space */
-
-            if ( base_index == gs_color_space_index_ICC) {
-
+            if ( base_index == gs_color_space_index_ICC ) {
                 if (!indexed) {
-
                     pie->color_space.icc_hash = pim->ColorSpace->cmm_icc_profile_data->hashcode;
                     clist_icc_addentry(cdev, pim->ColorSpace->cmm_icc_profile_data->hashcode, 
                         pim->ColorSpace->cmm_icc_profile_data);
-
                 } else {
-
                     pie->color_space.icc_hash = pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode;
                     clist_icc_addentry(cdev, pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode, 
                         pim->ColorSpace->base_space->cmm_icc_profile_data);
-
                 }
-
-
             } else {
-
                 pie->color_space.icc_hash = 0;
-
             }
-
 	}
 	pie->y = pie->rect.p.y;
-
 	/* Image row has to fit in cmd writer's buffer */
 	bytes_per_plane =
 	    (pim->Width * pie->bits_per_plane + 7) >> 3;
