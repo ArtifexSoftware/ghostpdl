@@ -6064,7 +6064,8 @@ zcurrentcmykcolor(i_ctx_t * i_ctx_p)
     return o_push_estack;
 }
 
-static int
+/* Can't be static, as setcolorscreen needs to call it */
+int
 zswapcolors(i_ctx_t * i_ctx_p)
 {
     ref_colorspace tmp_cs;
