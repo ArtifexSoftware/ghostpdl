@@ -233,6 +233,7 @@ gx_concretize_ICC(
     gsicc_rendering_param_t rendering_params;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int k;
+    unsigned short *psrc_temp;
 
     /* Define the rendering intents.  MJV to fix */
     rendering_params.black_point_comp = BP_ON;
@@ -252,10 +253,16 @@ gx_concretize_ICC(
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
     /* Transform the color */
-    gscms_transform_color(icc_link, psrc, psrc_cm, 2, NULL);
+    if (icc_link->is_identity) {
+        psrc_temp = &(psrc[0]);
+    } else {
+        /* Transform the color */
+        psrc_temp = &(psrc_cm[0]);
+        gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+    }
     /* This needs to be optimized */
     for (k = 0; k < pis->icc_manager->device_profile->num_comps; k++){
-        pconc[k] = float2frac(((float) psrc_cm[k])/65535.0);
+        pconc[k] = float2frac(((float) psrc_temp[k])/65535.0);
     }
     /* Release the link */
     gsicc_release_link(icc_link);
