@@ -325,13 +325,22 @@ end
   /BG { 1 index /BG2 known { pop } { gsbg } ifelse }
   /UCR { 1 index /UCR2 known { pop } { gsucr } ifelse }
   /TR { 1 index /TR2 known { pop } { gstr } ifelse }
-  /HT {
+
+  % Some functions used to implement phases of HT and HTP
+  /sethalftones {
     dup /Default eq {
       pop .setdefaulthalftone
     } {
 	%****** DOESN'T IMPLEMENT THE STREAM CASE YET ******
       resolvehalftone sethalftone
     } ifelse
+  } bdef
+  /sethalftonephases {
+    /sethalftonephase where { pop aload pop sethalftonephase } { pop } ifelse
+  } bdef
+
+  /HT {
+    dup sethalftones .swapcolors sethalftones .swapcolors
     % the transfer function may dependent on the halftone, so make sure
     % it is set if included in the graphic state (otherwise this is
     % subject to order of a dictionary forall, which is unpredictable)
@@ -344,8 +353,8 @@ end
     } ifelse
   }
   /HTP {
-	% HTP may be present even if this isn't a DPS interpreter.
-    /sethalftonephase where { pop aload pop sethalftonephase } { pop } ifelse
+    % HTP may be present even if this isn't a DPS interpreter.
+    dup sethalftonephases .swapcolors sethalftonephases .swapcolors
   }
 	% PDF 1.3
   /Font { aload pop Tf }
