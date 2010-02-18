@@ -121,7 +121,7 @@ static int setscreen_finish(i_ctx_t *);
 
 /* <frequency> <angle> <proc> setscreen - */
 static int
-zsetscreen(i_ctx_t *i_ctx_p)
+zsetscreen_aux(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_screen_halftone screen;
@@ -143,6 +143,24 @@ zsetscreen(i_ctx_t *i_ctx_p)
 	return code;
     return zscreen_enum_init(i_ctx_p, &order, &screen, op, 3,
 			     setscreen_finish, space_index);
+}
+
+extern int zswapcolors(i_ctx_t *i_ctx_p);
+
+static int
+zsetscreen(i_ctx_t *i_ctx_p)
+{
+    check_ostack(3);
+    osp++; *osp = osp[-3];
+    osp++; *osp = osp[-3];
+    osp++; *osp = osp[-3];
+    check_estack(4);
+    esp += 4;
+    make_op_estack(esp-3, zsetscreen_aux);
+    make_op_estack(esp-2, zswapcolors);
+    make_op_estack(esp-1, zsetscreen_aux);
+    make_op_estack(esp,   zswapcolors);
+    return o_push_estack;
 }
 /* We break out the body of this operator so it can be shared with */
 /* the code for Type 1 halftones in sethalftone. */
