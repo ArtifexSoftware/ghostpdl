@@ -75,6 +75,47 @@ gs_image_class_3_mono(gx_image_enum * penum)
     return 0;
 }
 
+#define USE_SET_GRAY_FUNCTION 0
+#if USE_SET_GRAY_FUNCTION
+/* Temporary function to make it easier to debug the uber-macro below */
+static int
+image_set_gray(byte sample_value, const bool masked, uint mask_base,
+                uint mask_limit, gx_device_color *pdevc, gs_client_color *cc,
+                gs_color_space *pcs, const gs_imager_state *pis, 
+                gx_device * dev, gs_color_select_t gs_color_select_source,
+                gx_image_enum * penum)
+{
+   cs_proc_remap_color((*remap_color));
+   int code;
+
+   if (!masked) {
+       if ((uint)(sample_value - mask_base) < mask_limit) {
+            color_set_null(pdevc);
+       } else {
+            switch ( penum->map[0].decoding )
+            {
+            case sd_none:
+            cc->paint.values[0] = (sample_value) * (1.0 / 255.0);  /* faster than / */
+            break;
+            case sd_lookup:	/* <= 4 significant bits */
+            cc->paint.values[0] =
+              penum->map[0].decode_lookup[(sample_value) >> 4];
+            break;
+            case sd_compute:
+            cc->paint.values[0] =
+              penum->map[0].decode_base + (sample_value) * penum->map[0].decode_factor;
+            }
+            remap_color = pcs->type->remap_color;
+            code = (*remap_color)(cc, pcs, pdevc, pis, dev, gs_color_select_source);
+            return(code);
+        }
+    } else {
+        code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);
+        return(code);
+    }
+}
+#endif
+
 /*
  * Rendering procedure for general mono-component images, dealing with
  * multiple bit-per-sample images, general transformations, arbitrary
@@ -92,7 +133,8 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     const gs_color_space *pcs = NULL;	/* only set for non-masks */
     cs_proc_remap_color((*remap_color)) = NULL;	/* ditto */
     gs_client_color cc;
-    gx_device_color *pdevc = &penum->icolor1;	/* color for masking */
+    gx_device_color devc;
+    gx_device_color *pdevc = &devc;
     bool tiles_fit;
     uint mask_base =            /* : 0 to pacify Valgrind */
         (penum->use_mask_color ? penum->mask_color.values[0] : 0);
@@ -332,7 +374,12 @@ END
 		if (*psrc != run) {
 		    if (run != htrun) {
 			htrun = run;
+#if USE_SET_GRAY_FUNCTION
+                        image_set_gray(run,masked,mask_base,mask_limit,pdevc,
+                            &cc,pcs,pis,dev,gs_color_select_source,penum);
+#else
 			IMAGE_SET_GRAY(run);
+#endif
 		    }
 		    code = (*fill_pgram)(dev, xrun, yrun, xl - xrun,
 					 ytf - yrun, pdyx, pdyy,
@@ -367,7 +414,12 @@ END
 		/* Just fill the region between xrun and xl. */
 		if (run != htrun) {
 		    htrun = run;
+#if USE_SET_GRAY_FUNCTION
+                    image_set_gray(run,masked,mask_base,mask_limit,pdevc,
+                        &cc,pcs,pis,dev,gs_color_select_source,penum);
+#else
 		    IMAGE_SET_GRAY(run);
+#endif
 		}
 		code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
 				      ytf - yrun, pdyx, pdyy, pdevc, lop);
@@ -387,7 +439,12 @@ END
 	/* Fill the last run. */
       last:if (stop < endp && (*stop || !masked)) {
 	    if (!masked) {
+#if USE_SET_GRAY_FUNCTION
+                image_set_gray(*stop,masked,mask_base,mask_limit,pdevc,
+                    &cc,pcs,pis,dev,gs_color_select_source,penum);
+#else
 		IMAGE_SET_GRAY(*stop);
+#endif
 	    }
 	    dda_advance(next.x, endp - stop);
 	    dda_advance(next.y, endp - stop);
@@ -488,7 +545,12 @@ END
 			default:
 			  ht:	/* Use halftone if needed */
 			    if (run != htrun) {
-				IMAGE_SET_GRAY(run);
+#if USE_SET_GRAY_FUNCTION
+                            image_set_gray(run,masked,mask_base,mask_limit,pdevc,
+                                &cc,pcs,pis,dev,gs_color_select_source,penum);
+#else
+			    IMAGE_SET_GRAY(run);
+#endif
 				htrun = run;
 			    }
                             code = gx_fill_rectangle_device_rop(xi, yt, wi, iht,
@@ -528,7 +590,12 @@ END
 		if (wi <= 0)
 		    goto lmt;
 	    }
+#if USE_SET_GRAY_FUNCTION
+            image_set_gray(*stop,masked,mask_base,mask_limit,pdevc,
+                &cc,pcs,pis,dev,gs_color_select_source,penum);
+#else
 	    IMAGE_SET_GRAY(*stop);
+#endif
 	    code = gx_fill_rectangle_device_rop(xi, yt, wi, iht,
 						pdevc, dev, lop);
 	  lmt:;
