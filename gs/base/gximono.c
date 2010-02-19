@@ -185,7 +185,8 @@ END
      */
 
     /* TO_DO_DEVICEN - The gx_check_tile_cache_current() routine is bogus */
-
+    /* Get devc initialized so that it has the proper procs */
+    pdevc->type = penum->icolor0.type;
     tiles_fit = (pis && penum->device_color ? gx_check_tile_cache(pis) : false);
     next = penum->dda.pixel0;
     xrun = dda_current(next.x);
