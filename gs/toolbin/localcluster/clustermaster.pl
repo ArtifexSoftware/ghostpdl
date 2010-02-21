@@ -242,6 +242,37 @@ sub checkProblem {
 }
 
 {
+  my $url1=`svn info icc_work | grep "URL" | awk '{ print \$2 } '`;
+  chomp $url1;
+  my $currentRev1=`svn info icc_work | grep "Last Changed Rev" | awk '{ print \$4 } '`;
+  my $newRev1    =`svn info $url1 | grep "Last Changed Rev" | awk '{ print \$4 } '`;
+  chomp $currentRev1;
+  chomp $newRev1;
+  if ($currentRev1 eq "" || $newRev1 eq "") {
+    checkPID();
+    unlink $runningSemaphore;
+    die "svn info failed";
+  }
+  if ($currentRev1 != $newRev1) {
+    #   print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
+    open(LOCK,">$lock") || die "can't write to $lock";
+    flock(LOCK,LOCK_EX);
+    my $s="svn-icc_work $newRev1";
+    my $t=`grep "$s" $queue`;
+    chomp $t;
+    #   print "grep '$s' returned: $t\n";
+    if (length($t)==0) {
+      mylog "grep '$s' returns no match, adding to queue\n";
+      open(F,">>$queue");
+      print F "$s\n";
+      close(F);
+    }
+    close(LOCK);
+  }
+}
+
+
+{
   my $cmd="cd mupdf ; darcs pull -a";
   my $value=`$cmd`;
   chomp $value;
@@ -428,6 +459,7 @@ if (!$regression) {
 }
 
 my $normalRegression=0;
+my $icc_workRegression=0;
 my $userRegression="";
 my $mupdfRegression=0;
 my $updateBaseline=0;
@@ -471,11 +503,11 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
           mylog "$s: $rules{$t}\n";
           $set|=$rules{$t};
         } else {
-#         mylog "$s: missing, testing all\n";
-#         $set=15;
+          mylog "$s: missing, testing all\n";
+          $set=15;
         }
       } else {
-#       $set=15;
+        $set=15;
       }
     }
   }
@@ -505,6 +537,12 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
 } elsif ($regression=~/user (.+)/) {
   mylog "found user regression in queue: $regression\n";
   $userRegression=$1;
+} elsif ($regression=~/svn-icc_work (.+)/) {
+  mylog "found icc_work regression in queue: $regression\n";
+  $icc_workRegression=1;
+  $rev1=$1;
+  $product="gs";
+  $footer.="icc_work regression: $rev1\n\nProducts tested: $product\n\n";
 } elsif ($regression=~/mupdf/) {
   mylog "found mupdf entry in queue.lst, not yet handled, removing.\n";
   my $cmd="touch mupdf.tar.gz ; rm mupdf.tar.gz ; tar cvf mupdf.tar --exclude=_darcs mupdf ; gzip mupdf.tar";
@@ -521,7 +559,7 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
   mylog "found unknown entry in queue.lst, removing.\n";
 }
 
-if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $updateBaseline==1) {
+if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $updateBaseline==1 || $icc_workRegression==1) {
 
   if ($userRegression ne "") {
     mylog "running: $userRegression\n" if ($verbose);
@@ -530,6 +568,12 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
   if ($normalRegression) {
     open(F,">revision.gs");
     print F "local cluster regression gs-r$rev2 / ghostpdl-r$rev1 (xefitra)\n";
+    close(F);
+  }
+
+  if ($icc_workRegression) {
+    open(F,">revision.gs");
+    print F "local cluster regression icc_work-r$rev1 (xefitra)\n";
     close(F);
   }
 
@@ -613,6 +657,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       open(F,">$_.start");
       if ($normalRegression) {
         print F "svn\t$rev1 $rev2\t$product\n";
+      } elsif ($icc_workRegression) {
+        print F "svn-icc_work\t$rev1\t$product";
       } elsif ($mupdfRegression) {
         print F "mupdf\t$rev1\t$product";
       } elsif ($updateBaseline) {
@@ -629,6 +675,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
     open (F,">status");
     if ($normalRegression) {
       print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC";
+    } elsif ($icc_workRegression) {
+      print F "Regression icc_work-r$rev1 started at $startText UTC";
     } elsif ($mupdfRegression) {
       print F "Regression mupdf-r$rev1 started at $startText UTC";
     } elsif ($updateBaseline) {
@@ -737,6 +785,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
           open (F,">status");
           if ($normalRegression) {
             print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+          } elsif ($icc_workRegression) {
+            print F "Regression icc_work-r$rev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($mupdfRegression) {
             print F "Regression mupdf-r$rev1 started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($updateBaseline) {
@@ -836,6 +886,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
   open (F,">status");
   if ($normalRegression) {
     print F "Regression gs-r$rev2 / ghostpdl-r$rev1 started at $startText UTC - finished at $s";
+  } elsif ($icc_workRegression) {
+    print F "Regression icc_work-r$rev1 started at $startText UTC - finished at $s";
   } elsif ($mupdfRegression) {
     print F "Regression mupdf-r$rev1 started at $startText UTC - finished at $s";
   } elsif ($updateBaseline) {
@@ -888,6 +940,7 @@ mylog "ls:\n$a";
 
   checkPID();
   $userName="email" if ($normalRegression);
+  $userName="email" if ($icc_workRegression);
 
   {
     my @t=split '\n',$footer;
@@ -941,6 +994,26 @@ mylog "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
       #  unlink "archive/$rev2-$rev1.tab.gz";
       #  `gzip archive/$rev2-$rev1.tab`;
       # unlink "log";
+    } elsif ($icc_workRegression) {
+      `mv icc_work_previous.tab icc_work_previous2.tab`;
+      `mv icc_work_current.tab icc_work_previous.tab`;
+      `cat $tabs | sort >icc_work_current.tab`;
+      `rm $tabs`;
+
+      checkPID();
+mylog "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elapsedTime $machineCount false \"$product\"\n";
+      `./compare.pl icc_work_current.tab icc_work_previous.tab $elapsedTime $machineCount false \"$product\" >>email.txt`;
+
+      checkPID();
+      `touch archive/icc_work-$rev1`;
+      `rm -fr archive/icc_work-$rev1`;
+      `mkdir archive/icc_work-$rev1`;
+      `mv $logs archive/icc_work-$rev1/.`;
+      `gzip archive/icc_work-$rev1/*log`;
+      `cp -p email.txt archive/icc_work-$rev1/.`;
+      `cp -p icc_work_current.tab archive/icc_work-$rev1/icc_work_current.tab`;
+      `cp -p icc_work_previous.tab archive/icc_work-$rev1/icc_work_previous.tab`;
+      `cp -p icc_work_current.tab archive/icc_work-$rev1.tab`;
     } elsif ($mupdfRegression) {
     } elsif ($updateBaseline) {
     } else {
@@ -999,7 +1072,7 @@ mylog "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount 
     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision.gs\`\" <email.txt`;
 
     mylog "test complete, performing final svn update\n";
-    mylog "svn update ghostpdl -r$rev1 --ignore-externals\nsvn update ghostpdl/gs -r$rev2\n" if ($verbose);
+    mylog "svn update ghostpdl -r$rev1 --ignore-externals\nsvn update ghostpdl/gs -r$rev2\n";
     `svn update ghostpdl -r$rev1 --ignore-externals`;
     `svn update ghostpdl/gs -r$rev2`;
 
@@ -1007,9 +1080,21 @@ mylog "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount 
 mylog("calling cachearchive.pl");
     `./cachearchive.pl >md5sum.cache`;
 mylog("finished cachearchive.pl");
+  } elsif ($icc_workRegression) {
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision.gs\`\" <email.txt`;
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision.gs\`\" <email.txt`;
+
+    mylog "test complete, performing final svn update\n";
+    mylog "svn update icc_work -r$rev1\n";
+    `svn update icc_work -r$rev1`;
+
+mylog("calling cachearchive.pl");
+    `./cachearchive.pl >md5sum.cache`;
+mylog("finished cachearchive.pl");
+
   } elsif ($mupdfRegression) {
   } elsif ($updateBaseline) {
-  } else {
+  } elsif ($userRegression) {
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;
@@ -1019,6 +1104,8 @@ mylog("finished cachearchive.pl");
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
       `mail marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
     }
+  } else {
+    mylog("internal error");
   }
 
   foreach my $machine (keys %machines) {

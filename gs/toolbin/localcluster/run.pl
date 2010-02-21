@@ -53,6 +53,7 @@ if ($local) {
 
 my $user;
 my $revs;
+my $icc_work;
 #my $product;
 my @commands;
 
@@ -130,6 +131,9 @@ if (open(F,"<$machine.start")) {
     if ($a[0] eq "svn") {
       $revs=$a[1];
       $products=$a[2];
+    } elsif ($a[0] eq "svn-icc_work") {
+      $icc_work=$a[1];
+      $products=$a[2];
     } elsif ($a[0] eq "user") {
       $user=$a[1];
       $products=$a[2];
@@ -150,6 +154,7 @@ if (open(F,"<$machine.start")) {
 
 mylog "user products=$products user=$user\n" if ($user);
 mylog "svn products=$products revs=$revs\n" if ($revs);
+mylog "icc_work products=$products rev=$icc_work\n" if ($icc_work);
 
 my $host="casper3.ghostscript.com";
 
@@ -169,6 +174,7 @@ my $baselineRaster="./baselineraster";
 my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
 my $gsBin=$baseDirectory."/gs";
+my $icc_workSource=$baseDirectory."/icc_work";
 
 my $abort=0;
 unlink ("$machine.abort");
@@ -398,11 +404,20 @@ if (!$abort) {
 # } else {
     $cmd="cd users/$user          ; rsync -vlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
     # }
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
 
     $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
     $gsSource=$gpdlSource."/gs";
+  } elsif ($icc_work) {
+
+    if (!-e $icc_workSource) {
+      updateStatus('Checking out icc_work');
+      $cmd="export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn co http://svn.ghostscript.com/ghostscript/branches/icc_work";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+    }
+    updateStatus('Updating icc_work');
+    $cmd="cd $icc_workSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$icc_work";
+    $gsSource=$icc_workSource;
   } else {
 
     updateStatus('Updating Ghostscript');
@@ -421,10 +436,11 @@ if (!$abort) {
       die "oops 4";  # hack
     }
     $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$pdlrev ; cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$gsrev";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
 
   }
+
+  print "$cmd\n" if ($verbose);
+  `$cmd`;
 }
 
 mkdir "baselineraster";
@@ -477,7 +493,7 @@ if (!$abort) {
     `$cmd`;
 
     if (-e "$gsBin/bin/gs") {
-      if (!$user) {
+      if ($revs) {
         `cp -p $gsBin/bin/gs ./head/bin/.`;
       }
     } else {
@@ -496,7 +512,7 @@ if ($products{'pcl'} && !$abort) {
     $cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;
-    if (!$user) {
+    if ($revs) {
       `cp -p $gsBin/bin/pcl6 ./head/bin/.`;
     }
   } else {
@@ -514,7 +530,7 @@ if ($products{'xps'} && !$abort) {
     $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;
-    if (!$user) {
+    if ($revs) {
       `cp -p $gsBin/bin/gxps ./head/bin/.`;
     }
   } else {
@@ -532,7 +548,7 @@ if ($products{'svg'} && !$abort) {
     $cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;
-    if (!$user) {
+    if ($revs) {
       `cp -p $gsBin/bin/gsvg ./head/bin/.`;
     }
   } else {
@@ -887,9 +903,11 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
     }
     if ($compileFail ne "") {
       print F2 "compileFail: $compileFail\n\n";
-      my $dir="ghostpdl";
+      my $dir="";
+      $dir="ghostpdl" if ($revs);
       $dir="users/$user/ghostpdl" if ($user);
-      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out') {
+      $dir="icc_work" if ($icc_work);
+      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out','makegs.out') {
         my $count=0;
         my $start=-1;
         if (open(F3,"<$dir/$i")) {

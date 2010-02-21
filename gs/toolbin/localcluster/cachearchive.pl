@@ -21,8 +21,18 @@ foreach (readdir(DIR)) {
 closedir DIR;
 }
 
+sub myCmp($$) {
+  my $a=shift;
+  my $b=shift;
+  $a=~m/-(\d+)/;
+  $a=$1;
+  $b=~m/-(\d+)/;
+  $b=$1;
+  return($b cmp $a);
+}
+
 my $count=$previousValues;
-foreach my $i (sort {$b cmp $a} keys %archives) {
+foreach my $i (sort myCmp keys %archives) {
 # print STDERR "$i\n";
   if ($count>0) {
     print STDERR "reading archive/$i\n" if ($verbose);
