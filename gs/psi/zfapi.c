@@ -16,6 +16,7 @@
 
 #include "memory_.h"
 #include "math_.h"
+#include "stat_.h" /* include before definition of esp macro, bug 691123 */
 #include "ghost.h"
 #include "gp.h"
 #include "oper.h"
