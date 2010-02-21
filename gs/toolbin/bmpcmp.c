@@ -30,7 +30,7 @@ static void *Malloc(size_t size) {
     
     block = malloc(size);
     if (block == NULL) {
-        fprintf(stderr, "Failed to malloc %u bytes\n", size);
+        fprintf(stderr, "Failed to malloc %u bytes\n", (unsigned int) size);
         exit(EXIT_FAILURE);
     }
     return block;
