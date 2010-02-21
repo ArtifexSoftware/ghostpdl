@@ -448,7 +448,8 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
 
   my $a=`svn update ghostpdl -r$rev1 --ignore-externals`;
   my $b=`svn update ghostpdl/gs -r$rev2`;
-  mylog "svn update ghostpdl -r$rev1 --ignore-externals\nsvn update ghostpdl/gs -r$rev2\n" if ($verbose);
+  mylog "svn update ghostpdl -r$rev1 --ignore-externals\n" if ($verbose);
+  mylog "svn update ghostpdl/gs -r$rev2\n" if ($verbose);
 
   $footer.="\nChanged files:\n";
   $a.=$b;
@@ -470,8 +471,11 @@ if ($regression =~ m/svn (\d+) (\d+)/) {
           mylog "$s: $rules{$t}\n";
           $set|=$rules{$t};
         } else {
-          mylog "$s: missing\n";
+#         mylog "$s: missing, testing all\n";
+#         $set=15;
         }
+      } else {
+#       $set=15;
       }
     }
   }
@@ -581,7 +585,9 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       $userName=$a[0];
       $product=$a[1];
       mylog "userName=$userName product=$product\n" if ($verbose);
-      $footer="\n\nUser regression options: $product\n";
+      my $t=`date +\"%D %H:%M:%S\"`;
+      chomp $t;
+      $footer="\n\nUser regression: user $userName  options $product  start $t\n";
     }
 
     my $baseline="";
@@ -873,6 +879,8 @@ sleep(10);
       $tabs.=" $_.tab";
     } else {
       mylog "ERROR: log or out missing for $_\n";
+my $a=`ls -ls *log* *out*`;
+mylog "ls:\n$a";
       unlink $runningSemaphore;
       exit;
     }

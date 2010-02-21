@@ -7,8 +7,7 @@ use Data::Dumper;
 use POSIX ":sys_wait_h";
 
 my $updateBaseline=0;
-my $rerunIfMd5sumDifferences=1;
-
+my $rerunIfMd5sumDifferences=0;
 
 my %allowedProducts=(
   'gs'  => 1,
@@ -43,6 +42,7 @@ my $verbose=0;
 
 local $| = 1;
 my %md5sum;
+my %skip;
 
 if ($rerunIfMd5sumDifferences) {
   open(F,"<current.tab") || die "file current.tab not found";
@@ -61,9 +61,16 @@ if ($rerunIfMd5sumDifferences) {
     $md5sum{$a[0]}.= '|'.$a[1];
   }
   close(F);
+  if (open(F,"<skip.lst")) {
+    while(<F>) {
+      chomp;
+      $skip{$_}=1;
+    }
+    close(F);
+  }
 }
 
-#print Dumper(\%md5sum);  exit;
+#print Dumper(\%skip);  exit;
 
 
 
@@ -407,8 +414,8 @@ sub build($$$$) {
     $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
     $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
 
-    if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gzcat $rasterFilename.gz) <(gzcat $baselineFilename.gz) $bmpcmpFilename\" ; gzip $bmpcmpFilename.* ; fi";
+    if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2} && !exists $skip{$filename2}) {
+      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ; fi";
     }
 
     #   $cmd.=" ; gzip -f $inputFilename >>$logFilename 2>&1";
@@ -469,8 +476,8 @@ sub build($$$$) {
     $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
     $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
 
-    if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gzcat $rasterFilename) <($baselineFilename).gz $bmpcmpFilename\" ; gzip $bmpcmpFilename.* ; fi";
+    if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2} && !exists $skip{$filename2}) {
+      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ; fi";
     }
 
 
