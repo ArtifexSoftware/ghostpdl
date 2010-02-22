@@ -394,25 +394,25 @@ static void write_private_dict(FAPI_font* a_fapi_font,WRF_output* a_output,unsig
 	 * on its value (because of number representation).
 	 */
 	if (count) {
-	    unsigned int n = 1, n1 = a_output->m_count - initial + 2; /* One for the operator, one for the first try at the data representation */
+	    int n = 1, n1;
 
 	    do {
-		n1 = a_output->m_count - initial + 1 + n;
+		n1 = a_output->m_count - initial + 1 + n; /* one for the operator, plus the size needed for the representation */
 		switch (n) {
 		    case 1:
-			if (n1 >= -107 && n <= 107) {
+			if (n1 >= -107 && n1 <= 107) {
 			    write_type2_int(a_output, n1);
 			    n = 5;
 			}
 			break;
 		    case 2:
-			if ((n1 >= 108 && n <= 1131) || (n1 >= -1131 && n1 <= -108)) {
+			if ((n1 >= 108 && n1 <= 1131) || (n1 >= -1131 && n1 <= -108)) {
 			    write_type2_int(a_output, n1);
 			    n = 5;
 			}
 			break;
 		    case 3:
-			if (n1 >= -32768 && n <= 32767) {
+			if (n1 >= -32768 && n1 <= 32767) {
 			    write_type2_int(a_output, n1);
 			    n = 5;
 			}
