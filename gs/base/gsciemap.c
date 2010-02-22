@@ -143,7 +143,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
-    code = gsicc_create_fromdefg(pcs->params.defg, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
+    code = gsicc_create_fromdefg(pcs, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
                     abc_caches, lmn_caches, defg_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
@@ -157,6 +157,7 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
 		gs_color_select_t select)
 {
     gs_color_space *pcs_icc;
+    int code;
 
     if_debug4('c', "[c]remap CIEDEFG [%g %g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
@@ -165,10 +166,7 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
        the conversion of the DEFG space to an ICC type.  We
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
-        gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
-        /* For now assign default CMYK.  MJV to fix */
-        pcs_icc->cmm_icc_profile_data = pis->icc_manager->default_cmyk;
-        rc_increment(pis->icc_manager->default_cmyk);
+        code = gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         return((pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
     } else {
         pcs_icc = pcs->icc_equivalent;
@@ -193,15 +191,134 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
        will finish that process now. */
     if (pcs->icc_equivalent == NULL) {
         code = gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
-        /* For now assign default CMYK.  MJV to fix */
-        pcs_icc->cmm_icc_profile_data = pis->icc_manager->default_cmyk;
-        rc_increment(pis->icc_manager->default_cmyk);
         return((pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     } else {
         pcs_icc = pcs->icc_equivalent;
         return((pcs_icc->type->concretize_color)(pc, pcs_icc, pconc, pis));
     }
 }
+
+
+/* Used still for when we have to mash entire transform to CIEXYZ */
+int
+gx_psconcretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
+		      frac * pconc, const gs_imager_state * pis)
+{
+    const gs_cie_defg *pcie = pcs->params.defg;
+    int i;
+    fixed hijk[4];
+    frac abc[3];
+    cie_cached_vector3 vec3;
+    int code;
+
+    if_debug4('c', "[c]concretize DEFG [%g %g %g %g]\n",
+	      pc->paint.values[0], pc->paint.values[1],
+	      pc->paint.values[2], pc->paint.values[3]);
+    code = gx_cie_check_rendering_inline(pcs, pconc, pis);
+    if (code < 0)
+	return code;
+    if (code == 1)
+	return 0;
+    /*
+     * Apply DecodeDEFG, including restriction to RangeHIJK and scaling to
+     * the Table dimensions.
+     */
+    for (i = 0; i < 4; ++i) {
+	int tdim = pcie->Table.dims[i] - 1;
+	double factor = pcie->caches_defg.DecodeDEFG[i].floats.params.factor;
+	double v0 = pc->paint.values[i];
+	const gs_range *const rangeDEFG = &pcie->RangeDEFG.ranges[i];
+	double value =
+	    (v0 < rangeDEFG->rmin ? 0.0 : factor *
+	    (v0 > rangeDEFG->rmax ? rangeDEFG->rmax - rangeDEFG->rmin :
+	     v0 - rangeDEFG->rmin ));
+	int vi = (int)value;
+	double vf = value - vi;
+	double v = pcie->caches_defg.DecodeDEFG[i].floats.values[vi];
+
+	if (vf != 0 && vi < factor)
+	    v += vf *
+		(pcie->caches_defg.DecodeDEFG[i].floats.values[vi + 1] - v);
+	v = (v < 0 ? 0 : v > tdim ? tdim : v);
+	hijk[i] = float2fixed(v);
+    }
+    /* Apply Table. */
+    gx_color_interpolate_linear(hijk, &pcie->Table, abc);
+
+#define SCALE_TO_RANGE(range, frac) ( \
+       float2cie_cached(((range).rmax - (range).rmin) * frac2float(frac) + \
+	    (range).rmin) \
+    )
+    /* Scale the abc[] frac values to RangeABC cie_cached result */
+    vec3.u = SCALE_TO_RANGE(pcie->RangeABC.ranges[0], abc[0]); 
+    vec3.v = SCALE_TO_RANGE(pcie->RangeABC.ranges[1], abc[1]); 
+    vec3.w = SCALE_TO_RANGE(pcie->RangeABC.ranges[2], abc[2]); 
+    /* Apply DecodeABC and MatrixABC. */
+    if (!pis->cie_joint_caches->skipDecodeABC)
+	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
+			"Decode/MatrixABC");
+    GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
+    return 0;
+}
+
+/* Render a CIEBasedDEF color. */
+int
+gx_psconcretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
+		     frac * pconc, const gs_imager_state * pis)
+{
+    const gs_cie_def *pcie = pcs->params.def;
+    int i;
+    fixed hij[3];
+    frac abc[3];
+    cie_cached_vector3 vec3;
+    int code;
+
+    if_debug3('c', "[c]concretize DEF [%g %g %g]\n",
+	      pc->paint.values[0], pc->paint.values[1],
+	      pc->paint.values[2]);
+    code = gx_cie_check_rendering_inline(pcs, pconc, pis);
+    if (code < 0)
+	return code;
+    if (code == 1)
+	return 0;
+
+    /*
+     * Apply DecodeDEF, including restriction to RangeHIJ and scaling to
+     * the Table dimensions.
+     */
+    for (i = 0; i < 3; ++i) {
+	int tdim = pcie->Table.dims[i] - 1;
+	double factor = pcie->caches_def.DecodeDEF[i].floats.params.factor;
+	double v0 = pc->paint.values[i];
+	const gs_range *const rangeDEF = &pcie->RangeDEF.ranges[i];
+	double value =
+	    (v0 < rangeDEF->rmin ? 0.0 : factor *
+	    (v0 > rangeDEF->rmax ? rangeDEF->rmax - rangeDEF->rmin :
+	     v0 - rangeDEF->rmin ));
+	int vi = (int)value;
+	double vf = value - vi;
+	double v = pcie->caches_def.DecodeDEF[i].floats.values[vi];
+
+	if (vf != 0 && vi < factor)
+	    v += vf *
+		(pcie->caches_def.DecodeDEF[i].floats.values[vi + 1] - v);
+	v = (v < 0 ? 0 : v > tdim ? tdim : v);
+	hij[i] = float2fixed(v);
+    }
+    /* Apply Table. */
+    gx_color_interpolate_linear(hij, &pcie->Table, abc);
+    /* Scale the abc[] frac values to RangeABC cie_cached result */
+    vec3.u = SCALE_TO_RANGE(pcie->RangeABC.ranges[0], abc[0]); 
+    vec3.v = SCALE_TO_RANGE(pcie->RangeABC.ranges[1], abc[1]); 
+    vec3.w = SCALE_TO_RANGE(pcie->RangeABC.ranges[2], abc[2]); 
+    /* Apply DecodeABC and MatrixABC. */
+    if (!pis->cie_joint_caches->skipDecodeABC)
+	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
+			"Decode/MatrixABC");
+    GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
+    return 0;
+}
+#undef SCALE_TO_RANGE
 
 /* Common code shared between remap and concretize for def */
 static int
@@ -219,7 +336,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
-    code = gsicc_create_fromdef(pcs->params.def, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
+    code = gsicc_create_fromdef(pcs, &((*ppcs_icc)->cmm_icc_profile_data->buffer), 
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
                     abc_caches, lmn_caches, def_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);

@@ -2511,7 +2511,7 @@ $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
 $(GLOBJ)gsicc_create.$(OBJ) : $(GLSRC)gsicc_create.c $(GX) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
  $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsiccmanage_h) $(gsicccache_h)\
- $(math__h)
+ $(math__h) $(gscolor2_h) $(gxcie_h)
 	$(GLLCMSCC) $(GLO_)gsicc_create.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
 
 # ---------------- Separation colors ---------------- #

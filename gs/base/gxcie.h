@@ -130,4 +130,11 @@ extern  void *  gx_build_cie_space( gs_color_space **           ppcspace,
  */
 cs_proc_concrete_space(gx_concrete_space_CIE);
 
+/* Special operations used in the creation of ICC color spaces from PS 
+   spaces.  These are used to map from PS color to CIEXYZ */
+int gx_psconcretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
+		      frac * pconc, const gs_imager_state * pis);
+int gx_psconcretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
+		     frac * pconc, const gs_imager_state * pis);
+
 #endif /* gxcie_INCLUDED */
