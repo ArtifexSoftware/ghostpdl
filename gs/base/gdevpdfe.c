@@ -302,15 +302,19 @@ decode_escape(const byte *data, int data_length, int *index)
 	    break;
     }
     if (c >= '0' && c <= '7') {
+	int oct_loop;
 	/* octal */
 	byte v = c - '0';
 
-	for (;;) {
+	/* Octal values should always be three digits, one is consumed above! */
+	for (oct_loop = 0;oct_loop < 2; oct_loop++) {
 	    (*index)++;
 	    if (*index >= data_length)
+		/* Ran out of data, return what we found */
 		return v;
 	    c = data[*index];
 	    if (c < '0' || c > '7') {
+		/* Ran out of numeric data, return what we found */
 		/* Need to 'unget' the non-numeric character */
 		(*index)--;
 		break;
