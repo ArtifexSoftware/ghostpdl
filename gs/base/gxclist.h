@@ -342,7 +342,8 @@ struct gx_device_clist_writer_s {
                                               I did not put this into gx_device_clist_common_members
                                               since I dont see where those pointers are ever defined
                                               for GC. */
-
+    gsicc_link_cache_t *icc_cache_cl;   /* Had to add this into the writer device to avoid problems
+                                           with 64 bit builds.  We need to revisit this */
 };
 
 #ifndef gx_device_clist_writer_DEFINED
@@ -379,11 +380,14 @@ typedef struct gx_device_clist_reader_s {
     byte *main_thread_data;		/* saved data pointer of main thread */
     int curr_render_thread;		/* index into array */
     int thread_lookahead_direction;	/* +1 or -1 */
-    clist_icctable_t *icc_table;           /* Table that keeps track of ICC profiles.  It 
-                                              relates the hashcode to the cfile file location.
-                                              I did not put this into gx_device_clist_common_members
-                                              since I dont see where those pointers are ever defined
-                                              for GC. */
+    clist_icctable_t *icc_table;        /* Table that keeps track of ICC profiles.  It 
+                                           relates the hashcode to the cfile file location.
+                                           I did not put this into gx_device_clist_common_members
+                                           since I dont see where those pointers are ever defined
+                                           for GC. */
+    gsicc_link_cache_t *icc_cache_cl;   /* A link cache so that each band 
+                                        does not recreate the links. 
+                                        A big savings */
 } gx_device_clist_reader;
 
 union gx_device_clist_s {

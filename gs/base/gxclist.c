@@ -35,8 +35,9 @@ extern dev_proc_open_device(pattern_clist_open_device);
 /*  Where is the GC information for the common objects that are
     shared between the reader and writer.  I see pointers in
     there, but they don't seem to be GC.  This is why I have
-    put the icc_table in the reader and the writer rather than
-    the common */
+    put the icc_table and the link cache in the reader and the 
+    writer rather than the common.   fixme: Also, if icc_cache_cl is not
+    included in the writer, 64bit builds will seg fault */
 
 extern_st(st_imager_state);
 static
@@ -56,9 +57,10 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
 	case 2: return ENUM_OBJ(cdev->writer.pinst);
 	case 3: return ENUM_OBJ(cdev->writer.cropping_stack);
         case 4: return ENUM_OBJ(cdev->writer.icc_table);
+        case 5: return ENUM_OBJ(cdev->writer.icc_cache_cl);
         default:
         return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
-                  sizeof(gs_imager_state), index - 4);
+                  sizeof(gs_imager_state), index - 5);
         }
     }
     else {
@@ -75,6 +77,8 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
 	    return ENUM_OBJ(cdev->reader.offset_map);
         else if (index == 2)
             return ENUM_OBJ(cdev->reader.icc_table);
+        else if (index == 3)
+            return ENUM_OBJ(cdev->reader.icc_cache_cl);
 	else
             return 0;
     }
@@ -91,6 +95,7 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 	RELOC_VAR(cdev->writer.pinst);
 	RELOC_VAR(cdev->writer.cropping_stack);
         RELOC_VAR(cdev->writer.icc_table);
+        RELOC_VAR(cdev->writer.icc_cache_cl);
         RELOC_USING(st_imager_state, &cdev->writer.imager_state,
             sizeof(gs_imager_state));
     } else {
@@ -101,7 +106,7 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
         RELOC_VAR(cdev->reader.band_complexity_array);
         RELOC_VAR(cdev->reader.offset_map);
         RELOC_VAR(cdev->reader.icc_table);
-
+        RELOC_VAR(cdev->reader.icc_cache_cl);
     }
 } RELOC_PTRS_END
 public_st_device_clist();
@@ -507,6 +512,7 @@ clist_reset(gx_device * dev)
     cdev->cropping_level = 0;
     cdev->mask_id_count = cdev->mask_id = cdev->temp_mask_id = 0;
     cdev->icc_table = NULL;
+    cdev->icc_cache_cl = NULL;
     return 0;
 }
 /*
@@ -714,19 +720,14 @@ clist_finish_page(gx_device *dev, bool flush)
 	clist_teardown_render_threads(dev);
     }
 
-    /* Also free the icc_table at this time */
-
+    /* Also free the icc_table at this time and the icc_cache */
     if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
-
        /* Free the icc table associated with this device.
            May Need to do some work here for multi-threaded case. MJV to do */
         gx_device_clist_reader * const crdev =	&((gx_device_clist *)dev)->reader;
-
         clist_icc_freetable(crdev->icc_table, crdev->memory);
-
+        rc_decrement(crdev->icc_cache_cl,"clist_finish_page");
     }
-
-
     if (flush) {
 	if (cdev->page_cfile != 0)
 	    cdev->page_info.io_procs->rewind(cdev->page_cfile, true, cdev->page_cfname);
@@ -759,23 +760,15 @@ clist_end_page(gx_device_clist_writer * cldev)
     int ecode = 0;
 
     code = cmd_write_buffer(cldev, cmd_opv_end_page);
-
     /* If we have ICC profiles present in the cfile save the table now,
        along with the ICC profiles. Table is stored in band maxband + 1. */
-
     if ( cldev->icc_table != NULL ) {
-
         /* Save the table */
-
         code = clist_icc_writetable(cldev);
-
         /* Free the table */
-
         clist_icc_freetable(cldev->icc_table, cldev->memory);
         cldev->icc_table = NULL;
-
     }
-
     if (code >= 0) {
 	/*
 	 * Write the terminating entry in the block file.
@@ -981,10 +974,7 @@ clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_
 
 
 /* ICC table operations.  See gxclist.h for details */
-
-
 /* This checks the table for a hash code entry */
-
 bool 
 clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 {
@@ -993,26 +983,17 @@ clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 
     if (icc_table == NULL)
         return(false);  /* No entry */
-
     curr_entry = icc_table->head;
-
     while(curr_entry != NULL) {
-    
         if (curr_entry->serial_data.hashcode == hashcode){
-            
             return(true);
-
         }
-        
         curr_entry = curr_entry->next;
-
     }
-
      return(false);  /* No entry */
 }
 
 /* Free the table */
-
 int 
 clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
 {
@@ -1023,31 +1004,22 @@ clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
 
     if (icc_table == NULL)
         return(0);
-
     number_entries = icc_table->tablesize;
     curr_entry = icc_table->head;
-
     for (k = 0; k < number_entries; k++) {
-
         next_entry = curr_entry->next;
         gs_free_object(memory, curr_entry, "clist_icc_freetable");
         curr_entry = next_entry;
-
     }
-
     gs_free_object(memory, icc_table, "clist_icc_freetable");
-
     return(0);
-
 }
 
 
 /* This serializes the ICC table and writes it out for maxband+1 */
-
 int
 clist_icc_writetable(gx_device_clist_writer *cldev)
 {
-
     unsigned char *pbuf, *buf;
     clist_icctable_t *icc_table = cldev->icc_table;
     int number_entries = icc_table->tablesize;
@@ -1057,51 +1029,33 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
 
     /* First we need to write out the ICC profiles themselves and update
        in the table where they will be stored and their size. */
-
     curr_entry = icc_table->head;
-
     for ( k = 0; k < number_entries; k++ ){
-    
         curr_entry->serial_data.file_position = clist_icc_addprofile(cldev, curr_entry->icc_profile, &size_data);
         curr_entry->serial_data.size = size_data;
         rc_decrement(curr_entry->icc_profile, "clist_icc_writetable");
         curr_entry->icc_profile = NULL;
         curr_entry = curr_entry->next;
-
     }
 
     /* Now serialize the table data */
-
     size_data = number_entries*sizeof(clist_icc_serial_entry_t) + sizeof(number_entries);
-
     buf = gs_alloc_bytes(cldev->memory, size_data, "clist_icc_writetable");
-
     if (buf == NULL)
         return gs_rethrow(-1, "insufficient memory for icc table buffer");
-
     pbuf = buf;
-
     memcpy(pbuf, &number_entries, sizeof(number_entries));
     pbuf += sizeof(number_entries);
-
     curr_entry = icc_table->head;
-
     for (k = 0; k < number_entries; k++) {
-
         memcpy(pbuf, &(curr_entry->serial_data), sizeof(clist_icc_serial_entry_t));
         pbuf += sizeof(clist_icc_serial_entry_t);
         curr_entry = curr_entry->next;
-
     }
-
     /* Now go ahead and save the table data */
-
     cmd_write_icctable(cldev, buf, size_data);
-
     gs_free_object(cldev->memory, buf, "clist_icc_writetable");
-
     return(0);
-
 }
 
 /* This write the actual data out to the cfile */
@@ -1117,25 +1071,15 @@ clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, i
 
     /* Get the current position */
     fileposit = cldev->page_info.io_procs->ftell(cfile);
-
     /* Get the serialized header */
-
     gsicc_profile_serialize(&profile_data, iccprofile);
-
     /* Write the header */
-
     if_debug1('l', "[l]writing icc profile in cfile at pos %ld\n",fileposit);
-
     count1 = cldev->page_info.io_procs->fwrite_chars(&profile_data, sizeof(gsicc_serialized_profile_t), cfile);
-
     /* Now write the profile */
-
     count2 = cldev->page_info.io_procs->fwrite_chars(iccprofile->buffer, iccprofile->buffer_size, cfile);
-
     /* Return where we wrote this in the cfile */
-
     *size = count1 + count2;
-
     return(fileposit);
 }
 
@@ -1158,7 +1102,6 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
     } else {
         hashcode = hashcode_in;
     }
-
     if ( icc_table == NULL ) {
         entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory, 
 		    clist_icctable_entry_t,

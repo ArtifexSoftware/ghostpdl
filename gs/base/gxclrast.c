@@ -597,8 +597,12 @@ in:				/* Initialize for a new page. */
 	(*dev_proc(target, get_clipping_box))(target, &target_box);
     imager_state = clist_imager_state_initial;
     code = gs_imager_state_initialize(&imager_state, mem);
-
-    if (code < 0)
+    /* Remove the ICC link cache and replace with the device link cache 
+       so that we share the cache across bands */
+   rc_decrement(imager_state.icc_link_cache,"clist_plaback_band");
+   imager_state.icc_link_cache = cdev->icc_cache_cl;
+   rc_increment(cdev->icc_cache_cl);
+   if (code < 0)
 	goto out;
 
     /* Initialize the ICC manger with the output device profile.
