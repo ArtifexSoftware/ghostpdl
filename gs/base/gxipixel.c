@@ -64,8 +64,22 @@ ENUM_PTRS_WITH(image_enum_enum_ptrs, gx_image_enum *eptr)
 	bps = 1;
     if (index >= (1 << bps) * st_device_color_max_ptrs)		/* done */
 	return 0;
-
-    ENUM_RETURN(0);
+    /* the clues may have been cleared by gx_image_free_enum, but not freed in that */
+    /* function due to being at a different save level. Only trace if dev_color.type != 0. */
+    if (eptr->spp == 1) {
+        if (eptr->clues[(index/st_device_color_max_ptrs) * (255 / ((1 << bps) - 1))].dev_color.type != 0)
+	    ret = ENUM_USING(st_device_color,
+		         &eptr->clues[(index / st_device_color_max_ptrs) *
+				      (255 / ((1 << bps) - 1))].dev_color,
+		         sizeof(eptr->clues[0].dev_color),
+		         index % st_device_color_max_ptrs);
+        else
+	    ret = 0;
+    } else {
+        ret = 0;
+    }
+    if (ret == 0)		/* don't stop early */
+        ENUM_RETURN(0);
     return ret;
 }
 
@@ -88,9 +102,15 @@ static RELOC_PTRS_WITH(image_enum_reloc_ptrs, gx_image_enum *eptr)
 	    bps = 8;
 	else if (bps > 8 || eptr->unpack == sample_unpack_copy)
 	    bps = 1;
+        if (eptr->spp == 1) {
+	    for (i = 0; i <= 255; i += 255 / ((1 << bps) - 1))
+	        RELOC_USING(st_device_color,
+			    &eptr->clues[i].dev_color, sizeof(gx_device_color));
+        }
     }
 }
 RELOC_PTRS_END
+
 
 /* Forward declarations */
 static int color_draws_b_w(gx_device * dev,
@@ -276,14 +296,25 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	     float2fixed_rounded(rh * mat.yx));
 	y_extent.y = float2fixed_rounded(rh * mat.yy);
     }
+    /* Set icolor0 and icolor1 to point to image clues locations if we have 
+       1spp or an imagemask, otherwise image clues is not used and 
+       we have these values point to other member variables */
+    if (masked || cs_num_components(pcs) == 1) {
+        penum->icolor0 = &(penum->clues[0].dev_color);
+        penum->icolor1 = &(penum->clues[255].dev_color);
+    } else {
+        penum->icolor0 = &(penum->icolor0_val);
+        penum->icolor1 = &(penum->icolor1_val);
+    }
     if (masked) {	/* This is imagemask. */
 	if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {
 	    gs_free_object(mem, penum, "gx_default_begin_image");
 	    return_error(gs_error_rangecheck);
 	}
 	/* Initialize color entries 0 and 255. */
-	set_nonclient_dev_color(&penum->icolor0, gx_no_color_index);
-	penum->icolor1 = *pdcolor;
+	set_nonclient_dev_color(penum->icolor0, gx_no_color_index);
+	set_nonclient_dev_color(penum->icolor1, gx_no_color_index);
+	*(penum->icolor1) = *pdcolor;
 	memcpy(&penum->map[0].table.lookup4x1to32[0],
 	       (decode[0] < decode[1] ? lookup4x1to32_inverted :
 		lookup4x1to32_identity),
@@ -349,15 +380,15 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	if (lop != rop3_S &&	/* if best case, no more work needed */
 	    !rop3_uses_T(lop) && bps == 1 && spp == 1 &&
 	    (b_w_color =
-	     color_draws_b_w(dev, &penum->icolor0)) >= 0 &&
-	    color_draws_b_w(dev, &penum->icolor1) == (b_w_color ^ 1)
+	     color_draws_b_w(dev, penum->icolor0)) >= 0 &&
+	    color_draws_b_w(dev, penum->icolor1) == (b_w_color ^ 1)
 	    ) {
 	    if (b_w_color) {	/* Swap the colors and invert the RasterOp source. */
 		gx_device_color dcolor;
 
-		dcolor = penum->icolor0;
-		penum->icolor0 = penum->icolor1;
-		penum->icolor1 = dcolor;
+		dcolor = *(penum->icolor0);
+		*(penum->icolor0) = *(penum->icolor1);
+		*(penum->icolor1) = dcolor;
 		lop = rop3_invert_S(lop);
 	    }
 	    /*
@@ -368,7 +399,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	    switch (lop) {
 		case rop3_D & rop3_S:
 		    /* Implement this as an inverted mask writing 0s. */
-		    penum->icolor1 = penum->icolor0;
+		    *(penum->icolor1) = *(penum->icolor0);
 		    /* (falls through) */
 		case rop3_D | rop3_not(rop3_S):
 		    /* Implement this as an inverted mask writing 1s. */
@@ -376,13 +407,13 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 			   lookup4x1to32_inverted, 16 * 4);
 		  rmask:	/* Fill in the remaining parameters for a mask. */
 		    penum->masked = masked = true;
-		    set_nonclient_dev_color(&penum->icolor0, gx_no_color_index);
+		    set_nonclient_dev_color(penum->icolor0, gx_no_color_index);
 		    penum->map[0].decoding = sd_none;
 		    lop = rop3_T;
 		    break;
 		case rop3_D & rop3_not(rop3_S):
 		    /* Implement this as a mask writing 0s. */
-		    penum->icolor1 = penum->icolor0;
+		    *(penum->icolor1) = *(penum->icolor0);
 		    /* (falls through) */
 		case rop3_D | rop3_S:
 		    /* Implement this as a mask writing 1s. */
@@ -676,6 +707,47 @@ color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor)
     return -1;
 }
 
+/* Export this for use by image_render_ functions */
+void
+image_init_clues(gx_image_enum * penum, int bps, int spp)
+{
+    /* Initialize the color table */
+#define ictype(i)\
+  penum->clues[i].dev_color.type
+
+    switch ((spp == 1 ? bps : 8)) {
+	case 8:		/* includes all color images */
+	    {
+		register gx_image_clue *pcht = &penum->clues[0];
+		register int n = 64;	/* 8 bits means 256 clues, do	*/
+					/* 4 at a time for efficiency	*/
+		do {
+		    pcht[0].dev_color.type =
+			pcht[1].dev_color.type =
+			pcht[2].dev_color.type =
+			pcht[3].dev_color.type =
+			gx_dc_type_none;
+		    pcht[0].key = pcht[1].key =
+			pcht[2].key = pcht[3].key = 0;
+		    pcht += 4;
+		}
+		while (--n > 0);
+		penum->clues[0].key = 1;	/* guarantee no hit */
+		break;
+	    }
+	case 4:
+	    ictype(17) = ictype(2 * 17) = ictype(3 * 17) =
+		ictype(4 * 17) = ictype(6 * 17) = ictype(7 * 17) =
+		ictype(8 * 17) = ictype(9 * 17) = ictype(11 * 17) =
+		ictype(12 * 17) = ictype(13 * 17) = ictype(14 * 17) =
+		gx_dc_type_none;
+	    /* falls through */
+	case 2:
+	    ictype(5 * 17) = ictype(10 * 17) = gx_dc_type_none;
+#undef ictype
+    }
+}
+
 /* Initialize the color mapping tables for a non-mask image. */
 static void
 image_init_colors(gx_image_enum * penum, int bps, int spp,
@@ -688,6 +760,10 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 	0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
     };
 
+    /* Clues are only used with image_mono_render */
+    if (spp == 1) {
+        image_init_clues(penum, bps, spp);
+    }
     decode_type = 3; /* 0=custom, 1=identity, 2=inverted, 3=impossible */
     for (ci = 0; ci < spp; ci +=2 ) {
         decode_type &= (decode[ci] == 0. && decode[ci + 1] == 1.) |
@@ -774,11 +850,12 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 	if (spp == 1) {		/* and ci == 0 *//* Pre-map entries 0 and 255. */
 	    gs_client_color cc;
 
+            /* Image clues are used in this case */
 	    cc.paint.values[0] = real_decode[0];
-	    (*pcs->type->remap_color) (&cc, pcs, &penum->icolor0,
+	    (*pcs->type->remap_color) (&cc, pcs, penum->icolor0,
 				       pis, dev, gs_color_select_source);
 	    cc.paint.values[0] = real_decode[1];
-	    (*pcs->type->remap_color) (&cc, pcs, &penum->icolor1,
+	    (*pcs->type->remap_color) (&cc, pcs, penum->icolor1,
 				       pis, dev, gs_color_select_source);
 	}
     }

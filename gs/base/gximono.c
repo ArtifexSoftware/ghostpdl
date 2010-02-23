@@ -49,7 +49,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
 	 * logical operation.
 	 */
 	penum->slow_loop =
-	    (penum->masked && !color_is_pure(&penum->icolor1)) ||
+	    (penum->masked && !color_is_pure(penum->icolor0)) ||
 	    penum->use_rop;
 	/* We can bypass X clipping for portrait mono-component images. */
 	if (!(penum->slow_loop || penum->posture != image_portrait))
@@ -66,9 +66,9 @@ gs_image_class_3_mono(gx_image_enum * penum)
 	if (penum->use_mask_color) {
 	    gx_image_scale_mask_colors(penum, 0);
 	    if (penum->mask_color.values[0] <= 0)
-		color_set_null(&penum->icolor0);
+		color_set_null(penum->icolor0);
 	    if (penum->mask_color.values[1] >= 255)
-		color_set_null(&penum->icolor1);
+		color_set_null(penum->icolor1);
 	}
 	return &image_render_mono;
     }
@@ -76,19 +76,19 @@ gs_image_class_3_mono(gx_image_enum * penum)
 }
 
 #define USE_SET_GRAY_FUNCTION 0
-#if USE_SET_GRAY_FUNCTION
 /* Temporary function to make it easier to debug the uber-macro below */
 static int
 image_set_gray(byte sample_value, const bool masked, uint mask_base,
                 uint mask_limit, gx_device_color *pdevc, gs_client_color *cc,
                 gs_color_space *pcs, const gs_imager_state *pis, 
                 gx_device * dev, gs_color_select_t gs_color_select_source,
-                gx_image_enum * penum)
+                gx_image_enum * penum, bool tiles_fit)
 {
    cs_proc_remap_color((*remap_color));
    int code;
 
-   if (!masked) {
+    pdevc = &penum->clues[sample_value].dev_color;
+    if (!color_is_set(pdevc)) {
        if ((uint)(sample_value - mask_base) < mask_limit) {
             color_set_null(pdevc);
        } else {
@@ -109,12 +109,15 @@ image_set_gray(byte sample_value, const bool masked, uint mask_base,
             code = (*remap_color)(cc, pcs, pdevc, pis, dev, gs_color_select_source);
             return(code);
         }
-    } else {
-        code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);
-        return(code);
+    } else if (!color_is_pure(pdevc)) {
+	if (!tiles_fit) {
+	    code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);
+	    if (code < 0)
+		return(code);
+	}
     }
+    return(0);
 }
-#endif
 
 /*
  * Rendering procedure for general mono-component images, dealing with
@@ -133,8 +136,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     const gs_color_space *pcs = NULL;	/* only set for non-masks */
     cs_proc_remap_color((*remap_color)) = NULL;	/* ditto */
     gs_client_color cc;
-    gx_device_color devc;
-    gx_device_color *pdevc = &devc;
+    gx_device_color *pdevc = penum->icolor1;	/* color for masking */
     bool tiles_fit;
     uint mask_base =            /* : 0 to pacify Valgrind */
         (penum->use_mask_color ? penum->mask_color.values[0] : 0);
@@ -148,22 +150,24 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
  */
 #define IMAGE_SET_GRAY(sample_value)\
   BEGIN\
-    if (!masked) {\
-        if ((uint)(sample_value - mask_base) < mask_limit)\
-            color_set_null(pdevc);\
-        else {\
-            decode_sample(sample_value, cc, 0);\
-            code = (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
-            if (code < 0)\
-	        goto err;\
-        }\
-    } else {\
-        code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);\
-        if (code < 0)\
-	    goto err;\
+    pdevc = &penum->clues[sample_value].dev_color;\
+    if (!color_is_set(pdevc)) {\
+	if ((uint)(sample_value - mask_base) < mask_limit)\
+	    color_set_null(pdevc);\
+	else {\
+	    decode_sample(sample_value, cc, 0);\
+	    code = (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
+	    if (code < 0)\
+		goto err;\
+	}\
+    } else if (!color_is_pure(pdevc)) {\
+	if (!tiles_fit) {\
+	    code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);\
+	    if (code < 0)\
+		goto err;\
+	}\
     }\
-END
-
+  END
     gx_dda_fixed_point next;	/* (y not used in fast loop) */
     gx_dda_step_fixed dxx2, dxx3, dxx4;		/* (not used in all loops) */
     const byte *psrc_initial = buffer + data_x;
@@ -185,8 +189,10 @@ END
      */
 
     /* TO_DO_DEVICEN - The gx_check_tile_cache_current() routine is bogus */
-    /* Get devc initialized so that it has the proper procs */
-    pdevc->type = penum->icolor0.type;
+
+    if (pis == 0 || !gx_check_tile_cache_current(pis)) {
+        image_init_clues(penum, penum->bps, penum->spp);
+    }
     tiles_fit = (pis && penum->device_color ? gx_check_tile_cache(pis) : false);
     next = penum->dda.pixel0;
     xrun = dda_current(next.x);
@@ -223,7 +229,7 @@ END
 	     * Slow case, masked. *
 	     **********************/
 
-	    pdevc = &penum->icolor1;
+	    pdevc = penum->icolor1;
 	    code = gx_color_load(pdevc, pis, dev);
 	    if (code < 0)
 		return code;
@@ -376,10 +382,12 @@ END
 		    if (run != htrun) {
 			htrun = run;
 #if USE_SET_GRAY_FUNCTION
-                        image_set_gray(run,masked,mask_base,mask_limit,pdevc,
-                            &cc,pcs,pis,dev,gs_color_select_source,penum);
+                        code = image_set_gray(run,masked,mask_base,mask_limit,pdevc,
+                            &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
+                        if (code < 0) 
+                            goto err;
 #else
-			IMAGE_SET_GRAY(run);
+	                IMAGE_SET_GRAY(run);
 #endif
 		    }
 		    code = (*fill_pgram)(dev, xrun, yrun, xl - xrun,
@@ -416,12 +424,14 @@ END
 		if (run != htrun) {
 		    htrun = run;
 #if USE_SET_GRAY_FUNCTION
-                    image_set_gray(run,masked,mask_base,mask_limit,pdevc,
-                        &cc,pcs,pis,dev,gs_color_select_source,penum);
+                    code = image_set_gray(run,masked,mask_base,mask_limit,pdevc,
+                        &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
+                    if (code < 0) 
+                        goto err;
 #else
-		    IMAGE_SET_GRAY(run);
-#endif
-		}
+                    IMAGE_SET_GRAY(run);
+#endif		
+                }
 		code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
 				      ytf - yrun, pdyx, pdyy, pdevc, lop);
 		if (code < 0)
@@ -441,10 +451,12 @@ END
       last:if (stop < endp && (*stop || !masked)) {
 	    if (!masked) {
 #if USE_SET_GRAY_FUNCTION
-                image_set_gray(*stop,masked,mask_base,mask_limit,pdevc,
-                    &cc,pcs,pis,dev,gs_color_select_source,penum);
+                    code = image_set_gray(*stop, masked,mask_base,mask_limit,pdevc,
+                        &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
+                    if (code < 0) 
+                        goto err;
 #else
-		IMAGE_SET_GRAY(*stop);
+                    IMAGE_SET_GRAY(*stop);
 #endif
 	    }
 	    dda_advance(next.x, endp - stop);
@@ -532,25 +544,27 @@ END
 			case 0:
 			    if (masked)
 				goto mt;
-			    if (!color_is_pure(&penum->icolor0))
+			    if (!color_is_pure(penum->icolor0))
 				goto ht;
 			    code = (*fill_proc) (dev, xi, yt, wi, iht,
-						 penum->icolor0.colors.pure);
+						 penum->icolor0->colors.pure);
 			    break;
 			case 255:	/* just for speed */
-			    if (!color_is_pure(&penum->icolor1))
+			    if (!color_is_pure(penum->icolor1))
 				goto ht;
 			    code = (*fill_proc) (dev, xi, yt, wi, iht,
-						 penum->icolor1.colors.pure);
+						 penum->icolor1->colors.pure);
 			    break;
 			default:
 			  ht:	/* Use halftone if needed */
 			    if (run != htrun) {
 #if USE_SET_GRAY_FUNCTION
-                            image_set_gray(run,masked,mask_base,mask_limit,pdevc,
-                                &cc,pcs,pis,dev,gs_color_select_source,penum);
+                                code = image_set_gray(run, masked,mask_base,mask_limit,pdevc,
+                                    &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
+                                if (code < 0) 
+                                    goto err;
 #else
-			    IMAGE_SET_GRAY(run);
+                                IMAGE_SET_GRAY(run);
 #endif
 				htrun = run;
 			    }
@@ -592,10 +606,12 @@ END
 		    goto lmt;
 	    }
 #if USE_SET_GRAY_FUNCTION
-            image_set_gray(*stop,masked,mask_base,mask_limit,pdevc,
-                &cc,pcs,pis,dev,gs_color_select_source,penum);
+            code = image_set_gray(*stop, masked,mask_base,mask_limit,pdevc,
+                &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
+            if (code < 0) 
+                goto err;
 #else
-	    IMAGE_SET_GRAY(*stop);
+            IMAGE_SET_GRAY(*stop);
 #endif
 	    code = gx_fill_rectangle_device_rop(xi, yt, wi, iht,
 						pdevc, dev, lop);
@@ -612,5 +628,3 @@ err:
     penum->used.y = 0;
     return code;
 }
-
-
