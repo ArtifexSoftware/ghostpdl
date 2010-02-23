@@ -18,6 +18,7 @@
 /*                 as well as a 'composite' 32-bit CMYK for the page.      */
 /* tiffsep1 device: Generate individual TIFF 1-bit files for each separation. */
 
+#include "stdint_.h"   /* for tiff.h */
 #include "gdevtifs.h"
 #include "gdevprn.h"
 #include "gdevdevn.h"

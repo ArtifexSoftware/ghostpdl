@@ -13,6 +13,8 @@
 
 /* $Id$ */
 /* 12-bit & 24-bit RGB uncompressed TIFF driver */
+
+#include "stdint_.h"   /* for tiff.h */
 #include "gdevtifs.h"
 #include "gdevprn.h"
 

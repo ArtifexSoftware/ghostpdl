@@ -428,7 +428,7 @@ case "x$with_system_libtiff" in
     xcheck)
 	if test -d tiff; then
 	    LIBTIFFDIR=tiff
-	    LOCAL_LIBTIFF_VERSION=`sed -n 's/^#define\s\+TIFFLIB_VERSION\s\+\([0-9]\+\)\s*.*$/\1/p' $LIBTIFFDIR/libtiff/tiffvers.h`
+	    LOCAL_LIBTIFF_VERSION=`sed -n '/TIFFLIB_VERSION[[^_]]/s/[[^0-9]]*\([[0-9]]*\).*/\1/p' $LIBTIFFDIR/libtiff/tiffvers.h`
 	    SHARE_LIBTIFF=0
 	fi
 	AC_CHECK_LIB(tiff, TIFFOpen,
