@@ -1832,7 +1832,7 @@ $(PSOBJ)write_t2.$(OBJ) : $(PSSRC)write_t2.c $(AK)\
 	$(PSCC) $(FT_CFLAGS) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
 
 $(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
- $(wrfont_h) $(stdio_h)
+ $(wrfont_h) $(stdio__h)
 	$(PSCC) $(FT_CFLAGS) $(PSO_)wrfont.$(OBJ) $(C_) $(PSSRC)wrfont.c
 
 # stub for FreeType bridge :
