@@ -16,8 +16,8 @@ my $verbose=0;
 
 my $wordSize="64";
 my $timeOut=240;
-my $maxTimeout=10;  # starting value, is adjusted by value below based on jobs completed
-my $maxTimeoutPercentage=0.5;
+my $maxTimeout=20;  # starting value, is adjusted by value below based on jobs completed
+my $maxTimeoutPercentage=1.0;
 
 my $maxCount=12;
 $maxCount=16;
@@ -153,7 +153,7 @@ if (open(F,"<$machine.start")) {
 }
 
 mylog "user products=$products user=$user\n" if ($user);
-mylog "svn products=$products revs=$revs\n" if ($revs);
+mylog "svn products=$products rev=$revs\n" if ($revs);
 mylog "icc_work products=$products rev=$icc_work\n" if ($icc_work);
 
 my $host="casper3.ghostscript.com";
@@ -175,6 +175,7 @@ my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
 my $gsBin=$baseDirectory."/gs";
 my $icc_workSource=$baseDirectory."/icc_work";
+my $icc_workGsSource=$icc_workSource."/gs";
 
 my $abort=0;
 unlink ("$machine.abort");
@@ -409,33 +410,29 @@ if (!$abort) {
     $gsSource=$gpdlSource."/gs";
   } elsif ($icc_work) {
 
-    if (!-e $icc_workSource) {
+    if (!-e $icc_workGsSource) {
+      `rm -fr $icc_workSource`;
       updateStatus('Checking out icc_work');
-      $cmd="export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn co http://svn.ghostscript.com/ghostscript/branches/icc_work";
-      print "$cmd\n" if ($verbose);
+      $cmd="svn co --ignore-externals http://svn.ghostscript.com/ghostscript/trunk/ghostpdl $icc_workSource ; svn co http://svn.ghostscript.com/ghostscript/branches/icc_work $icc_workGsSource";
+      mylog "$cmd\n";
       `$cmd`;
     }
     updateStatus('Updating icc_work');
-    $cmd="cd $icc_workSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$icc_work";
-    $gsSource=$icc_workSource;
+    $cmd="svn update -r$icc_work --ignore-externals $icc_workSource ; cd $icc_workGsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; svn update -r$icc_work";
+    $gpdlSource=$icc_workSource;
+    $gsSource=$icc_workGsSource;
   } else {
 
     updateStatus('Updating Ghostscript');
 
     # get update
-    my $pdlrev;
-    my $gsrev;
     if ($revs eq "head") {
-      $pdlrev="head";
-      $gsrev="head";
-    } elsif ($revs =~ m/(\d+) (\d+)/) {
-      $pdlrev=$1;
-      $gsrev=$2;
+    } elsif ($revs =~ m/(\d+)/) {
     } else {
       mylog "oops 4: revs=$revs";
       die "oops 4";  # hack
     }
-    $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$pdlrev ; cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$gsrev";
+    $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs ; cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs";
 
   }
 
@@ -705,6 +702,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
         kill 1, $p;
         kill 9, $p;
       }
+      $name{$pid}='missing' if (!exists $name{$pid});
       mylog ("killing (timeout 1) $pid $name{$pid}\n");
       kill 1, $pid;
       kill 9, $pid;
@@ -742,8 +740,8 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
     my $filename=$a[0];
     my $cmd=$a[1];
     $jobs++;
-    $maxTimeout=int($jobs*$maxTimeoutPercentage/100+0.5);
-    $maxTimeout=10 if ($maxTimeout<10);
+    my $t=int($jobs*$maxTimeoutPercentage/100+0.5);
+    $maxTimeout=$t if ($maxTimeout<$t);
     {
       sub convertTime($) {
         my $t=shift;
@@ -832,9 +830,11 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
     my $a=`ps -ef`;
     my @a=split '\n',$a;
     my %children;
+    my %name;
     foreach (@a) {
       if (m/\S+ +(\d+) +(\d+)/ && !m/<defunct>/ && !m/\(sh\)/) {
         $children{$2}=$1;
+        $name{$1}=$3;
       }
     }
 
@@ -844,11 +844,12 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
         while (exists $children{$p}) {
 #         mylog "$p->$children{$p}\n"; # mhw
           $p=$children{$p};
-          mylog ("killing (timeout 2) $p\n");
+          mylog ("killing (timeout 2) $p $name{$p}\n");
           kill 1, $p;
           kill 9, $p;
         }
-        mylog ("killing (timeout 2) $pid\n");
+        $name{$pid}='missing' if (!exists $name{$pid});
+        mylog ("killing (timeout 2) $pid $name{$pid}\n");
         kill 1, $pid;
         kill 9, $pid;
         $timeOuts{$pids{$pid}{'filename'}}=1;
@@ -856,7 +857,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
         delete $pids{$pid};
 
 #       mylog "killed:  $p ($pid) $pids{$pid}{'filename'}  total $count\n";  # mhw
-        mylog "killed:  $pids{$pid}{'filename'}\n";  # mhw
+#       mylog "killed:  $pids{$pid}{'filename'}\n";  # mhw
         if ($count>=$maxTimeout) {
           $timeoutFail="too many timeouts";
 mylog("setting $machine.fail on casper3\n");
@@ -907,7 +908,7 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
       $dir="ghostpdl" if ($revs);
       $dir="users/$user/ghostpdl" if ($user);
       $dir="icc_work" if ($icc_work);
-      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out','makegs.out') {
+      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out') {
         my $count=0;
         my $start=-1;
         if (open(F3,"<$dir/$i")) {
@@ -972,11 +973,6 @@ if (!$local) {
     `gzip $machine.log`;
     `gzip $machine.out`;
 
-    mylog "about to upload $machine.log.gz";
-    spawn(300,"scp -q -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz");
-    mylog "done with uploading $machine.log.gz";
-
-# what foolishness is this?
     mylog "about to upload $machine.log.gz";
     spawn(300,"scp -q -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz");
     mylog "done with uploading $machine.log.gz";

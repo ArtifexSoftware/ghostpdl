@@ -24,11 +24,11 @@ closedir DIR;
 sub myCmp($$) {
   my $a=shift;
   my $b=shift;
-  $a=~m/-(\d+)/;
-  $a=$1;
-  $b=~m/-(\d+)/;
-  $b=$1;
-  return($b cmp $a);
+  $a=~m/(\d+)/;
+  my $a1=$1;
+  $b=~m/(\d+)/;
+  my $b1=$1;
+  return($b1 cmp $a1);
 }
 
 my $count=$previousValues;
