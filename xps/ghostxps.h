@@ -63,6 +63,8 @@
 #include "gzstate.h"
 #include "gzpath.h"
 
+#include "gsiccmanage.h"
+
 #include "zlib.h"
 
 #ifndef MIN

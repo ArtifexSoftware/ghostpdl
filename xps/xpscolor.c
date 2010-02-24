@@ -202,35 +202,8 @@ xps_stream_from_buffer(xps_context_t *ctx, byte *data, int length)
 int
 xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length, int ncomp)
 {
-    gs_color_space *colorspace;
-    gs_cie_icc *info;
-    stream *stm;
-    int code;
-
-    // based on zseticcspace
-
-    stm = xps_stream_from_buffer(ctx, data, length);
-    if (!stm)
-	return gs_rethrow(-1, "cannot create stream from buffer");
-
-    code = gs_cspace_build_CIEICC(&colorspace, NULL, ctx->memory);
-    if (code < 0)
-	return gs_rethrow(code, "cannot build ICC colorspace");
-
-    info = colorspace->params.icc.picc_info;
-    info->num_components = ncomp; /* redundant but that's what the interface requires */
-    info->instrp = stm;
-    info->file_id = (stm->read_id | stm->write_id);
-
-    code = gx_load_icc_profile(info);
-    if (code < 0)
-	return gs_throw(code, "gx_load_icc_profile failed");
-
-    // cie_cache_joint
-    // cie_set_finish
-
-    *csp = colorspace;
-
+    // TODO: implement using the icc_work branch
+    *csp = NULL;
     return 0;
 }
 

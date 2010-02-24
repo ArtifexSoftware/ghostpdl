@@ -176,10 +176,20 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     int code;
 
     gs_opendevice(pdevice);
+    
+#ifdef ICCBRANCH
+    code = gsicc_init_device_profile(ctx->pgs, pdevice);
+    if (code < 0)
+        return code;
+#endif
 
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
 	goto cleanup_setdevice;
+
+#ifdef ICCBRANCH
+    gsicc_init_iccmanager(ctx->pgs);
+#endif
 
     gs_setaccuratecurves(ctx->pgs, true);  /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);

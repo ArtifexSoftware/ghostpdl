@@ -78,8 +78,8 @@ PDL_INCLUDE_FLAGS?=-DXPS_INCLUDED
 # We don't need fonts included by pcl6_gcc.mak
 PCLXL_ROMFS_ARGS?=
 
-# Since XPS doesn't really need anything from the %rom% file system, set default:
-COMPILE_INITS?=0
+# XPS only needs the ICC profiles from the %rom% file system.
+COMPILE_INITS?=1
 
 include $(MAINSRCDIR)/pcl6_gcc.mak
 

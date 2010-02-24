@@ -56,6 +56,12 @@ PSLIBDIR=..\gs\lib
 ICCSRCDIR=..\gs\icclib
 !endif
 
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
+!ifndef LCMSSRCDIR
+LCMSSRCDIR=..\gs\lcms
+!endif
+
 !ifndef PNGSRCDIR
 PNGSRCDIR=..\gs\libpng
 !endif
@@ -147,8 +153,8 @@ PCLXL_ROMFS_ARGS=
 
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
 !ifndef COMPILE_INITS
-# Since XPS doesn't really need anything from the %rom% file system, set default:
-COMPILE_INITS=0
+# XPS only needs the ICC profiles from the %rom% file system.
+COMPILE_INITS=1
 !endif
 
 # "Subclassed" makefile
