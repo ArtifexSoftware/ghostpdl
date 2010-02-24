@@ -40,11 +40,11 @@ int cieicc_prepare_caches(i_ctx_t *i_ctx_p, const gs_range * domains,
 		     cie_cache_floats * pc0, cie_cache_floats * pc1,
 		     cie_cache_floats * pc2, cie_cache_floats * pc3,
 		     void *container,
-		     gs_ref_memory_t * imem, client_name_t cname);
+		     const gs_ref_memory_t * imem, client_name_t cname);
 static int
 cie_prepare_iccproc(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
 		  cie_cache_floats * pcache, void *container,
-		  gs_ref_memory_t * imem, client_name_t cname);
+		  const gs_ref_memory_t * imem, client_name_t cname);
 
 /* Empty procedures */
 static const ref empty_procs[4] =
@@ -175,7 +175,7 @@ static int cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
 			       gs_const_string * strings);
 int
 cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
-		gs_memory_t * mem)
+		const gs_memory_t * mem)
 {
     int n = pclt->n, m = pclt->m;
     const ref *pta = ptref->value.const_refs;
@@ -302,6 +302,7 @@ cie_abc_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_ci
               bool *has_abc_procs, bool *has_lmn_procs)
 {
     int code;
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
     if ((code = dict_range3_param(mem, pdref, "RangeABC", &pcie->RangeABC)) < 0 ||
 	(code = dict_matrix3_param(mem, pdref, "MatrixABC", &pcie->MatrixABC)) < 0 ||
@@ -329,7 +330,7 @@ cie_abc_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_ci
                  &(pcie->caches.DecodeABC.caches)->floats,
                  &(pcie->caches.DecodeABC.caches)[1].floats,
                  &(pcie->caches.DecodeABC.caches)[2].floats,
-                 NULL, pcie, mem, "Decode.ABC(ICC)");
+                 NULL, pcie, imem, "Decode.ABC(ICC)");
     } else {
         pcie->caches.DecodeABC.caches->floats.params.is_identity = true;
         (pcie->caches.DecodeABC.caches)[1].floats.params.is_identity = true;
@@ -341,7 +342,7 @@ cie_abc_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_ci
                     &(pcie->common.caches.DecodeLMN)->floats,
                     &(pcie->common.caches.DecodeLMN)[1].floats,
                     &(pcie->common.caches.DecodeLMN)[2].floats,
-                    NULL, pcie, mem, "Decode.LMN(ICC)");
+                    NULL, pcie, imem, "Decode.LMN(ICC)");
     } else {
         pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
         (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
@@ -381,6 +382,7 @@ cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_c
               bool *has_abc_procs, bool *has_lmn_procs, bool *has_defg_procs, ref *ptref)
 {
     int code; 
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
     /* First get all the ABC and LMN information related to this space */
     code = cie_abc_param(i_ctx_p, mem, pdref, (gs_cie_abc *) pcie, pcprocs, has_abc_procs, has_lmn_procs);
@@ -406,7 +408,7 @@ cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_c
                  &(pcie->caches_defg.DecodeDEFG)[1].floats,
                  &(pcie->caches_defg.DecodeDEFG)[2].floats,
                  &(pcie->caches_defg.DecodeDEFG)[3].floats,
-                    pcie, mem, "Decode.DEFG(ICC)");
+                    pcie, imem, "Decode.DEFG(ICC)");
     } else {
          pcie->caches_defg.DecodeDEFG->floats.params.is_identity = true;
         (pcie->caches_defg.DecodeDEFG)[1].floats.params.is_identity = true;
@@ -421,7 +423,6 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
     gs_memory_t *mem = gs_state_memory(igs);
-    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_defg *pcie;
@@ -465,6 +466,7 @@ cie_def_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_ci
               bool *has_abc_procs, bool *has_lmn_procs, bool *has_def_procs, ref *ptref)
 {
     int code; 
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
     /* First get all the ABC and LMN information related to this space */
     code = cie_abc_param(i_ctx_p, mem, pdref, (gs_cie_abc *) pcie, pcprocs, has_abc_procs, has_lmn_procs);
@@ -490,7 +492,7 @@ cie_def_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_ci
                  &(pcie->caches_def.DecodeDEF)->floats,
                  &(pcie->caches_def.DecodeDEF)[1].floats,
                  &(pcie->caches_def.DecodeDEF)[2].floats,
-                 NULL, pcie, mem, "Decode.DEF(ICC)");
+                 NULL, pcie, imem, "Decode.DEF(ICC)");
     } else {
          pcie->caches_def.DecodeDEF->floats.params.is_identity = true;
         (pcie->caches_def.DecodeDEF)[1].floats.params.is_identity = true;
@@ -506,7 +508,6 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
     gs_memory_t *mem = gs_state_memory(igs);
-    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_def *pcie;
@@ -553,7 +554,6 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
     gs_memory_t *mem = gs_state_memory(igs);
-    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_abc *pcie;
@@ -593,12 +593,12 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
     gs_memory_t *mem = gs_state_memory(igs);
-    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
+    const gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_a *pcie;
     int code;
-    bool has_a_procs;
+    bool has_a_procs = false;
     bool has_lmn_procs;
 
     procs = istate->colorspace.procs.cie;
@@ -822,7 +822,7 @@ static int cie_create_icc(i_ctx_t *);
 static int
 cie_prepare_iccproc(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
 		  cie_cache_floats * pcache, void *container,
-		  gs_ref_memory_t * imem, client_name_t cname)
+		  const gs_ref_memory_t * imem, client_name_t cname)
 {
     int space = imemory_space(imem);
     gs_sample_loop_params_t lp;
@@ -857,7 +857,7 @@ cieicc_prepare_caches(i_ctx_t *i_ctx_p, const gs_range * domains,
 		     cie_cache_floats * pc0, cie_cache_floats * pc1,
 		     cie_cache_floats * pc2, cie_cache_floats * pc3,
 		     void *container,
-		     gs_ref_memory_t * imem, client_name_t cname)
+		     const gs_ref_memory_t * imem, client_name_t cname)
 {
     cie_cache_floats *pcn[4];
     int i, n, code = 0;

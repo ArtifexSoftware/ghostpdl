@@ -451,7 +451,6 @@ int
 gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 		     frac * pconc, const gs_imager_state * pis)
 {
-    const gs_cie_abc *pcie = pcs->params.abc;
     gs_color_space *pcs_icc;
 
     if_debug3('c', "[c]concretize CIEABC [%g %g %g]\n",
@@ -493,6 +492,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
     return(code);
 }
 
+int
 gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		gs_color_select_t select)
@@ -519,8 +519,6 @@ int
 gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 		   frac * pconc, const gs_imager_state * pis)
 {
-    const gs_cie_a *pcie = pcs->params.a;
-    cie_cached_value a = float2cie_cached(pc->paint.values[0]);
     int code;
     gs_color_space *pcs_icc;
 
@@ -561,6 +559,9 @@ gs_colorspace_set_icc_equivalent(gs_color_space *pcs, gs_memory_t *memory)
         case gs_color_space_index_CIEA:
             gx_ciea_to_icc(&picc_cs, pcs, memory->stable_memory);
             break;
+        default:
+             /* do nothing.  Sould never happen */
+             break;
      } 
     return(0);
 }

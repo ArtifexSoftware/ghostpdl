@@ -246,14 +246,14 @@ static void
 gsicc_matrix3_to_mlut(gs_matrix3 *mat, unsigned short *clut)
 {
     /* Step through the grid values */
-    float grid_points[8][3]={0,0,0,
-                             0,0,1,
-                             0,1,0,
-                             0,1,1,
-                             1,0,0,
-                             1,0,1,
-                             1,1,0,
-                             1,1,1};
+    float grid_points[8][3]={{0,0,0},
+                             {0,0,1},
+                             {0,1,0},
+                             {0,1,1},
+                             {1,0,0},
+                             {1,0,1},
+                             {1,1,0},
+                             {1,1,1}};
     int k;
     gs_vector3 input,output;
     unsigned short *curr_ptr = clut, value;
@@ -1124,7 +1124,7 @@ add_lutAtoBtype(unsigned char *input_ptr, gsicc_lutatob *lutatobparts)
     }    
     curr_ptr += 4;
     /* Header is completed */
-    /* Now write out the various parts (i.e. curves, matrix and clut)
+    /* Now write out the various parts (i.e. curves, matrix and clut) */
     /* First the B curves */
     if (lutatobparts->b_curves != NULL) {
         for (k = 0; k < numout; k++) {
@@ -1480,7 +1480,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, gsicc_luta
 
 /* Shared code by ABC, DEF and DEFG compaction of ABC/LMN parts.  This is used
    when we either MatrixABC is identity, LMN Decode is identity or MatrixLMN is identity */
-static
+static void
 gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN, gs_matrix3 *matrixABC, bool has_abc_procs,
                        bool has_lmn_procs, gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches, gs_memory_t *memory)   
 {
@@ -1545,7 +1545,9 @@ gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **pp_buffer_in, int *profil
 {
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
+#if SAVEICCPROFILE
     int debug_catch = 1;
+#endif
     int k;
     gs_matrix3 matrix_input_trans;
     gsicc_lutatob icc_luta2bparts;
@@ -1648,7 +1650,9 @@ gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_si
 {
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
+#if SAVEICCPROFILE
     int debug_catch = 1;
+#endif
     gs_matrix3 matrix_input;
     float *curr_pos;
     bool has_a_proc = !(a_cache->floats.params.is_identity);
@@ -1798,6 +1802,7 @@ gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts, bool 
 
 /* If we have an ABC matrix, a DecodeLMN and an LMN matrix we have to mash together the table, Decode ABC (if present) and
    ABC matrix. */
+int
 gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory,
                    gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches, gx_cie_scalar_cache *defg_caches)
 {
@@ -1805,7 +1810,9 @@ gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in, i
     gsicc_lutatob icc_luta2bparts;
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
+#if SAVEICCPROFILE
     int debug_catch = 1;
+#endif
     float *curr_pos;
     bool has_abc_procs = !((abc_caches->floats.params.is_identity &&
                          (abc_caches)[1].floats.params.is_identity && 
@@ -1856,7 +1863,9 @@ gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in, in
     gsicc_lutatob icc_luta2bparts;
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
+#if SAVEICCPROFILE
     int debug_catch = 1;
+#endif
     float *curr_pos;
     bool has_abc_procs = !((abc_caches->floats.params.is_identity &&
                          (abc_caches)[1].floats.params.is_identity && 

@@ -196,7 +196,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
         psrc_cm_start = psrc_cm;
         bufend = psrc_cm +  w * spp_cm/spp;
         gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
-                                 psrc,psrc_cm);
+                                 (void*) psrc, (void*) psrc_cm);
     }
     /* Release the link */
     gsicc_release_link(icc_link);

@@ -769,7 +769,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     pdf14_mask_t *mask_stack = tos->maskbuf;
     pdf14_buf *maskbuf;
     int x0, x1, y0, y1;
-    byte *new_data_buf;
+    byte *new_data_buf = NULL;
     int num_noncolor_planes, new_num_planes;
     int num_cols, num_rows, num_newcolor_planes;
     bool icc_match;
@@ -2873,9 +2873,9 @@ pdf14_update_device_color_procs(gx_device *dev,
 			      gs_transparency_color_t group_color, int64_t icc_hashcode,
 			      gs_imager_state *pis, cmm_profile_t *iccprofile)
 {
-    pdf14_device *pdevproto;
+    pdf14_device *pdevproto = NULL;
     pdf14_device *pdev = (pdf14_device *)dev;
-    const pdf14_procs_t *new_14procs;
+    const pdf14_procs_t *new_14procs = NULL;
     pdf14_parent_color_t *parent_color_info;
     gx_color_polarity_t new_polarity;
     int new_num_comps;
@@ -2968,7 +2968,7 @@ pdf14_update_device_color_procs(gx_device *dev,
                         return gs_rethrow(-1,"ICC data not found in clist");
 
                     /* Keep a pointer to the clist device */
-                    iccprofile->dev = pcrdev;
+                    iccprofile->dev = (gx_device *) pcrdev;
    
                 } 
 
