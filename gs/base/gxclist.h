@@ -25,6 +25,7 @@
 #include "gxdevbuf.h"
 #include "gxistate.h"
 #include "gxrplane.h"
+#include "gscms.h"
 
 /*
  * A command list is essentially a compressed list of driver calls.
@@ -182,42 +183,18 @@ typedef struct gx_clist_state_s gx_clist_state;
 	int ymin, ymax;			/* current band, <0 when writing */\
 		/* Following are set when writing, read when reading. */\
 	gx_band_page_info_t page_info;	/* page information */\
-	int nbands			/* # of bands */
+	int nbands;			/* # of bands */\
+        clist_icctable_t *icc_table;    /* Table that keeps track of ICC profiles.\
+                                           It relates the hashcode to the cfile\ 
+                                           file location. */\
+        gsicc_link_cache_t *icc_cache_cl  /* Link cache */\
+
 
 /*
  * Chech whether a clist is used for storing a pattern command stream.
  * Useful for both reader and writer.
  */
 #define IS_CLIST_FOR_PATTERN(cdev) (cdev->procs.open_device == pattern_clist_open_device)
-
-typedef struct gx_device_clist_common_s {
-    gx_device_clist_common_members;
-} gx_device_clist_common;
-
-#define clist_band_height(cldev) ((cldev)->page_info.band_height)
-#define clist_cfname(cldev) ((cldev)->page_info.cfname)
-#define clist_cfile(cldev) ((cldev)->page_info.cfile)
-#define clist_bfname(cldev) ((cldev)->page_info.bfname)
-#define clist_bfile(cldev) ((cldev)->page_info.bfile)
-
-/* Define the length of the longest dash pattern we are willing to store. */
-/* (Strokes with longer patterns are converted to fills.) */
-#define cmd_max_dash 11
-
-/* Define a clist cropping buffer, 
-   which represents a cropping stack element while clist writing. */
-typedef struct clist_writer_cropping_buffer_s clist_writer_cropping_buffer_t;
-
-struct clist_writer_cropping_buffer_s {
-    int cropping_min, cropping_max;
-    uint mask_id, temp_mask_id;
-    clist_writer_cropping_buffer_t *next;
-};
-
-#define private_st_clist_writer_cropping_buffer()\
-  gs_private_st_ptrs1(st_clist_writer_cropping_buffer,\
-		clist_writer_cropping_buffer_t, "clist_writer_transparency_buffer",\
-		clist_writer_cropping_buffer_enum_ptrs, clist_writer_cropping_buffer_reloc_ptrs, next)
 
 
 /* Define a structure to hold where the ICC profiles are stored in the clist
@@ -266,6 +243,38 @@ struct clist_icctable_s {
   gs_private_st_ptrs2(st_clist_icctable,\
 		clist_icctable_t, "clist_icctable",\
 		clist_icctable_enum_ptrs, clist_icctable_reloc_ptrs, head, final)
+
+
+typedef struct gx_device_clist_common_s {
+    gx_device_clist_common_members;
+} gx_device_clist_common;
+
+#define clist_band_height(cldev) ((cldev)->page_info.band_height)
+#define clist_cfname(cldev) ((cldev)->page_info.cfname)
+#define clist_cfile(cldev) ((cldev)->page_info.cfile)
+#define clist_bfname(cldev) ((cldev)->page_info.bfname)
+#define clist_bfile(cldev) ((cldev)->page_info.bfile)
+
+/* Define the length of the longest dash pattern we are willing to store. */
+/* (Strokes with longer patterns are converted to fills.) */
+#define cmd_max_dash 11
+
+/* Define a clist cropping buffer, 
+   which represents a cropping stack element while clist writing. */
+typedef struct clist_writer_cropping_buffer_s clist_writer_cropping_buffer_t;
+
+struct clist_writer_cropping_buffer_s {
+    int cropping_min, cropping_max;
+    uint mask_id, temp_mask_id;
+    clist_writer_cropping_buffer_t *next;
+};
+
+#define private_st_clist_writer_cropping_buffer()\
+  gs_private_st_ptrs1(st_clist_writer_cropping_buffer,\
+		clist_writer_cropping_buffer_t, "clist_writer_transparency_buffer",\
+		clist_writer_cropping_buffer_enum_ptrs, clist_writer_cropping_buffer_reloc_ptrs, next)
+
+
 
 
 /* Define the state of a band list when writing. */
@@ -337,12 +346,12 @@ struct gx_device_clist_writer_s {
                                            access to the graphic state information in those
                                            routines, this is the logical place to put this
                                            information */
-    clist_icctable_t *icc_table;           /* Table that keeps track of ICC profiles.  It 
+   /* clist_icctable_t *icc_table;  */          /* Table that keeps track of ICC profiles.  It 
                                               relates the hashcode to the cfile file location.
                                               I did not put this into gx_device_clist_common_members
                                               since I dont see where those pointers are ever defined
                                               for GC. */
-    gsicc_link_cache_t *icc_cache_cl;   /* Had to add this into the writer device to avoid problems
+   /* gsicc_link_cache_t *icc_cache_cl; */  /* Had to add this into the writer device to avoid problems
                                            with 64 bit builds.  We need to revisit this */
 };
 
@@ -380,12 +389,12 @@ typedef struct gx_device_clist_reader_s {
     byte *main_thread_data;		/* saved data pointer of main thread */
     int curr_render_thread;		/* index into array */
     int thread_lookahead_direction;	/* +1 or -1 */
-    clist_icctable_t *icc_table;        /* Table that keeps track of ICC profiles.  It 
+  /*  clist_icctable_t *icc_table;  */       /* Table that keeps track of ICC profiles.  It 
                                            relates the hashcode to the cfile file location.
                                            I did not put this into gx_device_clist_common_members
                                            since I dont see where those pointers are ever defined
                                            for GC. */
-    gsicc_link_cache_t *icc_cache_cl;   /* A link cache so that each band 
+  /*  gsicc_link_cache_t *icc_cache_cl; */   /* A link cache so that each band 
                                         does not recreate the links. 
                                         A big savings */
 } gx_device_clist_reader;

@@ -442,7 +442,7 @@ gxistate_h=$(GLSRC)gxistate.h\
  $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h) $(gscspace_h) $(gstrans_h) $(gsnamecl_h)
 gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
  $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxdevbuf_h) $(gxistate_h)\
- $(gxrplane_h)
+ $(gxrplane_h) $(gscms_h)
 gxcolor2_h=$(GLSRC)gxcolor2.h\
  $(gscolor2_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h)
 gxcspace_h=$(GLSRC)gxcspace.h\
