@@ -714,7 +714,7 @@ pl_main_universe_select(
 	/* Select curr/new device into PDL instance */
 	if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
 	    if (err_str)
-		strcpy(err_str, "Unable to install device into PDL interp.");
+		strcpy(err_str, "Unable to install device into PDL interp.\n");
 	    return 0;
 	}
         /* potentially downgrade the resolution */
