@@ -46,6 +46,7 @@ static void gstate_free_contents(gs_state *);
 static int gstate_copy(gs_state *, const gs_state *,
 			gs_state_copy_reason_t, client_name_t);
 static void clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t cname);
+static void gs_swapcolors_quick(gs_state *pgs);
 
 /*
  * Graphics state storage management is complicated.  There are many
@@ -255,9 +256,12 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     pgs->color[1].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     pgs->in_cachedevice = 0;
-    gs_swapcolors(pgs); /* To color 1 */
+    pgs->overprint_alt = false;
+    pgs->overprint_mode_alt = 0;
+    pgs->effective_overprint_mode_alt = 0;
+    gs_swapcolors_quick(pgs); /* To color 1 */
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
-    gs_swapcolors(pgs); /* To color 0 */
+    gs_swapcolors_quick(pgs); /* To color 0 */
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */
     pgs->dev_ht_alt = 0;
@@ -402,6 +406,7 @@ gs_grestore_only(gs_state * pgs)
     void *sdata;
     gs_transparency_state_t *tstack = pgs->transparency_stack;
     bool prior_overprint = pgs->overprint;
+    int code;
 
     if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
@@ -424,9 +429,10 @@ gs_grestore_only(gs_state * pgs)
 
     /* update the overprint compositor, if necessary */
     if (prior_overprint != pgs->overprint)
+    {
         return gs_do_set_overprint(pgs);
-    else
-        return 0;
+    }
+    return 0;
 }
 
 /* Restore the graphics state per PostScript semantics */
@@ -965,9 +971,9 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     } else {
 	GSTATE_ASSIGN_PARTS(pgs, &parts);
     }
-    gs_swapcolors(pgs);
+    gs_swapcolors_quick(pgs);
     cs_adjust_counts(pgs, 1);
-    gs_swapcolors(pgs);
+    gs_swapcolors_quick(pgs);
     cs_adjust_counts(pgs, 1);
     return pgs;
   fail:
@@ -1006,9 +1012,9 @@ gstate_free_contents(gs_state * pgs)
     rc_decrement(pgs->device, cname);
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
     rc_decrement(pgs->dfilter_stack, cname);
-    gs_swapcolors(pgs);
+    gs_swapcolors_quick(pgs);
     cs_adjust_counts(pgs, -1);
-    gs_swapcolors(pgs);
+    gs_swapcolors_quick(pgs);
     cs_adjust_counts(pgs, -1);
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
@@ -1048,9 +1054,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
      * Handle references from contents.
      */
     cs_adjust_counts(pto, -1);
-    gs_swapcolors(pto);
+    gs_swapcolors_quick(pto);
     cs_adjust_counts(pto, -1);
-    gs_swapcolors(pto);
+    gs_swapcolors_quick(pto);
     gx_path_assign_preserve(pto->path, pfrom->path);
     gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
     /*
@@ -1105,9 +1111,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
     cs_adjust_counts(pto, 1);
-    gs_swapcolors(pto);
+    gs_swapcolors_quick(pto);
     cs_adjust_counts(pto, 1);
-    gs_swapcolors(pto);
+    gs_swapcolors_quick(pto);
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;
@@ -1119,13 +1125,14 @@ gs_id gx_get_clip_path_id(gs_state *pgs)
     return pgs->clip_path->id;
 }
 
-void gs_swapcolors(gs_state *pgs)
+static void gs_swapcolors_quick(gs_state *pgs)
 {
     struct gx_cie_joint_caches_s *tmp_cie;
     gx_device_halftone           *tmp_ht;
     gs_devicen_color_map          tmp_ccm;
     struct gx_pattern_cache_s    *tmp_pc;
     gs_client_color              *tmp_cc;
+    int                           tmp;
     gx_device_color              *tmp_dc;
     gs_color_space               *tmp_cs;
     
@@ -1157,4 +1164,23 @@ void gs_swapcolors(gs_state *pgs)
     tmp_pc                 = pgs->pattern_cache;
     pgs->pattern_cache     = pgs->pattern_cache_alt;
     pgs->pattern_cache_alt = tmp_pc;
+    
+    tmp                = pgs->overprint;
+    pgs->overprint     = pgs->overprint_alt;
+    pgs->overprint_alt = tmp;
+
+    tmp                     = pgs->overprint_mode;
+    pgs->overprint_mode     = pgs->overprint_mode_alt;
+    pgs->overprint_mode_alt = tmp;
+
+    tmp                               = pgs->effective_overprint_mode;
+    pgs->effective_overprint_mode     = pgs->effective_overprint_mode_alt;
+    pgs->effective_overprint_mode_alt = tmp;
+    
+}
+
+int gs_swapcolors(gs_state *pgs)
+{
+    gs_swapcolors_quick(pgs);
+    return gs_do_set_overprint(pgs);
 }

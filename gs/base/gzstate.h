@@ -121,9 +121,12 @@ struct gs_state_s {
     /* Stores for cached values which correspond to whichever of the
      * above colors isn't in force at the moment */
     struct gx_cie_joint_caches_s *cie_joint_caches_alt;
-    gx_device_halftone *dev_ht_alt;
-    gs_devicen_color_map color_component_map_alt;
-    struct gx_pattern_cache_s *pattern_cache_alt;
+    gx_device_halftone           *dev_ht_alt;
+    gs_devicen_color_map          color_component_map_alt;
+    struct gx_pattern_cache_s    *pattern_cache_alt;
+    bool                          overprint_alt;
+    int                           overprint_mode_alt;
+    int                           effective_overprint_mode_alt;
 
     /* Font: */
 
@@ -179,6 +182,6 @@ struct gs_state_s {
     (pgs)->current_point.x = xx;\
     (pgs)->current_point.y = yy;
 
-void gs_swapcolors(gs_state *);
+int gs_swapcolors(gs_state *);
 
 #endif /* gzstate_INCLUDED */

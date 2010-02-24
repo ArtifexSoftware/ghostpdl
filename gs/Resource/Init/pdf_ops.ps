@@ -263,7 +263,7 @@ nodict readonly pop
 /op { /FillOverprint gput } bdef
 /OP { /StrokeOverprint gput } bdef
 /OPM {
-  /.setoverprintmode where { pop .setoverprintmode } { pop } ifelse
+  /.setoverprintmode where { pop dup .setoverprintmode .swapcolors .setoverprintmode .swapcolors } { pop } ifelse
 } bdef
 /ca { /FillConstantAlpha gput } bdef
 /CA { /StrokeConstantAlpha gput } bdef
