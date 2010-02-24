@@ -28,6 +28,7 @@
 #include "gdevplnx.h"
 #include "gsmemory.h"
 #include "vdtrace.h"
+#include "gsicccache.h"
 /*
  * We really don't like the fact that gdevprn.h is included here, since
  * command lists are supposed to be usable for purposes other than printer
