@@ -759,6 +759,37 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
     }
 }
 
+/*
+ * Special version of pdf_font_orig_matrix(), that cares FDArray font's FontMatrix too.
+ * Called only by pdf_glyph_width().
+ * 'cid' is only consulted if 'font' is a CIDFontType 0 CID font.
+ */
+static int
+glyph_orig_matrix(const gs_font *font, gs_glyph cid, gs_matrix *pmat)
+{
+    int code = pdf_font_orig_matrix(font, pmat);
+    if (code >= 0) {
+	if (font->FontType == ft_CID_encrypted) {
+	    int fidx;
+
+	    if (cid < GS_MIN_CID_GLYPH)
+		cid = GS_MIN_CID_GLYPH;
+	    code = ((gs_font_cid0 *)font)->cidata.glyph_data((gs_font_base *)font,
+				cid, NULL, &fidx);
+	    if (code < 0) {
+		code = ((gs_font_cid0 *)font)->cidata.glyph_data((gs_font_base *)font,
+				(gs_glyph)GS_MIN_CID_GLYPH, NULL, &fidx);
+	    }
+	    if (code >= 0) {
+		gs_matrix_multiply(&(gs_cid0_indexed_font(font, fidx)->FontMatrix),
+				pmat, pmat);
+	    }
+	}
+    }
+    return code;
+}
+
+
 /* 
  * Check the Encoding compatibility 
  */
@@ -2224,10 +2255,10 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 
     if (ofont->FontType == ft_composite)
 	return_error(gs_error_unregistered); /* Must not happen. */
-    code = pdf_font_orig_matrix((const gs_font *)cfont, &scale_c);
+    code = glyph_orig_matrix((const gs_font *)cfont, glyph, &scale_c);
     if (code < 0)
 	return code;
-    code = pdf_font_orig_matrix(ofont, &scale_o);
+    code = glyph_orig_matrix(ofont, glyph, &scale_o);
     if (code < 0)
 	return code;
     gs_matrix_scale(&scale_c, 1000.0, 1000.0, &scale_c);
