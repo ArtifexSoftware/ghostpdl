@@ -270,6 +270,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	bool NumCopies_set;
 	bool IgnoreNumCopies;
 	*/
+        cwdev->icc_cache_cl = NULL;
+        cwdev->icc_table = NULL;
 	cwdev->UseCIEColor = tdev->UseCIEColor;
 	cwdev->LockSafetyParams = true;
 	/* gx_page_device_procs page_procs; */

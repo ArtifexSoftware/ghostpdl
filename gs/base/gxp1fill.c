@@ -29,6 +29,7 @@
 #include "gxp1impl.h"
 #include "gxcldev.h"
 #include "gxblend.h"
+#include "gsicccache.h"
 
 /* Define the state for tile filling. */
 typedef struct tile_fill_state_s {
@@ -277,7 +278,14 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
      /* Check for and get ICC profile table */
     code = clist_read_icctable(crdev);
-
+    /* Also allocate the icc cache for the clist reader */
+    if ( crdev->icc_cache_cl == NULL ) 
+        crdev->icc_cache_cl = gsicc_cache_new(crdev->memory);
+    /* Todo: I am a bit worried about this not getting freed. There
+       is a spot for it in the standard clist flow in gxclist.c in the
+       function clist_finish_page but I am not sure this occurs when
+       a clist is used as a pattern.  Maybe when the pattern cache entry
+       is released? */
     if_debug0('L', "Pattern clist playback begin\n");
     code = clist_playback_file_bands(playback_action_render,
 		crdev, &crdev->page_info, dev, 0, 0, ptfs->xoff - x, ptfs->yoff - y);
