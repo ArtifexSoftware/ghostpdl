@@ -1181,6 +1181,14 @@ static void gs_swapcolors_quick(gs_state *pgs)
 
 int gs_swapcolors(gs_state *pgs)
 {
+    int prior_overprint = pgs->overprint;
+    int prior_mode      = pgs->effective_overprint_mode;
+
     gs_swapcolors_quick(pgs);
-    return gs_do_set_overprint(pgs);
+
+    if ((prior_overprint != pgs->overprint) ||
+        ((prior_mode != pgs->effective_overprint_mode) &&
+         (pgs->overprint)))
+        return gs_do_set_overprint(pgs);
+    return 0;
 }
