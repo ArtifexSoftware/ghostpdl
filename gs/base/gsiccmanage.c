@@ -320,6 +320,25 @@ gsicc_copy_colorname( const char *cmm_name, gsicc_colorname_t *colorname, gs_mem
     colorname->length = length;
 }
 
+/* If the profile is one of the default types that were set in the iccmanager,
+   then the index for that type is returned.  Otherwise the ICC index
+   is returned.  This is currently used to keep us from writing out 
+   the default profiles for high level devices, if desired. */
+gs_color_space_index 
+gsicc_get_default_type(cmm_profile_t *profile_data)
+{
+    switch ( profile_data->default_match ) {
+        case DEFAULT_GRAY:
+            return(gs_color_space_index_DeviceGray);
+        case DEFAULT_RGB:
+            return(gs_color_space_index_DeviceRGB);
+        case DEFAULT_CMYK:
+            return(gs_color_space_index_DeviceCMYK);
+        default:
+            return(gs_color_space_index_ICC);
+    }
+}
+
 /*  This computes the hash code for the
     ICC data and assigns the code
     and the profile to the appropriate

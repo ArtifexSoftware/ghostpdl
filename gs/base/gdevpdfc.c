@@ -33,6 +33,7 @@
 #include "gxcspace.h"
 #include "gxcdevn.h"
 #include "gscspace.h"
+#include "gsiccmanage.h"
 
 /*
  * PDF doesn't have general CIEBased color spaces.  However, it provides
@@ -558,6 +559,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
         }
     }
     csi = gs_color_space_get_index(pcs);
+    /* Note that if csi is ICC, check to see if this was one of 
+       the default substitutes that we introduced for DeviceGray,
+       DeviceRGB or DeviceCMYK.  If it is, then just write
+       the default color.  Depending upon the flavor of PDF,
+       or other options, we may want to actually have all
+       the colors defined by ICC profiles and not do the following
+       substituion of the Device space. */
+    if (csi == gs_color_space_index_ICC) {
+        csi = gsicc_get_default_type(pcs->cmm_icc_profile_data);
+    }
     if (ppranges)
 	*ppranges = 0;		/* default */
     switch (csi) {

@@ -61,6 +61,7 @@ cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager);
 int gsicc_profile_clist_read(cmm_profile_t *icc_profile, const gs_imager_state * pis,
     uint offset, const byte *data, uint size, gs_memory_t *mem);
+gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
 #endif
