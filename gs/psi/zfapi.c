@@ -16,6 +16,7 @@
 
 #include "memory_.h"
 #include "math_.h"
+#include "stat_.h" /* include before definition of esp macro, bug 691123 */
 #include "ghost.h"
 #include "gp.h"
 #include "oper.h"
@@ -1279,6 +1280,7 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     const byte *pchars;
     uint len;
     font_data *pdata;
+    FAPI_server *I;
 
     if (code < 0)
 	return code;
@@ -1299,6 +1301,7 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
 	    return code;
     }
     pdata = (font_data *)pfont->client_data;
+    I = pbfont->FAPI;
     if (dict_find_string(op - 1, "Path", &v) <= 0 || !r_has_type(v, t_string))
         v = NULL;
     if (pfont->FontType == ft_CID_encrypted && v == NULL) {
@@ -1318,6 +1321,7 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
         if (v != NULL)
             font_file_path = ref_to_string(v, imemory_global, "font file path");
         code = FAPI_refine_font(i_ctx_p, op - 1, pbfont, font_file_path);
+	memcpy(&I->initial_FontMatrix, &pbfont->FontMatrix, sizeof(gs_matrix));
         if (font_file_path != NULL)
             gs_free_string(imemory_global, (byte *)font_file_path, r_size(v) + 1, "font file path");
         code1 = gs_notify_register(&pfont->notify_list, notify_remove_font, pbfont);
@@ -1610,7 +1614,7 @@ retry_oversampling:
 	I->face.HWResolution[1] != dev->HWResolution[1]
        ) {
 	FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
-        gs_matrix *base_font_matrix = &pbfont->base->orig_FontMatrix;
+        gs_matrix *base_font_matrix = &I->initial_FontMatrix;
         double dx, dy;
 
 	I->face.font_id = pbfont->id;

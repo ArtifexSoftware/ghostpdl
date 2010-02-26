@@ -29,7 +29,7 @@ typedef struct gx_device_tiff_s {
     gx_prn_device_common;
     bool  BigEndian;            /* true = big endian; false = little endian*/
     uint16 Compression;		/* same values as TIFFTAG_COMPRESSION */
-
+    long MaxStripSize;
     TIFF *tif;			/* TIFF file opened on gx_device_common.file */
 } gx_device_tiff;
 
@@ -46,13 +46,20 @@ TIFF * tiff_from_filep(const char *name, FILE *filep, int big_endian);
 
 int tiff_print_page(gx_device_printer *dev, TIFF *tif);
 
-int tiff_set_fields_for_printer(gx_device_printer *pdev,
-				TIFF *tif,
-				long max_strip_size);
+/*
+ * Sets the compression tag for TIFF and updates the rows_per_strip tag to
+ * reflect max_strip_size under the new compression scheme.
+ */
+#define TIFF_DEFAULT_STRIP_SIZE 8192
 
-int gdev_tiff_begin_page(gx_device_tiff *tfdev,
-			 FILE *file,
+int tiff_set_compression(gx_device_printer *pdev,
+			 TIFF *tif,
+			 uint compression,
 			 long max_strip_size);
+
+int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif);
+
+int gdev_tiff_begin_page(gx_device_tiff *tfdev, FILE *file);
 
 /*
  * Returns the gs_param_string that corresponds to the tiff COMPRESSION_* id.

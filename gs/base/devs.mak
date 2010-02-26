@@ -1646,7 +1646,7 @@ $(DD)tfax.dev : $(DEVS_MAK) $(libtiff_dev) $(tfax_) $(GLD)cfe.dev $(GLD)lzwe.dev
 	$(ADDMOD) $(DD)tfax -include $(DD)fax $(DD)tiffs $(tiff_i_)
 
 $(GLOBJ)gdevtfax.$(OBJ) : $(GLSRC)gdevtfax.c $(PDEVH)\
- $(gdevfax_h) $(gdevtifs_h)\
+ $(stdint__h) $(gdevfax_h) $(gdevtifs_h)\
  $(scfx_h) $(slzwx_h) $(srlx_h) $(strimpl_h)
 	$(GLCC) $(I_)$(TI_)$(_I) $(GLO_)gdevtfax.$(OBJ) $(C_) $(GLSRC)gdevtfax.c
 
@@ -1657,7 +1657,7 @@ $(DD)tiffs.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffs_) $(GLD)page.dev
 	$(SETMOD) $(DD)tiffs $(tiffs_)
 	$(ADDMOD) $(DD)tiffs -include $(GLD)page $(tiff_i_)
 
-$(GLOBJ)gdevtifs.$(OBJ) : $(GLSRC)gdevtifs.c $(PDEVH) $(stdio__h) $(time__h)\
+$(GLOBJ)gdevtifs.$(OBJ) : $(GLSRC)gdevtifs.c $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
  $(gdevtifs_h) $(gscdefs_h) $(gstypes_h)
 	$(GLCC) $(I_)$(GLI_) $(II)$(TI_)$(_I) $(GLO_)gdevtifs.$(OBJ) $(C_) $(GLSRC)gdevtifs.c
 
@@ -1700,7 +1700,7 @@ $(DD)tiffgray.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev
 	$(SETPDEV2) $(DD)tiffgray $(tiffgray_)
 	$(ADDMOD) $(DD)tiffgray -include $(DD)tiffs $(tiff_i_)
 
-$(GLOBJ)gdevtsep.$(OBJ) : $(GLSRC)gdevtsep.c $(PDEVH) $(gdevtifs_h)\
+$(GLOBJ)gdevtsep.$(OBJ) : $(GLSRC)gdevtsep.c $(PDEVH) $(stdint__h) $(gdevtifs_h)\
 	$(gdevdevn_h) $(gsequivc_h) $(stdio__h) $(ctype__h)
 	$(GLCC) $(I_)$(TI_)$(_I) $(GLO_)gdevtsep.$(OBJ) $(C_) $(GLSRC)gdevtsep.c
 
@@ -1720,7 +1720,7 @@ $(DD)tiff48nc.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffrgb_) $(DD)tiffs.dev
 	$(SETPDEV2) $(DD)tiff48nc $(tiffrgb_)
 	$(ADDMOD) $(DD)tiff48nc -include $(DD)tiffs $(tiff_i_)
 
-$(GLOBJ)gdevtfnx.$(OBJ) : $(GLSRC)gdevtfnx.c $(PDEVH) $(gdevtifs_h)
+$(GLOBJ)gdevtfnx.$(OBJ) : $(GLSRC)gdevtfnx.c $(PDEVH) $(stdint__h) $(gdevtifs_h)
 	$(GLCC) $(I_)$(TI_)$(_I) $(GLO_)gdevtfnx.$(OBJ) $(C_) $(GLSRC)gdevtfnx.c
 
 # TIFF CMYK, no compression

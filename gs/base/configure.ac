@@ -208,43 +208,6 @@ if test "$uint64_type" != "none"; then
 	GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$uint64_type\""
 fi
 
-dnl pkg-config is used for several tests now...
-AC_PATH_PROG(PKGCONFIG, pkg-config)
-
-dnl Fontconfig support
-HAVE_FONTCONFIG=""
-FONTCONFIG_CFLAGS=""
-FONTCONFIG_LIBS=""
-AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
-    [Don't use fontconfig to list system fonts]))
-if test "$enable_fontconfig" != "no"; then
-	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
-	# autoconf macro and b) requires pkg-config on the system, which is
-	# NOT standard on ANY OS, including Linux!
-	if test "x$PKGCONFIG" != x; then
-		AC_MSG_CHECKING(for fontconfig with pkg-config)
-		if $PKGCONFIG --exists fontconfig; then
-			AC_MSG_RESULT(yes)
-			FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
-			FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
-			HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
-		else
-			AC_MSG_RESULT(no)
-		fi
-	fi
-	if test -z "$HAVE_FONTCONFIG"; then
-		AC_CHECK_LIB([fontconfig], [FcInitLoadConfigAndFonts], [
-		  AC_CHECK_HEADER([fontconfig/fontconfig.h], [
-		    FONTCONFIG_LIBS="-lfontconfig"
-		    HAVE_FONTCONFIG="-DHAVE_FONTCONFIG"
-		  ])
-		])
-	fi
-fi
-AC_SUBST(HAVE_FONTCONFIG)
-AC_SUBST(FONTCONFIG_CFLAGS)
-AC_SUBST(FONTCONFIG_LIBS)
-
 dnl --------------------------------------------------
 dnl Check for libraries
 dnl --------------------------------------------------
@@ -319,6 +282,43 @@ if test x$with_libpaper != xno; then
     AC_DEFINE(USE_LIBPAPER, 1, [Using libpaper])
     CFLAGS="$CFLAGS -DUSE_LIBPAPER"
 fi
+
+dnl pkg-config is used for several tests now...
+AC_PATH_PROG(PKGCONFIG, pkg-config)
+
+dnl Fontconfig support
+HAVE_FONTCONFIG=""
+FONTCONFIG_CFLAGS=""
+FONTCONFIG_LIBS=""
+AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
+    [Don't use fontconfig to list system fonts]))
+if test "$enable_fontconfig" != "no"; then
+	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
+	# autoconf macro and b) requires pkg-config on the system, which is
+	# NOT standard on ANY OS, including Linux!
+	if test "x$PKGCONFIG" != x; then
+		AC_MSG_CHECKING(for fontconfig with pkg-config)
+		if $PKGCONFIG --exists fontconfig; then
+			AC_MSG_RESULT(yes)
+			FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
+			FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
+			HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
+		else
+			AC_MSG_RESULT(no)
+		fi
+	fi
+	if test -z "$HAVE_FONTCONFIG"; then
+		AC_CHECK_LIB([fontconfig], [FcInitLoadConfigAndFonts], [
+		  AC_CHECK_HEADER([fontconfig/fontconfig.h], [
+		    FONTCONFIG_LIBS="-lfontconfig"
+		    HAVE_FONTCONFIG="-DHAVE_FONTCONFIG"
+		  ])
+		])
+	fi
+fi
+AC_SUBST(HAVE_FONTCONFIG)
+AC_SUBST(FONTCONFIG_CFLAGS)
+AC_SUBST(FONTCONFIG_LIBS)
 
 AC_CHECK_LIB(dl, dlopen)
 
@@ -428,7 +428,7 @@ case "x$with_system_libtiff" in
     xcheck)
 	if test -d tiff; then
 	    LIBTIFFDIR=tiff
-	    LOCAL_LIBTIFF_VERSION=`sed -n 's/^#define\s\+TIFFLIB_VERSION\s\+\([0-9]\+\)\s*.*$/\1/p' $LIBTIFFDIR/libtiff/tiffvers.h`
+	    LOCAL_LIBTIFF_VERSION=`sed -n '/TIFFLIB_VERSION[[^_]]/s/[[^0-9]]*\([[0-9]]*\).*/\1/p' $LIBTIFFDIR/libtiff/tiffvers.h`
 	    SHARE_LIBTIFF=0
 	fi
 	AC_CHECK_LIB(tiff, TIFFOpen,

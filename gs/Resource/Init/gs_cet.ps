@@ -31,6 +31,18 @@ setundercolorremoval
 % CPSI doesn't define "Localization" resource.
 /Localization /Category undefineresource
 
+% Redefine Font category to return -1 (unknown) VM usage
+% in all cases to avoid differences between hosts.
+/Font /Category findresource
+dup length dict copy 
+dup
+dup /.loadfontresource get
+dup length array copy cvx
+dup 1 0 put
+dup 7 -1 put
+/.loadfontresource exch put
+/Font exch /Category defineresource pop
+
 % Some previously compile time options such as USE_ADOBE_CMYK_RGB
 % and GS_CHAR_FILL are now dynamic. Force CPSI compatibility.
 true .setCPSImode

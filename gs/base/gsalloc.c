@@ -727,6 +727,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *pp;
     gs_memory_type_ptr_t pstype;
+    gs_memory_struct_type_t saved_stype;
 
     struct_proc_finalize((*finalize));
     uint size, rounded_size;
@@ -777,10 +778,20 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     rounded_size = obj_align_round(size);
     finalize = pstype->finalize;
     if (finalize != 0) {
+
+        /* unfortunately device finalize procedures will clobber the
+           stype which is used for later debugging with "A" debug
+           tracing, so we save stype it in a local. */
+        if (gs_debug['a'])
+            saved_stype = *pstype;
+
 	if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
 		  struct_type_name_string(pstype),
 		  (ulong) ptr, client_name_string(cname));
 	(*finalize) (ptr);
+
+        if (gs_debug['a'])
+            pstype = &saved_stype;
     }
     if ((byte *) ptr + rounded_size == imem->cc.cbot) {
 	alloc_trace(":-o ", imem, cname, pstype, size, ptr);

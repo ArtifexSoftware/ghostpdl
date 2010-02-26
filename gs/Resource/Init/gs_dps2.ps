@@ -136,7 +136,7 @@ end
 /.fixsethalftonescreen		% <freq> <angle> <dict> .fix...screen
 				%   <freq> <angle> <dict> <dict'>
  { dup dup /HalftoneType get 1 eq
-    { dup wcheck not { dup length .copydict } if
+    { dup wcheck not { dup length dict .copydict } if
       dup /Frequency 5 index put
       dup /Angle 4 index put
       languagelevel 3 ge { dup /AccurateScreens dup getuserparam put } if

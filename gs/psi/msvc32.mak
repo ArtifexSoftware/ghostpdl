@@ -479,7 +479,14 @@ DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 9.0
 COMPBASE=
 SHAREDBASE=
 !else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+! ifdef MSSDK
+RCDIR=$(MSSDK)\bin
+! else
 RCDIR=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+! endif
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
@@ -847,13 +854,13 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def 
 
 DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1 SBRDIR=.\debugobj
 debug:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS)
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS)
 
 debugclean:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) clean
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS) clean
 
 debugbsc:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) bsc
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS) bsc
 
 
 

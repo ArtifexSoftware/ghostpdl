@@ -13,8 +13,26 @@ my %products=('abort' =>1,
               'svg'=>1,
               'xps'=>1);
 
+my $res="";
+
 my $product=shift;
+if ($product && $product eq "lowres") {
+  $product=shift;
+  $res="lowres";
+}
+if ($product && $product eq "highres") {
+  $product=shift;
+  $res="highres";
+}
 my $user=shift;
+if ($user && $user eq "lowres") {
+  $user=shift;
+  $res="lowres";
+}
+if ($user && $user eq "highres") {
+  $user=shift;
+  $res="highres";
+}
 
 unlink "cluster_command.run";
 
@@ -23,6 +41,16 @@ my $dir="/home/regression/cluster/users";
 if (!$user) {
   $user=`echo \$USER`;
   chomp $user;
+}
+
+# This is horrid, but it works. Replace it when I find a better way
+if ($user eq 'Robin Watts')
+{
+    $user = "robin";
+}
+if ($user eq 'eberly')
+{
+    $user = "deberly";
 }
 
 my $directory=`pwd`;
@@ -73,7 +101,7 @@ my $cmd="rsync -avxcz".
 " --exclude svg/obj --exclude svg/debugobj".
 " --exclude ufst --exclude ufst-obj".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
-" -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\"".
+" -e \"ssh -l regression -i \\\"\$HOME/.ssh/cluster_key\\\"\"".
 " .".
 " regression\@$host:$dir/$user/$directory";
 
@@ -89,7 +117,7 @@ if ($product ne "abort") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product\n";
+print F "$user $product $res\n";
 close(F);
 
 if ($product ne "abort") {

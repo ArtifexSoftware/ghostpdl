@@ -23,9 +23,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 debug &amp;&amp; nmake -f psi\msvc32.mak debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 debug &amp;&amp; nmake -f psi\msvc32.mak debugbsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak debugclean"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
@@ -43,9 +43,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 &amp;&amp; nmake -f psi\msvc32.mak bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 &amp;&amp; nmake -f psi\msvc32.mak bsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak clean"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""

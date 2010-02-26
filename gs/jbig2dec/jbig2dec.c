@@ -155,15 +155,15 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 				break;
                         case 'v':
                                 if (optarg) params->verbose = atoi(optarg);
-                                else params->verbose = 9;
+                                else params->verbose = 2;
                                 break;
 			case 'h':
 			case '?':
 				params->mode = usage;
                                 break;
                         case 'V':
-                                /* the GNU Coding Standards suggest --version should
-                                   override all other options */
+                                /* the GNU Coding Standards suggest --version
+                                   should override all other options */
                                 print_version();
                                 exit(0);
                                 break;
@@ -209,13 +209,13 @@ print_usage (void)
     "  embedded streams.\n"
     "\n"
     "  available options:\n"
-    "    -h --help	this usage summary\n"
+    "    -h --help      this usage summary\n"
     "    -q --quiet     suppress diagnostic output\n"
     "    -v --verbose   set the verbosity level\n"
     "    -d --dump      print the structure of the jbig2 file\n"
     "                   rather than explicitly decoding\n"
     "       --version   program name and version information\n"
-    "       --hash      print a hash of the decode document\n"
+    "       --hash      print a hash of the decoded document\n"
     "    -o <file>      send decoded output to <file>\n"
     "                   Defaults to the the input with a different\n"
     "                   extension. Pass '-' for stdout.\n"
@@ -445,7 +445,8 @@ main (int argc, char **argv)
       int n_bytes = fread(buf, 1, sizeof(buf), f);
       if (n_bytes <= 0)
 	break;
-      jbig2_data_in(ctx, buf, n_bytes);
+      if (jbig2_data_in(ctx, buf, n_bytes))
+	break;
     }
   fclose(f);
 
@@ -460,7 +461,8 @@ main (int argc, char **argv)
 	  int n_bytes = fread(buf, 1, sizeof(buf), f_page);
 	  if (n_bytes <= 0)
 	    break;
-	  jbig2_data_in(ctx, buf, n_bytes);
+	  if (jbig2_data_in(ctx, buf, n_bytes))
+	    break;
 	}
       fclose(f_page);
       jbig2_global_ctx_free(global_ctx);

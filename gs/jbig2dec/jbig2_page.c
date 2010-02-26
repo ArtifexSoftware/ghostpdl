@@ -54,14 +54,14 @@ dump_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, Jbig2Page *page)
 }
 
 /**
- * jbig2_read_page_info: parse page info segment
+ * jbig2_page_info: parse page info segment
  *
- * parse the page info segment data and fill out a corresponding
- * Jbig2Page struct is returned, including allocating an image
- * buffer for the page (or the first stripe)
+ * Parse the page info segment data and fill out a corresponding
+ * Jbig2Page struct and ready it for subsequent rendered data,
+ * including allocating an image buffer for the page (or the first stripe)
  **/
 int
-jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
+jbig2_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
     Jbig2Page *page;
 
@@ -80,12 +80,11 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
         index = ctx->current_page;
         while (ctx->pages[index].state != JBIG2_PAGE_FREE) {
             index++;
-            if (index >= ctx->max_page_index) { /* FIXME: should also look for freed pages? */
+            if (index >= ctx->max_page_index) {
                 /* grow the list */
 		ctx->pages = jbig2_realloc(ctx->allocator, ctx->pages,
 			(ctx->max_page_index <<= 2) * sizeof(Jbig2Page));
                 for (j=index; j < ctx->max_page_index; j++) {
-                    /* note to raph: and look, it gets worse! */
                     ctx->pages[j].state = JBIG2_PAGE_FREE;
                     ctx->pages[j].number = 0;
                     ctx->pages[j].image = NULL;
@@ -146,7 +145,6 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
         page->image = jbig2_image_new(ctx, page->width, page->height);
     }
     if (page->image == NULL) {
-        jbig2_free(ctx->allocator, page);
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "failed to allocate buffer for page image");
     } else {
@@ -162,10 +160,10 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
 }
 
 /**
- * jbig2_parse_end_of_stripe: parse an end of stripe segment
+ * jbig2_end_of_stripe: parse and implement an end of stripe segment
  **/
 int
-jbig2_parse_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
+jbig2_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
     Jbig2Page page = ctx->pages[ctx->current_page];
     int end_row;
@@ -221,10 +219,10 @@ jbig2_complete_page (Jbig2Ctx *ctx)
 }
 
 /**
- * jbig2_parse_end_of_page: parse an end of page segment
+ * jbig2_end_of_page: parse and implement an end of page segment
  **/
 int
-jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
+jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
     uint32_t page_number = ctx->pages[ctx->current_page].number;
 
@@ -296,7 +294,7 @@ Jbig2Image *jbig2_page_out(Jbig2Ctx *ctx)
             ctx->pages[index].state = JBIG2_PAGE_RETURNED;
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
                 "page %d returned to the client", ctx->pages[index].number);
-            return ctx->pages[index].image;
+            return jbig2_image_clone(ctx, ctx->pages[index].image);
         }
     }
 
@@ -314,7 +312,7 @@ int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
     /* find the matching page struct and mark it released */
     for (index = 0; index < ctx->max_page_index; index++) {
         if (ctx->pages[index].image == image) {
-            /* todo: free associated image */
+            jbig2_image_release(ctx, image);
             ctx->pages[index].state = JBIG2_PAGE_RELEASED;
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
                 "page %d released by the client", ctx->pages[index].number);

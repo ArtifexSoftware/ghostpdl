@@ -620,28 +620,31 @@ while (<>)
         unlink $tmp2;
 
         # Add the files to the HTML, converting to PNG if required.
-        while (stat($outdir."/out.".$images.".bmp"))
+        while (stat($outdir."/out.".sprintf("%05d",$images).".bmp"))
         {
             $suffix = ".bmp";
+            $imstr1 = sprintf("%05d",$images);
+            $imstr2 = sprintf("%05d",$images+1);
+            $imstr3 = sprintf("%05d",$images+2);
             if ($pngize)
             {
                 $cmd   = $convertexe." ";
-                $cmd  .= $outdir."/out.".$images.".bmp ";
-                $cmd  .= $outdir."/out.".$images.".png";
+                $cmd  .= $outdir."/out.$imstr1.bmp ";
+                $cmd  .= $outdir."/out.$imstr1.png";
                 $cmd2  = $convertexe." ";
-                $cmd2 .= $outdir."/out.".($images+1).".bmp ";
-                $cmd2 .= $outdir."/out.".($images+1).".png";
+                $cmd2 .= $outdir."/out.$imstr2.bmp ";
+                $cmd2 .= $outdir."/out.$imstr2.png";
                 $cmd3  = $convertexe." ";
-                $cmd3 .= $outdir."/out.".($images+2).".bmp ";
-                $cmd3 .= $outdir."/out.".($images+2).".png";
+                $cmd3 .= $outdir."/out.$imstr3.bmp ";
+                $cmd3 .= $outdir."/out.$imstr3.png";
                 runjobs3($cmd, $cmd2, $cmd3, $html, $iframe, "convert");
-                unlink $outdir."/out.".$images.".bmp";
-                unlink $outdir."/out.".($images+1).".bmp";
-                unlink $outdir."/out.".($images+2).".bmp";
+                unlink $outdir."/out.$imstr1.bmp";
+                unlink $outdir."/out.$imstr2.bmp";
+                unlink $outdir."/out.$imstr3.bmp";
                 $suffix = ".png";
             }
             
-            $metafile = $outdir."/out.".$images.".meta";
+            $metafile = $outdir."/out.$imstr.meta";
             $meta{"X"}    = 0;
             $meta{"Y"}    = 0;
             $meta{"PW"}   = 0;
@@ -667,16 +670,16 @@ while (<>)
             $mousemove = "onmousemove=\"coord(event,this,".$images.",".$meta{"X"}.",".$meta{"Y"}.")\"";
             
             if (!$iframes) {
-                print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate<->Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
-               print $html "<TD><IMG SRC=\"$framedir/out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
-               print $html "<TD><IMG SRC=\"$framedir/out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD></TR>";
-               print $html "<TR><TD COLSPAN=3><FORM name=\"Coord".$images."\"><LABEL for=\"X\">Page=".$page." PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=".$res." TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
+                print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$imstr1$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap($images)\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>";
+               print $html "<TD><IMG SRC=\"$framedir/out.$imstr2$suffix\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>";
+               print $html "<TD><IMG SRC=\"$framedir/out.$imstr3$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>";
+               print $html "<TR><TD COLSPAN=3><FORM name=\"Coord$images\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
             }
 
-            print $iframe "<TABLE><TR><TD><IMG SRC=\"out.".$images.$suffix."\" onMouseOver=\"swap(".$images.")\" onMouseOut=\"swap(".($images+1).")\" NAME=\"compare".$images."\" BORDER=1 TITLE=\"Candidate<->Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
-            print $iframe "<TD><IMG SRC=\"out.".($images+1).$suffix."\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD>";
-            print $iframe "<TD><IMG SRC=\"out.".($images+2).$suffix."\" BORDER=1 TITLE=\"Diff: ".$file." page=".$page." res=".$res."\" ".$mousemove."></TD></TR>";
-            print $iframe "<TR><TD COLSPAN=3><FORM name=\"Coord".$images."\"><LABEL for=\"X\">Page=".$page." PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=".$res." TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
+            print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$imstr1$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap($images)\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>";
+            print $iframe "<TD><IMG SRC=\"out.$imstr2$suffix\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>";
+            print $iframe "<TD><IMG SRC=\"out.$imstr3$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>";
+            print $iframe "<TR><TD COLSPAN=3><FORM name=\"Coord$images\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
             $images += 3;
             $diffs++;
             $setsthisfile++;

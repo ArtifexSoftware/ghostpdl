@@ -30,7 +30,7 @@ static void *Malloc(size_t size) {
     
     block = malloc(size);
     if (block == NULL) {
-        fprintf(stderr, "Failed to malloc %d bytes\n", size);
+        fprintf(stderr, "Failed to malloc %u bytes\n", (unsigned int) size);
         exit(EXIT_FAILURE);
     }
     return block;
@@ -526,6 +526,7 @@ static void image_open(ImageReader *im,
     if (type == 0x50) {
         /* Starts with a P! Must be a P?M file. */
         im->read = pnm_read;
+        ungetc(0x50, im->file);
     } else {
         type |= (fgetc(im->file)<<8);
         if (type == 0x4d42) { /* BM */
@@ -536,9 +537,6 @@ static void image_open(ImageReader *im,
             exit(EXIT_FAILURE);
         }
     }
-    
-    /* Seek back to the start */
-    fseek(im->file, 0, SEEK_SET);
 }
 
 static void image_close(ImageReader *im)
@@ -952,6 +950,7 @@ int main(int argc, char *argv[])
     int            nx, ny, n;
     int            basenum;
     int            imagecount;
+    int            maxdiffs;
     unsigned char *bmp;
     unsigned char *bmp2;
     BBox           bbox, bbox2;
@@ -964,10 +963,12 @@ int main(int argc, char *argv[])
 
     if (argc < 4)
     {
-        fprintf(stderr, "Syntax: bmpcmp <file1> <file2> <outfile_root> [<basenum>]\n");
+        fprintf(stderr, "Syntax: bmpcmp <file1> <file2> <outfile_root> [<basenum>] [<maxdiffs>]\n");
         fprintf(stderr, "  <file1> and <file2> can be bmp, ppm, pgm or pbm files.\n");
-        fprintf(stderr, "  This will produce a series of <outfile_root>.<number>.bmp files");
+        fprintf(stderr, "  This will produce a series of <outfile_root>.<number>.bmp files\n");
         fprintf(stderr, "  and a series of <outfile_root>.<number>.meta files.\n");
+        fprintf(stderr, "  The maxdiffs value determines the maximum number of bitmaps\n");
+        fprintf(stderr, "  produced - 0 (or unsupplied) is taken to mean unlimited.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -978,6 +979,15 @@ int main(int argc, char *argv[])
     else
     {
         basenum = 0;
+    }
+
+    if (argc > 5)
+    {
+        maxdiffs = atoi(argv[5]);
+    }
+    else
+    {
+        maxdiffs = 0;
     }
     
     image_open(&image1, argv[1]);
@@ -1092,12 +1102,12 @@ int main(int argc, char *argv[])
                 rediff(bmp, bmp2, s, bpp, boxlist);
                 if (!BBox_valid(boxlist))
                     continue;
-                sprintf(str1, "%s.%d.bmp", argv[3], n);
-                sprintf(str2, "%s.%d.bmp", argv[3], n+1);
+                sprintf(str1, "%s.%05d.bmp", argv[3], n);
+                sprintf(str2, "%s.%05d.bmp", argv[3], n+1);
                 save_bmp(bmp,  boxlist, s, bpp, str1);
                 save_bmp(bmp2, boxlist, s, bpp, str2);
-                sprintf(str4, "%s.%d.meta", argv[3], n);
-                save_meta(boxlist, str4, w, h, imagecount-1);
+                sprintf(str4, "%s.%05d.meta", argv[3], n);
+                save_meta(boxlist, str4, w, h, imagecount);
                 n += 3;
             }
         }
@@ -1111,12 +1121,29 @@ int main(int argc, char *argv[])
                 boxlist++;
                 if (!BBox_valid(boxlist))
                     continue;
-                sprintf(str3, "%s.%d.bmp", argv[3], n+2);
+                sprintf(str3, "%s.%05d.bmp", argv[3], n+2);
                 save_bmp(bmp, boxlist, s, bpp, str3);
                 n += 3;
             }
         }
         basenum = n;
+
+        boxlist -= nx*ny;
+	boxlist++;
+        free(boxlist);
+        free(bmp);
+        free(bmp2);
+        
+        /* If there is a maximum set */
+        if (maxdiffs > 0)
+        {
+            /* Check to see we haven't exceeded it */
+            maxdiffs--;
+            if (maxdiffs == 0)
+            {
+                break;
+            }
+        }
     }
 
     /* If one loaded, and the other didn't - that's an error */
