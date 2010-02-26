@@ -110,7 +110,7 @@ ft_cid=\
 
 ft_gzip=$(FTOBJ)ftgzip.$(OBJ)
 
-ft_lwz=$(FTOBJ)ftlzw.$(OBJ)
+ft_lzw=$(FTOBJ)ftlzw.$(OBJ)
 
 ft_pcf=\
 	$(FTOBJ)pcfdrivr.$(OBJ) \
