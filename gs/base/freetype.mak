@@ -17,8 +17,9 @@
 #	FTSRCDIR    - the source directory
 #	FTGENDIR    - the generated intermediate file directory
 #	FTOBJDIR    - the object file directory
+#	FT_CFLAGS   - The include options for the freetype library
 #	SHARE_FT - 0 to compile in freetype, 1 to link a shared library
-#	FT_NAME  - if SHARE_FT=1, the name of the shared library
+#	FT_LIBS  - if SHARE_FT=1, the link options for the shared library
 
 # (Rename directories.)
 FTSRC=$(FTSRCDIR)$(D)src$(D)
@@ -57,7 +58,26 @@ ft_base=\
 	$(FTOBJ)ftsnames.$(OBJ) \
 	$(FTOBJ)ftstream.$(OBJ) \
 	$(FTOBJ)fttrigon.$(OBJ) \
-	$(FTOBJ)ftutil.$(OBJ)
+	$(FTOBJ)ftutil.$(OBJ) \
+	$(FTOBJ)ftbbox.$(OBJ) \
+	$(FTOBJ)ftbdf.$(OBJ) \
+	$(FTOBJ)ftbitmap.$(OBJ) \
+	$(FTOBJ)ftdebug.$(OBJ) \
+	$(FTOBJ)ftgasp.$(OBJ) \
+	$(FTOBJ)ftglyph.$(OBJ) \
+	$(FTOBJ)ftgxval.$(OBJ) \
+	$(FTOBJ)ftinit.$(OBJ) \
+	$(FTOBJ)ftlcdfil.$(OBJ) \
+	$(FTOBJ)ftmm.$(OBJ) \
+	$(FTOBJ)ftotval.$(OBJ) \
+	$(FTOBJ)ftpfr.$(OBJ) \
+	$(FTOBJ)ftstroke.$(OBJ) \
+	$(FTOBJ)ftsynth.$(OBJ) \
+	$(FTOBJ)ftsystem.$(OBJ) \
+	$(FTOBJ)fttype1.$(OBJ) \
+	$(FTOBJ)ftwinfnt.$(OBJ) \
+	$(FTOBJ)ftxf86.$(OBJ) \
+	$(FTOBJ)ftpatent.$(OBJ)
 
 ft_bdf=\
 	$(FTOBJ)bdflib.$(OBJ) \
@@ -169,12 +189,16 @@ ft_type42=\
 
 ft_winfonts=$(FTOBJ)winfnt.$(OBJ)
 
+# instantiate the requested build option (shared or compiled in)
+$(FTGEN)freetype.dev : $(TOP_MAKEFILES) $(FTGEN)freetype_$(SHARE_FT).dev
+	$(CP_) $(FTGEN)freetype_$(SHARE_FT).dev $(FTGEN)freetype.dev
+
 # Define the shared version.
 $(FTGEN)freetype_1.dev : $(TOP_MAKEFILES) $(FT_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(FTGEN)freetype_1 -lib $(FT_NAME)
+	$(SETMOD) $(FTGEN)freetype_1 -link $(FT_LIBS)
 
 # Define the non-shared version.
-$(FTGEN)freetype_0.dev : $(FT_MAK) $(ECHOGS_XE) \
+$(FTGEN)freetype_0.dev : $(TOP_MAKEFILES) $(FT_MAK) $(ECHOGS_XE) \
     $(ft_autofit) $(ft_base) $(ft_bdf) $(ft_cache) $(ft_cff) $(ft_cid) \
     $(ft_gzip) $(ft_lzw) $(ft_pcf) $(ft_pfr) $(ft_psaux) $(ft_pshinter) \
     $(ft_psnames) $(ft_raster) $(ft_smooth) $(ft_sfnt) $(ft_truetype) \
@@ -266,6 +290,63 @@ $(FTOBJ)fttrigon.$(OBJ) : $(FTSRC)base$(D)fttrigon.c
 
 $(FTOBJ)ftutil.$(OBJ) : $(FTSRC)base$(D)ftutil.c
 	$(FTCC) $(FTO_)ftutil.$(OBJ) $(C_) $(FTSRC)base$(D)ftutil.c
+
+$(FTOBJ)ftbbox.$(OBJ) : $(FTSRC)base$(D)ftbbox.c
+	$(FTCC) $(FTO_)ftbbox.$(OBJ) $(C_) $(FTSRC)base$(D)ftbbox.c
+
+$(FTOBJ)ftbdf.$(OBJ) : $(FTSRC)base$(D)ftbdf.c
+	$(FTCC) $(FTO_)ftbdf.$(OBJ) $(C_) $(FTSRC)base$(D)ftbdf.c
+
+$(FTOBJ)ftbitmap.$(OBJ) : $(FTSRC)base$(D)ftbitmap.c
+	$(FTCC) $(FTO_)ftbitmap.$(OBJ) $(C_) $(FTSRC)base$(D)ftbitmap.c
+
+$(FTOBJ)ftdebug.$(OBJ) : $(FTSRC)base$(D)ftdebug.c
+	$(FTCC) $(FTO_)ftdebug.$(OBJ) $(C_) $(FTSRC)base$(D)ftdebug.c
+
+$(FTOBJ)ftgasp.$(OBJ) : $(FTSRC)base$(D)ftgasp.c
+	$(FTCC) $(FTO_)ftgasp.$(OBJ) $(C_) $(FTSRC)base$(D)ftgasp.c
+
+$(FTOBJ)ftglyph.$(OBJ) : $(FTSRC)base$(D)ftglyph.c
+	$(FTCC) $(FTO_)ftglyph.$(OBJ) $(C_) $(FTSRC)base$(D)ftglyph.c
+
+$(FTOBJ)ftgxval.$(OBJ) : $(FTSRC)base$(D)ftgxval.c
+	$(FTCC) $(FTO_)ftgxval.$(OBJ) $(C_) $(FTSRC)base$(D)ftgxval.c
+
+$(FTOBJ)ftinit.$(OBJ) : $(FTSRC)base$(D)ftinit.c
+	$(FTCC) $(FTO_)ftinit.$(OBJ) $(C_) $(FTSRC)base$(D)ftinit.c
+
+$(FTOBJ)ftlcdfil.$(OBJ) : $(FTSRC)base$(D)ftlcdfil.c
+	$(FTCC) $(FTO_)ftlcdfil.$(OBJ) $(C_) $(FTSRC)base$(D)ftlcdfil.c
+
+$(FTOBJ)ftmm.$(OBJ) : $(FTSRC)base$(D)ftmm.c
+	$(FTCC) $(FTO_)ftmm.$(OBJ) $(C_) $(FTSRC)base$(D)ftmm.c
+
+$(FTOBJ)ftotval.$(OBJ) : $(FTSRC)base$(D)ftotval.c
+	$(FTCC) $(FTO_)ftotval.$(OBJ) $(C_) $(FTSRC)base$(D)ftotval.c
+
+$(FTOBJ)ftpfr.$(OBJ) : $(FTSRC)base$(D)ftpfr.c
+	$(FTCC) $(FTO_)ftpfr.$(OBJ) $(C_) $(FTSRC)base$(D)ftpfr.c
+
+$(FTOBJ)ftstroke.$(OBJ) : $(FTSRC)base$(D)ftstroke.c
+	$(FTCC) $(FTO_)ftstroke.$(OBJ) $(C_) $(FTSRC)base$(D)ftstroke.c
+
+$(FTOBJ)ftsynth.$(OBJ) : $(FTSRC)base$(D)ftsynth.c
+	$(FTCC) $(FTO_)ftsynth.$(OBJ) $(C_) $(FTSRC)base$(D)ftsynth.c
+
+$(FTOBJ)ftsystem.$(OBJ) : $(FTSRC)base$(D)ftsystem.c
+	$(FTCC) $(FTO_)ftsystem.$(OBJ) $(C_) $(FTSRC)base$(D)ftsystem.c
+
+$(FTOBJ)fttype1.$(OBJ) : $(FTSRC)base$(D)fttype1.c
+	$(FTCC) $(FTO_)fttype1.$(OBJ) $(C_) $(FTSRC)base$(D)fttype1.c
+
+$(FTOBJ)ftwinfnt.$(OBJ) : $(FTSRC)base$(D)ftwinfnt.c
+	$(FTCC) $(FTO_)ftwinfnt.$(OBJ) $(C_) $(FTSRC)base$(D)ftwinfnt.c
+
+$(FTOBJ)ftxf86.$(OBJ) : $(FTSRC)base$(D)ftxf86.c
+	$(FTCC) $(FTO_)ftxf86.$(OBJ) $(C_) $(FTSRC)base$(D)ftxf86.c
+
+$(FTOBJ)ftpatent.$(OBJ) : $(FTSRC)base$(D)ftpatent.c
+	$(FTCC) $(FTO_)ftpatent.$(OBJ) $(C_) $(FTSRC)base$(D)ftpatent.c
 
 $(FTOBJ)bdflib.$(OBJ) : $(FTSRC)bdf$(D)bdflib.c
 	$(FTCC) $(FTO_)bdflib.$(OBJ) $(C_) $(FTSRC)bdf$(D)bdflib.c
