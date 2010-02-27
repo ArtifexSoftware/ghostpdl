@@ -454,7 +454,7 @@ end def
 /B {
   OFFlevels length 0 eq {
     gsave setfillstate fill grestore
-    setstrokestate /stroke fsexec
+    setstrokestate .swapcolors /stroke fsexec .swapcolors
   } {
     newpath
   } ifelse
@@ -465,7 +465,7 @@ end def
 /B* {
   OFFlevels length 0 eq {
     gsave setfillstate eofill grestore
-    setstrokestate /stroke fsexec
+    setstrokestate .swapcolors /stroke fsexec .swapcolors
   } {
     newpath
   } ifelse
