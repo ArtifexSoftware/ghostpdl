@@ -331,19 +331,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	/* that we implement less expensively. */
 	if (!pim->CombineWithColor)
 	    lop = rop3_know_T_0(lop) & ~lop_T_transparent;
-	else {
-	    if (rop3_uses_T(lop))
-		switch (color_draws_b_w(dev, pdcolor)) {
-		    case 0:
-			lop = rop3_know_T_0(lop);
-			break;
-		    case 1:
-			lop = rop3_know_T_1(lop);
-			break;
-		    default:
-			;
-		}
-	}
+
 	if (lop != rop3_S &&	/* if best case, no more work needed */
 	    !rop3_uses_T(lop) && bps == 1 && spp == 1 &&
 	    (b_w_color =
