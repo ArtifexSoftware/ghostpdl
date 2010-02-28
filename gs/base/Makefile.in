@@ -520,7 +520,7 @@ include $(GLSRCDIR)/unixinst.mak
 # Clean up after the autotools scripts
 # configure.ac and Makefile.in are symlinks from a subdir 
 # (created by autogen.sh) and so are safe to remove
-distclean : clean config-clean soclean debugclean
+distclean : clean config-clean soclean pgclean debugclean
 	-$(RM_) -r $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
 	-$(RM_) -r autom4te.cache
 	-$(RM_) config.log config.status
