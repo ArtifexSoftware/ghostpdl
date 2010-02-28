@@ -1382,30 +1382,46 @@ end readonly def
  { /DSCPageCount DSCPageCount 1 add store
  } bind def
 
-/get_media_box { % <pagedict> get_media_box <box>
-  /MediaBox pget not {
+/get_media_box { % <pagedict> get_media_box <box> <bool>
+  /MediaBox pget {
+    oforce_array //true
+  } {
     (   **** Page has no /MediaBox attribute. Using the current page size.\n)
     pdfformaterror
-    [ 0 0 currentpagedevice /PageSize get aload pop ]
-  } if
+    [ 0 0 currentpagedevice /PageSize get aload pop ] //false
+  } ifelse
 } bind def
 
 /get_any_box { % <pagedict> get_any_box <box name> <box>
   //systemdict /UseTrimBox .knownget dup { and } if {
     dup /TrimBox pget {
-      exch pop /TrimBox exch
+      /TrimBox exch
     } if
   } if
   dup type /arraytype ne {
     //systemdict /UseCropBox .knownget dup { and } if {
       dup /CropBox pget {
-        exch pop /CropBox exch
+        /CropBox exch
       } if
     } if
   } if
   dup type /arraytype ne {
-    /MediaBox exch get_media_box
-  } if
+    /MediaBox exch get_media_box pop
+  } {
+    oforce_elems              % <<pdict>> /SomeBox x0 y0 x1 y1
+    6 -1 roll get_media_box { % /SomeBox x0 y0 x1 y1 [MediaBox]
+      aload pop               % /SomeBox x0 y0 x1 y1 X0 Y0 X1 Y1 
+      5 -1 roll .min exch     % /SomeBox x0 y0 x1 X0 Y0 mY1 X1
+      5 -1 roll .min exch     % /SomeBox x0 y0 X0 Y0 mX1 mY1
+      4 2 roll                % /SomeBox x0 y0 mX1 mY1 X0 Y0
+      5 -1 roll .max exch     % /SomeBox x0 mX1 mY1 mY0 X0 
+      5 -1 roll .max exch     % /SomeBox mX1 mY1 mX0 mY0
+      4 2 roll                % /SomeBox mX0 mY0 mX1 mY1
+    } {
+      pop
+    } ifelse
+    4 array astore            % /SomeBox [mX0 mY0 mX1 mY1]
+  } ifelse
 } bind def
 
 % Compute the matrix that transforms the PDF->PS "default" user space
@@ -1637,7 +1653,7 @@ currentdict /PDF2PS_matrix_key undef
 	1 index /CropBox pget {
           /CropBox exch
         } {
-	  1 index get_media_box /MediaBox exch
+	  1 index get_media_box pop /MediaBox exch
 	} ifelse
         oforce_elems normrect_elems fix_empty_rect_elems 4 array astore .beginformgroup {
 	  showpagecontents
