@@ -108,7 +108,8 @@ $(PXLOBJ)pxptable.$(OBJ): $(PXLSRC)pxptable.c $(AK) $(std_h)\
 
 $(PXLOBJ)pxpthr.$(OBJ): $(PXLSRC)pxpthr.c $(AK) \
  $(pcommand_h) $(pgmand_h) $(pcstate_h) $(pcparse_h) $(pctop_h)\
- $(pcpage_h) $(pxstate_h) $(pxoper_h) $(stdio__h) $(pxpthr_h)
+ $(pcpage_h) $(pxstate_h) $(pxoper_h) $(stdio__h) $(pxpthr_h)\
+ $(gsiccmanage_h)
 	$(PXLCCC) $(PXLSRC)pxpthr.c $(PXLO_)pxpthr.$(OBJ)
 
 $(PXLOBJ)pxvalue.$(OBJ): $(PXLSRC)pxvalue.c $(AK) $(std_h) $(gsmemory_h) $(pxvalue_h)

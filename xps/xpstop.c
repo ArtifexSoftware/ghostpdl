@@ -96,7 +96,9 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 	    sizeof(xps_context_t), "xps_imp_allocate_interp_instance");
 
     pgs = gs_state_alloc(pmem);
-
+#ifdef ICCBRANCH
+    gsicc_init_iccmanager(pgs);
+#endif
     memset(ctx, 0, sizeof(xps_context_t));
 
     if (!instance || !ctx || !pgs)
@@ -186,10 +188,6 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
 	goto cleanup_setdevice;
-
-#ifdef ICCBRANCH
-    gsicc_init_iccmanager(ctx->pgs);
-#endif
 
     gs_setaccuratecurves(ctx->pgs, true);  /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);

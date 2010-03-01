@@ -244,7 +244,10 @@ pcl_impl_allocate_interp_instance(
 						   sizeof(pcl_interp_instance_t),
 						   "pcl_allocate_interp_instance(pcl_interp_instance_t)"
 						   );
-    gs_state *pgs = gs_state_alloc(mem);
+    gs_state *pgs = gs_state_alloc(mem);    
+#ifdef ICCBRANCH
+    gsicc_init_iccmanager(pgs);
+#endif
     /* If allocation error, deallocate & return */
     if (!pcli || !pgs) {
 	if (pcli)
@@ -383,10 +386,6 @@ pcl_impl_set_device(
     gs_settexturetransparent(pcli->pcs.pgs, false);
     gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
     gs_setfilladjust(pcli->pcs.pgs, 0, 0);
-
-#ifdef ICCBRANCH
-    gsicc_init_iccmanager(pcli->pcs.pgs);
-#endif
 
     stage = Sgsave1;
     if ( (code = gs_gsave(pcli->pcs.pgs)) < 0 )

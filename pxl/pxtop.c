@@ -232,6 +232,9 @@ pxl_impl_allocate_interp_instance(
 	    px_state_release(pxs);
 	  return gs_error_VMerror;
 	}
+#ifdef ICCBRANCH
+        gsicc_init_iccmanager(pgs);
+#endif
 
 	/* Setup pointers to allocated mem within instance */
 	pxli->memory = mem;
@@ -328,10 +331,6 @@ pxl_impl_set_device(
 
 	/* Do inits of gstate that may be reset by setdevice */
 	gs_setaccuratecurves(pxli->pgs, true);	/* All H-P languages want accurate curves. */
-
-#ifdef ICCBRANCH
-        gsicc_init_iccmanager(pxli->pgs);
-#endif
 
 	/* gsave and grestore (among other places) assume that */
 	/* there are at least 2 gstates on the graphics stack. */

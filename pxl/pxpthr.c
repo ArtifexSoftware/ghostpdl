@@ -19,6 +19,7 @@
 #include "gspath.h"
 #include "gscoord.h"
 #include "gsstate.h"
+#include "gsiccmanage.h"
 #include "pcommand.h"
 #include "pgmand.h"
 #include "pcstate.h"
@@ -149,7 +150,11 @@ pxPassthrough_init(px_state_t *pxs)
     code = gs_setdevice_no_erase(global_pcs->pgs, gs_currentdevice(pxs->pgs));
     if ( code < 0 )
         return code;
-
+    /* Also, check if the device profile was set int the global_pcs pgs.
+       If not then initialize. Fix for seg fault with T427.BIN */
+#ifdef ICCBRANCH
+    gsicc_init_device_profile(global_pcs->pgs, gs_currentdevice(pxs->pgs));
+#endif
     /* yet another reset with the new page device */
     pcl_do_resets(global_pcs, pcl_reset_initial);
     /* set the parser state and initialize the pcl parser */
