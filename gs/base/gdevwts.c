@@ -963,6 +963,13 @@ wtsimdi_contone_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     return code;
 }
 
+/* Unfortunately there are many bugs associated with optimizing away
+ *   raster operations to avoid creating a contone buffer (ie bug
+ *   #691154).  Until those are fixed the following should remain true.
+ */
+
+const bool ALWAYS_CONTONE = true;
+
 /*
  * We need to create custom memory buffer devices.  We use the default
  * create_buf_device routine and then we set our custom device procedures.
@@ -975,7 +982,7 @@ wtsimdi_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     int code = gx_default_create_buf_device(pbdev, target, y,
 	render_plane, mem, band_complexity);
     /* Now set our custom device procedures. */
-    if (band_complexity && band_complexity->nontrivial_rops) {
+    if ((band_complexity && band_complexity->nontrivial_rops) || ALWAYS_CONTONE) {
 	set_dev_proc(*pbdev, get_bits_rectangle,
 		     wtsimdi_contone_get_bits_rectangle);
     } else {
