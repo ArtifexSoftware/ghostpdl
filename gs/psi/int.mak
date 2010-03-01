@@ -1804,19 +1804,19 @@ $(PSD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
 # FreeType bridge :
 
 # the top-level makefile should define
-# FT_CFLAGS for the include directive and other switches, and
-# FT_LIBS for the the library link command
+# FT_CFLAGS for the include directive and other switches
 
 wrfont_h=$(stdpre_h) $(PSSRC)wrfont.h
 write_t1_h=$(ifapi_h) $(PSSRC)write_t1.h
 write_t2_h=$(ifapi_h) $(PSSRC)write_t2.h
 
 $(PSD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)fapi_ft.$(OBJ) \
- $(PSOBJ)write_t1.$(OBJ) $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ)
+ $(PSOBJ)write_t1.$(OBJ) $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ) \
+ $(GLD)freetype.dev
 	$(SETMOD) $(PSD)fapif1 $(PSOBJ)fapi_ft.$(OBJ) $(PSOBJ)write_t1.$(OBJ)
 	$(ADDMOD) $(PSD)fapif1 $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ)
 	$(ADDMOD) $(PSD)fapif1 -plugin fapi_ft
-	$(ADDMOD) $(PSD)fapif1 -link $(FT_LIBS)
+	$(ADDMOD) $(PSD)fapif1 -include $(GLD)freetype
 
 $(PSOBJ)fapi_ft.$(OBJ) : $(PSSRC)fapi_ft.c $(AK)\
  $(stdio__h) $(math__h) $(ifapi_h) $(gserror_h)\
@@ -1837,8 +1837,8 @@ $(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
 
 # stub for FreeType bridge :
 
-$(PSD)fapif.dev : $(INT_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(PSD)fapif
+$(PSD)fapif0.dev : $(INT_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(PSD)fapif0
 
 
 # ---------------- Custom color dummy callback ---------------- #

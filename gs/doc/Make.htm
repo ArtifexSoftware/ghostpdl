@@ -2730,61 +2730,26 @@ msvc32.mak sets the other options automatically.
 <h2><a name="FT_build"></a>How to build Ghostscript with FreeType</h2>
 
 <p>
-<em>Note: This section is only for users who wish to use Ghostscript with FreeType font renderer.
-Other users please skip this section.
+<em>Note: This section is only for users who wish to use Ghostscript with
+the FreeType font renderer. Other users please skip this section.
 </em>
 
 <p>
-Ghostscript sources do not include a copy of the FreeType sources.
-You need to obtain them from the 
-<a href="http://freetype.org/">FreeType Project</a>. 
-Ghostscript includes only some source modules that provide a 
-bridge to FreeType.
+Ghostscript sources include a copy of the the FreeType libary, or you
+can use a recent release which enables the incremental font interface.
 
 <p>
-Ghostscript makefiles do not include any script for building FreeType 
-libraries. Refer to FreeType manual how to build them. FreeType object 
-libraries must be built before building Ghostscript with the FreeType 
-bridge.
-
+With the autoconf build (Linux, MacOS X, Solaris, etc.) just pass
+<tt>--enable-freetype</tt> to the configure script. This will compile
+in the freetype source code and enable the font api bridge to freetype.
 <p>
-Note that Ghostscript requires FreeType to be built with the optional 
-incremental font support. Check that FT_CONFIG_OPTION_INCREMENTAL is 
-defined in the headers for your FreeType build. 
-<p>
-To build Ghostscript with FreeType, specify these additional options for 
-"make" either on the command line, or in the top-level makefile:
 
-<dl>
-<dt><code>FT_BRIDGE=1</code>
-<dd>Enables the FreeType bridge.
+<p>For Windows/MSVC you need to define FT_BRIGE=1 on the nmake
+command line. For example:
 
-<dt><code>FT_CFLAGS=<i>options</i></code>
-<dd>Specifies C compiler include directives and options for FreeType 
-library. Refer to the FreeType manual for information about them.
+<blockquote><pre>nmake -f psi\msvc32.mak FT_BRIDGE=1</pre></blockquote>
 
-<dt><code>FT_LIBS=<i>link-options</i></code>
-<dd>Specifies the path the the object library or options for linking 
-with FreeType. You must use the appropriate one for your platform and 
-linker.
-</dl>
-
-<p>An example for Unix/GCC :
-<blockquote>
-<tt>make FT_BRIDGE=1 FT_CFLAGS=-Ifreetype/include FT_LIBS=freetype/objs/libfreetype.a</tt>
-</blockquote>
-or
-<blockquote>
-<tt>make FT_BRIDGE=1 FT_CFLAGS=`pkg-config --cflags freetype2` FT_LIBS=`pkg-config --libs freetype2`</tt>
-</blockquote>
-
-<p>For Windows/MSVC you need only specify FT_ROOT to be the path to the 
-top level source directory of your FreeType build.
-msvc32.mak sets the other options automatically. However,
-because the freetype project files for MSVC embed the version and build
-type in the library filename, it may be necessary to override the default
-library name, by passing for example FT_LIB=freetype241MT. FT_LIB only
-has an effect on the MSVC build, unlike FT_LIBS which is used by all the builds.
+</p>
 
 <p>
 

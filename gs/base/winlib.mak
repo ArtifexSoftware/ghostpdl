@@ -20,6 +20,7 @@
 
 # Note that built-in third-party libraries aren't available.
 
+SHARE_FT=0
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_LIBTIFF=0
@@ -78,14 +79,9 @@ UFST_BRIDGE = 1
 UFST_LIB_EXT=.lib
 !endif
 
-# Define conditinal name for FreeType bridge :
-!ifdef FT_ROOT
-FT_BRIDGE = 1
-FT_CFLAGS=$(I_)$(FT_ROOT)$(D)include$(_I)
-!ifndef FT_LIB
-FT_LIB = freetype238MT_D
-!endif
-FT_LIBS=$(FT_ROOT)$(D)objs$(D)$(FT_LIB).lib
+# Define conditinal for FreeType bridge :
+!ifndef FT_BRIDGE
+FT_BRIDGE = 0
 !endif
 
 # Define the files to be removed by `make clean'.
@@ -103,6 +99,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 #!include $(COMMONDIR)/generic.mak
 !include $(GLSRCDIR)\gs.mak
 !include $(GLSRCDIR)\lib.mak
+!include $(GLSRCDIR)\freetype.mak
 !include $(GLSRCDIR)\jpeg.mak
 # zlib.mak must precede libpng.mak
 !include $(GLSRCDIR)\zlib.mak
