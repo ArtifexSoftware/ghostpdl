@@ -11,9 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /*  Data type definitions when using the gscms  */
-
 
 #ifndef gscms_INCLUDED
 #  define gscms_INCLUDED
@@ -24,7 +22,6 @@
 #include "gsutil.h"       /* Need for the object types */
 #include "gsdevice.h"     /* Need to carry pointer to clist reader */
 #include "stdint_.h"
-
 
 #define ICC_MAX_CHANNELS 15
 
@@ -47,9 +44,7 @@ typedef struct gs_range_icc_s {
     gs_range_t ranges[ICC_MAX_CHANNELS];
 } gs_range_icc_t;  /* ICC profile input could be up to 15 bands */
 
-
 /*  The buffer description.  We handle a variety of different types */
-
 typedef enum {
     gsGRAY,
     gsRGB,
@@ -110,7 +105,6 @@ typedef enum {
     DEVICEN_TYPE
 } gsicc_profile_t;
 
-
 #define gsicc_serial_data\
     unsigned char num_comps;		/* number of device dependent values */\
     unsigned char pcs_num_comps;	/* usually 3 but could be more if device link type */\
@@ -126,15 +120,12 @@ typedef enum {
     bool devicen_permute_needed;		/* Check if we need to permute the DeviceN values */\
     int buffer_size			/* size of ICC profile buffer */
     
-
 /* A subset of the profile information which is used when writing and reading
  * out to the c-list
  */
-
 typedef struct gsicc_serialized_profile_s {
     gsicc_serial_data;
 } gsicc_serialized_profile_t;
-
 
 typedef struct gsicc_colorname_s gsicc_colorname_t;
 
@@ -166,10 +157,7 @@ struct cmm_profile_s {
 				 * If it was embedded in the stream, there will not be a file
 				 * name.  This is primarily here for the system profiles, and
 				 * so that we avoid resetting them everytime the user params
-				 * are reloaded.
-				 */
-    
-
+				 * are reloaded. */
 };
 
 #ifndef cmm_profile_DEFINED
@@ -185,36 +173,30 @@ typedef struct cmm_profile_s cmm_profile_t;
    ICC profiles in a file).  The default GRAY, RGB, and CMYK profiles are not
    stored here but are maintained in the ICC manager.  This is for profiles
    that are in the content and for profiles we generate from PS and PDF CIE (NonICC)
-   color spaces.
+   color spaces. 
  */
-
 typedef struct gsicc_profile_entry_s gsicc_profile_entry_t;
 
 struct gsicc_profile_entry_s {
-    cmm_profile_t *profile;               /* The profile  */
-    gsicc_profile_entry_t *next;          /* next profile */
-    gsicc_profile_entry_t *prev;          /* previous profile */
+    gs_color_space *color_space;     /* The color space with the profile */
+    gsicc_profile_entry_t *next;    /* next CS */
+    gsicc_profile_entry_t *prev;    /* previous CS */
+    int64_t key;                    /* Key based off dictionary location */
 };
 
-
 /* ProfileList. The size of the list is limited by max_memory_size.
- * Profiles are added if there is sufficient memory.
- */
-
-typedef struct gsicc_profile_list_s {
-    gsicc_profile_entry_t *icc_profile_entry;
+   Profiles are added if there is sufficient memory. */
+typedef struct gsicc_profile_cache_s {
+    gsicc_profile_entry_t *first_entry;
+    gsicc_profile_entry_t *last_entry;
     int num_entries;
     rc_header rc;
     gs_memory_t *memory;
-} gsicc_profile_list_t;
-
+} gsicc_profile_cache_t;
 
 /*  These are the types that we can potentially have linked together by the CMS.
  *  If the CMS does not have understanding of PS color space types, then we 
- *  will need to convert them to an ICC type.
- */
-
-
+ *  will need to convert them to an ICC type. */
 typedef enum {
     DEVICETYPE,
     ICCTYPE,

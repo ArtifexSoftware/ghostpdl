@@ -139,7 +139,7 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
     pis->icc_link_cache = gsicc_cache_new(pis->memory);
     pis->icc_manager = gsicc_manager_new(pis->memory);
-    pis->icc_profile_cache = gsicc_profilelist_new(pis->memory);
+    pis->icc_profile_cache = gsicc_profilecache_new(pis->memory);
     return 0;
 }
 

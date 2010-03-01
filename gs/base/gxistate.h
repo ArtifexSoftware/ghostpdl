@@ -260,7 +260,7 @@ typedef struct gs_xstate_trans_flags {
 	int renderingintent; /* See gsstate.c */\
         gsicc_manager_t *icc_manager; /* ICC color manager, profile */\
         gsicc_link_cache_t *icc_link_cache; /* ICC linked transforms */\
-        gsicc_profile_list_t *icc_profile_cache;  /* ICC profiles. */\
+        gsicc_profile_cache_t *icc_profile_cache;  /* ICC profiles from PS. */\
 	CUSTOM_COLOR_PTR	/* Pointer to custom color callback struct */\
 	const gx_color_map_procs *\
 	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\

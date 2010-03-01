@@ -369,8 +369,9 @@ static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2, bool 
     oldspace.tas.type_attrs = 0;
     oldspace.tas.type_attrs = 0;
 
-    ref_assign(poldspace, space1);
-    ref_assign(pnewspace, space2);
+    ref_assign(pnewspace, space1);
+    ref_assign(poldspace, space2);
+
     do {
 	if (r_type(poldspace) != r_type(pnewspace))
 	    return 0;
@@ -5351,7 +5352,8 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
                               dflt_white );
      if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
         return_error(e_rangecheck);
-    code = seticc_cal(i_ctx_p, white, black, &gamma, NULL, 1);
+    code = seticc_cal(i_ctx_p, white, black, &gamma, NULL, 1, 
+                        graydict.value.saveid); 	
     if ( code < 0)
         return gs_rethrow(code, "setting CalGray  color space");
     cc.pattern = 0x00;
@@ -5437,7 +5439,7 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
                               9,
                               matrix,
                               dflt_matrix );
-    code = seticc_cal(i_ctx_p, white, black, gamma, matrix, 3);
+    code = seticc_cal(i_ctx_p, white, black, gamma, matrix, 3, rgbdict.value.saveid); 
     if ( code < 0)
         return gs_rethrow(code, "setting CalRGB  color space");
     cc.pattern = 0x00;

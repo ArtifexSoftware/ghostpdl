@@ -19,16 +19,9 @@
 #ifndef gsicc_profilecache_INCLUDED
 #  define gsicc_profilecache_INCLUDED
 
-
-gsicc_profile_list_t * gsicc_profilelist_new(gs_memory_t *memory);
-
-void gsicc_add_profile(gsicc_profile_list_t *profile_list, 
-                              cmm_profile_t *profile, gs_memory_t *memory);
-
-cmm_profile_t* gsicc_findprofile(int64_t hash, gsicc_profile_list_t *profile_list);
-
-gsicc_profile_list_t *gsicc_profilelist_new(gs_memory_t *memory);
-
+gsicc_profile_cache_t* gsicc_profilecache_new(gs_memory_t *memory);
+gs_color_space* gsicc_find_cs(ulong key_test, gs_state * pgs);
+void gsicc_add_cs(gs_state * pgs, gs_color_space * pcs, ulong dictkey);
 
 #endif
 
