@@ -111,6 +111,10 @@ BAND_LIST_STORAGE=file
 COMPILE_INITS=1
 !endif
 
+!ifndef FT_BRIDGE
+FT_BRIDGE=0
+!endif
+
 !ifndef APP_CCC
 APP_CCC=$(CC_) -I..\pl -I..\gs\base -I.\obj $(C_)
 !endif
