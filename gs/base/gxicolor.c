@@ -362,7 +362,6 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
 		   uint w, int h, gx_device * dev)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
-    gx_image_clue *const clues = penum_orig->clues; /* not const */
     const gs_imager_state *pis = penum->pis;
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
@@ -372,13 +371,7 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     int vci, vdi;
     const gs_color_space *pcs = penum->pcs;
     cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
-    cs_proc_remap_concrete_color((*remap_concrete_color)) =
-	    pcs->type->remap_concrete_color;
     gs_client_color cc;
-    bool device_color = penum->device_color;
-    const gx_color_map_procs *cmap_procs = gx_get_cmap_procs(pis, dev);
-    bits32 mask = penum->mask_color.mask;
-    bits32 test = penum->mask_color.test;
     gx_device_color devc1;
     gx_device_color devc2;
     gx_device_color *pdevc;
@@ -394,7 +387,6 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     color_samples run;		/* run value */
     color_samples next;		/* next sample value */
     const byte *bufend = psrc + w;
-    bool use_cache = spp * penum->bps <= 12;
     int code = 0, mcode = 0;
     int i;
 
