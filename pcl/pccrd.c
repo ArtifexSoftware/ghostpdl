@@ -334,6 +334,9 @@ pcl_crd_set_crd(
     pcl_crd_t *     pcrd = *ppcrd;
     int             code = 0;
 
+    if (pl_device_does_color_conversion())
+        return 0;
+
     if (pcrd == 0) {
         if ( (pcs->pcl_default_crd == 0) &&
              ((code = pcl_crd_build_default_crd(pcs)) < 0)  )
