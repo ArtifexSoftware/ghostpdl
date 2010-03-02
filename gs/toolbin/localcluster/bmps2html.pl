@@ -83,9 +83,13 @@ sub openhtml {
 
     $javascript  = "<SCRIPT LANGUAGE=\"JavaScript\">";
     $javascript .= "function swap(n){";
-    $javascript .=   "var x = document.images['compare'+3*Math.floor(n/3)].src;";
-    $javascript .=   "document.images['compare'+3*Math.floor(n/3)].src=document.images['compare'+(3*Math.floor(n/3)+1)].src;";
-    $javascript .=   "document.images['compare'+(3*Math.floor(n/3)+1)].src = x;";
+    $javascript .=   "var n0 = '00000'+3*Math.floor(n/3));"
+    $javascript .=   "n0=n0.substring(n0.length-5,n0.length);"
+    $javascript .=   "var n1 = '00000'+3*Math.floor(n/3)+1);"
+    $javascript .=   "n1=n1.substring(n1.length-5,n1.length);"
+    $javascript .=   "var x = document.images['compare'+n0].src;";
+    $javascript .=   "document.images['compare'+n0].src=document.images['compare'+n1].src;";
+    $javascript .=   "document.images['compare'+n1].src = x;";
     $javascript .= "}";
     $javascript .= "var undef;";
     $javascript .= "function findPosX(obj){";
@@ -376,7 +380,7 @@ while (<INDEX>)
         }
             
         $page = $meta{"PAGE"};
-        $mousemove = "onmousemove=\"coord(event,this,".$images.",".$meta{"X"}.",".$meta{"Y"}.")\"";
+        $mousemove = "onmousemove=\"coord(event,this,'$images',".$meta{"X"}.",".$meta{"Y"}.")\"";
             
         print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$images$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap(".($image1).")\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
         print $iframe "<TD><IMG SRC=\"out.".($image1)."$suffix\" NAME=\"compare".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove.></TD>\n";
