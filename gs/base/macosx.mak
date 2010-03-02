@@ -169,10 +169,10 @@ JBIG2_LIB=jbig2dec
 SHARE_JBIG2=0
 JBIG2SRCDIR=jbig2dec
 
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
 
-ICCSRCDIR=icclib
+LCMSSRCDIR=lcms
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.

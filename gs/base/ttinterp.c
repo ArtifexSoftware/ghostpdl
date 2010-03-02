@@ -3957,7 +3957,9 @@ static int nInstrCount=0;
 
     if ( BOUNDS( args[0], CUR.zp1.n_points ) )
     {
-      CUR.error = TT_Err_Invalid_Reference;
+	/* Current version of FreeType silently ignores this out of bounds error
+	 * and drops the instruction, see bug #691121 
+      CUR.error = TT_Err_Invalid_Reference; */
       return;
     }
 

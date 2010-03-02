@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2007 Artifex Software, Inc.
+#  Copyright (C) 2001-2010 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -178,6 +178,16 @@ GSDLL=gsdll32
 MAKEDLL=1
 !endif
 
+# Define the directory where the FreeType2 library sources are stored.
+# See freetype.mak for more information.
+
+!ifndef FTSRCDIR
+FTSRCDIR=freetype
+!ifndef FT_CFLAGS
+FT_CFLAGS=-I$(FTSRCDIR)\include
+!endif
+!endif
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
@@ -259,13 +269,6 @@ JPXSRCDIR=jasper
 
 # Alternatively, you can build a separate DLL
 # and define SHARE_JPX=1 in src/winlib.mak
-
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
-
-!ifndef ICCSRCDIR
-ICCSRCDIR=icclib
-!endif
 
 # Define the directory where the lcms source is stored.
 # See lcms.mak for more information
@@ -860,13 +863,13 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def 
 
 DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1 SBRDIR=.\debugobj
 debug:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS)
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS)
 
 debugclean:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) clean
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS) clean
 
 debugbsc:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) bsc
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS) bsc
 
 
 

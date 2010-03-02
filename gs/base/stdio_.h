@@ -68,6 +68,9 @@ int unlink(const char *);
 #if defined(_MSC_VER)
 #  define fdopen(handle,mode) _fdopen(handle,mode)
 #  define fileno(file) _fileno(file)
+#  if _MSC_VER < 1500	/* VS 2008 has vsnprintf */
+#    define vsnprintf _vsnprintf
+#  endif
 /* Microsoft Visual C++ 2005  doesn't properly define snprintf  */
 int snprintf(char *buffer, size_t count, const char *format , ...);
 #endif

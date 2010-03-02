@@ -13,6 +13,8 @@
 
 /* $Id$ */
 /* TIFF and TIFF/fax devices */
+
+#include "stdint_.h"   /* for tiff.h */
 #include "gdevtifs.h"
 #include "gdevprn.h"
 #include "strimpl.h"

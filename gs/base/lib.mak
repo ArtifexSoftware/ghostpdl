@@ -37,6 +37,8 @@ GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
 # msvc builds, and lcms configures itself to depend on msvc extensions
 # (inline asm, including windows.h) when compiled under msvc.
 GLLCMSCC=$(CC) $(GCFLAGS) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
+lcms_h=$(LCMSSRCDIR)$(D)include$(D)lcms.h
+icc34_h=$(LCMSSRCDIR)$(D)include$(D)icc34.h
 
 # All top-level makefiles define GLD.
 #GLD=$(GLGEN)
@@ -2501,7 +2503,7 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 	
 $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
- $(gsicc_littlecms_h)
+ $(gsicc_littlecms_h) $(lcms_h)
 	$(GLLCMSCC) $(GLO_)gsicc_littlecms.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
 	
 # Note that gsicc_create requires compile with lcms to obtain icc34.h 
@@ -2512,8 +2514,11 @@ $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
 $(GLOBJ)gsicc_create.$(OBJ) : $(GLSRC)gsicc_create.c $(GX) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
  $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsiccmanage_h) $(gsicccache_h)\
- $(math__h) $(gscolor2_h) $(gxcie_h)
+ $(math__h) $(gscolor2_h) $(gxcie_h) $(icc34_h)
 	$(GLLCMSCC) $(GLO_)gsicc_create.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
+
+
+#include "icc34.h"   /* Note this header is needed even if lcms is not compiled as default CMS */
 
 # ---------------- Separation colors ---------------- #
 

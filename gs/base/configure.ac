@@ -77,6 +77,9 @@ CFLAGS=$save_cflags
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
 
+dnl pkg-config is used for several tests now...
+AC_PATH_PROG(PKGCONFIG, pkg-config)
+
 dnl --------------------------------------------------  
 dnl Allow excluding the contributed drivers
 dnl --------------------------------------------------  
@@ -208,43 +211,6 @@ if test "$uint64_type" != "none"; then
 	GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$uint64_type\""
 fi
 
-dnl pkg-config is used for several tests now...
-AC_PATH_PROG(PKGCONFIG, pkg-config)
-
-dnl Fontconfig support
-HAVE_FONTCONFIG=""
-FONTCONFIG_CFLAGS=""
-FONTCONFIG_LIBS=""
-AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
-    [Don't use fontconfig to list system fonts]))
-if test "$enable_fontconfig" != "no"; then
-	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
-	# autoconf macro and b) requires pkg-config on the system, which is
-	# NOT standard on ANY OS, including Linux!
-	if test "x$PKGCONFIG" != x; then
-		AC_MSG_CHECKING(for fontconfig with pkg-config)
-		if $PKGCONFIG --exists fontconfig; then
-			AC_MSG_RESULT(yes)
-			FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
-			FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
-			HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
-		else
-			AC_MSG_RESULT(no)
-		fi
-	fi
-	if test -z "$HAVE_FONTCONFIG"; then
-		AC_CHECK_LIB([fontconfig], [FcInitLoadConfigAndFonts], [
-		  AC_CHECK_HEADER([fontconfig/fontconfig.h], [
-		    FONTCONFIG_LIBS="-lfontconfig"
-		    HAVE_FONTCONFIG="-DHAVE_FONTCONFIG"
-		  ])
-		])
-	fi
-fi
-AC_SUBST(HAVE_FONTCONFIG)
-AC_SUBST(FONTCONFIG_CFLAGS)
-AC_SUBST(FONTCONFIG_LIBS)
-
 dnl --------------------------------------------------
 dnl Check for libraries
 dnl --------------------------------------------------
@@ -320,8 +286,85 @@ if test x$with_libpaper != xno; then
     CFLAGS="$CFLAGS -DUSE_LIBPAPER"
 fi
 
+dnl Fontconfig support
+HAVE_FONTCONFIG=""
+FONTCONFIG_CFLAGS=""
+FONTCONFIG_LIBS=""
+AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
+    [Don't use fontconfig to list system fonts]))
+if test "$enable_fontconfig" != "no"; then
+	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
+	# autoconf macro and b) requires pkg-config on the system, which is
+	# NOT standard on ANY OS, including Linux!
+	if test "x$PKGCONFIG" != x; then
+		AC_MSG_CHECKING(for fontconfig with pkg-config)
+		if $PKGCONFIG --exists fontconfig; then
+			AC_MSG_RESULT(yes)
+			FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
+			FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
+			HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
+		else
+			AC_MSG_RESULT(no)
+		fi
+	fi
+	if test -z "$HAVE_FONTCONFIG"; then
+		AC_CHECK_LIB([fontconfig], [FcInitLoadConfigAndFonts], [
+		  AC_CHECK_HEADER([fontconfig/fontconfig.h], [
+		    FONTCONFIG_LIBS="-lfontconfig"
+		    HAVE_FONTCONFIG="-DHAVE_FONTCONFIG"
+		  ])
+		])
+	fi
+fi
+AC_SUBST(HAVE_FONTCONFIG)
+AC_SUBST(FONTCONFIG_CFLAGS)
+AC_SUBST(FONTCONFIG_LIBS)
+
 AC_CHECK_LIB(dl, dlopen)
 
+AC_ARG_ENABLE([freetype], AC_HELP_STRING([--enable-freetype],
+	[Use freetype for font rasterization]))
+FT_BRIDGE=0
+SHARE_FT=0
+FTSRCDIR=
+FT_CFLAGS=
+FT_LIBS=
+if test x"$enable_freetype" == xyes; then
+  AC_MSG_CHECKING([for local freetype library source])
+  dnl We prefer freetype2 over freetype, so it is easy to override
+  dnl the included freetype source with a checkout from upstream.
+  for dir in freetype2 freetype; do
+    if test -f $dir/src/base/ftbbox.c; then
+	AC_MSG_RESULT([$dir])
+	SHARE_FT=0
+	FTSRCDIR="$dir"
+	FT_CFLAGS="-I$dir/include"
+	FT_BRIDGE=1
+	break;
+    fi
+  done
+  if test -z $FTSRCDIR; then
+    AC_MSG_RESULT([no])
+    if test "x$PKGCONFIG" != x; then
+	AC_MSG_CHECKING(for system freetype with pkg-config)
+	    if $PKGCONFIG --exists freetype2; then
+		AC_MSG_RESULT(yes)
+		FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
+		FT_LIBS="`$PKGCONFIG --libs freetype2`"
+		FT_BRIDGE=1
+	    else
+		AC_MSG_RESULT(no)
+		AC_MSG_WARN([freetype library source not found...using native rasterizer])
+	    fi
+    fi
+  fi
+fi
+AC_SUBST(FT_BRIDGE)
+AC_SUBST(SHARE_FT)
+AC_SUBST(FTSRCDIR)
+AC_SUBST(FT_CFLAGS)
+AC_SUBST(FT_LIBS)
+  
 AC_MSG_CHECKING([for local jpeg library source])
 dnl At present, we give the local source priority over the shared
 dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.
@@ -428,7 +471,7 @@ case "x$with_system_libtiff" in
     xcheck)
 	if test -d tiff; then
 	    LIBTIFFDIR=tiff
-	    LOCAL_LIBTIFF_VERSION=`sed -n 's/^#define\s\+TIFFLIB_VERSION\s\+\([0-9]\+\)\s*.*$/\1/p' $LIBTIFFDIR/libtiff/tiffvers.h`
+	    LOCAL_LIBTIFF_VERSION=`sed -n '/TIFFLIB_VERSION[[^_]]/s/[[^0-9]]*\([[0-9]]*\).*/\1/p' $LIBTIFFDIR/libtiff/tiffvers.h`
 	    SHARE_LIBTIFF=0
 	fi
 	AC_CHECK_LIB(tiff, TIFFOpen,

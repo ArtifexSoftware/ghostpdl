@@ -68,6 +68,8 @@ my @differencePrevious;
 my @differencePreviousPdfwrite;
 my @archiveMatch;
 
+my @baselineUpdateNeeded;
+
 my $t2;
 
 print STDERR "reading $current\n" if ($verbose);
@@ -107,6 +109,8 @@ while(<F>) {
 }
 close(F);
 
+if ($elapsedTime==0) {
+} else {
 if (open(F,"<md5sum.cache")) {
 print STDERR "reading md5sum.cache\n" if ($verbose);
   while(<F>) {
@@ -166,6 +170,7 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 
 }
 #print Dumper(\%archiveCache);
+}
 
 #print "previous\n".Dumper(\%previous);
 #print "current \n".Dumper(\%current);
@@ -256,12 +261,16 @@ foreach my $t (sort keys %current) {
 }
 }
 
+if ($elapsedTime==0) {
+} else {
 print "ran ".($pdfwriteTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
+}
 
 if (@differencePrevious) {
   print "Differences in ".scalar(@differencePrevious)." of $notPdfwriteTestCount non-pdfwrite test(s):\n";
   while(my $t=shift @differencePrevious) {
     print "$t\n";
+    push @baselineUpdateNeeded,$t;
   }
   print "\n";
 } else {
@@ -272,6 +281,7 @@ if (@differencePreviousPdfwrite) {
   print "Differences in ".scalar(@differencePreviousPdfwrite)." of $pdfwriteTestCount pdfwrite test(s):\n";
   while(my $t=shift @differencePreviousPdfwrite) {
     print "$t\n";
+    push @baselineUpdateNeeded,$t;
   }
   print "\n";
 } else {
@@ -290,6 +300,7 @@ if (@repairedPrevious) {
   print "The following ".scalar(@repairedPrevious)." regression file(s) have stopped producing errors:\n";
   while(my $t=shift @repairedPrevious) {
     print "$t\n";
+    push @baselineUpdateNeeded,$t;
   }
   print "\n";
 }
@@ -308,6 +319,7 @@ if (!$skipMissing || $skipMissing eq "false" || $skipMissing eq "0") {
     print "The following ".scalar(@filesAdded)." regression file(s) have been added:\n";
     while(my $t=shift @filesAdded) {
       print "$t\n";
+      push @baselineUpdateNeeded,$t;
     }
     print "\n";
   }
@@ -330,5 +342,13 @@ if (0) {
     }
     print "\n";
   }
+
+  open(F,">>baselineupdateneeded.lst");
+  while(my $t=shift @baselineUpdateNeeded) {
+    my @a=split ' ',$t;
+    $a[0] =~ s/\//__/g;
+    print F "$a[0]\n";
+}
+  close(F);
 }
 

@@ -730,8 +730,10 @@ pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base, int d
                                "pclxl_write_image_data_DeltaRow(buf)");
     prow = gs_alloc_bytes(xdev->v_memory, width_bytes, "pclxl_write_image_data_DeltaRow(prow)");
     /* the RLE routine can write uncompressed without extra-allocation */
-    if ((buf == 0) || (prow == 0))
-        return pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+    if ((buf == 0) || (prow == 0)) {
+        pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+	return;
+    }
     /* initialize the seed row */
     memset(prow, 0, width_bytes);
     cdata = buf;
@@ -760,8 +762,10 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
 		       uint raster, uint width_bits, int y, int height)
 {
     /* If we only have 1 line, it does not make sense to do DeltaRow */
-    if (height < 2)
-    return pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+    if (height < 2) {
+        pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
+        return;
+    }
 
     switch(xdev->CompressMode){
     case eDeltaRowCompression:

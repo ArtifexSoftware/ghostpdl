@@ -3014,7 +3014,6 @@ pdf14_update_device_color_procs(gx_device *dev,
               
                 
                 break;
-
             default:			
 	        return_error(gs_error_rangecheck);
 	        break;
@@ -3596,6 +3595,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
                 rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_mask");
                 parent_color->icc_profile = NULL;
             }
+                memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
+                memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
         }
     }
     return ok;

@@ -1850,7 +1850,7 @@ currentdict /postalias undef
             TTFDEBUG { ( redefine codepoint by AdobeGlyphList, ) print dup == flush } if
             put                                                    % <<AGL>> <<pbe>>
           } {                                                      % <<AGL>> <<pbe>> <glyphname>
-            TTFDEBUG { ( unknown glyphname, leave as it is ) print flush } if
+            TTFDEBUG { ( unknown glyphname, leave as it is ) = flush } if
             pop                                                    % <<AGL>> <<pbe>>
           } ifelse
         } forall

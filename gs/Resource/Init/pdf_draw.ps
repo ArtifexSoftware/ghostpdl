@@ -945,7 +945,7 @@ drawopdict begin
           .buildshading
           dup 3 1 roll /.shading exch put
         } ifelse
-        .shfill grestore 
+        .shfill grestore
       } {
         pop
       } ifelse
@@ -1251,9 +1251,14 @@ currentdict /jp2_csp_dict .undef
     //false 1 index {
       type /integertype ne or
     } forall {
-      (\n   **** Warning: Some elements of Mask array are not integers.\n)
-      pdfformaterror
-      [ exch { 0.5 add cvi } forall ]  % following AR4, 5, 6 implementation
+      oforce_array
+      //false 1 index {
+        type /integertype ne or
+      } forall {
+        (\n   **** Warning: Some elements of Mask array are not integers.\n)
+        pdfformaterror
+        [ exch { 0.5 add cvi } forall ]  % following AR4, 5, 6 implementation
+      } if
     } if
 	% Check elements of array are within 0::(2**BitsPerComponent)-1
 	% This is a PostScript error, but AR ignores Mask in that case
@@ -1593,7 +1598,7 @@ drawopdict begin
       DataSource exch () /SubFileDecode filter flushfile
       end
     } ifelse  	
-	% The Adobe documentation says that the data following ID
+       	% The Adobe documentation says that the data following ID
 	% consists of "lines", and some PDF files (specifically, some files
 	% produced by PCL2PDF from Visual Software) contain garbage bytes
 	% between the last byte of valid data and an EOL.

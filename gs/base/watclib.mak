@@ -76,11 +76,11 @@ JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 !endif
 
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
 
-!ifndef ICCSRCDIR
-ICCSRCDIR=icclib
+!ifndef LCMSSRCDIR
+LCMSSRCDIR=lcms
 !endif
 
 # Define the directory where the ijs source is stored,

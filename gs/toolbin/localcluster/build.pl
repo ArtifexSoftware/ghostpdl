@@ -7,8 +7,7 @@ use Data::Dumper;
 use POSIX ":sys_wait_h";
 
 my $updateBaseline=0;
-my $rerunIfMd5sumDifferences=1;
-
+my $rerunIfMd5sumDifferences=0;
 
 my %allowedProducts=(
   'gs'  => 1,
@@ -21,6 +20,8 @@ my %allowedProducts=(
 my $lowres=0;
 my $highres=0;
 my %products;
+my $bmpcmp=0;
+my $filename="";
 
 my $t;
 
@@ -32,10 +33,14 @@ while ($t=shift) {
     $lowres=1;
   } elsif ($t eq "highres") {
     $highres=1;
+  } elsif ($t eq "bmpcmp") {
+    $bmpcmp=1;
+    $filename=shift;
+    $filename.=".txt";
   } else {
-  $products{$t}=1;
-  die "usage: build.pl [gs] [pcl] [xps] [svg] [mupdf]" if (!exists $allowedProducts{$t});
-}
+    $products{$t}=1;
+    die "usage: build.pl [gs] [pcl] [xps] [svg] [mupdf]" if (!exists $allowedProducts{$t});
+  }
 }
 
 my $updateTestFiles=1;
@@ -43,6 +48,7 @@ my $verbose=0;
 
 local $| = 1;
 my %md5sum;
+my %skip;
 
 if ($rerunIfMd5sumDifferences) {
   open(F,"<current.tab") || die "file current.tab not found";
@@ -61,9 +67,16 @@ if ($rerunIfMd5sumDifferences) {
     $md5sum{$a[0]}.= '|'.$a[1];
   }
   close(F);
+  if (open(F,"<skip.lst")) {
+    while(<F>) {
+      chomp;
+      $skip{$_}=1;
+    }
+    close(F);
+  }
 }
 
-#print Dumper(\%md5sum);  exit;
+#print Dumper(\%skip);  exit;
 
 
 
@@ -259,6 +272,9 @@ foreach my $testSource (sort keys %testSource) {
 }
 }
 
+
+if (!$bmpcmp) {
+
 foreach my $testSource (sort keys %testSource) {
   if (scalar keys %products==0 || exists $products{$testSource{$testSource}} || ($testSource{$testSource} eq 'gs' && exists $products{'mupdf'})) {
 #print "$testSource\n";
@@ -282,20 +298,22 @@ foreach my $testSource (sort keys %testSource) {
       if (exists $products{'mupdf'}) {
         $testfiles{'./'.$testfile}='mupdf'                  if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~ m/.disabled$/) && $testfile =~ m/.pdf$/i);
       } else {
-      $testfiles{'./'.$testfile}=$testSource{$testSource} if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~m /.disabled$/));
+        $testfiles{'./'.$testfile}=$testSource{$testSource} if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~ m/.disabled$/));
       }
 #     print "$testfile\n";
     }
   }
 }
+}
 
 #print Dumper(\%testfiles); exit;
 
-sub build($$$$) {
+sub build($$$$$) {
   my $product=shift;  # gs|pcl|xps|svg
   my $inputFilename=shift;
   my $options=shift;
   my $md5sumOnly=shift;
+  my $bmpcmp=shift;
 
   if ($md5sumOnly) {
     $niceCommand = 'nice';
@@ -304,7 +322,9 @@ sub build($$$$) {
   }
 
   my $cmd="";
-  my $cmd1="";
+  my $cmd1a="";
+  my $cmd1b="";
+  my $cmd1c="";
   my $cmd2a="";
   my $cmd2b="";
   my $cmd2c="";
@@ -330,8 +350,8 @@ sub build($$$$) {
 
   # $cmd .= " touch $logFilename ; rm -f $logFilename ";
 
-  $cmd  .= " true";
-  $cmd  .= "; touch $md5Filename" if (!$updateBaseline);
+  $cmd  .= " true ";
+  $cmd  .= "; touch $md5Filename" if (!$updateBaseline && !$bmpcmp);
 
 
   if ($a[0] eq 'pdf') {
@@ -339,35 +359,42 @@ sub build($$$$) {
 
     $outputFilename="$temp/$tempname.$options.pdf";
     if ($product eq 'gs') {
-      $cmd1.="$niceCommand $gsBin";
+      $cmd1a.="$niceCommand $gsBin";
     } elsif ($product eq 'pcl') {
-      $cmd1.="$niceCommand $pclBin";
+      $cmd1a.="$niceCommand $pclBin";
     } elsif ($product eq 'xps') {
-      $cmd1.="$niceCommand $xpsBin";
+      $cmd1a.="$niceCommand $xpsBin";
     } elsif ($product eq 'svg') {
-      $cmd1.="$niceCommand $svgBin";
+      $cmd1a.="$niceCommand $svgBin";
     } else {
       die "unexpected product: $product";
     }
-    $cmd1.=" -sOutputFile=$outputFilename";
-    $cmd1.=" -sDEVICE=pdfwrite";
-    $cmd1.=" -r".$a[2];
+    $cmd1b.=" -sOutputFile=$outputFilename";
+    $cmd1c.=" -sDEVICE=pdfwrite";
+    $cmd1c.=" -r".$a[2];
     #   $cmd1.=" -q" if ($product eq 'gs');
-    $cmd1.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
-    $cmd1.=" -dNOPAUSE -dBATCH";  # -Z:
-#   $cmd1.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
-    $cmd1.=" -dJOBSERVER" if ($product eq 'gs');
+    $cmd1c.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
+    $cmd1c.=" -dNOPAUSE -dBATCH";  # -Z:
+#   $cmd1c.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
+    $cmd1c.=" -dJOBSERVER" if ($product eq 'gs');
 
-    $cmd1.=" %rom%Resource/Init/gs_cet.ps" if ($filename =~ m/.PS$/ && $product eq 'gs');
+    $cmd1c.=" %rom%Resource/Init/gs_cet.ps" if ($filename =~ m/.PS$/ && $product eq 'gs');
 #   $cmd1.=" -dFirstPage=1 -dLastPage=1" if ($filename =~ m/.pdf$/i || $filename =~ m/.ai$/i);
 
-    $cmd1.=" - < " if (!($filename =~ m/.pdf$/i || $filename =~ m/.ai$/i) && $product eq 'gs');
+    $cmd1c.=" - < " if (!($filename =~ m/.pdf$/i || $filename =~ m/.ai$/i) && $product eq 'gs');
 
-    $cmd1.=" $inputFilename";
+    $cmd1c.=" $inputFilename";
     #   $cmd.=" 2>&1";
 
-    $cmd.=" ; echo \"$cmd1\" >>$logFilename ";
-    $cmd.=" ; $timeCommand $cmd1 >>$logFilename 2>&1";
+    if ($bmpcmp) {
+      $cmd.=" ; $timeCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
+      $cmd1a =~ s|/gs/|/head/|;
+      $cmd1b =~ s|$temp|$baselineRaster|;
+      $cmd.=" ; $timeCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
+    } else {
+      $cmd.=" ; echo \"$cmd1a $cmd1b $cmd1c\" >>$logFilename ";
+      $cmd.=" ; $timeCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
+    }
 
     $cmd.=" ; echo '---' >>$logFilename";
 
@@ -404,18 +431,27 @@ sub build($$$$) {
 
     $cmd2c.=" $inputFilename";
 
-    $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
-    $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+    if ($bmpcmp) {
+      $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
+      $cmd2a =~ s|/gs/|/head/|;
+      $cmd2c =~ s|$temp|$baselineRaster|;
+      $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; bash -c \"./bmpcmp <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ";
+      $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
+    } else {
+      $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
+      $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+   }
 
-    if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gzcat $rasterFilename.gz) <(gzcat $baselineFilename.gz) $bmpcmpFilename\" ; gzip $bmpcmpFilename.* ; fi";
+    if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2} && !exists $skip{$filename2}) {
+      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ; fi";
     }
 
     #   $cmd.=" ; gzip -f $inputFilename >>$logFilename 2>&1";
     $outputFilenames.="$inputFilename ";
 
   } else {
-    $cmd .= " ; echo \"$product\" >>$logFilename ";
+    $cmd .= " ; echo \"$product\" >>$logFilename " if (!$bmpcmp);
 
     $outputFilename="$temp/$tempname.$options";
     $baselineFilename="$baselineRaster/$tempname.$options";
@@ -466,15 +502,23 @@ sub build($$$$) {
 
     $cmd2c.=" $inputFilename ";
 
-    $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
-    $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+    if ($bmpcmp) {
+      $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
+      $cmd2a =~ s|/gs/|/head/|;
+      $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; bash -c \"./bmpcmp <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ";
+      $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
+    } else {
+      $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
+      $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+   }
 
-    if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gzcat $rasterFilename) <($baselineFilename).gz $bmpcmpFilename\" ; gzip $bmpcmpFilename.* ; fi";
+    if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2} && !exists $skip{$filename2}) {
+      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ; fi";
     }
 
 
-  }
+    }
 
   }
   if ($md5sumOnly) {
@@ -509,6 +553,29 @@ my @slowCommands;
 my @slowOutputFilenames;
 my @slowFilenames;
 
+if ($bmpcmp) {
+  open (F,"$filename") || die "file $filename not found";
+  my $done=0;
+  while(<F>) {
+    chomp;
+    my $cmd="";
+    my $outputFilenames="";
+    my $filename="";
+    if (m/^(.+)\.(pdf\.p.mraw\.\d+\.[01]) (\S+) pdfwrite /) {
+#       print "$1 $2 $3 -- pdfwrite\n";
+      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,1,1) if (!$done);
+print "$filename\t$cmd\n" if (!$done);
+    } elsif (m/^(.+)\.(p.mraw\.\d+\.[01]) (\S+)/) {
+#      print "$1 $2 $3\n";
+      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,1,1) if (!$done);
+print "$filename\t$cmd\n" if (!$done);
+    } elsif (m/errors:$/) {
+      $done=1;
+    }
+    
+  }
+  close(F);
+} else {
 foreach my $testfile (sort keys %testfiles) {
   foreach my $test (@{$tests{$testfiles{$testfile}}}) {
     if (($lowres==1  && ($test =~ m/\.72\./ || $test =~ m/\.75\./)) ||
@@ -518,19 +585,20 @@ foreach my $testfile (sort keys %testfiles) {
     my $cmd="";
     my $outputFilenames="";
     my $filename="";
-    ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,1);
+    ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,1,0);
     if (exists $quickFiles{$filename}) {
       push @commands,$cmd;
       push @outputFilenames,$outputFilenames;
-    push @filenames,$filename;
+      push @filenames,$filename;
     } else {
       push @slowCommands,$cmd;
       push @slowOutputFilenames,$outputFilenames;
       push @slowFilenames,$filename;
+    }
+    }
   }
 }
-    }
-  } 
+}
 
 while (scalar(@slowCommands) || scalar(@commands)) {
   if (scalar(@slowCommands)) {
@@ -541,10 +609,10 @@ while (scalar(@slowCommands) || scalar(@commands)) {
   }
   if (scalar(@commands)) {
     my $n=rand(scalar @commands);
-  my $filename=$filenames[$n];  splice(@filenames,$n,1);
-  my $command=$commands[$n];  splice(@commands,$n,1);
-  print "$filename\t$command\n";
-}
+    my $filename=$filenames[$n];  splice(@filenames,$n,1);
+    my $command=$commands[$n];  splice(@commands,$n,1);
+    print "$filename\t$command\n";
+  }
 }
 
 #while (scalar(@slowCommands)) {

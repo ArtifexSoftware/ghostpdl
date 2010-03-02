@@ -13,9 +13,11 @@
 
 /* $Id$ */
 /* TIFF-writing substructure */
-#include "gdevtifs.h"
+
+#include "stdint_.h"   /* for tiff.h */
 #include "stdio_.h"
 #include "time_.h"
+#include "gdevtifs.h"
 #include "gstypes.h"
 #include "gscdefs.h"
 #include "gdevprn.h"

@@ -130,10 +130,10 @@ JBIG2SRCDIR=[.jbig2dec]
 JPX_LIB=jasper
 JPXSRCDIR=jasper
 
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
 
-ICCSRCDIR=[.icclib]
+LCMSSRCDIR=[.lcms]
 
 # IJS has not been ported to OpenVMS. If you do the port,
 # you'll need to set these values. You'll also need to
