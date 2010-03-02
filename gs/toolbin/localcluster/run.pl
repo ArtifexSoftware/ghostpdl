@@ -313,6 +313,8 @@ sub spawn($$) {
       die "fork() failed";
     } elsif ($pid == 0) {
       exec($s);
+#     mylog "exec() failed";  # these produces a perl warning
+#     die "exec() failed";
       exit(0);
     } else {
       if ($timeout==0) {
@@ -973,12 +975,26 @@ if (!$local) {
     `gzip $machine.log`;
     `gzip $machine.out`;
 
-    mylog "about to upload $machine.log.gz";
-    spawn(300,"scp -q -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz");
+    for (my $retry=0;  $retry<5;  $retry++) {
+      mylog "about to upload $machine.log.gz";
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz`;
+      last if ($?==0);
+      my $b=$?;
+      chomp $a;
+      mylog "retry=$retry;  a=$a;  \$?=$b";
+      sleep 10;
+    }
     mylog "done with uploading $machine.log.gz";
 
-    mylog "about to upload $machine.out.gz";
-    spawn(300,"scp -q -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz");
+    for (my $retry=0;  $retry<5;  $retry++) {
+      mylog "about to upload $machine.out.gz";
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1`;
+      last if ($?==0);
+      my $b=$?;
+      chomp $a;
+      mylog "retry=$retry;  a=$a;  \$?=$b";
+      sleep 10;
+    }
     mylog "done with uploading $machine.out.gz";
 
 #   sleep(10);  # another horrible hack, see if this fixes the occasional log file not found problem on the cluster master

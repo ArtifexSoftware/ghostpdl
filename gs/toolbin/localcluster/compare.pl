@@ -109,6 +109,8 @@ while(<F>) {
 }
 close(F);
 
+if ($elapsedTime==0) {
+} else {
 if (open(F,"<md5sum.cache")) {
 print STDERR "reading md5sum.cache\n" if ($verbose);
   while(<F>) {
@@ -168,6 +170,7 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 
 }
 #print Dumper(\%archiveCache);
+}
 
 #print "previous\n".Dumper(\%previous);
 #print "current \n".Dumper(\%current);
@@ -258,7 +261,10 @@ foreach my $t (sort keys %current) {
   }
 }
 
-print "ran ".($pdfwriteTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
+if ($elapsedTime==0) {
+} else {
+  print "ran ".($pdfwriteTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
+}
 
 if (@differencePrevious) {
   print "Differences in ".scalar(@differencePrevious)." of $notPdfwriteTestCount non-pdfwrite test(s):\n";
