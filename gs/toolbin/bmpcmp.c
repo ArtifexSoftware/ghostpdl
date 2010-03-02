@@ -30,7 +30,7 @@ static void *Malloc(size_t size) {
     
     block = malloc(size);
     if (block == NULL) {
-        fprintf(stderr, "Failed to malloc %u bytes\n", (unsigned int) size);
+        fprintf(stderr, "Failed to malloc %u bytes\n", size);
         exit(EXIT_FAILURE);
     }
     return block;
@@ -137,8 +137,10 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
   }
 
   dst_bpp = src_bpp;
-  if ((src_bpp < 8) || (src_bpp == 24))
+  if (src_bpp == 24)
       src_bpp = 32;
+  if (dst_bpp <= 8)
+      dst_bpp = 32;
 
   /* Read the palette */
   if (src_bpp <= 8) {
@@ -157,7 +159,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
   }
 
   byte_width  = (width+7)>>3;
-  word_width  = width * (src_bpp>>3);
+  word_width  = width * ((dst_bpp+7)>>3);
   word_width += 3;
   word_width &= ~3;
 
@@ -264,7 +266,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
   *span       = word_width;
   *width_ret  = width;
   *height_ret = height;
-  *bpp        = src_bpp;
+  *bpp        = dst_bpp;
 
   return dst - word_width*height;
 }
@@ -309,6 +311,8 @@ static void pbm_read(FILE          *file,
     int w;
     int byte, mask, g;
     
+    bmp += width*(height-1)<<2;
+    
     for (; height>0; height--) {
         mask = 0;
         for (w=width; w>0; w--) {
@@ -326,6 +330,7 @@ static void pbm_read(FILE          *file,
             *bmp++ = g;
             *bmp++ = 0;
         }
+        bmp -= width<<3;
     }
 }
 
@@ -337,6 +342,8 @@ static void pgm_read(FILE          *file,
 {
     int w;
     
+    bmp += width*(height-1)<<2;
+    
     if (maxval == 255)
     {
         for (; height>0; height--) {
@@ -347,6 +354,7 @@ static void pgm_read(FILE          *file,
                 *bmp++ = g;
                 *bmp++ = 0;
             }
+            bmp -= width<<3;
         }
     } else if (maxval < 255) {
         for (; height>0; height--) {
@@ -357,6 +365,7 @@ static void pgm_read(FILE          *file,
                 *bmp++ = g;
                 *bmp++ = 0;
             }
+            bmp -= width<<3;
         }
     } else {
         for (; height>0; height--) {
@@ -367,6 +376,7 @@ static void pgm_read(FILE          *file,
                 *bmp++ = g;
                 *bmp++ = 0;
             }
+            bmp -= width<<3;
         }
     }
 }
@@ -379,6 +389,8 @@ static void ppm_read(FILE          *file,
 {
     int w;
     
+    bmp += width*(height-1)<<2;
+    
     if (maxval == 255)
     {
         for (; height>0; height--) {
@@ -388,6 +400,7 @@ static void ppm_read(FILE          *file,
                 *bmp++ = fgetc(file);
                 *bmp++ = 0;
             }
+            bmp -= width<<3;
         }
     } else if (maxval < 255) {
         for (; height>0; height--) {
@@ -397,6 +410,7 @@ static void ppm_read(FILE          *file,
                 *bmp++ = fgetc(file)*255/maxval;
                 *bmp++ = 0;
             }
+            bmp -= width<<3;
         }
     } else {
         for (; height>0; height--) {
@@ -406,6 +420,7 @@ static void ppm_read(FILE          *file,
                 *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
                 *bmp++ = 0;
             }
+            bmp -= width<<3;
         }
     }
 }
