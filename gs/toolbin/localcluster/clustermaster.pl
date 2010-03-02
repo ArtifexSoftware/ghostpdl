@@ -666,6 +666,27 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       exit;
     }
 
+if ($bmpcmp) {
+`head -1000 jobs >jobs.tmp ; mv jobs.tmp jobs`;
+        my $gs="";
+        my $pcl="";
+        my $xps="";
+        my $gsBin="gs/bin/gs";
+        my $pclBin="gs/bin/pcl6";
+        my $xpsBin="gs/bin/gxps";
+        if (open(F2,"<jobs")) {
+          while (<F2>) {
+            chomp;
+            $gs="gs " if (m/$gsBin/);
+            $pcl="pcl " if (m/$pclBin/);
+            $xps="xps " if (m/$xpsBin/);
+          }
+          close(F2);
+          $product=$gs.$pcl.$xps;
+        }
+mylog "done checking jobs, product=$product\n";
+}
+
     checkPID();
     foreach (keys %machines) {
       mylog "unlinking $_.done\n" if ($verbose);
@@ -695,7 +716,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       } elsif ($updateBaseline) {
         print F "svn\thead\t$product";
       } elsif ($bmpcmp) {
-        print F "user\t$userName\tgs pcl xps\n";
+        print F "user\t$userName\t$product\n";
       } else {
         print F "user\t$userName\t$product\n";
       }
@@ -983,7 +1004,7 @@ mylog "ls:\n$a";
   $userName="email" if ($normalRegression);
   $userName="email" if ($icc_workRegression);
 
-  {
+  if (!$bmpcmp) {
     my @t=split '\n',$footer;
     open(F,">$userName.txt");
     foreach (@t) {

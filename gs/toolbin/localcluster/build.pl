@@ -438,6 +438,7 @@ sub build($$$$$) {
       $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
       $cmd.=" ; bash -c \"./bmpcmp <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ";
       $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
+#     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
       $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
@@ -508,6 +509,7 @@ sub build($$$$$) {
       $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
       $cmd.=" ; bash -c \"./bmpcmp <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ";
       $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
+#     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
       $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
