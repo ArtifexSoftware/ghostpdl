@@ -939,7 +939,7 @@ $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
 
 $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c $(string__h)\
  $(gx_h) $(gserrors_h) $(gstrans_h) $(gscolor2_h) $(gzstate_h)\
- $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdfo_h)
+ $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gsccolor_h)
 	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
 
 $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\

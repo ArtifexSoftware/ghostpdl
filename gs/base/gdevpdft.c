@@ -22,6 +22,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
+#include "gsccolor.h"
 
 static int
 pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams)
@@ -100,7 +101,12 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
 	if (code < 0)
 	    return code;
     }
-    if (gstate != NULL) {
+    /* Note that we should not add in the graphic state 
+       color space for the group color if there was not 
+       a group color specified.
+       In this case, the parent group is inherited from
+       the previous group or the device color space */
+    if (gstate != NULL && pparams->group_color != UNKNOWN) {
 	const gs_color_space *cs = gstate->color_space;
 
 	code = pdf_color_space_named(pdev, &cs_value, NULL, cs,
