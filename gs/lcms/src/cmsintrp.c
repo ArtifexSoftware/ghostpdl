@@ -561,6 +561,16 @@ WORD cmsReverseLinearInterpLUT16(WORD Value, WORD LutTable[], LPL16PARAMS p)
                 r = b + 1;
         }
 
+        /* If input was zero check if output is same.  If so, use 
+           that to maintain the black.  This avoids quantization 
+           error at zero point due to binary search approach below.
+           e.g.  as we approach a value of zero interpolation provides
+           it before we get there.  Black is not a good location to
+           introduce an error. */
+        if ( Value == 0 ) {
+            res = (int) cmsLinearInterpLUT16((WORD) (0), LutTable, p);
+            if ( res == 0 ) return (WORD) 0;
+        }
 
         // Seems not a degenerated case... apply binary search
 
@@ -572,7 +582,7 @@ WORD cmsReverseLinearInterpLUT16(WORD Value, WORD LutTable[], LPL16PARAMS p)
 
                 if (res == Value) {
 
-                    // Found exact match. 
+                    // Found exact match.
                     
                     return (WORD) (x - 1);
                 }
