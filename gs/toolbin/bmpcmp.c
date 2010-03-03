@@ -34,7 +34,7 @@ static void *Malloc(size_t size) {
     
     block = malloc(size);
     if (block == NULL) {
-        fprintf(stderr, "Failed to malloc %u bytes\n", size);
+        fprintf(stderr, "Failed to malloc %u bytes\n", (unsigned int)size);
         exit(EXIT_FAILURE);
     }
     return block;
@@ -306,6 +306,45 @@ static void *bmp_read(ImageReader *im,
     return data;
 }
 
+static int get_uncommented_char(FILE *file)
+{
+    int c;
+    
+    do
+    {
+        c = fgetc(file);
+        if (c != '#')
+            return c;
+        do {
+            c = fgetc(file);
+        } while ((c != EOF) && (c != '\n') && (c != '\r'));
+    }
+    while (c != EOF);
+
+    return EOF;
+}
+
+static int get_pnm_num(FILE *file)
+{
+    int c;
+    int val = 0;
+    
+    /* Skip over any whitespace */
+    do {
+        c = get_uncommented_char(file);
+    } while (isspace(c));
+    
+    /* Read the number */
+    while (isdigit(c))
+    {
+        val = val*10 + c - '0';
+        c = get_uncommented_char(file);
+    }
+    
+    /* assume the last c is whitespace */
+    return val;
+}
+
 static void pbm_read(FILE          *file,
                      int            width,
                      int            height,
@@ -429,43 +468,101 @@ static void ppm_read(FILE          *file,
     }
 }
 
-static int get_uncommented_char(FILE *file)
+static void pbm_read_plain(FILE          *file,
+                           int            width,
+                           int            height,
+                           int            maxval,
+                           unsigned char *bmp)
 {
-    int c;
+    int w;
+    int g;
     
-    do
-    {
-        c = fgetc(file);
-        if (c != '#')
-            return c;
-        do {
-            c = fgetc(file);
-        } while ((c != EOF) && (c != '\n') && (c != '\r'));
+    bmp += width*(height-1)<<2;
+    
+    for (; height>0; height--) {
+        for (w=width; w>0; w--) {
+            g = get_pnm_num(file);
+            if (g != 0)
+                g = 255;
+            *bmp++ = g;
+            *bmp++ = g;
+            *bmp++ = g;
+            *bmp++ = 0;
+        }
+        bmp -= width<<3;
     }
-    while (c != EOF);
-
-    return EOF;
 }
 
-static int get_pnm_num(FILE *file)
+static void pgm_read_plain(FILE          *file,
+                           int            width,
+                           int            height,
+                           int            maxval,
+                           unsigned char *bmp)
 {
-    int c;
-    int val = 0;
+    int w;
     
-    /* Skip over any whitespace */
-    do {
-        c = get_uncommented_char(file);
-    } while (isspace(c));
+    bmp += width*(height-1)<<2;
     
-    /* Read the number */
-    while (isdigit(c))
+    if (maxval == 255)
     {
-        val = val*10 + c - '0';
-        c = get_uncommented_char(file);
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = get_pnm_num(file);
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    } else {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = get_pnm_num(file)*255/maxval;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
     }
+}
+
+static void ppm_read_plain(FILE          *file,
+                           int            width,
+                           int            height,
+                           int            maxval,
+                           unsigned char *bmp)
+{
+    int w;
     
-    /* assume the last c is whitespace */
-    return val;
+    bmp += width*(height-1)<<2;
+    
+    if (maxval == 255)
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                *bmp++ = get_pnm_num(file);
+                *bmp++ = get_pnm_num(file);
+                *bmp++ = get_pnm_num(file);
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    }
+    else
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                *bmp++ = get_pnm_num(file)*255/maxval;
+                *bmp++ = get_pnm_num(file)*255/maxval;
+                *bmp++ = get_pnm_num(file)*255/maxval;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    }
 }
 
 static void *pnm_read(ImageReader *im,
@@ -488,17 +585,14 @@ static void *pnm_read(ImageReader *im,
     switch (get_pnm_num(im->file))
     {
         case 1:
-            /* Plain PBM - we don't support that */
-            fprintf(stderr, "Plain PBM unsupported!\n");
-            return NULL;
+            read = pbm_read_plain;
+            break;
         case 2:
-            /* Plain PGM - we don't support that */
-            fprintf(stderr, "Plain PGM unsupported!\n");
-            return NULL;
+            read = pgm_read_plain;
+            break;
         case 3:
-            /* Plain PPM - we don't support that */
-            fprintf(stderr, "Plain PPM unsupported!\n");
-            return NULL;
+            read = ppm_read_plain;
+            break;
         case 4:
             read = pbm_read;
             break;
@@ -895,12 +989,12 @@ static void save_bmp(unsigned char *data,
                      int            bpp,
                      char          *str)
 {
-    FILE *file;
-    char  bmp[14+40];
-    int   word_width;
-    int   src_bypp;
-    int   width, height;
-    int   x, y;
+    FILE          *file;
+    unsigned char  bmp[14+40];
+    int            word_width;
+    int            src_bypp;
+    int            width, height;
+    int            x, y;
 
     file = fopen(str, "wb");
     if (file == NULL)
