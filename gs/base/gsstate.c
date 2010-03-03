@@ -428,7 +428,7 @@ gs_grestore_only(gs_state * pgs)
     gs_free_object(pgs->memory, saved, "gs_grestore");
 
     /* update the overprint compositor, if necessary */
-    if (prior_overprint != pgs->overprint)
+    if (prior_overprint || pgs->overprint)
     {
         return gs_do_set_overprint(pgs);
     }
@@ -1186,9 +1186,21 @@ int gs_swapcolors(gs_state *pgs)
 
     gs_swapcolors_quick(pgs);
 
-    if ((prior_overprint != pgs->overprint) ||
-        ((prior_mode != pgs->effective_overprint_mode) &&
-         (pgs->overprint)))
+    /* The following code will only call gs_do_set_overprint when we
+     * have a change:
+     * if ((prior_overprint != pgs->overprint) ||
+     *    ((prior_mode != pgs->effective_overprint_mode) &&
+     *     (pgs->overprint)))
+     *    return gs_do_set_overprint(pgs);
+     * Sadly, that's no good, as we need to call when we have swapped
+     * image space types too (separation <-> non separation for example).
+     *
+     * So instead, we call whenever at least one of them had overprint
+     * turned on.
+     */
+    if (prior_overprint || pgs->overprint)
+    {
         return gs_do_set_overprint(pgs);
+    }
     return 0;
 }
