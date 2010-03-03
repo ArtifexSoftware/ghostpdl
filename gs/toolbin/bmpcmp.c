@@ -430,17 +430,21 @@ static void ppm_read(FILE          *file,
                      int            maxval,
                      unsigned char *bmp)
 {
+    int r,g,b;
     int w;
-    
+
     bmp += width*(height-1)<<2;
     
     if (maxval == 255)
     {
         for (; height>0; height--) {
             for (w=width; w>0; w--) {
-                *bmp++ = fgetc(file);
-                *bmp++ = fgetc(file);
-                *bmp++ = fgetc(file);
+                r = fgetc(file);
+                g = fgetc(file);
+                b = fgetc(file);
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
                 *bmp++ = 0;
             }
             bmp -= width<<3;
@@ -448,9 +452,12 @@ static void ppm_read(FILE          *file,
     } else if (maxval < 255) {
         for (; height>0; height--) {
             for (w=width; w>0; w--) {
-                *bmp++ = fgetc(file)*255/maxval;
-                *bmp++ = fgetc(file)*255/maxval;
-                *bmp++ = fgetc(file)*255/maxval;
+                r = fgetc(file)*255/maxval;
+                g = fgetc(file)*255/maxval;
+                b = fgetc(file)*255/maxval;
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
                 *bmp++ = 0;
             }
             bmp -= width<<3;
@@ -458,9 +465,12 @@ static void ppm_read(FILE          *file,
     } else {
         for (; height>0; height--) {
             for (w=width; w>0; w--) {
-                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
-                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
-                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                r = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                g = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                b = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
                 *bmp++ = 0;
             }
             bmp -= width<<3;
@@ -535,6 +545,7 @@ static void ppm_read_plain(FILE          *file,
                            int            maxval,
                            unsigned char *bmp)
 {
+    int r,g,b;
     int w;
     
     bmp += width*(height-1)<<2;
@@ -543,9 +554,12 @@ static void ppm_read_plain(FILE          *file,
     {
         for (; height>0; height--) {
             for (w=width; w>0; w--) {
-                *bmp++ = get_pnm_num(file);
-                *bmp++ = get_pnm_num(file);
-                *bmp++ = get_pnm_num(file);
+                r = get_pnm_num(file);
+                g = get_pnm_num(file);
+                b = get_pnm_num(file);
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
                 *bmp++ = 0;
             }
             bmp -= width<<3;
@@ -555,9 +569,12 @@ static void ppm_read_plain(FILE          *file,
     {
         for (; height>0; height--) {
             for (w=width; w>0; w--) {
-                *bmp++ = get_pnm_num(file)*255/maxval;
-                *bmp++ = get_pnm_num(file)*255/maxval;
-                *bmp++ = get_pnm_num(file)*255/maxval;
+                r = get_pnm_num(file)*255/maxval;
+                g = get_pnm_num(file)*255/maxval;
+                b = get_pnm_num(file)*255/maxval;
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
                 *bmp++ = 0;
             }
             bmp -= width<<3;
@@ -1119,7 +1136,9 @@ static void save_png(unsigned char *data,
     png_set_rows(png, info, rows);
     
     /* write out the image */
-    png_write_png(png, info, PNG_TRANSFORM_STRIP_FILLER_AFTER, NULL);
+    png_write_png(png, info,
+        PNG_TRANSFORM_STRIP_FILLER_AFTER |
+        PNG_TRANSFORM_BGR, NULL);
 
 png_cleanup:
     png_destroy_write_struct(&png, &info);
