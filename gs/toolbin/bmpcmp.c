@@ -1313,8 +1313,13 @@ int main(int argc, char *argv[])
                 boxlist++;
                 if (!BBox_valid(boxlist))
                     continue;
+#ifdef HAVE_LIBPNG
+                sprintf(str3, "%s.%05d.png", argv[3], n+2);
+                save_png(bmp, boxlist, s, bpp, str3);
+#else
                 sprintf(str3, "%s.%05d.bmp", argv[3], n+2);
                 save_bmp(bmp, boxlist, s, bpp, str3);
+#endif
                 n += 3;
             }
         }
