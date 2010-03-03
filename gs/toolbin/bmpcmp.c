@@ -7,6 +7,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef HAVE_LIBPNG
+#include <png.h>
+#endif
+
 #define MINX (300)
 #define MINY (320)
 #define MAXX (600)
@@ -958,6 +962,78 @@ static void save_bmp(unsigned char *data,
     fclose(file);
 }
 
+#ifdef HAVE_LIBPNG
+static void save_png(unsigned char *data,
+                     BBox          *bbox,
+                     int            span,
+                     int            bpp,
+                     char          *str)
+{
+    FILE *file;
+    png_structp png;
+    png_infop   info;
+    png_bytep   *rows;
+    int   word_width;
+    int   src_bypp;
+    int   bpc;
+    int   width, height;
+    int   y;
+    
+    file = fopen(str, "wb");
+    if (file == NULL)
+        return;
+
+    png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (png == NULL) {
+        fclose(file);
+        return;
+    }
+    info = png_create_info_struct(png);
+    if (info == NULL)
+        /* info being set to NULL above makes this safe */
+        goto png_cleanup;
+    
+    /* libpng using longjmp() for error 'callback' */
+    if (setjmp(png_jmpbuf(png)))
+        goto png_cleanup;
+    
+    /* hook the png writer up to our FILE pointer */
+    png_init_io(png, file);
+    
+    /* fill out the image header */
+    width  = bbox->xmax - bbox->xmin;
+    height = bbox->ymax - bbox->ymin;
+    bpc = 8; /* FIXME */
+    png_set_IHDR(png, info, width, height, bpc, PNG_COLOR_TYPE_RGB,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+                 PNG_FILTER_TYPE_DEFAULT);
+
+    /* fill out pointers to each row */
+    /* we use bmp coordinates where the zero-th row is at the bottom */
+    src_bypp = (bpp == 16 ? 2 : 4);
+    if (bpp == 16)
+        word_width = width*2;
+    else
+        word_width = width*3;
+    word_width += 3;
+    word_width &= ~3;
+    rows = malloc(sizeof(*rows)*height);
+    if (rows == NULL)
+        goto png_cleanup;
+    for (y = 0; y < height; y++)
+      rows[height - y - 1] = &data[(y + bbox->ymin)*span + bbox->xmin];
+    png_set_rows(png, info, rows);
+    
+    /* write out the image */
+    png_write_png(png, info, PNG_TRANSFORM_STRIP_FILLER_AFTER, NULL);
+
+png_cleanup:
+    png_destroy_write_struct(&png, &info);
+    fclose(file);
+    return;
+}
+#endif /* HAVE_LIBPNG */
+
 int main(int argc, char *argv[])
 {
     int            w,  h,  s,  bpp;
@@ -1117,10 +1193,17 @@ int main(int argc, char *argv[])
                 rediff(bmp, bmp2, s, bpp, boxlist);
                 if (!BBox_valid(boxlist))
                     continue;
+#ifdef HAVE_LIBPNG
+                sprintf(str1, "%s.%05d.png", argv[3], n);
+                sprintf(str2, "%s.%05d.png", argv[3], n+1);
+                save_png(bmp,  boxlist, s, bpp, str1);
+                save_png(bmp2, boxlist, s, bpp, str2);
+#else
                 sprintf(str1, "%s.%05d.bmp", argv[3], n);
                 sprintf(str2, "%s.%05d.bmp", argv[3], n+1);
                 save_bmp(bmp,  boxlist, s, bpp, str1);
                 save_bmp(bmp2, boxlist, s, bpp, str2);
+#endif
                 sprintf(str4, "%s.%05d.meta", argv[3], n);
                 save_meta(boxlist, str4, w, h, imagecount);
                 n += 3;
