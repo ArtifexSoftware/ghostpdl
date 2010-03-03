@@ -140,9 +140,9 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
     }
   }
 
-  dst_bpp = src_bpp;
   if (src_bpp == 24)
       src_bpp = 32;
+  dst_bpp = src_bpp;
   if (dst_bpp <= 8)
       dst_bpp = 32;
 
