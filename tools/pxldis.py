@@ -295,9 +295,12 @@ pxl_attribute_name_to_attribute_number_dict = {
     'UnitsPerMeasure' : 137,
     'VectorObjects' : 31,
     'VUExtension' : 145,
+    'VUDataLength' : 146,
     'VUAttr1' : 147,
     'VUAttr2' : 148,
     'VUAttr3' : 149,
+    'VUAttr5' : 151,
+    'VUAttr6' : 152,
     'WhiteReferencePoint' : 19, # deprecated.
     'WritingMode' : 173, # deprecated.
     'XSpacingData' : 175, 
