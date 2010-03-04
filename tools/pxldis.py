@@ -368,6 +368,12 @@ class pxl_dis:
         # the n'th operator in the stream
         self.operator_position = 0
 
+        # The VendorUnique operator can have an optional embedded payload
+        # where the length is stored in the VUDataLength attribute.
+        # We need to cache the value of that atttribute to skip over
+        # that many number of bytes when it is encountered.
+        self.VUDataLength = 0 
+
         # true if we get UEL
         self.endjob = 0
         
@@ -699,7 +705,7 @@ class pxl_dis:
 
     # check for embedded tags.
     def isEmbedded(self, name):
-        return ( name == 'embedded_data' or name == 'embedded_data_byte' )
+        return ( name == 'embedded_data' or name == 'embedded_data_byte' or name == 'VendorUnique')
 
     def process_EmbeddedInfo(self, name):
         if ( name == 'embedded_data' ):
@@ -708,6 +714,9 @@ class pxl_dis:
         if ( name == 'embedded_data_byte' ):
             length = int(self.unpack('B', self.data[self.index:self.index+1])[0])
             self.index = self.index + 1
+        if ( name == 'VendorUnique' ):
+            length = self.VUDataLength
+            self.VUDataLength = 0
         print "length:",
         print length
         print "["
@@ -726,6 +735,17 @@ class pxl_dis:
             for k in pxl_attribute_name_to_attribute_number_dict.keys():
                 if ( pxl_attribute_name_to_attribute_number_dict[k] == tag ):
                     tag_not_listed = 0
+                    if (k == 'VUDataLength'):
+                        # The VUDataLength is only ever seen with the CLJ3500/3550/3600
+                        # as part of an optional VendorUnque payload; it is possible
+                        # that its value type can be something else other than uint32.
+                        # We'll just backtrack to get a uint32 value, and raise an error 
+                        # if it isn't uint32.
+                        vu_tag = unpack('B', self.data[self.index-6])[0]
+                        if ( vu_tag == pxl_tags_dict['uint32'] ):
+                            self.VUDataLength = int(self.unpack('I', self.data[self.index-5:self.index-1])[0])
+                        else:
+                            raise(SyntaxError), "VUDataLength not uint32"
                     print k,
                     if pxl_enumerations_dict.has_key(k):
                         print "//",
