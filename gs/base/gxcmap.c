@@ -1587,3 +1587,64 @@ gx_unit_frac(float fvalue)
         f = float2frac(fvalue);
     return f;
 }
+
+/* This is used by image color render to handle the cases where we need to
+   perform either a transfer function or halftoning on the color values
+   during an ICC color flow.  In this case, the color is already in the
+   device color space but in 16bpp color values. */
+void
+cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
+     const gs_imager_state * pis, gx_device * dev, bool has_transfer,
+     bool has_halftone, gs_color_select_t select)
+{
+    int ncomps = dev->color_info.num_components;
+    frac frac_value;
+    int i;
+    frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    /* apply the transfer function(s) */
+    if (has_transfer) {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+            for (i = 0; i < ncomps; i++) {
+                frac_value = cv2frac(pconc[i]);
+                cv_frac[i] = gx_map_color_frac(pis,
+	    			    frac_value, effective_transfer[i]);
+            }
+        } else {
+            if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN) {
+                check_cmyk_color_model_comps(dev);
+            }
+            if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+                int k = dev->color_info.black_component;
+                for (i = 0; i < ncomps; i++) {
+                    frac_value = cv2frac(pconc[i]);
+                    if (i == k) {
+                        cv_frac[i] = frac_1 - gx_map_color_frac(pis,
+	    		    (frac)(frac_1 - frac_value), effective_transfer[i]);
+                    } else {
+                        cv_frac[i] = cv2frac(pconc[i]);  /* Ignore transfer, see PLRM3 p. 494 */
+                    }
+                }
+            } else {
+                for (i = 0; i < ncomps; i++) {
+                    frac_value = cv2frac(pconc[i]);
+                    cv_frac[i] = frac_1 - gx_map_color_frac(pis,
+	    		        (frac)(frac_1 - frac_value), effective_transfer[i]);
+                }
+            }
+        }
+    } else {
+        if (has_halftone) {
+            /* We need this to be in frac form */
+            for (i = 0; i < ncomps; i++) {
+                cv_frac[i] = cv2frac(pconc[i]);  
+            }
+        }   
+    }
+    /* Halftoning */
+    if (has_halftone) {
+        if (gx_render_device_DeviceN(&(cv_frac[0]), pdc, dev,
+	            pis->dev_ht, &pis->screen_phase[select]) == 1)
+            gx_color_load_select(pdc, pis, dev, select);
+    }
+}

@@ -45,6 +45,10 @@ typedef union {
     bits32 all[BITS32_PER_COLOR_SAMPLES];	/* for fast comparison */
 } color_samples;
 
+extern void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
+     const gs_imager_state * pis, gx_device * dev, bool has_transfer,
+     bool has_halftone, gs_color_select_t select);
+
 /* ------ Strategy procedure ------ */
 
 /* Check the prototype. */
@@ -111,6 +115,23 @@ mask_color_matches(const byte *v, const gx_image_enum *penum,
     return true;
 }
 
+static bool 
+gx_has_transfer(const gs_imager_state *pis, int num_comps)
+{
+    int k;
+    gs_state *pgs;
+
+    if (pis->is_gstate) {
+        pgs = (gs_state *)pis;
+        for (k = 0; k < num_comps; k++) {
+            if (pgs->effective_transfer[k]->proc != gs_identity_transfer) {
+                return(true);
+            }
+        }
+    } 
+    return(false);
+}
+
 /* Render a color image with 8 or fewer bits per sample using ICC profile. */
 static int
 image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x,
@@ -148,9 +169,12 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     gsicc_bufferdesc_t output_buff_desc;
     unsigned char *psrc_cm, *psrc_cm_start;
     int k;
-    gx_color_index color;
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
+    gx_color_index color;
+    bool must_halftone = gx_device_must_halftone(dev);
+    bool has_transfer = gx_has_transfer(pis,
+                                pis->icc_manager->device_profile->num_comps);
 
     /* Needed for device N */
     memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
@@ -176,7 +200,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
         return gs_rethrow(-1, "ICC Link not created during image render color");
     }
     /* If the link is the identity, then we don't need to do any color conversions */
-    if (icc_link->is_identity ) {
+    if (icc_link->is_identity) {
         psrc_cm = (unsigned char *) psrc;
         spp_cm = spp;
         bufend = psrc_cm +  w;
@@ -245,11 +269,20 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
          for ( k = 0; k < spp_cm; k++ ) {
             conc[k] = gx_color_value_from_byte(next.v[k]);
         }
-        /* encode as a color index */
-        color = dev_proc(dev, encode_color)(dev, &(conc[0]));
-    /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index)
-        color_set_pure(pdevc_next, color);
+        /* Now we can do an encoding directly or we have to apply transfer
+           and or halftoning */
+        if (must_halftone || has_transfer) {
+            /* We need to do the tranfer function and/or the halftoning */
+            cmap_transfer_halftone(&(conc[0]), pdevc_next, pis, dev, 
+                has_transfer, must_halftone, gs_color_select_source);
+        } else {
+            /* encode as a color index. avoid all the cv to frac to cv
+               conversions */
+            color = dev_proc(dev, encode_color)(dev, &(conc[0]));
+            /* check if the encoding was successful; we presume failure is rare */
+            if (color != gx_no_color_index)
+                color_set_pure(pdevc_next, color);
+        }
         /* Fill the region between */
 	/* xrun/irun and xprev */
         /*
