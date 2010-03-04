@@ -716,8 +716,10 @@ class pxl_dis:
             self.index = self.index + 1
 
             tag = unpack('B', self.data[self.index] )[0]
+            tag_not_listed = 1
             for k in pxl_attribute_name_to_attribute_number_dict.keys():
                 if ( pxl_attribute_name_to_attribute_number_dict[k] == tag ):
+                    tag_not_listed = 0
                     print k,
                     if pxl_enumerations_dict.has_key(k):
                         print "//",
@@ -734,6 +736,9 @@ class pxl_dis:
 		    if ( self.isEmbedded(k) ):
 			self.process_EmbeddedInfo(k)
                     return 1
+            if (tag_not_listed):
+                print >> sys.stderr, "Unlisted attribute number:", tag
+                raise(SyntaxError), "Unlisted attribute number in PXL stream"
         return 0
 
     def Tag_attr_uint16(self):
