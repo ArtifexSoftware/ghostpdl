@@ -880,6 +880,15 @@ class pxl_dis:
         # assume an index error means we have processed everything - ugly
         except IndexError:
             return
+        except KeyboardInterrupt:
+            print >> sys.stderr, "^C pressed. Terminating..."
+            return
+        except IOError,msg:  # broken pipe when user quits a downsream pager
+            if msg.args == (32,'Broken pipe'):
+                print >> sys.stderr, "Broken pipe..."
+                return
+            else:
+                raise
         else:
             print >> sys.stderr, "dissassemble failed at file position %d" % self.index
             endpos = min(len(self.data), self.index + 25)
