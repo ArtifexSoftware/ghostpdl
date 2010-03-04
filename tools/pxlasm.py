@@ -606,6 +606,8 @@ class pxl_asm:
             if ( self.is_Embedded(tag) ):
                 self.process_EmbeddedInfo(tag)
             return 1
+        else:
+            print >> sys.stderr, "Unlisted attribute tag:", tag
         return 0
 
     def Tag_attr_uint16(self):
