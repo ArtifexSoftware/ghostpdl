@@ -299,6 +299,7 @@ pxl_attribute_name_to_attribute_number_dict = {
     'VUAttr1' : 147,
     'VUAttr2' : 148,
     'VUAttr3' : 149,
+    'VUAttr4' : 150,
     'VUAttr5' : 151,
     'VUAttr6' : 152,
     'WhiteReferencePoint' : 19, # deprecated.
