@@ -608,6 +608,7 @@ class pxl_asm:
             return 1
         else:
             print >> sys.stderr, "Unlisted attribute tag:", tag
+            raise(SyntaxError), "Unlisted attribute tag found in PXL disassembly"
         return 0
 
     def Tag_attr_uint16(self):
