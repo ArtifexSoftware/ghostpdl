@@ -183,5 +183,6 @@ struct gs_state_s {
     (pgs)->current_point.y = yy;
 
 int gs_swapcolors(gs_state *);
+void gs_swapcolors_quick(gs_state *);
 
 #endif /* gzstate_INCLUDED */

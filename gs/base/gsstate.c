@@ -46,7 +46,6 @@ static void gstate_free_contents(gs_state *);
 static int gstate_copy(gs_state *, const gs_state *,
 			gs_state_copy_reason_t, client_name_t);
 static void clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t cname);
-static void gs_swapcolors_quick(gs_state *pgs);
 
 /*
  * Graphics state storage management is complicated.  There are many
@@ -1125,7 +1124,7 @@ gs_id gx_get_clip_path_id(gs_state *pgs)
     return pgs->clip_path->id;
 }
 
-static void gs_swapcolors_quick(gs_state *pgs)
+void gs_swapcolors_quick(gs_state *pgs)
 {
     struct gx_cie_joint_caches_s *tmp_cie;
     gx_device_halftone           *tmp_ht;
