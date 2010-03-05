@@ -448,7 +448,8 @@ my %rules=(
   'gs/doc' => 0,
   'gs/toolbin' => 0,
   'gs/examples' => 0,
-  'language_switch' => 0
+  'language_switch' => 0,
+  'tools' => 0
 );
 
 #my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
@@ -992,11 +993,15 @@ sleep(10);
       $logs.=" $_.log $_.out";
       $tabs.=" $_.tab";
     } else {
-      mylog "ERROR: log or out missing for $_\n";
+      if ($failOccured) {
+        mylog "Warning: $_.log or $_.out missing (ignoring because failOccured is true)\n";
+      } else {
+        mylog "ERROR: $_.log or $_.out missing\n";
 my $a=`ls -ls *log* *out*`;
 mylog "ls:\n$a";
-      unlink $runningSemaphore;
-      exit;
+        unlink $runningSemaphore;
+        exit;
+      }
     }
   }
 

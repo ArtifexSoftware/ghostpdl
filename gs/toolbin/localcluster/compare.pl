@@ -334,6 +334,24 @@ if (0) {
   }
 }
 
+my $first=1;
+foreach my $t (sort keys %current) {
+  if ($t =~ m/(.+\.)1$/) {
+    $t2=$1.'0';
+    if (exists $current{$t2}) {
+      if ($current{$t} ne $current{$t2} && (!exists $previous{$t} || !exists $previous{$t2} || $previous{$t} eq $previous{$t2})) {
+        if ($first) {
+          print "\nThe following files are showing a new mismatch between banded and page mode:\n";
+          $first=0;
+        }
+        print "$t\n";
+      }
+    }
+  }
+}
+print "\n" if (!$first);
+
+
   if (@archiveMatch) {
     print "-------------------------------------------------------------------------------------------------------\n\n";
     print "The following ".scalar(@archiveMatch)." regression file(s) had differences but matched at least once in the previous $previousValues runs:\n";
