@@ -192,6 +192,16 @@ pxl_enumerations_dict = {
     'PatternPersistence' : [ 'eTempPattern=0', 'ePagePattern=1', 'eSessionPattern=2'],
     'SimplexPageMode' : ['eSimplexFrontSide=0'],
     'TxMode' : [ 'eOpaque=0', 'eTransparent=1' ],
+    'VUExtension' : [
+        'HP_ColorSmartRGB=1752174596',         #0x68701004
+        'HP_SelectTrayBinByString=1752178693', #0x68702005
+        'unknownHP2006=1752178694',            #0x68702006
+        'unknownHP2011=1752178705',            #0x68702011        
+        'JR3BeginImage=1752186880',            #0x68704000
+        'JR3ReadImage=1752186881' ,            #0x68704001
+        'JR3EndImage=1752186882'  ,            #0x68704002
+        'JR3ExecStream=1752186883',            #0x68704003
+        ],
     'WritingMode' : [ 'eHorizontal=0', 'eVertical=1' ]
 }
 
