@@ -367,6 +367,7 @@ static void pbm_read(FILE          *file,
             g = byte & mask;
             if (g != 0)
                 g = 255;
+            g=255-g;
             mask >>= 1;
             *bmp++ = g;
             *bmp++ = g;
@@ -1132,13 +1133,15 @@ static void save_png(unsigned char *data,
     if (rows == NULL)
         goto png_cleanup;
     for (y = 0; y < height; y++)
-      rows[height - y - 1] = &data[(y + bbox->ymin)*span + bbox->xmin];
+      rows[height - y - 1] = &data[(y + bbox->ymin)*span + bbox->xmin * src_bypp - 1];
     png_set_rows(png, info, rows);
     
     /* write out the image */
     png_write_png(png, info,
-        PNG_TRANSFORM_STRIP_FILLER_AFTER |
+        PNG_TRANSFORM_STRIP_FILLER_BEFORE| 
         PNG_TRANSFORM_BGR, NULL);
+
+    free(rows);
 
 png_cleanup:
     png_destroy_write_struct(&png, &info);
