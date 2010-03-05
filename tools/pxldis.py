@@ -749,7 +749,7 @@ class pxl_dis:
                     print k,
                     if pxl_enumerations_dict.has_key(k):
                         print "//",
-                        searchstr = "=" + str(self.saved_ubyte)
+                        searchstr = "=" + str(self.saved_value)
                         enum = pxl_enumerations_dict[k]
                         for value in enum:
                             if ( value[value.index('='):] == searchstr ):
@@ -787,8 +787,9 @@ class pxl_dis:
                 print "%f" % self.unpack(self.unpack_string, self.data[self.index:self.index+size]),
             else:
                 print "%d" % self.unpack(self.unpack_string, self.data[self.index:self.index+size]),
-            if ( self.unpack_string == 'B' and size == 1 ):
-                self.saved_ubyte = self.unpack(self.unpack_string, self.data[self.index:self.index+size])[0]
+            if (( self.unpack_string == 'B' and size == 1 ) or \
+                ( self.unpack_string == 'I' and size == 4 )):
+                self.saved_value = self.unpack(self.unpack_string, self.data[self.index:self.index+size])[0]
             self.index = self.index + self.size_of_element
             return 1
         return 0
