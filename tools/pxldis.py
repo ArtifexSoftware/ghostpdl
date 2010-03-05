@@ -751,10 +751,16 @@ class pxl_dis:
                         print "//",
                         searchstr = "=" + str(self.saved_value)
                         enum = pxl_enumerations_dict[k]
+                        enumeration_not_found = 1
                         for value in enum:
                             if ( value[value.index('='):] == searchstr ):
+                                enumeration_not_found = 0
                                 print value
                                 break
+                        if (enumeration_not_found):
+                            # we print here mainly to to avoid side effect 
+                            # of the // above if no enumeration is found.
+                            print 'Unknown enumeration'
                     else:
                         print
                     self.index = self.index + 1
