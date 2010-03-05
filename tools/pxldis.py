@@ -427,7 +427,7 @@ class pxl_dis:
         print key
         self.index = self.index + 1
                 # handle special cases
-        if (self.isEmbedded(key)):
+        if (self.isEmbedded(key) or (key == 'VendorUnique')):
             self.process_EmbeddedInfo(key)
         return 1
 
@@ -715,7 +715,7 @@ class pxl_dis:
 
     # check for embedded tags.
     def isEmbedded(self, name):
-        return ( name == 'embedded_data' or name == 'embedded_data_byte' or name == 'VendorUnique')
+        return ( name == 'embedded_data' or name == 'embedded_data_byte')
 
     def process_EmbeddedInfo(self, name):
         if ( name == 'embedded_data' ):
