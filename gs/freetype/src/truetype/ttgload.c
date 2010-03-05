@@ -1667,6 +1667,7 @@
       }
       else
       {
+	  if (!(loader->load_flags & FT_LOAD_NO_SYNTHETIC_METRICS)) {
         FT_Pos  height;
 
 
@@ -1688,6 +1689,9 @@
                               face->horizontal.Descender );
 
         top = ( advance - height ) / 2;
+      }
+      else
+	  advance = 0;
       }
 
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
