@@ -446,7 +446,7 @@ my %rules=(
   'gs/base' => 15,
   'gs/Resource' => 15,
   'gs/doc' => 0,
-  'gs/toolbin' => 0,
+# 'gs/toolbin' => 0,
   'gs/examples' => 0,
   'language_switch' => 0,
   'tools' => 0
@@ -686,6 +686,7 @@ if ($bmpcmp) {
           $product=$gs.$pcl.$xps;
         }
 mylog "done checking jobs, product=$product\n";
+        `touch bmpcmp.tmp ; rm -fr bmpcmp.tmp ; mv bmpcmp bmpcmp.tmp ; mkdir bmpcmp ; rm -fr bmpcmp.tmp &`;
 }
 
     checkPID();
@@ -1172,6 +1173,10 @@ mylog("finished cachearchive.pl");
   } elsif ($mupdfRegression) {
   } elsif ($updateBaseline) {
   } elsif ($bmpcmp) {
+    if (exists $emails{$userName}) {
+      `mail $emails{$userName} -s \"bmpcmp finished\" <$userName.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <$userName.txt`;
+    }
   } elsif ($userRegression) {
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
@@ -1195,11 +1200,16 @@ mylog("finished cachearchive.pl");
 }
 
 checkPID();
-
 removeQueue();
 
 checkPID();
+mylog("removing $runningSemaphore");
 unlink $runningSemaphore;
 
-mylog("removing $runningSemaphore");
+if ($bmpcmp) {
+  `rm -fr ../public_html/$userName`;
+  `mkdir ../public_html/$userName`;
+  `cd ../public_html/$userName; ln -s compare.html index.html`;
+  `./pngs2html.pl bmpcmp ../public_html/$userName`;
+}
 
