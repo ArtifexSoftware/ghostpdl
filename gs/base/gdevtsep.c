@@ -286,7 +286,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
 {	open,\
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
-	gdev_prn_output_page,		/* output_page */\
+	tiff_output_page,		/* output_page */\
 	close,				/* close */\
 	NULL,				/* map_rgb_color - not used */\
 	tiffsep_decode_color,		/* map_color_rgb */\
@@ -704,7 +704,7 @@ int
 tiffsep1_prn_open(gx_device * pdev)
 {
     tiffsep1_device * const tfdev = (tiffsep1_device *)pdev;
-    int code = gdev_prn_open(pdev);
+    int code = tiff_open(pdev);
 
 #if !USE_COMPRESSED_ENCODING
     /*
@@ -1016,7 +1016,7 @@ build_comp_to_sep_map(tiffsep_device * pdev, short * map_comp_to_sep)
 int
 tiffsep_prn_open(gx_device * pdev)
 {
-    int code = gdev_prn_open(pdev);
+    int code = tiff_open(pdev);
 
 #if !USE_COMPRESSED_ENCODING
     /*
@@ -1396,7 +1396,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	/* Open the separation file, if not already open */
 	if (tfdev->sep_file[comp_num] == NULL) {
 	    code = gx_device_open_output_file((gx_device *)pdev, name,
-		    true, false, &(tfdev->sep_file[comp_num]));
+		    true, true, &(tfdev->sep_file[comp_num]));
 	    if (code < 0)
 	        return code;
             tfdev->tiff[comp_num] = tiff_from_filep(name,
@@ -1568,7 +1568,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 	/* Open the separation file, if not already open */
 	if (tfdev->sep_file[comp_num] == NULL) {
 	    code = gx_device_open_output_file((gx_device *)pdev, name,
-		    true, false, &(tfdev->sep_file[comp_num]));
+		    true, true, &(tfdev->sep_file[comp_num]));
 	    if (code < 0)
 	        return code;
 	    tfdev->tiff[comp_num] = tiff_from_filep(name,
