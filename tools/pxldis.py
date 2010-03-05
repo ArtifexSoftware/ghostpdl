@@ -156,7 +156,7 @@ pxl_enumerations_dict = {
     'ClipRegion' : ['eInterior=0', 'eExterior=1'],
     'ColorDepth' : [ 'e1Bit=0', 'e4Bit=1', 'e8Bit=2' ],
     'ColorMapping' : [ 'eDirectPixel=0', 'eIndexedPixel=1' ],
-    'ColorSpace' : [ 'eGray=1', 'eRGB=2', 'eSRGB=6' ], # srgb deprecated
+    'ColorSpace' : [ 'eGray=1', 'eRGB=2', 'eSRGB=6', 'eGraySub=7'], # srgb deprecated
     'ColorTreatment' : [ 'eNoTreatment=0', 'eScreenMatch=1', 'eVivid=2' ],
     'CompressMode' : [ 'eNoCompression=0', 'eRLECompression=1',
                        'eJPEGCompression=2', 'eDeltaRowCompression=3' ],
