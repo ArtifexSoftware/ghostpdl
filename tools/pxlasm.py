@@ -410,6 +410,8 @@ class pxl_asm:
             # handle special cases
             if ( self.is_Embedded(tag) ):
                 self.process_EmbeddedInfo(tag)
+            if ( tag == 'VendorUnique' ):
+                self.process_VUpayload()
             return 1
         return 0
 
@@ -599,6 +601,18 @@ class pxl_asm:
         # NB needs wrapping
         for num in number_list:
             self.pack( 'B', num )
+
+    # VU payload does not have a prepended length 
+    # and is simplier than embedded data
+    def process_VUpayload(self):
+        self.consume_to_char_plus_one( '[' )
+        while (1):
+            num = self.next_hex_num()
+            # trick - num will fail on ']'
+            if (num != None):
+                self.pack( 'B', num )
+            else:
+                break
 
     def Tag_attr_ubyte(self):
         tag = self.next_string()
