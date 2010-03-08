@@ -199,7 +199,13 @@ static FT_Error
 get_fapi_glyph_metrics(FT_Incremental a_info, FT_UInt a_glyph_index,
 	FT_Bool bVertical, FT_Incremental_MetricsRec *a_metrics)
 {
-    /* fixme : bVertical is not implemented. */
+    /* FreeType will create synthetic vertical metrics, including a vertical
+     * advance, if none is present. We don't want this, so if the font is a type 42
+     * and the WMode is not 1 (vertical) we ignore the advance by setting it to 0
+     */
+    if (bVertical && !a_info->fapi_font->is_type1 && !a_info->fapi_font->is_cid)
+	a_metrics->advance = 0;
+
     if (a_info->glyph_metrics_index == a_glyph_index)
     {
 	switch (a_info->metrics_type)
@@ -212,6 +218,8 @@ get_fapi_glyph_metrics(FT_Incremental a_info, FT_UInt a_glyph_index,
 		break;
 	    case FAPI_METRICS_REPLACE:
 		*a_metrics = a_info->glyph_metrics;
+		/* We are replacing the horizontal metrics, so the vertical must be 0 */
+		a_metrics->advance_v = 0;
 		break;
 	    default:
 		/* This can't happen. */
