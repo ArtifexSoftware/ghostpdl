@@ -1315,6 +1315,15 @@ Examples :
 /STHeiti-Regular /SimHei ;<br>
 </code></blockquote>
 
+<p>The win32 installer of recent version of ghostscript has a checkbox for
+"Use Windows TrueType fonts for Chinese, Japanese and Korean" to optionally update
+lib/cidfmap with the common CJK fonts provided by Microsoft products. The script
+can also be run separately (e.g. against a network drive with windows CJK fonts):
+
+<blockquote><code>
+gswin32c -q -dBATCH -sFONTDIR=c:/windows/fonts -sCIDFMAP=lib/cidfmap lib/mkcidfm.ps
+</code></blockquote>
+
 <p>
 Note that the font file path uses Postscript syntax.
 Because of this, backslashes in the paths must be 
