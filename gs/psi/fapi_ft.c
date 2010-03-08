@@ -330,7 +330,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	face->ft_inc_int->object->metrics_type = a_char_ref->metrics_type;
     }
 
-    ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_SCALE | FT_LOAD_NO_SYNTHETIC_METRICS);
+    ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_SCALE);
     if (!ft_error && a_metrics)
     {
 	a_metrics->bbox_x0 = ft_face->glyph->metrics.horiBearingX;
