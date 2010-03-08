@@ -422,20 +422,51 @@ make_rotation(FT_Matrix *a_transform, const FT_Vector *a_vector)
 static void
 transform_decompose(FT_Matrix *a_transform, FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
 {
-    float a = a_transform->xx / 65536.0;
-    float b = a_transform->xy / 65536.0;
-    float c = a_transform->yx / 65536.0;
-    float d = a_transform->yy / 65536.0;
-
-    float scale = sqrt(fabs(a * d - b * c));
-
-    a_transform->xx = a / scale * 65536.0;
-    a_transform->xy = b / scale * 65536.0;
-    a_transform->yx = c / scale * 65536.0;
-    a_transform->yy = d / scale * 65536.0;
-
-    *a_x_scale = scale * 65536.0;
-    *a_y_scale = scale * 65536.0;
+    double scalex, scaley, fact = 1.0;
+    FT_Matrix ftscale_mat;
+    
+    scalex = hypot ((double)a_transform->xx, (double)a_transform->xy) / 65536.0;
+    scaley = hypot ((double)a_transform->yx, (double)a_transform->yy) / 65536.0;
+    
+    /* FT clamps the width and height to a lower limit of 1.0 units
+     * (note: as FT stores it in 64ths of a unit, that is 64)
+     * So if either the width or the height are <1.0 here, we scale
+     * the width and height appropriately, and then compensate using
+     * the "final" matrix for FT
+     */
+    /* We use 1 1/64th to calculate the scale, so that we *guarantee* the
+     * scalex/y we calculate will be >64 after rounding.
+     */
+    if (scalex > scaley)
+    {
+        if (scaley < 1.0)
+	{
+	    fact = 1.016 / scaley;
+	    scaley = scaley * fact;
+	    scalex = scalex * fact;
+	}
+    }
+    else
+    {
+        if (scalex < 1.0)
+	{
+	    fact = 1.016 / scalex;
+	    scalex = scalex * fact;
+	    scaley = scaley * fact;
+	}
+    }
+    
+    ftscale_mat.xx = ((1.0 / scalex)) * 65536.0;
+    ftscale_mat.xy = 0;
+    ftscale_mat.yx = 0;
+    ftscale_mat.yy = ((1.0 / scaley)) * 65536.0;
+    
+    FT_Matrix_Multiply (a_transform, &ftscale_mat);
+    memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));
+        
+    /* Return values ready scaled for FT */
+    *a_x_scale = scalex * 64;
+    *a_y_scale = scaley * 64;
 }
 
 /*
@@ -580,10 +611,9 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
      */
     if (face)
     {
-	static const FT_Matrix ft_reflection = { 65536, 0, 0, -65536 };
 	FT_Matrix ft_transform;
 	FT_F26Dot6 width, height;
-
+	
 	/* Convert the GS transform into an FT transform.
 	 * Ignore the translation elements because they contain very large values
 	 * derived from the current transformation matrix and so are of no use.
@@ -597,10 +627,7 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
 	 * transform.
 	 */
 	transform_decompose(&ft_transform, &width, &height);
-
-	/* Convert width and height to 64ths of pixels and set the FreeType sizes. */
-	width >>= 10;
-	height >>= 10;
+		
 	ft_error = FT_Set_Char_Size(face->ft_face, width, height,
 		a_font_scale->HWResolution[0] >> 16,
 		a_font_scale->HWResolution[1] >> 16);
