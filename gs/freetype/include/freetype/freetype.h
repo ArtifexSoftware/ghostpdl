@@ -2480,7 +2480,6 @@ FT_BEGIN_HEADER
 #define FT_LOAD_MONOCHROME                   0x1000
 #define FT_LOAD_LINEAR_DESIGN                0x2000
 #define FT_LOAD_NO_AUTOHINT                  0x8000U
-#define FT_LOAD_NO_SYNTHETIC_METRICS         0x10000U
 
   /* */
 
