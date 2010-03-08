@@ -494,11 +494,28 @@ def
   } loop
 } def
 
+% Convert string (font file name) to lowercase, take care not to touch
+% non-upper case letters. There are a few similiar routines elsewhere
+% for reference:
+%   /.ToLower in lib/pdf2dsc.ps
+%   /toupper in lib/printafm.ps
+%   /.lowerstring in Resource/Init/gs_fonts.ps
+/lowercase {
+  dup length 1 sub  -1 0 {
+      1 index exch 2 copy
+      get
+      dup dup 65 ge exch 90 le and {
+          2#00100000 or
+          } if
+      put
+      } for
+} def
 
 % Check if a font basename matches one of the possible cid substitutions.  
 % If it does, add the font and full path to the foundfonts dictionary
 /checkfont {
   dup basename
+  lowercase
   cidsubs
   {
     /Path get
