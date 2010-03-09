@@ -32,7 +32,7 @@ nogc_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 static void
 nogc_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 {
-    return gs_free_object(mem, str, cname);
+    gs_free_object(mem, str, cname);
 }
 
 static byte *
@@ -80,12 +80,12 @@ gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 
 	mem_prev = mem;
         set_procs(mem);
-        gs_consolidate_free(mem);
+        gs_consolidate_free((gs_memory_t *)mem);
 	if (mem->stable_memory != (gs_memory_t *)mem &&
 	    mem->stable_memory != 0
 	    ) {
-            set_procs(mem->stable_memory);
-            gs_consolidate_free(mem->stable_memory);
+            set_procs((gs_ref_memory_t *)mem->stable_memory);
+            gs_consolidate_free((gs_memory_t *)mem->stable_memory);
         }
     }
 }

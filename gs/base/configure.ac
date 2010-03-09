@@ -77,6 +77,9 @@ CFLAGS=$save_cflags
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
 
+dnl pkg-config is used for several tests now...
+AC_PATH_PROG(PKGCONFIG, pkg-config)
+
 dnl --------------------------------------------------  
 dnl Allow excluding the contributed drivers
 dnl --------------------------------------------------  
@@ -283,9 +286,6 @@ if test x$with_libpaper != xno; then
     CFLAGS="$CFLAGS -DUSE_LIBPAPER"
 fi
 
-dnl pkg-config is used for several tests now...
-AC_PATH_PROG(PKGCONFIG, pkg-config)
-
 dnl Fontconfig support
 HAVE_FONTCONFIG=""
 FONTCONFIG_CFLAGS=""
@@ -322,6 +322,49 @@ AC_SUBST(FONTCONFIG_LIBS)
 
 AC_CHECK_LIB(dl, dlopen)
 
+AC_ARG_ENABLE([freetype], AC_HELP_STRING([--enable-freetype],
+	[Use freetype for font rasterization]))
+FT_BRIDGE=0
+SHARE_FT=0
+FTSRCDIR=
+FT_CFLAGS=
+FT_LIBS=
+if test x"$enable_freetype" == xyes; then
+  AC_MSG_CHECKING([for local freetype library source])
+  dnl We prefer freetype2 over freetype, so it is easy to override
+  dnl the included freetype source with a checkout from upstream.
+  for dir in freetype2 freetype; do
+    if test -f $dir/src/base/ftbbox.c; then
+	AC_MSG_RESULT([$dir])
+	SHARE_FT=0
+	FTSRCDIR="$dir"
+	FT_CFLAGS="-I$dir/include"
+	FT_BRIDGE=1
+	break;
+    fi
+  done
+  if test -z $FTSRCDIR; then
+    AC_MSG_RESULT([no])
+    if test "x$PKGCONFIG" != x; then
+	AC_MSG_CHECKING(for system freetype with pkg-config)
+	    if $PKGCONFIG --exists freetype2; then
+		AC_MSG_RESULT(yes)
+		FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
+		FT_LIBS="`$PKGCONFIG --libs freetype2`"
+		FT_BRIDGE=1
+	    else
+		AC_MSG_RESULT(no)
+		AC_MSG_WARN([freetype library source not found...using native rasterizer])
+	    fi
+    fi
+  fi
+fi
+AC_SUBST(FT_BRIDGE)
+AC_SUBST(SHARE_FT)
+AC_SUBST(FTSRCDIR)
+AC_SUBST(FT_CFLAGS)
+AC_SUBST(FT_LIBS)
+  
 AC_MSG_CHECKING([for local jpeg library source])
 dnl At present, we give the local source priority over the shared
 dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.

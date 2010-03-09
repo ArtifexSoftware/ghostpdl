@@ -34,10 +34,15 @@
 #	    look for files in the current directory first).
 #	GS_DOCDIR - the directory where documentation will be available
 #	    at run time.
+#	FTSRCDIR - the directory where there the FreeType library
+#	    source code is stored, relative to the source directory.
 #	JSRCDIR - the directory where the IJG JPEG library source code
 #	    is stored (at compilation time).
 #	PNGSRCDIR - the same for libpng.
 #	ZSRCDIR - the same for zlib.
+#	SHARE_FT - normally 0; if set to 1, asks the linker to use
+#	    and existing compiled freetype library instead of compiling
+#	    in the source code availabel in FTSRCDIR.
 #	SHARE_JPEG - normally 0; if set to 1, asks the linker to use
 #	    an existing compiled libjpeg (-ljpeg) instead of compiling and
 #	    linking libjpeg explicitly.  (We strongly recommend against
@@ -204,6 +209,8 @@
 #	    such as paths that must be defined by all top-level makefiles.
 
 #**************** PATCHES
+FTGENDIR=$(GLGENDIR)
+FTOBJDIR=$(GLOBJDIR)
 JGENDIR=$(GLGENDIR)
 JOBJDIR=$(GLOBJDIR)
 PNGGENDIR=$(GLGENDIR)

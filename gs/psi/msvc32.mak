@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2007 Artifex Software, Inc.
+#  Copyright (C) 2001-2010 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -176,6 +176,16 @@ GSDLL=gsdll32
 
 !ifndef MAKEDLL
 MAKEDLL=1
+!endif
+
+# Define the directory where the FreeType2 library sources are stored.
+# See freetype.mak for more information.
+
+!ifndef FTSRCDIR
+FTSRCDIR=freetype
+!ifndef FT_CFLAGS
+FT_CFLAGS=-I$(FTSRCDIR)\include
+!endif
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,

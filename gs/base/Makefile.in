@@ -144,6 +144,16 @@ GS=@GS@@EXEEXT@
 DEBUGRELDIR=../debugobj
 PGRELDIR=../pgobj
 
+# Define whether to compile in the FreeType library, and if so, where
+# the source tree is location. Otherwise, what library name to use
+# in linking to a shared implementation.
+
+FT_BRIDGE=@FT_BRIDGE@
+SHARE_FT=@SHARE_FT@
+FTSRCDIR=@FTSRCDIR@
+FT_CFLAGS=@FT_CFLAGS@
+FT_LIBS=@FT_LIBS@
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
@@ -496,6 +506,7 @@ include $(GLSRCDIR)/gs.mak
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
+include $(GLSRCDIR)/freetype.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
@@ -520,7 +531,7 @@ include $(GLSRCDIR)/unixinst.mak
 # Clean up after the autotools scripts
 # configure.ac and Makefile.in are symlinks from a subdir 
 # (created by autogen.sh) and so are safe to remove
-distclean : clean config-clean soclean debugclean
+distclean : clean config-clean soclean pgclean debugclean
 	-$(RM_) -r $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
 	-$(RM_) -r autom4te.cache
 	-$(RM_) config.log config.status

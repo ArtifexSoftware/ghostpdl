@@ -7,6 +7,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef HAVE_LIBPNG
+#include <png.h>
+#endif
+
 #define MINX (300)
 #define MINY (320)
 #define MAXX (600)
@@ -30,7 +34,7 @@ static void *Malloc(size_t size) {
     
     block = malloc(size);
     if (block == NULL) {
-        fprintf(stderr, "Failed to malloc %u bytes\n", (unsigned int) size);
+        fprintf(stderr, "Failed to malloc %u bytes\n", (unsigned int)size);
         exit(EXIT_FAILURE);
     }
     return block;
@@ -136,9 +140,11 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
     }
   }
 
-  dst_bpp = src_bpp;
-  if ((src_bpp < 8) || (src_bpp == 24))
+  if (src_bpp == 24)
       src_bpp = 32;
+  dst_bpp = src_bpp;
+  if (dst_bpp <= 8)
+      dst_bpp = 32;
 
   /* Read the palette */
   if (src_bpp <= 8) {
@@ -157,7 +163,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
   }
 
   byte_width  = (width+7)>>3;
-  word_width  = width * (src_bpp>>3);
+  word_width  = width * ((dst_bpp+7)>>3);
   word_width += 3;
   word_width &= ~3;
 
@@ -264,7 +270,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
   *span       = word_width;
   *width_ret  = width;
   *height_ret = height;
-  *bpp        = src_bpp;
+  *bpp        = dst_bpp;
 
   return dst - word_width*height;
 }
@@ -298,116 +304,6 @@ static void *bmp_read(ImageReader *im,
     data = bmp_load_sub(bmp+14, width, height, span, bpp, offset-14, filelen);
     free(bmp);
     return data;
-}
-
-static void pbm_read(FILE          *file,
-                     int            width,
-                     int            height,
-                     int            maxval,
-                     unsigned char *bmp)
-{
-    int w;
-    int byte, mask, g;
-    
-    for (; height>0; height--) {
-        mask = 0;
-        for (w=width; w>0; w--) {
-            if (mask == 0)
-            {
-                byte = fgetc(file);
-                mask = 0x80;
-            }
-            g = byte & mask;
-            if (g != 0)
-                g = 255;
-            mask >>= 1;
-            *bmp++ = g;
-            *bmp++ = g;
-            *bmp++ = g;
-            *bmp++ = 0;
-        }
-    }
-}
-
-static void pgm_read(FILE          *file,
-                     int            width,
-                     int            height,
-                     int            maxval,
-                     unsigned char *bmp)
-{
-    int w;
-    
-    if (maxval == 255)
-    {
-        for (; height>0; height--) {
-            for (w=width; w>0; w--) {
-                int g = fgetc(file);
-                *bmp++ = g;
-                *bmp++ = g;
-                *bmp++ = g;
-                *bmp++ = 0;
-            }
-        }
-    } else if (maxval < 255) {
-        for (; height>0; height--) {
-            for (w=width; w>0; w--) {
-                int g = fgetc(file)*255/maxval;
-                *bmp++ = g;
-                *bmp++ = g;
-                *bmp++ = g;
-                *bmp++ = 0;
-            }
-        }
-    } else {
-        for (; height>0; height--) {
-            for (w=width; w>0; w--) {
-                int g = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
-                *bmp++ = g;
-                *bmp++ = g;
-                *bmp++ = g;
-                *bmp++ = 0;
-            }
-        }
-    }
-}
-
-static void ppm_read(FILE          *file,
-                     int            width,
-                     int            height,
-                     int            maxval,
-                     unsigned char *bmp)
-{
-    int w;
-    
-    if (maxval == 255)
-    {
-        for (; height>0; height--) {
-            for (w=width; w>0; w--) {
-                *bmp++ = fgetc(file);
-                *bmp++ = fgetc(file);
-                *bmp++ = fgetc(file);
-                *bmp++ = 0;
-            }
-        }
-    } else if (maxval < 255) {
-        for (; height>0; height--) {
-            for (w=width; w>0; w--) {
-                *bmp++ = fgetc(file)*255/maxval;
-                *bmp++ = fgetc(file)*255/maxval;
-                *bmp++ = fgetc(file)*255/maxval;
-                *bmp++ = 0;
-            }
-        }
-    } else {
-        for (; height>0; height--) {
-            for (w=width; w>0; w--) {
-                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
-                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
-                *bmp++ = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
-                *bmp++ = 0;
-            }
-        }
-    }
 }
 
 static int get_uncommented_char(FILE *file)
@@ -449,6 +345,244 @@ static int get_pnm_num(FILE *file)
     return val;
 }
 
+static void pbm_read(FILE          *file,
+                     int            width,
+                     int            height,
+                     int            maxval,
+                     unsigned char *bmp)
+{
+    int w;
+    int byte, mask, g;
+    
+    bmp += width*(height-1)<<2;
+    
+    for (; height>0; height--) {
+        mask = 0;
+        for (w=width; w>0; w--) {
+            if (mask == 0)
+            {
+                byte = fgetc(file);
+                mask = 0x80;
+            }
+            g = byte & mask;
+            if (g != 0)
+                g = 255;
+            g=255-g;
+            mask >>= 1;
+            *bmp++ = g;
+            *bmp++ = g;
+            *bmp++ = g;
+            *bmp++ = 0;
+        }
+        bmp -= width<<3;
+    }
+}
+
+static void pgm_read(FILE          *file,
+                     int            width,
+                     int            height,
+                     int            maxval,
+                     unsigned char *bmp)
+{
+    int w;
+    
+    bmp += width*(height-1)<<2;
+    
+    if (maxval == 255)
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = fgetc(file);
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    } else if (maxval < 255) {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = fgetc(file)*255/maxval;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    } else {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    }
+}
+
+static void ppm_read(FILE          *file,
+                     int            width,
+                     int            height,
+                     int            maxval,
+                     unsigned char *bmp)
+{
+    int r,g,b;
+    int w;
+
+    bmp += width*(height-1)<<2;
+    
+    if (maxval == 255)
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                r = fgetc(file);
+                g = fgetc(file);
+                b = fgetc(file);
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    } else if (maxval < 255) {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                r = fgetc(file)*255/maxval;
+                g = fgetc(file)*255/maxval;
+                b = fgetc(file)*255/maxval;
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    } else {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                r = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                g = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                b = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    }
+}
+
+static void pbm_read_plain(FILE          *file,
+                           int            width,
+                           int            height,
+                           int            maxval,
+                           unsigned char *bmp)
+{
+    int w;
+    int g;
+    
+    bmp += width*(height-1)<<2;
+    
+    for (; height>0; height--) {
+        for (w=width; w>0; w--) {
+            g = get_pnm_num(file);
+            if (g != 0)
+                g = 255;
+            *bmp++ = g;
+            *bmp++ = g;
+            *bmp++ = g;
+            *bmp++ = 0;
+        }
+        bmp -= width<<3;
+    }
+}
+
+static void pgm_read_plain(FILE          *file,
+                           int            width,
+                           int            height,
+                           int            maxval,
+                           unsigned char *bmp)
+{
+    int w;
+    
+    bmp += width*(height-1)<<2;
+    
+    if (maxval == 255)
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = get_pnm_num(file);
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    } else {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                int g = get_pnm_num(file)*255/maxval;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = g;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    }
+}
+
+static void ppm_read_plain(FILE          *file,
+                           int            width,
+                           int            height,
+                           int            maxval,
+                           unsigned char *bmp)
+{
+    int r,g,b;
+    int w;
+    
+    bmp += width*(height-1)<<2;
+    
+    if (maxval == 255)
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                r = get_pnm_num(file);
+                g = get_pnm_num(file);
+                b = get_pnm_num(file);
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    }
+    else
+    {
+        for (; height>0; height--) {
+            for (w=width; w>0; w--) {
+                r = get_pnm_num(file)*255/maxval;
+                g = get_pnm_num(file)*255/maxval;
+                b = get_pnm_num(file)*255/maxval;
+                *bmp++ = b;
+                *bmp++ = g;
+                *bmp++ = r;
+                *bmp++ = 0;
+            }
+            bmp -= width<<3;
+        }
+    }
+}
+
 static void *pnm_read(ImageReader *im,
                       int         *width,
                       int         *height,
@@ -469,17 +603,14 @@ static void *pnm_read(ImageReader *im,
     switch (get_pnm_num(im->file))
     {
         case 1:
-            /* Plain PBM - we don't support that */
-            fprintf(stderr, "Plain PBM unsupported!\n");
-            return NULL;
+            read = pbm_read_plain;
+            break;
         case 2:
-            /* Plain PGM - we don't support that */
-            fprintf(stderr, "Plain PGM unsupported!\n");
-            return NULL;
+            read = pgm_read_plain;
+            break;
         case 3:
-            /* Plain PPM - we don't support that */
-            fprintf(stderr, "Plain PPM unsupported!\n");
-            return NULL;
+            read = ppm_read_plain;
+            break;
         case 4:
             read = pbm_read;
             break;
@@ -876,12 +1007,12 @@ static void save_bmp(unsigned char *data,
                      int            bpp,
                      char          *str)
 {
-    FILE *file;
-    char  bmp[14+40];
-    int   word_width;
-    int   src_bypp;
-    int   width, height;
-    int   x, y;
+    FILE          *file;
+    unsigned char  bmp[14+40];
+    int            word_width;
+    int            src_bypp;
+    int            width, height;
+    int            x, y;
 
     file = fopen(str, "wb");
     if (file == NULL)
@@ -942,6 +1073,82 @@ static void save_bmp(unsigned char *data,
     }
     fclose(file);
 }
+
+#ifdef HAVE_LIBPNG
+static void save_png(unsigned char *data,
+                     BBox          *bbox,
+                     int            span,
+                     int            bpp,
+                     char          *str)
+{
+    FILE *file;
+    png_structp png;
+    png_infop   info;
+    png_bytep   *rows;
+    int   word_width;
+    int   src_bypp;
+    int   bpc;
+    int   width, height;
+    int   y;
+    
+    file = fopen(str, "wb");
+    if (file == NULL)
+        return;
+
+    png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (png == NULL) {
+        fclose(file);
+        return;
+    }
+    info = png_create_info_struct(png);
+    if (info == NULL)
+        /* info being set to NULL above makes this safe */
+        goto png_cleanup;
+    
+    /* libpng using longjmp() for error 'callback' */
+    if (setjmp(png_jmpbuf(png)))
+        goto png_cleanup;
+    
+    /* hook the png writer up to our FILE pointer */
+    png_init_io(png, file);
+    
+    /* fill out the image header */
+    width  = bbox->xmax - bbox->xmin;
+    height = bbox->ymax - bbox->ymin;
+    bpc = 8; /* FIXME */
+    png_set_IHDR(png, info, width, height, bpc, PNG_COLOR_TYPE_RGB,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+                 PNG_FILTER_TYPE_DEFAULT);
+
+    /* fill out pointers to each row */
+    /* we use bmp coordinates where the zero-th row is at the bottom */
+    src_bypp = (bpp == 16 ? 2 : 4);
+    if (bpp == 16)
+        word_width = width*2;
+    else
+        word_width = width*3;
+    word_width += 3;
+    word_width &= ~3;
+    rows = malloc(sizeof(*rows)*height);
+    if (rows == NULL)
+        goto png_cleanup;
+    for (y = 0; y < height; y++)
+      rows[height - y - 1] = &data[(y + bbox->ymin)*span + bbox->xmin * src_bypp - 1];
+    png_set_rows(png, info, rows);
+    
+    /* write out the image */
+    png_write_png(png, info,
+        PNG_TRANSFORM_STRIP_FILLER_BEFORE| 
+        PNG_TRANSFORM_BGR, NULL);
+
+    free(rows);
+
+png_cleanup:
+    png_destroy_write_struct(&png, &info);
+    fclose(file);
+    return;
+}
+#endif /* HAVE_LIBPNG */
 
 int main(int argc, char *argv[])
 {
@@ -1102,10 +1309,17 @@ int main(int argc, char *argv[])
                 rediff(bmp, bmp2, s, bpp, boxlist);
                 if (!BBox_valid(boxlist))
                     continue;
+#ifdef HAVE_LIBPNG
+                sprintf(str1, "%s.%05d.png", argv[3], n);
+                sprintf(str2, "%s.%05d.png", argv[3], n+1);
+                save_png(bmp,  boxlist, s, bpp, str1);
+                save_png(bmp2, boxlist, s, bpp, str2);
+#else
                 sprintf(str1, "%s.%05d.bmp", argv[3], n);
                 sprintf(str2, "%s.%05d.bmp", argv[3], n+1);
                 save_bmp(bmp,  boxlist, s, bpp, str1);
                 save_bmp(bmp2, boxlist, s, bpp, str2);
+#endif
                 sprintf(str4, "%s.%05d.meta", argv[3], n);
                 save_meta(boxlist, str4, w, h, imagecount);
                 n += 3;
@@ -1121,8 +1335,13 @@ int main(int argc, char *argv[])
                 boxlist++;
                 if (!BBox_valid(boxlist))
                     continue;
+#ifdef HAVE_LIBPNG
+                sprintf(str3, "%s.%05d.png", argv[3], n+2);
+                save_png(bmp, boxlist, s, bpp, str3);
+#else
                 sprintf(str3, "%s.%05d.bmp", argv[3], n+2);
                 save_bmp(bmp, boxlist, s, bpp, str3);
+#endif
                 n += 3;
             }
         }

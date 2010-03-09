@@ -439,13 +439,18 @@ my %rules=(
   'pcl' => 2,
   'pxl' => 2,
   'urwfonts' => 2,
-  'pl' => 15,
-  'main' => 15,
-  'common' => 15,
+  'pl' => 14,
+  'main' => 2,
+  'common' => 14,
   'gs/psi' => 1,
   'gs/base' => 15,
-  'gs/Resource' => 15
-  );
+  'gs/Resource' => 15,
+  'gs/doc' => 0,
+# 'gs/toolbin' => 0,
+  'gs/examples' => 0,
+  'language_switch' => 0,
+  'tools' => 0
+);
 
 #my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
 #my $currentRev2=`svn info ghostpdl/gs | grep "Last Changed Rev" | awk '{ print \$4} '`;
@@ -471,6 +476,7 @@ if (!$regression) {
 my $normalRegression=0;
 my $icc_workRegression=0;
 my $userRegression="";
+my $bmpcmp=0;
 my $mupdfRegression=0;
 my $updateBaseline=0;
 my $userName="";
@@ -511,11 +517,11 @@ if ($regression =~ m/svn (\d+)/) {
           mylog "$s: $rules{$t}\n";
           $set|=$rules{$t};
         } else {
-#         mylog "$s: missing, testing all\n";
-#         $set=15;
+          mylog "$s: missing, testing all\n";
+          $set=15;
         }
       } else {
-#       $set=15;
+        $set=15;
       }
     }
   }
@@ -581,7 +587,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
   }
 
   if ($icc_workRegression) {
-    open(F,">revision.gs");
+    open(F,">icc_workRevision.gs");
     print F "local cluster regression icc_work-r$rev (xefitra)\n";
     close(F);
   }
@@ -613,7 +619,12 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
     delete $machines{$_} if (stat("$_.down"));
   }
 
-  mylog Dumper(\%machines) if ($verbose);
+# mylog Dumper(\%machines) if ($verbose);
+  if ($verbose) {
+    foreach (sort keys %machines) {
+      mylog("  $_\n");
+    }
+  }
 
   my $startTime;
   my %doneTime;
@@ -625,10 +636,10 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
 
     mylog "running with ".(scalar keys %machines)." machines\n" if ($verbose);
 
-    if (scalar keys %machines==0) {
+    if (scalar keys %machines<=2) {
       sleep 600;
       unlink $runningSemaphore;
-      die "There aren't any cluster machines available"
+      die "There aren't enough cluster machines available"
     }
 
     checkPID();
@@ -637,6 +648,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       my @a=split ' ',$userRegression,2;
       $userName=$a[0];
       $product=$a[1];
+      $bmpcmp=1 if ($product eq "bmpcmp");
+      $product="bmpcmp $userName" if ($bmpcmp);
       mylog "userName=$userName product=$product\n" if ($verbose);
       my $t=`date +\"%D %H:%M:%S\"`;
       chomp $t;
@@ -653,6 +666,28 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       unlink $runningSemaphore;
       exit;
     }
+
+if ($bmpcmp) {
+`head -1000 jobs >jobs.tmp ; mv jobs.tmp jobs`;
+        my $gs="";
+        my $pcl="";
+        my $xps="";
+        my $gsBin="gs/bin/gs";
+        my $pclBin="gs/bin/pcl6";
+        my $xpsBin="gs/bin/gxps";
+        if (open(F2,"<jobs")) {
+          while (<F2>) {
+            chomp;
+            $gs="gs " if (m/$gsBin/);
+            $pcl="pcl " if (m/$pclBin/);
+            $xps="xps " if (m/$xpsBin/);
+          }
+          close(F2);
+          $product=$gs.$pcl.$xps;
+        }
+mylog "done checking jobs, product=$product\n";
+        `touch bmpcmp.tmp ; rm -fr bmpcmp.tmp ; mv bmpcmp bmpcmp.tmp ; mkdir bmpcmp ; rm -fr bmpcmp.tmp &`;
+}
 
     checkPID();
     foreach (keys %machines) {
@@ -682,6 +717,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
         print F "mupdf\t$rev\t$product";
       } elsif ($updateBaseline) {
         print F "svn\thead\t$product";
+      } elsif ($bmpcmp) {
+        print F "user\t$userName\t$product\n";
       } else {
         print F "user\t$userName\t$product\n";
       }
@@ -708,8 +745,13 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
     %doneTime=();
     $abort=0;
     $startTime=time;
-    mylog Dumper(\%machines) if ($verbose);
     mylog "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
+#   mylog Dumper(\%machines) if ($verbose);
+    if ($verbose) {
+      foreach (sort keys %machines) {
+        mylog("  $_\n");
+      }
+    }
 
     use IO::Socket;
     use Net::hostent;
@@ -788,7 +830,9 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
               mylog "setting tempDone to 1\n";
             }
           }
-          $jobsPerRequest=50 if (scalar(@jobs)<2000);
+          $jobsPerRequest=250;
+          $jobsPerRequest= 50 if (scalar(@jobs)<2000);
+          $jobsPerRequest= 10 if ($bmpcmp);
           for (my $i=0;  $i<$jobsPerRequest && scalar(@jobs);  $i++) {
             my $a=shift @jobs;
             print $client $a;
@@ -950,11 +994,15 @@ sleep(10);
       $logs.=" $_.log $_.out";
       $tabs.=" $_.tab";
     } else {
-      mylog "ERROR: log or out missing for $_\n";
+      if ($failOccured) {
+        mylog "Warning: $_.log or $_.out missing (ignoring because failOccured is true)\n";
+      } else {
+        mylog "ERROR: $_.log or $_.out missing\n";
 my $a=`ls -ls *log* *out*`;
 mylog "ls:\n$a";
-      unlink $runningSemaphore;
-      exit;
+        unlink $runningSemaphore;
+        exit;
+      }
     }
   }
 
@@ -962,7 +1010,7 @@ mylog "ls:\n$a";
   $userName="email" if ($normalRegression);
   $userName="email" if ($icc_workRegression);
 
-  {
+  if (!$bmpcmp) {
     my @t=split '\n',$footer;
     open(F,">$userName.txt");
     foreach (@t) {
@@ -1036,6 +1084,7 @@ mylog "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elap
       `cp -p icc_work_current.tab archive/icc_work-$rev.tab`;
     } elsif ($mupdfRegression) {
     } elsif ($updateBaseline) {
+    } elsif ($bmpcmp) {
     } else {
       my @a=split ' ',$product;
       my $filter="cat current.tab";
@@ -1052,11 +1101,20 @@ mylog "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elap
       `rm $tabs`;
 
       checkPID();
-mylog "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\"\n";
+
+      mylog "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\"\n";
       `./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\" >>$userName.txt`;
+
+      open(F,">>$userName.txt");
+      print F "\n\nDifferences from previous clusterpush:\n\n";
+      close(F);
+      mylog "now running ./compare.pl temp.tab $usersDir/$userName/temp.tab $elapsedTime $machineCount true \"$product\"\n";
+      `./compare.pl temp.tab $usersDir/$userName/temp.tab 0 1 true \"$product\" >>$userName.txt`;
+
       `mv $logs $usersDir/$userName/.`;
       `cp -p $userName.txt $usersDir/$userName/.`;
       `cp -p $userName.txt results/.`;
+      `mv    $usersDir/$userName/temp.tab $usersDir/$userName/previousTemp.tab`;
       `cp -p temp.tab $usersDir/$userName/.`;
       `cp -p current.tab $usersDir/$userName/.`;
 
@@ -1101,8 +1159,8 @@ mylog("calling cachearchive.pl");
     `./cachearchive.pl >md5sum.cache`;
 mylog("finished cachearchive.pl");
   } elsif ($icc_workRegression) {
-    `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision.gs\`\" <email.txt`;
-    `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat revision.gs\`\" <email.txt`;
+    `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat icc_workRevision.gs\`\" <email.txt`;
+#   `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat icc_workRevision.gs\`\" <email.txt`;
 
     mylog "test complete, performing final svn update\n";
     mylog "svn update icc_work -r$rev\n";
@@ -1114,12 +1172,17 @@ mylog("finished cachearchive.pl");
 
   } elsif ($mupdfRegression) {
   } elsif ($updateBaseline) {
+  } elsif ($bmpcmp) {
+    if (exists $emails{$userName}) {
+      `mail $emails{$userName} -s \"bmpcmp finished\" <$userName.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <$userName.txt`;
+    }
   } elsif ($userRegression) {
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;
       `mail $emails{$userName} -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;
-      `mail marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;
     } else {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
       `mail marcos.woehrmann\@artifex.com -s \"bad username: $userName\" <$userName.txt`;
@@ -1137,11 +1200,16 @@ mylog("finished cachearchive.pl");
 }
 
 checkPID();
-
 removeQueue();
 
 checkPID();
+mylog("removing $runningSemaphore");
 unlink $runningSemaphore;
 
-mylog("removing $runningSemaphore");
+if ($bmpcmp) {
+  `rm -fr ../public_html/$userName`;
+  `mkdir ../public_html/$userName`;
+  `cd ../public_html/$userName; ln -s compare.html index.html`;
+  `./pngs2html.pl bmpcmp ../public_html/$userName`;
+}
 

@@ -147,7 +147,7 @@ FT_BEGIN_HEADER
   /*    FT_OPEN_PATHNAME                                                   */
   /*    FT_OPEN_DRIVER                                                     */
   /*    FT_OPEN_PARAMS                                                     */
-  /*                                                                       */
+	  /*                                                                       */
   /*    FT_LOAD_DEFAULT                                                    */
   /*    FT_LOAD_RENDER                                                     */
   /*    FT_LOAD_MONOCHROME                                                 */

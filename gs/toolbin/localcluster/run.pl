@@ -170,6 +170,7 @@ my $temp2="./temp.tmp";
 my $raster="./temp/raster";
 my $bmpcmpOutput="./temp/bmpcmp";
 my $baselineRaster="./baselineraster";
+my $baselineRaster2="./baselineraster.tmp";
 
 my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
@@ -313,6 +314,8 @@ sub spawn($$) {
       die "fork() failed";
     } elsif ($pid == 0) {
       exec($s);
+#     mylog "exec() failed";  # these produces a perl warning
+#     die "exec() failed";
       exit(0);
     } else {
       if ($timeout==0) {
@@ -362,17 +365,6 @@ if (!$local) {
   mylog($message);
 }
 
-`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
-`rm -f 0*debug.icc`;
-`rm -f 1*debug.icc`;
-`rm -f 2*debug.icc`;
-`rm -f 3*debug.icc`;
-`rm -f 4*debug.icc`;
-`rm -f 5*debug.icc`;
-`rm -f 6*debug.icc`;
-`rm -f 7*debug.icc`;
-`rm -f 8*debug.icc`;
-`rm -f 9*debug.icc`;
 
 if (!$local) {
 if (!$user) {
@@ -440,7 +432,13 @@ if (!$abort) {
   `$cmd`;
 }
 
-mkdir "baselineraster";
+#`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
+`cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
+
+$cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
+print "$cmd\n" if ($verbose);
+`$cmd`;
+
 $cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; mkdir $raster ; mkdir $bmpcmpOutput ; touch raster.yes ; rm -fr $temp2 &";
 print "$cmd\n" if ($verbose);
 `$cmd`;
@@ -973,12 +971,26 @@ if (!$local) {
     `gzip $machine.log`;
     `gzip $machine.out`;
 
-    mylog "about to upload $machine.log.gz";
-    spawn(300,"scp -q -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz");
+    for (my $retry=0;  $retry<5;  $retry++) {
+      mylog "about to upload $machine.log.gz";
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz`;
+      last if ($?==0);
+      my $b=$?;
+      chomp $a;
+      mylog "retry=$retry;  a=$a;  \$?=$b";
+      sleep 10;
+    }
     mylog "done with uploading $machine.log.gz";
 
-    mylog "about to upload $machine.out.gz";
-    spawn(300,"scp -q -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz");
+    for (my $retry=0;  $retry<5;  $retry++) {
+      mylog "about to upload $machine.out.gz";
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1`;
+      last if ($?==0);
+      my $b=$?;
+      chomp $a;
+      mylog "retry=$retry;  a=$a;  \$?=$b";
+      sleep 10;
+    }
     mylog "done with uploading $machine.out.gz";
 
 #   sleep(10);  # another horrible hack, see if this fixes the occasional log file not found problem on the cluster master
