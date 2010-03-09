@@ -382,13 +382,13 @@ while (<INDEX>)
         $page = $meta{"PAGE"};
         $mousemove = "onmousemove=\"coord(event,this,'$images',".$meta{"X"}.",".$meta{"Y"}.")\"";
             
-        print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$images$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap(".($image1).")\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
+        print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$images$suffix\" onMouseOver=\"swap($imageCount)\" onMouseOut=\"swap(".($imageCount+1).")\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
         print $iframe "<TD><IMG SRC=\"out.".($image1)."$suffix\" NAME=\"compare".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove.></TD>\n";
         print $iframe "<TD><IMG SRC=\"out.".($image2)."$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>\n";
         print $iframe "<TR><TD COLSPAN=3><FORM name=\"Coord$images\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>\n";
 
         if (!$iframes) {
-            print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$images$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap(".($image1).")\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
+            print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$images$suffix\" onMouseOver=\"swap($imageCount)\" onMouseOut=\"swap(".($imageCount+1).")\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
             print $html "<TD><IMG SRC=\"$framedir/out.".($image1)."$suffix\" NAME=\"compare".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>\n";
             print $html "<TD><IMG SRC=\"$framedir/out.".($image2)."$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>\n";
             print $html "<TR><TD COLSPAN=3><FORM name=\"Coord$images\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>\n";
