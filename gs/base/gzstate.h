@@ -124,9 +124,6 @@ struct gs_state_s {
     gx_device_halftone           *dev_ht_alt;
     gs_devicen_color_map          color_component_map_alt;
     struct gx_pattern_cache_s    *pattern_cache_alt;
-    bool                          overprint_alt;
-    int                           overprint_mode_alt;
-    int                           effective_overprint_mode_alt;
 
     /* Font: */
 

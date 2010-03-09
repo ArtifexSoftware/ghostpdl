@@ -255,9 +255,6 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     pgs->color[1].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     pgs->in_cachedevice = 0;
-    pgs->overprint_alt = false;
-    pgs->overprint_mode_alt = 0;
-    pgs->effective_overprint_mode_alt = 0;
     gs_swapcolors_quick(pgs); /* To color 1 */
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     gs_swapcolors_quick(pgs); /* To color 0 */

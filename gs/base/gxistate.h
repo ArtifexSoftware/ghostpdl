@@ -250,6 +250,9 @@ typedef struct gs_xstate_trans_flags {
 	bool overprint;\
 	int overprint_mode;\
 	int effective_overprint_mode;\
+	bool overprint_alt;\
+	int overprint_mode_alt;\
+	int effective_overprint_mode_alt;\
 	float flatness;\
 	gs_fixed_point fill_adjust; /* A path expansion for fill; -1 = dropout prevention*/\
 	bool stroke_adjust;\
@@ -288,7 +291,7 @@ struct gs_imager_state_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 1.0,  \
+{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
   1, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
