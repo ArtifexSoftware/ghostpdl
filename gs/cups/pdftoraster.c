@@ -35,6 +35,8 @@ MIT Open Source License  -  http://www.opensource.org/
 #include <stdarg.h>
 #include <fcntl.h>
 #include <cups/raster.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define MAX_CHECK_COMMENT_LINES	20
 #ifndef GS
@@ -123,6 +125,7 @@ int main(int argc, char *argv[], char *envp[]) {
   const char* apos;
   int fds[2];
   int pid;
+  int status;
 
   parseOpts(argc, argv);
 
@@ -502,8 +505,17 @@ int main(int argc, char *argv[], char *envp[]) {
       }
     }
     fclose(fp);
+    close (fds[1]);
   }
 
-  exit(0);
+  if (waitpid (pid, &status, 0) == -1) {
+    perror (GS);
+    exit (1);
+  }
+
+  if (WIFEXITED (status))
+    exit(WEXITSTATUS (status));
+  else
+    exit(1);
 }
 
