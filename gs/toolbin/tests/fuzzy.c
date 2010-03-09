@@ -92,7 +92,7 @@ image_get_rgb_scan_line (Image *image, uchar *buf)
     {
       for (x = 0; x < width; x++)
 	{
-	  uchar g = -!(image_buf[x >> 3] && (128 >> (x & 7)));
+	  uchar g = -!(image_buf[x >> 3] & (128 >> (x & 7)));
 	  buf[x * 3] = g;
 	  buf[x * 3 + 1] = g;
 	  buf[x * 3 + 2] = g;
