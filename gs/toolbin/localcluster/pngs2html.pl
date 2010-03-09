@@ -107,11 +107,11 @@ sub openhtml {
     $setsthisfile = 0;
     open($html, ">", $baseoutdir."/".getfilename($filenum));
 
-    $javascript  = "<SCRIPT LANGUAGE=\"JavaScript\">";
+    $javascript  = "<SCRIPT LANGUAGE=\"JavaScript\"><!--";
     $javascript .= "function swap(n){";
-    $javascript .=   "var n0 = '00000'+3*Math.floor(n/3));";
+    $javascript .=   "var n0 = ('00000'+3*Math.floor(n/3));";
     $javascript .=   "n0=n0.substring(n0.length-5,n0.length);";
-    $javascript .=   "var n1 = '00000'+3*Math.floor(n/3)+1);";
+    $javascript .=   "var n1 = ('00000'+3*Math.floor(n/3)+1);";
     $javascript .=   "n1=n1.substring(n1.length-5,n1.length);";
     $javascript .=   "var x = document.images['compare'+n0].src;";
     $javascript .=   "document.images['compare'+n0].src=document.images['compare'+n1].src;";
@@ -154,7 +154,7 @@ sub openhtml {
     $javascript .=   "}";
     $javascript .=   "document['Coord'+n].X.value = x;";
     $javascript .=   "document['Coord'+n].Y.value = y;";
-    $javascript .= "}</SCRIPT>";
+    $javascript .= "}--></SCRIPT>";
     print $html "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE>";
     print $html "$javascript</HEAD><BODY>\n";
     
@@ -319,7 +319,7 @@ while (<INDEX>)
         $imageCount += 3;
         $image0=sprintf "%05d",$imageCount+0;
         $image1=sprintf "%05d",$imageCount+1;
-        $image2=sprintf "%05d",$imageCount+1;
+        $image2=sprintf "%05d",$imageCount+2;
         $diffs++;
         $setsthisfile++;
     }
