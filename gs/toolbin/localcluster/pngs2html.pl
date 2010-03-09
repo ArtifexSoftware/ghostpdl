@@ -108,14 +108,14 @@ sub openhtml {
     open($html, ">", $baseoutdir."/".getfilename($filenum));
 
     $javascript  = "<SCRIPT LANGUAGE=\"JavaScript\"><!--\n";
-    $javascript .= "function swap(n){";
+    $javascript .= "function swap(m,n){";
     $javascript .=   "var n0 = '00000'+(3*Math.floor(n/3));";
     $javascript .=   "n0=n0.substring(n0.length-5,n0.length);";
     $javascript .=   "var n1 = '00000'+(3*Math.floor(n/3)+1);";
     $javascript .=   "n1=n1.substring(n1.length-5,n1.length);";
-    $javascript .=   "var x = document.images['compare'+n0].src;";
-    $javascript .=   "document.images['compare'+n0].src=document.images['compare'+n1].src;";
-    $javascript .=   "document.images['compare'+n1].src = x;";
+    $javascript .=   "var x = document.images['compare'+m+n0].src;";
+    $javascript .=   "document.images['compare'+m+n0].src=document.images['compare'+m+n1].src;";
+    $javascript .=   "document.images['compare'+m+n1].src = x;";
     $javascript .= "}";
     $javascript .= "var undef;";
     $javascript .= "function findPosX(obj){";
@@ -305,13 +305,13 @@ while (<INDEX>)
         $page = $meta{"PAGE"};
         $mousemove = "onmousemove=\"coord(event,this,'$framedir$image0',".$meta{"X"}.",".$meta{"Y"}.")\"";
             
-        print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$image0$suffix\" onMouseOver=\"swap($imageCount)\" onMouseOut=\"swap(".($imageCount+1).")\" NAME=\"compare$image0\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
+        print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$image0$suffix\" onMouseOver=\"swap($framedir,$imageCount)\" onMouseOut=\"swap($framedir,".($imageCount+1).")\" NAME=\"compare$framedir$image0\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
         print $iframe "<TD><IMG SRC=\"out.".($image1)."$suffix\" NAME=\"compare".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove.></TD>\n";
         print $iframe "<TD><IMG SRC=\"out.".($image2)."$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>\n";
         print $iframe "<TR><TD COLSPAN=3><FORM name=\"Coord$framedir$image0\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>\n";
 
         if (!$iframes) {
-            print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$image0$suffix\" onMouseOver=\"swap($imageCount)\" onMouseOut=\"swap(".($imageCount+1).")\" NAME=\"compare$image0\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
+            print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$image0$suffix\" onMouseOver=\"swap($framedir,$imageCount)\" onMouseOut=\"swap($framedir,".($imageCount+1).")\" NAME=\"compare$framedir$image0\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
             print $html "<TD><IMG SRC=\"$framedir/out.".($image1)."$suffix\" NAME=\"compare".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>\n";
             print $html "<TD><IMG SRC=\"$framedir/out.".($image2)."$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>\n";
             print $html "<TR><TD COLSPAN=3><FORM name=\"Coord$framedir$image0\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>\n";
