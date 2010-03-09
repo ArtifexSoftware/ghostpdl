@@ -81,7 +81,7 @@ sub openhtml {
     $setsthisfile = 0;
     open($html, ">", $baseoutdir."/".getfilename($filenum));
 
-    $javascript  = "<SCRIPT LANGUAGE=\"JavaScript\"><!--";
+    $javascript  = "<SCRIPT LANGUAGE=\"JavaScript\"><!--\n";
     $javascript .= "function swap(n){";
     $javascript .=   "var n0 = ('00000'+3*Math.floor(n/3));"
     $javascript .=   "n0=n0.substring(n0.length-5,n0.length);"
@@ -128,7 +128,7 @@ sub openhtml {
     $javascript .=   "}";
     $javascript .=   "document['Coord'+n].X.value = x;";
     $javascript .=   "document['Coord'+n].Y.value = y;";
-    $javascript .= "}--></SCRIPT>";
+    $javascript .= "}\n--></SCRIPT>";
     print $html "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE>";
     print $html "$javascript</HEAD><BODY>\n";
     
