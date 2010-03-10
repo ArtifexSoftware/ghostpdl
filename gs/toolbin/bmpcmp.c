@@ -1216,140 +1216,136 @@ int main(int argc, char *argv[])
         }
 
         find_changed_bbox(bmp, bmp2, w, h, s, bpp, &bbox);
-        if ((bbox.xmin > bbox.xmax) && (bbox.ymin > bbox.ymax))
+        if ((bbox.xmin <= bbox.xmax) && (bbox.ymin <= bbox.ymax))
         {
-            /* The script will scream for us */
-            /* fprintf(stderr, "No differences found!\n"); */
-            /* Unchanged */
-            exit(EXIT_SUCCESS);
-        }
-        /* Make the bbox sensibly exclusive */
-        bbox.xmax++;
-        bbox.ymax++;
-
-        /* Make bbox2.xmin/ymin be the centre of the changed area */
-        bbox2.xmin = (bbox.xmin + bbox.xmax + 1)/2;
-        bbox2.ymin = (bbox.ymin + bbox.ymax + 1)/2;
-
-        /* Make bbox2.xmax/ymax be the width of the changed area */
-        nx = 1;
-        ny = 1;
-        bbox2.xmax = bbox.xmax - bbox.xmin;
-        if (bbox2.xmax < MINX)
-            bbox2.xmax = MINX;
-        if (bbox2.xmax > MAXX)
-        {
-            nx = 1+(bbox2.xmax/MAXX);
-            bbox2.xmax = MAXX*nx;
-        }
-        bbox2.ymax = bbox.ymax - bbox.ymin;
-        if (bbox2.ymax < MINY)
-            bbox2.ymax = MINY;
-        if (bbox2.ymax > MAXY)
-        {
-            ny = 1+(bbox2.ymax/MAXY);
-            bbox2.ymax = MAXY*ny;
-        }
-
-        /* Now make the real bbox */
-        bbox2.xmin -= bbox2.xmax>>1;
-        if (bbox2.xmin < 0)
-            bbox2.xmin = 0;
-        bbox2.ymin -= bbox2.ymax>>1;
-        if (bbox2.ymin < 0)
-            bbox2.ymin = 0;
-        bbox2.xmax += bbox2.xmin;
-        if (bbox2.xmax > w)
-        {
-            bbox2.xmin -= bbox2.xmax-w;
+            /* Make the bbox sensibly exclusive */
+            bbox.xmax++;
+            bbox.ymax++;
+    
+            /* Make bbox2.xmin/ymin be the centre of the changed area */
+            bbox2.xmin = (bbox.xmin + bbox.xmax + 1)/2;
+            bbox2.ymin = (bbox.ymin + bbox.ymax + 1)/2;
+    
+            /* Make bbox2.xmax/ymax be the width of the changed area */
+            nx = 1;
+            ny = 1;
+            bbox2.xmax = bbox.xmax - bbox.xmin;
+            if (bbox2.xmax < MINX)
+                bbox2.xmax = MINX;
+            if (bbox2.xmax > MAXX)
+            {
+                nx = 1+(bbox2.xmax/MAXX);
+                bbox2.xmax = MAXX*nx;
+            }
+            bbox2.ymax = bbox.ymax - bbox.ymin;
+            if (bbox2.ymax < MINY)
+                bbox2.ymax = MINY;
+            if (bbox2.ymax > MAXY)
+            {
+                ny = 1+(bbox2.ymax/MAXY);
+                bbox2.ymax = MAXY*ny;
+            }
+    
+            /* Now make the real bbox */
+            bbox2.xmin -= bbox2.xmax>>1;
             if (bbox2.xmin < 0)
                 bbox2.xmin = 0;
-            bbox2.xmax = w;
-        }
-        bbox2.ymax += bbox2.ymin;
-        if (bbox2.ymax > h)
-        {
-            bbox2.ymin -= bbox2.ymax-h;
+            bbox2.ymin -= bbox2.ymax>>1;
             if (bbox2.ymin < 0)
                 bbox2.ymin = 0;
-            bbox2.ymax = h;
-        }
-
-        /* bbox */
-        boxlist = Malloc(sizeof(*boxlist) * nx * ny);
-
-        /* Now save the changed bmps */
-        n = basenum;
-        boxlist--;
-        for (w2=0; w2 < nx; w2++)
-        {
-            for (h2=0; h2 < ny; h2++)
+            bbox2.xmax += bbox2.xmin;
+            if (bbox2.xmax > w)
             {
-                boxlist++;
-                boxlist->xmin = bbox2.xmin + MAXX*w2;
-                boxlist->xmax = boxlist->xmin + MAXX;
-                if (boxlist->xmax > bbox2.xmax)
-                    boxlist->xmax = bbox2.xmax;
-                if (boxlist->xmin > boxlist->xmax-MINX)
-                {
-                    boxlist->xmin = boxlist->xmax-MINX;
-                    if (boxlist->xmin < 0)
-                        boxlist->xmin = 0;
-                }
-                boxlist->ymin = bbox2.ymin + MAXY*h2;
-                boxlist->ymax = boxlist->ymin + MAXY;
-                if (boxlist->ymax > bbox2.ymax)
-                    boxlist->ymax = bbox2.ymax;
-                if (boxlist->ymin > boxlist->ymax-MINY)
-                {
-                    boxlist->ymin = boxlist->ymax-MINY;
-                    if (boxlist->ymin < 0)
-                        boxlist->ymin = 0;
-                }
-                rediff(bmp, bmp2, s, bpp, boxlist);
-                if (!BBox_valid(boxlist))
-                    continue;
-#ifdef HAVE_LIBPNG
-                sprintf(str1, "%s.%05d.png", argv[3], n);
-                sprintf(str2, "%s.%05d.png", argv[3], n+1);
-                save_png(bmp,  boxlist, s, bpp, str1);
-                save_png(bmp2, boxlist, s, bpp, str2);
-#else
-                sprintf(str1, "%s.%05d.bmp", argv[3], n);
-                sprintf(str2, "%s.%05d.bmp", argv[3], n+1);
-                save_bmp(bmp,  boxlist, s, bpp, str1);
-                save_bmp(bmp2, boxlist, s, bpp, str2);
-#endif
-                sprintf(str4, "%s.%05d.meta", argv[3], n);
-                save_meta(boxlist, str4, w, h, imagecount);
-                n += 3;
+                bbox2.xmin -= bbox2.xmax-w;
+                if (bbox2.xmin < 0)
+                    bbox2.xmin = 0;
+                bbox2.xmax = w;
             }
-        }
-        boxlist -= nx*ny;
-        diff_bmp(bmp, bmp2, w, h, s, bpp);
-        n = basenum;
-        for (w2=0; w2 < nx; w2++)
-        {
-            for (h2=0; h2 < ny; h2++)
+            bbox2.ymax += bbox2.ymin;
+            if (bbox2.ymax > h)
             {
-                boxlist++;
-                if (!BBox_valid(boxlist))
-                    continue;
-#ifdef HAVE_LIBPNG
-                sprintf(str3, "%s.%05d.png", argv[3], n+2);
-                save_png(bmp, boxlist, s, bpp, str3);
-#else
-                sprintf(str3, "%s.%05d.bmp", argv[3], n+2);
-                save_bmp(bmp, boxlist, s, bpp, str3);
-#endif
-                n += 3;
+                bbox2.ymin -= bbox2.ymax-h;
+                if (bbox2.ymin < 0)
+                    bbox2.ymin = 0;
+                bbox2.ymax = h;
             }
+    
+            /* bbox */
+            boxlist = Malloc(sizeof(*boxlist) * nx * ny);
+    
+            /* Now save the changed bmps */
+            n = basenum;
+            boxlist--;
+            for (w2=0; w2 < nx; w2++)
+            {
+                for (h2=0; h2 < ny; h2++)
+                {
+                    boxlist++;
+                    boxlist->xmin = bbox2.xmin + MAXX*w2;
+                    boxlist->xmax = boxlist->xmin + MAXX;
+                    if (boxlist->xmax > bbox2.xmax)
+                        boxlist->xmax = bbox2.xmax;
+                    if (boxlist->xmin > boxlist->xmax-MINX)
+                    {
+                        boxlist->xmin = boxlist->xmax-MINX;
+                        if (boxlist->xmin < 0)
+                            boxlist->xmin = 0;
+                    }
+                    boxlist->ymin = bbox2.ymin + MAXY*h2;
+                    boxlist->ymax = boxlist->ymin + MAXY;
+                    if (boxlist->ymax > bbox2.ymax)
+                        boxlist->ymax = bbox2.ymax;
+                    if (boxlist->ymin > boxlist->ymax-MINY)
+                    {
+                        boxlist->ymin = boxlist->ymax-MINY;
+                        if (boxlist->ymin < 0)
+                            boxlist->ymin = 0;
+                    }
+                    rediff(bmp, bmp2, s, bpp, boxlist);
+                    if (!BBox_valid(boxlist))
+                        continue;
+#ifdef HAVE_LIBPNG
+                    sprintf(str1, "%s.%05d.png", argv[3], n);
+                    sprintf(str2, "%s.%05d.png", argv[3], n+1);
+                    save_png(bmp,  boxlist, s, bpp, str1);
+                    save_png(bmp2, boxlist, s, bpp, str2);
+#else
+                    sprintf(str1, "%s.%05d.bmp", argv[3], n);
+                    sprintf(str2, "%s.%05d.bmp", argv[3], n+1);
+                    save_bmp(bmp,  boxlist, s, bpp, str1);
+                    save_bmp(bmp2, boxlist, s, bpp, str2);
+#endif
+                    sprintf(str4, "%s.%05d.meta", argv[3], n);
+                    save_meta(boxlist, str4, w, h, imagecount);
+                    n += 3;
+                }
+            }
+            boxlist -= nx*ny;
+            diff_bmp(bmp, bmp2, w, h, s, bpp);
+            n = basenum;
+            for (w2=0; w2 < nx; w2++)
+            {
+                for (h2=0; h2 < ny; h2++)
+                {
+                    boxlist++;
+                    if (!BBox_valid(boxlist))
+                        continue;
+#ifdef HAVE_LIBPNG
+                    sprintf(str3, "%s.%05d.png", argv[3], n+2);
+                    save_png(bmp, boxlist, s, bpp, str3);
+#else
+                    sprintf(str3, "%s.%05d.bmp", argv[3], n+2);
+                    save_bmp(bmp, boxlist, s, bpp, str3);
+#endif
+                    n += 3;
+                }
+            }
+            basenum = n;
+    
+            boxlist -= nx*ny;
+            boxlist++;
+            free(boxlist);
         }
-        basenum = n;
-
-        boxlist -= nx*ny;
-	boxlist++;
-        free(boxlist);
         free(bmp);
         free(bmp2);
         
