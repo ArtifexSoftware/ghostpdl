@@ -162,7 +162,14 @@ typedef struct gx_transfer_s {
 	/* Simple color spaces, stored here for easy access from */ 	\
 	/* gx_concrete_space_CIE */ \
 	gs_color_space *devicergb_cs;\
-	gs_color_space *devicecmyk_cs
+	gs_color_space *devicecmyk_cs;\
+\
+	/* Stores for cached values which correspond to whichever */\
+	/* color isn't in force at the moment */\
+	struct gx_cie_joint_caches_s *cie_joint_caches_alt;\
+	gs_devicen_color_map          color_component_map_alt;\
+	struct gx_pattern_cache_s    *pattern_cache_alt;\
+	gx_device_halftone           *dev_ht_alt
 
 /*
  * Enumerate the reference-counted pointers in a c.r. state.  Note that
@@ -176,7 +183,8 @@ typedef struct gx_transfer_s {
   m(set_transfer.red) m(set_transfer.green)\
   m(set_transfer.blue) m(set_transfer.gray)\
   m(cie_joint_caches)\
-  m(devicergb_cs) m(devicecmyk_cs)
+  m(devicergb_cs) m(devicecmyk_cs)\
+  m(dev_ht_alt) m(cie_joint_caches)
 
 /* Enumerate the pointers in a c.r. state. */
 #define gs_cr_state_do_ptrs(m)\
@@ -185,7 +193,9 @@ typedef struct gx_transfer_s {
   m(5,set_transfer.red) m(6,set_transfer.green)\
   m(7,set_transfer.blue) m(8,set_transfer.gray)\
   m(9,cie_joint_caches) m(10,pattern_cache)\
-  m(11,devicergb_cs) m(12,devicecmyk_cs)
+  m(11,devicergb_cs) m(12,devicecmyk_cs)\
+  m(13,cie_joint_caches_alt) m(14,pattern_cache_alt)\
+  m(15,dev_ht_alt)
   /*
    * We handle effective_transfer specially in gsistate.c since its pointers
    * are not enumerated for garbage collection but they are are relocated.
@@ -194,7 +204,7 @@ typedef struct gx_transfer_s {
  * This count does not include the effective_transfer pointers since they
  * are not enumerated for GC.
  */
-#define st_cr_state_num_ptrs 13
+#define st_cr_state_num_ptrs 16
 
 
 typedef struct gs_devicen_color_map_s {

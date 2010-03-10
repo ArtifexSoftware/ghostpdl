@@ -118,13 +118,6 @@ struct gs_state_s {
         gx_device_color *dev_color;
     } color[2];
     
-    /* Stores for cached values which correspond to whichever of the
-     * above colors isn't in force at the moment */
-    struct gx_cie_joint_caches_s *cie_joint_caches_alt;
-    gx_device_halftone           *dev_ht_alt;
-    gs_devicen_color_map          color_component_map_alt;
-    struct gx_pattern_cache_s    *pattern_cache_alt;
-
     /* Font: */
 
     gs_font *font;
@@ -168,10 +161,8 @@ struct gs_state_s {
   m(6,color[0].color_space) m(7,color[0].ccolor) m(8,color[0].dev_color)\
   m(9,color[1].color_space) m(10,color[1].ccolor) m(11,color[1].dev_color)\
   m(12,font) m(13,root_font) m(14,show_gstate) /*m(---,device)*/\
-  m(15,transparency_group_stack)\
-  m(16,cie_joint_caches_alt) m(17,pattern_cache_alt)\
-  m(18,dev_ht_alt)
-#define gs_state_num_ptrs 19
+  m(15,transparency_group_stack)
+#define gs_state_num_ptrs 16
 
 /* The following macro is used for development purpose for designating places 
    where current point is changed. Clients must not use it. */
