@@ -319,20 +319,6 @@ nodict readonly pop
   FillOverprint setoverprint
   FillConstantAlpha SoftMask .settransparencyparams
 } def
-/setfillstatetext {
-  FillColor FillColorSpace setgcolor setfillblend
-  .swapcolors
-  FillColor FillColorSpace setgcolor setfillblend
-  .swapcolors
-} def
-/setstrokestatetext {
-  StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
-  StrokeConstantAlpha SoftMask .settransparencyparams
-  .swapcolors
-  StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
-  StrokeConstantAlpha SoftMask .settransparencyparams
-  .swapcolors
-} def
 /setfillstate {
   FillColor FillColorSpace setgcolor setfillblend
 } def
@@ -761,9 +747,9 @@ end readonly def
 
 /pdfwrite_textrenderingprocs [
 	% Tr 0 - Fill
-	{ setfillstatetext show } bind
+	{ setfillstate show } bind
 	% Tr 1 - Stroke
-	{ setstrokestatetext
+	{ setstrokestate
         % Need to set the stroke width to a value which gives the correct
         % width under pdfwrite. Pdfwrite uses (in text mode) an identity
         % CTM, so we need to calculate the stroke width which would result
@@ -780,8 +766,8 @@ end readonly def
         .swapcolors show .swapcolors } bind
 	% Tr 2 - Fill then Stroke
 	{ gsave 0 .settextrenderingmode 
-	  setfillstatetext dup show currentpoint 3 -1 roll 
-	  grestore gsave setstrokestatetext
+	  setfillstate dup show currentpoint 3 -1 roll 
+	  grestore gsave setstrokestate
         false charpath 
         % We need to make sure the matrix used for the stroke
         % and therefore stroke width does not include the 
@@ -793,18 +779,18 @@ end readonly def
 	  grestore moveto
 	} bind
 	% Tr 3 - Neither fill nor stroke
-	{ setfillstatetext show } bind
+	{ setfillstate show } bind
 	% Tr 4 - Fill, add to clip
 	{ gsave 0 .settextrenderingmode 
-	  setfillstatetext dup show grestore true charpath } bind
+	  setfillstate dup show grestore true charpath } bind
 	% Tr 5 - Stroke, add to clip
 	{ gsave 1 .settextrenderingmode 
-	  setstrokestatetext dup .swapcolors show .swapcolors grestore
+	  setstrokestate dup .swapcolors show .swapcolors grestore
 	  true charpath } bind
 	% Tr 6 - Fill, stroke, add to clip
 	{ gsave 0 .settextrenderingmode 
-	  setfillstatetext dup show grestore gsave dup 
-	  setstrokestatetext false charpath 
+	  setfillstate dup show grestore gsave dup 
+	  setstrokestate false charpath 
         % We need to make sure the matrix used for the stroke
         % and therefore stroke width does not include the 
         % Text Matrix Tm.
@@ -825,7 +811,7 @@ end readonly def
 	}
 	{
 		TextRenderingMode 0 eq {
-	        { setfillstatetext show }
+	        { setfillstate show }
 	      } {
 	        TextRenderingMode 3 eq {
 	            	% Some PDF files execute 'tm' with a singular matrix,
@@ -842,7 +828,7 @@ end readonly def
 	              dup dup 1 get 0 eq { 3 }{ 2 } ifelse 1 put
 	            } if
 	            setmatrix
-	            2 index setfillstatetext show % Tr was set to graphic state.
+	            2 index setfillstate show % Tr was set to graphic state.
 	            setmatrix 
 		    % now set the currentpoint using the original matrix
 	            gsave
@@ -861,7 +847,7 @@ end readonly def
        % Tr was set to graphic state.
        { FontMatrixNonHV {
            {
-             setfillstatetext
+             setfillstate
              [ TextSpacing WordSpacing 3 index
                {					    % str [... weach wword c undef|ythis xthis|undef
 		 exch % will be removed, unless FontMatrix.xx/yy == 0 (FontMatrixNonHV already true)
@@ -878,10 +864,10 @@ end readonly def
            }
          } {
            WordSpacing 0 eq
-            { { setfillstatetext TextSpacing 0 Vexch 3 -1 roll ashow } }
+            { { setfillstate TextSpacing 0 Vexch 3 -1 roll ashow } }
 	    { TextSpacing 0 eq
-              { { setfillstatetext WordSpacing 0 Vexch 32 4 -1 roll widthshow } }
-              { { setfillstatetext WordSpacing 0 Vexch 32
+              { { setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow } }
+              { { setfillstate WordSpacing 0 Vexch 32
                    TextSpacing 0 Vexch 6 -1 roll awidthshow } }
 	      ifelse
 	    }
@@ -951,13 +937,13 @@ end readonly def
   } ifelse
 } bdef
 
-/tf { setfillstatetext currentpoint fill moveto } bdef
+/tf { setfillstate currentpoint fill moveto } bdef
 /tn { currentpoint newpath moveto } bdef % Obsolete, never used.
 % For stroking characters, temporarily restore the graphics CTM so that
 % the line width will be transformed properly.
 /Tmatrix matrix def
 /tS
- { setstrokestatetext
+ { setstrokestate
    currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke .swapcolors
    setmatrix moveto
  } bdef
