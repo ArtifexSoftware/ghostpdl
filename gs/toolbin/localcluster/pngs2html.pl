@@ -265,7 +265,7 @@ while (<INDEX>)
     print "Processing: $framenum: $file ($res)";
 
     # Add the files to the HTML, converting to PNG if required.
-    my $imageCount = 1;
+    my $imageCount = 0;
     my $image0=sprintf "%05d",$imageCount+0;
     my $image1=sprintf "%05d",$imageCount+1;
     my $image2=sprintf "%05d",$imageCount+2;

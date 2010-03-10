@@ -9,14 +9,14 @@ use POSIX ":sys_wait_h";
 use File::stat;
 
 my $updateTestFiles=1;
-my $dontBuild=1;
+my $dontBuild=0;
 
 my $debug=0;
 my $debug2=0;
 my $verbose=0;
 
 my $wordSize="64";
-my $timeOut=240;
+my $timeOut=300;
 my $maxTimeout=20;  # starting value, is adjusted by value below based on jobs completed
 my $maxTimeoutPercentage=1.0;
 

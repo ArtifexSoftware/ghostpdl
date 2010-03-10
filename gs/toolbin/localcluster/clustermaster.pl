@@ -36,6 +36,13 @@ sub mylog($) {
   print "$d: $s\n";
 }
 
+sub updateStatus($) {
+  my $s=shift;
+  open(F,">status");
+  print F "$s";
+  close(F);
+}
+
 sub removeQueue {
   mylog "removing top element from queue\n";
   open(LOCK,">$lock") || die "can't write to $lock";
@@ -93,14 +100,12 @@ sub checkAbort {
 mylog "abort.job found\n";
     alarm 0;
     unlink "abort.job";
-    open(F,">status");
-    print F "Aborting current job";
-    close(F);
+    updateStatus "Aborting current job";
 
-# removeQueue();  not necessary
-
+#   removeQueue();  not necessary
     abortAll();
- 
+
+    updateStatus "Last job aborted";
     unlink $runningSemaphore;
     exit;
 
@@ -387,9 +392,7 @@ if (open(F,"<$runningSemaphore")) {
   my $t=time;
   if ($t-$fileTime>7200) {
     mylog "semaphore file too old, removing\n";
-    open(F,">status");
-    print F "Regression terminated due to timeout";
-    close(F);
+    updateStatus "Regression terminated due to timeout";
     unlink $runningSemaphore;
   }
   exit;
@@ -446,8 +449,9 @@ my %rules=(
   'gs/base' => 15,
   'gs/Resource' => 15,
   'gs/doc' => 0,
-# 'gs/toolbin' => 0,
+  'gs/toolbin' => 0,
   'gs/examples' => 0,
+  'gs/lib' => 0,
   'language_switch' => 0,
   'tools' => 0
 );
@@ -517,10 +521,11 @@ if ($regression =~ m/svn (\d+)/) {
           mylog "$s: $rules{$t}\n";
           $set|=$rules{$t};
         } else {
-          mylog "$s: missing, testing all\n";
+          mylog "$s ($t): missing, testing all\n";
           $set=15;
         }
       } else {
+        mylog "unknown commit: testing all\n";
         $set=15;
       }
     }
@@ -728,19 +733,17 @@ mylog "done checking jobs, product=$product\n";
     checkPID();
     $startText=`date +\"%D %H:%M:%S\"`;
     chomp $startText;
-    open (F,">status");
     if ($normalRegression) {
-      print F "Regression r$rev started at $startText UTC";
+      updateStatus "Regression r$rev started at $startText UTC";
     } elsif ($icc_workRegression) {
-      print F "Regression icc_work-r$rev started at $startText UTC";
+      updateStatus "Regression icc_work-r$rev started at $startText UTC";
     } elsif ($mupdfRegression) {
-      print F "Regression mupdf-r$rev started at $startText UTC";
+      updateStatus "Regression mupdf-r$rev started at $startText UTC";
     } elsif ($updateBaseline) {
-      print F "Update baseline started at $startText UTC";
+      updateStatus "Update baseline started at $startText UTC";
     } else {
-      print F "Regression $userRegression started at $startText UTC";
+      updateStatus "Regression $userRegression started at $startText UTC";
     }
-    close(F);
 
     %doneTime=();
     $abort=0;
@@ -846,18 +849,16 @@ mylog "done checking jobs, product=$product\n";
           my $percentage=int(($totalJobs-scalar(@jobs))/$totalJobs*100+0.5);
           $s=`date +\"%H:%M:%S\"`;
           chomp $s;
-          open (F,">status");
           if ($normalRegression) {
-            print F "Regression r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($icc_workRegression) {
-            print F "Regression icc_work-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression icc_work-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($mupdfRegression) {
-            print F "Regression mupdf-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression mupdf-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($updateBaseline) {
           } else {
-            print F "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           }
-          close(F);
           checkProblem;
           checkPID();
         }
@@ -947,19 +948,17 @@ mylog "done checking jobs, product=$product\n";
   checkPID();
   $s=`date +\"%H:%M:%S\"`;
   chomp $s;
-  open (F,">status");
   if ($normalRegression) {
-    print F "Regression r$rev started at $startText UTC - finished at $s";
+    updateStatus "Regression r$rev started at $startText UTC - finished at $s";
   } elsif ($icc_workRegression) {
-    print F "Regression icc_work-r$rev started at $startText UTC - finished at $s";
+    updateStatus "Regression icc_work-r$rev started at $startText UTC - finished at $s";
   } elsif ($mupdfRegression) {
-    print F "Regression mupdf-r$rev started at $startText UTC - finished at $s";
+    updateStatus "Regression mupdf-r$rev started at $startText UTC - finished at $s";
   } elsif ($updateBaseline) {
-    print F "Update baseline started at $startText UTC - finished at $s";
+    updateStatus "Update baseline started at $startText UTC - finished at $s";
   } else {
-    print F "Regression $userRegression started at $startText UTC - finished at $s";
+    updateStatus "Regression $userRegression started at $startText UTC - finished at $s";
   }
-  close(F);
 
   checkPID();
   my $buildFail=0;  # did at least one machine report a build failure?
@@ -1207,8 +1206,10 @@ mylog("removing $runningSemaphore");
 unlink $runningSemaphore;
 
 if ($bmpcmp) {
+  `touch ../public_html/$userName`;
   `rm -fr ../public_html/$userName`;
   `mkdir ../public_html/$userName`;
+  `chmod 777 ../public_html/$userName`;
   `cd ../public_html/$userName; ln -s compare.html index.html`;
   `./pngs2html.pl bmpcmp ../public_html/$userName`;
 }

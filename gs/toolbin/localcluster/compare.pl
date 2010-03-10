@@ -361,12 +361,12 @@ print "\n" if (!$first);
     print "\n";
   }
 
-  open(F,">>baselineupdateneeded.lst");
-  while(my $t=shift @baselineUpdateNeeded) {
-    my @a=split ' ',$t;
-    $a[0] =~ s/\//__/g;
-    print F "$a[0]\n";
-  }
-  close(F);
+# open(F,">>baselineupdateneeded.lst");
+# while(my $t=shift @baselineUpdateNeeded) {
+#   my @a=split ' ',$t;
+#   $a[0] =~ s/\//__/g;
+#   print F "$a[0]\n";
+# }
+# close(F);
 }
 
