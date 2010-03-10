@@ -48,6 +48,12 @@ typedef struct FF_face_s
 {
     FT_Face ft_face;
 
+    /* Currently in force scaling/transform for this face */
+    FT_Matrix ft_transform;
+    FT_F26Dot6 width, height;
+    FT_UInt horz_res;
+    FT_UInt vert_res;
+    
     /* If non-null, the incremental interface object passed to FreeType. */
     FT_Incremental_InterfaceRec *ft_inc_int;
 
@@ -337,28 +343,50 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	face->ft_inc_int->object->glyph_metrics_index = index;
 	face->ft_inc_int->object->metrics_type = a_char_ref->metrics_type;
     }
-
-    ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_SCALE);
-    if (!ft_error && a_metrics)
-    {
-	a_metrics->bbox_x0 = ft_face->glyph->metrics.horiBearingX;
-	a_metrics->bbox_y0 = ft_face->glyph->metrics.horiBearingY - ft_face->glyph->metrics.height;
-	a_metrics->bbox_x1 = a_metrics->bbox_x0 + ft_face->glyph->metrics.width;
-	a_metrics->bbox_y1 = a_metrics->bbox_y0 + ft_face->glyph->metrics.height;
-	a_metrics->escapement = ft_face->glyph->metrics.horiAdvance;
-	a_metrics->v_escapement = ft_face->glyph->metrics.vertAdvance;
-	a_metrics->em_x = ft_face->units_per_EM;
-	a_metrics->em_y = ft_face->units_per_EM;
-    }
-
-    /* We have to load the glyph again, scale it correctly, and render it if we need a bitmap. */
+    
+    /* We have to load the glyph, scale it correctly, and render it if we need a bitmap. */
     if (!ft_error)
     {
 	a_fapi_font->char_data = saved_char_data;
 	ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER: FT_LOAD_MONOCHROME);
     }
+    /* Previously we interpreted the glyph unscaled, and derived the metrics from that. Now we only interpret it
+     * once, and work out the metrics from the scaled/hinted outline.
+     */
+    if (!ft_error && a_metrics)
+    {
+        FT_Long hx;
+        FT_Long hy;
+        FT_Long w;
+        FT_Long h;
+        FT_Long hadv;
+        FT_Long vadv;
+
+        /* In order to get the metrics in the form we need them, we have to remove the size scaling
+         * the resolution scaling, and convert to points.
+         */
+        hx = (((double)ft_face->glyph->metrics.horiBearingX * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        hy = (((double)ft_face->glyph->metrics.horiBearingY * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+
+        w = (((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        h = (((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+
+        hadv = (((double)ft_face->glyph->metrics.horiAdvance * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        vadv = (((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+        
+        a_metrics->bbox_x0 = hx;
+	a_metrics->bbox_y0 = hy - h;
+	a_metrics->bbox_x1 = a_metrics->bbox_x0 + w;
+	a_metrics->bbox_y1 = a_metrics->bbox_y0 + h;
+	a_metrics->escapement = hadv;
+	a_metrics->v_escapement = vadv;
+	a_metrics->em_x = ft_face->units_per_EM;
+	a_metrics->em_y = ft_face->units_per_EM;
+    }
+
     if (!ft_error && a_glyph)
 	ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
+
     if (ft_error == FT_Err_Too_Many_Hints) {
 	eprintf1 ("TrueType glyph %d uses more instructions than the declared maximum in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
 	ft_error = 0;
@@ -619,39 +647,39 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
      */
     if (face)
     {
-	FT_Matrix ft_transform;
-	FT_F26Dot6 width, height;
-	
-	/* Convert the GS transform into an FT transform.
-	 * Ignore the translation elements because they contain very large values
-	 * derived from the current transformation matrix and so are of no use.
-	 */
-	ft_transform.xx = a_font_scale->matrix[0];
-	ft_transform.xy = a_font_scale->matrix[2];
-	ft_transform.yx = a_font_scale->matrix[1];
-	ft_transform.yy = a_font_scale->matrix[3];
-
-	/* Split the transform into scale factors and a rotation-and-shear
-	 * transform.
-	 */
-	transform_decompose(&ft_transform, &width, &height);
+        /* Convert the GS transform into an FT transform.
+         * Ignore the translation elements because they contain very large values
+         * derived from the current transformation matrix and so are of no use.
+         */
+        face->ft_transform.xx = a_font_scale->matrix[0];
+        face->ft_transform.xy = a_font_scale->matrix[2];
+        face->ft_transform.yx = a_font_scale->matrix[1];
+        face->ft_transform.yy = a_font_scale->matrix[3];
+        
+        face->horz_res = a_font_scale->HWResolution[0] >> 16;
+        face->vert_res = a_font_scale->HWResolution[1] >> 16;
+        
+        /* Split the transform into scale factors and a rotation-and-shear
+         * transform.
+         */
+        transform_decompose(&face->ft_transform, &face->width, &face->height);
 		
-	ft_error = FT_Set_Char_Size(face->ft_face, width, height,
-		a_font_scale->HWResolution[0] >> 16,
-		a_font_scale->HWResolution[1] >> 16);
-	if (ft_error)
-	{
-	    delete_face(face);
-	    a_font->server_font_data = NULL;
-	    return ft_to_gs_error(ft_error);
-	}
+        ft_error = FT_Set_Char_Size(face->ft_face, face->width, face->height,
+                face->horz_res, face->vert_res);
+        
+        if (ft_error)
+        {
+            delete_face(face);
+            a_font->server_font_data = NULL;
+            return ft_to_gs_error(ft_error);
+        }
 
 	/* Concatenate the transform to a reflection around (y=0) so that it
 	 * produces a glyph that is upside down in FreeType terms, with its
 	 * first row at the bottom. That is what GhostScript needs.
 	 */
 
-	FT_Set_Transform(face->ft_face, &ft_transform, NULL);
+	FT_Set_Transform(face->ft_face, &face->ft_transform, NULL);
     }
 
     /* dpf("get_scaled_font return %d\n", a_font->server_font_data ? 0 : -1); */
