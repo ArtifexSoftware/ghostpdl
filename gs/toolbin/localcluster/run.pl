@@ -9,6 +9,7 @@ use POSIX ":sys_wait_h";
 use File::stat;
 
 my $updateTestFiles=1;
+my $dontBuild=1;
 
 my $debug=0;
 my $debug2=0;
@@ -314,8 +315,6 @@ sub spawn($$) {
       die "fork() failed";
     } elsif ($pid == 0) {
       exec($s);
-#     mylog "exec() failed";  # these produces a perl warning
-#     die "exec() failed";
       exit(0);
     } else {
       if ($timeout==0) {
@@ -365,7 +364,6 @@ if (!$local) {
   mylog($message);
 }
 
-
 if (!$local) {
 if (!$user) {
   updateStatus('Updating test files');
@@ -380,7 +378,6 @@ if (!$user) {
     }
 
   }
-}
 }
 
 $abort=checkAbort;
@@ -431,6 +428,7 @@ if (!$abort) {
   print "$cmd\n" if ($verbose);
   `$cmd`;
 }
+}
 
 #`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
 `cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
@@ -467,10 +465,13 @@ if (!$abort) {
   unlink "$gpdlSource/makexps.out";
   unlink "$gpdlSource/makesvg.out";
 
+if (!$dontBuild) {
   if (-e "./head/bin/gs") {
     `cp -p ./head/bin/* $gsBin/bin/.`;
   }
+}
 
+if (!$dontBuild) {
   if ($products{'gs'}) {
 
     updateStatus('Building Ghostscript');
@@ -495,9 +496,11 @@ if (!$abort) {
       $compileFail.="gs ";
     }
   }
+}
 } 
 
 $abort=checkAbort;
+if (!$dontBuild) {
 if ($products{'pcl'} && !$abort) {
   updateStatus('Building GhostPCL');
   $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; echo >>makepcl.out ;  nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
@@ -514,8 +517,10 @@ if ($products{'pcl'} && !$abort) {
     $compileFail.="pcl6 ";
   }
 }
+}
 
 $abort=checkAbort;
+if (!$dontBuild) {
 if ($products{'xps'} && !$abort) {
   updateStatus('Building GhostXPS');
   $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; echo >>makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
@@ -532,8 +537,10 @@ if ($products{'xps'} && !$abort) {
     $compileFail.="gxps ";
   }
 }
+}
 
 $abort=checkAbort;
+if (!$dontBuild) {
 if ($products{'svg'} && !$abort) {
   updateStatus('Building GhostSVG');
   $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; echo >>makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
@@ -549,6 +556,7 @@ if ($products{'svg'} && !$abort) {
   } else {
     $compileFail.="gsvg ";
   }
+}
 }
 
 unlink "link.icc","wts_plane_0","wts_plane_1","wts_plane_2","wts_plane_3";
@@ -981,7 +989,7 @@ if (!$local) {
       sleep 10;
     }
     mylog "done with uploading $machine.log.gz";
-
+ 
     for (my $retry=0;  $retry<5;  $retry++) {
       mylog "about to upload $machine.out.gz";
       my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1`;
