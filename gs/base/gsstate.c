@@ -411,7 +411,7 @@ gs_grestore_only(gs_state * pgs)
     gs_free_object(pgs->memory, saved, "gs_grestore");
 
     /* update the overprint compositor, if necessary */
-    if (prior_overprint != pgs->overprint)
+    if (prior_overprint || pgs->overprint)
         return gs_do_set_overprint(pgs);
     else
         return 0;
