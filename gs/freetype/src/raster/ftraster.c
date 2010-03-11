@@ -3449,7 +3449,7 @@
 
         raster->buffer      = pool_base + ( (sizeof ( *worker ) + 7 ) & ~7 );
         raster->buffer_size = ( ( pool_base + pool_size ) -
-                                (char*)raster->buffer ) / sizeof ( Long );
+                                (char*)raster->buffer );
         raster->worker      = worker;
       }
       else
