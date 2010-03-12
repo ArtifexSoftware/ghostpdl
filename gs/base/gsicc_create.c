@@ -387,9 +387,20 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
                 gx_psconcretize_CIEABC(&cc, pcs, xyz, pis);
                 break;
             case gs_color_space_index_CIEDEF:
+                /* This needs to be done differently so we are not swapping */
+                temp = cc.paint.values[2];
+                cc.paint.values[2] = cc.paint.values[0];
+                cc.paint.values[0] = temp;
                 gx_psconcretize_CIEDEF(&cc, pcs, xyz, pis);
                 break;
             case gs_color_space_index_CIEDEFG:
+                /* This needs to be done differently so we are not swapping */
+                temp = cc.paint.values[3];
+                cc.paint.values[3] = cc.paint.values[0];
+                cc.paint.values[0] = temp;
+                temp = cc.paint.values[1];
+                cc.paint.values[1] = cc.paint.values[2];
+                cc.paint.values[2] = temp;
                gx_psconcretize_CIEDEFG(&cc, pcs, xyz, pis);
                break;
             default:
