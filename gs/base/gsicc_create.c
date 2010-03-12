@@ -368,11 +368,6 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
             index = (unsigned int) floor((float) i/(float) (table_size*table_size*table_size))%table_size;
             cc.paint.values[3] = fltptr[index];
         }
-        if (num_components == 3) {
-            dlprintf3("[M]index values [%g %g %g]\n",
-	         cc.paint.values[0], cc.paint.values[1],
-	          cc.paint.values[2]);
-        }
         /* These special concretizations functions do not go through
            the ICC mapping like the procs associated with the color space */
         switch (cs_index) {
