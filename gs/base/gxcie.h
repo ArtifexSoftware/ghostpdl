@@ -136,5 +136,10 @@ int gx_psconcretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * p
 		      frac * pconc, const gs_imager_state * pis);
 int gx_psconcretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
 		     frac * pconc, const gs_imager_state * pis);
+int gx_psconcretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
+		     frac * pconc, const gs_imager_state * pis);
+int gx_psconcretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
+		     frac * pconc, const gs_imager_state * pis);
+bool check_range(gs_range *ranges, int num_colorants);
 
 #endif /* gxcie_INCLUDED */

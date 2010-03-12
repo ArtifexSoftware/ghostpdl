@@ -17,9 +17,9 @@
 #include "gscie.h"
 
 void gsicc_create_fromcrd(unsigned char *buffer, gs_memory_t *memory);
-int gsicc_create_froma(gs_cie_a *pcie, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
+int gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory, 
                    gx_cie_vector_cache *a_cache, gx_cie_scalar_cache *lmn_caches);
-int gsicc_create_fromabc(gs_cie_abc *pcie, unsigned char **buffer, int *profile_size_out, gs_memory_t *memory,
+int gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **buffer, int *profile_size_out, gs_memory_t *memory,
                           gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches);
 int gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in, int *profile_size_out, gs_memory_t *memory,
                    gx_cie_vector_cache *abc_caches, gx_cie_scalar_cache *lmn_caches, gx_cie_scalar_cache *defg_caches);

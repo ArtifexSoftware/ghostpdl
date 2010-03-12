@@ -1036,7 +1036,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer)
             break;
         case gs_color_space_index_CIEABC:
             gs_colorspace->cmm_icc_profile_data = gsicc_profile_new(NULL, icc_manager->memory, NULL, 0);
-            code = gsicc_create_fromabc(gs_colorspace->params.abc, &(gs_colorspace->cmm_icc_profile_data->buffer), 
+            code = gsicc_create_fromabc(gs_colorspace, &(gs_colorspace->cmm_icc_profile_data->buffer), 
                             &(gs_colorspace->cmm_icc_profile_data->buffer_size), icc_manager->memory, 
                             &(gs_colorspace->params.abc->caches.DecodeABC.caches[0]), 
                             &(gs_colorspace->params.abc->common.caches.DecodeLMN[0]));
@@ -1044,7 +1044,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer)
             break;
         case gs_color_space_index_CIEA:
             gs_colorspace->cmm_icc_profile_data = gsicc_profile_new(NULL, icc_manager->memory, NULL, 0);
-            code = gsicc_create_froma(gs_colorspace->params.a, &(gs_colorspace->cmm_icc_profile_data->buffer), 
+            code = gsicc_create_froma(gs_colorspace, &(gs_colorspace->cmm_icc_profile_data->buffer), 
                             &(gs_colorspace->cmm_icc_profile_data->buffer_size), icc_manager->memory, 
                             &(gs_colorspace->params.a->caches.DecodeA),&(gs_colorspace->params.a->common.caches.DecodeLMN[0]));
             return(gs_colorspace->cmm_icc_profile_data);
