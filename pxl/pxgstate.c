@@ -1030,7 +1030,7 @@ pxSetPageScale(px_args_t *par, px_state_t *pxs)
             /* new measure */
             pxeMeasure_t mt = par->pv[1]->value.i;
             /* convert to session units */
-            real factor = units_conversion_table[mt][pxs->measure];
+            real factor = units_conversion_table[pxs->measure][mt];
             real sux = nux * factor;
             real suy = nuy * factor;
             sx = pxs->units_per_measure.x / sux;
