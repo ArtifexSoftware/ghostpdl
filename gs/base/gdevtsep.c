@@ -1439,6 +1439,10 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 	    return_error(gs_error_VMerror);
 	}
 
+	for (comp_num = 0; comp_num < num_comp; comp_num++ )
+	    TIFFCheckpointDirectory(tfdev->tiff[comp_num]);
+	TIFFCheckpointDirectory(tfdev->tiff_comp);
+
         /* Write the page data. */
 	for (y = 0; y < pdev->height; ++y) {
 	    code = gdev_prn_get_bits(pdev, y, line, &row);
@@ -1603,6 +1607,9 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 
 	if (line == NULL || unpacked == NULL || dithered_line == NULL)
 	    return_error(gs_error_VMerror);
+
+        for (comp_num = 0; comp_num < num_comp; comp_num++ )
+	    TIFFCheckpointDirectory(tfdev->tiff[comp_num]);
 
         /* Loop for the lines */
 	for (y = 0; y < pdev->height; ++y) {

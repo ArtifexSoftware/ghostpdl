@@ -295,6 +295,8 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif)
     if (data == NULL)
 	return_error(gs_error_VMerror);
 
+    TIFFCheckpointDirectory(tif);
+
     memset(data, 0, max_size);
     for (row = 0; row < dev->height; row++) {
 	code = gdev_prn_copy_scan_lines(dev, row, data, size);
