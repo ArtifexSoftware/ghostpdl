@@ -91,7 +91,7 @@ while(<F>) {
     }
 #   print "time=$t1 $t2 $t3\n";
   }
-  if (m/^([0-9a-f]{32})$/ || m/^([0-9a-f]{32})  -/) {
+  if (m/^([0-9a-f]{32})$/ || m/^([0-9a-f]{32})  -/ || m/^([0-9a-f]{32})  \.\/temp/ || m/^MD5 .+ = ([0-9a-f]{32})$/) {
     $md5sum=$1;
 #   print "md5sum=$md5sum\n";
     $results{$file}{"error"}=$error;

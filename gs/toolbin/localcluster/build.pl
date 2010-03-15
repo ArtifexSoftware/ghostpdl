@@ -247,8 +247,8 @@ my %tests=(
     ],
   'mupdf' => [
     "ppmraw.72.0",
-    "ppmraw.300.0"
-#   "ppmraw.300.1",
+    "ppmraw.300.0",
+    "ppmraw.300.1"
 #   "psdcmyk.72.0",
 ##"psdcmyk.300.0",
 ##"psdcmyk.300.1",
@@ -446,7 +446,7 @@ sub build($$$$$) {
       $cmd2c =~ s|$temp|$baselineRaster|;
       $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
       $cmd.=" ; bash -c \"./bmpcmp <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename\""; # ; gzip $bmpcmpFilename.* ";
-      $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
+      $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=$?; if (( \\\$t == 0 )); then break; fi; echo 'scp retry \\\$c' ; done \"";
 #     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
@@ -487,6 +487,14 @@ sub build($$$$$) {
     }
 
     if ($product eq 'mupdf') {
+      $cmd2b.=" -r$a[1]";
+      $cmd2b.=" -b20"    if ($a[2]==1);
+      $cmd2b.=" -o $outputFilename.%04d";
+      $cmd2b.=" $inputFilename  ";
+      $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
+      $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; cat $outputFilename.???? >$outputFilename ";
+      $cmd.=" ; md5sum $outputFilename >>$md5Filename";
     } else {
     if ($updateBaseline) {
       $cmd2b.=" -sOutputFile='|gzip -1 -n >$baselineFilename.gz'";
@@ -521,7 +529,7 @@ sub build($$$$$) {
       $cmd2a =~ s|/gs/|/head/|;
       $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
       $cmd.=" ; bash -c \"./bmpcmp <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename\""; # ; gzip $bmpcmpFilename.* ";
-      $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
+      $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=$?; if (( \\\$t == 0 )); then break; fi; echo 'scp retry \\\$c' ; done \"";
 #     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";

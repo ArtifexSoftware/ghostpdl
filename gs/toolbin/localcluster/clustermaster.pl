@@ -564,13 +564,13 @@ if ($regression =~ m/svn (\d+)/) {
   $product="gs pcl xps";
   $footer.="icc_work regression: $rev\n\nProducts tested: $product\n\n";
 } elsif ($regression=~/mupdf/) {
-  mylog "found mupdf entry in queue.lst, not yet handled, removing.\n";
+  mylog "found mupdf entry in queue.lst\n";
   my $cmd="touch mupdf.tar.gz ; rm mupdf.tar.gz ; tar cvf mupdf.tar --exclude=_darcs mupdf ; gzip mupdf.tar";
   `$cmd`;
   $cmd="cd mupdf ; darcs changes --count";
   $rev=`$cmd`;
   chomp $rev;
-# $mupdfRegression=1;
+$mupdfRegression=1;
   $product="mupdf";
 } elsif ($regression=~/updatebaseline/) {
   mylog "found updatebaseline in regression: $regression\n";
@@ -719,7 +719,7 @@ mylog "done checking jobs, product=$product\n";
       } elsif ($icc_workRegression) {
         print F "svn-icc_work\t$rev\t$product";
       } elsif ($mupdfRegression) {
-        print F "mupdf\t$rev\t$product";
+        print F "mupdf\t$rev";
       } elsif ($updateBaseline) {
         print F "svn\thead\t$product";
       } elsif ($bmpcmp) {
@@ -754,6 +754,11 @@ mylog "done checking jobs, product=$product\n";
       foreach (sort keys %machines) {
         mylog("  $_\n");
       }
+    }
+
+    if ($userRegression ne "") {
+      my $cmd="diff -w -c -r ./ghostpdl ./users/$userName/ghostpdl | grep -v \"Only in\" > $userName.diff";
+      `$cmd`;
     }
 
     use IO::Socket;
@@ -1008,6 +1013,7 @@ mylog "ls:\n$a";
   checkPID();
   $userName="email" if ($normalRegression);
   $userName="email" if ($icc_workRegression);
+  $userName="email" if ($mupdfRegression);
 
   if (!$bmpcmp) {
     my @t=split '\n',$footer;
@@ -1082,6 +1088,26 @@ mylog "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elap
       `cp -p icc_work_previous.tab archive/icc_work-$rev/icc_work_previous.tab`;
       `cp -p icc_work_current.tab archive/icc_work-$rev.tab`;
     } elsif ($mupdfRegression) {
+      `mv mupdf_previous.tab mupdf_previous2.tab`;
+      `mv mupdf_current.tab mupdf_previous.tab`;
+      `cat $tabs | sort >mupdf_current.tab`;
+      `rm $tabs`;
+
+      checkPID();
+mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTime $machineCount false \"$product\"\n";
+      `./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTime $machineCount false \"$product\" >>email.txt`;
+
+      checkPID();
+      `touch archive/mupdf-$rev`;
+      `rm -fr archive/mupdf-$rev`;
+      `mkdir archive/mupdf-$rev`;
+      `mv $logs archive/mupdf-$rev/.`;
+      `gzip archive/mupdf-$rev/*log`;
+      `cp -p email.txt archive/mupdf-$rev/.`;
+      `cp -p mupdf_current.tab archive/mupdf-$rev/mupdf_current.tab`;
+      `cp -p mupdf_previous.tab archive/mupdf-$rev/mupdf_previous.tab`;
+      `cp -p mupdf_current.tab archive/mupdf-$rev.tab`;
+
     } elsif ($updateBaseline) {
     } elsif ($bmpcmp) {
     } else {
@@ -1174,9 +1200,13 @@ mylog("finished cachearchive.pl");
   } elsif ($bmpcmp) {
     if (exists $emails{$userName}) {
       `mail $emails{$userName} -s \"bmpcmp finished\" <$userName.txt`;
-      `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <$userName.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <bmpcmpFinished.txt`;
     }
   } elsif ($userRegression) {
+    `echo >>$userName.txt`;
+    `echo "Source differences from trunk:" >>$userName.txt`;
+    `echo >>$userName.txt`;
+    `head -1000 $userName.diff >>$userName.txt`;
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;

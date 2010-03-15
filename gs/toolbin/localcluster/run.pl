@@ -57,6 +57,7 @@ if ($local) {
 my $user;
 my $revs;
 my $icc_work;
+my $mupdf;
 #my $product;
 my @commands;
 
@@ -134,6 +135,12 @@ if (open(F,"<$machine.start")) {
     if ($a[0] eq "svn") {
       $revs=$a[1];
       $products=$a[2];
+    } elsif ($a[0] eq "mupdf") {
+      $mupdf=1;
+      $products="mupdf";
+$maxCount=8;
+$maxTimeoutPercentage=5.0;
+$timeOut=600;
     } elsif ($a[0] eq "svn-icc_work") {
       $icc_work=$a[1];
       $products=$a[2];
@@ -158,8 +165,9 @@ if (open(F,"<$machine.start")) {
 mylog "user products=$products user=$user\n" if ($user);
 mylog "svn products=$products rev=$revs\n" if ($revs);
 mylog "icc_work products=$products rev=$icc_work\n" if ($icc_work);
+mylog "mupdf\n" if ($mupdf);
 
-my $host="casper3.ghostscript.com";
+my $host="casper.ghostscript.com";
 
 my $desiredRev;
 
@@ -399,6 +407,18 @@ if (!$abort) {
 
     $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
     $gsSource=$gpdlSource."/gs";
+  } elsif ($mupdf) {
+    updateStatus('Fetching mupdf.tar.gz');
+    `touch mupdf ; rm -fr mupdf; touch mupdf.tar.gz ; rm mupdf.tar.gz`;
+    for (my $retry=0;  $retry<5;  $retry++) {
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
+      last if ($?==0);
+      my $b=$?;
+      chomp $a;
+      mylog "mupdf_retry=$retry;  a=$a;  \$?=$b";
+      sleep 10;
+    }
+ 
   } elsif ($icc_work) {
 
     if (!-e $icc_workGsSource) {
@@ -471,6 +491,28 @@ if (!$abort) {
 if (!$dontBuild) {
   if (-e "./head/bin/gs") {
     `cp -p ./head/bin/* $gsBin/bin/.`;
+  }
+}
+
+if (!$dontBuild) {
+  if ($mupdf) {
+    updateStatus('Building mupdf');
+    $cmd="touch mupdf.tar ; rm mupdf.tar ; gunzip mupdf.tar.gz ; tar xf mupdf.tar";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+    if (-e "./Jamrules") {
+      $cmd="cp -p Jamrules mupdf/.";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+    }
+    $cmd="cd mupdf ; jam >makemupdf.out";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+      
+
+    $cmd="touch gs/bin/mupdf ; rm gs/bin/mupdf ; cp -p mupdf/build/*/pdfdraw gs/bin/.";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
   }
 }
 
