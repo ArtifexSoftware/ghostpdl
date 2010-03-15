@@ -165,7 +165,11 @@ hp:	r = *pr;
 	    r.limit = r.ptr + ss->hex_left;
 	status = s_hex_process(&r, pw, &ss->odd, 
 	  (ss->is_leading_space ? hex_ignore_leading_whitespace : hex_break_on_whitespace));
-        ss->is_leading_space = (status == 2);
+        if (status == 2) {
+            ss->is_leading_space = true;
+            status = 1;
+        } else
+            ss->is_leading_space = false;
 	pr->ptr = r.ptr;
 	ss->hex_left -= r.ptr - start;
 	/*
