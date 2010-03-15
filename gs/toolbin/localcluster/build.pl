@@ -101,6 +101,7 @@ my $niceCommand="";
 my $temp="./temp";
 #$temp="/tmp/space/temp";
 #$temp="/dev/shm/temp";
+#$temp="/media/sdd/temp";
 
 my $raster="$temp/raster";
 my $bmpcmpDir="$temp/bmpcmp";
@@ -452,6 +453,7 @@ sub build($$$$$) {
       $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
       if ($local) {
         $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
+#       $cmd.=" ; md5sum $outputFilename.gz >$md5Filename";
       }
    }
 
@@ -526,6 +528,7 @@ sub build($$$$$) {
       $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
       if ($local) {
         $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
+#       $cmd.=" ; md5sum $outputFilename.gz >$md5Filename";
       }
    }
 

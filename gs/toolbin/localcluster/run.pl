@@ -31,8 +31,10 @@ my %timeOuts;
 my $machine=shift || die "usage: run.pl machine_name";
 
 my $local=0;
-$local=1 if ($machine eq "local");
-$timeOut=600 if ($local);
+$dontBuild=1     if ($machine eq "local_no_build");
+$machine="local" if ($machine eq "local_no_build");
+$local=1         if ($machine eq "local");
+$timeOut=600     if ($local);
 
 if (!$local) {
 open (LOG,">>$machine.dbg");
@@ -110,7 +112,7 @@ close(F);
 
 mylog "starting run.pl:  pid=$$\n";
 
-{
+if (0) {
   mylog "about to kill any jobs still running from previous regression\n";
   my $a=`ps -ef | grep nice | grep temp | grep true | grep -v grep`;
   my @a=split '\n',$a;
@@ -705,6 +707,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
       while (exists $children{$p}) {
 #       mylog "$p->$children{$p}\n";  # mhw
         $p=$children{$p};
+        $name{$p}='missing' if (!exists $name{$p});
         mylog ("killing (timeout 1) $p $name{$p}\n");
         kill 1, $p;
         kill 9, $p;
@@ -740,7 +743,12 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
   }
     }
 
-  if (scalar(@commands)>0 && $count<$maxCount) {
+  my $clusterRegressionRunning=0;
+  $clusterRegressionRunning=1 if ($local && -e "/home/marcos/cluster/$runningSemaphore");  # hack: directory name shouldn't be hard coded
+  sleep 5 if ($clusterRegressionRunning);
+
+
+  if (scalar(@commands)>0 && $count<$maxCount && !$clusterRegressionRunning) {
     my $n=rand(scalar @commands);
     my @a=split '\t',$commands[$n];
     splice(@commands,$n,1);
@@ -772,7 +780,6 @@ my @files = <$raster/*>;
 my $count = @files;
 my $count2=scalar (keys %timeOuts);
 unlink('raster.yes') if ($count>$maxRaster);
-$maxCount=16 if ($count>$maxRaster);
 mylog("$raster file count=$count timeOuts=$count2 maxTimeout=$maxTimeout");
 
 
@@ -839,7 +846,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
     my %children;
     my %name;
     foreach (@a) {
-      if (m/\S+ +(\d+) +(\d+)/ && !m/<defunct>/ && !m/\(sh\)/) {
+      if (m/\S+ +(\d+) +(\d+) .+ \d\d:\d\d:\d\d (.+)$/ && !m/<defunct>/ && !m/\(sh\)/) {
         $children{$2}=$1;
         $name{$1}=$3;
       }
@@ -851,6 +858,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
         while (exists $children{$p}) {
 #         mylog "$p->$children{$p}\n"; # mhw
           $p=$children{$p};
+          $name{$p}='missing' if (!exists $name{$p});
           mylog ("killing (timeout 2) $p $name{$p}\n");
           kill 1, $p;
           kill 9, $p;

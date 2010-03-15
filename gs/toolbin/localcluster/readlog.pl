@@ -14,7 +14,6 @@ my $divider=0;
 my $t1;
 my $t2;
 my $t3;
-my $t4;
 
 my %results;
 
@@ -51,6 +50,9 @@ while(<F>) {
     $results{$file}{"time2"}=0;
     $results{$file}{"time3"}=0;
     $results{$file}{"time4"}=0;
+    $t1=0;
+    $t2=0;
+    $t3=0;
     my $t=<F>;
     chomp $t;
     $results{$file}{"product"}=$t;
@@ -80,20 +82,23 @@ while(<F>) {
     $results{$file}{"error"}=$error;
   }
   if (m/(\d+\.\d+) (\d+\.\d+) (\d+:\d\d\.\d\d) (\d+)%/) {
-    $t1=$1;
-    $t2=$2;
-    $t3=$3;
-    $t4=$4;
-#   print "time=$t1 $t2 $t3 $t4\n";
+    if ($t1==0) {
+      $t1=$1;
+    } elsif ($t2==0) {
+      $t2=$1;
+    } else {
+      $t3=$1;
+    }
+#   print "time=$t1 $t2 $t3\n";
   }
   if (m/^([0-9a-f]{32})$/ || m/^([0-9a-f]{32})  -/) {
     $md5sum=$1;
 #   print "md5sum=$md5sum\n";
     $results{$file}{"error"}=$error;
     $results{$file}{"md5"}=$md5sum;
-    $results{$file}{"time1"}=0;
-    $results{$file}{"time2"}=0;
-    $results{$file}{"time3"}=0;
+    $results{$file}{"time1"}=$t1;
+    $results{$file}{"time2"}=$t2;
+    $results{$file}{"time3"}=$t3;
     $results{$file}{"time4"}=0;
   }
 }
