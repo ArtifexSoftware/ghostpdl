@@ -245,8 +245,8 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif)
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
     TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
-    TIFFSetField(tif, TIFFTAG_XRESOLUTION, pdev->x_pixels_per_inch);
-    TIFFSetField(tif, TIFFTAG_YRESOLUTION, pdev->y_pixels_per_inch);
+    TIFFSetField(tif, TIFFTAG_XRESOLUTION, (float)pdev->x_pixels_per_inch);
+    TIFFSetField(tif, TIFFTAG_YRESOLUTION, (float)pdev->y_pixels_per_inch);
 
     {
 	char revs[10];
