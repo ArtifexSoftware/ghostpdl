@@ -99,7 +99,8 @@ tfax_close(gx_device * pdev)
 {
     gx_device_tfax *const tfdev = (gx_device_tfax *)pdev;
 
-    TIFFCleanup(tfdev->tif);
+    if (tfdev->tif)
+        TIFFCleanup(tfdev->tif);
 
     return gdev_prn_close(pdev);
 }
