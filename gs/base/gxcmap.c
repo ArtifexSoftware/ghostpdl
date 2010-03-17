@@ -1648,10 +1648,10 @@ int
 cmyk_16bit_map_color_cmyk(gx_device * dev, gx_color_index color,
 			  gx_color_value pcv[4])
 {
-    pcv[0] = (color >> 48) & 0xffff;
-    pcv[1] = (color >> 32) & 0xffff;
-    pcv[2] = (color >> 16) & 0xffff;
-    pcv[3] = (color) & 0xffff;
+    pcv[0] = ((color >> 24) >> 24) & 0xffff;
+    pcv[1] = ((color >> 16) >> 16) & 0xffff;
+    pcv[2] = ( color        >> 16) & 0xffff;
+    pcv[3] = ( color             ) & 0xffff;
     return 0;
 }
 
