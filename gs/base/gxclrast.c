@@ -779,12 +779,12 @@ in:				/* Initialize for a new page. */
 				/* For cases with an even number of bytes */
 			        case 8:
 			            data = *cbp++;
-			            delta = ((gx_color_index)
-				        ((data & 0xf0) << 4) + (data & 0x0f)) << 48;
+			            delta = (((gx_color_index)
+				        ((data & 0xf0) << 4) + (data & 0x0f)) << 24) << 24;
 			        case 6:
 			            data = *cbp++;
-			            delta |= ((gx_color_index)
-				        ((data & 0xf0) << 4) + (data & 0x0f)) << 32;
+			            delta |= (((gx_color_index)
+				        ((data & 0xf0) << 4) + (data & 0x0f)) << 16) << 16;
 			        case 4:
 			            data = *cbp++;
 			            delta |= ((gx_color_index)
