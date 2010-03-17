@@ -17,9 +17,9 @@
 #ifndef zcie_INCLUDED
 #  define zcie_INCLUDED
 
-int cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict);
-int cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict);
-int ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict);
-int ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict);
+int cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey);
+int cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey);
+int ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey);
+int ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey);
 
 #endif /* zcie_INCLUDED */

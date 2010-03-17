@@ -2158,6 +2158,7 @@ static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 {
     int code = 0;
     ref CIEDict, *nocie;
+    ulong dictkey;
 
     if (i_ctx_p->language_level < 2)
 	return_error(e_undefined);
@@ -2183,7 +2184,8 @@ static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
         *stage = 0;
 	return code;
     }
-    code = cieaspace(i_ctx_p, &CIEDict);
+    dictkey = r->value.refs->value.saveid;
+    code = cieaspace(i_ctx_p, &CIEDict, dictkey);
     (*stage)++;
     *cont = 1;
     return code;
@@ -2392,6 +2394,7 @@ static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
 {
     int code = 0;
     ref CIEDict, *nocie;
+    ulong dictkey;
     
     if (i_ctx_p->language_level < 2)
 	return_error(e_undefined);
@@ -2420,7 +2423,8 @@ static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
         *stage = 0;
 	return code;
     }
-    code = cieabcspace(i_ctx_p, &CIEDict);
+    dictkey = r->value.refs->value.saveid;
+    code = cieabcspace(i_ctx_p, &CIEDict,dictkey);
     *cont = 1;
     (*stage)++;
     return code;
@@ -2643,6 +2647,7 @@ static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
 {
     int code = 0;
     ref CIEDict, *nocie;
+    ulong dictkey;
     
     if (i_ctx_p->language_level < 3)
 	return_error(e_undefined);
@@ -2670,7 +2675,8 @@ static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
         *stage = 0;
 	return code;
     }
-    code = ciedefspace(i_ctx_p, &CIEDict);
+    dictkey = r->value.refs->value.saveid;
+    code = ciedefspace(i_ctx_p, &CIEDict, dictkey);
     *cont = 1;
     (*stage)++;
     return code;
@@ -2927,6 +2933,7 @@ static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 {
     int code = 0;
     ref CIEDict, *nocie;
+    ulong dictkey;
     
     if (i_ctx_p->language_level < 3)
 	return_error(e_undefined);
@@ -2954,7 +2961,8 @@ static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         *stage = 0;
 	return code;
     }
-    code = ciedefgspace(i_ctx_p, &CIEDict);
+    dictkey = r->value.refs->value.saveid;
+    code = ciedefgspace(i_ctx_p, &CIEDict,dictkey);
     *cont = 1;
     (*stage)++;
     return code;

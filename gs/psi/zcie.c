@@ -33,6 +33,7 @@
 #include "zcie.h"
 #include "gsicc_create.h"
 #include "gsiccmanage.h"
+#include "gsicc_profilecache.h"
 
 /* Prototype */
 int cieicc_prepare_caches(i_ctx_t *i_ctx_p, const gs_range * domains,
@@ -153,8 +154,10 @@ cie_points_param(const gs_memory_t *mem,
 {
     int code;
 
-    if ((code = dict_floats_param(mem, pdref, "WhitePoint", 3, (float *)&pwb->WhitePoint, NULL)) < 0 ||
-	(code = dict_floats_param(mem, pdref, "BlackPoint", 3, (float *)&pwb->BlackPoint, (const float *)&BlackPoint_default)) < 0
+    if ((code = dict_floats_param(mem, pdref, "WhitePoint", 3, 
+        (float *)&pwb->WhitePoint, NULL)) < 0 ||
+	(code = dict_floats_param(mem, pdref, "BlackPoint", 3, 
+        (float *)&pwb->BlackPoint, (const float *)&BlackPoint_default)) < 0
 	)
 	return code;
     if (pwb->WhitePoint.u <= 0 ||
@@ -276,15 +279,17 @@ cie_lmnp_param(const gs_memory_t *mem, const ref * pdref, gs_cie_common * pcie,
 
 /* Get objects associated with cie color space */
 static int
-cie_a_param(const gs_memory_t *mem, const ref * pdref, gs_cie_a * pcie, ref_cie_procs * pcprocs, 
-              bool *has_a_procs, bool *has_lmn_procs)
+cie_a_param(const gs_memory_t *mem, const ref * pdref, gs_cie_a * pcie, 
+            ref_cie_procs * pcprocs, bool *has_a_procs, bool *has_lmn_procs)
 {
     int code;
 
-    code = dict_floats_param(mem, pdref, "RangeA", 2, (float *)&pcie->RangeA, (const float *)&RangeA_default);
+    code = dict_floats_param(mem, pdref, "RangeA", 2, (float *)&pcie->RangeA, 
+                            (const float *)&RangeA_default);
     if (code < 0)
 	return code;
-    code = dict_floats_param(mem, pdref, "MatrixA", 3, (float *)&pcie->MatrixA, (const float *)&MatrixA_default);
+    code = dict_floats_param(mem, pdref, "MatrixA", 3, (float *)&pcie->MatrixA, 
+                            (const float *)&MatrixA_default);
     if (code < 0)
 	return code;
     code = cie_lmnp_param(mem, pdref, &pcie->common, pcprocs, has_lmn_procs);
@@ -298,7 +303,8 @@ cie_a_param(const gs_memory_t *mem, const ref * pdref, gs_cie_a * pcie, ref_cie_
 
 /* Common code for the CIEBasedABC/DEF[G] cases of setcolorspace. */
 static int
-cie_abc_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_cie_abc * pcie, ref_cie_procs * pcprocs, 
+cie_abc_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, 
+               gs_cie_abc * pcie, ref_cie_procs * pcprocs, 
               bool *has_abc_procs, bool *has_lmn_procs)
 {
     int code;
@@ -314,7 +320,8 @@ cie_abc_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_ci
         return code;
     *has_abc_procs = !code;
     pcie->DecodeABC = DecodeABC_default;
-   /* At this point, we have all the parameters in pcie including knowing if there
+   /* At this point, we have all the parameters in pcie including knowing if 
+    there
        are procedures present.  If there are no procedures, life is simple for us.
        If there are procedures, we can not create the ICC profile until we have the procedures 
        sampled, which requires pushing the appropriate commands upon the postscript execution stack 
@@ -378,14 +385,16 @@ static int cache_abc_common(i_ctx_t *, gs_cie_abc *, const ref_cie_procs *,
 static int cie_defg_finish(i_ctx_t *);
 
 static int
-cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_cie_defg * pcie, ref_cie_procs * pcprocs, 
-              bool *has_abc_procs, bool *has_lmn_procs, bool *has_defg_procs, ref *ptref)
+cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, 
+               gs_cie_defg * pcie, ref_cie_procs * pcprocs, bool *has_abc_procs, 
+               bool *has_lmn_procs, bool *has_defg_procs, ref *ptref)
 {
     int code; 
     gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
     /* First get all the ABC and LMN information related to this space */
-    code = cie_abc_param(i_ctx_p, mem, pdref, (gs_cie_abc *) pcie, pcprocs, has_abc_procs, has_lmn_procs);
+    code = cie_abc_param(i_ctx_p, mem, pdref, (gs_cie_abc *) pcie, pcprocs, 
+                            has_abc_procs, has_lmn_procs);
     if (code < 0) 
         return code;
     code = dict_ranges_param(mem, pdref, "RangeDEFG", 4, pcie->RangeDEFG.ranges);
@@ -397,7 +406,8 @@ cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_c
     code = cie_table_param(ptref, &pcie->Table, mem);
     if (code < 0) 
         return code;
-    code = dict_proc_array_param(mem, pdref, "DecodeDEFG", 4, &(pcprocs->PreDecode.DEFG));
+    code = dict_proc_array_param(mem, pdref, "DecodeDEFG", 4, 
+                                    &(pcprocs->PreDecode.DEFG));
     if (code < 0) 
         return code;
     *has_defg_procs = !code;
@@ -418,7 +428,7 @@ cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_c
     return(0);
 }
 int
-ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict)
+ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -430,20 +440,28 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     ref *ptref;
     bool has_defg_procs, has_abc_procs, has_lmn_procs;
 
-    push(1);
-    if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
-    check_read_type(*ptref, t_array);
-    if (r_size(ptref) != 5)
-	return_error(e_rangecheck);
+    pcs = gsicc_find_cs(dictkey, igs);
+    push(1); /* Sacrificial */
     procs = istate->colorspace.procs.cie;
-    code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem);
-    if (code < 0)
-	return code;
-    pcie = pcs->params.defg;
-    pcie->Table.n = 4;
-    pcie->Table.m = 3;
-    code = cie_defg_param(i_ctx_p, imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs, &has_defg_procs,ptref);
+    if (pcs == NULL ) {
+        if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
+	    return (code < 0 ? code : gs_note_error(e_rangecheck));
+        check_read_type(*ptref, t_array);
+        if (r_size(ptref) != 5)
+	    return_error(e_rangecheck);
+        code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem);
+        if (code < 0)
+	    return code;
+        pcie = pcs->params.defg;
+        pcie->Table.n = 4;
+        pcie->Table.m = 3;
+        code = cie_defg_param(i_ctx_p, imemory, CIEDict, pcie, &procs, 
+            &has_abc_procs, &has_lmn_procs, &has_defg_procs,ptref);
+        /* Add the color space to the profile cache */
+        gsicc_add_cs(igs, pcs,dictkey);
+    } else {
+        rc_increment(pcs);
+    }
     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 
@@ -462,14 +480,17 @@ cie_defg_finish(i_ctx_t *i_ctx_p)
 }
 
 static int
-cie_def_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_cie_def * pcie, ref_cie_procs * pcprocs, 
-              bool *has_abc_procs, bool *has_lmn_procs, bool *has_def_procs, ref *ptref)
+cie_def_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, 
+              gs_cie_def * pcie, ref_cie_procs * pcprocs, 
+              bool *has_abc_procs, bool *has_lmn_procs, 
+              bool *has_def_procs, ref *ptref)
 {
     int code; 
     gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
     /* First get all the ABC and LMN information related to this space */
-    code = cie_abc_param(i_ctx_p, mem, pdref, (gs_cie_abc *) pcie, pcprocs, has_abc_procs, has_lmn_procs);
+    code = cie_abc_param(i_ctx_p, mem, pdref, (gs_cie_abc *) pcie, pcprocs, 
+                            has_abc_procs, has_lmn_procs);
     if (code < 0) 
         return code;
     code = dict_range3_param(mem, pdref, "RangeDEF", &pcie->RangeDEF);
@@ -503,7 +524,7 @@ cie_def_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref, gs_ci
 
 static int cie_def_finish(i_ctx_t *);
 int
-ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict)
+ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -511,24 +532,32 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_def *pcie;
-    int code;
+    int code = 0;
     ref *ptref;
     bool has_def_procs, has_lmn_procs, has_abc_procs;
 
-    push(1);
-    if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
-    check_read_type(*ptref, t_array);
-    if (r_size(ptref) != 4)
-	return_error(e_rangecheck);
+    pcs = gsicc_find_cs(dictkey, igs);
+    push(1); /* Sacrificial */
     procs = istate->colorspace.procs.cie;
-    code = gs_cspace_build_CIEDEF(&pcs, NULL, mem);
-    if (code < 0)
-	return code;
-    pcie = pcs->params.def;
-    pcie->Table.n = 3;
-    pcie->Table.m = 3;
-    code = cie_def_param(i_ctx_p, imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs, &has_def_procs, ptref);
+    if (pcs == NULL ) {
+        if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
+	    return (code < 0 ? code : gs_note_error(e_rangecheck));
+        check_read_type(*ptref, t_array);
+        if (r_size(ptref) != 4)
+	    return_error(e_rangecheck);
+        code = gs_cspace_build_CIEDEF(&pcs, NULL, mem);
+        if (code < 0)
+	    return code;
+        pcie = pcs->params.def;
+        pcie->Table.n = 3;
+        pcie->Table.m = 3;
+        code = cie_def_param(i_ctx_p, imemory, CIEDict, pcie, &procs, 
+            &has_abc_procs, &has_lmn_procs, &has_def_procs, ptref);
+        /* Add the color space to the profile cache */
+        gsicc_add_cs(igs, pcs,dictkey);
+    } else {
+        rc_increment(pcs);
+    }
     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 
@@ -549,7 +578,7 @@ cie_def_finish(i_ctx_t *i_ctx_p)
 static int cie_abc_finish(i_ctx_t *);
 
 int
-cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
+cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -557,18 +586,28 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_abc *pcie;
-    int code;
+    int code=0;
     bool has_lmn_procs, has_abc_procs;
 
+/* See if the color space is in the profile cache */
+    pcs = gsicc_find_cs(dictkey, igs);
     push(1); /* Sacrificial */
     procs = istate->colorspace.procs.cie;
-    code = gs_cspace_build_CIEABC(&pcs, NULL, mem);
-    if (code < 0)
-	return code;
-    pcie = pcs->params.abc;
-    code = cie_abc_param(i_ctx_p, imemory, CIEDict, pcie, &procs, &has_abc_procs, &has_lmn_procs);
-    /* Set the color space in the graphic state.  The ICC profile will be set later if
-       we actually use the space.  Procs will be sampled now though. */
+    if (pcs == NULL ) {
+        code = gs_cspace_build_CIEABC(&pcs, NULL, mem);
+        if (code < 0)
+	    return code;
+        pcie = pcs->params.abc;
+        code = cie_abc_param(i_ctx_p, imemory, CIEDict, pcie, &procs, 
+            &has_abc_procs, &has_lmn_procs);
+        /* Set the color space in the graphic state.  The ICC profile 
+            will be set later if we actually use the space.  Procs will be 
+            sampled now though. */
+        /* Add the color space to the profile cache */
+        gsicc_add_cs(igs, pcs,dictkey);
+    } else {
+        rc_increment(pcs);
+    }
     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code); 
 }
 
@@ -588,7 +627,7 @@ cie_abc_finish(i_ctx_t *i_ctx_p)
 static int cie_a_finish(i_ctx_t *);
 
 int
-cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
+cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -597,47 +636,53 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_a *pcie;
-    int code;
+    int code = 0;
     bool has_a_procs = false;
     bool has_lmn_procs;
 
-    procs = istate->colorspace.procs.cie;
-    if ((code = dict_proc_param(CIEdict, "DecodeA", &procs.Decode.A, true)) < 0)
-	return code;
+/* See if the color space is in the profile cache */
+    pcs = gsicc_find_cs(dictkey, igs);
     push(1); /* Sacrificial */
     procs = istate->colorspace.procs.cie;
-    code = gs_cspace_build_CIEA(&pcs, NULL, mem);
-    if (code < 0)
-	return code;
-    pcie = pcs->params.a;
-    code = cie_a_param(imemory, CIEdict, pcie, &procs, &has_a_procs, &has_lmn_procs);
-    if (!has_a_procs && !has_lmn_procs) {
-        pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
-        (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
-        (pcie->common.caches.DecodeLMN)[2].floats.params.is_identity = true;
-        pcie->caches.DecodeA.floats.params.is_identity = true;
-    } else {
-        if (has_a_procs) {
-            code = cie_prepare_iccproc(i_ctx_p, &pcie->RangeA, 
-                &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A");
-        } else {
-            pcie->caches.DecodeA.floats.params.is_identity = true;
-        }
-        if (has_lmn_procs) {
-            cieicc_prepare_caches(i_ctx_p, (&pcie->common.RangeLMN)->ranges,
-		     procs.DecodeLMN.value.const_refs,
-                     &(pcie->common.caches.DecodeLMN)->floats,
-                     &(pcie->common.caches.DecodeLMN)[1].floats,
-                     &(pcie->common.caches.DecodeLMN)[2].floats,
-                     NULL, pcie, imem, "Decode.LMN(ICC)");
-        } else {
+    if (pcs == NULL ) {
+        code = gs_cspace_build_CIEA(&pcs, NULL, mem);
+        if (code < 0)
+	    return code;
+        pcie = pcs->params.a;
+        code = cie_a_param(imemory, CIEdict, pcie, &procs, &has_a_procs, 
+                                &has_lmn_procs);
+        if (!has_a_procs && !has_lmn_procs) {
             pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
             (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
             (pcie->common.caches.DecodeLMN)[2].floats.params.is_identity = true;
+            pcie->caches.DecodeA.floats.params.is_identity = true;
+        } else {
+            if (has_a_procs) {
+                code = cie_prepare_iccproc(i_ctx_p, &pcie->RangeA, 
+                    &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A");
+            } else {
+                pcie->caches.DecodeA.floats.params.is_identity = true;
+            }
+            if (has_lmn_procs) {
+                cieicc_prepare_caches(i_ctx_p, (&pcie->common.RangeLMN)->ranges,
+		         procs.DecodeLMN.value.const_refs,
+                         &(pcie->common.caches.DecodeLMN)->floats,
+                         &(pcie->common.caches.DecodeLMN)[1].floats,
+                         &(pcie->common.caches.DecodeLMN)[2].floats,
+                         NULL, pcie, imem, "Decode.LMN(ICC)");
+            } else {
+                pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
+                (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
+                (pcie->common.caches.DecodeLMN)[2].floats.params.is_identity = true;
+            }
         }
+        /* Add the color space to the profile cache */
+        gsicc_add_cs(igs, pcs,dictkey);
+    } else {
+        rc_increment(pcs);
     }
     /* Set the color space in the graphic state.  The ICC profile may be set after this
-       due to the needed sampled procs */
+           due to the needed sampled procs */
     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code); 
 }
 

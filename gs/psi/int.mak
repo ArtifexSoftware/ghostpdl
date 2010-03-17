@@ -1430,7 +1430,7 @@ $(PSOBJ)zcie.$(OBJ) : $(PSSRC)zcie.c $(OP) $(math__h) $(memory__h)\
  $(gscolor2_h) $(gscie_h) $(gsstruct_h) $(gxcspace_h)\
  $(ialloc_h) $(icie_h) $(idict_h) $(idparam_h) $(estack_h)\
  $(isave_h) $(igstate_h) $(ivmspace_h) $(store_h)\
- $(zcie_h) $(gsicc_create_h) $(gsiccmanage_h) 
+ $(zcie_h) $(gsicc_create_h) $(gsiccmanage_h) $(gsicc_profilecache_h) 
 	$(PSCC) $(PSO_)zcie.$(OBJ) $(C_) $(PSSRC)zcie.c
 
 $(PSOBJ)zcrd.$(OBJ) : $(PSSRC)zcrd.c $(OP) $(math__h)\
