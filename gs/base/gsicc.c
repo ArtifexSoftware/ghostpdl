@@ -175,6 +175,10 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     unsigned short *psrc_temp;
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int k,i;
+#ifdef DEBUG
+    int num_src_comps;
+    int num_des_comps;
+#endif
 
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_PATH_TAG;
@@ -198,7 +202,21 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
         psrc_temp = &(psrc_cm[0]);
         gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
     }
-
+#ifdef DEBUG
+    if (!icc_link->is_identity) {
+        num_src_comps = pcs->cmm_icc_profile_data->num_comps;
+        num_des_comps = pis->icc_manager->device_profile->num_comps;
+        if_debug0('c',"[c]ICC remap [ ");
+        for (k = 0; k < num_src_comps; k++) {
+            if_debug1('c', "%d ",psrc[k]);
+        }
+        if_debug0('c',"] --> [ ");
+        for (k = 0; k < num_des_comps; k++) {
+            if_debug1('c', "%d ",psrc_temp[k]);
+        }
+        if_debug0('c',"]\n");
+    }
+#endif
     /* Release the link */
     gsicc_release_link(icc_link);
     /* Now do the remap for ICC which amounts to the alpha application
