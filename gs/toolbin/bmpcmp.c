@@ -36,10 +36,12 @@
  *   15=> Red        No Match
  */
 
-#define MINX (300)
-#define MINY (320)
-#define MAXX (600)
-#define MAXY (960)
+enum {
+    Default_MinX = 300,
+    Default_MinY = 320,
+    Default_MaxX = 600,
+    Default_MaxY = 960
+};
 
 typedef struct
 {
@@ -68,6 +70,8 @@ typedef struct
     int   height;
     int   span;
     int   bpp;
+    /* Output BMP sizes */
+    BBox  output_size;
 } Params;
 
 typedef struct ImageReader
@@ -1758,8 +1762,12 @@ static void syntax(void)
 {
     fprintf(stderr, "Syntax: bmpcmp [options] <file1> <file2> <outfile_root> [<basenum>] [<maxdiffs>]\n");
     fprintf(stderr, "  -w <window> or -w<window>         window size (default=1)\n");
+    fprintf(stderr, "                                    (good values = 1, 3, 5, 7, etc)\n");
     fprintf(stderr, "  -t <threshold> or -t<threshold>   threshold   (default=0)\n");
     fprintf(stderr, "  -e                                exhaustive search\n");
+    fprintf(stderr, "  -o <minx> <maxx> <miny> <maxy>    Output bitmap size hints (0 for default)\n");
+    fprintf(stderr, "  -h or --help or -?                Output this message and exit\n");
+    fprintf(stderr, "\n");
     fprintf(stderr, "  <file1> and <file2> can be "
 #ifdef HAVE_LIBPNG
                     "png, "
@@ -1769,6 +1777,15 @@ static void syntax(void)
     fprintf(stderr, "  and a series of <outfile_root>.<number>.meta files.\n");
     fprintf(stderr, "  The maxdiffs value determines the maximum number of bitmaps\n");
     fprintf(stderr, "  produced - 0 (or unsupplied) is taken to mean unlimited.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Examples:\n");
+    fprintf(stderr, "  To ignore 1 pixel moves:\n");
+    fprintf(stderr, "    bmpcmp in.pam out.pam out\\diff -w 3\n");
+    fprintf(stderr, "  To ignore small color changes:\n");
+    fprintf(stderr, "    bmpcmp in.pam out.pam out\\diff -t 7\n");
+    fprintf(stderr, "  To see the types of pixel changes in a picture:\n");
+    fprintf(stderr, "    bmpcmp in.pam out.pam out\\diff -w 3 -t 7 -e\n");
+    exit(EXIT_FAILURE);
 }
 
 static void parseArgs(int argc, char *argv[], Params *params)
@@ -1801,12 +1818,34 @@ static void parseArgs(int argc, char *argv[], Params *params)
                         params->threshold = atoi(argv[i]);
                     }
                     break;
+                case 'o':
+                    if (argc <= i+3)
+                        syntax();
+                    if (argv[i][2]) {
+                        params->output_size.xmin = atoi(&argv[i][2]);
+                        params->output_size.xmax = atoi(argv[i+1]);
+                        params->output_size.ymin = atoi(argv[i+2]);
+                        params->output_size.ymax = atoi(argv[i+3]);
+                        i += 3;
+                    } else if (argc <= i+4) {
+                        syntax();
+                    } else {
+                        params->output_size.xmin = atoi(argv[++i]);
+                        params->output_size.xmax = atoi(argv[++i]);
+                        params->output_size.ymin = atoi(argv[++i]);
+                        params->output_size.ymax = atoi(argv[++i]);
+                    }
+                    break;
                 case 'e':
                     params->exhaustive = 1;
                     break;
+                case 'h':
+                case '?':
+                case '-': /* Hack :) */
+                    syntax();
+                    break;
                 default:
                     syntax();
-                    exit(EXIT_FAILURE);
             }
         } else {
             switch (arg) {
@@ -1827,7 +1866,6 @@ static void parseArgs(int argc, char *argv[], Params *params)
                     break;
                 default:
                     syntax();
-                    exit(EXIT_FAILURE);
             }
             arg++;
         }
@@ -1837,8 +1875,21 @@ static void parseArgs(int argc, char *argv[], Params *params)
     if (arg < 3)
     {
         syntax();
-        exit(EXIT_FAILURE);
     }
+    
+    /* Sanity check */
+    if (params->output_size.xmin == 0)
+        params->output_size.xmin = Default_MinX;
+    if (params->output_size.xmax == 0)
+        params->output_size.xmax = Default_MaxX;
+    if (params->output_size.ymin == 0)
+        params->output_size.ymin = Default_MinY;
+    if (params->output_size.ymax == 0)
+        params->output_size.ymax = Default_MaxY;
+    if (params->output_size.xmax < params->output_size.xmin)
+        params->output_size.xmax = params->output_size.xmin;
+    if (params->output_size.ymax < params->output_size.ymin)
+        params->output_size.ymax = params->output_size.ymin;
 }
 
 static void makeWindowTable(Params *params, int span, int bpp)
@@ -1921,9 +1972,9 @@ static void rediff(unsigned char *map,
     local.xmax++;
     local.ymax++;
     if ((local.xmax-local.xmin > 0) &&
-        (local.xmax-local.xmin < MINX))
+        (local.xmax-local.xmin < params->output_size.xmin))
     {
-        int d = MINX;
+        int d = params->output_size.xmin;
 
         if (d > w)
             d = w;
@@ -1941,9 +1992,10 @@ static void rediff(unsigned char *map,
             local.xmax  = global->xmax;
         }
     }
-    if ((local.ymax-local.ymin > 0) && (local.ymax-local.ymin < MINY))
+    if ((local.ymax-local.ymin > 0) &&
+        (local.ymax-local.ymin < params->output_size.ymin))
     {
-        int d = MINY;
+        int d = params->output_size.ymin;
 
         if (d > h)
             d = h;
@@ -2032,20 +2084,20 @@ int main(int argc, char *argv[])
             nx = 1;
             ny = 1;
             bbox2.xmax = bbox.xmax - bbox.xmin;
-            if (bbox2.xmax < MINX)
-                bbox2.xmax = MINX;
-            if (bbox2.xmax > MAXX)
+            if (bbox2.xmax < params.output_size.xmin)
+                bbox2.xmax = params.output_size.xmin;
+            if (bbox2.xmax > params.output_size.xmax)
             {
-                nx = 1+(bbox2.xmax/MAXX);
-                bbox2.xmax = MAXX*nx;
+                nx = 1+(bbox2.xmax/params.output_size.xmax);
+                bbox2.xmax = params.output_size.xmax*nx;
             }
             bbox2.ymax = bbox.ymax - bbox.ymin;
-            if (bbox2.ymax < MINY)
-                bbox2.ymax = MINY;
-            if (bbox2.ymax > MAXY)
+            if (bbox2.ymax < params.output_size.ymin)
+                bbox2.ymax = params.output_size.ymin;
+            if (bbox2.ymax > params.output_size.ymax)
             {
-                ny = 1+(bbox2.ymax/MAXY);
-                bbox2.ymax = MAXY*ny;
+                ny = 1+(bbox2.ymax/params.output_size.ymax);
+                bbox2.ymax = params.output_size.ymax*ny;
             }
 
             /* Now make the real bbox */
@@ -2083,23 +2135,23 @@ int main(int argc, char *argv[])
                 for (h2=0; h2 < ny; h2++)
                 {
                     boxlist++;
-                    boxlist->xmin = bbox2.xmin + MAXX*w2;
-                    boxlist->xmax = boxlist->xmin + MAXX;
+                    boxlist->xmin = bbox2.xmin + params.output_size.xmax*w2;
+                    boxlist->xmax = boxlist->xmin + params.output_size.xmax;
                     if (boxlist->xmax > bbox2.xmax)
                         boxlist->xmax = bbox2.xmax;
-                    if (boxlist->xmin > boxlist->xmax-MINX)
+                    if (boxlist->xmin > boxlist->xmax-params.output_size.xmin)
                     {
-                        boxlist->xmin = boxlist->xmax-MINX;
+                        boxlist->xmin = boxlist->xmax-params.output_size.xmin;
                         if (boxlist->xmin < 0)
                             boxlist->xmin = 0;
                     }
-                    boxlist->ymin = bbox2.ymin + MAXY*h2;
-                    boxlist->ymax = boxlist->ymin + MAXY;
+                    boxlist->ymin = bbox2.ymin + params.output_size.ymax*h2;
+                    boxlist->ymax = boxlist->ymin + params.output_size.ymax;
                     if (boxlist->ymax > bbox2.ymax)
                         boxlist->ymax = bbox2.ymax;
-                    if (boxlist->ymin > boxlist->ymax-MINY)
+                    if (boxlist->ymin > boxlist->ymax-params.output_size.ymin)
                     {
-                        boxlist->ymin = boxlist->ymax-MINY;
+                        boxlist->ymin = boxlist->ymax-params.output_size.ymin;
                         if (boxlist->ymin < 0)
                             boxlist->ymin = 0;
                     }
