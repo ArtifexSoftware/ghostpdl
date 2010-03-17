@@ -2629,14 +2629,24 @@ pdf14_update_device_color_procs(gx_device *dev,
                     case 1:
                         pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
                         new_14procs = &gray_pdf14_procs;
+                        comp_bits[0] = 8;
+                        comp_shift[0] = 0; 
                         break;
                     case 3:
                         pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
                         new_14procs = &rgb_pdf14_procs;
+                        for (k = 0; k < 3; k++) {
+                            comp_bits[k] = 8;
+                            comp_shift[k] = (2-k)*8; 
+                        }
                         break;
                    case 4:
                         pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
                         new_14procs = &cmyk_pdf14_procs;
+                        for (k = 0; k < 4; k++) {
+                            comp_bits[k] = 8;
+                            comp_shift[k] = (3-k)*8; 
+                        }
                         break;
                 }
                 break;
@@ -2799,7 +2809,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                 /* Check if the profile is different. */
                 if (pis->icc_manager->device_profile->hashcode != 
                                         cmm_icc_profile_data->hashcode) {
-
+                    update_color_info = true;
                     new_num_comps = cmm_icc_profile_data->num_comps;
                     new_depth = cmm_icc_profile_data->num_comps*8;
                     switch (new_num_comps) {
@@ -2808,18 +2818,28 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                         new_additive = true;
                         pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
                         new_14procs = &gray_pdf14_procs;
+                        comp_bits[0] = 8;
+                        comp_shift[0] = 0; 
                         break;
                     case 3:
                         new_polarity = GX_CINFO_POLARITY_ADDITIVE;
                         new_additive = true;
                         pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
                         new_14procs = &rgb_pdf14_procs;
+                        for (k = 0; k < 3; k++) {
+                            comp_bits[k] = 8;
+                            comp_shift[k] = (2-k)*8; 
+                        }
                         break;
                     case 4:
                         new_polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
                         new_additive = false;
                         pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
                         new_14procs = &cmyk_pdf14_procs;
+                        for (k = 0; k < 4; k++) {
+                            comp_bits[k] = 8;
+                            comp_shift[k] = (3-k)*8; 
+                        }
                         break;
                     default:
                         return gs_rethrow(gs_error_undefinedresult, 
