@@ -224,13 +224,10 @@ static int
 gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
 {
     if (pcs->cmm_icc_profile_data == NULL) {
-
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
         pcs->type = &gs_color_space_type_ICC;
         rc_adjust(pgs->icc_manager->default_gray, pcs->rc.ref_count, "gx_install_DeviceGray");	
-
     }
-
     return 0;
 }
 
@@ -267,72 +264,44 @@ gs_cspace_base_space(const gs_color_space * pcspace)
 
 void rc_increment_cs(gs_color_space *pcs)
 {
-
     rc_increment(pcs);
-
     if (pcs) {
-
         if (pcs->cmm_icc_profile_data != NULL) {
-
             rc_increment(pcs->cmm_icc_profile_data);
-
         }
-
     }
-
 }
 
 void rc_decrement_cs(gs_color_space *pcs, const char *cname) {
 
     if (pcs) {
-        
         if (pcs->cmm_icc_profile_data != NULL) {
-
             rc_decrement(pcs->cmm_icc_profile_data, cname);
-
         }
-
         rc_decrement(pcs, cname);
-
     }
-
-
 }
 
 void rc_decrement_only_cs(gs_color_space *pcs, const char *cname)
 {
-
     if (pcs) {
-
         if (pcs->cmm_icc_profile_data != NULL) {
-
             rc_decrement(pcs->cmm_icc_profile_data, cname);
-
         }
-
         rc_decrement_only(pcs, cname);
     }
-
-
 }
 
 void cs_adjust_counts_icc(gs_state *pgs, int delta)
 {
-    
     gs_color_space *pcs = pgs->color_space;
 
     if (pcs) {
-
         if (pcs->cmm_icc_profile_data != NULL) {
-
             rc_adjust(pcs->cmm_icc_profile_data, delta, "cs_adjust_counts_icc");	
-
-
         }
-
         cs_adjust_counts(pgs, delta);
     }
-
 }
 
 
@@ -350,13 +319,10 @@ static int
 gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 {    
     if (pcs->cmm_icc_profile_data == NULL) {
-
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
         pcs->type = &gs_color_space_type_ICC;
         rc_adjust(pgs->icc_manager->default_rgb, pcs->rc.ref_count, "gx_install_DeviceRGB");	
-
     }
-
     return 0;
 }
 
@@ -365,13 +331,10 @@ static int
 gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
 {
     if (pcs->cmm_icc_profile_data == NULL) {
-
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;
         pcs->type = &gs_color_space_type_ICC;
         rc_adjust(pgs->icc_manager->default_cmyk, pcs->rc.ref_count, "gx_install_DeviceCMYK");	
-
     }
-
     return 0;
 }
 
