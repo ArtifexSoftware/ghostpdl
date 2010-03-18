@@ -521,13 +521,12 @@ gs_begin_transparency_mask(gs_state * pgs,
     gs_pdf14trans_params_t params = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
     int i;
-    const gs_color_space *blend_color_space;
+    gs_color_space *blend_color_space;
     int num_components;
 
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
     params.subtype = ptmp->subtype;
-   /* params.SMask_is_CIE = gs_color_space_is_CIE(pgs->color_space); */  /* See comments in gs_begin_transparency_mask */
     params.SMask_is_CIE = false; 
     params.Background_components = ptmp->Background_components;
     memcpy(params.Background, ptmp->Background, l);
@@ -537,15 +536,21 @@ gs_begin_transparency_mask(gs_state * pgs,
 	    (ptmp->TransferFunction == mask_transfer_identity);
     params.mask_is_image = mask_is_image;
     params.replacing = ptmp->replacing;
-    /* Note that the SMask buffer may have a different 
-       numcomps than the device buffer */
-    params.group_color_numcomps = cs_num_components(pgs->color_space);
 
-    if_debug9('v', "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
-      subtype = %d  Background_components = %d Num_grp_clr_comp = %d  %s\n",
+    /* The eventual state that we want this smask to be moved to
+       is always gray.  This should provide us with a significant 
+       speed improvement over the old code.  This does not keep us
+       from having groups within the softmask getting blended in different
+       color spaces, it just makes the final space be gray, which is what
+       we will need to get to eventually anyway. In this way we avoid a 
+       final color conversion on a potentially large buffer. */
+    blend_color_space = gs_cspace_new_DeviceGray(pgs->memory);
+    blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
+    rc_increment(pgs->icc_manager->default_gray);
+    if_debug8('v', "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
+      subtype = %d  Background_components = %d %s\n",
 	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
 	      (int)ptmp->subtype, ptmp->Background_components,
-              params.group_color_numcomps,
 	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
 
@@ -557,47 +562,20 @@ gs_begin_transparency_mask(gs_state * pgs,
 	ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
 	params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
     }
-
-    /* If we have a CIE space & a luminosity subtype
-       we will need to do our concretization
-       to CIEXYZ so that we can obtain the proper 
-       luminance value.  This is what SHOULD happen
-       according to the spec.  However AR does not 
-       follow this.  It always seems to do the soft mask
-       creation in the device space.  For this reason
-       we will do that too. SMask_is_CIE is always false for now */
-
-    /* The blending procs are currently based upon the device type.
-       We need to have them based upon the current color space */
-
     /* Note:  This function is called during the c-list writer side. */ 
-
-    blend_color_space = pgs->color_space;
-
-    if ( gs_color_space_is_ICC(blend_color_space) ) {
-
+    if ( blend_color_space->cmm_icc_profile_data != NULL ) {
     /* Blending space is ICC based.  If we 
        are doing c-list rendering we will need
-       to write this color space into the clist.
-       MJV ToDo.
-       */
-
+       to write this color space into the clist. */
         params.group_color = ICC;
         params.group_color_numcomps = 
                 blend_color_space->cmm_icc_profile_data->num_comps;
-
         /* Get the ICC profile */
-
         params.iccprofile = blend_color_space->cmm_icc_profile_data;
         rc_increment(params.iccprofile);
-
-
     } else {
-
-
         num_components = cs_num_components(blend_color_space);
         switch (abs(num_components)) {
-
             case 1:				
                 params.group_color = GRAY_SCALE;       
                 params.group_color_numcomps = 1;  /* Need to check */
@@ -617,11 +595,9 @@ gs_begin_transparency_mask(gs_state * pgs,
                    transform */
             return_error(gs_error_rangecheck);
             break;
-
          }    
-
     }
-
+    rc_decrement_only_cs(blend_color_space, "gs_begin_transparency_mask");
     return gs_state_update_pdf14trans(pgs, &params);
 }
 

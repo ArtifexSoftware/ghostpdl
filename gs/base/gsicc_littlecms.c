@@ -267,8 +267,10 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     des_data_type = des_data_type | ENDIAN16_SH(1);
 #endif
 /* Create the link */
-    return(cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
-        rendering_params->rendering_intent, (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC) /*cmsFLAGS_LOWRESPRECALC*/));	
+    return(cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, 
+                        des_data_type, rendering_params->rendering_intent, 
+               (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC)));
+    /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/	
 }
 
 /* Get the link from the CMS, but include proofing. 

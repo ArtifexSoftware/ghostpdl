@@ -1022,11 +1022,24 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 }
 
 static	int
-pdf14_pop_transparency_mask(pdf14_ctx *ctx)
+pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis)
 {
     pdf14_buf *tos = ctx->stack;
     byte *new_data_buf;
+    int icc_match;
+    cmm_profile_t *des_profile = tos->parent_color_info_procs->icc_profile; /* If set, this should be a gray profile */
+    cmm_profile_t *src_profile = pis->icc_manager->device_profile;    
+    gsicc_rendering_param_t rendering_params;
+    gsicc_link_t *icc_link;
 
+    /* icc_match == -1 means old non-icc code.
+       icc_match == 0 means use icc code 
+       icc_match == 1 mean no conversion needed */
+    if ( des_profile != NULL && src_profile != NULL ) {
+        icc_match = (des_profile->hashcode ==  src_profile->hashcode);
+    } else {
+        icc_match = -1;
+    }
     if_debug1('v', "[v]pdf14_pop_transparency_mask, idle=%d\n", tos->idle);
     ctx->stack = tos->saved;
     tos->saved = NULL;  /* To avoid issues with GC */
@@ -1060,6 +1073,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
             ctx->maskbuf->rc_mask->mask_buf = tos;
         }
     } else {
+        /* If we are already in the source space then there is no reason 
+           to do the transformation */
         /* Lets get this to a monochrome buffer and map it to a luminance only value */
         /* This will reduce our memory.  We won't reuse the existing one, due */
         /* Due to the fact that on certain systems we may have issues recovering */
@@ -1072,10 +1087,36 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx)
            we won't be filling everything during the remap if it had not been 
            written into by the PDF14 fill rect */
         memset(new_data_buf, 0, tos->planestride);
-        Smask_Luminosity_Mapping(tos->rect.q.y - tos->rect.p.y ,
-            tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
-            tos->rowstride, tos->planestride, new_data_buf, tos->data, ctx->additive,
-            tos->SMask_is_CIE, tos->SMask_SubType); 
+        if ( icc_match == 1 || tos->n_chan == 2) {
+            /* There is no need to convert.  Data is already gray scale.
+               We just need to copy the gray plane */
+            smask_copy(tos->rect.q.y - tos->rect.p.y,
+                       tos->rect.q.x - tos->rect.p.x, 
+                       tos->rowstride, tos->data, new_data_buf);
+        } else {
+            if ( icc_match == -1 ) {
+                /* The slow old fashioned way */
+                smask_luminosity_mapping(tos->rect.q.y - tos->rect.p.y ,
+                    tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
+                    tos->rowstride, tos->planestride, 
+                    tos->data,  new_data_buf, ctx->additive,
+                    tos->SMask_is_CIE, tos->SMask_SubType); 
+            } else {
+                /* ICC case where we use the CMM */
+                /* Request the ICC link for the transform that we will need to use */
+                rendering_params.black_point_comp = BP_OFF;
+                rendering_params.object_type = GS_IMAGE_TAG;
+                rendering_params.rendering_intent = gsPERCEPTUAL;
+                icc_link = gsicc_get_link_profile(pis, des_profile, 
+                    src_profile, &rendering_params, pis->memory, false);
+                smask_icc(tos->rect.q.y - tos->rect.p.y ,
+                                    tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
+                                    tos->rowstride, tos->planestride, 
+                                    tos->data, new_data_buf, icc_link);
+                /* Release the link */
+                gsicc_release_link(icc_link);
+            }
+        }
          /* Free the old object, NULL test was above */
           gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
              tos->data = new_data_buf;
@@ -3084,7 +3125,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
     int ok;
 
     if_debug0('v', "pdf14_end_transparency_mask\n");
-    ok = pdf14_pop_transparency_mask(pdev->ctx);
+    ok = pdf14_pop_transparency_mask(pdev->ctx, pis);
     /* May need to reset some color stuff related
      * to a mismatch between the Smask color space
      * and the Smask blending space */
