@@ -582,6 +582,12 @@ buildfontdict 3 /.buildfont3 cvx put
 % We go to some trouble to parse the font name and extract
 % properties from it.  Later entries take priority over earlier.
 /.substitutefaces [
+        % Define substitutes for the fonts we define in Fontmap.GS
+  [(Charter) /Times 0]
+  [(Utopia) /Times 0]
+  [(Antiqua) /Times 0]
+  [(Calligraphic) /Helvetica 0]
+  [(Hershey) /Times 0]
         % Guess at suitable substitutions for random unknown fonts.
   [(Book) /NewCenturySchlbk 0]
   [(Grot) /Helvetica 0]
