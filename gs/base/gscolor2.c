@@ -34,18 +34,18 @@ int
 gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 {
     int             code = 0;
-    gs_color_space  *cs_old = pgs->color_space;
-    gs_client_color cc_old = *pgs->ccolor;
+    gs_color_space  *cs_old = pgs->color[0].color_space;
+    gs_client_color cc_old = *pgs->color[0].ccolor;
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
 
-    if (pcs->id != pgs->color_space->id) {
+    if (pcs->id != cs_old->id) {
         rc_increment(pcs);
-        pgs->color_space = pcs;
+        pgs->color[0].color_space = pcs;
         if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0          ||
               (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0)  ) {
-            pgs->color_space = cs_old;
+            pgs->color[0].color_space = cs_old;
             rc_decrement_only(pcs, "gs_setcolorspace");
         } else {
 	    cs_old->type->adjust_color_count(&cc_old, cs_old, -1);
@@ -54,9 +54,9 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
     }
 
     if (code >= 0) {
-	pgs->color_space->pclient_color_space_data =
+	pgs->color[0].color_space->pclient_color_space_data =
 	    pcs->pclient_color_space_data;
-        cs_full_init_color(pgs->ccolor, pcs);
+        cs_full_init_color(pgs->color[0].ccolor, pcs);
         gx_unset_dev_color(pgs);
     }
 
@@ -67,22 +67,22 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 gs_color_space *
 gs_currentcolorspace(const gs_state * pgs)
 {
-    return pgs->color_space;
+    return pgs->color[0].color_space;
 }
 
 /* setcolor */
 int
 gs_setcolor(gs_state * pgs, const gs_client_color * pcc)
 {
-    gs_color_space *    pcs = pgs->color_space;
-    gs_client_color     cc_old = *pgs->ccolor;
+    gs_color_space *    pcs = pgs->color[0].color_space;
+    gs_client_color     cc_old = *pgs->color[0].ccolor;
 
    if (pgs->in_cachedevice)
 	return_error(gs_error_undefined); /* PLRM3 page 215. */
     gx_unset_dev_color(pgs);
     (*pcs->type->adjust_color_count)(pcc, pcs, 1);
-    *pgs->ccolor = *pcc;
-    (*pcs->type->restrict_color)(pgs->ccolor, pcs);
+    *pgs->color[0].ccolor = *pcc;
+    (*pcs->type->restrict_color)(pgs->color[0].ccolor, pcs);
     (*pcs->type->adjust_color_count)(&cc_old, pcs, -1);
 
     return 0;
@@ -92,14 +92,14 @@ gs_setcolor(gs_state * pgs, const gs_client_color * pcc)
 const gs_client_color *
 gs_currentcolor(const gs_state * pgs)
 {
-    return pgs->ccolor;
+    return pgs->color[0].ccolor;
 }
 
 /* currentdevicecolor */
 const gx_device_color *
 gs_currentdevicecolor(const gs_state * pgs)
 {
-    return pgs->dev_color;
+    return pgs->color[0].dev_color;
 }
 
 /* ------ Internal procedures ------ */
@@ -711,5 +711,5 @@ gx_serialize_Indexed(const gs_color_space * pcs, stream * s)
 int
 gs_includecolorspace(gs_state * pgs, const byte *res_name, int name_length)
 {
-    return (*dev_proc(pgs->device, include_color_space))(pgs->device, pgs->color_space, res_name, name_length);
+    return (*dev_proc(pgs->device, include_color_space))(pgs->device, gs_currentcolorspace_inline(pgs), res_name, name_length);
 }

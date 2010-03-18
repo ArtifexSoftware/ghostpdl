@@ -590,7 +590,7 @@ gs_pattern1_set_color(const gs_client_color * pcc, gs_state * pgs)
     gs_pattern1_template_t * ptmplt = &pinst->template;
 
     if (ptmplt->PaintType == 2) {
-        const gs_color_space *  pcs = pgs->color_space;
+        const gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
 
         pcs = pcs->base_space;
         return pcs->type->set_overprint(pcs, pgs);

@@ -122,12 +122,12 @@ typedef struct int_gstate_s {
           transfer_procs;	/* transfer procedures */
     ref black_generation;	/* (procedure) */
     ref undercolor_removal;	/* (procedure) */
-    ref_colorspace colorspace;
+    ref_colorspace colorspace[2];
     /*
      * Pattern is relevant only if the current color space
      * is a pattern space.
      */
-    ref pattern;		/* pattern (dictionary) */
+    ref pattern[2];		/* pattern (dictionary) */
     struct {
 	ref dict;		/* CIE color rendering dictionary */
 	ref_cie_render_procs procs;	/* (see above) */

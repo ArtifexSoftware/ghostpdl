@@ -238,7 +238,7 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
      * space.  If so then when check if the color space contains a separation
      * color for which we need a CMYK equivalent.
      */
-    pcs = pgs->color_space;
+    pcs = gs_currentcolorspace_inline(pgs);
     if (pcs != NULL) {
 	if (pcs->type->index == gs_color_space_index_Separation) {
 	    update_Separation_spot_equivalent_cmyk_colors(pdev, pgs, pcs,

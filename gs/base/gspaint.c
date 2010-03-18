@@ -81,7 +81,8 @@ gs_fillpage(gs_state * pgs)
 
     gx_set_dev_color(pgs);
 
-    code = (*dev_proc(dev, fillpage))(dev, (gs_imager_state *)pgs, pgs->dev_color);
+    code = (*dev_proc(dev, fillpage))(dev, (gs_imager_state *)pgs,
+				      gs_currentdevicecolor_inline(pgs));
     if (code < 0)
 	return code;
     return (*dev_proc(dev, sync_output)) (dev);
@@ -96,7 +97,7 @@ alpha_buffer_bits(gs_state * pgs)
 {
     gx_device *dev;
 
-    if (!color_is_pure(pgs->dev_color))
+    if (!color_is_pure(gs_currentdevicecolor_inline(pgs)))
 	return 0;
     dev = gs_currentdevice_inline(pgs);
     if (gs_device_is_abuf(dev)) {
@@ -243,6 +244,66 @@ alpha_buffer_release(gs_state * pgs, bool newpath)
     return code;
 }
 
+static int do_fill(gs_state *pgs, int rule)
+{
+    int code, abits, acode, rcode = 0;
+
+    /* Here we need to distinguish text from vectors to compute the object tag.
+       Actually we need to know whether this function is called to rasterize a character,
+       or to rasterize a vector graphics to the output device.
+       Currently we assume it works for the bitrgbtags device only,
+       which is a low level device with a 4-component color model.
+       We use the fact that with printers a character is usually being rendered 
+       to a 1bpp cache device rather than to the output device.
+       Therefore we hackly look whether the target device
+       "has a color" : either it's a multicomponent color model,
+       or it is not gray (such as a yellow separation).
+
+       This check has several limitations :
+       1. It doesn't work with -dNOCACHE.
+       2. It doesn't work with large characters,
+	  which cannot fit into a cache cell and thus they
+	  render directly to the output device.
+       3. It doesn't work for TextAlphaBits=2 or 4.
+	  We don't care of this case because
+	  text antialiasing usually usn't applied to printers.
+       4. It doesn't work for things like with "(xyz) true charpath stroke".
+	  That's unfortunate, we'd like to improve someday.
+       5. It doesn't work for high level devices when a Type 3 character is being constructed.
+	  This case is not important for low level devices
+	  (which a printer is), because low level device doesn't accept
+	  Type 3 charproc streams immediately.
+       6. It doesn't work properly while an insiding testing,
+	  which sets gs_hit_device, which is uncolored.
+     */
+    if (gx_device_has_color(gs_currentdevice(pgs))) {
+	gs_set_object_tag(pgs, GS_PATH_TAG);
+    }
+    else {
+	gs_set_object_tag(pgs, GS_TEXT_TAG);
+    }
+    gx_set_dev_color(pgs);
+    code = gs_state_color_load(pgs);
+    if (code < 0)
+	return code;
+    abits = alpha_buffer_bits(pgs);
+    if (abits > 1) {
+	acode = alpha_buffer_init(pgs, pgs->fill_adjust.x,
+				  pgs->fill_adjust.y, abits);
+	if (acode < 0)
+	    return acode;
+    } else
+	acode = 0;
+    code = gx_fill_path(pgs->path, gs_currentdevicecolor_inline(pgs), pgs, rule,
+			pgs->fill_adjust.x, pgs->fill_adjust.y);
+    if (acode > 0)
+	rcode = alpha_buffer_release(pgs, code >= 0);
+    if (code >= 0 && rcode < 0)
+        code = rcode;
+
+    return code;
+}
+
 /* Fill the current path using a specified rule. */
 static int
 fill_with_rule(gs_state * pgs, int rule)
@@ -259,63 +320,9 @@ fill_with_rule(gs_state * pgs, int rule)
 	gs_newpath(pgs);
 	code = 0;
     } else {
-	int abits, acode, rcode = 0;
-
-	/* Here we need to distinguish text from vectors to compute the object tag.
-	   Actually we need to know whether this function is called to rasterize a character,
-	   or to rasterize a vector graphics to the output device.
-	   Currently we assume it works for the bitrgbtags device only,
-	   which is a low level device with a 4-component color model.
-	   We use the fact that with printers a character is usually being rendered 
-	   to a 1bpp cache device rather than to the output device.
-	   Therefore we hackly look whether the target device
-	   "has a color" : either it's a multicomponent color model,
-	   or it is not gray (such as a yellow separation).
-
-	   This check has several limitations :
-	   1. It doesn't work with -dNOCACHE.
-	   2. It doesn't work with large characters,
-	      which cannot fit into a cache cell and thus they
-	      render directly to the output device.
-	   3. It doesn't work for TextAlphaBits=2 or 4.
-	      We don't care of this case because
-	      text antialiasing usually usn't applied to printers.
-	   4. It doesn't work for things like with "(xyz) true charpath stroke".
-	      That's unfortunate, we'd like to improve someday.
-	   5. It doesn't work for high level devices when a Type 3 character is being constructed.
-	      This case is not important for low level devices
-	      (which a printer is), because low level device doesn't accept
-	      Type 3 charproc streams immediately.
-	   6. It doesn't work properly while an insiding testing,
-	      which sets gs_hit_device, which is uncolored.
-	 */
-        if (gx_device_has_color(gs_currentdevice(pgs))) {
-            gs_set_object_tag(pgs, GS_PATH_TAG);
-	}
-	else {
-            gs_set_object_tag(pgs, GS_TEXT_TAG);
-	}
-	gx_set_dev_color(pgs);
-	code = gs_state_color_load(pgs);
-	if (code < 0)
-	    return code;
-	abits = alpha_buffer_bits(pgs);
-	if (abits > 1) {
-	    acode = alpha_buffer_init(pgs, pgs->fill_adjust.x,
-				      pgs->fill_adjust.y, abits);
-	    if (acode < 0)
-		return acode;
-	} else
-	    acode = 0;
-	code = gx_fill_path(pgs->path, pgs->dev_color, pgs, rule,
-			    pgs->fill_adjust.x, pgs->fill_adjust.y);
-	if (acode > 0)
-	    rcode = alpha_buffer_release(pgs, code >= 0);
+        code = do_fill(pgs, rule);
 	if (code >= 0)
 	    gs_newpath(pgs);
-	if (code >= 0 && rcode < 0)
-	    code = rcode;
-
     }
     return code;
 }
@@ -332,6 +339,109 @@ gs_eofill(gs_state * pgs)
 {
     pgs->device->sgr.stroke_stored = false;
     return fill_with_rule(pgs, gx_rule_even_odd);
+}
+
+static int
+do_stroke(gs_state * pgs)
+{
+    int code, abits, acode, rcode = 0;
+
+    /* to distinguish text from vectors we hackly look at the
+       target device 1 bit per component is a cache and this is
+       text else it is a path */
+    if (gx_device_has_color(gs_currentdevice(pgs)))
+        gs_set_object_tag(pgs, GS_PATH_TAG);
+    else
+        gs_set_object_tag(pgs, GS_TEXT_TAG);
+
+    /* Here we need to distinguish text from vectors to compute the object tag.
+       Actually we need to know whether this function is called to rasterize a character,
+       or to rasterize a vector graphics to the output device.
+       Currently we assume it works for the bitrgbtags device only,
+       which is a low level device with a 4-component color model.
+       We use the fact that with printers a character is usually being rendered 
+       to a 1bpp cache device rather than to the output device.
+       Therefore we hackly look whether the target device
+       "has a color" : either it's a multicomponent color model,
+       or it is not gray (such as a yellow separation).
+
+       This check has several limitations :
+       1. It doesn't work with -dNOCACHE.
+       2. It doesn't work with large characters,
+          which cannot fit into a cache cell and thus they
+          render directly to the output device.
+       3. It doesn't work for TextAlphaBits=2 or 4.
+          We don't care of this case because
+          text antialiasing usually usn't applied to printers.
+       4. It doesn't work for things like with "(xyz) true charpath stroke".
+          That's unfortunate, we'd like to improve someday.
+       5. It doesn't work for high level devices when a Type 3 character is being constructed.
+          This case is not important for low level devices
+          (which a printer is), because low level device doesn't accept
+          Type 3 charproc streams immediately.
+     */
+    if (gx_device_has_color(gs_currentdevice(pgs))) {
+	gs_set_object_tag(pgs, GS_PATH_TAG);
+    }
+    else {
+	gs_set_object_tag(pgs, GS_TEXT_TAG);
+    }
+    /* Evil: The following call is a macro that might return! */
+    gx_set_dev_color(pgs);
+    code = gs_state_color_load(pgs);
+    if (code < 0)
+	return code;
+    abits = alpha_buffer_bits(pgs);
+    if (abits > 1) {
+	/*
+	 * Expand the bounding box by the line width.
+	 * This is expensive to compute, so we only do it
+	 * if we know we're going to buffer.
+	 */
+	float xxyy = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yy);
+	float xyyx = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yx);
+	float scale = (float)(1 << (abits / 2));
+	float orig_width = gs_currentlinewidth(pgs);
+	float new_width = orig_width * scale;
+	fixed extra_adjust =
+		float2fixed(max(xxyy, xyyx) * new_width / 2);
+	float orig_flatness = gs_currentflat(pgs);
+	gx_path spath;
+
+	/* Scale up the line width, dash pattern, and flatness. */
+	if (extra_adjust < fixed_1)
+	    extra_adjust = fixed_1;
+	acode = alpha_buffer_init(pgs,
+				  pgs->fill_adjust.x + extra_adjust,
+				  pgs->fill_adjust.y + extra_adjust,
+				  abits);
+	if (acode < 0)
+	    return acode;
+	gs_setlinewidth(pgs, new_width);
+	scale_dash_pattern(pgs, scale);
+	gs_setflat(pgs, orig_flatness * scale);
+	/*
+	 * The alpha-buffer device requires that we fill the
+	 * entire path as a single unit.
+	 */
+	gx_path_init_local(&spath, pgs->memory);
+	code = gx_stroke_add(pgs->path, &spath, pgs, false);
+	gs_setlinewidth(pgs, orig_width);
+	scale_dash_pattern(pgs, 1.0 / scale);
+	if (code >= 0)
+	    code = gx_fill_path(&spath, gs_currentdevicecolor_inline(pgs), pgs,
+				gx_rule_winding_number,
+				pgs->fill_adjust.x,
+				pgs->fill_adjust.y);
+	gs_setflat(pgs, orig_flatness);
+	gx_path_free(&spath, "gs_stroke");
+	if (acode > 0)
+	    rcode = alpha_buffer_release(pgs, code >= 0);
+    } else
+	code = gx_stroke_fill(pgs->path, pgs);
+    if (code >= 0 && rcode < 0)
+	code = rcode;
+    return code;
 }
 
 /* Stroke the current path */
@@ -362,104 +472,9 @@ gs_stroke(gs_state * pgs)
 	gs_newpath(pgs);
 	code = 0;
     } else {
-	int abits, acode, rcode = 0;
-
-        /* to distinguish text from vectors we hackly look at the
-           target device 1 bit per component is a cache and this is
-           text else it is a path */
-        if (gx_device_has_color(gs_currentdevice(pgs)))
-            gs_set_object_tag(pgs, GS_PATH_TAG);
-        else
-            gs_set_object_tag(pgs, GS_TEXT_TAG);
-
-	/* Here we need to distinguish text from vectors to compute the object tag.
-	   Actually we need to know whether this function is called to rasterize a character,
-	   or to rasterize a vector graphics to the output device.
-	   Currently we assume it works for the bitrgbtags device only,
-	   which is a low level device with a 4-component color model.
-	   We use the fact that with printers a character is usually being rendered 
-	   to a 1bpp cache device rather than to the output device.
-	   Therefore we hackly look whether the target device
-	   "has a color" : either it's a multicomponent color model,
-	   or it is not gray (such as a yellow separation).
-
-	   This check has several limitations :
-	   1. It doesn't work with -dNOCACHE.
-	   2. It doesn't work with large characters,
-	      which cannot fit into a cache cell and thus they
-	      render directly to the output device.
-	   3. It doesn't work for TextAlphaBits=2 or 4.
-	      We don't care of this case because
-	      text antialiasing usually usn't applied to printers.
-	   4. It doesn't work for things like with "(xyz) true charpath stroke".
-	      That's unfortunate, we'd like to improve someday.
-	   5. It doesn't work for high level devices when a Type 3 character is being constructed.
-	      This case is not important for low level devices
-	      (which a printer is), because low level device doesn't accept
-	      Type 3 charproc streams immediately.
-	 */
-        if (gx_device_has_color(gs_currentdevice(pgs))) {
-            gs_set_object_tag(pgs, GS_PATH_TAG);
-	}
-	else {
-            gs_set_object_tag(pgs, GS_TEXT_TAG);
-	}
-	gx_set_dev_color(pgs);
-	code = gs_state_color_load(pgs);
-	if (code < 0)
-	    return code;
-	abits = alpha_buffer_bits(pgs);
-	if (abits > 1) {
-	    /*
-	     * Expand the bounding box by the line width.
-	     * This is expensive to compute, so we only do it
-	     * if we know we're going to buffer.
-	     */
-	    float xxyy = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yy);
-	    float xyyx = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yx);
-	    float scale = (float)(1 << (abits / 2));
-	    float orig_width = gs_currentlinewidth(pgs);
-	    float new_width = orig_width * scale;
-	    fixed extra_adjust =
-		float2fixed(max(xxyy, xyyx) * new_width / 2);
-	    float orig_flatness = gs_currentflat(pgs);
-	    gx_path spath;
-
-	    /* Scale up the line width, dash pattern, and flatness. */
-	    if (extra_adjust < fixed_1)
-		extra_adjust = fixed_1;
-	    acode = alpha_buffer_init(pgs,
-				      pgs->fill_adjust.x + extra_adjust,
-				      pgs->fill_adjust.y + extra_adjust,
-				      abits);
-	    if (acode < 0)
-		return acode;
-	    gs_setlinewidth(pgs, new_width);
-	    scale_dash_pattern(pgs, scale);
-	    gs_setflat(pgs, orig_flatness * scale);
-	    /*
-	     * The alpha-buffer device requires that we fill the
-	     * entire path as a single unit.
-	     */
-	    gx_path_init_local(&spath, pgs->memory);
-	    code = gx_stroke_add(pgs->path, &spath, pgs, false);
-	    gs_setlinewidth(pgs, orig_width);
-	    scale_dash_pattern(pgs, 1.0 / scale);
-	    if (code >= 0)
-		code = gx_fill_path(&spath, pgs->dev_color, pgs,
-				    gx_rule_winding_number,
-				    pgs->fill_adjust.x,
-				    pgs->fill_adjust.y);
-	    gs_setflat(pgs, orig_flatness);
-	    gx_path_free(&spath, "gs_stroke");
-	    if (acode > 0)
-		rcode = alpha_buffer_release(pgs, code >= 0);
-	} else
-	    code = gx_stroke_fill(pgs->path, pgs);
+        code = do_stroke(pgs);
 	if (code >= 0)
 	    gs_newpath(pgs);
-	if (code >= 0 && rcode < 0)
-	    code = rcode;
     }
     return code;
 }

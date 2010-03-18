@@ -140,14 +140,19 @@ typedef struct gs_state_parts_s {
     gx_path *path;
     gx_clip_path *clip_path;
     gx_clip_path *effective_clip_path;
-    gs_client_color *ccolor;
-    gx_device_color *dev_color;
+    struct {
+        gs_client_color *ccolor;
+        gx_device_color *dev_color;
+    } color[2];
 } gs_state_parts;
 
 #define GSTATE_ASSIGN_PARTS(pto, pfrom)\
   ((pto)->path = (pfrom)->path, (pto)->clip_path = (pfrom)->clip_path,\
    (pto)->effective_clip_path = (pfrom)->effective_clip_path,\
-   (pto)->ccolor = (pfrom)->ccolor, (pto)->dev_color = (pfrom)->dev_color)
+   (pto)->color[0].ccolor = (pfrom)->color[0].ccolor,\
+   (pto)->color[0].dev_color = (pfrom)->color[0].dev_color,\
+   (pto)->color[1].ccolor = (pfrom)->color[1].ccolor,\
+   (pto)->color[1].dev_color = (pfrom)->color[1].dev_color)
 
 /* GC descriptors */
 extern_st(st_imager_state);
@@ -247,10 +252,17 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->effective_clip_path = pgs->clip_path;
     pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
-    pgs->color_space = gs_cspace_new_DeviceGray(pgs->memory);
+    pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
+    pgs->color[1].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     pgs->in_cachedevice = 0;
+    gs_swapcolors_quick(pgs); /* To color 1 */
+    gx_set_device_color_1(pgs); /* sets colorspace and client color */
+    gs_swapcolors_quick(pgs); /* To color 0 */
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */
+    pgs->dev_ht_alt = 0;
+    pgs->cie_joint_caches_alt = 0;
+    pgs->pattern_cache_alt = 0;
     gs_nulldevice(pgs);
     gs_setalpha(pgs, 1.0);
     gs_settransfer(pgs, gs_identity_transfer);
@@ -390,6 +402,7 @@ gs_grestore_only(gs_state * pgs)
     void *sdata;
     gs_transparency_state_t *tstack = pgs->transparency_stack;
     bool prior_overprint = pgs->overprint;
+    int code;
 
     if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
@@ -412,9 +425,10 @@ gs_grestore_only(gs_state * pgs)
 
     /* update the overprint compositor, if necessary */
     if (prior_overprint || pgs->overprint)
+    {
         return gs_do_set_overprint(pgs);
-    else
-        return 0;
+    }
+    return 0;
 }
 
 /* Restore the graphics state per PostScript semantics */
@@ -649,8 +663,8 @@ gs_state_update_overprint(gs_state * pgs, const gs_overprint_params_t * pparams)
 int
 gs_do_set_overprint(gs_state * pgs)
 {
-    const gs_color_space *  pcs = pgs->color_space;
-    const gs_client_color * pcc = pgs->ccolor;
+    const gs_color_space *  pcs = gs_currentcolorspace_inline(pgs);
+    const gs_client_color * pcc = gs_currentcolor_inline(pgs);
     int                     code = 0;
 
     if (cs_num_components(pcs) < 0 && pcc->pattern != 0)
@@ -813,8 +827,10 @@ gs_currenttextrenderingmode(const gs_state * pgs)
 static void
 gstate_free_parts(const gs_state * parts, gs_memory_t * mem, client_name_t cname)
 {
-    gs_free_object(mem, parts->dev_color, cname);
-    gs_free_object(mem, parts->ccolor, cname);
+    gs_free_object(mem, parts->color[1].dev_color, cname);
+    gs_free_object(mem, parts->color[1].ccolor, cname);
+    gs_free_object(mem, parts->color[0].dev_color, cname);
+    gs_free_object(mem, parts->color[0].ccolor, cname);
     if (!parts->effective_clip_shared)
 	gx_cpath_free(parts->effective_clip_path, cname);
     gx_cpath_free(parts->clip_path, cname);
@@ -847,14 +863,20 @@ gstate_alloc_parts(gs_state * parts, const gs_state * shared,
 				  "gstate_alloc_parts(effective_clip_path)");
 	parts->effective_clip_shared = false;
     }
-    parts->color_space = NULL;
-    parts->ccolor =
+    parts->color[0].color_space = NULL;
+    parts->color[1].color_space = NULL;
+    parts->color[0].ccolor =
 	gs_alloc_struct(mem, gs_client_color, &st_client_color, cname);
-    parts->dev_color =
+    parts->color[1].ccolor =
+	gs_alloc_struct(mem, gs_client_color, &st_client_color, cname);
+    parts->color[0].dev_color =
+	gs_alloc_struct(mem, gx_device_color, &st_device_color, cname);
+    parts->color[1].dev_color =
 	gs_alloc_struct(mem, gx_device_color, &st_device_color, cname);
     if (parts->path == 0 || parts->clip_path == 0 ||
 	parts->effective_clip_path == 0 ||
-	parts->ccolor == 0 || parts->dev_color == 0
+	parts->color[0].ccolor == 0 || parts->color[0].dev_color == 0 ||
+	parts->color[1].ccolor == 0 || parts->color[1].dev_color == 0
 	) {
 	gstate_free_parts(parts, mem, cname);
 	return_error(gs_error_VMerror);
@@ -927,10 +949,14 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	    goto fail;
     }
     gs_imager_state_copied((gs_imager_state *)pgs);
+    rc_increment(pgs->dev_ht_alt);
+    rc_increment(pgs->cie_joint_caches_alt);
     /* Don't do anything to clip_stack. */
     rc_increment(pgs->device);
-    *parts.ccolor = *pfrom->ccolor;
-    *parts.dev_color = *pfrom->dev_color;
+    *parts.color[0].ccolor    = *pfrom->color[0].ccolor;
+    *parts.color[0].dev_color = *pfrom->color[0].dev_color;
+    *parts.color[1].ccolor    = *pfrom->color[1].ccolor;
+    *parts.color[1].dev_color = *pfrom->color[1].dev_color;
     if (reason == copy_for_gsave) {
 	float *dfrom = pfrom->line_params.dash.pattern;
 	float *dto = pgs->line_params.dash.pattern;
@@ -941,6 +967,9 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     } else {
 	GSTATE_ASSIGN_PARTS(pgs, &parts);
     }
+    gs_swapcolors_quick(pgs);
+    cs_adjust_counts(pgs, 1);
+    gs_swapcolors_quick(pgs);
     cs_adjust_counts(pgs, 1);
     return pgs;
   fail:
@@ -973,16 +1002,30 @@ gstate_free_contents(gs_state * pgs)
 {
     gs_memory_t *mem = pgs->memory;
     const char *const cname = "gstate_free_contents";
+    int current_col;
+    gx_device_halftone *pdhta = pgs->dev_ht_alt;
 
     rc_decrement(pgs->device, cname);
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
     rc_decrement(pgs->dfilter_stack, cname);
+    gs_swapcolors_quick(pgs);
+    cs_adjust_counts(pgs, -1);
+    gs_swapcolors_quick(pgs);
     cs_adjust_counts(pgs, -1);
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     gstate_free_parts(pgs, mem, cname);
     gs_imager_state_release((gs_imager_state *)pgs);
+    /*
+     * If we're going to free the device halftone, make sure we free the
+     * dependent structures as well.
+     */
+    if (pdhta != 0 && pdhta->rc.ref_count == 1) {
+	gx_device_halftone_release(pdhta, pdhta->rc.memory);
+    }
+    rc_decrement(pgs->dev_ht_alt, "gstate_free_contents");
+    rc_decrement(pgs->cie_joint_caches_alt, "gstate_free_contents");
 }
 
 /* Copy one gstate to another. */
@@ -1007,6 +1050,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
      * Handle references from contents.
      */
     cs_adjust_counts(pto, -1);
+    gs_swapcolors_quick(pto);
+    cs_adjust_counts(pto, -1);
+    gs_swapcolors_quick(pto);
     gx_path_assign_preserve(pto->path, pfrom->path);
     gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
     /*
@@ -1024,8 +1070,10 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     } else
 	gx_cpath_assign_preserve(pto->effective_clip_path,
 				 pfrom->effective_clip_path);
-    *parts.ccolor = *pfrom->ccolor;
-    *parts.dev_color = *pfrom->dev_color;
+    *parts.color[0].ccolor    = *pfrom->color[0].ccolor;
+    *parts.color[0].dev_color = *pfrom->color[0].dev_color;
+    *parts.color[1].ccolor    = *pfrom->color[1].ccolor;
+    *parts.color[1].dev_color = *pfrom->color[1].dev_color;
     /* Handle references from gstate object. */
     rc_pre_assign(pto->device, pfrom->device, cname);
     rc_pre_assign(pto->dfilter_stack, pfrom->dfilter_stack, cname);
@@ -1042,6 +1090,8 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 
 	gs_imager_state_pre_assign((gs_imager_state *)pto,
 				   (const gs_imager_state *)pfrom);
+	rc_pre_assign(pto->dev_ht_alt, pfrom->dev_ht_alt, "gstate_copy");
+	rc_pre_assign(pto->cie_joint_caches_alt, pfrom->cie_joint_caches_alt, "gstate_copy");
 	*pto = *pfrom;
 	pto->client_data = pdata;
 	pto->memory = mem;
@@ -1057,6 +1107,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
     cs_adjust_counts(pto, 1);
+    gs_swapcolors_quick(pto);
+    cs_adjust_counts(pto, 1);
+    gs_swapcolors_quick(pto);
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;
@@ -1066,4 +1119,84 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 gs_id gx_get_clip_path_id(gs_state *pgs)
 {
     return pgs->clip_path->id;
+}
+
+void gs_swapcolors_quick(gs_state *pgs)
+{
+    struct gx_cie_joint_caches_s *tmp_cie;
+    gx_device_halftone           *tmp_ht;
+    gs_devicen_color_map          tmp_ccm;
+    struct gx_pattern_cache_s    *tmp_pc;
+    gs_client_color              *tmp_cc;
+    int                           tmp;
+    gx_device_color              *tmp_dc;
+    gs_color_space               *tmp_cs;
+    
+    tmp_cc               = pgs->color[0].ccolor;
+    pgs->color[0].ccolor = pgs->color[1].ccolor;
+    pgs->color[1].ccolor = tmp_cc;
+
+    tmp_dc                  = pgs->color[0].dev_color;
+    pgs->color[0].dev_color = pgs->color[1].dev_color;
+    pgs->color[1].dev_color = tmp_dc;
+
+    tmp_cs                    = pgs->color[0].color_space;
+    pgs->color[0].color_space = pgs->color[1].color_space;
+    pgs->color[1].color_space = tmp_cs;
+
+    /* Swap the bits of the imager state that depend on the current color */
+    tmp_ht          = pgs->dev_ht;
+    pgs->dev_ht     = pgs->dev_ht_alt;
+    pgs->dev_ht_alt = tmp_ht;
+    
+    tmp_cie                   = pgs->cie_joint_caches;
+    pgs->cie_joint_caches     = pgs->cie_joint_caches_alt;
+    pgs->cie_joint_caches_alt = tmp_cie;
+    
+    tmp_ccm                      = pgs->color_component_map;
+    pgs->color_component_map     = pgs->color_component_map_alt;
+    pgs->color_component_map_alt = tmp_ccm;
+
+    tmp_pc                 = pgs->pattern_cache;
+    pgs->pattern_cache     = pgs->pattern_cache_alt;
+    pgs->pattern_cache_alt = tmp_pc;
+    
+    tmp                = pgs->overprint;
+    pgs->overprint     = pgs->overprint_alt;
+    pgs->overprint_alt = tmp;
+
+    tmp                     = pgs->overprint_mode;
+    pgs->overprint_mode     = pgs->overprint_mode_alt;
+    pgs->overprint_mode_alt = tmp;
+
+    tmp                               = pgs->effective_overprint_mode;
+    pgs->effective_overprint_mode     = pgs->effective_overprint_mode_alt;
+    pgs->effective_overprint_mode_alt = tmp;
+    
+}
+
+int gs_swapcolors(gs_state *pgs)
+{
+    int prior_overprint = pgs->overprint;
+    int prior_mode      = pgs->effective_overprint_mode;
+
+    gs_swapcolors_quick(pgs);
+
+    /* The following code will only call gs_do_set_overprint when we
+     * have a change:
+     * if ((prior_overprint != pgs->overprint) ||
+     *    ((prior_mode != pgs->effective_overprint_mode) &&
+     *     (pgs->overprint)))
+     *    return gs_do_set_overprint(pgs);
+     * Sadly, that's no good, as we need to call when we have swapped
+     * image space types too (separation <-> non separation for example).
+     *
+     * So instead, we call whenever at least one of them had overprint
+     * turned on.
+     */
+    if (prior_overprint || pgs->overprint)
+    {
+        return gs_do_set_overprint(pgs);
+    }
+    return 0;
 }

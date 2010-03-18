@@ -263,7 +263,7 @@ nodict readonly pop
 /op { /FillOverprint gput } bdef
 /OP { /StrokeOverprint gput } bdef
 /OPM {
-  /.setoverprintmode where { pop .setoverprintmode } { pop } ifelse
+  /.setoverprintmode where { pop dup .setoverprintmode .swapcolors .setoverprintmode .swapcolors } { pop } ifelse
 } bdef
 /ca { /FillConstantAlpha gput } bdef
 /CA { /StrokeConstantAlpha gput } bdef
@@ -323,8 +323,10 @@ nodict readonly pop
   FillColor FillColorSpace setgcolor setfillblend
 } def
 /setstrokestate {
+  .swapcolors
   StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
   StrokeConstantAlpha SoftMask .settransparencyparams
+  .swapcolors
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
   /DeviceGray { pop setgray } bdef
@@ -423,7 +425,7 @@ end def
 
 /S {
   OFFlevels length 0 eq {
-    setstrokestate /stroke fsexec
+    setstrokestate .swapcolors /stroke fsexec .swapcolors
   } {
     newpath
   } ifelse
@@ -452,7 +454,7 @@ end def
 /B {
   OFFlevels length 0 eq {
     gsave setfillstate fill grestore
-    setstrokestate /stroke fsexec
+    setstrokestate .swapcolors /stroke fsexec .swapcolors
   } {
     newpath
   } ifelse
@@ -463,7 +465,7 @@ end def
 /B* {
   OFFlevels length 0 eq {
     gsave setfillstate eofill grestore
-    setstrokestate /stroke fsexec
+    setstrokestate .swapcolors /stroke fsexec .swapcolors
   } {
     newpath
   } ifelse
@@ -474,7 +476,7 @@ end def
 % Clipping:
 
 /Wdict 4 dict dup begin
-/S { OFFlevels length 0 eq { gsave setstrokestate stroke grestore } if n } bdef
+/S { OFFlevels length 0 eq { gsave setstrokestate .swapcolors stroke .swapcolors grestore } if n } bdef
 /f { OFFlevels length 0 eq { gsave setfillstate fill grestore } if n } bdef
 /f* { OFFlevels length 0 eq { gsave setfillstate eofill grestore } if n } bdef
 /n { end { currentpoint } stopped not { pop pop clip } if newpath } bdef
@@ -744,8 +746,10 @@ end readonly def
 ] readonly def
 
 /pdfwrite_textrenderingprocs [
+	% Tr 0 - Fill
 	{ setfillstate show } bind
-	{ setstrokestate 
+	% Tr 1 - Stroke
+	{ setstrokestate
         % Need to set the stroke width to a value which gives the correct
         % width under pdfwrite. Pdfwrite uses (in text mode) an identity
         % CTM, so we need to calculate the stroke width which would result
@@ -759,24 +763,31 @@ end readonly def
           % we can ignore it. (wrong answer, but consistent)
           pop pop currentlinewidth
         }ifelse setlinewidth
-        show } bind
+        .swapcolors show .swapcolors } bind
+	% Tr 2 - Fill then Stroke
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show currentpoint 3 -1 roll 
-	  grestore gsave setstrokestate 
+	  grestore gsave setstrokestate
         false charpath 
         % We need to make sure the matrix used for the stroke
         % and therefore stroke width does not include the 
         % Text Matrix Tm.
         TextSaveMatrix setmatrix
+        .swapcolors
         stroke 
+        .swapcolors
 	  grestore moveto
 	} bind
+	% Tr 3 - Neither fill nor stroke
 	{ setfillstate show } bind
+	% Tr 4 - Fill, add to clip
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show grestore true charpath } bind
+	% Tr 5 - Stroke, add to clip
 	{ gsave 1 .settextrenderingmode 
-	  setstrokestate dup show grestore
+	  setstrokestate dup .swapcolors show .swapcolors grestore
 	  true charpath } bind
+	% Tr 6 - Fill, stroke, add to clip
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show grestore gsave dup 
 	  setstrokestate false charpath 
@@ -784,8 +795,10 @@ end readonly def
         % and therefore stroke width does not include the 
         % Text Matrix Tm.
         TextSaveMatrix setmatrix
-        stroke grestore 
+        .swapcolors
+        stroke .swapcolors grestore 
 	  true charpath } bind
+	% Tr 7 - Add to clip
 	{ true charpath } bind
 ] readonly def
 
@@ -931,7 +944,7 @@ end readonly def
 /Tmatrix matrix def
 /tS
  { setstrokestate
-   currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix stroke
+   currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke .swapcolors
    setmatrix moveto
  } bdef
 /tB { gsave tf grestore tS } bdef

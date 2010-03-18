@@ -285,7 +285,7 @@ cie_set_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;
     }
-    istate->colorspace.procs.cie = *pcprocs;
+    istate->colorspace[0].procs.cie = *pcprocs;
     pop(1);
     return (ref_stack_count(&e_stack) == edepth ? 0 : o_push_estack);
 }
@@ -316,7 +316,7 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     check_read_type(*ptref, t_array);
     if (r_size(ptref) != 5)
 	return_error(e_rangecheck);
-    procs = istate->colorspace.procs.cie;
+    procs = istate->colorspace[0].procs.cie;
     code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem);
     if (code < 0)
 	return code;
@@ -373,7 +373,7 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     check_read_type(*ptref, t_array);
     if (r_size(ptref) != 4)
 	return_error(e_rangecheck);
-    procs = istate->colorspace.procs.cie;
+    procs = istate->colorspace[0].procs.cie;
     code = gs_cspace_build_CIEDEF(&pcs, NULL, mem);
     if (code < 0)
 	return code;
@@ -425,7 +425,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict)
     int code;
 
     push(1); /* Sacrificial */
-    procs = istate->colorspace.procs.cie;
+    procs = istate->colorspace[0].procs.cie;
     code = gs_cspace_build_CIEABC(&pcs, NULL, mem);
     if (code < 0)
 	return code;
@@ -467,7 +467,7 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict)
     int code;
 
     push(1); /* Sacrificial. cie_a_finish does a pop... */
-    procs = istate->colorspace.procs.cie;
+    procs = istate->colorspace[0].procs.cie;
     if ((code = dict_proc_param(CIEdict, "DecodeA", &procs.Decode.A, true)) < 0)
 	return code;
     code = gs_cspace_build_CIEA(&pcs, NULL, mem);

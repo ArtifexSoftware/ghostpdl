@@ -94,7 +94,7 @@ type1_exec_init(gs_type1_state *pcis, gs_text_enum_t *penum,
     int alpha_bits = 1; 
     gs_log2_scale_point log2_subpixels;
     
-    if (color_is_pure(pgs->dev_color)) /* Keep consistency with alpha_buffer_bits() */
+    if (color_is_pure(gs_currentdevicecolor_inline(pgs))) /* Keep consistency with alpha_buffer_bits() */
 	alpha_bits = (*dev_proc(pgs->device, get_alpha_bits)) (pgs->device, go_text);
     if (alpha_bits <= 1) {
 	/* We render to cache device or the target device has no alpha bits. */

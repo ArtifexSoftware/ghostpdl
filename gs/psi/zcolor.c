@@ -129,7 +129,7 @@ zcurrentcolor(i_ctx_t * i_ctx_p)
 
     /* push the pattern dictionary or null object, if appropriate */
     if (push_pattern)
-        *op = istate->pattern;
+        *op = istate->pattern[0];
 
     return 0;
 }
@@ -155,8 +155,8 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
      * this we define the arrays at startup (see gs_cspace.ps), and 
      * recover them here by executing PostScript.
      */
-    if (r_has_type(&istate->colorspace.array, t_name)) {
-	name_string_ref(imemory, &istate->colorspace.array, &namestr);
+    if (r_has_type(&istate->colorspace[0].array, t_name)) {
+	name_string_ref(imemory, &istate->colorspace[0].array, &namestr);
 	if (r_size(&namestr) == 10 && !memcmp(namestr.value.bytes, "DeviceGray", 10)) {
 	    body = ialloc_string(32, "string");
 	    if (body == 0)
@@ -186,7 +186,9 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
 		    if (code < 0)
 			return code;
 		    refset_null(op->value.refs, 1);
-		    ref_assign_old(op, op->value.refs, &istate->colorspace.array, "currentcolorspace");
+		    ref_assign_old(op, op->value.refs,
+				   &istate->colorspace[0].array,
+				   "currentcolorspace");
 		    return 0;
 		}
 	    }
@@ -200,7 +202,7 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
 	 * action and can simply use it.
 	 */
 	push(1);
-	*op = istate->colorspace.array;
+	*op = istate->colorspace[0].array;
     }
     return 0;
 }
@@ -256,7 +258,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
     int                     n_comps, n_numeric_comps, num_offset = 0, code, depth;
     bool                    is_ptype2 = 0;
     PS_colour_space_t *space;
-
+    
     /* initialize the client color pattern pointer for GC */
     cc.pattern = 0; 
 
@@ -290,11 +292,13 @@ zsetcolor(i_ctx_t * i_ctx_p)
     if (code < 0)
 	return code;
 
-    code = get_space_object(i_ctx_p, &istate->colorspace.array, &space);
+    code = get_space_object(i_ctx_p, &istate->colorspace[0].array, &space);
     if (code < 0)
 	return code;
     if (space->validatecomponents) {
-	code = space->validatecomponents(i_ctx_p, &istate->colorspace.array, cc.paint.values, n_numeric_comps);
+	code = space->validatecomponents(i_ctx_p,
+					 &istate->colorspace[0].array,
+					 cc.paint.values, n_numeric_comps);
 	if (code < 0)
 	    return code;
     }
@@ -303,17 +307,17 @@ zsetcolor(i_ctx_t * i_ctx_p)
     if ((code = gs_setcolor(igs, &cc)) >= 0) {
 
         if (n_comps > n_numeric_comps) {
-            istate->pattern = *op;      /* save pattern dict or null */
+            istate->pattern[0] = *op;      /* save pattern dict or null */
             n_comps = n_numeric_comps + 1;
         }
     }
-
+    
     /* Check the color spaces, to see if we need to run any tint transform
      * procedures. Some Adobe applications *eg Photoshop) expect that the 
      * tint transform will be run and use this to set up duotone DeviceN
      * spaces.
      */
-    code = validate_spaces(i_ctx_p, &istate->colorspace.array, &depth);
+    code = validate_spaces(i_ctx_p, &istate->colorspace[0].array, &depth);
     if (code < 0)
 	return code;
     /* Set up for the continuation procedure which will do the work */
@@ -333,7 +337,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
      * to the space difficult
      */
     ep = esp += 1;
-    *ep = istate->colorspace.array;
+    *ep = istate->colorspace[0].array;
     /* Finally, the actual continuation routine */
     push_op_estack(setcolor_cont);
     return o_push_estack;
@@ -409,7 +413,7 @@ static int is_same_colorspace(i_ctx_t * i_ctx_p, ref *space1, ref *space2, bool 
             */
 
         if ( name_is_device_color(newcspace->name) ){
-            if ( gs_color_space_is_CIE(i_ctx_p->pgs->color_space) ){
+            if ( gs_color_space_is_CIE(gs_currentcolorspace_inline(i_ctx_p->pgs)) ){
                 if ( !isCIE ) return 0; /*  The color spaces will be different */
             } else {
                 if ( isCIE ) return 0; /*  The color spaces will be different */
@@ -470,17 +474,17 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
     is_CIE = istate->use_cie_color.value.boolval;
 
     /* See if its the same as the current space */
-    if (is_same_colorspace(i_ctx_p, op, &istate->colorspace.array, is_CIE)) {
+    if (is_same_colorspace(i_ctx_p, op, &istate->colorspace[0].array, is_CIE)) {
 	PS_colour_space_t *cspace;
 
 	/* Even if its the same space, we still need to set the correct
 	 * initial color value.
 	 */
-	code = get_space_object(i_ctx_p, &istate->colorspace.array, &cspace);
+	code = get_space_object(i_ctx_p, &istate->colorspace[0].array, &cspace);
 	if (code < 0)
 	    return 0;
 	if (cspace->initialcolorproc) {
-	    cspace->initialcolorproc(i_ctx_p, &istate->colorspace.array);
+	    cspace->initialcolorproc(i_ctx_p, &istate->colorspace[0].array);
 	}
 	/* Pop the space off the stack */
 	pop(1);
@@ -510,7 +514,7 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
 }
 
 /*
- * A sepcial version of the setcolorspace operation above. This sets the 
+ * A special version of the setcolorspace operation above. This sets the 
  * CIE substitution flag to true before starting, which prevents any further
  * CIE substitution taking place.
  */
@@ -721,6 +725,10 @@ zcolor_reset_transfer(i_ctx_t *i_ctx_p)
 int
 zcolor_remap_color(i_ctx_t *i_ctx_p)
 {
+    /* Remap both colors. This should never hurt. */
+    gs_swapcolors(igs);
+    gx_unset_dev_color(igs);
+    gs_swapcolors(igs);
     gx_unset_dev_color(igs);
     return 0;
 }
@@ -1085,7 +1093,7 @@ static int hsb2rgb(float *HSB)
     return 0;
 }
 
-/* The routiens for handling colors and color spaces, moved from 
+/* The routines for handling colors and color spaces, moved from 
  * PostScript to C, start here.
  */
 
@@ -1143,7 +1151,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 		    return_error(e_VMerror);
 		code = gs_setcolorspace(igs, pcs);
 		if (code >= 0) {
-		    gs_client_color *   pcc = igs->ccolor;
+		    gs_client_color *pcc = gs_currentcolor_inline(igs);
 
 		    cs_adjust_color_count(igs, -1); /* not strictly necessary */
 		    pcc->paint.values[0] = (0);
@@ -1366,7 +1374,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		    return_error(e_VMerror);
 		code = gs_setcolorspace(igs, pcs);
 		if (code >= 0) {
-		    gs_client_color *   pcc = igs->ccolor;
+		    gs_client_color *pcc = gs_currentcolor_inline(igs);
 
 		    cs_adjust_color_count(igs, -1); /* not strictly necessary */
 		    pcc->paint.values[0] = 0;
@@ -1700,7 +1708,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 		    return_error(e_VMerror);
 		code = gs_setcolorspace(igs, pcs);
 		if (code >= 0) {
-		    gs_client_color *   pcc = igs->ccolor;
+		    gs_client_color *pcc = gs_currentcolor_inline(igs);
 
 		    cs_adjust_color_count(igs, -1); /* not strictly necessary */
 		    pcc->paint.values[0] = 0;
@@ -3395,7 +3403,7 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     /* The alternate color space has been selected as the current color space */
     pacs = gs_currentcolorspace(igs);
 
-    cspace_old = istate->colorspace;
+    cspace_old = istate->colorspace[0];
     /* Now set the current color space as Separation */
     code = gs_cspace_new_Separation(&pcs, pacs, imemory);
     if (code < 0)
@@ -3406,11 +3414,11 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     code = array_get(imemory, sepspace, 1, &proc);
     if (code < 0)
 	return code;
-    istate->colorspace.procs.special.separation.layer_name = proc;
+    istate->colorspace[0].procs.special.separation.layer_name = proc;
     code = array_get(imemory, sepspace, 3, &proc);
     if (code < 0)
 	return code;
-    istate->colorspace.procs.special.separation.tint_transform = proc;
+    istate->colorspace[0].procs.special.separation.tint_transform = proc;
     if (code >= 0)
         code = gs_cspace_set_sepr_function(pcs, pfn);
     if (code >= 0)
@@ -3418,7 +3426,7 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     /* release reference from construction */
     rc_decrement_only(pcs, "setseparationspace");
     if (code < 0) {
-	istate->colorspace = cspace_old;
+	istate->colorspace[0] = cspace_old;
 	return code;
     }
     cc.pattern = 0x00;
@@ -3941,7 +3949,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 	    /* The alternate color space has been selected as the current color space */
 	    pacs = gs_currentcolorspace(igs);
 
-	    cspace_old = istate->colorspace;
+	    cspace_old = istate->colorspace[0];
 	    /* Now set the current color space as Separation */
 	    code = gs_cspace_new_Separation(&pcs, pacs, imemory);
 	    if (code < 0)
@@ -3952,11 +3960,11 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 	    code = array_get(imemory, &namesarray, (long)0, &sname);
 	    if (code < 0)
 		return code;
-	    istate->colorspace.procs.special.separation.layer_name = sname;
+	    istate->colorspace[0].procs.special.separation.layer_name = sname;
 	    code = array_get(imemory, devicenspace, 3, &proc);
 	    if (code < 0)
 		return code;
-	    istate->colorspace.procs.special.separation.tint_transform = proc;
+	    istate->colorspace[0].procs.special.separation.tint_transform = proc;
 	    if (code >= 0)
 		code = gs_cspace_set_sepr_function(pcs, pfn);
 	    if (code >= 0)
@@ -3964,7 +3972,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 	    /* release reference from construction */
 	    rc_decrement_only(pcs, "setseparationspace");
 	    if (code < 0) {
-		istate->colorspace = cspace_old;
+		istate->colorspace[0] = cspace_old;
 		return code;
 	    }
 	    cc.pattern = 0x00;
@@ -4007,18 +4015,18 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 
     /* Now set the current color space as DeviceN */
 
-    cspace_old = istate->colorspace;
-    istate->colorspace.procs.special.device_n.layer_names = namesarray;
+    cspace_old = istate->colorspace[0];
+    istate->colorspace[0].procs.special.device_n.layer_names = namesarray;
     code = array_get(imemory, devicenspace, 3, &proc);
     if (code < 0)
 	return code;
-    istate->colorspace.procs.special.device_n.tint_transform = proc;    
+    istate->colorspace[0].procs.special.device_n.tint_transform = proc;    
     gs_cspace_set_devn_function(pcs, pfn);
     code = gs_setcolorspace(igs, pcs);
     /* release reference from construction */
     rc_decrement_only(pcs, "setdevicenspace");
     if (code < 0) {
-	istate->colorspace = cspace_old;
+	istate->colorspace[0] = cspace_old;
 	return code;
     }
 
@@ -4437,7 +4445,7 @@ indexed_cont(i_ctx_t *i_ctx_p)
 }
 static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
 {
-    ref *pproc = &istate->colorspace.procs.special.index_proc;
+    ref *pproc = &istate->colorspace[0].procs.special.index_proc;
     int code = 0;
     uint edepth = ref_stack_count(&e_stack);
     ref_colorspace cspace_old;
@@ -4454,7 +4462,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 	return 0;
     }
 
-    cspace_old = istate->colorspace;
+    cspace_old = istate->colorspace[0];
 
     pcs_base = gs_currentcolorspace(igs);
 
@@ -4510,7 +4518,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     /* release reference from construction */
     rc_decrement_only(pcs, "setindexedspace");
     if (code < 0) {
-	istate->colorspace = cspace_old;
+	istate->colorspace[0] = cspace_old;
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;
     }
@@ -4754,7 +4762,7 @@ static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;
     }
-    make_null(&istate->pattern); /* PLRM: initial color value is a null object */
+    make_null(&istate->pattern[0]); /* PLRM: initial color value is a null object */
     *stage = 0;
     return (ref_stack_count(&e_stack) == edepth ? 0 : o_push_estack);	/* installation will load the caches */
 }
@@ -5527,7 +5535,7 @@ setcolor_cont(i_ctx_t *i_ctx_p)
 	    }
 	}
 	if (obj->runtransformproc) {
-	    code = obj->runtransformproc(i_ctx_p, &istate->colorspace.array, &usealternate, &stage, &stack_depth);
+	    code = obj->runtransformproc(i_ctx_p, &istate->colorspace[0].array, &usealternate, &stage, &stack_depth);
 	    make_int(&ep[-3], stack_depth);
 	    make_int(&ep[-1], stage);
 	    if (code != 0) {
@@ -5590,7 +5598,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
 	for (i = 0;i < depth;i++) {
 	    code = get_space_object(i_ctx_p, parr, &obj);
  	    if (code < 0) 
-	        return code;
+		return code;
 
 	    if (i < (depth - 1)) {
 		if (!obj->alternateproc) {
@@ -5616,7 +5624,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
         /* Remove our next continuation and our data */
 	esp -= 5;
 	op = osp;
-	istate->colorspace.array = *op;
+	istate->colorspace[0].array = *op;
 	/* Remove the colorspace array form the operand stack */
 	pop(1);
 	code = o_pop_estack;
@@ -5807,6 +5815,7 @@ zsetrgbcolor(i_ctx_t * i_ctx_p)
     push_op_estack(setdevicecolor_cont);
     return o_push_estack;
 }
+
 static int
 zsetcmykcolor(i_ctx_t * i_ctx_p)
 {
@@ -5844,6 +5853,7 @@ zsetcmykcolor(i_ctx_t * i_ctx_p)
     push_op_estack(setdevicecolor_cont);
     return o_push_estack;
 }
+
 /*
  * The routine which does all the dispatching for the device-space specific
  * 'current color' routines currentgray, currentrgbcolo and currentcmykcolor.
@@ -5927,7 +5937,7 @@ zcurrentgray(i_ctx_t * i_ctx_p)
 {
     int code, depth;
 
-    code = validate_spaces(i_ctx_p, &istate->colorspace.array, &depth);
+    code = validate_spaces(i_ctx_p, &istate->colorspace[0].array, &depth);
     if (code < 0)
 	return code;
 
@@ -5951,7 +5961,7 @@ zcurrentgray(i_ctx_t * i_ctx_p)
      * as the stack may grow unpredictably making further access
      * to the space difficult
      */
-    esp[3] = istate->colorspace.array;
+    esp[3] = istate->colorspace[0].array;
     esp += 3; /* The push_op_estack macro increments esp before using it */
     /* Finally, the actual continuation routine */
     push_op_estack(currentbasecolor_cont);
@@ -5962,7 +5972,7 @@ zcurrenthsbcolor(i_ctx_t * i_ctx_p)
 {
     int code, depth;
 
-    code = validate_spaces(i_ctx_p, &istate->colorspace.array, &depth);
+    code = validate_spaces(i_ctx_p, &istate->colorspace[0].array, &depth);
     if (code < 0)
 	return code;
 
@@ -5986,7 +5996,7 @@ zcurrenthsbcolor(i_ctx_t * i_ctx_p)
      * as the stack may grow unpredictably making further access
      * to the space difficult
      */
-    esp[3] = istate->colorspace.array;
+    esp[3] = istate->colorspace[0].array;
     esp += 3; /* The push_op_estack macro increments esp before using it */
     /* Finally, the actual continuation routine */
     push_op_estack(currentbasecolor_cont);
@@ -6017,7 +6027,7 @@ zcurrentrgbcolor(i_ctx_t * i_ctx_p)
      * as the stack may grow unpredictably making further access
      * to the space difficult
      */
-    esp[3] = istate->colorspace.array;
+    esp[3] = istate->colorspace[0].array;
     esp += 3; /* The push_op_estack macro increments esp before using it */
     /* Finally, the actual continuation routine */
     push_op_estack(currentbasecolor_cont);
@@ -6048,11 +6058,29 @@ zcurrentcmykcolor(i_ctx_t * i_ctx_p)
      * as the stack may grow unpredictably making further access
      * to the space difficult
      */
-    esp[3] = istate->colorspace.array;
+    esp[3] = istate->colorspace[0].array;
     esp += 3; /* The push_op_estack macro increments esp before using it */
     /* Finally, the actual continuation routine */
     push_op_estack(currentbasecolor_cont);
     return o_push_estack;
+}
+
+/* Can't be static, as setcolorscreen needs to call it */
+int
+zswapcolors(i_ctx_t * i_ctx_p)
+{
+    ref_colorspace tmp_cs;
+    ref            tmp_pat;
+
+    tmp_cs                = istate->colorspace[0];
+    istate->colorspace[0] = istate->colorspace[1];
+    istate->colorspace[1] = tmp_cs;
+
+    tmp_pat            = istate->pattern[0];
+    istate->pattern[0] = istate->pattern[1];
+    istate->pattern[1] = tmp_pat;
+
+    return gs_swapcolors(igs);
 }
 
 /* ------ Initialization procedure ------ */
@@ -6086,14 +6114,17 @@ const op_def    zcolor_op_defs[] =
 
 const op_def    zcolor_ext_op_defs[] = 
 {
-    {"0currentgray", zcurrentgray },
-    {"1setgray", zsetgray },
-    {"0currenthsbcolor", zcurrenthsbcolor },
-    {"3sethsbcolor", zsethsbcolor },
-    {"0currentrgbcolor", zcurrentrgbcolor },
-    {"3setrgbcolor", zsetrgbcolor },
-    {"0currentcmykcolor", zcurrentcmykcolor },
-    {"4setcmykcolor", zsetcmykcolor },
+    { "0currentgray", zcurrentgray },
+    { "1setgray", zsetgray },
+    { "0currenthsbcolor", zcurrenthsbcolor },
+    { "3sethsbcolor", zsethsbcolor },
+    { "0currentrgbcolor", zcurrentrgbcolor },
+    { "3setrgbcolor", zsetrgbcolor },
+    { "0currentcmykcolor", zcurrentcmykcolor },
+    { "4setcmykcolor", zsetcmykcolor },
+    
+    /* Operators to deal with setting stroking/non-stroking colors
+     * individually */
+    { "1.swapcolors", zswapcolors },
     op_def_end(0)
 };
-

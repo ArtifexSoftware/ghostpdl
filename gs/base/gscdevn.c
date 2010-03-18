@@ -171,7 +171,7 @@ gs_attachattributecolorspace(gs_separation_name sep_name, gs_state * pgs)
     /* Verify that we have a DeviceN color space */
     if (!pgs->saved)
 	return_error(gs_error_rangecheck);
-    pdevncs = pgs->saved->color_space;
+    pdevncs = gs_currentcolorspace_inline(pgs->saved);
     if (pdevncs->type != &gs_color_space_type_DeviceN)
 	return_error(gs_error_rangecheck);
 
@@ -182,8 +182,8 @@ gs_attachattributecolorspace(gs_separation_name sep_name, gs_state * pgs)
 
     /* Point our attribute list entry to the attribute color space */
     patt->colorant_name = sep_name;
-    patt->cspace = pgs->color_space;
-    rc_increment(pgs->color_space);
+    patt->cspace = gs_currentcolorspace_inline(pgs);
+    rc_increment(patt->cspace);
 
     /* Link our new attribute color space to the DeviceN color space */
     patt->next = pdevncs->params.device_n.colorants;

@@ -129,9 +129,9 @@ gx_install_Separation(gs_color_space * pcs, gs_state * pgs)
     code = check_Separation_component_name(pcs, pgs);
     if (code < 0)
        return code;
-    pgs->color_space->params.separation.use_alt_cspace =
+    gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace =
 	using_alt_color_space(pgs);
-    if (pgs->color_space->params.separation.use_alt_cspace)
+    if (gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace)
         code = (pcs->base_space->type->install_cspace)
 	    (pcs->base_space, pgs);
     /*

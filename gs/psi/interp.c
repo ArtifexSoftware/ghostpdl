@@ -105,10 +105,22 @@ call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 {
     int code;
 
-#   ifdef DEBUG_TRACE_PS_OPERATORS
+# ifdef DEBUG_TRACE_PS_OPERATORS
+#   ifndef SHOW_STACK_DEPTHS
     if_debug1('!', "[!]operator %s\n", op_get_name_string(op_proc));
+#   else
+    if_debug3('!', "[!][es=%d os=%d]operator %s\n",
+	    esp-i_ctx_p->exec_stack.stack.bot,
+	    osp-i_ctx_p->op_stack.stack.bot,
+	    op_get_name_string(op_proc));
 #   endif
+# endif
     code = op_proc(i_ctx_p);
+# if defined(DEBUG_TRACE_PS_OPERATORS) && !defined(SHOW_STACK_DEPTHS)
+    if_debug2('!', "[!][es=%d os=%d]\n",
+	    esp-i_ctx_p->exec_stack.stack.bot,
+	    osp-i_ctx_p->op_stack.stack.bot);
+# endif
     return code; /* A good place for a conditional breakpoint. */
 }
 #else
