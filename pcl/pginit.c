@@ -13,8 +13,8 @@
 
 /* pginit.c - Initialization and resetting for HP-GL/2. */
 #include "gx.h"
-#include "gsmatrix.h"		/* for gsstate.h */
-#include "gsmemory.h"		/* for gsstate.h */
+#include "gsmatrix.h"           /* for gsstate.h */
+#include "gsmemory.h"           /* for gsstate.h */
 #include "gsstate.h"            /* for gs_setlimitclamp */
 #include "pgfont.h"
 #include "pgmand.h"
@@ -39,8 +39,8 @@ hpgl_default_font_params(
     pfs->params.height_4ths = (int)(11.5*4);
     pfs->params.style = 0;
     pfs->params.stroke_weight = 0;
-    pfs->params.typeface_family = 48;	/* stick font */
-    pfs->font = 0;			/* not looked up yet */
+    pfs->params.typeface_family = 48;   /* stick font */
+    pfs->font = 0;                      /* not looked up yet */
 }
 
 /*
@@ -61,16 +61,16 @@ hpgl_default_coordinate_system(
 {
     pcs->g.plot_width = pcs->g.picture_frame_width
                        = pcs->xfm_state.lp_size.x;
-    pcs->g.plot_height = pcs->g.picture_frame_height 
-	                = pcs->xfm_state.lp_size.y;
+    pcs->g.plot_height = pcs->g.picture_frame_height
+                        = pcs->xfm_state.lp_size.y;
     if ( pcs->personality == rtl ) {
-	pcs->g.picture_frame.anchor_point.x = 0;
-	pcs->g.picture_frame.anchor_point.y = 0;
+        pcs->g.picture_frame.anchor_point.x = 0;
+        pcs->g.picture_frame.anchor_point.y = 0;
     } else {
-	pcs->g.picture_frame.anchor_point.x = pcs->margins.left;
-	pcs->g.picture_frame.anchor_point.y = pcs->margins.top;
-	pcs->g.plot_height -= inch2coord(1.0);
-	pcs->g.picture_frame_height -= inch2coord(1.0);
+        pcs->g.picture_frame.anchor_point.x = pcs->margins.left;
+        pcs->g.picture_frame.anchor_point.y = pcs->margins.top;
+        pcs->g.plot_height -= inch2coord(1.0);
+        pcs->g.picture_frame_height -= inch2coord(1.0);
     }
     pcs->g.plot_size_vertical_specified = false;
     pcs->g.plot_size_horizontal_specified = false;
@@ -78,12 +78,16 @@ hpgl_default_coordinate_system(
     pcs->g.move_or_draw = hpgl_plot_move;
     pcs->g.relative_coords = hpgl_plot_absolute;
     {
-	gs_point pos;
-	pos.x = 0.0;
-	pos.y = 0.0;
-	(void)hpgl_set_current_position(pcs, &pos);
+        gs_point pos;
+        pos.x = 0.0;
+        pos.y = 0.0;
+        (void)hpgl_set_current_position(pcs, &pos);
     }
     pcs->g.scaling_type = hpgl_scaling_none;
+    pcs->g.soft_clip_window.rect.p.x =
+        pcs->g.soft_clip_window.rect.p.y = 0;
+    pcs->g.soft_clip_window.rect.q.x =
+        pcs->g.soft_clip_window.rect.q.y = 0;
     return;
 }
 
@@ -116,27 +120,27 @@ hpgl_do_reset(
                                      pcs->memory,
                                      "hpgl_do_reset polygon buffer"
                                      );
-	    gs_setlimitclamp(pcs->pgs, true);
-	} else
+            gs_setlimitclamp(pcs->pgs, true);
+        } else
             gx_path_new(&pcs->g.polygon.buffer.path);
 
-	/* provide default anchor point, plot size and picture frame size */
-	hpgl_default_coordinate_system(pcs);
+        /* provide default anchor point, plot size and picture frame size */
+        hpgl_default_coordinate_system(pcs);
 
-	/* we should not have a path at this point but we make sure */
-	hpgl_clear_current_path(pcs);
+        /* we should not have a path at this point but we make sure */
+        hpgl_clear_current_path(pcs);
 
-	/* Initialize stick/arc font instances */
-	hpgl_initialize_stick_fonts(pcs);
+        /* Initialize stick/arc font instances */
+        hpgl_initialize_stick_fonts(pcs);
 
-	/* intialize subpolygon started hack flag */
-	pcs->g.subpolygon_started = false;
+        /* intialize subpolygon started hack flag */
+        pcs->g.subpolygon_started = false;
 
         /* indicates a line down operation has been done in polygon
            mode */
         pcs->g.have_drawn_in_path = false;
-	/* execute only the implicit portion of IN */
-	hpgl_IN_implicit(pcs);
+        /* execute only the implicit portion of IN */
+        hpgl_IN_implicit(pcs);
 
         /* we select the default pen 1 here, oddly, IN does not select
            the default pen even though it sets pen widths and units of
@@ -145,38 +149,38 @@ hpgl_do_reset(
     }
     /* NB check all of these */
     if ((type & pcl_reset_page_params) != 0) {
-	/* provide default anchor point, plot size and picture frame size */
-	hpgl_default_coordinate_system(pcs);
-	hpgl_args_setup(&hpgl_args);
-	hpgl_IW(&hpgl_args, pcs);
-	hpgl_args_set_int(&hpgl_args,0);
-	hpgl_PM(&hpgl_args, pcs);
-	hpgl_args_set_int(&hpgl_args,2);
-	hpgl_PM(&hpgl_args, pcs);
+        /* provide default anchor point, plot size and picture frame size */
+        hpgl_default_coordinate_system(pcs);
+        hpgl_args_setup(&hpgl_args);
+        hpgl_IW(&hpgl_args, pcs);
+        hpgl_args_set_int(&hpgl_args,0);
+        hpgl_PM(&hpgl_args, pcs);
+        hpgl_args_set_int(&hpgl_args,2);
+        hpgl_PM(&hpgl_args, pcs);
         hpgl_args_setup(&hpgl_args);
         hpgl_IP(&hpgl_args, pcs);
     }
 
     if ((type & pcl_reset_picture_frame) != 0) {
-	/* this shouldn't happen.  Picture frame side effects are
+        /* this shouldn't happen.  Picture frame side effects are
            handled directly by the command picture frame command. */
-	dprintf("PCL reset picture frame received\n");
+        dprintf("PCL reset picture frame received\n");
     }
 
-    if ((type & pcl_reset_overlay) != 0) 
+    if ((type & pcl_reset_overlay) != 0)
         /* ignore return */
         (void)hpgl_reset_overlay(pcs);
 
     if ((type & (pcl_reset_plot_size)) != 0) {
-	/* this shouldn't happen.  Plot size side effects are handled
+        /* this shouldn't happen.  Plot size side effects are handled
            directly by the command picture frame command. */
-	dprintf("PCL reset plot received\n");
+        dprintf("PCL reset plot received\n");
     }
 
     if ((type & (pcl_reset_permanent)) != 0 ) {
-	gx_path_free(&pcs->g.polygon.buffer.path, "hpgl_do_reset polygon buffer");
-	/* if we have allocated memory for a stick font free the memory */
-	hpgl_free_stick_fonts(pcs);
+        gx_path_free(&pcs->g.polygon.buffer.path, "hpgl_do_reset polygon buffer");
+        /* if we have allocated memory for a stick font free the memory */
+        hpgl_free_stick_fonts(pcs);
     }
     return;
 }
@@ -191,10 +195,10 @@ hpgl_do_copy(
 )
 {
     if ((operation & pcl_copy_after) != 0) {
-	/* Don't restore the polygon buffer. (Copy from pcs to psaved.) 
-	 * path->segments is reference counted! 
-	 */
-	memcpy(&psaved->g.polygon.buffer.path, &pcs->g.polygon.buffer.path, sizeof(gx_path));
+        /* Don't restore the polygon buffer. (Copy from pcs to psaved.)
+         * path->segments is reference counted!
+         */
+        memcpy(&psaved->g.polygon.buffer.path, &pcs->g.polygon.buffer.path, sizeof(gx_path));
     }
     return 0;
 }
