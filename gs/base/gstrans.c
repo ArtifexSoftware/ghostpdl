@@ -572,6 +572,7 @@ gs_begin_transparency_mask(gs_state * pgs,
                 blend_color_space->cmm_icc_profile_data->num_comps;
         /* Get the ICC profile */
         params.iccprofile = blend_color_space->cmm_icc_profile_data;
+        params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
         rc_increment(params.iccprofile);
     } else {
         num_components = cs_num_components(blend_color_space);

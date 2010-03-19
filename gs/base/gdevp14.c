@@ -932,8 +932,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
                              const float GrayBackground)
 {
     pdf14_buf *buf;
-    unsigned char *curr_ptr;
-    int k;
+    unsigned char *curr_ptr, gray;
     unsigned char background_init;
     
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", 
@@ -1000,19 +999,18 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
         /* We need to initialize it to the BC if it existed */
         /* According to the spec, the CS has to be the same */
         /* If the back ground component is black, then don't bother 
-           with this */
+           with this.  Since we are forcing the rendering to gray
+           earlier now, go ahead and just use the GrayBackGround color 
+           directly. */
         if ( Background_components && GrayBackground != 0.0 ) {
             curr_ptr = buf->data;
-            for (k = 0; k < Background_components; k++) {
-                background_init = (unsigned char) (255.0 * Background[k]);
-	        memset(curr_ptr, background_init, buf->planestride);
-                curr_ptr +=  buf->planestride;
-            }
+            gray = (unsigned char) (255.0 * GrayBackground);
+            memset(curr_ptr, gray, buf->planestride); 
+            curr_ptr +=  buf->planestride;            
             /* If we have a background component that was not black, then we 
                need to set the alpha for this mask as if we had drawn in the
                entire soft mask buffer */
-	    memset(curr_ptr, 255, buf->planestride * 
-                (buf->n_chan - Background_components));
+	    memset(curr_ptr, 255, buf->planestride *(buf->n_chan - 1));
         } else {
             /* Compose mask with opaque background */
 	    memset(buf->data, 0, buf->planestride * buf->n_chan);
