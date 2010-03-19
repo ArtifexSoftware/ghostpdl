@@ -449,7 +449,8 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
         check_read_type(*ptref, t_array);
         if (r_size(ptref) != 5)
 	    return_error(e_rangecheck);
-        code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem);
+        /* Stable memory due to current caching of color space */
+        code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem->stable_memory);
         if (code < 0)
 	    return code;
         pcie = pcs->params.defg;
@@ -545,7 +546,8 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
         check_read_type(*ptref, t_array);
         if (r_size(ptref) != 4)
 	    return_error(e_rangecheck);
-        code = gs_cspace_build_CIEDEF(&pcs, NULL, mem);
+        /* Stable memory due to current caching of color space */
+        code = gs_cspace_build_CIEDEF(&pcs, NULL, mem->stable_memory);
         if (code < 0)
 	    return code;
         pcie = pcs->params.def;
@@ -594,7 +596,8 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     push(1); /* Sacrificial */
     procs = istate->colorspace.procs.cie;
     if (pcs == NULL ) {
-        code = gs_cspace_build_CIEABC(&pcs, NULL, mem);
+        /* Stable memory due to current caching of color space */
+        code = gs_cspace_build_CIEABC(&pcs, NULL, mem->stable_memory);
         if (code < 0)
 	    return code;
         pcie = pcs->params.abc;
@@ -645,7 +648,8 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
     push(1); /* Sacrificial */
     procs = istate->colorspace.procs.cie;
     if (pcs == NULL ) {
-        code = gs_cspace_build_CIEA(&pcs, NULL, mem);
+        /* Stable memory due to current caching of color space */
+        code = gs_cspace_build_CIEA(&pcs, NULL, mem->stable_memory);
         if (code < 0)
 	    return code;
         pcie = pcs->params.a;
