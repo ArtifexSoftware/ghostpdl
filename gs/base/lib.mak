@@ -2650,7 +2650,7 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
 
 $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(GX) $(memory__h)\
  $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicccache_h)\
- $gsiccmanage_h)
+ $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(GX) $(memory__h)\
