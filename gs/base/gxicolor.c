@@ -132,6 +132,41 @@ gx_has_transfer(const gs_imager_state *pis, int num_comps)
     return(false);
 }
 
+static void 
+decode_row(gx_image_enum *penum, byte *psrc, int spp, byte *pdes, 
+                byte *bufend)
+{
+    byte *curr_pos = pdes;
+    int k;
+    float temp;
+
+    while ( curr_pos < bufend ) {
+        for ( k = 0; k < spp; k ++ ) {
+            switch ( penum->map[k].decoding ) {
+                case sd_none:
+                    *curr_pos = *psrc;
+                    break;
+                case sd_lookup:	
+                    temp = penum->map[k].decode_lookup[(*psrc) >> 4]*255.0;
+                    if (temp > 255) temp = 255;
+                    if (temp < 0 ) temp = 0;
+                    *curr_pos = (unsigned char) temp;
+                    break;
+                case sd_compute:
+                    temp = penum->map[k].decode_base + 
+                        (*psrc) * penum->map[k].decode_factor;
+                    if (temp > 255) temp = 255;
+                    if (temp < 0 ) temp = 0;
+                    *curr_pos = (unsigned char) temp;
+                default:
+                    break;
+            }
+            curr_pos++;
+            psrc++;
+        }
+    }
+}
+
 /* Render a color image with 8 or fewer bits per sample using ICC profile. */
 static int
 image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x,
@@ -167,7 +202,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     gsicc_link_t *icc_link;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
-    unsigned char *psrc_cm, *psrc_cm_start;
+    unsigned char *psrc_cm, *psrc_cm_start, *psrc_decode;
     int k;
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
@@ -175,7 +210,16 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     bool must_halftone = gx_device_must_halftone(dev);
     bool has_transfer = gx_has_transfer(pis,
                                 pis->icc_manager->device_profile->num_comps);
-
+    int src_num_comp = cs_num_components(penum->pcs);
+    bool need_decode = false;
+    
+   /* Check if we need to do any decoding.  If yes, then that will slow us down */
+   for (k = 0; k < src_num_comp; k++) {
+        if ( penum->map[k].decoding != sd_none ) {
+            need_decode = true;
+            break;
+        }
+    }
     /* Needed for device N */
     memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
@@ -199,34 +243,49 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     if (icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
     }
-    /* If the link is the identity, then we don't need to do any color conversions */
-    if (icc_link->is_identity) {
+    /* If the link is the identity, then we don't need to do any color 
+       conversions except for potentially a decode. */
+    if (icc_link->is_identity && !need_decode) {
+        /* Fastest case.  No decode or CM needed */
         psrc_cm = (unsigned char *) psrc;
         spp_cm = spp;
         bufend = psrc_cm +  w;
         psrc_cm_start = NULL;
     } else {
-        /* Set up the buffer descriptors. */
         spp_cm = pis->icc_manager->device_profile->num_comps;
-        num_pixels = w/spp;
-        gsicc_init_buffer(&input_buff_desc, spp, 1,
-                      false, false, false, 0, w,
-                      1, num_pixels);
-        gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
-                      false, false, false, 0, num_pixels * spp_cm,
-                      1, num_pixels);
-        /* For now, just blast it all through the link. If we had a significant reduction 
-           we will want to repack the data first and then do this.  That will be 
-           an optimization shortly.  Also we are going to have to do something here
-           with respect to the decode.  If sdnone is the case, then we are fine but the
-           others will need to be considered.  Also, for now just allocate a new output
-           buffer.  We can reuse the old one if the number of channels in the output is
-           less than or equal to the new one.  We will do that soon. */
         psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, "image_render_color_icc");
         psrc_cm_start = psrc_cm;
         bufend = psrc_cm +  w * spp_cm/spp;
-        gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
-                                 (void*) psrc, (void*) psrc_cm);
+        if (icc_link->is_identity) {
+            /* decode only. no CM.  This is slow but does not happen that often */
+            decode_row(penum, psrc, spp, psrc_cm, bufend);    
+        } else {
+            /* Set up the buffer descriptors. */
+            num_pixels = w/spp;
+            gsicc_init_buffer(&input_buff_desc, spp, 1,
+                          false, false, false, 0, w,
+                          1, num_pixels);
+            gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
+                          false, false, false, 0, num_pixels * spp_cm,
+                          1, num_pixels);
+            /* For now, just blast it all through the link. If we had a significant reduction 
+               we will want to repack the data first and then do this.  That will be 
+               an optimization shortly.  For now just allocate a new output
+               buffer.  We can reuse the old one if the number of channels in the output is
+               less than or equal to the new one.  */
+            if (need_decode) {
+                /* Need decode and CM.  This is slow but does not happen that often */
+                psrc_decode = gs_alloc_bytes(pis->memory,  w, "image_render_color_icc");
+                decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
+                gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
+                                         (void*) psrc_decode, (void*) psrc_cm);
+                gs_free_object(pis->memory, (byte *)psrc_decode, "image_render_color_icc");
+            } else {
+                /* CM only. No decode */
+                gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
+                                         (void*) psrc, (void*) psrc_cm);
+            }
+        }
     }
     /* Release the link */
     gsicc_release_link(icc_link);
