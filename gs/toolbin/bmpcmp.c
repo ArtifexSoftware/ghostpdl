@@ -64,7 +64,7 @@ typedef struct
     char *outroot;
     /* Fuzzy table */
     int   wTabLen;
-    int  *wTab;
+    ptrdiff_t  *wTab;
     /* Image details */
     int   width;
     int   height;
@@ -959,6 +959,7 @@ static void simple_diff2(unsigned char *bmp,
     {
         isrc  = (int *)bmp;
         isrc2 = (int *)bmp2;
+        isrc3 = NULL;
         span >>= 2;
         isrc  += span*(bbox2->ymin)+bbox2->xmin;
         isrc2 += span*(bbox2->ymin)+bbox2->xmin;
