@@ -2186,6 +2186,16 @@ int main(int argc, char *argv[])
                     sprintf(str4, "%s.%05d.meta", params.outroot, n);
                     save_meta(boxlist, str4, w, h, imagecount);
                     n += 3;
+                    /* If there is a maximum set */
+                    if (params.maxdiffs > 0)
+                    {
+                        /* Check to see we haven't exceeded it */
+                        params.maxdiffs--;
+                        if (params.maxdiffs == 0)
+                        {
+                            goto done;
+                        }
+                    }
                 }
             }
             params.basenum = n;
@@ -2198,17 +2208,9 @@ int main(int argc, char *argv[])
         free(bmp2);
         free(map);
 
-        /* If there is a maximum set */
-        if (params.maxdiffs > 0)
-        {
-            /* Check to see we haven't exceeded it */
-            params.maxdiffs--;
-            if (params.maxdiffs == 0)
-            {
-                break;
-            }
-        }
     }
+
+done:
 
     /* If one loaded, and the other didn't - that's an error */
     if ((bmp2 != NULL) && (bmp == NULL))
