@@ -502,7 +502,7 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
 		return r_size(&SubArray);
 	    }
 	case FAPI_FONT_FEATURE_DollarBlend_length:
-	    {   ref *DBlend, Element, name, string; 
+	    {   ref *DBlend, Element, string; 
 		int i, length = 0;
 		char Buffer[32];
 		if (dict_find_string(pdr, "$Blend", &DBlend) <= 0)
@@ -641,7 +641,7 @@ static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int inde
 	    }
 	case FAPI_FONT_FEATURE_BlendDesignMapArrayValue:
 	    {	ref *Info, *Array, SubArray, SubSubArray, value;
-		int array_index = index / 64, subarray_index = (index %64) / 8;
+		int array_index = index / 64;
 		index %= 8;
 		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
 		    return 0;
@@ -798,8 +798,7 @@ static ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_l
 static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
-    int i, glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
-    ulong off;
+    int glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
 
     sfnts_reader_init(&r, pdr);
     r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
@@ -1641,8 +1640,7 @@ retry_oversampling:
 	I->face.HWResolution[1] != dev->HWResolution[1]
        ) {
 	FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
-        gs_matrix imat, scale_mat, scale_ctm, *base_font_matrix;
-        double dx, dy;
+        gs_matrix scale_mat, scale_ctm;
 
 	I->face.font_id = pbfont->id;
 	I->face.ctm = *ctm;
@@ -1817,13 +1815,21 @@ retry_oversampling:
             ref *CIDMap, Str;
 	    byte *Map;
 	    int ccode = client_char_code;
+            int gdb = 2;
+            int i;
+            ref *GDBytes;
 
+	    if (dict_find_string(pdr, "GDBytes", &GDBytes) && r_has_type(GDBytes, t_integer)) {
+                gdb = GDBytes->value.intval;
+            }
+            
 	    /* The PDF Reference says that we should use a CIDToGIDMap, but the PDF
 	     * interpreter converts this into a CIDMap (see pdf_font.ps, processCIDToGIDMap)
 	     */
 	    if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name)) {
 		if (r_has_type(CIDMap, t_array)) {
 		    /* Too big for single string, so its an array of 2 strings */
+                    /* Do we have to worry about codes straddling string boundaries? */
 		    if (client_char_code < 32767) 
 			code = array_get(imemory, CIDMap, 0, &Str);
 		    else {
@@ -1832,10 +1838,27 @@ retry_oversampling:
 		    }
 		    if (code < 0)
 		        return code;
-		    Map = &Str.value.bytes[ccode * 2];
-		} else
-		    Map = &CIDMap->value.bytes[ccode * 2];
-		cr.char_codes[0] = (Map[0] << 8) + Map[1];
+
+                    if (CIDMap->tas.rsize < ccode * gdb) {
+                       ccode = 0;
+                    }
+
+		    Map = &Str.value.bytes[ccode * gdb];
+		} else {
+                    if (CIDMap->tas.rsize < ccode * gdb) {
+                       ccode = 0;
+                    }
+                    Map = &CIDMap->value.bytes[ccode * gdb];
+                }
+
+                cr.char_codes[0] = 0;
+                
+                /* decrement this saves us subracting one on every iteration of the loop below */
+                gdb--;
+                
+                for (i = 0; i <= gdb; i++) {
+                    cr.char_codes[0] += Map[i] << ((gdb - i) * 8);
+                }
 	    }
 	    else
 		cr.char_codes[0] = client_char_code;
