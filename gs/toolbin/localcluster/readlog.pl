@@ -39,7 +39,7 @@ while(<F>) {
     exit;
   }
 
-  if (m/===(.+).log===/ || m/===(.+)===/) {
+  if ((m/===(.+).log===/ || m/===(.+)===/) && !m/=====/) {
     $file=$1;
     $error=0;
     $divider=0;
@@ -66,7 +66,7 @@ while(<F>) {
     $error=2 if ($divider==1 && $error==0);
     $results{$file}{"error"}=$error;
   }
-  if (m/Segmentation fault/) {
+  if (m/Segmentation fault/ || m/Backtrace:/) {
     $error=8 if ($divider==0 && $error==0);
     $error=9 if ($divider==1 && $error==0);
     $results{$file}{"error"}=$error;

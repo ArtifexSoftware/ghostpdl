@@ -307,6 +307,7 @@ sub checkProblem {
   opendir(DIR, $usersDir) || die "can't opendir $usersDir: $!";
   foreach my $user (readdir(DIR)) {
     my $product="";
+    my $options;
     my $s="";
     if (open(F,"<$usersDir/$user/gs.run")) {
       close(F);
@@ -321,15 +322,20 @@ sub checkProblem {
     if (open(F,"<$usersDir/$user/ghostpdl/cluster_command.run")) {
       $product=<F>;
       chomp $product;
+      $options=<F>;
+      chomp $options;
       close(F);
       unlink "$usersDir/$user/ghostpdl/cluster_command.run";
     }
     if (open(F,"<$usersDir/$user/ghostpdl/gs/cluster_command.run")) {
       $product=<F>;
       chomp $product;
+      $options=<F>;
+      chomp $options;
       close(F);
       unlink "$usersDir/$user/ghostpdl/gs/cluster_command.run";
     }
+    $options="" if (!$options);
     if ($product) {
       $product =~ s/ +$//;
       mylog "user $product\n";
@@ -370,7 +376,7 @@ mylog "setting 'abort.job'\n";
         if (length($t)==0) {
           mylog "grep '$s' returns no match, adding to queue\n";
           open(F,">>$queue");
-          print F "$s\n";
+          print F "$s $options\n";
           close(F);
           mylog "running: find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u\n";
           `find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u`;
@@ -415,6 +421,7 @@ if (open(F,"<emails.tab")) {
 }
 
 my $product="";
+my $options="";
 
 #gs/base, gs/Resource: all languages
 #gs/psi: ps, pdf
@@ -653,18 +660,23 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       my @a=split ' ',$userRegression,2;
       $userName=$a[0];
       $product=$a[1];
-      $bmpcmp=1 if ($product eq "bmpcmp");
-      $product="bmpcmp $userName" if ($bmpcmp);
-      mylog "userName=$userName product=$product\n" if ($verbose);
+      if ($product=~m/^bmpcmp/) {
+        $bmpcmp=1;
+        my @a=split ' ',$product,2;
+        $product="bmpcmp $userName";
+        $options=$a[1];
+#     print "userName=$userName product=$product options=$options\n"; exit;
+      }
+      mylog "userName=$userName product=$product options=$options\n" if ($verbose);
       my $t=`date +\"%D %H:%M:%S\"`;
       chomp $t;
-      $footer="\n\nUser regression: user $userName  options $product  start $t\n";
+      $footer="\n\nUser regression: user $userName  options $product $options start $t\n";
     }
 
     my $baseline="";
     $baseline="baseline" if ($updateBaseline);  # mhw
 
-    `./build.pl $product $baseline >$jobs`;
+    `./build.pl $product $baseline \"$options\" >$jobs`;
     if ($? != 0) {
       # horrible hack, fix later
       mylog "build.pl $product failed\n";
@@ -1134,7 +1146,7 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
       print F "\n\nDifferences from previous clusterpush:\n\n";
       close(F);
       mylog "now running ./compare.pl temp.tab $usersDir/$userName/temp.tab $elapsedTime $machineCount true \"$product\"\n";
-      `./compare.pl temp.tab $usersDir/$userName/temp.tab 0 1 true \"$product\" >>$userName.txt`;
+      `./compare.pl temp.tab $usersDir/$userName/temp.tab 1 1 true \"$product\" >>$userName.txt`;
 
       `mv $logs $usersDir/$userName/.`;
       `cp -p $userName.txt $usersDir/$userName/.`;
@@ -1204,9 +1216,9 @@ mylog("finished cachearchive.pl");
     }
   } elsif ($userRegression) {
     `echo >>$userName.txt`;
-    `echo "Source differences from trunk:" >>$userName.txt`;
+    `echo "Source differences from trunk (first 2500 lines):" >>$userName.txt`;
     `echo >>$userName.txt`;
-    `head -1000 $userName.diff >>$userName.txt`;
+    `head -2500 $userName.diff >>$userName.txt`;
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;

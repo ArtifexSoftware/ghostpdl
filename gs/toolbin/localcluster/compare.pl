@@ -261,7 +261,7 @@ foreach my $t (sort keys %current) {
   }
 }
 
-if ($elapsedTime==0) {
+if ($elapsedTime==0 || $elapsedTime==1) {
 } else {
   print "ran ".($pdfwriteTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 }

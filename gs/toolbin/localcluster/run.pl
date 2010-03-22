@@ -138,7 +138,7 @@ if (open(F,"<$machine.start")) {
     } elsif ($a[0] eq "mupdf") {
       $mupdf=1;
       $products="mupdf";
-$maxCount=8;
+$maxCount=4;
 $maxTimeoutPercentage=5.0;
 $timeOut=600;
     } elsif ($a[0] eq "svn-icc_work") {
@@ -455,6 +455,10 @@ if (!$abort) {
 #`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
 `svn update $baseDirectory/ghostpdl/gs`;
 `cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
+
+mkdir("$gsBin");
+mkdir("$gsBin/bin");
+
 
 $cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
 print "$cmd\n" if ($verbose);
