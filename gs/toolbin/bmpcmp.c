@@ -12,6 +12,8 @@
 #include <png.h>
 #endif
 
+#define DEBUG_BBOX(A) /* do {(A);} while(0==1) */
+
 /* Values in map field:
  *
  *  0 means Completely unchanged pixel
@@ -54,24 +56,24 @@ typedef struct
 typedef struct
 {
     /* Read from the command line */
-    int   window;
-    int   threshold;
-    int   exhaustive;
-    int   basenum;
-    int   maxdiffs;
-    char *filename1;
-    char *filename2;
-    char *outroot;
+    int        window;
+    int        threshold;
+    int        exhaustive;
+    int        basenum;
+    int        maxdiffs;
+    char      *filename1;
+    char      *filename2;
+    char      *outroot;
     /* Fuzzy table */
-    int   wTabLen;
-    ptrdiff_t  *wTab;
+    int        wTabLen;
+    ptrdiff_t *wTab;
     /* Image details */
-    int   width;
-    int   height;
-    int   span;
-    int   bpp;
+    int        width;
+    int        height;
+    int        span;
+    int        bpp;
     /* Output BMP sizes */
-    BBox  output_size;
+    BBox       output_size;
 } Params;
 
 typedef struct ImageReader
@@ -941,7 +943,7 @@ static void simple_diff2(unsigned char *bmp,
                          Params        *params)
 {
     int    x, y;
-    int   *isrc, *isrc2, *isrc3;
+    int   *isrc, *isrc2;
     short *ssrc, *ssrc2;
     BBox   bbox;
     int    w;
@@ -959,13 +961,9 @@ static void simple_diff2(unsigned char *bmp,
     {
         isrc  = (int *)bmp;
         isrc2 = (int *)bmp2;
-        isrc3 = NULL;
         span >>= 2;
         isrc  += span*(bbox2->ymin)+bbox2->xmin;
         isrc2 += span*(bbox2->ymin)+bbox2->xmin;
-        if (isrc3 != NULL) {
-            isrc3 += span*(bbox2->ymin)+bbox2->xmin;
-        }
         span -= w;
         for (y = 0; y < h; y++)
         {
@@ -981,9 +979,6 @@ static void simple_diff2(unsigned char *bmp,
                         bbox.ymin = y;
                     if (y > bbox.ymax)
                         bbox.ymax = y;
-                    if (isrc3 != NULL)
-                    {
-                    }
                 }
             }
             isrc  += span;
@@ -2021,6 +2016,7 @@ int main(int argc, char *argv[])
     int            w,  h,  s,  bpp,  cmyk;
     int            w2, h2, s2, bpp2, cmyk2;
     int            nx, ny, n;
+    int            xstep, ystep;
     int            imagecount;
     unsigned char *bmp;
     unsigned char *bmp2;
@@ -2077,29 +2073,39 @@ int main(int argc, char *argv[])
             bbox.xmax++;
             bbox.ymax++;
 
+            DEBUG_BBOX(fprintf(stderr, "Raw bbox=%d %d %d %d\n",
+                               bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax));
             /* Make bbox2.xmin/ymin be the centre of the changed area */
             bbox2.xmin = (bbox.xmin + bbox.xmax + 1)/2;
             bbox2.ymin = (bbox.ymin + bbox.ymax + 1)/2;
 
-            /* Make bbox2.xmax/ymax be the width of the changed area */
+            /* Calculate subdivisions of image to fit as best as possible
+             * into our max/min sizes. */
             nx = 1;
             ny = 1;
-            bbox2.xmax = bbox.xmax - bbox.xmin;
-            if (bbox2.xmax < params.output_size.xmin)
-                bbox2.xmax = params.output_size.xmin;
-            if (bbox2.xmax > params.output_size.xmax)
+            xstep = bbox.xmax - bbox.xmin;
+            if (xstep > params.output_size.xmax)
             {
-                nx = 1+(bbox2.xmax/params.output_size.xmax);
-                bbox2.xmax = params.output_size.xmax*nx;
+                nx = 1+(xstep/params.output_size.xmax);
+                xstep = params.output_size.xmax;
             }
-            bbox2.ymax = bbox.ymax - bbox.ymin;
-            if (bbox2.ymax < params.output_size.ymin)
-                bbox2.ymax = params.output_size.ymin;
-            if (bbox2.ymax > params.output_size.ymax)
+            if (xstep < params.output_size.xmin)
+                xstep = params.output_size.xmin;
+            if (xstep*nx > w)
+                xstep = (w+nx-1)/nx;
+            bbox2.xmax = xstep*nx;
+            ystep = bbox.ymax - bbox.ymin;
+            bbox2.ymax = ystep;
+            if (ystep > params.output_size.ymax)
             {
-                ny = 1+(bbox2.ymax/params.output_size.ymax);
-                bbox2.ymax = params.output_size.ymax*ny;
+                ny = 1+(ystep/params.output_size.ymax);
+                ystep = params.output_size.ymax;
             }
+            if (ystep < params.output_size.ymin)
+                ystep = params.output_size.ymin;
+            if (ystep*ny > h)
+                ystep = (h+ny-1)/ny;
+            bbox2.ymax = ystep*ny;
 
             /* Now make the real bbox */
             bbox2.xmin -= bbox2.xmax>>1;
@@ -2125,6 +2131,9 @@ int main(int argc, char *argv[])
                 bbox2.ymax = h;
             }
 
+            DEBUG_BBOX(fprintf(stderr, "Expanded bbox=%d %d %d %d\n",
+                               bbox2.xmin, bbox2.ymin, bbox2.xmax, bbox2.ymax));
+
             /* bbox */
             boxlist = Malloc(sizeof(*boxlist) * nx * ny);
 
@@ -2136,29 +2145,24 @@ int main(int argc, char *argv[])
                 for (h2=0; h2 < ny; h2++)
                 {
                     boxlist++;
-                    boxlist->xmin = bbox2.xmin + params.output_size.xmax*w2;
-                    boxlist->xmax = boxlist->xmin + params.output_size.xmax;
+                    boxlist->xmin = bbox2.xmin + xstep*w2;
+                    boxlist->xmax = boxlist->xmin + xstep;
                     if (boxlist->xmax > bbox2.xmax)
                         boxlist->xmax = bbox2.xmax;
-                    if (boxlist->xmin > boxlist->xmax-params.output_size.xmin)
-                    {
-                        boxlist->xmin = boxlist->xmax-params.output_size.xmin;
-                        if (boxlist->xmin < 0)
-                            boxlist->xmin = 0;
-                    }
-                    boxlist->ymin = bbox2.ymin + params.output_size.ymax*h2;
-                    boxlist->ymax = boxlist->ymin + params.output_size.ymax;
+                    boxlist->ymin = bbox2.ymin + ystep*h2;
+                    boxlist->ymax = boxlist->ymin + ystep;
                     if (boxlist->ymax > bbox2.ymax)
                         boxlist->ymax = bbox2.ymax;
-                    if (boxlist->ymin > boxlist->ymax-params.output_size.ymin)
-                    {
-                        boxlist->ymin = boxlist->ymax-params.output_size.ymin;
-                        if (boxlist->ymin < 0)
-                            boxlist->ymin = 0;
-                    }
+                    DEBUG_BBOX(fprintf(stderr, "Retesting bbox=%d %d %d %d\n",
+                                       boxlist->xmin, boxlist->ymin,
+                                       boxlist->xmax, boxlist->ymax));
+
                     rediff(map, boxlist, &params);
                     if (!BBox_valid(boxlist))
                         continue;
+                    DEBUG_BBOX(fprintf(stderr, "Reduced bbox=%d %d %d %d\n",
+                                       boxlist->xmin, boxlist->ymin,
+                                       boxlist->xmax, boxlist->ymax));
                     if (cmyk)
                     {
                         uncmyk_bmp(bmp,  boxlist, s);
@@ -2207,11 +2211,9 @@ int main(int argc, char *argv[])
         free(bmp);
         free(bmp2);
         free(map);
-
     }
 
 done:
-
     /* If one loaded, and the other didn't - that's an error */
     if ((bmp2 != NULL) && (bmp == NULL))
     {
