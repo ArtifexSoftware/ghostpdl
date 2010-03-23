@@ -266,6 +266,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     }
     if (term_patch_fill_state(&pfs1))
 	return_error(gs_error_unregistered); /* Must not happen. */
+    if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
     return code;
 }
 

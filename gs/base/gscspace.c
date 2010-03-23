@@ -513,7 +513,7 @@ gx_cspace_no_linear(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device * dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, const gs_client_color *c3,
-		float smoothness)
+		float smoothness, gsicc_link_t *icclink)
 {
     return_error(gs_error_rangecheck);
 }
@@ -662,13 +662,14 @@ gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state 
     return 1;
 }
 
+
 /* Default color mapping linearity check. */
 int
 gx_cspace_is_linear_default(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, const gs_client_color *c3,
-		float smoothness)
+		float smoothness, gsicc_link_t *icclink)
 {
     /* Assuming 2 <= nc <= 4. We don't need other cases. */
     /* With nc == 4 assuming a convex plain quadrangle in the client color space. */

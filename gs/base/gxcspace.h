@@ -205,9 +205,9 @@ struct gs_color_space_type_s {
 		gx_device *dev,\
 		const gs_client_color *c0, const gs_client_color *c1,\
 		const gs_client_color *c2, const gs_client_color *c3,\
-		float smoothness)
-#define cs_is_linear(pcs, pis, dev, c0, c1, c2, c3, smoothness)\
-  (*(pcs)->type->is_linear)(pcs, pis, dev, c0, c1, c2, c3, smoothness)
+		float smoothness, gsicc_link_t *icclink)
+#define cs_is_linear(pcs, pis, dev, c0, c1, c2, c3, smoothness, icclink)\
+  (*(pcs)->type->is_linear)(pcs, pis, dev, c0, c1, c2, c3, smoothness, icclink)
 	cs_proc_is_linear((*is_linear));
 };
 

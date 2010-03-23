@@ -1116,7 +1116,7 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
 	if (s > pfs->smoothness)
 	    return 0;
 	code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-		&c0->cc, &c1->cc, NULL, NULL, pfs->smoothness - s);
+		&c0->cc, &c1->cc, NULL, NULL, pfs->smoothness - s, pfs->icclink);
 	if (code <= 0)
 	    return code;
 	return 1;
@@ -1706,7 +1706,8 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	    s01 = max(s0, s1);
 	    s012 = max(s01, s2);
 	    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-				&p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, pfs->smoothness - s012);
+				&p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, 
+                                pfs->smoothness - s012, pfs->icclink);
 	    if (code < 0)
 		return code;
 	    if (code == 0)
@@ -2680,6 +2681,7 @@ gx_init_patch_fill_state_for_clist(gx_device *dev, patch_fill_state_t *pfs, gs_m
     pfs->color_stack_limit = NULL; /* fixme */
     pfs->pcic = NULL; /* Will do someday. */
     pfs->trans_device = NULL;
+    pfs->icclink = NULL;
     return alloc_patch_fill_memory(pfs, memory, NULL);
 }
 

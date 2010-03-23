@@ -27,6 +27,7 @@
 #include "gsicc.h"
 #include "gsicccache.h"
 #include "gsicc_littlecms.h"
+#include "gxdevice.h"
 
 #define SAVEICCPROFILE 0
 
@@ -61,6 +62,7 @@ static cs_proc_install_cspace(gx_install_ICC);
 static cs_proc_remap_concrete_color(gx_remap_concrete_ICC);
 static cs_proc_final(gx_final_ICC);
 static cs_proc_serialize(gx_serialize_ICC);
+static cs_proc_is_linear(gx_cspace_is_linear_ICC);
 
 const gs_color_space_type gs_color_space_type_ICC = {
     gs_color_space_index_ICC,       /* index */
@@ -79,9 +81,152 @@ const gs_color_space_type gs_color_space_type_ICC = {
     gx_final_ICC,                   /* final */
     gx_no_adjust_color_count,       /* adjust_color_count */
     gx_serialize_ICC,               /* serialize */
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_ICC
 };
 
+
+
+static inline void
+gsicc_remap_fast(unsigned short *psrc, unsigned short *psrc_cm,
+		       gsicc_link_t *icc_link)
+{
+    gscms_transform_color(icc_link, psrc, psrc_cm, 2, NULL);
+}
+
+/* ICC color mapping linearity check, a 2-points case. Check only the 1/2 point */
+static int
+gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
+		gx_device *dev, 
+		const gs_client_color *c0, const gs_client_color *c1,
+		float smoothness, gsicc_link_t *icclink)
+{
+    int nsrc = cs->type->num_components(cs);
+    int ndes = dev->color_info.num_components;
+    unsigned short src0[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short src1[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short src01[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des0[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des1[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des01[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short interp_des;
+    unsigned short max_diff = max(1, 65535 * smoothness);
+    int k;
+
+    /* Get us to ushort and get mid point */
+    for (k = 0; k < nsrc; k++) {
+        src0[k] = c0->paint.values[k]*65535;
+        src1[k] = c1->paint.values[k]*65535;
+        src01[k] = ((unsigned int) src0[k] + (unsigned int) src1[k]) >> 1;
+    }
+    /* Transform the end points and the interpolated point */
+    gsicc_remap_fast(&(src0[0]), &(des0[0]), icclink);
+    gsicc_remap_fast(&(src1[0]), &(des1[0]), icclink);
+    gsicc_remap_fast(&(src01[0]), &(des01[0]), icclink);
+    /* Interpolate 1/2 value in des space and compare */
+    for (k = 0; k < ndes; k++) {
+        interp_des = (des0[k] + des1[k]) >> 1;
+        if (any_abs(interp_des - des01[k]) > max_diff)
+            return false;
+    }
+    return 1;
+}
+
+/* Default icc color mapping linearity check, a triangle case. */
+static int
+gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * pis,
+		gx_device *dev, 
+		const gs_client_color *c0, const gs_client_color *c1,
+		const gs_client_color *c2, float smoothness, gsicc_link_t *icclink)
+{
+    /* Check 4 points middle points of 3 sides and middle of one side with
+       other point.  We avoid divisions this way. */
+    unsigned short src0[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short src1[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short src2[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des0[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des1[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des2[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short src01[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short src12[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short src02[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short src012[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des01[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des12[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des02[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short des012[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int nsrc = cs->type->num_components(cs);
+    int ndes = dev->color_info.num_components;
+    unsigned short max_diff = max(1, 65535 * smoothness);
+    unsigned int interp_des;
+    int k;
+
+    /* This needs to be optimized. And range corrected */
+    for (k = 0; k < nsrc; k++){
+        src0[k] = c0->paint.values[k]*65535;
+        src1[k] = c1->paint.values[k]*65535;
+        src2[k] = c2->paint.values[k]*65535;
+        src01[k] = (src0[k] + src1[k]) >> 1;
+        src02[k] = (src0[k] + src2[k]) >> 1;   
+        src12[k] = (src1[k] + src2[k]) >> 1;
+        src012[k] = (src12[k] + src0[k]) >> 1;  
+    }
+    /* Map the points */
+    gsicc_remap_fast(&(src0[0]), &(des0[0]), icclink);
+    gsicc_remap_fast(&(src1[0]), &(des1[0]), icclink);
+    gsicc_remap_fast(&(src2[0]), &(des2[0]), icclink);
+    gsicc_remap_fast(&(src01[0]), &(des01[0]), icclink);
+    gsicc_remap_fast(&(src12[0]), &(des12[0]), icclink);
+    gsicc_remap_fast(&(src02[0]), &(des02[0]), icclink);
+    gsicc_remap_fast(&(src012[0]), &(des012[0]), icclink);
+    /* Interpolate in des space and check it */
+    for (k = 0; k < ndes; k++){
+        interp_des = (des0[k] + des1[k]) >> 1;
+        if (any_abs(interp_des - des01[k]) > max_diff)
+            return false;
+        interp_des = (des0[k] + des2[k]) >> 1;
+        if (any_abs(interp_des - des02[k]) > max_diff)
+            return false;
+        interp_des = (des1[k] + des2[k]) >> 1;
+        if (any_abs(interp_des - des12[k]) > max_diff)
+            return false;
+        /* 12 with 0 */
+        interp_des = (des0[k] + interp_des) >> 1;
+        if (any_abs(interp_des - des012[k]) > max_diff)
+            return false;
+    }
+    return 1;
+}
+
+/* ICC color mapping linearity check. */
+int
+gx_cspace_is_linear_ICC(const gs_color_space *cs, const gs_imager_state * pis,
+		gx_device *dev, 
+		const gs_client_color *c0, const gs_client_color *c1,
+		const gs_client_color *c2, const gs_client_color *c3,
+		float smoothness, gsicc_link_t *icclink)
+{
+    /* Assuming 2 <= nc <= 4. We don't need other cases. */
+    /* With nc == 4 assuming a convex plain quadrangle in the client color space. */
+    int code;
+    
+    /* Do a quick check if we are in a halftone situation. If yes,
+       then we should not be doing this linear check */
+    if (gx_device_must_halftone(dev)) return 0;
+    if (icclink->is_identity) return 1; /* Transform is identity, linear! */
+
+    if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
+	return_error(gs_error_rangecheck);
+    if (c2 == NULL)
+	return gx_icc_is_linear_in_line(cs, pis, dev, c0, c1, smoothness, icclink);
+    code = gx_icc_is_linear_in_triangle(cs, pis, dev, c0, c1, c2, 
+                                            smoothness, icclink);
+    if (code <= 0)
+	return code;
+    if (c3 == NULL)
+	return 1;
+    return gx_icc_is_linear_in_triangle(cs, pis, dev, c1, c2, c3, 
+                                                smoothness, icclink);
+}
 /*
  * Return the number of components used by a ICCBased color space - 1, 3, or 4
  */
