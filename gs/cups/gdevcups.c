@@ -66,7 +66,6 @@
 #include "std.h"                /* to stop stdlib.h redefining types */
 #include "gdevprn.h"
 #include "gsparam.h"
-#include "gsexit.h"
 #include "arch.h"
 
 #include <stdlib.h>
@@ -92,16 +91,6 @@
 /* The RGBW colorspace is not defined until CUPS 1.2... */
 #  define CUPS_CSPACE_RGBW 17
 #endif /* CUPS_RASTER_SYNCv1 */
-
-
-/*
- * Newer versions of Ghostscript don't provide gs_exit() function anymore.
- * It has been renamed to gs_to_exit()...
- */
-
-#ifdef dev_t_proc_encode_color
-#  define gs_exit gs_to_exit
-#endif /* dev_t_proc_encode_color */
 
 
 /*
@@ -435,11 +424,11 @@ static unsigned char	cupsRevLower1[16] =
  */
 
 static double	cups_map_cielab(double, double);
-static void	cups_print_chunked(gx_device_printer *, unsigned char *,
+static int	cups_print_chunked(gx_device_printer *, unsigned char *,
 		                   unsigned char *, int);
-static void	cups_print_banded(gx_device_printer *, unsigned char *,
+static int	cups_print_banded(gx_device_printer *, unsigned char *,
 		                  unsigned char *, int);
-static void	cups_print_planar(gx_device_printer *, unsigned char *,
+static int	cups_print_planar(gx_device_printer *, unsigned char *,
 		                  unsigned char *, int);
 
 /*static void	cups_set_margins(gx_device *);*/
@@ -941,6 +930,7 @@ cups_get_space_params(const gx_device_printer *pdev,
 
   space_params->MaxBitmap   = (long)cache_size;
   space_params->BufferSpace = (long)cache_size / 10;
+  space_params->banding_type = BandingAlways;  /* always force banding */
 }
 
 
@@ -2550,6 +2540,7 @@ cups_print_pages(gx_device_printer *pdev,
 		 int               num_copies)
 					/* I - Number of copies */
 {
+  int		code = 0;		/* Error code */
   int		copy;			/* Copy number */
   int		srcbytes;		/* Byte width of scanline */
   unsigned char	*src,			/* Scanline data */
@@ -2624,8 +2615,7 @@ cups_print_pages(gx_device_printer *pdev,
                                        CUPS_RASTER_WRITE)) == NULL)
     {
       perror("ERROR: Unable to open raster stream - ");
-      gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 0);
-      exit(1);
+      return_error(gs_error_ioerror);
     }
   }
 
@@ -2651,20 +2641,22 @@ cups_print_pages(gx_device_printer *pdev,
     cupsRasterWriteHeader(cups->stream, &(cups->header));
 
     if (pdev->color_info.num_components == 1)
-      cups_print_chunked(pdev, src, dst, srcbytes);
+      code = cups_print_chunked(pdev, src, dst, srcbytes);
     else
       switch (cups->header.cupsColorOrder)
       {
 	case CUPS_ORDER_CHUNKED :
-            cups_print_chunked(pdev, src, dst, srcbytes);
+            code = cups_print_chunked(pdev, src, dst, srcbytes);
 	    break;
 	case CUPS_ORDER_BANDED :
-            cups_print_banded(pdev, src, dst, srcbytes);
+            code = cups_print_banded(pdev, src, dst, srcbytes);
 	    break;
 	case CUPS_ORDER_PLANAR :
-            cups_print_planar(pdev, src, dst, srcbytes);
+            code = cups_print_planar(pdev, src, dst, srcbytes);
 	    break;
       }
+    if (code < 0)
+      break;
   }
 
  /*
@@ -2674,6 +2666,9 @@ cups_print_pages(gx_device_printer *pdev,
   gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)src, srcbytes, 1, "cups_print_pages");
   gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)dst, cups->header.cupsBytesPerLine, 1, "cups_print_pages");
 
+  if (code < 0)
+    return (code);
+ 
   cups->page ++;
   dprintf1("INFO: Processing page %d...\n", cups->page);
 
@@ -3732,7 +3727,7 @@ cups_sync_output(gx_device *pdev)	/* I - Device info */
  * 'cups_print_chunked()' - Print a page of chunked pixels.
  */
 
-static void
+static int
 cups_print_chunked(gx_device_printer *pdev,
 					/* I - Printer device */
                    unsigned char     *src,
@@ -3809,8 +3804,7 @@ cups_print_chunked(gx_device_printer *pdev,
     if (gdev_prn_get_bits((gx_device_printer *)pdev, y, src, &srcptr) < 0)
     {
       dprintf1("ERROR: Unable to get scanline %d!\n", y);
-      gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
-      exit(1);
+      return_error(gs_error_unknownerror);
     }
 
     if (xflip)
@@ -3942,6 +3936,7 @@ cups_print_chunked(gx_device_printer *pdev,
       cupsRasterWritePixels(cups->stream, srcptr, cups->header.cupsBytesPerLine);
     }
   }
+  return (0);
 }
 
 
@@ -3949,7 +3944,7 @@ cups_print_chunked(gx_device_printer *pdev,
  * 'cups_print_banded()' - Print a page of banded pixels.
  */
 
-static void
+static int
 cups_print_banded(gx_device_printer *pdev,
 					/* I - Printer device */
                   unsigned char     *src,
@@ -4041,8 +4036,7 @@ cups_print_banded(gx_device_printer *pdev,
     if (gdev_prn_get_bits((gx_device_printer *)pdev, y, src, &srcptr) < 0)
     {
       dprintf1("ERROR: Unable to get scanline %d!\n", y);
-      gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
-      exit(1);
+      return_error(gs_error_unknownerror);
     }
 
    /*
@@ -4648,6 +4642,7 @@ cups_print_banded(gx_device_printer *pdev,
 
     cupsRasterWritePixels(cups->stream, dst, cups->header.cupsBytesPerLine);
   }
+  return (0);
 }
 
 
@@ -4655,7 +4650,7 @@ cups_print_banded(gx_device_printer *pdev,
  * 'cups_print_planar()' - Print a page of planar pixels.
  */
 
-static void
+static int
 cups_print_planar(gx_device_printer *pdev,
 					/* I - Printer device */
                   unsigned char     *src,
@@ -4692,8 +4687,7 @@ cups_print_planar(gx_device_printer *pdev,
       if (gdev_prn_get_bits((gx_device_printer *)pdev, y, src, &srcptr) < 0)
       {
 	dprintf1("ERROR: Unable to get scanline %d!\n", y);
-	gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
-	exit(1);
+	return_error(gs_error_unknownerror);
       }
 
      /*
@@ -5020,6 +5014,7 @@ cups_print_planar(gx_device_printer *pdev,
 
       cupsRasterWritePixels(cups->stream, dst, cups->header.cupsBytesPerLine);
     }
+  return (0);
 }
 
 
