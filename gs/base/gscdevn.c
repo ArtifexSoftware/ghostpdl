@@ -302,7 +302,6 @@ gx_restrict_DeviceN(gs_client_color * pcc, const gs_color_space * pcs)
 
     for (i = 0; i < pcs->params.device_n.num_components; ++i) {
 	floatp value = pcc->paint.values[i];
-
 	pcc->paint.values[i] = (value <= 0 ? 0 : value >= 1 ? 1 : value);
     }
 }
@@ -319,7 +318,6 @@ gx_concrete_space_DeviceN(const gs_color_space * pcs,
     if (pcs->id != pis->color_component_map.cspace_id)
 	dprintf("gx_concrete_space_DeviceN: color space id mismatch");
 #endif
-
     /*
      * Check if we are using the alternate color space.
      */
@@ -345,46 +343,31 @@ gx_remap_DeviceN(const gs_client_color * pcc, const gs_color_space * pcs,
     gs_client_color temp;
 
     if ( pcs->cmm_icc_profile_data != NULL && pis->color_component_map.use_alt_cspace) {
-
         /* If needed, reorganize the data.  The ICC colorants tag drives the 
            the laydown order */
-
-        if (pcs->cmm_icc_profile_data->devicen_permute_needed){
-
-            for ( k = 0; k < i; k++){
-                
+        if (pcs->cmm_icc_profile_data->devicen_permute_needed) {
+            for ( k = 0; k < i; k++) {
                 temp.paint.values[k] = pcc->paint.values[pcs->cmm_icc_profile_data->devicen_permute[k]];
-
             }
-
             code = pacs->type->remap_color(&temp, pacs, pdc, pis, dev, select);
-
         } else {
-
             code = pacs->type->remap_color(pcc, pacs, pdc, pis, dev, select);
-
         }
         return(code);
-
     } else {
-
         code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis);
-
         if (code < 0)
 	    return code;
         pconcs = cs_concrete_space(pcs, pis);
         code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pis, dev, select);
-
         /* Save original color space and color info into dev color */
         i = any_abs(i);
         for (i--; i >= 0; i--)
 	    pdc->ccolor.paint.values[i] = pcc->paint.values[i];
         pdc->ccolor_valid = true;
         return code;
-
     }
 }
-
 
 static int
 gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
@@ -558,48 +541,31 @@ gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
     code = check_DeviceN_component_names(pcs, pgs);
     if (code < 0)
        return code;
-
     /* See if we have an ICC profile that we can associate with
        this DeviceN color space */
-
     if (pgs->icc_manager->device_n != NULL) {
-
         /* An nclr profile is in the manager.  Grab one
            that matches */
-
         pcs->cmm_icc_profile_data = gsicc_finddevicen(pcs, pgs->icc_manager);
-
         if (pcs->cmm_icc_profile_data != NULL)
             rc_adjust(pcs->cmm_icc_profile_data, pcs->rc.ref_count, "gs_install_DeviceN");
-
     }
-
     /* {csrc} was pgs->color_space->params.device_n.use_alt_cspace */
     ((gs_color_space *)pcs)->params.device_n.use_alt_cspace =
 	using_alt_color_space(pgs);
-
     if (pcs->params.device_n.use_alt_cspace && pcs->cmm_icc_profile_data == NULL ) {
-
         /* No nclr ICC profile */
-
         code = (pcs->base_space->type->install_cspace)
 	    (pcs->base_space, pgs);
-
     } else if (pcs->params.device_n.use_alt_cspace) {
-
         gs_color_space *nclr_pcs;
-
         /* Need to install the nclr cspace */
         code = gs_cspace_build_ICC(&nclr_pcs, NULL, pgs->memory);
         nclr_pcs->cmm_icc_profile_data = pcs->cmm_icc_profile_data;
         rc_increment_cs(nclr_pcs);
-
         rc_decrement_cs(pcs->base_space, "gx_install_DeviceN");
-
         pcs->base_space = nclr_pcs;
-
     }
-
     /*
      * Give the device an opportunity to capture equivalent colors for any
      * spot colors which might be present in the color space.

@@ -62,7 +62,8 @@ gs_private_st_ptrs2(st_gsicc_colorname, gsicc_colorname_t, "gsicc_colorname",
 gs_private_st_ptrs1(st_gsicc_namelist, gsicc_namelist_t, "gsicc_namelist",
 		    gsicc_namelist_enum_ptrs, gsicc_namelist_reloc_ptrs, head);
 gs_private_st_ptrs4(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
-		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, dev, name, spotnames);
+		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, 
+                    dev, name, spotnames);
 
 gs_private_st_ptrs10(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
@@ -238,25 +239,20 @@ gsicc_get_spotnames(gcmmhprofile_t profile, gs_memory_t *memory)
     num_colors = gscms_get_numberclrtnames(profile);
     if (num_colors == 0) 
         return(NULL);
-
     /* Allocate structure for managing this */
     list = gsicc_new_namelist(memory);
     if (list == NULL) 
         return(NULL);
-
     curr_entry = &(list->head);
     for (k = 0; k < num_colors; k++) {
-
        /* Allocate a new name object */
         name = gsicc_new_colorname(memory);
         *curr_entry = name;
-
         /* Get the name */
         clr_name = gscms_get_clrtname(profile, k);
         gsicc_copy_colorname(clr_name, *curr_entry, memory);
         curr_entry = &((*curr_entry)->next);
     }
-
     list->count = num_colors;
     return(list);
 }
@@ -276,7 +272,6 @@ gsicc_get_devicen_names(cmm_profile_t *icc_profile, gs_memory_t *memory)
     }
     icc_profile->spotnames = gsicc_get_spotnames(icc_profile->profile_handle, memory);
     return;
-
 }
 
 /* Allocate new spot name list object.  */
@@ -290,7 +285,6 @@ gsicc_new_namelist(gs_memory_t *memory)
     result->count = 0;
     result->head = NULL;
     return(result);
-
 }
 
 /* Allocate new spot name.  */
