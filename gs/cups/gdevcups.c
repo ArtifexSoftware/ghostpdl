@@ -285,7 +285,9 @@ private gx_device_procs	cups_procs =
    NULL,				/* fill_linear_color_triangle */
    NULL,				/* update_spot_equivalent_colors */
    NULL,				/* ret_devn_params */
-   NULL 				/* fillpage */
+   NULL,				/* fillpage */
+   NULL,				/* push_transparency_state */
+   NULL					/* pop_transparency_state */
 };
 
 #define prn_device_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_pages)\
@@ -937,8 +939,8 @@ cups_get_space_params(const gx_device_printer *pdev,
 
   dprintf1("DEBUG2: cache_size = %.0f\n", cache_size);
 
-  space_params->MaxBitmap   = (int)cache_size;
-  space_params->BufferSpace = (int)cache_size / 10;
+  space_params->MaxBitmap   = (long)cache_size;
+  space_params->BufferSpace = (long)cache_size / 10;
 }
 
 
@@ -2623,6 +2625,7 @@ cups_print_pages(gx_device_printer *pdev,
     {
       perror("ERROR: Unable to open raster stream - ");
       gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 0);
+      exit(1);
     }
   }
 
@@ -2819,7 +2822,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
                 param_read_int(plist, "cupsBitsPerColor", &intval) == 0;
   /* We also recompute page size and margins if we simply get onto a new
      page without necessarily having a page size change in the PostScript
-     code, as for some printers margins have to flipped on the back sides of
+     code, as for some printers margins have to be flipped on the back sides of
      the sheets (even pages) when printing duplex */
   if (cups->page != lastpage) {
     size_set = 1;
@@ -3807,6 +3810,7 @@ cups_print_chunked(gx_device_printer *pdev,
     {
       dprintf1("ERROR: Unable to get scanline %d!\n", y);
       gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
+      exit(1);
     }
 
     if (xflip)
@@ -4038,6 +4042,7 @@ cups_print_banded(gx_device_printer *pdev,
     {
       dprintf1("ERROR: Unable to get scanline %d!\n", y);
       gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
+      exit(1);
     }
 
    /*
@@ -4688,6 +4693,7 @@ cups_print_planar(gx_device_printer *pdev,
       {
 	dprintf1("ERROR: Unable to get scanline %d!\n", y);
 	gs_exit(gs_lib_ctx_get_non_gc_memory_t(), 1);
+	exit(1);
       }
 
      /*
