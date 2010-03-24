@@ -2009,6 +2009,7 @@ static void rediff(unsigned char *map,
             local.ymax  = global->ymax;
         }
     }
+    *global = local;
 }
 
 int main(int argc, char *argv[])
