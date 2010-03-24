@@ -125,7 +125,7 @@ gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
     /* Interpolate 1/2 value in des space and compare */
     for (k = 0; k < ndes; k++) {
         interp_des = (des0[k] + des1[k]) >> 1;
-        if (any_abs(interp_des - des01[k]) > max_diff)
+        if (any_abs((signed int) interp_des - (signed int) des01[k]) > max_diff)
             return false;
     }
     return 1;
@@ -181,17 +181,17 @@ gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * p
     /* Interpolate in des space and check it */
     for (k = 0; k < ndes; k++){
         interp_des = (des0[k] + des1[k]) >> 1;
-        if (any_abs(interp_des - des01[k]) > max_diff)
+        if (any_abs((signed int) interp_des - (signed int) des01[k]) > max_diff)
             return false;
         interp_des = (des0[k] + des2[k]) >> 1;
-        if (any_abs(interp_des - des02[k]) > max_diff)
+        if (any_abs((signed int) interp_des - (signed int) des02[k]) > max_diff)
             return false;
         interp_des = (des1[k] + des2[k]) >> 1;
-        if (any_abs(interp_des - des12[k]) > max_diff)
+        if (any_abs((signed int) interp_des - (signed int) des12[k]) > max_diff)
             return false;
         /* 12 with 0 */
         interp_des = (des0[k] + interp_des) >> 1;
-        if (any_abs(interp_des - des012[k]) > max_diff)
+        if (any_abs((signed int) interp_des - (signed int) des012[k]) > max_diff)
             return false;
     }
     return 1;
