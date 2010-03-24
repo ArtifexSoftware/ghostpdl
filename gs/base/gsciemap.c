@@ -578,7 +578,7 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     if (pcs->icc_equivalent == NULL) {
         gx_cieabc_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
     } else {
-        gs_color_space *pcs_icc = pcs->icc_equivalent;
+        pcs_icc = pcs->icc_equivalent;
     }
     /* Rescale the input based upon the input range since profile is
        created to remap this range from 0 to 1 */
