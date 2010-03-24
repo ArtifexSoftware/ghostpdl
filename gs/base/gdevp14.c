@@ -2544,8 +2544,12 @@ pdf14_end_transparency_group(gx_device *dev,
         pdev->ctx->additive = parent_color->isadditive;
         pdev->pdf14_procs = parent_color->unpack_procs;
         pdev->color_info.depth = parent_color->depth;
-        memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
-        memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        pdev->color_info.max_color = parent_color->max_color;
+        pdev->color_info.max_gray = parent_color->max_gray;
+        memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),
+                            GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),
+                            GX_DEVICE_COLOR_MAX_COMPONENTS);
         parent_color->get_cmap_procs = NULL;
         parent_color->parent_color_comp_index = NULL;
         parent_color->parent_color_mapping_procs = NULL;
@@ -2611,7 +2615,7 @@ pdf14_update_device_color_procs(gx_device *dev,
                 new_14procs = &gray_pdf14_procs;
                 new_depth = 8;
                 comp_bits[0] = 8;
-                comp_shift[0] = 0; 
+                comp_shift[0] = 0;
                 break;
             case DEVICE_RGB:			 	
             case CIE_XYZ:				
@@ -2708,8 +2712,12 @@ pdf14_update_device_color_procs(gx_device *dev,
         parent_color_info->isadditive = pdev->ctx->additive;
         parent_color_info->unpack_procs = pdev->pdf14_procs;
         parent_color_info->depth = pdev->color_info.depth;
-        memcpy(&(parent_color_info->comp_bits),&(pdev->color_info.comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
-        memcpy(&(parent_color_info->comp_shift),&(pdev->color_info.comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(parent_color_info->comp_bits),&(pdev->color_info.comp_bits),
+                            GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(parent_color_info->comp_shift),&(pdev->color_info.comp_shift),
+                            GX_DEVICE_COLOR_MAX_COMPONENTS);
+        parent_color_info->max_color = pdev->color_info.max_color;
+        parent_color_info->max_gray = pdev->color_info.max_gray;
 
         /* Don't increment the space since we are going to remove it from the 
            ICC manager anyway.  */
@@ -2734,6 +2742,8 @@ pdf14_update_device_color_procs(gx_device *dev,
         memset(&(pdev->color_info.comp_shift),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
         memcpy(&(pdev->color_info.comp_bits),comp_bits,4);
         memcpy(&(pdev->color_info.comp_shift),comp_shift,4);
+        pdev->color_info.max_color = 255;
+        pdev->color_info.max_gray = 255;
         /* If the CS was ICC based, we need to update the device ICC profile 
            in the ICC manager, since that is the profile that is used for the
            PDF14 device */
@@ -2903,6 +2913,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->blend_procs = pdevproto->blend_procs;
             pdev->color_info.polarity = new_polarity;
             pdev->color_info.num_components = new_num_comps;
+            pdev->color_info.max_color = 255;
+            pdev->color_info.max_gray = 255;
             pdev->pdf14_procs = new_14procs;
             pdev->color_info.depth = new_depth;
             memset(&(pdev->color_info.comp_bits),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -2912,6 +2924,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             cldev->clist_color_info.depth = pdev->color_info.depth;
             cldev->clist_color_info.polarity = pdev->color_info.polarity;
             cldev->clist_color_info.num_components = pdev->color_info.num_components;
+            cldev->clist_color_info.max_color = pdev->color_info.max_color;
+            cldev->clist_color_info.max_gray = pdev->color_info.max_gray;
             /* For the ICC profiles, we want to update the ICC profile for the
                device in the ICC manager.  We already stored in in pdf14_parent_color_t.
                That will be stored in the clist and restored during the reading phase. */
@@ -2950,16 +2964,24 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev, gs_imager_state *pis)
         pdev->color_info.num_components = parent_color->num_components;
         pdev->blend_procs = parent_color->parent_blending_procs;
         pdev->pdf14_procs = parent_color->unpack_procs;
-        memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
-        memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        pdev->color_info.max_color = parent_color->max_color;
+        pdev->color_info.max_gray = parent_color->max_gray;
+        memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),
+                            GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),
+                            GX_DEVICE_COLOR_MAX_COMPONENTS);
         /* clist writer fill rect has no access to imager state */
         /* and it forwards the target device.  this information */
         /* is passed along to use in this case */
         cldev->clist_color_info.depth = pdev->color_info.depth;
         cldev->clist_color_info.polarity = pdev->color_info.polarity;
         cldev->clist_color_info.num_components = pdev->color_info.num_components;
-        memcpy(&(cldev->clist_color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
-        memcpy(&(cldev->clist_color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+        cldev->clist_color_info.max_color = pdev->color_info.max_color;
+        cldev->clist_color_info.max_gray = pdev->color_info.max_gray;
+        memcpy(&(cldev->clist_color_info.comp_bits),&(parent_color->comp_bits),
+                            GX_DEVICE_COLOR_MAX_COMPONENTS);
+        memcpy(&(cldev->clist_color_info.comp_shift),&(parent_color->comp_shift),
+                            GX_DEVICE_COLOR_MAX_COMPONENTS);
         if (pdev->ctx) {
             pdev->ctx->additive = parent_color->isadditive;
         }
@@ -3007,8 +3029,12 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     new_parent_color->num_components = pdev->color_info.num_components;
     new_parent_color->unpack_procs = pdev->pdf14_procs;
     new_parent_color->depth = pdev->color_info.depth;
-    memcpy(&(new_parent_color->comp_bits),&(pdev->color_info.comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
-    memcpy(&(new_parent_color->comp_shift),&(pdev->color_info.comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+    new_parent_color->max_color = pdev->color_info.max_color;
+    new_parent_color->max_gray = pdev->color_info.max_gray;
+    memcpy(&(new_parent_color->comp_bits),&(pdev->color_info.comp_bits),
+                        GX_DEVICE_COLOR_MAX_COMPONENTS);
+    memcpy(&(new_parent_color->comp_shift),&(pdev->color_info.comp_shift),
+                        GX_DEVICE_COLOR_MAX_COMPONENTS);
     /* The ICC manager has the ICC profile for the device */
     new_parent_color->icc_profile = pis->icc_manager->device_profile;
     rc_increment(pis->icc_manager->device_profile);
@@ -3141,19 +3167,21 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
             pdev->blend_procs = parent_color->parent_blending_procs;
             pdev->ctx->additive = parent_color->isadditive;
             pdev->pdf14_procs = parent_color->unpack_procs;
+            pdev->color_info.max_color = parent_color->max_color;
+            pdev->color_info.max_gray = parent_color->max_gray;
             parent_color->get_cmap_procs = NULL;
             parent_color->parent_color_comp_index = NULL;
             parent_color->parent_color_mapping_procs = NULL;
-            memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
-            memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
+            memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),
+                                GX_DEVICE_COLOR_MAX_COMPONENTS);
+            memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),
+                                GX_DEVICE_COLOR_MAX_COMPONENTS);
             /* Take care of the ICC profile */
             if (parent_color->icc_profile != NULL) {
                 pis->icc_manager->device_profile = parent_color->icc_profile;
                 rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_mask");
                 parent_color->icc_profile = NULL;
             }
-                memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
-                memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
         }
     }
     return ok;

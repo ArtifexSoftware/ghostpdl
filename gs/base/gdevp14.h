@@ -110,6 +110,8 @@ struct pdf14_parent_color_s {
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* These are needed for the shading code */
     byte comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte depth;  /* used in clist writer cmd_put_color */
+    uint max_gray;  /* Used to determine if device halftones */
+    uint max_color; /* Causes issues if these are not maintained */
     const gx_color_map_procs *(*get_cmap_procs)(const gs_imager_state *,
 						     const gx_device *);
     const gx_cm_color_map_procs *(*parent_color_mapping_procs)(const gx_device *);
