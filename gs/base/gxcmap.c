@@ -1601,6 +1601,7 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
     frac frac_value;
     int i;
     frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
 
     /* apply the transfer function(s) */
     if (has_transfer) {
@@ -1646,5 +1647,12 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
         if (gx_render_device_DeviceN(&(cv_frac[0]), pdc, dev,
 	            pis->dev_ht, &pis->screen_phase[select]) == 1)
             gx_color_load_select(pdc, pis, dev, select);
+    } else {
+        /* We have a frac value from the transfer function.  Do the encode */
+        color = dev_proc(dev, encode_color)(dev, &(cv_frac[0]));
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+            color_set_pure(pdc, color);
+
     }
 }
