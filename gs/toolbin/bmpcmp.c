@@ -1558,7 +1558,6 @@ static void diff_bmp(unsigned char *bmp,
                     a  =  i      & 0xFF;
                     a += (i>> 8) & 0xFF;
                     a += (i>>16) & 0xFF;
-                    a += 0xFF*3*2;
                     a /= 6*2;
 
                     *isrc++ = a | (a<<8) | (a<<16);
