@@ -34,6 +34,7 @@
 #include "stdint_.h"
 #include "math_.h"
 #include "vdtrace.h"
+#include "gsicccache.h"
 
 #define VD_TRACE_TENSOR_PATCH 1
 
@@ -414,12 +415,16 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
     code = mesh_init_fill_state((mesh_fill_state_t *) &state,
 			 (const gs_shading_mesh_t *)psh0, rect_clip, dev, pis);
-    if (code < 0)
+    if (code < 0) {
+        if (state.icclink != NULL) gsicc_release_link(state.icclink);
 	return code;
+    }
     state.Function = psh->params.Function;
     code = init_patch_fill_state(&state);
-    if(code < 0)
+    if(code < 0) {
+        if (state.icclink != NULL) gsicc_release_link(state.icclink);
 	return code;
+    }
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s')) {
 	vd_get_dc('s');
 	vd_set_shift(0, 0);
@@ -440,6 +445,7 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_release_dc;
     if (term_patch_fill_state(&state))
 	return_error(gs_error_unregistered); /* Must not happen. */
+    if (state.icclink != NULL) gsicc_release_link(state.icclink);
     return min(code, 0);
 }
 
@@ -508,8 +514,10 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
     code = mesh_init_fill_state((mesh_fill_state_t *) & state,
 			 (const gs_shading_mesh_t *)psh0, rect_clip, dev, pis);
-    if (code < 0)
+    if (code < 0) {
+        if (state.icclink != NULL) gsicc_release_link(state.icclink);
 	return code;
+    }
     state.Function = psh->params.Function;
     code = init_patch_fill_state(&state);
     if(code < 0)
@@ -536,13 +544,14 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	swapped_interior[2] = interior[2];
 	swapped_interior[3] = interior[1];
 	code = patch_fill(&state, curve, swapped_interior, Tpp_transform);
-	if (code < 0)
+        if (code < 0) 
 	    break;
     }
     if (term_patch_fill_state(&state))
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
 	vd_release_dc;
+    if (state.icclink != NULL) gsicc_release_link(state.icclink);
     return min(code, 0);
 }
 

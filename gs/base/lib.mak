@@ -2714,26 +2714,26 @@ $(GLOBJ)gxshade.$(OBJ) : $(GLSRC)gxshade.c $(GXERR) $(math__h)\
  $(gsrect_h)\
  $(gxcspace_h) $(gscindex_h) $(gscie_h) \
  $(gxdevcli_h) $(gxistate_h) $(gxdht_h) $(gxpaint_h) $(gxshade_h) $(gxshade4_h)\
- $(gsicc_h)
+ $(gsicc_h) $(gsicccache_h)
 	$(GLCC) $(GLO_)gxshade.$(OBJ) $(C_) $(GLSRC)gxshade.c
 
 $(GLOBJ)gxshade1.$(OBJ) : $(GLSRC)gxshade1.c $(GXERR) $(math__h) $(memory__h)\
  $(gscoord_h) $(gsmatrix_h) $(gspath_h) $(gsptype2_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxfarith_h) $(gxfixed_h) $(gxistate_h)\
- $(gxpath_h) $(gxshade_h) $(gxshade4_h) $(gxdevcli_h)
+ $(gxpath_h) $(gxshade_h) $(gxshade4_h) $(gxdevcli_h) $(gsicccache_h)
 	$(GLCC) $(GLO_)gxshade1.$(OBJ) $(C_) $(GLSRC)gxshade1.c
 
 $(GLOBJ)gxshade4.$(OBJ) : $(GLSRC)gxshade4.c $(GXERR)\
  $(math__h) $(memory__h)\
  $(gscoord_h) $(gsmatrix_h) $(gsptype2_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxdevcli_h) $(gxistate_h) $(gxpath_h)\
- $(gxshade_h) $(gxshade4_h) $(vdtrace_h)
+ $(gxshade_h) $(gxshade4_h) $(vdtrace_h) $(gsicccache_h)
 	$(GLCC) $(GLO_)gxshade4.$(OBJ) $(C_) $(GLSRC)gxshade4.c
 
 $(GLOBJ)gxshade6.$(OBJ) : $(GLSRC)gxshade6.c $(GXERR) $(memory__h)\
  $(gscoord_h) $(gscicach_h) $(gsmatrix_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxistate_h) $(gxshade_h) $(gxshade4_h) $(gxdevcli_h)\
- $(gxarith_h) $(gzpath_h) $(math__h) $(vdtrace_h)
+ $(gxarith_h) $(gzpath_h) $(math__h) $(vdtrace_h) $(gsicccache_h)
 	$(GLCC) $(GLO_)gxshade6.$(OBJ) $(C_) $(GLSRC)gxshade6.c
 
 shadelib_1=$(GLOBJ)gscolor3.$(OBJ) $(GLOBJ)gsfunc3.$(OBJ) $(GLOBJ)gsptype2.$(OBJ) $(GLOBJ)gsshade.$(OBJ)
