@@ -196,7 +196,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
     nbytes = m * pclt->dims[n - 2] * pclt->dims[n - 1];
     if (n == 3) {
 	table =
-	    gs_alloc_struct_array(mem, pclt->dims[0], gs_const_string,
+	    gs_alloc_struct_array(mem->stable_memory, pclt->dims[0], gs_const_string,
 				  &st_const_string_element, "cie_table_param");
 	if (table == 0)
 	    return_error(e_VMerror);
@@ -210,7 +210,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
 	if (r_size(pta + 4) != d0)
 	    return_error(e_rangecheck);
 	table =
-	    gs_alloc_struct_array(mem, ntables, gs_const_string,
+	    gs_alloc_struct_array(mem->stable_memory, ntables, gs_const_string,
 				  &st_const_string_element, "cie_table_param");
 	if (table == 0)
 	    return_error(e_VMerror);
