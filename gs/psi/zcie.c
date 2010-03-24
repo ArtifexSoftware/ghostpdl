@@ -436,7 +436,7 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_defg *pcie;
-    int code;
+    int code = 0;
     ref *ptref;
     bool has_defg_procs, has_abc_procs, has_lmn_procs;
 
@@ -588,7 +588,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_abc *pcie;
-    int code=0;
+    int code = 0;
     bool has_lmn_procs, has_abc_procs;
 
 /* See if the color space is in the profile cache */
