@@ -43,28 +43,33 @@
 /* Static prototypes */
 
 
-static gsicc_link_t * gsicc_add_link(gsicc_link_cache_t *link_cache, void *link_handle,
-               void *ContextPtr, gsicc_hashlink_t hashcode, gs_memory_t *memory);
-
+static gsicc_link_t * gsicc_add_link(gsicc_link_cache_t *link_cache, 
+                                     void *link_handle, void *ContextPtr, 
+                                     gsicc_hashlink_t hashcode, 
+                                     gs_memory_t *memory);
 static void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
+static void gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, 
+                                  cmm_profile_t *profile, int64_t *hash);
+static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, 
+                                   cmm_profile_t *input_profile, 
+                                   cmm_profile_t *output_profile, 
+                                   gsicc_rendering_param_t *rendering_params, 
+                                   gsicc_hashlink_t *hash);
 
-static void gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *profile, int64_t *hash);
-
-static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, cmm_profile_t *input_profile, 
-                   cmm_profile_t *output_profile, 
-                   gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash);
-
-static gsicc_link_t* gsicc_findcachelink(gsicc_hashlink_t hashcode,gsicc_link_cache_t *icc_cache, 
-                                   bool includes_proof);
+static gsicc_link_t* gsicc_findcachelink(gsicc_hashlink_t hashcode,
+                                         gsicc_link_cache_t *icc_cache,
+                                         bool includes_proof);
 
 static gsicc_link_t* gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache);
 
 static void gsicc_remove_link(gsicc_link_t *link,gsicc_link_cache_t *icc_cache, 
                               gs_memory_t *memory);
 
-static void gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,int64_t *hash);
+static void gsicc_get_buff_hash(unsigned char *data,unsigned int num_bytes,
+                                int64_t *hash);
 
-static void rc_gsicc_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname);
+static void rc_gsicc_cache_free(gs_memory_t * mem, void *ptr_in, 
+                                client_name_t cname);
 
 /* Structure pointer information */
 
@@ -90,10 +95,10 @@ gsicc_cache_new(gs_memory_t *memory)
 {
     gsicc_link_cache_t *result;
 
-    /* We want this to be maintained in stable_memory.  It should be be effected by the 
-       save and restores */
-    result = gs_alloc_struct(memory->stable_memory, gsicc_link_cache_t, &st_icc_linkcache,
-			     "gsicc_cache_new");
+    /* We want this to be maintained in stable_memory.  It should not be 
+      affected by the  save and restores */
+    result = gs_alloc_struct(memory->stable_memory, gsicc_link_cache_t, 
+                            &st_icc_linkcache, "gsicc_cache_new");
     if ( result == NULL )
         return(NULL);
     rc_init_free(result, memory->stable_memory, 1, rc_gsicc_cache_free);
@@ -174,9 +179,11 @@ gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 
 
 static void 
-gsicc_get_gscs_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace, int64_t *hash)
+gsicc_get_gscs_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace, 
+                    int64_t *hash)
 {
-    /* There may be some work to do here with respect to pattern and indexed spaces */
+    /* There may be some work to do here with respect to pattern 
+       and indexed spaces */
     const gs_color_space_type *pcst = colorspace->type;
 
       switch(pcst->index) {
@@ -258,7 +265,8 @@ gsicc_compute_linkhash(gsicc_manager_t *icc_manager, cmm_profile_t *input_profil
 }
 
 static void
-gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *cmm_icc_profile_data, int64_t *hash)
+gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, 
+                      cmm_profile_t *cmm_icc_profile_data, int64_t *hash)
 {
     if (cmm_icc_profile_data == NULL ) {
         *hash = icc_manager->device_profile->hashcode;
@@ -277,7 +285,8 @@ gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *cmm_icc_profi
 }
 
 static gsicc_link_t*
-gsicc_findcachelink(gsicc_hashlink_t hash,gsicc_link_cache_t *icc_cache, bool includes_proof)
+gsicc_findcachelink(gsicc_hashlink_t hash,gsicc_link_cache_t *icc_cache, 
+                    bool includes_proof)
 {
     gsicc_link_t *curr_pos1,*curr_pos2;
     int64_t hashcode = hash.link_hashcode;
@@ -287,13 +296,15 @@ gsicc_findcachelink(gsicc_hashlink_t hash,gsicc_link_cache_t *icc_cache, bool in
     curr_pos2 = curr_pos1;
 
     while (curr_pos1 != NULL ) {
-        if (curr_pos1->hashcode.link_hashcode == hashcode && includes_proof == curr_pos1->includes_softproof) {
+        if (curr_pos1->hashcode.link_hashcode == hashcode && 
+            includes_proof == curr_pos1->includes_softproof) {
             return(curr_pos1);
         }
         curr_pos1 = curr_pos1->prevlink;
     }
     while (curr_pos2 != NULL ) {
-        if (curr_pos2->hashcode.link_hashcode == hashcode && includes_proof == curr_pos2->includes_softproof) {
+        if (curr_pos2->hashcode.link_hashcode == hashcode && 
+            includes_proof == curr_pos2->includes_softproof) {
             return(curr_pos2);
         }
         curr_pos2 = curr_pos2->nextlink;
@@ -332,7 +343,8 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_cache)
 
 /* Remove link from cache.  Notify CMS and free */
 static void
-gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, gs_memory_t *memory)
+gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, 
+                  gs_memory_t *memory)
 {
     gsicc_link_t *prevlink,*nextlink;
 
@@ -354,7 +366,8 @@ gsicc_remove_link(gsicc_link_t *link, gsicc_link_cache_t *icc_cache, gs_memory_t
 gsicc_link_t* 
 gsicc_get_link(const gs_imager_state *pis, const gs_color_space  *input_colorspace, 
                     gs_color_space *output_colorspace, 
-                    gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
+                    gsicc_rendering_param_t *rendering_params, 
+                    gs_memory_t *memory, bool include_softproof)
 {
     cmm_profile_t *gs_input_profile;
     cmm_profile_t *gs_output_profile;
@@ -385,7 +398,8 @@ gsicc_get_link(const gs_imager_state *pis, const gs_color_space  *input_colorspa
 gsicc_link_t* 
 gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile, 
                     cmm_profile_t *gs_output_profile, 
-                    gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
+                    gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, 
+                    bool include_softproof)
 {
     gsicc_hashlink_t hash;
     gsicc_link_t *link;
@@ -397,8 +411,10 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
     gcmmhprofile_t *cms_output_profile;
 
     /* First compute the hash code for the incoming case */
-    /* If the output color space is NULL we will use the device profile for the output color space */
-    gsicc_compute_linkhash(icc_manager, gs_input_profile, gs_output_profile, rendering_params, &hash);
+    /* If the output color space is NULL we will use the device profile for 
+       the output color space */
+    gsicc_compute_linkhash(icc_manager, gs_input_profile, gs_output_profile, 
+                           rendering_params, &hash);
 
     /* Check the cache for a hit.  Need to check if softproofing was used */
     link = gsicc_findcachelink(hash,icc_cache,include_softproof);
@@ -406,8 +422,8 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
     /* Got a hit, update the reference count, return link */
     if (link != NULL) {
         link->ref_count++;
-        return(link);  /* TO FIX: We are really not going to want to have the members
-                          of this object visible outside gsiccmange */
+        return(link);  /* TO FIX: We are really not going to want to have the 
+                          members of this object visible outside gsiccmange */
     }
     /* If not, then lets create a new one if there is room or return NULL */
     /* Caller will need to try later */
@@ -494,9 +510,10 @@ gsicc_release_link(gsicc_link_t *icclink)
 /* Used to initialize the buffer description prior to color conversion */
 
 void
-gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsigned char bytes_per_chan,
-                  bool has_alpha, bool alpha_first, bool is_planar, int plane_stride, int row_stride,
-                  int num_rows, int pixels_per_row)
+gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, 
+                  unsigned char bytes_per_chan, bool has_alpha, 
+                  bool alpha_first, bool is_planar, int plane_stride, 
+                  int row_stride, int num_rows, int pixels_per_row)
 {
     buffer_desc->num_chan = num_chan;
     buffer_desc->bytes_per_chan = bytes_per_chan;

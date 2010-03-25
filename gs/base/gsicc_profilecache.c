@@ -29,15 +29,16 @@
 #define ICC_CACHE_MAXPROFILE 50 
 
 /* Static prototypes */
-static void rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname);
+static void rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, 
+                                        client_name_t cname);
 static void gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache);
 
-gs_private_st_ptrs3(st_profile_entry, gsicc_profile_entry_t, "gsicc_profile_entry",
-		    profile_entry_enum_ptrs, profile_entry_reloc_ptrs,
-		    color_space, next, prev);
-gs_private_st_ptrs2(st_profile_cache, gsicc_profile_cache_t, "gsicc_profile_cache",
-		    profile_list_enum_ptrs, profile_list_reloc_ptrs,
-		    first_entry, last_entry);
+gs_private_st_ptrs3(st_profile_entry, gsicc_profile_entry_t, 
+                    "gsicc_profile_entry", profile_entry_enum_ptrs, 
+                    profile_entry_reloc_ptrs, color_space, next, prev);
+gs_private_st_ptrs2(st_profile_cache, gsicc_profile_cache_t, 
+                    "gsicc_profile_cache", profile_list_enum_ptrs, 
+                    profile_list_reloc_ptrs, first_entry, last_entry);
 
 /**
  * gsicc_cache_new: Allocate a new ICC cache manager
@@ -50,8 +51,8 @@ gsicc_profilecache_new(gs_memory_t *memory)
 
     /* We want this to be maintained in stable_memory.  It should not be effected by the 
        save and restores */
-    result = gs_alloc_struct(memory->stable_memory, gsicc_profile_cache_t, &st_profile_cache,
-			     "gsicc_profilecache_new");
+    result = gs_alloc_struct(memory->stable_memory, gsicc_profile_cache_t, 
+                             &st_profile_cache, "gsicc_profilecache_new");
     if ( result == NULL )
         return(NULL);
     rc_init_free(result, memory->stable_memory, 1, rc_gsicc_profile_cache_free);
@@ -71,11 +72,13 @@ rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname
     curr_entry = profile_cache->first_entry;
     while (curr_entry != NULL ){
         rc_decrement(curr_entry->color_space, "rc_gsicc_profile_cache_free");
-        gs_free_object(mem->stable_memory, curr_entry, "rc_gsicc_profile_cache_free");
+        gs_free_object(mem->stable_memory, curr_entry, 
+                       "rc_gsicc_profile_cache_free");
         profile_cache->num_entries--;
         curr_entry = curr_entry->next;
     }
-    gs_free_object(mem->stable_memory, profile_cache, "rc_gsicc_profile_cache_free"); 
+    gs_free_object(mem->stable_memory, profile_cache, 
+                   "rc_gsicc_profile_cache_free"); 
 }
 
 void
@@ -87,8 +90,8 @@ gsicc_add_cs(gs_state * pgs, gs_color_space * colorspace, ulong dictkey)
 
     /* The entry has to be added in stable memory. We want them
        to be maintained across the gsave and grestore process */
-    result = gs_alloc_struct(memory->stable_memory, gsicc_profile_entry_t, &st_profile_entry,
-			     "gsicc_add_cs");
+    result = gs_alloc_struct(memory->stable_memory, gsicc_profile_entry_t, 
+                                &st_profile_entry, "gsicc_add_cs");
     /* If needed, remove an entry */
     if (profile_cache->num_entries > ICC_CACHE_MAXPROFILE) {
         gsicc_remove_cs_entry(profile_cache);

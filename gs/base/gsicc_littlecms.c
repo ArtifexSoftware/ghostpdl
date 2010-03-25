@@ -101,7 +101,8 @@ gscms_get_profile_handle_file(const char *filename)
 
 /* Transform an entire buffer */
 void
-gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_buff_desc,
+gscms_transform_color_buffer(gsicc_link_t *icclink, 
+                             gsicc_bufferdesc_t *input_buff_desc,
                              gsicc_bufferdesc_t *output_buff_desc, 
                              void *inputbuffer,
                              void *outputbuffer)
@@ -115,8 +116,8 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
 #if DUMP_BUFFER
     FILE *fid_in, *fid_out;
 #endif
-    /* Although little CMS does  make assumptions about data types in its transformations
-        you can change it after the fact.  */
+    /* Although little CMS does  make assumptions about data types in its 
+       transformations you can change it after the fact.  */
     /* Set us to the proper output type */
     /* Note, we could speed this up by passing back the encoded data type
         to the caller so that we could avoid having to go through this 
@@ -140,7 +141,7 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
 
     /* 8 or 16 byte input and output */
     numbytes = input_buff_desc->bytes_per_chan;
-    if (numbytes>2) numbytes = 0;  /* littleCMS encodes float with 0 ToDO. Doublecheck this. */
+    if (numbytes>2) numbytes = 0;  /* littleCMS encodes float with 0 ToDO. */
     dwInputFormat = dwInputFormat | BYTES_SH(numbytes);
     numbytes = output_buff_desc->bytes_per_chan;
     if (numbytes>2) numbytes = 0;  
@@ -169,9 +170,10 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
     /* Change the formaters */
     cmsChangeBuffersFormat(hTransform,dwInputFormat,dwOutputFormat);
 
-    /* littleCMS knows nothing about word boundarys.  As such, we need to do this row
-       by row adjusting for our stride.  Output buffer must already be allocated.
-       ToDo:  Check issues with plane and row stride and word boundry */
+    /* littleCMS knows nothing about word boundarys.  As such, we need to do 
+       this row by row adjusting for our stride.  Output buffer must already 
+       be allocated. ToDo:  Check issues with plane and row stride and word 
+       boundry */
     inputpos = (unsigned char *) inputbuffer;
     outputpos = (unsigned char *) outputbuffer;
     if(input_buff_desc->is_planar){
@@ -179,11 +181,13 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
            with respect to row stride, word boundry and number
            of source versus output channels.  We may 
            need to take a closer look at this. */
-        cmsDoTransform(hTransform,inputpos,outputpos,input_buff_desc->plane_stride); 
+        cmsDoTransform(hTransform,inputpos,outputpos,
+                        input_buff_desc->plane_stride); 
     } else {
         /* Do row by row. */    
         for(k = 0; k < input_buff_desc->num_rows ; k++){
-            cmsDoTransform(hTransform,inputpos,outputpos,input_buff_desc->pixels_per_row);
+            cmsDoTransform(hTransform,inputpos,outputpos,
+                            input_buff_desc->pixels_per_row);
             inputpos += input_buff_desc->row_stride;
             outputpos += output_buff_desc->row_stride;
         }
@@ -191,8 +195,10 @@ gscms_transform_color_buffer(gsicc_link_t *icclink, gsicc_bufferdesc_t *input_bu
 #if DUMP_CMS_BUFFER
     fid_in = fopen("CM_Input.raw","ab");
     fid_out = fopen("CM_Output.raw","ab");
-    fwrite((unsigned char*) inputbuffer,sizeof(unsigned char),input_buff_desc->row_stride,fid_in);
-    fwrite((unsigned char*) outputbuffer,sizeof(unsigned char),output_buff_desc->row_stride,fid_out);
+    fwrite((unsigned char*) inputbuffer,sizeof(unsigned char),
+                            input_buff_desc->row_stride,fid_in);
+    fwrite((unsigned char*) outputbuffer,sizeof(unsigned char),
+                            output_buff_desc->row_stride,fid_out);
     fclose(fid_in);
     fclose(fid_out);
 #endif
@@ -217,7 +223,7 @@ gscms_transform_color(gsicc_link_t *icclink,
     curr_input = p->InputFormat;
     curr_output = p->OutputFormat;
     /* numbytes = sizeof(gx_color_value); */
-    if (num_bytes>2) num_bytes = 0;  /* littleCMS encodes float with 0 ToDO. Doublecheck this. */
+    if (num_bytes>2) num_bytes = 0;  /* littleCMS encodes float with 0 ToDO. */
     dwInputFormat = (curr_input & (~LCMS_BYTES_MASK))  | BYTES_SH(num_bytes);
     dwOutputFormat = (curr_output & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
     /* Change the formatters */
@@ -246,9 +252,10 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     /* littlecms returns -1 for types it does not (but should) understand */
     if (lcms_src_color_space < 0) lcms_src_color_space = 0;
     src_nChannels = _cmsChannelsOf(src_color_space);
-    /* For now, just do single byte data, interleaved.  We can change this when we
-       use the transformation. */
-    src_data_type = (COLORSPACE_SH(lcms_src_color_space)|CHANNELS_SH(src_nChannels)|BYTES_SH(2));
+    /* For now, just do single byte data, interleaved.  We can change this 
+      when we use the transformation. */
+    src_data_type = (COLORSPACE_SH(lcms_src_color_space)|
+                        CHANNELS_SH(src_nChannels)|BYTES_SH(2));
 #if arch_is_big_endian
     src_data_type = src_data_type | ENDIAN16_SH(1);
 #endif
@@ -261,7 +268,8 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     lcms_des_color_space = _cmsLCMScolorSpace(des_color_space);
     if (lcms_des_color_space < 0) lcms_des_color_space = 0;
     des_nChannels = _cmsChannelsOf(des_color_space);
-    des_data_type = (COLORSPACE_SH(lcms_des_color_space)|CHANNELS_SH(des_nChannels)|BYTES_SH(2));
+    des_data_type = (COLORSPACE_SH(lcms_des_color_space)|
+                        CHANNELS_SH(des_nChannels)|BYTES_SH(2));
     /* endian */
 #if arch_is_big_endian
     des_data_type = des_data_type | ENDIAN16_SH(1);
@@ -296,9 +304,12 @@ gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle,
     src_data_type= (CHANNELS_SH(src_nChannels)|BYTES_SH(1)); 
     des_data_type= (CHANNELS_SH(des_nChannels)|BYTES_SH(1)); 
     /* Create the link.  Note the gamut check alarm */
-    return(cmsCreateProofingTransform(lcms_srchandle, src_data_type, lcms_deshandle, des_data_type, 
-        lcms_proofhandle,rendering_params->rendering_intent, INTENT_ABSOLUTE_COLORIMETRIC, 
-        cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING ));			
+    return(cmsCreateProofingTransform(lcms_srchandle, src_data_type, 
+                                      lcms_deshandle, des_data_type,
+                                      lcms_proofhandle,
+                                      rendering_params->rendering_intent, 
+                                      INTENT_ABSOLUTE_COLORIMETRIC, 
+                                      cmsFLAGS_GAMUTCHECK | cmsFLAGS_SOFTPROOFING ));			
 }
 
 /* Do any initialization if needed to the CMS */
@@ -359,8 +370,8 @@ gscms_release_profile(void *profile)
    it will return values defined by the output device profile */
 
 int
-gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value, const char* ColorName, 
-                        gx_color_value device_values[] )  
+gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value, 
+                            const char* ColorName, gx_color_value device_values[] )  
 {
     cmsHPROFILE hTransform = icclink->link_handle; 
     unsigned short *deviceptr = device_values;
@@ -374,10 +385,11 @@ gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value, const char
    return(0);
 }
 
-/* Create a link to return device values inside the named color profile or link it with a destination
-    profile and potentially a proofing profile.  If the output_colorspace and the proof_color
-    space are NULL, then we will be returning the device values that are contained in the
-    named color profile.  i.e. in namedcolor_information.  Note that an ICC named color profile
+/* Create a link to return device values inside the named color profile or link 
+   it with a destination profile and potentially a proofing profile.  If the 
+   output_colorspace and the proof_color space are NULL, then we will be 
+   returning the device values that are contained in the named color profile.  
+   i.e. in namedcolor_information.  Note that an ICC named color profile
     need NOT contain the device values but must contain the CIELAB values. */
 void
 gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle, 
@@ -399,8 +411,11 @@ gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle
     }
     /* Create the transform */
     /* ToDo:  Adjust rendering intent */
-    hTransform = cmsCreateProofingTransform(lcms_srchandle, TYPE_NAMED_COLOR_INDEX, lcms_deshandle, TYPE_CMYK_8, 
-        lcms_proofhandle,INTENT_PERCEPTUAL, INTENT_ABSOLUTE_COLORIMETRIC,lcms_proof_flag);	
+    hTransform = cmsCreateProofingTransform(lcms_srchandle, TYPE_NAMED_COLOR_INDEX, 
+                                            lcms_deshandle, TYPE_CMYK_8, 
+                                            lcms_proofhandle,INTENT_PERCEPTUAL, 
+                                            INTENT_ABSOLUTE_COLORIMETRIC,
+                                            lcms_proof_flag);	
     /* In littleCMS there is no easy way to find out the size of the device
         space returned by the named color profile until after the transform is made.
         Hence we adjust our output format after creating the transform.  It is
