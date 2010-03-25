@@ -282,8 +282,8 @@ static int pdf14_update_device_color_procs(gx_device *dev,
 /* Uses color procs stack so that it can be used with clist writer */
 static int
 pdf14_update_device_color_procs_push_c(gx_device *dev,
-			      gs_transparency_color_t group_color,
-			      gs_imager_state *pis);
+			      gs_transparency_color_t group_color, int64_t icc_hashcode,
+			      gs_imager_state *pis, cmm_profile_t *iccprofile);
 
 static int
 pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis);
@@ -933,7 +933,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 {
     pdf14_buf *buf;
     unsigned char *curr_ptr, gray;
-    unsigned char background_init;
     
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", 
                     idle, replacing);
@@ -2758,8 +2757,8 @@ pdf14_update_device_color_procs(gx_device *dev,
    for transparency groups */
 static int
 pdf14_update_device_color_procs_push_c(gx_device *dev,
-			      gs_transparency_color_t group_color,
-			      gs_imager_state *pis)
+			      gs_transparency_color_t group_color, int64_t icc_hashcode,
+			      gs_imager_state *pis, cmm_profile_t *icc_profile)
 {
     pdf14_device *pdevproto;
     pdf14_device *pdev = (pdf14_device *)dev;
@@ -2774,18 +2773,10 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     byte comp_shift[] = {0,0,0,0};
     int k;
     gs_state *pgs;
-    cmm_profile_t *cmm_icc_profile_data;
     
-    if (pis->is_gstate) {
-        pgs = (gs_state *)pis;
-        cmm_icc_profile_data = pgs->color_space->cmm_icc_profile_data;
-    } else {
-        pgs = NULL;
-        cmm_icc_profile_data = NULL;
-        if (group_color == ICC ) {
-            return gs_rethrow(gs_error_undefinedresult, 
-                "Missing ICC data");
-        }
+    if (group_color == ICC && icc_profile == NULL) {
+        return gs_rethrow(gs_error_undefinedresult, 
+            "Missing ICC data");
     }
     if_debug0('v', "[v]pdf14_update_device_color_procs_push_c\n");
    /* Check if we need to alter the device procs at this
@@ -2857,10 +2848,10 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             case ICC:
                 /* Check if the profile is different. */
                 if (pis->icc_manager->device_profile->hashcode != 
-                                        cmm_icc_profile_data->hashcode) {
+                                        icc_profile->hashcode) {
                     update_color_info = true;
-                    new_num_comps = cmm_icc_profile_data->num_comps;
-                    new_depth = cmm_icc_profile_data->num_comps*8;
+                    new_num_comps = icc_profile->num_comps;
+                    new_depth = icc_profile->num_comps*8;
                     switch (new_num_comps) {
                     case 1:
                         new_polarity = GX_CINFO_POLARITY_ADDITIVE;
@@ -2930,7 +2921,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                device in the ICC manager.  We already stored in in pdf14_parent_color_t.
                That will be stored in the clist and restored during the reading phase. */
            if (group_color == ICC) {
-                pis->icc_manager->device_profile = cmm_icc_profile_data;
+                pis->icc_manager->device_profile = icc_profile;
             }
             if (pdev->ctx) {
                pdev->ctx->additive = new_additive; 
@@ -5371,7 +5362,9 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                     (strcmp(pdev->dname, "pdf14clistcmykspot") == 0);
                 if (!sep_target)
                    code = pdf14_update_device_color_procs_push_c(dev,
-			          pdf14pct->params.group_color,pis);
+                                  pdf14pct->params.group_color,
+			          pdf14pct->params.icc_hash, pis,
+                                  pdf14pct->params.iccprofile);
                /* Note that our initial device buffer may have had a different color space
                    than the first transparency group.  In such a case, we really should force
                    this first group to be isolated, anytime that the parent color space is 
@@ -5397,7 +5390,9 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 pdf14_push_parent_color(dev, pis);
                 /* Now update the device procs */
                code = pdf14_update_device_color_procs_push_c(dev,
-			      pdf14pct->params.group_color,pis);
+                                  pdf14pct->params.group_color,
+			          pdf14pct->params.icc_hash, pis,
+                                  pdf14pct->params.iccprofile);
                /* Also, if the BC is a value that may end up as
                   something other than transparent. We must
                   use the parent colors bounding box in

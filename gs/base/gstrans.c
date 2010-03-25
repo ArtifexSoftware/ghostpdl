@@ -171,7 +171,6 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
 void
 gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
 {
-
     ptgp->ColorSpace = NULL;	/* bogus, but can't do better */
     ptgp->Isolated = false;
     ptgp->Knockout = false;
@@ -188,9 +187,6 @@ gs_begin_transparency_group(gs_state *pgs,
     gs_pdf14trans_params_t params = { 0 };
     const gs_color_space *blend_color_space;
     gs_imager_state * pis = (gs_imager_state *)pgs;
-
-
-
     /*
      * Put parameters into a compositor parameter and then call the
      * create_compositor.  This will pass the data to the PDF 1.4
@@ -203,31 +199,22 @@ gs_begin_transparency_group(gs_state *pgs,
     params.opacity = pgs->opacity;
     params.shape = pgs->shape;
     params.blend_mode = pgs->blend_mode;
-
     /* The blending procs must be based upon the current color space */
     /* Note:  This function is called during the c-list writer side. 
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader */ 
-
     /* Note that we currently will use the concrete space for any space other than a 
         device space.  However, if the device is a sep device it will blend
         in DeviceN color space as required.  */
-
     if (gs_color_space_get_index(pgs->color_space) <= gs_color_space_index_DeviceCMYK) {
-
         blend_color_space = pgs->color_space;
-
     } else {
-
        /* ICC and CIE based color space.  With upcoming code changes
           all CIE based spaces will actually be ICC based spaces and
           ICC spaces are already concrete. So this will return the
           ICC color space. */
-
         blend_color_space = cs_concrete_space(pgs->color_space, pis);
-
     }
-
     /* Note that if the /CS parameter was not present in the push 
        of the transparency group, then we must actually inherent 
        the previous group color space, or the color space of the
@@ -235,32 +222,23 @@ gs_begin_transparency_group(gs_state *pgs,
        to set it as a unknown type for clist writing, as we .  We will later 
        during clist reading 
        */
-
     if (ptgp->ColorSpace == NULL) {
-
         params.group_color = UNKNOWN;
         params.group_color_numcomps = 0;
-    
     } else {
-
         if ( gs_color_space_is_ICC(blend_color_space) ) {
-
             /* Blending space is ICC based.  If we 
                are doing c-list rendering we will need
                to write this color space into the clist.
                MJV ToDo.
                */
-
             params.group_color = ICC;
             params.group_color_numcomps = 
                 blend_color_space->cmm_icc_profile_data->num_comps;
-
             /* Get the ICC profile */
-
             params.iccprofile = blend_color_space->cmm_icc_profile_data;
-
+            params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
         } else {
-
             switch (cs_num_components(blend_color_space)) {
                 case 1:				
                     params.group_color = GRAY_SCALE;       
@@ -275,28 +253,20 @@ gs_begin_transparency_group(gs_state *pgs,
                     params.group_color_numcomps = 4; 
                 break;
                 default:
-                    
                     /* We can end up here if we are in
                        a deviceN color space and 
                        we have a sep output device */
-
                     params.group_color = DEVICEN;
                     params.group_color_numcomps = cs_num_components(blend_color_space);
-
                 break;
-
              }  
-
         }
-
     }
-
 #ifdef DEBUG
     if (gs_debug_c('v')) {
 	static const char *const cs_names[] = {
 	    GS_COLOR_SPACE_TYPE_NAMES
 	};
-
 	dlprintf6("[v](0x%lx)begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
 		  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,params.group_color_numcomps);
 	if (ptgp->ColorSpace)
@@ -309,7 +279,6 @@ gs_begin_transparency_group(gs_state *pgs,
 		 ptgp->Isolated, ptgp->Knockout);
     }
 #endif
-
     params.bbox = *pbbox;
     return gs_state_update_pdf14trans(pgs, &params);
 }
