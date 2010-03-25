@@ -137,7 +137,6 @@ pop_transparency_stack(gs_state *pgs, client_name_t cname)
 
     gs_free_object(pgs->memory, pts, cname);
     pgs->transparency_stack = saved;
-
 }
 
 /*
@@ -313,9 +312,9 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 	static const char *const cs_names[] = {
 	    GS_COLOR_SPACE_TYPE_NAMES
 	};
-
 	dlprintf6("[v](0x%lx)gx_begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
-		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,pparams->group_color_numcomps);
+		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,
+                        pparams->group_color_numcomps);
         if (tgp.ColorSpace)
 	    dprintf1("     CS = %s",
 		cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
@@ -368,39 +367,28 @@ gs_push_transparency_state(gs_state *pgs)
        that we need to watch for end transparency 
        soft masks when we are at this graphic state
        level */
-
     /* pis->trans_flags.xstate_pending = true; */
-
     /* Actually I believe the above flag is not 
        needed.  We really should be watching for
        the softmask even at the base level.  What
        we need to watch for are q operations after
        a soft mask end has occured. */
-
     /* Check if we have a change flag set to true.
        this indicates that a softmask is present.
        We will need to send a push state to save
        the current soft mask, so that we can
        restore it later */
-
     if (pis->trans_flags.xstate_change) {
-
         if_debug0('v', "[v]gs_push_transparency_state sending\n");
         params.pdf14_op = PDF14_PUSH_TRANS_STATE;  
         code = gs_state_update_pdf14trans(pgs, &params);
         if (code < 0) 
             return(code);
-
     } else {
-
         if_debug0('v', "[v]gs_push_transparency_state NOT sending\n");
-
     }
-
-
     return(0);
 }
-
 
 int
 gs_pop_transparency_state(gs_state *pgs)
@@ -413,28 +401,19 @@ gs_pop_transparency_state(gs_state *pgs)
        an active softmask for the graphic state.  We
        need to communicate to the compositor to pop
        the softmask */
-
     if ( pis->trans_flags.xstate_change ) {
-    
         if_debug0('v', "[v]gs_pop_transparency_state sending\n");
         params.pdf14_op = PDF14_POP_TRANS_STATE;  
         code = gs_state_update_pdf14trans(pgs, &params);
         if ( code < 0 )
             return (code);
-
     } else {
-
         if_debug0('v', "[v]gs_pop_transparency_state NOT sending\n");
-
     }
-
     /* There is no reason to reset any of the flags since
        they will be reset by the graphic state restore */
-
     return(0);
-
 }
-
 
 int
 gx_pop_transparency_state(gs_imager_state * pis, gx_device * pdev)
@@ -479,7 +458,6 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
     ptmp->TransferFunction_data = 0;
     ptmp->replacing = false;
     ptmp->iccprofile = NULL;
-
 }
 
 int
@@ -522,7 +500,6 @@ gs_begin_transparency_mask(gs_state * pgs,
 	      (int)ptmp->subtype, ptmp->Background_components,
 	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
-
     /* Sample the transfer function */
     for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
 	float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
@@ -593,18 +570,13 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     tmp.mask_id = pparams->mask_id;
     
     if (tmp.group_color == ICC ) {
-
         /* Do I need to ref count here? */
         tmp.iccprofile = pparams->iccprofile;
         tmp.icc_hashcode = pparams->icc_hash;
-
     } else {
-
         tmp.iccprofile = NULL;
         tmp.icc_hashcode = 0;
-
     }
-
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
     if_debug9('v', "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  Background_components = %d  Num_grp_clr_comp = %d %s\n",
@@ -629,24 +601,18 @@ gs_end_transparency_mask(gs_state *pgs,
     gs_imager_state * pis = (gs_imager_state *)pgs;
 
     /* If we have done a q then set a flag to watch for any Qs */
-
    /* if (pis->trans_flags.xstate_pending)
         pis->trans_flags.xstate_change = true; */
-
     /* This should not depend upon if we have encountered a q
        operation.  We could be setting a softmask, before 
        there is any q operation.  Unlikely but it could happen.
        Then if we encouter a q operation (and this flag
        is true) we will need to 
        push the mask graphic state (PDF14_PUSH_TRANS_STATE). */
-
     pis->trans_flags.xstate_change = true;
-
     if_debug1('v', "[v]xstate_changed set true, gstate level is %d\n", pgs->level);
-
     if_debug2('v', "[v](0x%lx)gs_end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
-
     params.pdf14_op = PDF14_END_TRANS_MASK;  /* Other parameters not used */
     params.csel = csel;
     return gs_state_update_pdf14trans(pgs, &params);
@@ -658,7 +624,6 @@ gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 {
     if_debug2('v', "[v](0x%lx)gx_end_transparency_mask(%d)\n", (ulong)pis,
 	      (int)pparams->csel);
-
     if (dev_proc(pdev, end_transparency_mask) != 0)
 	return (*dev_proc(pdev, end_transparency_mask)) (pdev, pis, NULL);
     else
@@ -698,7 +663,6 @@ get_num_pdf14_spot_colors(gs_state * pgs)
      * countspotcolors in lib/pdf_main.ps.
      */
     if (pclist_devn_params != NULL) {
-
         /* If the sep order names were specified, then we should only allocate
            for those.  But only the nonstandard colorants that are stored
            in num_separations.  See devn_put_params for details on this. 
@@ -706,10 +670,9 @@ get_num_pdf14_spot_colors(gs_state * pgs)
            optimization is to be able to NOT have those included in the buffer 
            allocations if we don't specify them.  It would then be possible to
            output 8 separations at a time without using compressed color. */
-
-        if (pclist_devn_params->num_separation_order_names == 0)
-	return pclist_devn_params->page_spot_colors;
-
+        if (pclist_devn_params->num_separation_order_names == 0) {
+	    return pclist_devn_params->page_spot_colors;
+        }
         return (pclist_devn_params->separations.num_separations);
 
     }
