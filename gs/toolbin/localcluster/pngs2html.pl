@@ -90,7 +90,9 @@ sub openiframe {
     open($iframe, ">", $outdir."/frame.html");
         
     print $iframe "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE>";
-    print $iframe "$javascript</HEAD><BODY onLoad=\"parent.document.getElementById('iframe".$framedir."').style.height=document.getElementById('content').offsetHeight;parent.document.getElementById('iframe".$framedir."').style.width=document.getElementById('content').offsetWidth;\">";
+    print $iframe "$javascript";
+    print $iframe "<SCRIPT type=\"text/javascript\" src=\"../../js/tjpzoom.js\"></SCRIPT>";
+    print $iframe "</HEAD><BODY onLoad=\"parent.document.getElementById('iframe".$framedir."').style.height=document.getElementById('content').offsetHeight;parent.document.getElementById('iframe".$framedir."').style.width=document.getElementById('content').offsetWidth;\">";
     print $iframe "<DIV id=\"content\">";
 }
 
@@ -156,7 +158,9 @@ sub openhtml {
     $javascript .=   "document['Coord'+n].Y.value = y;";
     $javascript .= "}\n--></SCRIPT>";
     print $html "<HTML><HEAD><TITLE>Bitmap Comparison</TITLE>";
-    print $html "$javascript</HEAD><BODY>\n";
+    print $html "$javascript";
+    print $html "<SCRIPT type=\"text/javascript\" src=\"../js/tjpzoom.js\"></SCRIPT>";
+    print $html "</HEAD><BODY>\n";
     
     if ($filenum > 0) {
         print $html "<P>";
@@ -303,17 +307,19 @@ while (<INDEX>)
         }
             
         $page = $meta{"PAGE"};
-        $mousemove = "onmousemove=\"coord(event,this,'$framedir$image0',".$meta{"X"}.",".$meta{"Y"}.")\"";
+        $mousemove = "coord(event,this,'$framedir$image0',".$meta{"X"}.",".$meta{"Y"}.")";
+        $mousemove2 = "onmousemove=\"$mousemove;TJPzoom(this);\"";
+        $mousemove = "onmousemove=\"$mousemove\"";
             
-        print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$image0$suffix\" onMouseOver=\"swap('$framedir',$imageCount)\" onMouseOut=\"swap('$framedir',".($imageCount+1).")\" NAME=\"compare$framedir$image0\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
-        print $iframe "<TD><IMG SRC=\"out.".($image1)."$suffix\" NAME=\"compare$framedir".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove.></TD>\n";
-        print $iframe "<TD><IMG SRC=\"out.".($image2)."$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>\n";
+        print $iframe "<TABLE><TR><TD><div><IMG SRC=\"out.$image0$suffix\" onMouseOver=\"swap('$framedir',$imageCount)\" onMouseOut=\"swap('$framedir',".($imageCount+1).")\" NAME=\"compare$framedir$image0\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></div></TD>\n";
+        print $iframe "<TD><div><IMG SRC=\"out.".($image1)."$suffix\" NAME=\"compare$framedir".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove2.></div></TD>\n";
+        print $iframe "<TD><div><IMG SRC=\"out.".($image2)."$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></div></TD></TR>\n";
         print $iframe "<TR><TD COLSPAN=3><FORM name=\"Coord$framedir$image0\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>\n";
 
         if (!$iframes) {
-            print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$image0$suffix\" onMouseOver=\"swap('$framedir',$imageCount)\" onMouseOut=\"swap('$framedir',".($imageCount+1).")\" NAME=\"compare$framedir$image0\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>\n";
-            print $html "<TD><IMG SRC=\"$framedir/out.".($image1)."$suffix\" NAME=\"compare$framedir".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>\n";
-            print $html "<TD><IMG SRC=\"$framedir/out.".($image2)."$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>\n";
+            print $html "<TABLE><TR><TD><div><IMG SRC=\"$framedir/out.$image0$suffix\" onMouseOver=\"swap('$framedir',$imageCount)\" onMouseOut=\"swap('$framedir',".($imageCount+1).")\" NAME=\"compare$framedir$image0\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></div></TD>\n";
+            print $html "<TD><div><IMG SRC=\"$framedir/out.".($image1)."$suffix\" NAME=\"compare$framedir".($image1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove2></div></TD>\n";
+            print $html "<TD><div><IMG SRC=\"$framedir/out.".($image2)."$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></div></TD></TR>\n";
             print $html "<TR><TD COLSPAN=3><FORM name=\"Coord$framedir$image0\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>\n";
 	}
         $imageCount += 3;
