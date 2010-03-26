@@ -2060,7 +2060,8 @@ $(GLD)psf0lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)cmaplib.dev $(psf0lib_)
 
 $(GLOBJ)gschar0.$(OBJ) : $(GLSRC)gschar0.c $(GXERR) $(memory__h)\
  $(gsfcmap_h) $(gsstruct_h)\
- $(gxdevice_h) $(gxfcmap_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxtext_h)
+ $(gxdevice_h) $(gxfcmap_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h)\
+ $(gxfcid_h) $(gxtext_h)
 	$(GLCC) $(GLO_)gschar0.$(OBJ) $(C_) $(GLSRC)gschar0.c
 
 $(GLOBJ)gsfont0.$(OBJ) : $(GLSRC)gsfont0.c $(GXERR) $(memory__h)\
