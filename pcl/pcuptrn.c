@@ -537,6 +537,10 @@ upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
 	psaved->bi_pattern_array[i] = pcs->bi_pattern_array[i];
     psaved->gl_patterns = pcs->gl_patterns;
     psaved->pcl_patterns = pcs->pcl_patterns;
+    psaved->last_pcl_uptrn_id = pcs->last_pcl_uptrn_id;
+    psaved->plast_pcl_uptrn = pcs->plast_pcl_uptrn;
+    psaved->last_gl2_RF_indx = pcs->last_gl2_RF_indx;
+    psaved->plast_gl2_uptrn = pcs->plast_gl2_uptrn;
     return 0;
 }
 

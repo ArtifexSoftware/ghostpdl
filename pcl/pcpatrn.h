@@ -107,7 +107,7 @@ typedef struct pcl_ccolor_s     pcl_ccolor_t;
  * The pattern structure. This is not reference counted, as the only place it
  * is referred to is the pattern dictionary.
  *
- * The primary purpose for this structure is to handle cahcing of pattern
+ * The primary purpose for this structure is to handle caching of pattern
  * instances. There are potentially two rendered instances of a pattern,
  * one as a mask (uncolored) pattern and one as a colored pattern.
  *
