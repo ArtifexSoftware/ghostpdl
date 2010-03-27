@@ -48,6 +48,7 @@ my $outdir;
 my $metafile;
 my $framedir;
 my $mousemove;
+my $mousemove2;
 my $ret;
 my $ret2;
 my $filenum;
