@@ -227,6 +227,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     } else {
         pcs = penum->pcs;
     }
+    if (pcs->cmm_icc_profile_data->islab ) need_decode = false;
     pdevc = &devc1;
     pdevc_next = &devc2;
     /* These used to be set by init clues */

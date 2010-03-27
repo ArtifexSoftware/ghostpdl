@@ -261,7 +261,12 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     stream_cursor_read r;
     stream_cursor_write w;
     unsigned char index_space;
-    byte *out = penum->line;   
+    byte *out = penum->line;
+    bool islab = false;
+
+    if (pcs->cmm_icc_profile_data != NULL) {
+        islab = pcs->cmm_icc_profile_data->islab;
+    }
     /* buffer for output scan line.  It may be large enough to hold a temporary 
        converted input scan line also depending upon what occured in 
        gs_image_class_0_interpolate */
@@ -275,6 +280,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
         /* We have the following cases to worry about 
           1) Device 8 bit color or nondevice but not indexed (e.g. ICC).  
              Use as is directly. Remap after interpolation.
+             Also if ICC CIELAB do not do a decode operation
           2) Indexed 8 bit color.  Get to the base space. We will then be in 
              the same state as 1.  
           3) 16 bit not indexed.  Remap after interpolation.  
@@ -285,10 +291,9 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             if (pcs->type->index != gs_color_space_index_Indexed) {
                 /* An issue here is that we may not be "device color" due to 
                    how the data is encoded.  Need to check for that case here */
-                if (penum->device_color || gs_color_space_is_CIE(pcs)){
-                    /* 8-bit color values, possibly device 
-                    indep. or device depend., not indexed. 
-                    Decode range was [0 1] */
+                if (penum->device_color || gs_color_space_is_CIE(pcs) || islab){
+                    /* 8-bit color values, possibly device  indep. or device 
+                       depend., not indexed. Decode range was [0 1] */
                     if (penum->matrix.xx >= 0) {
 	                /* Use the input data directly. */
                         /* sets up data in the stream buffere structure */
@@ -567,7 +572,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                           for (j = 0; j < num_components;  ++j) {
                             /* If we were indexed, dont use the decode procedure 
                             for the index values just get to float directly */
-                            if (index_space) {
+                            if (index_space || islab) {
                                 cc.paint.values[j] = frac2float(psrc[j]); 
                             } else {
                                 decode_sample_frac_to_float(penum, psrc[j], &cc, j);
