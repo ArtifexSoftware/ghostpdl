@@ -125,22 +125,15 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 
     /* If we are in an indexed space then we need to use the number of components
        in the base space.  Otherwise we use the number of components in the source space */
-
     if (pcs->type->index == gs_color_space_index_Indexed) {
-
         /* Use the number of colors in the base space */
         iss.Colors = cs_num_components(pcs->base_space);
-
     } else {
-
         /* Use the number of colors that exist in the source space
         as this is where we are doing our interpolation */
         iss.Colors = cs_num_components(pcs);
-
     }
-
-    if (penum->bps <= 8 ) {
-
+    if (penum->bps <= 8) {
        /* If the input is ICC or other device independent format, go ahead 
           and do the interpolation in that space. 
           If we have more than 8 bits per channel then we will need to 
@@ -149,48 +142,33 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
           The interpolation will still be in the source 
           color space.  Note that if image data was less the 8 bps
           It is handed here to us in 8 bit form already decoded. */
-
 	iss.BitsPerComponentIn = 8;
 	iss.MaxValueIn = 0xff;
-
-        /* If it is an index color space we will need to allocate for the decoded data */
-
+        /* If it is an index color space we will need to allocate for 
+           the decoded data */
        if (pcs->type->index == gs_color_space_index_Indexed) {
-        
            in_size = iss.WidthIn * iss.Colors;
-
        } else {
-
            /* Non indexed case, we either use the data as 
            is, or allocate space if it is reversed in X */
-
 	    in_size =
 	        (penum->matrix.xx < 0 ?
 	         /* We need a buffer for reversing each scan line. */
 	         iss.WidthIn * iss.Colors : 0);  
-
             /* If it is not reversed, and we have 8 bit/color channel data then            
             no need to allocate extra as we will use the source directly */
-
             /* However, if we have a nonstandard encoding and are in 
                 a device color space we will need to allocate
                in that case also. We will maintain 8 bits but
                do the decode and then interpolate.  This is OK
                for the linear decode */
-
-            if (!penum->device_color && !gs_color_space_is_CIE(pcs)){
-
+            if (!penum->device_color && !gs_color_space_is_CIE(pcs)) {
                 in_size = iss.WidthIn * iss.Colors;
-
             }
-
        }
-
     } else {
-
         /* If it has more than 8 bits per color channel then we will go to frac 
            for the interpolation to mantain precision.  */
-
 	iss.BitsPerComponentIn = sizeof(frac) * 8;
 	iss.MaxValueIn = frac_1;
 	in_size = round_up(iss.WidthIn * iss.Colors * sizeof(frac),
@@ -208,12 +186,15 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	  penum->dev->color_info.max_color < 15))
 	) {
 	/* halftone device -- restrict interpolation */
-	if ((iss.WidthOut < iss.WidthIn * 4) && (iss.HeightOut < iss.HeightIn * 4)) {
-	    if ((iss.WidthOut < iss.WidthIn) && (iss.HeightOut < iss.HeightIn) &&	/* downsampling */
-		(penum->dev->color_info.polarity != GX_CINFO_POLARITY_UNKNOWN)) {	/* colorspace OK */
-		/* Special case handling for when we are downsampling to a dithered device	*/
-		/* The point of this non-linear downsampling is to preserve dark pixels		*/
-		/* from the source image to avoid dropout. The color polarity is used for this	*/
+	if ((iss.WidthOut < iss.WidthIn * 4) && 
+            (iss.HeightOut < iss.HeightIn * 4)) {
+	    if ((iss.WidthOut < iss.WidthIn) && 
+                (iss.HeightOut < iss.HeightIn) &&	/* downsampling */
+		(penum->dev->color_info.polarity != GX_CINFO_POLARITY_UNKNOWN)) {	
+		/* Special case handling for when we are downsampling 
+                   to a dithered device.  The point of this non-linear 
+                   downsampling is to preserve dark pixels from the source 
+                   image to avoid dropout. The color polarity is used for this	*/
 		template = &s_ISpecialDownScale_template;
 	    } else {
 		penum->interpolate = false;
@@ -224,20 +205,17 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     }
     /* The SpecialDownScale filter needs polarity, either ADDITIVE or SUBTRACTIVE */
     /* UNKNOWN case (such as for palette colors) has been handled above */
-    iss.ColorPolarityAdditive = penum->dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
+    iss.ColorPolarityAdditive = 
+        penum->dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
     /* Allocate a buffer for one source/destination line. */
     {
 	uint out_size =
 	    iss.WidthOut * max(iss.Colors * (iss.BitsPerComponentOut / 8),
 			       arch_sizeof_color_index);  
-        /* Allocate based upon frac size (as BitsPerComponentOut=16) */
-
-        /* output scan line input plus output */
-        /* The outsize may have an adjustment for word boundary on it.
-           Need to account for that now */
-
+        /* Allocate based upon frac size (as BitsPerComponentOut=16) output scan 
+           line input plus output. The outsize may have an adjustment for 
+           word boundary on it. Need to account for that now */
  	out_size += align_bitmap_mod;  
-
 	line = gs_alloc_bytes(mem, in_size + out_size,       
 			      "image scale src+dst line");
     }
@@ -258,7 +236,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     penum->line_xy = 0;
     {
 	gx_dda_fixed x0;
-
 	x0 = penum->dda.pixel0.x;
 	if (penum->matrix.xx < 0)
 	    dda_advance(x0, penum->rect.w);
@@ -267,7 +244,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y 
 				    * penum->dst_height / penum->Height));
     if_debug0('b', "[b]render=interpolate\n");
-
     return &image_render_interpolate;
 }
 
@@ -285,45 +261,38 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     stream_cursor_read r;
     stream_cursor_write w;
     unsigned char index_space;
-    byte *out = penum->line;   /* buffer for output scan line.  It may be large
-                               enough to hold a temporary converted input scan
-                               line also depending upon what occured in
-                               gs_image_class_0_interpolate */
-
+    byte *out = penum->line;   
+    /* buffer for output scan line.  It may be large enough to hold a temporary 
+       converted input scan line also depending upon what occured in 
+       gs_image_class_0_interpolate */
     if (h != 0) {
-
 	/* Convert the unpacked data to concrete values in */
 	/* the source buffer. */
 	int sizeofPixelIn = pss->params.BitsPerComponentIn / 8;
 	uint row_size = pss->params.WidthIn * c * sizeofPixelIn;
 	const unsigned char *bdata = buffer + data_x * c * sizeofPixelIn;    /* raw input data */       
         index_space = 0;
-
         /* We have the following cases to worry about 
-
-          1) Device 8 bit color or nondevice but not indexed (e.g. ICC).  Use as is directly. Remap after interpolation.
-          2) Indexed 8 bit color.  Get to the base space. We will then be in the same state as 1.  
+          1) Device 8 bit color or nondevice but not indexed (e.g. ICC).  
+             Use as is directly. Remap after interpolation.
+          2) Indexed 8 bit color.  Get to the base space. We will then be in 
+             the same state as 1.  
           3) 16 bit not indexed.  Remap after interpolation.  
-          4) Indexed 16bit color.   Get to base space in 16bit frac form. We will then be in same state as 3.  
-
+          4) Indexed 16bit color.   Get to base space in 16bit frac form. We 
+             will then be in same state as 3.  
        */
-
 	if (sizeofPixelIn == 1) {
-
             if (pcs->type->index != gs_color_space_index_Indexed) {
-
-
                 /* An issue here is that we may not be "device color" due to 
                    how the data is encoded.  Need to check for that case here */
-
                 if (penum->device_color || gs_color_space_is_CIE(pcs)){
-
                     /* 8-bit color values, possibly device 
                     indep. or device depend., not indexed. 
                     Decode range was [0 1] */
                     if (penum->matrix.xx >= 0) {
 	                /* Use the input data directly. */
-	                r.ptr = bdata - 1;   /* sets up data in the stream buffere structure */
+                        /* sets up data in the stream buffere structure */
+	                r.ptr = bdata - 1;   
                     } else {
 	                /* Mirror the data in X. */
 	                const byte *p = bdata + row_size - c;
@@ -335,16 +304,11 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	                r.ptr = out - 1;
 	                out += round_up(pss->params.WidthIn * c, align_bitmap_mod);
                     }
-
                 } else {
-
-                    /* We need to do some decoding.
-                       Data will remain in 8 bits 
-                       This does not occur if color
-                       space was CIE encoded.  Then we
-                       do the decode during concretization 
-                       which occurs after interpolation */
-
+                    /* We need to do some decoding. Data will remain in 8 bits 
+                       This does not occur if color space was CIE encoded.  
+                       Then we do the decode during concretization which occurs 
+                       after interpolation */
 	            int bps = 1;
 	            int dc = penum->spp;
 	            const byte *pdata = bdata;
@@ -358,46 +322,35 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                       pdata += (pss->params.WidthIn - 1) * dpd;
                       dpd = - dpd;
                     }
-
 	            r.ptr = (byte *) psrc - 1;
 	            for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
-
                         /* Do the decode but remain in 8 bits */
-
                         for (j = 0; j < dc;  ++j) {
                             decode_sample(pdata[j], cc, j);
                             psrc[j] = float_color_to_byte_color(cc.paint.values[j]);
                          }
-
 	                pdata += dpd;
                     }
-
 	            out += round_up(pss->params.WidthIn * c,align_bitmap_mod);
                 }
-
-
             } else {
-
-                /* indexed 8 bit color values, possibly a device indep. or device depend. base space 
-                   We need to get out of the indexed space and into the base color space.
-                   Note that we need to worry about the decode function for the index values. */
-
+                /* indexed 8 bit color values, possibly a device indep. or 
+                   device depend. base space. We need to get out of the indexed 
+                   space and into the base color space. Note that we need to 
+                   worry about the decode function for the index values. */
       	        int bps = penum->bps;
 	        int dc = penum->spp;
 	        const byte *pdata = bdata; /* Input buffer */
-	        unsigned char *psrc = (unsigned char *) penum->line;  /* Output buffer */
+	        unsigned char *psrc = (unsigned char *) penum->line;  /* Output */
 	        int i;
                 int dpd = dc * (bps <= 8 ? 1 : sizeof(frac));
                 float max_range;
 
                 /* Get max of decode range */
-
                 max_range = (penum->map[0].decode_factor < 0 ? 
                     penum->map[0].decode_base : 
                 penum->map[0].decode_base + 255.0 * penum->map[0].decode_factor);
-
                 index_space = 1;
-
                 /* flip the horizontal direction if indicated by the matrix value */
                 if (penum->matrix.xx < 0) {
                   pdata += (pss->params.WidthIn - 1) * dpd;
@@ -406,64 +359,52 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	        r.ptr = (byte *) psrc - 1;
 
 	        for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
-
-                    /* Let's get directly to a decoded byte type loaded into psrc, 
-                        and do the interpolation in the source space 
-                        Then we will do the appropriate remap function after interpolation. */
-
+                    /* Let's get directly to a decoded byte type loaded into 
+                       psrc, and do the interpolation in the source space. Then 
+                       we will do the appropriate remap function after 
+                       interpolation. */
                     /* First we need to get the properly decoded value. */
-
                     float decode_value;
-
                     switch ( penum->map[0].decoding )
                     {
                         case sd_none:
-
-                         /* while our indexin is going to be 0 to 255.0 due to what is getting handed to us,
-                            the range of our original data may not have been as such and we may need to rescale, 
-                            to properly lookup at the correct location (or do the proc correctly) during the 
-                            index look-up.  This occurs even if decoding was set to sd_none.  */
-
+                         /* while our indexin is going to be 0 to 255.0 due to 
+                            what is getting handed to us, the range of our 
+                            original data may not have been as such and we may 
+                            need to rescale, to properly lookup at the correct 
+                            location (or do the proc correctly) during the index 
+                            look-up.  This occurs even if decoding was set to 
+                            sd_none.  */
                             decode_value = (float) pdata[0] * (float)max_range / 255.0; 
-
                         break;
-
                         case sd_lookup:	
                             decode_value = 
                               (float) penum->map[0].decode_lookup[pdata[0] >> 4];
                         break;
-
                         case sd_compute:
                             decode_value =   
                               penum->map[0].decode_base + 
                               ((float) pdata[0]) * penum->map[0].decode_factor;
 			    break;
-
 		        default:
 			    decode_value = 0; /* Quiet gcc warning. */
                   }
-
                   gs_cspace_indexed_lookup_bytes(pcs, decode_value,psrc);	
 	          pdata += dpd;    /* Can't have just ++ 
                                    since we could be going backwards */
                 }
-
                  /* We need to set the output to the end of the input buffer 
                     moving it to the next desired word boundary.  This must
-                    be accounted for in the memory allocation of gs_image_class_0_interpolate */
-
+                    be accounted for in the memory allocation of 
+                    gs_image_class_0_interpolate */
  	         out += round_up(pss->params.WidthIn*c, align_bitmap_mod);  
               }
-
 	} else {
-
 	    /* More than 8-bits/color values */
             /* Even in this case we need to worry about an indexed color space. 
                We need to get to the base color space for the interpolation and
                then if necessary do the remap to the device space */
-
             if (pcs->type->index != gs_color_space_index_Indexed) {
-
 	        int bps = penum->bps;
 	        int dc = penum->spp;
 	        const byte *pdata = bdata;
@@ -478,36 +419,27 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	        r.ptr = (byte *) psrc - 1;
 	        if_debug0('B', "[B]Remap row:\n[B]");
 	        for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
-
                     /* Lets get directly to a frac type loaded into psrc, and do 
-                        the interpolation in the source space. 
-                           Then we will do the appropriate remap 
-                           function after interpolation. */
-
+                       the interpolation in the source space. Then we will do 
+                       the appropriate remap function after interpolation. */
                     for (j = 0; j < dc;  ++j) {
 	                DECODE_FRAC_FRAC(((const frac *)pdata)[j], psrc[j], j);
                     }
-
 	            pdata += dpd;
         #ifdef DEBUG
 	            if (gs_debug_c('B')) {
 	                int ci;
 
-	                for (ci = 0; ci < c; ++ci)
+                        for (ci = 0; ci < c; ++ci)
 		            dprintf2("%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
 	            }
         #endif
                 }
-
 	        out += round_up(pss->params.WidthIn * c * sizeof(frac),
 			        align_bitmap_mod);
 	        if_debug0('B', "\n");
-
-
             } else {
-                
                 /* indexed and more than 8bps.  Need to get to the base space */
-
       	        int bps = penum->bps;
 	        int dc = penum->spp;
 	        const byte *pdata = bdata; /* Input buffer */
@@ -517,47 +449,41 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                 float decode_value;
 
                 index_space = 1;
-
                 /* flip the horizontal direction if indicated by the matrix value */
                 if (penum->matrix.xx < 0) {
                   pdata += (pss->params.WidthIn - 1) * dpd;
                   dpd = - dpd;
                 }
 	        r.ptr = (byte *) psrc - 1;
-
 	        for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
-
-                    /* Lets get the decoded value. Then we need to do the lookup of this */
-
-                    decode_value = penum->map[i].decode_base + (((const frac *)pdata)[0]) * penum->map[i].decode_factor;
-
-                     /* Now we need to do the lookup of this value, and stick it in psrc as a frac, which is what
-                        the interpolator is expecting, since we had more than 8 bits of original image data */
-
+                    /* Lets get the decoded value. Then we need to do the lookup 
+                       of this */
+                    decode_value = penum->map[i].decode_base +
+                        (((const frac *)pdata)[0]) * penum->map[i].decode_factor;
+                     /* Now we need to do the lookup of this value, and stick it 
+                        in psrc as a frac, which is what the interpolator is 
+                        expecting, since we had more than 8 bits of original 
+                        image data */
                       gs_cspace_indexed_lookup_frac(pcs, decode_value,psrc);	
 	              pdata += dpd;  
-
                 }
-
                  /* We need to set the output to the end of the input buffer 
                     moving it to the next desired word boundary.  This must
-                    be accounted for in the memory allocation of gs_image_class_0_interpolate */
+                    be accounted for in the memory allocation of 
+                    gs_image_class_0_interpolate */
  	         out += round_up(pss->params.WidthIn*c, align_bitmap_mod);                 
-
             } /* end of else on indexed */
 	}  /* end of else on more than 8 bps */
-
 	r.limit = r.ptr + row_size;
     } else {			/* h == 0 */
 	r.ptr = 0, r.limit = 0;
-	index_space = 0; /* Quiet gcc warning. We didn't figure out whether it was a real bug. */
+	index_space = 0; 
+        /* Quiet gcc warning. We didn't figure out whether it was a real bug. */
     }
-
     /*
      * Process input and/or collect output.  By construction, the pixels are
      * 1-for-1 with the device, but the Y coordinate might be inverted.
      */
-
     {
 	int xo = penum->xyi.x;
 	int yo = penum->xyi.y;
@@ -582,24 +508,13 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    int status, code;
 
 	    DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
-
 	    w.limit = out + width *
 		max(c * sizeofPixelOut, arch_sizeof_color_index) - 1;
 	    w.ptr = w.limit - width * c * sizeofPixelOut;
 	    psrc = (const frac *)(w.ptr + 1);
-
             /* This is where the rescale takes place */
- /*    z=_CrtCheckMemory();
-    if (z != 1)
-        z = 0; */
-            
             status = (*pss->template->process)
 		((stream_state *) pss, &r, &w, h == 0);
-
-  /*  z=_CrtCheckMemory();
-    if (z != 1)
-        z = 0;  */
-
 	    if (status < 0 && status != EOFC)
 		return_error(gs_error_ioerror);
 	    if (w.ptr == w.limit) {
@@ -608,7 +523,6 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		if_debug1('B', "[B]Interpolated row %d:\n[B]",
 			  penum->line_xy);
 		for (x = xo; x < xe;) {
-
 #ifdef DEBUG
 		    if (gs_debug_c('B')) {
 			int ci;
@@ -618,74 +532,55 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 				     psrc[ci]);
 		    }
 #endif                   
-
                     /* if we are in a non device space then work 
                        from the pcs not from the concrete space 
                        also handle index case, where base case was device type */
-            
                     if (pcs->type->index == gs_color_space_index_Indexed) {
-
                         pactual_cs = pcs->base_space;
-
                     } else {
-
                         pactual_cs = pcs;
                     }
-
                     pconcs = cs_concrete_space(pactual_cs, pis);
-
                     if (pcs->cmm_icc_profile_data != NULL) {
                         device_color = false;
                     } else {
-	                device_color = (pactual_cs->type->concrete_space) (pactual_cs, pis) == pactual_cs;
+	                device_color = 
+                            (pactual_cs->type->concrete_space) (pactual_cs, pis) == pactual_cs;
                     }
-
                     if (device_color) {
-
                         /* Use the underlying concrete space remap */
-                       	
                         code = (*pconcs->type->remap_concrete_color)
 		        (psrc, pactual_cs, &devc, pis, dev, gs_color_select_source);
-
                     } else {
-
-                          /* if we are device dependent we need to get back to float 
-                            prior to remap.  This stuff needs to be reworked  as 
-                            part of the ICC flow update.  In such a flow, we will want
-                            the interpolation algorithm output likely to be 8 bit (if the
-                            input were 8 bit) and hit that buffer of values directly 
-                            with the linked transform */
-
+                      /* if we are device dependent we need to get back to 
+                         float prior to remap.  This stuff needs to be 
+                         reworked  as  part of the ICC flow update.  
+                         In such a flow, we will want the interpolation 
+                         algorithm output likely to be 8 bit (if the input 
+                         were 8 bit) and hit that buffer of values directly 
+                         with the linked transform */
 	                  gs_client_color cc;
                           int j;
-                          int num_components = gs_color_space_num_components(pactual_cs);
+                          int num_components = 
+                              gs_color_space_num_components(pactual_cs);
 
                           for (j = 0; j < num_components;  ++j) {
-
-                            /* If we were indexed, dont use the decode procedure for the index values just get to float directly */
-                            if (index_space)
-                            {
-		            
+                            /* If we were indexed, dont use the decode procedure 
+                            for the index values just get to float directly */
+                            if (index_space) {
                                 cc.paint.values[j] = frac2float(psrc[j]); 
-
                             } else {
-
                                 decode_sample_frac_to_float(penum, psrc[j], &cc, j);
                             }
-
                           }
-
                             code = (pactual_cs->type->remap_color)
                                 (&cc, pactual_cs, &devc, pis, dev, gs_color_select_source);
-
                     }
-
 		    if (code < 0)
 			return code;
 		    if (color_is_pure(&devc)) {
 			/* Just pack colors into a scan line. */
 			gx_color_index color = devc.colors.pure;
-
 			/* Skip runs quickly for the common cases. */
 			switch (c) {
 			    case 1:
@@ -738,7 +633,6 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		break;
 	}
     }
-    
     return (h == 0 ? 0 : 1);
 }
 
