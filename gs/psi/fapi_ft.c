@@ -756,7 +756,7 @@ static FAPI_retcode
 can_replace_metrics(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_char_ref, int *a_result)
 {
     /* Replace metrics only if the metrics are supplied in font units. */
-    *a_result = a_char_ref->metrics_scale == 0;
+    *a_result = 1;
     return 0;
 }
 
