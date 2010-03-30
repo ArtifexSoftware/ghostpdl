@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -17,6 +17,7 @@
 #ifndef gxline_INCLUDED
 #  define gxline_INCLUDED
 
+#include "math_.h"
 #include "gslparam.h"
 #include "gsmatrix.h"
 
@@ -55,7 +56,7 @@ typedef struct gx_line_params_s {
 } gx_line_params;
 
 #define gx_set_line_width(plp, wid)\
-  ((plp)->half_width = (wid) / 2)
+  ((plp)->half_width = fabs(wid) / 2)
 #define gx_current_line_width(plp)\
   ((plp)->half_width * 2)
 int gx_set_miter_limit(gx_line_params *, floatp);
