@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -168,8 +168,7 @@ typedef struct gx_transfer_s {
 	/* color isn't in force at the moment */\
 	struct gx_cie_joint_caches_s *cie_joint_caches_alt;\
 	gs_devicen_color_map          color_component_map_alt;\
-	struct gx_pattern_cache_s    *pattern_cache_alt;\
-	gx_device_halftone           *dev_ht_alt
+	struct gx_pattern_cache_s    *pattern_cache_alt
 
 /*
  * Enumerate the reference-counted pointers in a c.r. state.  Note that
@@ -184,7 +183,7 @@ typedef struct gx_transfer_s {
   m(set_transfer.blue) m(set_transfer.gray)\
   m(cie_joint_caches)\
   m(devicergb_cs) m(devicecmyk_cs)\
-  m(dev_ht_alt) m(cie_joint_caches)
+  m(cie_joint_caches_alt)
 
 /* Enumerate the pointers in a c.r. state. */
 #define gs_cr_state_do_ptrs(m)\
@@ -194,8 +193,7 @@ typedef struct gx_transfer_s {
   m(7,set_transfer.blue) m(8,set_transfer.gray)\
   m(9,cie_joint_caches) m(10,pattern_cache)\
   m(11,devicergb_cs) m(12,devicecmyk_cs)\
-  m(13,cie_joint_caches_alt) m(14,pattern_cache_alt)\
-  m(15,dev_ht_alt)
+  m(13,cie_joint_caches_alt) m(14,pattern_cache_alt)
   /*
    * We handle effective_transfer specially in gsistate.c since its pointers
    * are not enumerated for garbage collection but they are are relocated.
@@ -204,20 +202,20 @@ typedef struct gx_transfer_s {
  * This count does not include the effective_transfer pointers since they
  * are not enumerated for GC.
  */
-#define st_cr_state_num_ptrs 16
+#define st_cr_state_num_ptrs 15
 
 
 typedef struct gs_devicen_color_map_s {
     bool use_alt_cspace;
     separation_type sep_type;
     uint num_components;	/* Input - Duplicate of value in gs_device_n_params */
-    uint num_colorants;		/* Number of colorants - output */ 
+    uint num_colorants;		/* Number of colorants - output */
     gs_id cspace_id;		/* Used to verify color space and map match */
     int color_map[GS_CLIENT_COLOR_MAX_COMPONENTS];
 } gs_devicen_color_map;
 
 
-/* These flags are used to keep track of qQ 
+/* These flags are used to keep track of qQ
    combinations surrounding a graphic state
    change that includes a softmask setting.
    The transparency compositor must be notified

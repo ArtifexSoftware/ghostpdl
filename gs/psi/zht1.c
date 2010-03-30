@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,7 +39,7 @@ spot_dummy(floatp x, floatp y)
 static int setcolorscreen_finish(i_ctx_t *);
 static int setcolorscreen_cleanup(i_ctx_t *);
 static int
-zsetcolorscreen_aux(i_ctx_t *i_ctx_p)
+zsetcolorscreen(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_colorscreen_halftone cscreen;
@@ -136,33 +136,6 @@ setcolorscreen_cleanup(i_ctx_t *i_ctx_p)
     gs_free_object(pht->rc.memory, pht,
 		   "setcolorscreen_cleanup(halftone)");
     return 0;
-}
-
-extern int zswapcolors(i_ctx_t *i_ctx_p);
-
-static int
-zsetcolorscreen(i_ctx_t *i_ctx_p)
-{
-    check_ostack(12);
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    osp++; *osp = osp[-12];
-    check_estack(4);
-    esp += 4;
-    make_op_estack(esp-3, zsetcolorscreen_aux);
-    make_op_estack(esp-2, zswapcolors);
-    make_op_estack(esp-1, zsetcolorscreen_aux);
-    make_op_estack(esp,   zswapcolors);
-    return o_push_estack;
 }
 
 /* ------ Initialization procedure ------ */

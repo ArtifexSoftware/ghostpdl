@@ -110,6 +110,8 @@ struct gs_state_s {
     ((pgs)->color[0].ccolor)
 #define gs_currentcolorspace_inline(pgs) \
     ((pgs)->color[0].color_space)
+#define gs_altdevicecolor_inline(pgs) \
+    ((pgs)->color[1].dev_color)
 
     /* Current colors (non-stroking, and stroking) */
     struct {

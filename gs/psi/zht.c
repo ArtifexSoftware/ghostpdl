@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -55,7 +55,7 @@ zcurrenthalftone(i_ctx_t *i_ctx_p)
 	    push(13);
 	    {
 		os_ptr opc = op - 12;
-		gs_screen_halftone *pht = 
+		gs_screen_halftone *pht =
 		    &ht.params.colorscreen.screens.colored.red;
 
 		make_real(opc, pht->frequency);
@@ -121,7 +121,7 @@ static int setscreen_finish(i_ctx_t *);
 
 /* <frequency> <angle> <proc> setscreen - */
 static int
-zsetscreen_aux(i_ctx_t *i_ctx_p)
+zsetscreen(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_screen_halftone screen;
@@ -145,23 +145,6 @@ zsetscreen_aux(i_ctx_t *i_ctx_p)
 			     setscreen_finish, space_index);
 }
 
-extern int zswapcolors(i_ctx_t *i_ctx_p);
-
-static int
-zsetscreen(i_ctx_t *i_ctx_p)
-{
-    check_ostack(3);
-    osp++; *osp = osp[-3];
-    osp++; *osp = osp[-3];
-    osp++; *osp = osp[-3];
-    check_estack(4);
-    esp += 4;
-    make_op_estack(esp-3, zsetscreen_aux);
-    make_op_estack(esp-2, zswapcolors);
-    make_op_estack(esp-1, zsetscreen_aux);
-    make_op_estack(esp,   zswapcolors);
-    return o_push_estack;
-}
 /* We break out the body of this operator so it can be shared with */
 /* the code for Type 1 halftones in sethalftone. */
 int
@@ -170,7 +153,7 @@ zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
 		  int (*finish_proc)(i_ctx_t *), int space_index)
 {
     gs_screen_enum *penum;
-    gs_memory_t * mem = (gs_memory_t *)idmemory->spaces_indexed[space_index]; 
+    gs_memory_t * mem = (gs_memory_t *)idmemory->spaces_indexed[space_index];
     int code;
 
     check_estack(snumpush + 1);

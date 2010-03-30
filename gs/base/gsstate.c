@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -260,7 +260,6 @@ gs_state_alloc(gs_memory_t * mem)
     gs_swapcolors_quick(pgs); /* To color 0 */
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */
-    pgs->dev_ht_alt = 0;
     pgs->cie_joint_caches_alt = 0;
     pgs->pattern_cache_alt = 0;
     gs_nulldevice(pgs);
@@ -278,7 +277,7 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->level = 0;
     pgs->dfilter_stack = 0;
     pgs->transparency_group_stack = 0;
-    if (gs_initgraphics(pgs) >= 0) 
+    if (gs_initgraphics(pgs) >= 0)
 	return pgs;
     /* Something went very wrong. */
 fail:
@@ -309,7 +308,7 @@ gs_state_client_data(const gs_state * pgs)
 int
 gs_state_free_chain(gs_state * pgs)
 {
-   gs_state *saved = pgs, *tmp; 
+   gs_state *saved = pgs, *tmp;
 
    while(saved != 0) {
        tmp = saved->saved;
@@ -949,7 +948,6 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	    goto fail;
     }
     gs_imager_state_copied((gs_imager_state *)pgs);
-    rc_increment(pgs->dev_ht_alt);
     rc_increment(pgs->cie_joint_caches_alt);
     /* Don't do anything to clip_stack. */
     rc_increment(pgs->device);
@@ -986,11 +984,11 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 static void
 clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t cname)
 {
-    gx_clip_stack_t *p = cs;  
+    gx_clip_stack_t *p = cs;
 
     while(p) {
         gx_clip_stack_t *q = p;
-        p = p->next;  
+        p = p->next;
         rc_adjust(q, delta, cname);
     }
 }
@@ -1003,7 +1001,6 @@ gstate_free_contents(gs_state * pgs)
     gs_memory_t *mem = pgs->memory;
     const char *const cname = "gstate_free_contents";
     int current_col;
-    gx_device_halftone *pdhta = pgs->dev_ht_alt;
 
     rc_decrement(pgs->device, cname);
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
@@ -1017,14 +1014,6 @@ gstate_free_contents(gs_state * pgs)
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     gstate_free_parts(pgs, mem, cname);
     gs_imager_state_release((gs_imager_state *)pgs);
-    /*
-     * If we're going to free the device halftone, make sure we free the
-     * dependent structures as well.
-     */
-    if (pdhta != 0 && pdhta->rc.ref_count == 1) {
-	gx_device_halftone_release(pdhta, pdhta->rc.memory);
-    }
-    rc_decrement(pgs->dev_ht_alt, "gstate_free_contents");
     rc_decrement(pgs->cie_joint_caches_alt, "gstate_free_contents");
 }
 
@@ -1090,7 +1079,6 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 
 	gs_imager_state_pre_assign((gs_imager_state *)pto,
 				   (const gs_imager_state *)pfrom);
-	rc_pre_assign(pto->dev_ht_alt, pfrom->dev_ht_alt, "gstate_copy");
 	rc_pre_assign(pto->cie_joint_caches_alt, pfrom->cie_joint_caches_alt, "gstate_copy");
 	*pto = *pfrom;
 	pto->client_data = pdata;
@@ -1131,7 +1119,7 @@ void gs_swapcolors_quick(gs_state *pgs)
     int                           tmp;
     gx_device_color              *tmp_dc;
     gs_color_space               *tmp_cs;
-    
+
     tmp_cc               = pgs->color[0].ccolor;
     pgs->color[0].ccolor = pgs->color[1].ccolor;
     pgs->color[1].ccolor = tmp_cc;
@@ -1145,14 +1133,10 @@ void gs_swapcolors_quick(gs_state *pgs)
     pgs->color[1].color_space = tmp_cs;
 
     /* Swap the bits of the imager state that depend on the current color */
-    tmp_ht          = pgs->dev_ht;
-    pgs->dev_ht     = pgs->dev_ht_alt;
-    pgs->dev_ht_alt = tmp_ht;
-    
     tmp_cie                   = pgs->cie_joint_caches;
     pgs->cie_joint_caches     = pgs->cie_joint_caches_alt;
     pgs->cie_joint_caches_alt = tmp_cie;
-    
+
     tmp_ccm                      = pgs->color_component_map;
     pgs->color_component_map     = pgs->color_component_map_alt;
     pgs->color_component_map_alt = tmp_ccm;
@@ -1160,7 +1144,7 @@ void gs_swapcolors_quick(gs_state *pgs)
     tmp_pc                 = pgs->pattern_cache;
     pgs->pattern_cache     = pgs->pattern_cache_alt;
     pgs->pattern_cache_alt = tmp_pc;
-    
+
     tmp                = pgs->overprint;
     pgs->overprint     = pgs->overprint_alt;
     pgs->overprint_alt = tmp;
@@ -1172,7 +1156,7 @@ void gs_swapcolors_quick(gs_state *pgs)
     tmp                               = pgs->effective_overprint_mode;
     pgs->effective_overprint_mode     = pgs->effective_overprint_mode_alt;
     pgs->effective_overprint_mode_alt = tmp;
-    
+
 }
 
 int gs_swapcolors(gs_state *pgs)
