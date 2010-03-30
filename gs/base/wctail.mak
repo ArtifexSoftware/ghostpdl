@@ -69,15 +69,6 @@ $(GENDEV_XE): $(AUXGEN)gendev.$(OBJ)
 $(AUXGEN)gendev.$(OBJ): $(GLSRC)gendev.c $(stdpre_h)
 	$(CCAUX) $(GLSRC)gendev.c $(O_)$(AUXGEN)gendev.$(OBJ)
 
-$(GENINIT_XE): $(AUXGEN)geninit.$(OBJ)
-	echo OPTION STUB=$(STUB) >$(temp_tr)
-	echo OPTION STACK=8k >>$(temp_tr)
-	echo $(LIBPATHS) >>$(temp_tr)
-	$(LINK) @$(temp_tr) FILE $(AUXGEN)geninit
-
-$(AUXGEN)geninit.$(OBJ): $(GLSRC)geninit.c $(stdpre_h)
-	$(CCAUX) $(GLSRC)geninit.c $(O_)$(AUXGEN)geninit.$(OBJ)
-
 # No special gconfig_.h is needed.
 # Watcom `make' supports output redirection.
 $(gconfig__h): $(WCTAIL_MAK)

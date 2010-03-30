@@ -248,7 +248,6 @@ GENARCH_XE=$(AUXGEN)genarch$(XEAUX)
 GENCONF_XE=$(AUXGEN)genconf$(XEAUX)
 GENDEV_XE=$(AUXGEN)gendev$(XEAUX)
 GENHT_XE=$(AUXGEN)genht$(XEAUX)
-GENINIT_XE=$(AUXGEN)geninit$(XEAUX)
 MKROMFS_XE=$(AUXGEN)mkromfs$(XEAUX)
 
 # Define the names of the generated header files.
@@ -278,7 +277,7 @@ mostlyclean : config-clean
 	$(RMN_) $(GSGEN)deflate.h $(GSGEN)zutil.h
 	$(RMN_) $(GSGEN)gconfig*.c $(GSGEN)gscdefs*.c $(GSGEN)iconfig*.c
 	$(RMN_) $(GSGEN)_temp_* $(GSGEN)_temp_*.* $(GSOBJ)*.map $(GSOBJ)*.sym
-	$(RMN_) $(GENARCH_XE) $(GENCONF_XE) $(GENDEV_XE) $(GENHT_XE) $(GENINIT_XE)
+	$(RMN_) $(GENARCH_XE) $(GENCONF_XE) $(GENDEV_XE) $(GENHT_XE)
 	$(RMN_) $(ECHOGS_XE)
 	$(RMN_) $(GSGEN)gs_init.ps $(BEGINFILES)
 	$(RMN_) $(MKROMFS_XE)

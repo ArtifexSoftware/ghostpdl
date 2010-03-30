@@ -74,9 +74,6 @@ $(GENDEV_XE): $(GLSRC)gendev.c $(AK) $(GENDEV_DEPS)
 $(GENHT_XE): $(GLSRC)genht.c $(AK) $(GENHT_DEPS)
 	$(CCAUX) $(GENHT_CFLAGS) $(O_)$(GENHT_XE) $(GLSRC)genht.c
 
-$(GENINIT_XE): $(GLSRC)geninit.c $(AK) $(GENINIT_DEPS)
-	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENINIT_XE) $(GLSRC)geninit.c
-
 MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) \
  $(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)gslibctx.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) \
  $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) \

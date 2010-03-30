@@ -1860,8 +1860,6 @@ $(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP)\
 
 # ================ Dependencies for auxiliary programs ================ #
 
-GENINIT_DEPS=$(stdpre_h)
-
 # ============================= Main program ============================== #
 
 $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\

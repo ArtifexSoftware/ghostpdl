@@ -561,16 +561,6 @@ $(GENHT_XE): $(PSSRC)genht.c $(GENHT_DEPS)
 	$(CCAUX) /Fe$(GENHT_XE) genht.c
 !endif
 
-$(GENINIT_XE): $(PSSRC)geninit.c $(GENINIT_DEPS)
-!if $(EMX)
-	$(CCAUX) -o $(AUXGEN)geninit $(PSSRC)geninit.c
-	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)geninit $(GENINIT_XE)
-	del $(AUXGEN)geninit
-!endif
-!if $(IBMCPP)
-	$(CCAUX) /Fe$(GENINIT_XE) geninit.c
-!endif
-
 MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)gp_getnv.obj $(GLOBJ)gp_os2fs.obj
 $(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS)
 !if $(EMX)

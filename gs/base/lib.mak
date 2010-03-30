@@ -2862,7 +2862,6 @@ GENHT_DEPS=$(malloc__h) $(stdio__h) $(string__h)\
  $(GLSRC)scantab.c $(GLOBJ)scantab.$(OBJ)\
  $(GLSRC)sstring.c $(GLOBJ)sstring.$(OBJ)
 GENHT_CFLAGS=$(I_)$(GLI_)$(_I) $(GLF_)
-# GENINIT_DEPS is in int.mak
 
 # ============================= Main program ============================== #
 

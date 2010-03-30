@@ -22,23 +22,345 @@
 #	The init files are in the %rom%Resource/Init/ directory
 #       Any EXTRA_INIT_FILES go into %rom%lib/
 
-RESOURCE_LIST=CIDFont$(D) CMap$(D) ColorSpace$(D) Decoding$(D) Encoding$(D) Font$(D) IdiomSet$(D) Init$(D) ProcSet$(D) SubstCID$(D)
+PDF_RESOURCE_LIST=CMap$(D)*
+
+MISC_INIT_FILES=FCOfontmap-PCLPS2 cidfmap gs_cet.ps opdfread.ps pdf_cslayer.ps
+
+# In the below list, the Font contents are _not_ compressed since it doesn't help.
+RESOURCE_LIST=CIDFont$(D) $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -b Font$(D)* -c IdiomSet$(D)* ProcSet$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ $(MISC_INIT_FILES)
 
 #	Note: gs_cet.ps is only needed to match Adobe CPSI defaults
-PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
+PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ -g gs_init.ps $(gconfig_h) \
+  -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) \
+  -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
 
-# A list of all the files in Resource/Init/ as dependencies for COMPILE_INITS=1.
 # If you add a file remember to add it here. If you forget then builds from
 # clean will work (as all files in the directory are included), but rebuilds
 # after changes to unlisted files will not cause the romfs to be regenerated.
-PS_ROMFS_DEPS=\
+
+# A list of all of the files in Resource/CIDFont dependencies for COMPILE_INITS=1
+PS_CIDFONT_DEPS=
+
+# A list of all of the files in Resource/CMap dependencies for COMPILE_INITS=1
+PS_CMAP_DEPS=\
+	$(PSRESDIR)$(D)CMap$(D)78-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)78-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)78-H \
+	$(PSRESDIR)$(D)CMap$(D)78-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)78-RKSJ-V \
+	$(PSRESDIR)$(D)CMap$(D)78-V \
+	$(PSRESDIR)$(D)CMap$(D)78ms-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)78ms-RKSJ-V \
+	$(PSRESDIR)$(D)CMap$(D)83pv-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)90ms-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)90ms-RKSJ-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)90ms-RKSJ-V \
+	$(PSRESDIR)$(D)CMap$(D)90msp-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)90msp-RKSJ-V \
+	$(PSRESDIR)$(D)CMap$(D)90pv-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)90pv-RKSJ-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)90pv-RKSJ-UCS2C \
+	$(PSRESDIR)$(D)CMap$(D)90pv-RKSJ-V \
+	$(PSRESDIR)$(D)CMap$(D)Add-H \
+	$(PSRESDIR)$(D)CMap$(D)Add-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)Add-RKSJ-V \
+	$(PSRESDIR)$(D)CMap$(D)Add-V \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-0 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-1 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-2 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-3 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-4 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-5 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-6 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-B5pc \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-ETenms-B5 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-H-CID \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-H-Host \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-H-Mac \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-CNS1-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-0 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-1 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-2 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-3 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-4 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-5 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-GBK-EUC \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-GBpc-EUC \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-H-CID \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-H-Host \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-H-Mac \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-GB1-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-0 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-1 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-2 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-3 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-4 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-5 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-6 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-90ms-RKSJ \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-90pv-RKSJ \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-H-CID \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-H-Host \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-H-Mac \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-PS-H \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-PS-V \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan1-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Japan2-0 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-0 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-1 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-2 \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-H-CID \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-H-Host \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-H-Mac \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-KSCms-UHC \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-KSCpc-EUC \
+	$(PSRESDIR)$(D)CMap$(D)Adobe-Korea1-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)B5-H \
+	$(PSRESDIR)$(D)CMap$(D)B5-V \
+	$(PSRESDIR)$(D)CMap$(D)B5pc-H \
+	$(PSRESDIR)$(D)CMap$(D)B5pc-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)B5pc-UCS2C \
+	$(PSRESDIR)$(D)CMap$(D)B5pc-V \
+	$(PSRESDIR)$(D)CMap$(D)CNS-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)CNS01-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS02-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS03-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS04-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS05-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS06-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS07-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS1-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS1-V \
+	$(PSRESDIR)$(D)CMap$(D)CNS15-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS2-H \
+	$(PSRESDIR)$(D)CMap$(D)CNS2-V \
+	$(PSRESDIR)$(D)CMap$(D)ETHK-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)ETHK-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)ETen-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)ETen-B5-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)ETen-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)ETenms-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)ETenms-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)Ext-H \
+	$(PSRESDIR)$(D)CMap$(D)Ext-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)Ext-RKSJ-V \
+	$(PSRESDIR)$(D)CMap$(D)Ext-V \
+	$(PSRESDIR)$(D)CMap$(D)GB-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)GB-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)GB-H \
+	$(PSRESDIR)$(D)CMap$(D)GB-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)GB-V \
+	$(PSRESDIR)$(D)CMap$(D)GBK-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)GBK-EUC-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)GBK-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)GBK2K-H \
+	$(PSRESDIR)$(D)CMap$(D)GBK2K-V \
+	$(PSRESDIR)$(D)CMap$(D)GBKp-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)GBKp-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)GBT-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)GBT-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)GBT-H \
+	$(PSRESDIR)$(D)CMap$(D)GBT-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)GBT-V \
+	$(PSRESDIR)$(D)CMap$(D)GBTpc-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)GBTpc-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)GBpc-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)GBpc-EUC-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)GBpc-EUC-UCS2C \
+	$(PSRESDIR)$(D)CMap$(D)GBpc-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)H \
+	$(PSRESDIR)$(D)CMap$(D)HK-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)HKdla-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)HKdla-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)HKdlb-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)HKdlb-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)HKgccs-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)HKgccs-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)HKm314-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)HKm314-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)HKm471-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)HKm471-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)HKscs-B5-H \
+	$(PSRESDIR)$(D)CMap$(D)HKscs-B5-V \
+	$(PSRESDIR)$(D)CMap$(D)Hankaku \
+	$(PSRESDIR)$(D)CMap$(D)Hiragana \
+	$(PSRESDIR)$(D)CMap$(D)Hojo-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)Hojo-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)Hojo-H \
+	$(PSRESDIR)$(D)CMap$(D)Hojo-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)Hojo-V \
+	$(PSRESDIR)$(D)CMap$(D)Identity-H \
+	$(PSRESDIR)$(D)CMap$(D)Identity-UTF16-H \
+	$(PSRESDIR)$(D)CMap$(D)Identity-UTF16-V \
+	$(PSRESDIR)$(D)CMap$(D)Identity-V \
+	$(PSRESDIR)$(D)CMap$(D)KSC-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)KSC-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)KSC-H \
+	$(PSRESDIR)$(D)CMap$(D)KSC-Johab-H \
+	$(PSRESDIR)$(D)CMap$(D)KSC-Johab-V \
+	$(PSRESDIR)$(D)CMap$(D)KSC-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)KSC-V \
+	$(PSRESDIR)$(D)CMap$(D)KSC2-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)KSCms-UHC-H \
+	$(PSRESDIR)$(D)CMap$(D)KSCms-UHC-HW-H \
+	$(PSRESDIR)$(D)CMap$(D)KSCms-UHC-HW-V \
+	$(PSRESDIR)$(D)CMap$(D)KSCms-UHC-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)KSCms-UHC-V \
+	$(PSRESDIR)$(D)CMap$(D)KSCpc-EUC-H \
+	$(PSRESDIR)$(D)CMap$(D)KSCpc-EUC-UCS2 \
+	$(PSRESDIR)$(D)CMap$(D)KSCpc-EUC-UCS2C \
+	$(PSRESDIR)$(D)CMap$(D)KSCpc-EUC-V \
+	$(PSRESDIR)$(D)CMap$(D)Katakana \
+	$(PSRESDIR)$(D)CMap$(D)NWP-H \
+	$(PSRESDIR)$(D)CMap$(D)NWP-V \
+	$(PSRESDIR)$(D)CMap$(D)RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)RKSJ-V \
+	$(PSRESDIR)$(D)CMap$(D)Roman \
+	$(PSRESDIR)$(D)CMap$(D)TCVN-RKSJ-H \
+	$(PSRESDIR)$(D)CMap$(D)UCS2-90ms-RKSJ \
+	$(PSRESDIR)$(D)CMap$(D)UCS2-90pv-RKSJ \
+	$(PSRESDIR)$(D)CMap$(D)UCS2-B5pc \
+	$(PSRESDIR)$(D)CMap$(D)UCS2-ETen-B5 \
+	$(PSRESDIR)$(D)CMap$(D)UCS2-GBK-EUC \
+	$(PSRESDIR)$(D)CMap$(D)UCS2-GBpc-EUC \
+	$(PSRESDIR)$(D)CMap$(D)UCS2-KSCms-UHC \
+	$(PSRESDIR)$(D)CMap$(D)UCS2-KSCpc-EUC \
+	$(PSRESDIR)$(D)CMap$(D)UniCNS-UCS2-H \
+	$(PSRESDIR)$(D)CMap$(D)UniCNS-UCS2-V \
+	$(PSRESDIR)$(D)CMap$(D)UniCNS-UTF16-H \
+	$(PSRESDIR)$(D)CMap$(D)UniCNS-UTF16-V \
+	$(PSRESDIR)$(D)CMap$(D)UniCNS-UTF32-H \
+	$(PSRESDIR)$(D)CMap$(D)UniCNS-UTF32-V \
+	$(PSRESDIR)$(D)CMap$(D)UniCNS-UTF8-H \
+	$(PSRESDIR)$(D)CMap$(D)UniCNS-UTF8-V \
+	$(PSRESDIR)$(D)CMap$(D)UniGB-UCS2-H \
+	$(PSRESDIR)$(D)CMap$(D)UniGB-UCS2-V \
+	$(PSRESDIR)$(D)CMap$(D)UniGB-UTF16-H \
+	$(PSRESDIR)$(D)CMap$(D)UniGB-UTF16-V \
+	$(PSRESDIR)$(D)CMap$(D)UniGB-UTF32-H \
+	$(PSRESDIR)$(D)CMap$(D)UniGB-UTF32-V \
+	$(PSRESDIR)$(D)CMap$(D)UniGB-UTF8-H \
+	$(PSRESDIR)$(D)CMap$(D)UniGB-UTF8-V \
+	$(PSRESDIR)$(D)CMap$(D)UniHojo-UCS2-H \
+	$(PSRESDIR)$(D)CMap$(D)UniHojo-UCS2-V \
+	$(PSRESDIR)$(D)CMap$(D)UniHojo-UTF16-H \
+	$(PSRESDIR)$(D)CMap$(D)UniHojo-UTF16-V \
+	$(PSRESDIR)$(D)CMap$(D)UniHojo-UTF32-H \
+	$(PSRESDIR)$(D)CMap$(D)UniHojo-UTF32-V \
+	$(PSRESDIR)$(D)CMap$(D)UniHojo-UTF8-H \
+	$(PSRESDIR)$(D)CMap$(D)UniHojo-UTF8-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UCS2-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UCS2-HW-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UCS2-HW-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UCS2-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UTF16-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UTF16-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UTF32-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UTF32-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UTF8-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS-UTF8-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS2004-UTF16-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS2004-UTF16-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS2004-UTF32-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS2004-UTF32-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS2004-UTF8-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJIS2004-UTF8-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJISPro-UCS2-HW-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJISPro-UCS2-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJISPro-UTF8-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJISX0213-UTF32-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJISX0213-UTF32-V \
+	$(PSRESDIR)$(D)CMap$(D)UniJISX02132004-UTF32-H \
+	$(PSRESDIR)$(D)CMap$(D)UniJISX02132004-UTF32-V \
+	$(PSRESDIR)$(D)CMap$(D)UniKS-UCS2-H \
+	$(PSRESDIR)$(D)CMap$(D)UniKS-UCS2-V \
+	$(PSRESDIR)$(D)CMap$(D)UniKS-UTF16-H \
+	$(PSRESDIR)$(D)CMap$(D)UniKS-UTF16-V \
+	$(PSRESDIR)$(D)CMap$(D)UniKS-UTF32-H \
+	$(PSRESDIR)$(D)CMap$(D)UniKS-UTF32-V \
+	$(PSRESDIR)$(D)CMap$(D)UniKS-UTF8-H \
+	$(PSRESDIR)$(D)CMap$(D)UniKS-UTF8-V \
+	$(PSRESDIR)$(D)CMap$(D)V \
+	$(PSRESDIR)$(D)CMap$(D)WP-Symbol
+
+# A list of all of the files in Resource/ColorSpace dependencies for COMPILE_INITS=1
+PS_COLORSPACE_DEPS=\
+	$(PSRESDIR)$(D)ColorSpace$(D)DefaultCMYK \
+	$(PSRESDIR)$(D)ColorSpace$(D)DefaultGray \
+	$(PSRESDIR)$(D)ColorSpace$(D)DefaultRGB \
+	$(PSRESDIR)$(D)ColorSpace$(D)TrivialCMYK \
+	$(PSRESDIR)$(D)ColorSpace$(D)sGray \
+	$(PSRESDIR)$(D)ColorSpace$(D)sRGB 
+
+# A list of all of the files in Resource/Decoding
+PS_DECODING_DEPS=\
+	$(PSRESDIR)$(D)Decoding$(D)FCO_Dingbats \
+	$(PSRESDIR)$(D)Decoding$(D)FCO_Symbol \
+	$(PSRESDIR)$(D)Decoding$(D)FCO_Unicode \
+	$(PSRESDIR)$(D)Decoding$(D)FCO_Wingdings \
+	$(PSRESDIR)$(D)Decoding$(D)Latin1 \
+	$(PSRESDIR)$(D)Decoding$(D)StandardEncoding \
+	$(PSRESDIR)$(D)Decoding$(D)Unicode 
+
+# A list of all of the files in Resource/Encoding
+PS_ENCODING_DEPS=\
+	$(PSRESDIR)$(D)Encoding$(D)Wingdings
+
+# A list of all of the files in Resource/Font
+PS_FONT_DEPS=\
+	$(PSRESDIR)$(D)Font$(D)CenturySchL-Bold \
+	$(PSRESDIR)$(D)Font$(D)CenturySchL-BoldItal \
+	$(PSRESDIR)$(D)Font$(D)CenturySchL-Ital \
+	$(PSRESDIR)$(D)Font$(D)CenturySchL-Roma \
+	$(PSRESDIR)$(D)Font$(D)Dingbats \
+	$(PSRESDIR)$(D)Font$(D)NimbusMonL-Bold \
+	$(PSRESDIR)$(D)Font$(D)NimbusMonL-BoldObli \
+	$(PSRESDIR)$(D)Font$(D)NimbusMonL-Regu \
+	$(PSRESDIR)$(D)Font$(D)NimbusMonL-ReguObli \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-Medi \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-MediItal \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-Regu \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-ReguItal \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-Bold \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-BoldCond \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-BoldCondItal \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-BoldItal \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-Regu \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-ReguCond \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-ReguCondItal \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-ReguItal \
+	$(PSRESDIR)$(D)Font$(D)StandardSymL \
+	$(PSRESDIR)$(D)Font$(D)URWBookmanL-DemiBold \
+	$(PSRESDIR)$(D)Font$(D)URWBookmanL-DemiBoldItal \
+	$(PSRESDIR)$(D)Font$(D)URWBookmanL-Ligh \
+	$(PSRESDIR)$(D)Font$(D)URWBookmanL-LighItal \
+	$(PSRESDIR)$(D)Font$(D)URWChanceryL-MediItal \
+	$(PSRESDIR)$(D)Font$(D)URWGothicL-Book \
+	$(PSRESDIR)$(D)Font$(D)URWGothicL-BookObli \
+	$(PSRESDIR)$(D)Font$(D)URWGothicL-Demi \
+	$(PSRESDIR)$(D)Font$(D)URWGothicL-DemiObli \
+	$(PSRESDIR)$(D)Font$(D)URWPalladioL-Bold \
+	$(PSRESDIR)$(D)Font$(D)URWPalladioL-BoldItal \
+	$(PSRESDIR)$(D)Font$(D)URWPalladioL-Ital \
+	$(PSRESDIR)$(D)Font$(D)URWPalladioL-Roma
+
+# A list of all of the files in Resource/IdimSet
+PS_IDIOMSET_DEPS=
+
+# A list of all of the files in Resource/ProcSet
+PS_PROCSET_DEPS=
+
+# A list of all the files in Resource/Init/ as dependencies for COMPILE_INITS=1.
+PS_INIT_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)cidfmap \
 	$(PSRESDIR)$(D)Init$(D)FCOfontmap-PCLPS2 \
 	$(PSRESDIR)$(D)Init$(D)Fontmap \
 	$(PSRESDIR)$(D)Init$(D)Fontmap.GS \
 	$(PSRESDIR)$(D)Init$(D)gs_agl.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_btokn.ps \
-	$(PSRESDIR)$(D)Init$(D)gs_cet.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_cff.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_cidcm.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_ciddc.ps \
@@ -85,7 +407,6 @@ PS_ROMFS_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)gs_typ42.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_type1.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_wan_e.ps \
-	$(PSRESDIR)$(D)Init$(D)opdfread.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_base.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_cslayer.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_draw.ps \
@@ -95,3 +416,22 @@ PS_ROMFS_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)pdf_rbld.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_sec.ps \
 	$(PSRESDIR)$(D)Init$(D)xlatmap
+
+PS_SUBSTCID_DEPS=\
+	$(PSRESDIR)$(D)SubstCID$(D)CNS1-WMode \
+	$(PSRESDIR)$(D)SubstCID$(D)GB1-WMode \
+	$(PSRESDIR)$(D)SubstCID$(D)Japan1-WMode \
+	$(PSRESDIR)$(D)SubstCID$(D)Korea1-WMode
+
+PS_MISC_DEPS=\
+	$(PSRESDIR)$(D)Init$(D)FCOfontmap-PCLPS2 \
+	$(PSRESDIR)$(D)Init$(D)cidfmap \
+	$(PSRESDIR)$(D)Init$(D)gs_cet.ps \
+	$(PSRESDIR)$(D)Init$(D)opdfread.ps \
+	$(PSRESDIR)$(D)Init$(D)pdf_cslayer.ps
+	
+PS_ROMFS_DEPS=$(PSSRCDIR)$(D)psromfs.mak $(gconfig_h) \
+	$(PDF_RESOURCE_DEPS) $(PS_COLORSPACE_DEPS) $(PS_DECODING_DEPS) $(PS_ENCODING_DEPS) \
+	$(PS_FONT_DEPS) $(PS_IDIOMSET_DEPS) $(PS_PROCSET_DEPS) $(PS_INIT_DEPS) $(PS_SUBSTCID_DEPS) \
+	$(PS_MISC_DEPS)
+

@@ -4,7 +4,7 @@
    This software is provided AS-IS with no warranty, either express or
    implied.
 
-   This software is distributed under license and may not be copied, modified
+  This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
    license.  Refer to licensing information at http://www.artifex.com/
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
@@ -21,20 +21,40 @@
  * This file takes a set of directories, and creates a compressed filesystem
  * image that can be compiled into the executable as static data and accessed
  * through the %rom% iodevice prefix
+ *
  */
 /*
- *	Usage: mkromfs [-o outputfile] [options ...] paths
+ *	Usage: mkromfs [-o outputfile] [options ...] path path ...
+ *
+ *	    mkromfs no longer performs implicit enumeration of paths, so if a
+ *	    path is a directory to be enumerated trailing '/*' must be present.
+ *
  *	    options and paths can be interspersed and are processed in order
+ *      
  *	    options:
  *		-o outputfile	default: obj/gsromfs.c if this option present, must be first.
  *		-P prefix	use prefix to find path. prefix not included in %rom%
- *		-X path		exclude the path from further processing.
- *              -d string       directory in %rom file system (really just a prefix string on filename)
+ *		-X path		exclude the path/file from further processing.
+ *			  Note:	The tail of any path encountered will be tested so .svn on the
+ *				-X list will exclude that path in all subsequent paths enumerated.
+ *
+ *              -d romprefix    directory in %rom% file system (a prefix string on filename)
  *		-c		compression on
  *		-b		compression off (binary).
+ *		-g initfile gconfig_h 
+ *				special handling to read the 'gs_init.ps' file (from
+ *				the current -P prefix path), and read the gconfig.h for
+ *				psfile_ entries and combines them into a whitespace
+ *				optimized and no comments form and writes this 'gs_init.ps'
+ *				to the current -d destination path. This is a space and
+ *				startup performance improvement, so also this should be
+ *				BEFORE other stuff in the %rom% list of files (currently
+ *				we do a sequential search in the %rom% directory).
  *
- *	    Note: The tail of any path encountered will be tested so .svn on the -X
- *		  list will exclude that path in all subsequent paths enumerated.
+ *				For performance reasons, it is best to turn off compression
+ *				for the init file. Less frequently accessed files, if they
+ *				are large should still be compressed.
+ *
  */ 
 
 #include "stdpre.h"
@@ -48,6 +68,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <memory.h>
 
 #include <zlib.h>
 
@@ -180,8 +202,14 @@ void put_uint32(FILE *out, const unsigned int q);
 void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len);
 void inode_clear(romfs_inode* node);
 void inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int*totlen);
-void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_element *Xlist_head, int compression,
-	int *inode_count, int *totlen, FILE *out);
+void process_path(char *path, const char *os_prefix, const char *rom_prefix,
+		  Xlist_element *Xlist_head,
+		  int compression, int *inode_count, int *totlen, FILE *out);
+int process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
+		     const char *rom_prefix,
+		     int compression, int *inode_count, int *totlen, FILE *out);
+FILE *prefix_open(const char *os_prefix, const char *inname);
+void prefix_add(const char *prefix, const char *filename, char *prefixed_path);
 
 /* put 4 byte integer, big endian */
 void put_uint32(FILE *out, const unsigned int q)
@@ -254,18 +282,13 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
     int i, offset;
     int blocks = (node->length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE;
     int namelen = strlen(node->name) + 1;	/* include terminating <nul> */
+    int clen = 0;			/* compressed length */
     
     /* write the node header */
     fprintf(out,"    static uint32_t node_%d[] = {\n\t", inode_count);
     /* 4 byte file length + compression flag in high bit */
     put_uint32(out, node->length | (compression ? 0x80000000 : 0));
     fprintf(out, "\t/* compression_flag_bit + file length */\n\t");
-    
-    printf("writing node '%s' len=%ld", node->name, node->length);
-#ifdef DEBUG
-    printf(" %ld blocks %s", blocks, compression ? "compressed" : "binary");
-#endif
-    printf("\n");
     
     /* write out data block structures */
     offset = 4 + (8*blocks) + ((namelen+3) & ~3);
@@ -283,15 +306,41 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
     /* write out data */
     for (i = 0; i < blocks; i++) {
 	put_bytes_padded(out, node->data[i], node->data_lengths[i]);
+	clen += node->data_lengths[i];
 	*totlen += (node->data_lengths[i]+3) & ~3;	/* padded block length */
     }
     fprintf(out, "\t0 };\t/* end-of-node */\n");
+
+    printf("node '%s' len=%ld", node->name, node->length);
+    printf(" %ld blocks", blocks);
+    if (compression) {
+	printf(", compressed size=%ld", clen);
+    }
+    printf("\n");
 }
 
+void
+prefix_add(const char *prefix, const char *filename, char *prefixed_path)
+{
+    prefixed_path[0] = 0;	/* empty string */
+    strcat(prefixed_path, prefix);
+    strcat(prefixed_path, filename);
+#if defined(__WIN32__) || defined(__OS2__)
+    /* On Windows, the paths may (will) have '\' instead of '/' so we translate them */
+    {
+	int i;
 
-/* This relies on the gp_enumerate_* which should not return directories, nor */
-/* should it recurse into directories (unlike Adobe's implementation)         */
-void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_element *Xlist_head,
+	for (i=0; i<strlen(prefixed_path); i++)
+	    if (prefixed_path[i] == '\\')
+		prefixed_path[i] = '/';
+    }
+#endif
+}
+
+/* This relies on the gp_enumerate_* which should not return directories, nor	*/
+/* should it recurse into directories (unlike Adobe's implementation)		*/
+/* paths are checked to see if they are an ordinary file or a path		*/
+void process_path(char *path, const char *os_prefix, const char *rom_prefix, Xlist_element *Xlist_head,
 		int compression, int *inode_count, int *totlen, FILE *out)
 {
     int namelen, excluded, save_count=*inode_count;
@@ -315,24 +364,10 @@ void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_
 	printf("malloc fail in process_path\n");
 	exit(1);
     }
-    prefixed_path[0] = 0;	/* empty string */
-    strcat(prefixed_path, prefix);
-    strcat(prefixed_path, path);
-    strcat(prefixed_path, "*");
-    strcpy(rom_filename, add_prefix);
-#if defined(__WIN32__) || defined(__OS2__)
-    {
-	int i;
+    prefix_add(os_prefix, path, prefixed_path);
+    prefix_add(rom_prefix, "", rom_filename);
+    strcpy(rom_filename, rom_prefix);
 
-	/* On Windows, the paths may (will) have '\' instead of '/' so we translate them */
-	for (i=0; i<strlen(prefixed_path); i++)
-	    if (prefixed_path[i] == '\\')
-		prefixed_path[i] = '/';
-	for (i=0; i<strlen(rom_filename); i++)
-	    if (rom_filename[i] == '\\')
-		rom_filename[i] = '/';
-    }
-#endif
     /* check for the file on the Xlist */
     pfenum = gp_enumerate_files_init(prefixed_path, strlen(prefixed_path),
 		    	(gs_memory_t *)&minimal_memory);
@@ -363,11 +398,11 @@ void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_
 	    printf("unable to open file for processing: %s\n", found_path);
 	    continue;
 	}
-	/* rom_filename + strlen(add_prefix) is first char after the new prefix we want to add */
-	/* found_path + strlen(prefix) is the file name after the -P prefix */
-	rom_filename[strlen(add_prefix)] = 0;		/* truncate afater prefix */
-	strcat(rom_filename, found_path + strlen(prefix));
-	node->name = rom_filename;	/* without -P prefix, with -d add_prefix */
+	/* rom_filename + strlen(rom_prefix) is first char after the new prefix we want to add */
+	/* found_path + strlen(os_prefix) is the file name after the -P prefix */
+	rom_filename[strlen(rom_prefix)] = 0;		/* truncate afater prefix */
+	strcat(rom_filename, found_path + strlen(os_prefix));
+	node->name = rom_filename;	/* without -P prefix, with -d rom_prefix */
 	fseek(in, 0, SEEK_END);
 	node->length = ftell(in);
 	blocks = (node->length+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE + 1;
@@ -409,9 +444,529 @@ void process_path(char *path, const char *prefix, const char *add_prefix, Xlist_
     free(found_path);
     free(prefixed_path);
     if (save_count == *inode_count) {
-	printf("warning: no files found from path '%s%s'\n", prefix, path);
+	printf("warning: no files found from path '%s%s'\n", os_prefix, path);
     }
 }
+
+/*
+ * Utility for merging all the Ghostscript initialization files (gs_*.ps)
+ * into a single file.
+ *
+ * The following special constructs are recognized in the input files:
+ *	%% Replace[%| ]<#lines> (<psfile>)
+ *	%% Replace[%| ]<#lines> INITFILES
+ * '%' after Replace means that the file to be included intact.
+ * If the first non-comment, non-blank line in a file ends with the
+ * LanguageLevel 2 constructs << or <~, its section of the merged file
+ * will begin with
+ *	currentobjectformat 1 setobjectformat
+ * and end with
+ *	setobjectformat
+ * and if any line then ends with with <, the following ASCIIHex string
+ * will be converted to a binary token.
+ */
+/* Forward references */
+void merge_to_ps(const char *os_prefix, const char *inname, FILE * in, FILE * config);
+int write_init(char *);
+bool rl(FILE * in, char *str, int len);
+void wsc(const byte *str, int len);
+void ws(const byte *str, int len);
+void wl(const char *str);
+char *doit(char *line, bool intact);
+void hex_string_to_binary(FILE *in);
+void flush_buf(char *buf);
+void mergefile(const char *os_prefix, const char *inname, FILE * in, FILE * config,
+	       bool intact);
+void flush_line_buf(int len);
+
+typedef struct in_block_s in_block_t;
+struct in_block_s {
+    struct in_block_s *next;
+    unsigned char data[ROMFS_BLOCKSIZE];
+};
+
+
+#define LINE_SIZE 128
+
+/* Globals used for gs_init processing */
+char linebuf[LINE_SIZE * 2];		/* make it plenty long to avoid overflow */
+in_block_t *in_block_head = NULL;
+in_block_t *in_block_tail = NULL;
+unsigned char *curr_block_p, *curr_block_end;
+
+int
+process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
+		 const char *rom_prefix, int compression, int *inode_count,
+		 int *totlen, FILE *out)
+{
+    int ret, block, blocks;
+    romfs_inode *node;
+    unsigned char *ubuf, *cbuf;
+    char *prefixed_path, *rom_filename;
+    unsigned long clen;
+    FILE *in;
+    FILE *config;
+    in_block_t *in_block = NULL;
+
+    ubuf = malloc(ROMFS_BLOCKSIZE);
+    cbuf = malloc(ROMFS_CBUFSIZE);
+    prefixed_path = malloc(1024);
+    rom_filename = malloc(1024);
+    if (ubuf == NULL || cbuf == NULL || prefixed_path == NULL ||
+	rom_filename == NULL) {
+	printf("malloc fail in process_initfile\n");
+	/* should free whichever buffers got allocated, but don't bother */
+	return -1;
+    }
+
+    prefix_add(os_prefix, initfile, prefixed_path);
+    prefix_add(rom_prefix, initfile, rom_filename);
+
+    in = fopen(prefixed_path, "r");
+    if (in == 0) {
+	printf("cannot open initfile at: %s\n", prefixed_path);
+	return -1;
+    }
+    config = fopen(gconfig_h, "r");
+    if (config == 0) {
+	printf("Cannot open gconfig file %s\n", gconfig_h);
+	fclose(in);
+	return -1;
+    }
+    memset(linebuf, 0, sizeof(linebuf));
+    node = calloc(1, sizeof(romfs_inode));
+    node->name = rom_filename;	/* without -P prefix, with -d rom_prefix */
+
+    merge_to_ps(os_prefix, initfile, in, config);
+
+    fclose(in);
+    fclose(config);
+
+/**********/
+    node->length = 0;
+    in_block = in_block_head;
+    while (in_block != NULL) {
+	node->length += 
+	    in_block != in_block_tail ? ROMFS_BLOCKSIZE : curr_block_p - in_block->data;
+	in_block = in_block->next;
+    }
+
+    blocks = (node->length+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE + 1;
+    node->data_lengths = calloc(blocks, sizeof(*node->data_lengths));
+    node->data = calloc(blocks, sizeof(*node->data));
+    block = 0;
+
+    in_block = in_block_head;
+    while (in_block != NULL) {
+        int block_len = 
+		in_block != in_block_tail ? ROMFS_BLOCKSIZE : curr_block_p - in_block->data;
+
+	clen = ROMFS_CBUFSIZE;
+	if (compression) {
+	    /* compress data here */
+	    ret = compress(cbuf, &clen, in_block->data, block_len);
+	    if (ret != Z_OK) {
+		printf("error compressing data block!\n");
+		exit(1);
+	    }
+	} else {
+	    memcpy(cbuf, in_block->data, block_len);
+	    clen = block_len;
+	}
+	node->data_lengths[block] = clen; 
+	node->data[block] = malloc(clen);
+	memcpy(node->data[block], cbuf, clen);
+	block++;
+	in_block = in_block->next;
+    }
+
+    /* write data for this file */
+    inode_write(out, node, compression, *inode_count, totlen);
+    /* clean up */
+    inode_clear(node);
+    free(node);
+    (*inode_count)++;
+
+    free(cbuf);
+    free(ubuf);
+    free(prefixed_path);
+    free(rom_filename);
+    return 0;
+}
+
+void
+flush_line_buf(int len) {
+    int remaining_len = len;
+    int move_len;
+
+    if (len > LINE_SIZE) {
+	printf("*** warning, flush_line called with len (%d) > LINE_SIZE (%d)\n",
+		len, LINE_SIZE);
+	return;
+    }
+    /* check for empty list and allocate the first block if needed */
+    if (in_block_tail == NULL) {
+	in_block_head = in_block_tail = calloc(1, sizeof(in_block_t));
+	in_block_tail->next = NULL;	/* calloc really already does this */
+	curr_block_p = in_block_head->data;
+	curr_block_end = curr_block_p + ROMFS_BLOCKSIZE;
+    }
+    /* move the data into the in_block buffer */
+    do {
+	move_len = min(remaining_len, curr_block_end - curr_block_p); 
+        memcpy(curr_block_p, linebuf, move_len);
+	curr_block_p += move_len;
+	if (curr_block_p == curr_block_end) {
+	    /* start a new data block appended to the list of blocks */
+	    in_block_tail->next =  calloc(1, sizeof(in_block_t));
+	    in_block_tail = in_block_tail->next;
+	    in_block_tail->next = NULL;	/* calloc really already does this */
+	    curr_block_p = in_block_tail->data;
+	    curr_block_end = curr_block_p + ROMFS_BLOCKSIZE;
+	}
+	remaining_len = max(0, remaining_len - move_len);
+    } while (remaining_len > 0);
+
+    /* clear the line (to allow 'strlen' to work if the data is not binary */
+    memset(linebuf, 0, sizeof(linebuf));
+}
+
+/* Read a line from the input. */
+bool
+rl(FILE * in, char *str, int len)
+{
+    /*
+     * Unfortunately, we can't use fgets here, because the typical
+     * implementation only recognizes the EOL convention of the current
+     * platform.
+     */
+    int i = 0, c = getc(in);
+
+    if (c < 0)
+	return false;
+    while (i < len - 1) {
+	if (c < 0 || c == 10)		/* ^J, Unix EOL */
+	    break;
+	if (c == 13) {		/* ^M, Mac EOL */
+	    c = getc(in);
+	    if (c != 10 && c >= 0)	/* ^M^J, PC EOL */
+		ungetc(c, in);
+	    break;
+	}
+	str[i++] = c;
+	c = getc(in);
+    }
+    str[i] = 0;
+    return true;
+}
+
+/* Write a string or a line on the output. */
+void
+wsc(const byte *str, int len)
+{
+    int n = 0;
+    int i;
+
+    if (len >= LINE_SIZE)
+	exit(1);
+
+    for (i = 0; i < len; ++i) {
+	int c = str[i];
+
+	sprintf(linebuf,
+		(c < 32 || c >= 127 ? "%d," :
+		 c == '\'' || c == '\\' ? "'\\%c'," : "'%c',"),
+		c);
+	flush_line_buf(strlen(linebuf));
+	if (++n == 15) {
+	    linebuf[0] = '\n';
+	    flush_line_buf(1);
+	    n = 0;
+	}
+    }
+    if (n != 0) {
+	flush_line_buf(strlen(linebuf));
+	linebuf[0] = '\n';
+	flush_line_buf(1);
+    }
+}
+void
+ws(const byte *str, int len)
+{
+    if (len >= LINE_SIZE)
+	exit(1);
+
+    memcpy(linebuf, str, len);
+    flush_line_buf(len);
+}
+
+void
+wl(const char *str)
+{
+    ws((const byte *)str, strlen(str));
+    ws((const byte *)"\n", 1);
+}
+
+/*
+ * Strip whitespace and comments from a line of PostScript code as possible.
+ * Return a pointer to any string that remains, or NULL if none.
+ * Note that this may store into the string.
+ */
+char *
+doit(char *line, bool intact)
+{
+    char *str = line;
+    char *from;
+    char *to;
+    int in_string = 0;
+
+    if (intact)
+	return str;
+    while (*str == ' ' || *str == '\t')		/* strip leading whitespace */
+	++str;
+    if (*str == 0)		/* all whitespace */
+	return NULL;
+    if (!strncmp(str, "%END", 4))	/* keep these for .skipeof */
+	return str;
+    if (str[0] == '%')    /* comment line */
+	return NULL;
+    /*
+     * Copy the string over itself removing:
+     *  - All comments not within string literals;
+     *  - Whitespace adjacent to '[' ']' '{' '}';
+     *  - Whitespace before '/' '(' '<';
+     *  - Whitespace after ')' '>'.
+     */
+    for (to = from = str; (*to = *from) != 0; ++from, ++to) {
+	switch (*from) {
+	    case '%':
+		if (!in_string)
+		    break;
+		continue;
+	    case ' ':
+	    case '\t':
+		if (to > str && !in_string && strchr(" \t>[]{})", to[-1]))
+		    --to;
+		continue;
+	    case '(':
+	    case '<':
+	    case '/':
+	    case '[':
+	    case ']':
+	    case '{':
+	    case '}':
+		if (to > str && !in_string && strchr(" \t", to[-1]))
+		    *--to = *from;
+                if (*from == '(')
+                    ++in_string;
+              	continue;
+	    case ')':
+		--in_string;
+		continue;
+	    case '\\':
+		if (from[1] == '\\' || from[1] == '(' || from[1] == ')')
+		    *++to = *++from;
+		continue;
+	    default:
+		continue;
+	}
+	break;
+    }
+    /* Strip trailing whitespace. */
+    while (to > str && (to[-1] == ' ' || to[-1] == '\t'))
+	--to;
+    *to = 0;
+    return str;
+}
+
+/* Copy a hex string to the output as a binary token. */
+void
+hex_string_to_binary(FILE *in)
+{
+#define MAX_STR 0xffff	/* longest possible PostScript string token */
+    byte *strbuf = (byte *)malloc(MAX_STR);
+    byte *q = strbuf;
+    int c;
+    bool which = false;
+    int len;
+    byte prefix[3];
+
+    if (strbuf == 0) {
+	printf("Unable to allocate string token buffer.\n");
+	exit(1);
+    }
+    while ((c = getc(in)) >= 0) {
+	if (isxdigit(c)) {
+	    c -= (isdigit(c) ? '0' : islower(c) ? 'a' : 'A');
+	    if ((which = !which)) {
+		if (q == strbuf + MAX_STR) {
+		    printf("Can't handle string token > %d bytes.\n",
+			    MAX_STR);
+		    exit(1);
+		}
+		*q++ = c << 4;
+	    } else
+		q[-1] += c;
+	} else if (isspace(c))
+	    continue;
+	else if (c == '>')
+	    break;
+	else
+	    printf("Unknown character in ASCIIHex string: %c\n", c);
+    }
+    len = q - strbuf;
+    if (len <= 255) {
+	prefix[0] = 142;
+	prefix[1] = (byte)len;
+	ws(prefix, 2);
+    } else {
+	prefix[0] = 143;
+	prefix[1] = (byte)(len >> 8);
+	prefix[2] = (byte)len;
+	ws(prefix, 3);
+    }
+    ws(strbuf, len);
+    free((char *)strbuf);
+#undef MAX_STR
+}
+
+/* Merge a file from input to output. */
+void
+flush_buf(char *buf)
+{
+    if (buf[0] != 0) {
+	wl(buf);
+	buf[0] = 0;
+    }
+}
+
+FILE *
+prefix_open(const char *os_prefix, const char *filename)
+{
+    char *prefixed_path;
+    FILE *filep;
+
+    prefixed_path = malloc(1024);
+    if (prefixed_path == NULL) {
+	printf("malloc problem in prefix_open\n");
+	return NULL;
+    }
+    prefix_add(os_prefix, filename, prefixed_path);
+    filep = fopen(prefixed_path, "rb");
+    free(prefixed_path);
+    return filep;
+}
+
+void
+mergefile(const char *os_prefix, const char *inname, FILE * in, FILE * config,
+	  bool intact)
+{
+    char line[LINE_SIZE + 1];
+    char buf[LINE_SIZE + 1];
+    char *str;
+    int level = 1;
+    bool first = true;
+
+    buf[0] = 0;
+    while (rl(in, line, LINE_SIZE)) {
+	char psname[LINE_SIZE + 1];
+	int nlines;
+
+	if (!strncmp(line, "%% Replace", 10) &&
+	    sscanf(line + 11, "%d %s", &nlines, psname) == 2
+	    ) {
+	    bool do_intact = (line[10] == '%');
+
+	    flush_buf(buf);
+	    while (nlines-- > 0)
+		rl(in, line, LINE_SIZE);
+	    if (psname[0] == '(') {
+		FILE *ps;
+		
+		psname[strlen(psname) - 1] = 0;
+		ps = prefix_open(os_prefix, psname + 1);
+		if (ps == 0)
+		    exit(1);
+		mergefile(os_prefix, psname + 1, ps, config, intact || do_intact);
+	    } else if (!strcmp(psname, "INITFILES")) {
+		/*
+		 * We don't want to bind config.h into geninit, so
+		 * we parse it ourselves at execution time instead.
+		 */
+		rewind(config);
+		while (rl(config, psname, LINE_SIZE))
+		    if (!strncmp(psname, "psfile_(\"", 9)) {
+			FILE *ps;
+			char *quote = strchr(psname + 9, '"');
+
+			*quote = 0;
+			ps = prefix_open(os_prefix, psname + 9);
+			if (ps == 0)
+			    exit(1);
+			mergefile(os_prefix, psname + 9, ps, config, false);
+		    }
+	    } else {
+		printf("Unknown %%%% Replace %d %s\n",
+			nlines, psname);
+		exit(1);
+	    }
+	} else if (!strcmp(line, "currentfile closefile")) {
+	    /* The rest of the file is debugging code, stop here. */
+	    break;
+	} else {
+	    int len;
+
+	    str = doit(line, intact);
+	    if (str == 0)
+		continue;
+	    len = strlen(str);
+	    if (first && len >= 2 && str[len - 2] == '<' &&
+		(str[len - 1] == '<' || str[len - 1] == '~')
+		) {
+		wl("currentobjectformat 1 setobjectformat\n");
+		level = 2;
+	    }
+	    if (level > 1 && len > 0 && str[len - 1] == '<' &&
+		(len < 2 || str[len - 2] != '<')
+		) {
+		/* Convert a hex string to a binary token. */
+		flush_buf(buf);
+		str[len - 1] = 0;
+		wl(str);
+		hex_string_to_binary(in);
+		continue;
+	    }
+	    if (buf[0] != '%' &&	/* i.e. not special retained comment */
+		strlen(buf) + len < LINE_SIZE &&
+		(strchr("(/[]{}", str[0]) ||
+		 (buf[0] != 0 && strchr(")[]{}", buf[strlen(buf) - 1])))
+		)
+		strcat(buf, str);
+	    else {
+		flush_buf(buf);
+		strcpy(buf, str);
+	    }
+	    first = false;
+	}
+    }
+    flush_buf(buf);
+    if (level > 1)
+	wl("setobjectformat");
+}
+
+/* Merge and produce a PostScript file. */
+void
+merge_to_ps(const char *os_prefix, const char *inname, FILE * in, FILE * config)
+{
+    char line[LINE_SIZE + 1];
+
+    while ((rl(in, line, LINE_SIZE), line[0])) {
+	sprintf(linebuf, "%s", line );
+	wl(linebuf);
+    }
+    mergefile(os_prefix, inname, in, config, false);
+}
+
 
 int
 main(int argc, char *argv[])
@@ -420,43 +975,54 @@ main(int argc, char *argv[])
     int inode_count = 0, totlen = 0;
     FILE *out;
     const char *outfilename = "obj/gsromfs.c";
-    const char *prefix = "";
-    const char *add_prefix = "";
+    const char *os_prefix = "";
+    const char *rom_prefix = "";
+    char *initfile, *gconfig_h;
     int atarg = 1;
     int compression = 1;			/* default to doing compression */
     Xlist_element *Xlist_scan, *Xlist_head = NULL;
     
     if (argc < 2) {
 	printf("\n"
- 		"	Usage: mkromfs [-o outputfile] [options ...] paths\n"
- 		"	    options and paths can be interspersed and are processed in order\n"
- 		"	    options:\n"
- 		"		-o outputfile	default: obj/gsromfs.c if this option present, must be first.\n"
- 		"		-P prefix	use prefix to find path. prefix not included in %%rom%%\n"
- 		"		-X path		exclude the path from further processing.\n"
- 		"		-d string       directory in %%rom file system (just a prefix string on filename)\n"
- 		"		-c		compression on\n"
- 		"		-b		compression off (binary).\n"
- 		"\n"
- 		"	    Note: The tail of any path encountered will be tested so .svn on the -X\n"
- 		"		  list will exclude that path in all subsequent paths enumerated.\n"
+                "       Usage: mkromfs [-o outputfile] [options ...] paths\n"
+                "           options and paths can be interspersed and are processed in order\n"
+                "           options:\n"
+                "               -o outputfile   default: obj/gsromfs.c if this option present, must be first.\n"
+                "               -P prefix       use prefix to find path. prefix not included in %%rom%%\n"
+                "               -X path         exclude the path from further processing.\n"
+                "                         Note: The tail of any path encountered will be tested so .svn on the -X\n"
+                "                               list will exclude that path in all subsequent paths enumerated.\n"
+                "\n"
+                "               -d romprefix    directory in %%rom file system (just a prefix string on filename)\n"
+                "               -c              compression on\n"
+                "               -b              compression off (binary).\n"
+                "               -g initfile gconfig_h \n"
+                "                       special handling to read the 'gs_init.ps' file (from\n"
+                "                       the current -P prefix path), and read the gconfig.h for\n"
+                "                       psfile_ entries and combines them into a whitespace\n"
+                "                       optimized and no comments form and writes this 'gs_init.ps'\n"
+                "                       to the current -d destination path. This is a space and\n"
+                "                       startup performance improvement, so also this should be\n"
+                "                       BEFORE other stuff in the %rom% list of files (currently\n"
+                "                       we do a sequential search in the %rom% directory).\n"
+                "\n"
+                "                       For performance reasons, it is best to turn off compression\n"
+                "                       for the init file. Less frequently accessed files, if they\n"
+                "                       are large should still be compressed.\n"
+                "\n"
 	    );
 	exit(1);
     }
 
-#ifdef DEBUG
     printf("compression will use %d byte blocksize (zlib output buffer %d bytes)\n",
         ROMFS_BLOCKSIZE, ROMFS_CBUFSIZE);
-#endif /* DEBUG */
     
     if (argc > 3 && argv[1][0] == '-' && argv[1][1] == 'o') {
 	/* process -o option for outputfile */
 	outfilename = argv[2];
 	atarg += 2;
     }
-#ifdef DEBUG
     printf("   writing romfs data to '%s'\n", outfilename);
-#endif /* DEBUG */
     out = fopen(outfilename, "w");
 
     fprintf(out,"\t/* Generated data for %%rom%% device, see mkromfs.c */\n");
@@ -485,14 +1051,24 @@ main(int argc, char *argv[])
 		    printf("   option %s missing required argument\n", argv[atarg-1]);
 		    exit(1);
 		}
-		add_prefix = argv[atarg];
+		rom_prefix = argv[atarg];
+	        break;
+	      case 'g':
+		if ((++atarg) + 1 == argc) {
+		    printf("   option %s missing required arguments\n", argv[atarg-1]);
+		    exit(1);
+		}
+		initfile = argv[atarg++];
+		gconfig_h = argv[atarg];
+		process_initfile(initfile, gconfig_h, os_prefix, rom_prefix, compression,
+				&inode_count, &totlen, out);
 	        break;
 	      case 'P':
 		if (++atarg == argc) {
 		    printf("   option %s missing required argument\n", argv[atarg-1]);
 		    exit(1);
 		}
-		prefix = argv[atarg];
+		os_prefix = argv[atarg];
 	        break;
 	      case 'X':
 		if (++atarg == argc) {
@@ -512,8 +1088,10 @@ main(int argc, char *argv[])
 	    }
 	    continue;
 	}
-	/* process a path */
-	process_path(argv[atarg], prefix, add_prefix, Xlist_head, compression, &inode_count, &totlen, out);
+	/* process a path or file */
+	process_path(argv[atarg], os_prefix, rom_prefix, Xlist_head,
+		    compression, &inode_count, &totlen, out);
+
     }
     /* now write out the array of nodes */
     fprintf(out, "    uint32_t *gs_romfs[] = {\n");
