@@ -1112,7 +1112,6 @@ gs_id gx_get_clip_path_id(gs_state *pgs)
 void gs_swapcolors_quick(gs_state *pgs)
 {
     struct gx_cie_joint_caches_s *tmp_cie;
-    gx_device_halftone           *tmp_ht;
     gs_devicen_color_map          tmp_ccm;
     struct gx_pattern_cache_s    *tmp_pc;
     gs_client_color              *tmp_cc;
