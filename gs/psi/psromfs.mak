@@ -27,10 +27,10 @@ PDF_RESOURCE_LIST=CMap$(D)*
 MISC_INIT_FILES=FCOfontmap-PCLPS2 cidfmap gs_cet.ps opdfread.ps pdf_cslayer.ps
 
 # In the below list, the Font contents are _not_ compressed since it doesn't help.
-RESOURCE_LIST=CIDFont$(D) $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -b Font$(D)* -c IdiomSet$(D)* ProcSet$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ $(MISC_INIT_FILES)
+RESOURCE_LIST=CIDFont$(D) $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -b Font$(D)* -c IdiomSet$(D)* ProcSet$(D)* Init$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ $(MISC_INIT_FILES)
 
 #	Note: gs_cet.ps is only needed to match Adobe CPSI defaults
-PS_ROMFS_ARGS=-c -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ -g gs_init.ps $(gconfig_h) \
+PS_ROMFS_ARGS=-c \
   -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) \
   -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
 
