@@ -2113,13 +2113,18 @@ retry_oversampling:
     }
     penum_s->fapi_glyph_shift.x = penum_s->fapi_glyph_shift.y = 0;
     if (sbw_state == SBW_FROM_RENDERER) {
-	sbw[2] = metrics.escapement / em_scale_x;
-	sbw[3] = metrics.v_escapement / em_scale_y;
-	if (pbfont->FontType == 2) {
-	    gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
+        int can_replace_metrics;
+	
+        if ((code = renderer_retcode(i_ctx_p, I, I->can_replace_metrics(I, &I->ff, &cr, &can_replace_metrics))) < 0)
+            return code;
 
-	    sbw[2] += fixed2float(pfont1->data.defaultWidthX);
-	}
+        sbw[2] = metrics.escapement / em_scale_x;
+        sbw[3] = metrics.v_escapement / em_scale_y;
+        if (pbfont->FontType == 2 && !can_replace_metrics) {
+            gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
+
+            sbw[2] += fixed2float(pfont1->data.nominalWidthX);
+        }
     } else if (sbw_state == SBW_SCALE) {
 	sbw[0] = (double)cr.sb_x / scale / em_scale_x;
 	sbw[1] = (double)cr.sb_y / scale / em_scale_y;
