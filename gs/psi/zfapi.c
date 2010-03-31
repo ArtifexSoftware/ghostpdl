@@ -1820,38 +1820,37 @@ retry_oversampling:
             */
 	} else {
             ref *CIDMap, Str;
-	    byte *Map;
-	    int ccode = client_char_code;
+            byte *Map;
+            int ccode = client_char_code;
             int gdb = 2;
             int i;
             ref *GDBytes;
 
-	    if (dict_find_string(pdr, "GDBytes", &GDBytes) && r_has_type(GDBytes, t_integer)) {
+            if (dict_find_string(pdr, "GDBytes", &GDBytes) && r_has_type(GDBytes, t_integer)) {
                 gdb = GDBytes->value.intval;
             }
 
 	    /* The PDF Reference says that we should use a CIDToGIDMap, but the PDF
 	     * interpreter converts this into a CIDMap (see pdf_font.ps, processCIDToGIDMap)
 	     */
-	    if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name)) {
-		if (r_has_type(CIDMap, t_array)) {
-		    /* Too big for single string, so its an array of 2 strings */
+            if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name)) {
+                if (r_has_type(CIDMap, t_array)) {
+                    /* Too big for single string, so its an array of 2 strings */
                     /* Do we have to worry about codes straddling string boundaries? */
-		    if (client_char_code < 32767)
-			code = array_get(imemory, CIDMap, 0, &Str);
-		    else {
-			code = array_get(imemory, CIDMap, 1, &Str);
-			ccode -= 32767;
-		    }
-		    if (code < 0)
-		        return code;
-
-                    if (CIDMap->tas.rsize < ccode * gdb) {
-                       ccode = 0;
+                    if (client_char_code < 32767)
+                        code = array_get(imemory, CIDMap, 0, &Str);
+                    else {
+                        code = array_get(imemory, CIDMap, 1, &Str);
+                        ccode -= 32767;
                     }
+                    if (code < 0)
+                        return code;
 
-		    Map = &Str.value.bytes[ccode * gdb];
-		} else {
+                    if (Str.tas.rsize < ccode * gdb) {
+                        ccode = 0;
+                    }
+                    Map = &Str.value.bytes[ccode * gdb];
+                } else {
                     if (CIDMap->tas.rsize < ccode * gdb) {
                        ccode = 0;
                     }
@@ -1866,7 +1865,7 @@ retry_oversampling:
                 for (i = 0; i <= gdb; i++) {
                     cr.char_codes[0] += Map[i] << ((gdb - i) * 8);
                 }
-	    }
+            }
 	    else
 		cr.char_codes[0] = client_char_code;
 	}
