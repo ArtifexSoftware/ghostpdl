@@ -351,7 +351,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER: FT_LOAD_MONOCHROME);
     }
 
-    if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || FT_Err_Invalid_Glyph_Index) {
+    if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index) {
         a_fapi_font->char_data = saved_char_data;
         ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING);
     }
