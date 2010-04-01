@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -58,12 +58,12 @@ private_st_line_params();
  * pointers are handled in this manner.
  */
 public_st_imager_state();
-static 
+static
 ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     ENUM_SUPER(gs_imager_state, st_line_params, line_params, st_imager_state_num_ptrs - st_line_params_num_ptrs);
     ENUM_PTR(0, gs_imager_state, client_data);
     ENUM_PTR(1, gs_imager_state, transparency_stack);
-    ENUM_PTR(2, gs_imager_state, trans_device); 
+    ENUM_PTR(2, gs_imager_state, trans_device);
 #define E1(i,elt) ENUM_PTR(i+3,gs_imager_state,elt);
     gs_cr_state_do_ptrs(E1)
 #undef E1
@@ -119,12 +119,14 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->set_transfer.gray->values[0] = frac_0;
     pis->set_transfer.red =
 	pis->set_transfer.green =
-	pis->set_transfer.blue = NULL; 
+	pis->set_transfer.blue = NULL;
     for (i = 0; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
 	pis->effective_transfer[i] = pis->set_transfer.gray;
     pis->cie_joint_caches = NULL;
+    pis->cie_joint_caches_alt = NULL;
     pis->cmap_procs = cmap_procs_default;
     pis->pattern_cache = NULL;
+    pis->pattern_cache_alt = NULL;
     pis->have_pattern_streams = false;
     pis->devicergb_cs = gs_cspace_new_DeviceRGB(mem);
     pis->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
@@ -164,6 +166,7 @@ gs_imager_state_copied(gs_imager_state * pis)
     rc_increment(pis->set_transfer.green);
     rc_increment(pis->set_transfer.blue);
     rc_increment(pis->cie_joint_caches);
+    rc_increment(pis->cie_joint_caches_alt);
     rc_increment(pis->devicergb_cs);
     rc_increment(pis->devicecmyk_cs);
 }
@@ -178,6 +181,7 @@ gs_imager_state_pre_assign(gs_imager_state *pto, const gs_imager_state *pfrom)
     rc_pre_assign(pto->element, pfrom->element, cname)
 
     RCCOPY(cie_joint_caches);
+    RCCOPY(cie_joint_caches_alt);
     RCCOPY(set_transfer.blue);
     RCCOPY(set_transfer.green);
     RCCOPY(set_transfer.red);

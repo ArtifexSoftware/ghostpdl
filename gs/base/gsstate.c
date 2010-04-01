@@ -260,8 +260,6 @@ gs_state_alloc(gs_memory_t * mem)
     gs_swapcolors_quick(pgs); /* To color 0 */
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */
-    pgs->cie_joint_caches_alt = 0;
-    pgs->pattern_cache_alt = 0;
     gs_nulldevice(pgs);
     gs_setalpha(pgs, 1.0);
     gs_settransfer(pgs, gs_identity_transfer);
@@ -948,7 +946,6 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	    goto fail;
     }
     gs_imager_state_copied((gs_imager_state *)pgs);
-    rc_increment(pgs->cie_joint_caches_alt);
     /* Don't do anything to clip_stack. */
     rc_increment(pgs->device);
     *parts.color[0].ccolor    = *pfrom->color[0].ccolor;
@@ -1014,7 +1011,6 @@ gstate_free_contents(gs_state * pgs)
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     gstate_free_parts(pgs, mem, cname);
     gs_imager_state_release((gs_imager_state *)pgs);
-    rc_decrement(pgs->cie_joint_caches_alt, "gstate_free_contents");
 }
 
 /* Copy one gstate to another. */
@@ -1079,7 +1075,6 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 
 	gs_imager_state_pre_assign((gs_imager_state *)pto,
 				   (const gs_imager_state *)pfrom);
-	rc_pre_assign(pto->cie_joint_caches_alt, pfrom->cie_joint_caches_alt, "gstate_copy");
 	*pto = *pfrom;
 	pto->client_data = pdata;
 	pto->memory = mem;
