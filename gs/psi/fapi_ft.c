@@ -206,10 +206,10 @@ get_fapi_glyph_metrics(FT_Incremental a_info, FT_UInt a_glyph_index,
 	FT_Bool bVertical, FT_Incremental_MetricsRec *a_metrics)
 {
     /* FreeType will create synthetic vertical metrics, including a vertical
-     * advance, if none is present. We don't want this, so if the font is a type 42
+     * advance, if none is present. We don't want this, so if the font uses Truetype outlines
      * and the WMode is not 1 (vertical) we ignore the advance by setting it to 0
      */
-    if (bVertical && !a_info->fapi_font->is_type1 && !a_info->fapi_font->is_cid)
+    if (bVertical && !a_info->fapi_font->is_type1)
 	a_metrics->advance = 0;
 
     if (a_info->glyph_metrics_index == a_glyph_index)
