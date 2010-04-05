@@ -75,19 +75,21 @@ systemdict /CIDFMAP known { CIDFMAP } { (%stdout) } ifelse
   /AdobeSongStd-Light [ /SimSun /ArialUnicodeMS-GB ]
 
   % Japanese
-  /Ryumin-Light [ /MS-Mincho /ArialUnicodeMS-JP ]
-  /Ryumin-Medium [ /MS-Mincho /ArialUnicodeMS-JP ]
-  /GothicBBB-Medium [ /MS-Gothic /Meiryo /ArialUnicodeMS-JP ]
-  /HeiseiMin-W3 [ /MS-Mincho /ArialUnicodeMS-JP ]
-  /HeiseiKakuGo-W5 [ /MS-Gothic /Meiryo /ArialUnicodeMS-JP ]
-  /KozMinPr6N-Regular [ /MS-Mincho /ArialUnicodeMS-JP ]
+  /Ryumin-Light [ /MS-Mincho04 /MS-Mincho /ArialUnicodeMS-JP ]
+  /Ryumin-Medium [ /MS-Mincho04 /MS-Mincho /ArialUnicodeMS-JP ]
+  /GothicBBB-Medium [ /MS-Gothic04 /MS-Gothic /Meiryo /ArialUnicodeMS-JP ]
+  /HeiseiMin-W3 [ /MS-Mincho04 /MS-Mincho /ArialUnicodeMS-JP ]
+  /HeiseiKakuGo-W5 [ /MS-Gothic04 /MS-Gothic /Meiryo /ArialUnicodeMS-JP ]
+  /KozMinPr6N-Regular [ /MS-Mincho04 /MS-Mincho /ArialUnicodeMS-JP ]
 
   % Korean
   % Malgun seems to have a full set of Hangu but not much of Kanji glyphs
-  /HYSMyeongJo-Medium [ /Batang /GulimChe /ArialUnicodeMS-KR /MalgunGothicRegular ]
-  /HYRGoThic-Medium [ /Gulim /GulimChe /ArialUnicodeMS-KR /MalgunGothicRegular ]
-  /HYGoThic-Medium [ /Dotum /GulimChe /ArialUnicodeMS-KR /MalgunGothicRegular ]
-  /AdobeMyungjoStd-Medium [ /Batang /GulimChe /ArialUnicodeMS-KR /MalgunGothicRegular ]
+  % "Gulim Old Hangul Jamo" has Hangu but no Kanji, and PMmy has Kanji but
+  % no Hangu. Neither are useful for Korean users.
+  /HYSMyeongJo-Medium [ /Batang /NewBatang /GulimChe /ArialUnicodeMS-KR /MalgunGothicRegular ]
+  /HYRGoThic-Medium [ /Gulim /NewGulim /GulimChe /ArialUnicodeMS-KR /MalgunGothicRegular ]
+  /HYGoThic-Medium [ /Dotum /NewGulim /GulimChe /ArialUnicodeMS-KR /MalgunGothicRegular ]
+  /AdobeMyungjoStd-Medium [ /Batang /NewBatang /GulimChe /ArialUnicodeMS-KR /MalgunGothicRegular ]
 >>
 def
 
@@ -324,6 +326,47 @@ def
    /CSI [(Japan1) 3]
   >>
 
+  % An XP update ships the Vista (JIS2004) version of msgothic.ttc/msmincho.ttc renamed
+  /MS-Gothic04
+  <<
+   /FileType /TrueType
+   /Path (msgoth04.ttc)
+   /SubfontID 0
+   /CSI [(Japan1) 3]
+  >>
+
+  /MS-PGothic04
+  <<
+   /FileType /TrueType
+   /Path (msgoth04.ttc)
+   /SubfontID 1
+   /CSI [(Japan1) 3]
+  >>
+
+  /MS-UI-Gothic04
+  <<
+   /FileType /TrueType
+   /Path (msgoth04.ttc)
+   /SubfontID 2
+   /CSI [(Japan1) 3]
+  >>
+
+  /MS-Mincho04
+  <<
+   /FileType /TrueType
+   /Path (msmin04.ttc)
+   /SubfontID 0
+   /CSI [(Japan1) 3]
+  >>
+
+  /MS-PMincho04
+  <<
+   /FileType /TrueType
+   /Path (msmin04.ttc)
+   /SubfontID 1
+   /CSI [(Japan1) 3]
+  >>
+
   /MS-Mincho-oldttf
   <<
    /FileType /TrueType
@@ -458,6 +501,22 @@ def
   <<
    /FileType /TrueType
    /Path (malgunbd.ttf)
+   /SubfontID 0
+   /CSI [(Korea1) 3]
+  >>
+
+  /NewBatang
+  <<
+   /FileType /TrueType
+   /Path (nbatang.ttf)
+   /SubfontID 0
+   /CSI [(Korea1) 3]
+  >>
+
+  /NewGulim
+  <<
+   /FileType /TrueType
+   /Path (ngulim.ttf)
    /SubfontID 0
    /CSI [(Korea1) 3]
   >>
@@ -694,6 +753,10 @@ FONTDIR writecidfmap
 % msyh.ttf        21767952     6.02       29354      (0,3)(3,1)        MicrosoftYaHei                           936
 % msyhbd.ttf      14707012     0.71       29240      (0,3)(3,1)(3,10)  MicrosoftYaHei
 % msyhbd.ttf      14685876     5.00       29126      (0,3)(3,1)(3,10)  MicrosoftYaHei
+% nbatang.ttf     32472240     3.00       49636      (3,1)             New Batang
+% ngulim.ttf      25719724     3.10       49284      (3,1)             New Gulim
+% ogulim.ttf      830340       1.00       2921       (3,1)             Gulim Old Hangul Jamo
+% palmm.ttf       13816928     001.003    27560      (3,1)             PMmy
 % simfang.ttf     3996872      2.00       7580       (1,0)(3,1)        FangSong_GB2312
 % simfang.ttf     10576012     5.01       28562      (3,1)             FangSong                                 936
 % simhei.ttf      10044356     3.02       22021      (1,0)(3,1)        SimHei
