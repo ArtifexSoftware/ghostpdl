@@ -1834,36 +1834,22 @@ retry_oversampling:
 	     * interpreter converts this into a CIDMap (see pdf_font.ps, processCIDToGIDMap)
 	     */
             if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name)) {
-                if (r_has_type(CIDMap, t_array)) {
-                    /* Too big for single string, so its an array of 2 strings */
-                    /* Do we have to worry about codes straddling string boundaries? */
-                    if (client_char_code < 32767)
-                        code = array_get(imemory, CIDMap, 0, &Str);
-                    else {
-                        code = array_get(imemory, CIDMap, 1, &Str);
-                        ccode -= 32767;
-                    }
-                    if (code < 0)
-                        return code;
+       
+               if (r_has_type(CIDMap, t_array)) {
 
-                    if (Str.tas.rsize < ccode * gdb) {
-                        ccode = 0;
-                    }
-                    Map = &Str.value.bytes[ccode * gdb];
+                    /* Too big for single string, so its an array of 2 strings */
+                    code = string_array_access_proc(pbfont->memory, CIDMap, 1, client_char_code * gdb, gdb, NULL, NULL, &Map);
+
                 } else {
                     if (CIDMap->tas.rsize < ccode * gdb) {
                        ccode = 0;
                     }
                     Map = &CIDMap->value.bytes[ccode * gdb];
                 }
-
                 cr.char_codes[0] = 0;
 
-                /* decrement this saves us subracting one on every iteration of the loop below */
-                gdb--;
-
-                for (i = 0; i <= gdb; i++) {
-                    cr.char_codes[0] += Map[i] << ((gdb - i) * 8);
+                for (i = 0; i < gdb; i++) {
+                    cr.char_codes[0] = (cr.char_codes[0] << 8) + Map[i];
                 }
             }
 	    else
@@ -1990,27 +1976,27 @@ retry_oversampling:
     /* Compute the metrics replacement : */
 
     if(bCID && !bIsType1GlyphData) {
-	gs_font_cid2 *pfcid = (gs_font_cid2 *)pbfont;
-	int MetricsCount = pfcid->cidata.MetricsCount;
+	    gs_font_cid2 *pfcid = (gs_font_cid2 *)pbfont;
+	    int MetricsCount = pfcid->cidata.MetricsCount;
 
-	if (MetricsCount > 0) {
-	    const byte *data_ptr;
-	    int l = get_GlyphDirectory_data_ptr(imemory, pdr, cr.char_code, &data_ptr);
+	    if (MetricsCount > 0) {
+            const byte *data_ptr;
+            int l = get_GlyphDirectory_data_ptr(imemory, pdr, cr.char_code, &data_ptr);
 
-	    if (MetricsCount == 2 && l >= 4) {
-		if (!bVertical0) {
-		    cr.sb_x = GET_S16_MSB(data_ptr + 2) * scale;
-		    cr.aw_x = GET_U16_MSB(data_ptr + 0) * scale;
-		    cr.metrics_type = FAPI_METRICS_REPLACE;
-		}
-	    } else if (l >= 8){
-		cr.sb_y = GET_S16_MSB(data_ptr + 2) * scale;
-		cr.aw_y = GET_U16_MSB(data_ptr + 0) * scale;
-		cr.sb_x = GET_S16_MSB(data_ptr + 6) * scale;
-		cr.aw_x = GET_U16_MSB(data_ptr + 4) * scale;
-		cr.metrics_type = FAPI_METRICS_REPLACE;
+            if (MetricsCount == 2 && l >= 4) {
+                if (!bVertical0) {
+                    cr.sb_x = GET_S16_MSB(data_ptr + 2) * scale;
+                    cr.aw_x = GET_U16_MSB(data_ptr + 0) * scale;
+                    cr.metrics_type = FAPI_METRICS_REPLACE;
+                }
+            } else if (l >= 8){
+                cr.sb_y = GET_S16_MSB(data_ptr + 2) * scale;
+                cr.aw_y = GET_U16_MSB(data_ptr + 0) * scale;
+                cr.sb_x = GET_S16_MSB(data_ptr + 6) * scale;
+                cr.aw_x = GET_U16_MSB(data_ptr + 4) * scale;
+                cr.metrics_type = FAPI_METRICS_REPLACE;
+            }
 	    }
-	}
     }
     if (cr.metrics_type != FAPI_METRICS_REPLACE && bVertical) {
 	double pwv[4];
