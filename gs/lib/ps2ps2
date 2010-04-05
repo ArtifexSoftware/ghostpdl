@@ -19,8 +19,8 @@ do
 done
 
 if [ $# -ne 2 ]; then
-	echo "Usage: `basename $0` [options] input.ps output.ps" 1>&2
-	echo "  e.g. `basename $0` -sPAPERSIZE=a4 input.ps output.ps" 1>&2
+	echo "Usage: `basename \"$0\"` [options] input.ps output.ps" 1>&2
+	echo "  e.g. `basename \"$0\"` -sPAPERSIZE=a4 input.ps output.ps" 1>&2
 	exit 1
 fi
 

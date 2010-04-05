@@ -28,7 +28,7 @@ elif [ $# -eq 1 ]
 then
     outfile=`basename "$1" \.pdf`.ps
 else
-    echo "Usage: `basename $0` [-dASCII85EncodePages=false] [-dLanguageLevel=1|2|3] input.pdf [output.ps]" 1>&2
+    echo "Usage: `basename \"$0\"` [-dASCII85EncodePages=false] [-dLanguageLevel=1|2|3] input.pdf [output.ps]" 1>&2
     exit 1
 fi
 

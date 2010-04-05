@@ -18,7 +18,7 @@ elif [ $# -eq 1 ]
 then
     outfile=`basename "$1" \.pfb`.pfa
 else
-    echo "Usage: `basename $0` input.pfb [output.pfa]" 1>&2
+    echo "Usage: `basename \"$0\"` input.pfb [output.pfa]" 1>&2
     exit 1
 fi
 

@@ -22,7 +22,7 @@ do
 done
 
 if [ $# -ne 2 ]; then
-	echo "Usage: `basename $0` ...switches... input.eps output.eps" 1>&2
+	echo "Usage: `basename \"$0\"` ...switches... input.eps output.eps" 1>&2
 	exit 1
 fi
 

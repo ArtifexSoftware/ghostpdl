@@ -25,7 +25,7 @@ do
 done
 
 if [ $# -lt 1 -o $# -gt 2 ]; then
-	echo "Usage: `basename $0` [options...] input.dvi [output.pdf]" 1>&2
+	echo "Usage: `basename \"$0\"` [options...] input.dvi [output.pdf]" 1>&2
 	exit 1
 fi
 

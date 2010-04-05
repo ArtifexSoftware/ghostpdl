@@ -30,7 +30,7 @@ trap "rm -rf \"$tmpfile\"" 0 1 2 3 7 13 15
 export outfile
 
 if [ $# -lt 1 -o $# -gt 2 ]; then
-	echo "Usage: `basename $0` file.ps [file.epsi]" 1>&2
+	echo "Usage: `basename \"$0\"` file.ps [file.epsi]" 1>&2
 	exit 1
 fi
 

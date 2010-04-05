@@ -23,7 +23,7 @@ do
 done
 
 if [ $# -ne 1 ]; then
-	echo "Usage: `basename $0` input.pdf" 1>&2
+	echo "Usage: `basename \"$0\"` input.pdf" 1>&2
 	exit 1
 fi
 
