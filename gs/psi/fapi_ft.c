@@ -347,16 +347,20 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     /* We have to load the glyph, scale it correctly, and render it if we need a bitmap. */
     if (!ft_error)
     {
+	/* We disable loading bitmaps because if we allow it then FreeType invents metrics for them, which messes up our glyph positioning */
+	/* Also the bitmaps tend to look somewhat different (though more readable) than FreeType's rendering. By disabling them we */
+	/* maintain consistency better.  (FT_LOAD_NO_BITMAP) */
 	a_fapi_font->char_data = saved_char_data;
 	if (!a_fapi_font->is_type1)
-	    ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER: FT_LOAD_MONOCHROME);
+	    ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_BITMAP : FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP);
 	else
-	    ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING);
+	    /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
+	    ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
     }
 
     if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index) {
         a_fapi_font->char_data = saved_char_data;
-        ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING);
+        ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
     }
     /* Previously we interpreted the glyph unscaled, and derived the metrics from that. Now we only interpret it
      * once, and work out the metrics from the scaled/hinted outline.
