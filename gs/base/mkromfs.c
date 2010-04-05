@@ -28,6 +28,8 @@
  *
  *	    mkromfs no longer performs implicit enumeration of paths, so if a
  *	    path is a directory to be enumerated trailing '/*' must be present.
+ *	    Note: one should avoid bare "/*" which may be expanded by the shell
+ *	    to "/bin /boot /dev ...". e.g. use "/*.ttf" or "/*.ps" instead of "/*".
  *
  *	    options and paths can be interspersed and are processed in order
  *      
