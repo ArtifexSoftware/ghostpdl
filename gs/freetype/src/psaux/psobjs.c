@@ -1621,7 +1621,6 @@
 
     if ( builder->parse_state == T1_Parse_Have_Path )
       error = PSaux_Err_Ok;
-
     builder->parse_state = T1_Parse_Have_Path;
     error = t1_builder_add_contour( builder );
     if ( !error )
