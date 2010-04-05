@@ -4,7 +4,8 @@
 /*                                                                         */
 /*    FreeType high-level API and common types (specification only).       */
 /*                                                                         */
-/*  Copyright 1996-2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 by */
+/*  Copyright 1996-2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,   */
+/*            2010 by                                                      */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -147,7 +148,7 @@ FT_BEGIN_HEADER
   /*    FT_OPEN_PATHNAME                                                   */
   /*    FT_OPEN_DRIVER                                                     */
   /*    FT_OPEN_PARAMS                                                     */
-	  /*                                                                       */
+  /*                                                                       */
   /*    FT_LOAD_DEFAULT                                                    */
   /*    FT_LOAD_RENDER                                                     */
   /*    FT_LOAD_MONOCHROME                                                 */
@@ -1752,7 +1753,8 @@ FT_BEGIN_HEADER
   /*    data :: A pointer to the parameter data.                           */
   /*                                                                       */
   /* <Note>                                                                */
-  /*    The ID and function of parameters are driver-specific.             */
+  /*    The ID and function of parameters are driver-specific.  See the    */
+  /*    various FT_PARAM_TAG_XXX flags for more information.               */
   /*                                                                       */
   typedef struct  FT_Parameter_
   {
@@ -3772,7 +3774,7 @@ FT_BEGIN_HEADER
    */
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  3
-#define FREETYPE_PATCH  11
+#define FREETYPE_PATCH  12
 
 
   /*************************************************************************/
