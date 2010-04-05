@@ -299,7 +299,7 @@ UFSTFONTDIR=/usr/local/fontdata5.0/
 !if "$(PL_SCALER)" == "afs"
 # The mkromfs arguments for including the PCL fonts if COMPILE_INITS=1
 !ifndef PCLXL_ROMFS_ARGS
-PCLXL_ROMFS_ARGS= -c -P ../urwfonts -d ttfonts /
+PCLXL_ROMFS_ARGS= -c -P ../urwfonts -d ttfonts /*.ttf
 !endif
 
 !endif

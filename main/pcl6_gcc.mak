@@ -160,7 +160,7 @@ endif # PL_SCALER = ufst
 ifeq ($(PL_SCALER), afs)
 UFST_BRIDGE?=
 # The mkromfs arguments for including the PCL fonts if COMPILE_INITS=1
-PCLXL_ROMFS_ARGS?= -c -P ../urwfonts -d ttfonts /
+PCLXL_ROMFS_ARGS?= -c -P ../urwfonts -d ttfonts /*.ttf
 XLDFLAGS=
 EXTRALIBS=
 UFST_OBJ=
