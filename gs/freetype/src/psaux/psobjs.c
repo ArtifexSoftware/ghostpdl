@@ -1621,13 +1621,11 @@
 
     if ( builder->parse_state == T1_Parse_Have_Path )
       error = PSaux_Err_Ok;
-    else if ( builder->parse_state == T1_Parse_Have_Moveto )
-    {
-      builder->parse_state = T1_Parse_Have_Path;
-      error = t1_builder_add_contour( builder );
-      if ( !error )
-        error = t1_builder_add_point1( builder, x, y );
-    }
+
+    builder->parse_state = T1_Parse_Have_Path;
+    error = t1_builder_add_contour( builder );
+    if ( !error )
+      error = t1_builder_add_point1( builder, x, y );
 
     return error;
   }
