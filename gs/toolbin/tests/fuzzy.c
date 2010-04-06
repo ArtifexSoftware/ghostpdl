@@ -7,6 +7,7 @@
 #include <string.h>
 #include <memory.h>
 #include <sys/stat.h>
+#include <math.h>
 
 typedef unsigned char uchar;
 typedef int bool;
@@ -50,6 +51,8 @@ struct _FuzzyReport {
   int n_diff;
   int n_outof_tolerance;
   int n_outof_window;
+  double max_color_error;
+  double avg_color_error;
 };
 
 static off_t
@@ -483,6 +486,8 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   int x0 = -2, y0 = -2, mc = 0, mmax = 10;
   int y;
   int rcode = 0;
+  double diff[3];
+  double color_diff;
 
   if (image_out != NULL)
     {
@@ -541,6 +546,26 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 	          rowmid1[x * 3 + 2] != rowmid2[x * 3 + 2])
 	        {
 	          freport->n_diff++;
+                  /* If max error is the largest it can be in a 3 band 
+                     unsigned char image, then stop collecting this
+                     information since we are likely dealing with a half
+                     tone image and the max color error is not of interest */
+                  if ( freport->max_color_error < 440) { 
+                      diff[0] = rowmid1[x * 3] - rowmid2[x * 3];
+                      diff[1] = rowmid1[x * 3 + 1] - rowmid2[x * 3 + 1];
+                      diff[2] = rowmid1[x * 3 + 2] - rowmid2[x * 3 + 2];
+                      color_diff = sqrt(diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]); 
+                      if (color_diff > freport->max_color_error) {
+                        freport->max_color_error = color_diff;
+                      }
+                      if( freport->n_diff == 1) {   
+                        freport->avg_color_error = color_diff;
+                      } else {
+                        freport->avg_color_error = 
+                            ( freport->avg_color_error*(freport->n_diff-1) + 
+                              color_diff) / freport->n_diff;
+                      }
+                  }
 	          if (abs (rowmid1[x * 3] - rowmid2[x * 3]) > tolerance ||
 		      abs (rowmid1[x * 3 + 1] - rowmid2[x * 3 + 1]) > tolerance ||
 		      abs (rowmid1[x * 3 + 2] - rowmid2[x * 3 + 2]) > tolerance)
@@ -758,6 +783,8 @@ main (int argc, char **argv)
     freport.n_diff = 0;
     freport.n_outof_tolerance = 0;
     freport.n_outof_window = 0;
+    freport.avg_color_error = 0;
+    freport.max_color_error = 0;
     if (fuzzy_diff_images (image1, image2, &fparams, &freport, image_out))
 	return 1;
     if (image_out)
@@ -765,9 +792,10 @@ main (int argc, char **argv)
     image_out = NULL;
     if (freport.n_diff > 0)
     {
-      printf ("%s: page %d: %d different, %d out of tolerance, %d out of window\n",
+      printf ("%s: page %d: %d diff., %d out of tol., %d out of win., %3.2lf avg diff, %3.2lf max diff\n",
  	      fn[0], page, freport.n_diff, freport.n_outof_tolerance,
-	      freport.n_outof_window);
+	      freport.n_outof_window,freport.avg_color_error, 
+              freport.max_color_error);
       rcode = MAX(rcode, 1);
     }
     if (freport.n_outof_window > 0)
