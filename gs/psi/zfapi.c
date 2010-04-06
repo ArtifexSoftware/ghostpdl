@@ -54,6 +54,7 @@
 #include "gxchar.h"		/* for st_gs_show_enum */
 #include "ipacked.h"	    /* for packed_next */
 #include "iddict.h"
+#include "ifont42.h"        /* for string_array_access_proc */
 
 /* -------------------------------------------------------- */
 
@@ -1819,7 +1820,7 @@ retry_oversampling:
                Call get_font_proportional_feature for proper choice.
             */
 	} else {
-            ref *CIDMap, Str;
+            ref *CIDMap;
             byte *Map;
             int ccode = client_char_code;
             int gdb = 2;
@@ -1838,7 +1839,7 @@ retry_oversampling:
                if (r_has_type(CIDMap, t_array)) {
 
                     /* Too big for single string, so its an array of 2 strings */
-                    code = string_array_access_proc(pbfont->memory, CIDMap, 1, client_char_code * gdb, gdb, NULL, NULL, &Map);
+                    code = string_array_access_proc(pbfont->memory, CIDMap, 1, client_char_code * gdb, gdb, NULL, NULL, (const byte **)&Map);
 
                 } else {
                     if (CIDMap->tas.rsize < ccode * gdb) {
