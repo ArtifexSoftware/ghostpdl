@@ -68,8 +68,8 @@ mem_full_alpha_device("image64", 64, 0, mem_open,
 #else
 /* Unpack a color into 32 bit chunks. */
 #  define declare_unpack_color(abcd, efgh, color)\
-	bits32 abcd = (bits32)((0x000000ff & ((color) >> 56)) |\
-		               (0x0000ff00 & ((color) >> 40)) |\
+	bits32 abcd = (bits32)((0x000000ff & (((color) >> 28) >> 28)) |\
+		               (0x0000ff00 & (((color) >> 24) >> 16)) |\
 		               (0x00ff0000 & ((color) >> 24)) |\
 		               (0xff000000 & ((color) >> 8)));\
 	bits32 efgh = (bits32)((0x000000ff & ((color) >> 24)) |\

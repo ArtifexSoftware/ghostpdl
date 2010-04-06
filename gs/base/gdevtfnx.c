@@ -107,6 +107,8 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
     TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE, 4);
     tiff_set_rgb_fields(tfdev);
 
+    TIFFCheckpointDirectory(tfdev->tif);
+
     /* Write the page data. */
     {
 	int y;

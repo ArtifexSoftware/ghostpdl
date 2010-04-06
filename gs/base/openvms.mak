@@ -486,12 +486,6 @@ $(GENHT_XE) : $(GLOBJDIR)genht.$(OBJ)
 $(GLOBJ)genht.$(OBJ) :  $(GLSRC)genht.c $(GENHT_DEPS)
 	$(CCAUX)/obj=$(GLOBJ)genht.$(OBJ) $(GENHT_CFLAGS) $(GLSRC)genht.c
 
-$(GENINIT_XE) : $(GLOBJDIR)geninit.$(OBJ)
-	LINK/EXE=$@ $(GLOBJ)geninit.$(OBJ)
-
-$(GLOBJ)geninit.$(OBJ) :  $(GLSRC)geninit.c $(GENINIT_DEPS)
-	$(CCAUX)/obj=$(GLOBJ)geninit.$(OBJ)  $(GLSRC)geninit.c
-
 $(GLOBJ)mkromfs.$(OBJ) :  $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS)
 	$(CCAUX)/obj=$(GLOBJ)mkromfs.$(OBJ) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(GLSRC)mkromfs.c
 

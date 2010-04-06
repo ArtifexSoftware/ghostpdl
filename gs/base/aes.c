@@ -42,6 +42,8 @@
 #include "string_.h"	/* memcmp() */
 #include "aes.h"
 
+#define XYSSL_AES_ROM_TABLES 1 /* avoid regenerating tables each time */
+
 /*
  * 32-bit integer manipulation macros (little endian)
  */

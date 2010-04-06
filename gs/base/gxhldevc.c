@@ -81,7 +81,7 @@ gx_hld_save_color(const gs_imager_state * pis, const gx_device_color * pdevc,
 	 * may be the same but for differing high level colors (due to the
 	 * usual lower resolution of the gx_color_index values.
 	 */
-        const gs_color_space * pcs = pgs->color_space;
+        const gs_color_space * pcs = gs_currentcolorspace_inline(pgs);
         int i = gs_color_space_num_components(pcs);
 
         psc->color_space_id = pcs->id;
@@ -158,7 +158,7 @@ gx_hld_get_color_space_and_ccolor(const gs_imager_state * pis,
     /* Check if the current color space was used to build the device color */
     if (gx_hld_is_hl_color_available(pis, pdevc)) {
 	const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
-        const gs_color_space * pcs = pgs->color_space;
+        const gs_color_space * pcs = gs_currentcolorspace_inline(pgs);
 
 	*ppcs = pcs;
 	*ppcc = &(pdevc->ccolor);
@@ -187,7 +187,7 @@ gx_hld_get_number_color_components(const gs_imager_state * pis)
     const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
 
     if (pgs != NULL) {
-        const gs_color_space * pcs = pgs->color_space;
+        const gs_color_space * pcs = gs_currentcolorspace_inline(pgs);
 	int n = gs_color_space_num_components(pcs);
 
 	return (n >= 0 ? n : -n - 1);

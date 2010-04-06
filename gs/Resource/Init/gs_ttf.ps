@@ -1000,8 +1000,18 @@ mark
     needsort {
       { lt } bind .sort	 % stack: locatable_array
     } if
+    % Drop 'loca' entries that point beyond 'glyf' table. Bug 691221.
+    dup numloca 1 sub get len1 ge {
+      0 1 numloca 1 sub {
+        2 copy get len1 ge {
+          0 exch getinterval exit
+        } {
+          pop
+        } ifelse
+      } for
+    } if
     /splitarray [
-      3 -1 roll 0 1 numloca 1 sub {
+      3 -1 roll 0 1 2 index length 1 sub {
 	% stack: /splitarray -mark- { splitlen splitlen ... } locatable_array index
 	1 index exch get dup prevsplit maxstring add gt {
 	  prevboundary prevsplit sub exch

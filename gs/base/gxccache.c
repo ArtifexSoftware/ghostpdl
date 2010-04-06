@@ -259,7 +259,7 @@ int
 gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 {
     register gs_state *pgs = penum->pgs;
-    gx_device_color *pdevc = pgs->dev_color;
+    gx_device_color *pdevc = gs_currentdevicecolor_inline(pgs);
     int x, y, w, h, depth;
     int code;
     gs_fixed_point pt;

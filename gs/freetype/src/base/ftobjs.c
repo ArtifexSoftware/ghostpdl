@@ -29,7 +29,6 @@
 #include FT_TRUETYPE_TABLES_H
 #include FT_TRUETYPE_TAGS_H
 #include FT_TRUETYPE_IDS_H
-#include FT_OUTLINE_H
 
 #include FT_SERVICE_SFNT_H
 #include FT_SERVICE_POSTSCRIPT_NAME_H
@@ -3112,7 +3111,7 @@
     if ( face && face->charmap )
     {
       gindex = FT_Get_Char_Index( face, 0 );
-      if ( gindex == 0 )
+      if ( gindex == 0 || gindex >= (FT_UInt)face->num_glyphs )
         result = FT_Get_Next_Char( face, 0, &gindex );
     }
 
@@ -3140,7 +3139,10 @@
       FT_CMap    cmap = FT_CMAP( face->charmap );
 
 
+      do {
       gindex = cmap->clazz->char_next( cmap, &code );
+      } while ( gindex >= (FT_UInt)face->num_glyphs );
+
       result = ( gindex == 0 ) ? 0 : code;
     }
 

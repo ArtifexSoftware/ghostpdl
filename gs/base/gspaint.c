@@ -81,7 +81,8 @@ gs_fillpage(gs_state * pgs)
 
     gx_set_dev_color(pgs);
 
-    code = (*dev_proc(dev, fillpage))(dev, (gs_imager_state *)pgs, pgs->dev_color);
+    code = (*dev_proc(dev, fillpage))(dev, (gs_imager_state *)pgs,
+				      gs_currentdevicecolor_inline(pgs));
     if (code < 0)
 	return code;
     return (*dev_proc(dev, sync_output)) (dev);
@@ -96,7 +97,7 @@ alpha_buffer_bits(gs_state * pgs)
 {
     gx_device *dev;
 
-    if (!color_is_pure(pgs->dev_color))
+    if (!color_is_pure(gs_currentdevicecolor_inline(pgs)))
 	return 0;
     dev = gs_currentdevice_inline(pgs);
     if (gs_device_is_abuf(dev)) {
@@ -243,23 +244,9 @@ alpha_buffer_release(gs_state * pgs, bool newpath)
     return code;
 }
 
-/* Fill the current path using a specified rule. */
-static int
-fill_with_rule(gs_state * pgs, int rule)
+static int do_fill(gs_state *pgs, int rule)
 {
-    int code;
-
-    /* If we're inside a charpath, just merge the current path */
-    /* into the parent's path. */
-    if (pgs->in_charpath)
-	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
-				     pgs->in_charpath);
-    else if (gs_is_null_device(pgs->device)) {
-	/* Handle separately to prevent gs_state_color_load - bug 688308. */
-	gs_newpath(pgs);
-	code = 0;
-    } else {
-	int abits, acode, rcode = 0;
+    int code, abits, acode, rcode = 0;
 
 	/* Here we need to distinguish text from vectors to compute the object tag.
 	   Actually we need to know whether this function is called to rasterize a character,
@@ -307,15 +294,35 @@ fill_with_rule(gs_state * pgs, int rule)
 		return acode;
 	} else
 	    acode = 0;
-	code = gx_fill_path(pgs->path, pgs->dev_color, pgs, rule,
+    code = gx_fill_path(pgs->path, gs_currentdevicecolor_inline(pgs), pgs, rule,
 			    pgs->fill_adjust.x, pgs->fill_adjust.y);
 	if (acode > 0)
 	    rcode = alpha_buffer_release(pgs, code >= 0);
-	if (code >= 0)
-	    gs_newpath(pgs);
 	if (code >= 0 && rcode < 0)
 	    code = rcode;
 
+    return code;
+    }
+
+/* Fill the current path using a specified rule. */
+static int
+fill_with_rule(gs_state * pgs, int rule)
+{
+    int code;
+
+    /* If we're inside a charpath, just merge the current path */
+    /* into the parent's path. */
+    if (pgs->in_charpath)
+	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
+				     pgs->in_charpath);
+    else if (gs_is_null_device(pgs->device)) {
+	/* Handle separately to prevent gs_state_color_load - bug 688308. */
+	gs_newpath(pgs);
+	code = 0;
+    } else {
+        code = do_fill(pgs, rule);
+	if (code >= 0)
+	    gs_newpath(pgs);
     }
     return code;
 }
@@ -334,35 +341,10 @@ gs_eofill(gs_state * pgs)
     return fill_with_rule(pgs, gx_rule_even_odd);
 }
 
-/* Stroke the current path */
-int
-gs_stroke(gs_state * pgs)
+static int
+do_stroke(gs_state * pgs)
 {
-    int code;
-
-    /*
-     * If we're inside a charpath, just merge the current path
-     * into the parent's path.
-     */
-    if (pgs->in_charpath) {
-	if (pgs->in_charpath == cpm_true_charpath) {
-	    /*
-	     * A stroke inside a true charpath should do the
-	     * equivalent of strokepath.
-	     */
-	    code = gs_strokepath(pgs);
-	    if (code < 0)
-		return code;
-	}
-	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
-				     pgs->in_charpath);
-    }
-    if (gs_is_null_device(pgs->device)) {
-	/* Handle separately to prevent gs_state_color_load. */
-	gs_newpath(pgs);
-	code = 0;
-    } else {
-	int abits, acode, rcode = 0;
+    int code, abits, acode, rcode = 0;
 
         /* to distinguish text from vectors we hackly look at the
            target device 1 bit per component is a cache and this is
@@ -404,6 +386,7 @@ gs_stroke(gs_state * pgs)
 	else {
             gs_set_object_tag(pgs, GS_TEXT_TAG);
 	}
+    /* Evil: The following call is a macro that might return! */
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);
 	if (code < 0)
@@ -446,7 +429,7 @@ gs_stroke(gs_state * pgs)
 	    gs_setlinewidth(pgs, orig_width);
 	    scale_dash_pattern(pgs, 1.0 / scale);
 	    if (code >= 0)
-		code = gx_fill_path(&spath, pgs->dev_color, pgs,
+	    code = gx_fill_path(&spath, gs_currentdevicecolor_inline(pgs), pgs,
 				    gx_rule_winding_number,
 				    pgs->fill_adjust.x,
 				    pgs->fill_adjust.y);
@@ -456,10 +439,42 @@ gs_stroke(gs_state * pgs)
 		rcode = alpha_buffer_release(pgs, code >= 0);
 	} else
 	    code = gx_stroke_fill(pgs->path, pgs);
-	if (code >= 0)
-	    gs_newpath(pgs);
 	if (code >= 0 && rcode < 0)
 	    code = rcode;
+    return code;
+    }
+
+/* Stroke the current path */
+int
+gs_stroke(gs_state * pgs)
+{
+    int code;
+
+    /*
+     * If we're inside a charpath, just merge the current path
+     * into the parent's path.
+     */
+    if (pgs->in_charpath) {
+	if (pgs->in_charpath == cpm_true_charpath) {
+	    /*
+	     * A stroke inside a true charpath should do the
+	     * equivalent of strokepath.
+	     */
+	    code = gs_strokepath(pgs);
+	    if (code < 0)
+    return code;
+}
+	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
+				     pgs->in_charpath);
+    }
+    if (gs_is_null_device(pgs->device)) {
+	/* Handle separately to prevent gs_state_color_load. */
+	gs_newpath(pgs);
+	code = 0;
+    } else {
+        code = do_stroke(pgs);
+	if (code >= 0)
+	    gs_newpath(pgs);
     }
     return code;
 }

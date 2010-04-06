@@ -5,7 +5,7 @@
 # This definition is changed on install to match the
 # executable name set in the makefile
 GS_EXECUTABLE=gs
-gs="`dirname $0`/$GS_EXECUTABLE"
+gs="`dirname \"$0\"`/$GS_EXECUTABLE"
 if test ! -x "$gs"; then
 	gs="$GS_EXECUTABLE"
 fi
@@ -23,8 +23,8 @@ do
 done
 
 if [ $# -ne 1 ]; then
-	echo "Usage: `basename $0` input.pdf" 1>&2
+	echo "Usage: `basename \"$0\"` input.pdf" 1>&2
 	exit 1
 fi
 
-exec "$GS_EXECUTABLE" -q -dNODISPLAY $OPTIONS -- "`dirname $0`/dumphint.ps" "$1"
+exec "$GS_EXECUTABLE" -q -dNODISPLAY $OPTIONS -- "`dirname \"$0\"`/dumphint.ps" "$1"

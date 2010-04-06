@@ -9,6 +9,8 @@ my $verbose=0;
 
 # todo:
 #
+# allow option to be passed to ./autogen.sh (i.e. FT_BRIDGE=1)
+#
 # options: --retest : retest only those files that failed last time
 #          --minimal (X) : test only X percentage of files (x defaults to 10)
 #          --early (N) : stop test if more than N changes on a node (N defaults to 10)
@@ -23,6 +25,7 @@ my $verbose=0;
 
 my %products=('abort' =>1,
               'bmpcmp' =>1,
+              'localbmpcmp' =>1,
               'gs' =>1,
               'pcl'=>1,
               'svg'=>1,
@@ -39,15 +42,35 @@ if ($product && $product eq "highres") {
   $product=shift;
   $res="highres";
 }
-my $user=shift;
-if ($user && $user eq "lowres") {
-  $user=shift;
+my $localbmpcmp="";
+if ($product && $product eq "localbmpcmp") {
+  my $filename=shift;
+  die "filename required after localbmpcmp option" if (!$filename);
+  open (F,"<$filename") || die "file $filename not found";
+  while(<F>) {
+    $localbmpcmp.=$_;
+  }
+  close(F);
+}
+my $user;
+my $command="";
+my $t1;
+while ($t1=shift) {
+  if ($t1 eq "lowres") {
   $res="lowres";
-}
-if ($user && $user eq "highres") {
-  $user=shift;
+  } elsif ($t1 eq "highres") {
   $res="highres";
+  } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
+    $command.=$t1.' ';
+  } else {
+    $user=$t1;
 }
+}
+
+$product="" if (!$product);
+$user=""    if (!$user);
+
+#print "product=$product res=$res user=$user command=$command localbmpcmp=$localbmpcmp\n";  exit;
 
 unlink "cluster_command.run";
 
@@ -77,8 +100,8 @@ if ($directory ne 'gs' && $directory ne 'ghostpdl') {
   }
 }
 
-$directory="gs" if ($directory eq "" && $product eq "bmpcmp");
-$directory="gs" if ($directory eq "" && $product eq "abort");
+#$directory="gs" if ($directory eq "" && $product eq "bmpcmp");
+$directory="gs" if ($directory eq "" && $product && $product eq "abort");
 
 die "can't figure out if this is a ghostscript or ghostpdl directory" if ($directory eq "");
 
@@ -118,7 +141,7 @@ my $cmd="rsync -avxcz".
 " .".
 " regression\@$host:$dir/$user/$directory";
 
-if ($product ne "abort" && $product ne "bmpcmp") {
+if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
   print STDERR "syncing\n";
 print "$cmd\n" if ($verbose);
 #`$cmd`;
@@ -132,7 +155,14 @@ close(T);
 
 open(F,">cluster_command.run");
 print F "$user $product $res\n";
+print F "$command\n";
+print F "$localbmpcmp" if ($localbmpcmp);
 close(F);
+
+$cmd="rsync -avxcz".
+" -e \"ssh -l regression -i \\\"\$HOME/.ssh/cluster_key\\\"\"".
+" cluster_command.run".
+" regression\@$host:$dir/$user/$directory";
 
 if ($product ne "abort") {
   print STDERR "\nqueueing\n";

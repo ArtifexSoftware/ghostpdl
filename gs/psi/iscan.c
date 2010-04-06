@@ -329,9 +329,9 @@ scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
 					       rstate, 1, cont);
 	    }
     }
-    /* No more data available, but no exception.  How can this be? */
-    lprintf("Can't refill scanner input buffer!");
-    return_error(e_Fatal);
+    /* No more data available, but no exception. */
+    /* A filter is consuming headers but returns nothing. */
+    return 0;
 }
 
 /*

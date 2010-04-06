@@ -540,12 +540,13 @@ gx_set_cmap_procs(gs_imager_state * pis, const gx_device * dev)
 int
 gx_remap_color(gs_state * pgs)
 {
-    const gs_color_space *pcs = pgs->color_space;
+    const gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
     int                   code;
 
     /* The current color in the graphics state is always used for */
     /* the texture, never for the source. */
-    code = (*pcs->type->remap_color) (pgs->ccolor, pcs, pgs->dev_color,
+    code = (*pcs->type->remap_color) (gs_currentcolor_inline(pgs),
+				      pcs, gs_currentdevicecolor_inline(pgs),
 				      (gs_imager_state *) pgs, pgs->device,
 				      gs_color_select_texture);
     /* if overprint mode is in effect, update the overprint information */
@@ -1548,8 +1549,8 @@ int
 cmyk_16bit_map_color_cmyk(gx_device * dev, gx_color_index color,
 			  gx_color_value pcv[4])
 {
-    pcv[0] = (color >> 48) & 0xffff;
-    pcv[1] = (color >> 32) & 0xffff;
+    pcv[0] = ((color >> 24) >> 24) & 0xffff;
+    pcv[1] = ((color >> 16) >> 16) & 0xffff;
     pcv[2] = (color >> 16) & 0xffff;
     pcv[3] = (color) & 0xffff;
     return 0;

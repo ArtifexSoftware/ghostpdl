@@ -9,13 +9,14 @@ use POSIX ":sys_wait_h";
 use File::stat;
 
 my $updateTestFiles=1;
+my $dontBuild=0;
 
 my $debug=0;
 my $debug2=0;
 my $verbose=0;
 
 my $wordSize="64";
-my $timeOut=240;
+my $timeOut=300;
 my $maxTimeout=20;  # starting value, is adjusted by value below based on jobs completed
 my $maxTimeoutPercentage=1.0;
 
@@ -30,6 +31,8 @@ my %timeOuts;
 my $machine=shift || die "usage: run.pl machine_name";
 
 my $local=0;
+$dontBuild=1     if ($machine eq "local_no_build");
+$machine="local" if ($machine eq "local_no_build");
 $local=1 if ($machine eq "local");
 $timeOut=600 if ($local);
 
@@ -54,6 +57,7 @@ if ($local) {
 my $user;
 my $revs;
 my $icc_work;
+my $mupdf;
 #my $product;
 my @commands;
 
@@ -109,7 +113,7 @@ close(F);
 
 mylog "starting run.pl:  pid=$$\n";
 
-{
+if (0) {
   mylog "about to kill any jobs still running from previous regression\n";
   my $a=`ps -ef | grep nice | grep temp | grep true | grep -v grep`;
   my @a=split '\n',$a;
@@ -131,6 +135,12 @@ if (open(F,"<$machine.start")) {
     if ($a[0] eq "svn") {
       $revs=$a[1];
       $products=$a[2];
+    } elsif ($a[0] eq "mupdf") {
+      $mupdf=1;
+      $products="mupdf";
+$maxCount=4;
+$maxTimeoutPercentage=5.0;
+$timeOut=600;
     } elsif ($a[0] eq "svn-icc_work") {
       $icc_work=$a[1];
       $products=$a[2];
@@ -155,8 +165,9 @@ if (open(F,"<$machine.start")) {
 mylog "user products=$products user=$user\n" if ($user);
 mylog "svn products=$products rev=$revs\n" if ($revs);
 mylog "icc_work products=$products rev=$icc_work\n" if ($icc_work);
+mylog "mupdf\n" if ($mupdf);
 
-my $host="casper3.ghostscript.com";
+my $host="casper.ghostscript.com";
 
 my $desiredRev;
 
@@ -170,6 +181,7 @@ my $temp2="./temp.tmp";
 my $raster="./temp/raster";
 my $bmpcmpOutput="./temp/bmpcmp";
 my $baselineRaster="./baselineraster";
+my $baselineRaster2="./baselineraster.tmp";
 
 my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
@@ -313,8 +325,6 @@ sub spawn($$) {
       die "fork() failed";
     } elsif ($pid == 0) {
       exec($s);
-#     mylog "exec() failed";  # these produces a perl warning
-#     die "exec() failed";
       exit(0);
     } else {
       if ($timeout==0) {
@@ -364,18 +374,6 @@ if (!$local) {
   mylog($message);
 }
 
-`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
-`rm -f 0*debug.icc`;
-`rm -f 1*debug.icc`;
-`rm -f 2*debug.icc`;
-`rm -f 3*debug.icc`;
-`rm -f 4*debug.icc`;
-`rm -f 5*debug.icc`;
-`rm -f 6*debug.icc`;
-`rm -f 7*debug.icc`;
-`rm -f 8*debug.icc`;
-`rm -f 9*debug.icc`;
-
 if (!$local) {
 if (!$user) {
   updateStatus('Updating test files');
@@ -390,7 +388,6 @@ if (!$user) {
     }
 
   }
-}
 }
 
 $abort=checkAbort;
@@ -410,6 +407,18 @@ if (!$abort) {
 
     $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
     $gsSource=$gpdlSource."/gs";
+  } elsif ($mupdf) {
+    updateStatus('Fetching mupdf.tar.gz');
+    `touch mupdf ; rm -fr mupdf; touch mupdf.tar.gz ; rm mupdf.tar.gz`;
+    for (my $retry=0;  $retry<5;  $retry++) {
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
+      last if ($?==0);
+      my $b=$?;
+      chomp $a;
+      mylog "mupdf_retry=$retry;  a=$a;  \$?=$b";
+      sleep 10;
+    }
+ 
   } elsif ($icc_work) {
 
     if (!-e $icc_workGsSource) {
@@ -441,8 +450,20 @@ if (!$abort) {
   print "$cmd\n" if ($verbose);
   `$cmd`;
 }
+}
 
-mkdir "baselineraster";
+#`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
+`svn update $baseDirectory/ghostpdl/gs`;
+`cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
+
+mkdir("$gsBin");
+mkdir("$gsBin/bin");
+
+
+$cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
+print "$cmd\n" if ($verbose);
+`$cmd`;
+
 $cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; mkdir $raster ; mkdir $bmpcmpOutput ; touch raster.yes ; rm -fr $temp2 &";
 print "$cmd\n" if ($verbose);
 `$cmd`;
@@ -471,10 +492,35 @@ if (!$abort) {
   unlink "$gpdlSource/makexps.out";
   unlink "$gpdlSource/makesvg.out";
 
+if (!$dontBuild) {
   if (-e "./head/bin/gs") {
     `cp -p ./head/bin/* $gsBin/bin/.`;
   }
+}
 
+if (!$dontBuild) {
+  if ($mupdf) {
+    updateStatus('Building mupdf');
+    $cmd="touch mupdf.tar ; rm mupdf.tar ; gunzip mupdf.tar.gz ; tar xf mupdf.tar";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+    if (-e "./Jamrules") {
+      $cmd="cp -p Jamrules mupdf/.";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+    }
+    $cmd="cd mupdf ; jam >makemupdf.out";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+      
+
+    $cmd="touch gs/bin/mupdf ; rm gs/bin/mupdf ; cp -p mupdf/build/*/pdfdraw gs/bin/.";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+  }
+}
+
+if (!$dontBuild) {
   if ($products{'gs'}) {
 
     updateStatus('Building Ghostscript');
@@ -500,8 +546,10 @@ if (!$abort) {
     }
   }
 } 
+} 
 
 $abort=checkAbort;
+if (!$dontBuild) {
 if ($products{'pcl'} && !$abort) {
   updateStatus('Building GhostPCL');
   $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; echo >>makepcl.out ;  nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
@@ -518,8 +566,10 @@ if ($products{'pcl'} && !$abort) {
     $compileFail.="pcl6 ";
   }
 }
+}
 
 $abort=checkAbort;
+if (!$dontBuild) {
 if ($products{'xps'} && !$abort) {
   updateStatus('Building GhostXPS');
   $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; echo >>makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
@@ -536,8 +586,10 @@ if ($products{'xps'} && !$abort) {
     $compileFail.="gxps ";
   }
 }
+}
 
 $abort=checkAbort;
+if (!$dontBuild) {
 if ($products{'svg'} && !$abort) {
   updateStatus('Building GhostSVG');
   $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; echo >>makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
@@ -553,6 +605,7 @@ if ($products{'svg'} && !$abort) {
   } else {
     $compileFail.="gsvg ";
   }
+}
 }
 
 unlink "link.icc","wts_plane_0","wts_plane_1","wts_plane_2","wts_plane_3";
@@ -700,6 +753,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
       while (exists $children{$p}) {
 #       mylog "$p->$children{$p}\n";  # mhw
         $p=$children{$p};
+        $name{$p}='missing' if (!exists $name{$p});
         mylog ("killing (timeout 1) $p $name{$p}\n");
         kill 1, $p;
         kill 9, $p;
@@ -735,7 +789,12 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
   }
     }
 
-  if (scalar(@commands)>0 && $count<$maxCount) {
+  my $clusterRegressionRunning=0;
+  $clusterRegressionRunning=1 if ($local && -e "/home/marcos/cluster/$runningSemaphore");  # hack: directory name shouldn't be hard coded
+  sleep 5 if ($clusterRegressionRunning);
+
+
+  if (scalar(@commands)>0 && $count<$maxCount && !$clusterRegressionRunning) {
     my $n=rand(scalar @commands);
     my @a=split '\t',$commands[$n];
     splice(@commands,$n,1);
@@ -767,7 +826,6 @@ my @files = <$raster/*>;
 my $count = @files;
 my $count2=scalar (keys %timeOuts);
 unlink('raster.yes') if ($count>$maxRaster);
-$maxCount=16 if ($count>$maxRaster);
 mylog("$raster file count=$count timeOuts=$count2 maxTimeout=$maxTimeout");
 
 
@@ -834,7 +892,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
     my %children;
     my %name;
     foreach (@a) {
-      if (m/\S+ +(\d+) +(\d+)/ && !m/<defunct>/ && !m/\(sh\)/) {
+      if (m/\S+ +(\d+) +(\d+) .+ \d\d:\d\d:\d\d (.+)$/ && !m/<defunct>/ && !m/\(sh\)/) {
         $children{$2}=$1;
         $name{$1}=$3;
       }
@@ -846,6 +904,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
         while (exists $children{$p}) {
 #         mylog "$p->$children{$p}\n"; # mhw
           $p=$children{$p};
+          $name{$p}='missing' if (!exists $name{$p});
           mylog ("killing (timeout 2) $p $name{$p}\n");
           kill 1, $p;
           kill 9, $p;

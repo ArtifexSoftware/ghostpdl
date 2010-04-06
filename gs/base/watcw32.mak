@@ -417,11 +417,6 @@ $(GENHT_XE): $(GLSRC)genht.c $(GENHT_DEPS)
 	$(CCAUX) $(GENHT_CFLAGS) $(GLSRC)genht.c $(O_)$(GLOBJ)genht.obj 
 	$(LINK) FILE $(GLOBJ)genht.obj NAME $(GENHT_XE)
 
-# PSSRC and PSOBJ aren't defined yet, so we spell out the definitions.
-$(GENINIT_XE): $(PSSRCDIR)$(D)geninit.c $(GENINIT_DEPS)
-	$(CCAUX) $(PSSRCDIR)$(D)geninit.c $(O_)$(PSOBJDIR)$(D)geninit.obj 
-	$(LINK) FILE $(GLOBJ)geninit.obj NAME $(GENINIT_XE)
-
 # -------------------------------- Library -------------------------------- #
 
 # make sure the target directories exist - use special Watcom .BEFORE

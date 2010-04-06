@@ -1194,11 +1194,12 @@ devn_encode_compressed_color(gx_device *pdev, const gx_color_value colors[],
 
     /*
      * We keep a list of which colorant combinations we have used.  Make
-     * sure that this list has been initialized.
+     * sure that this list has been initialized. Alloc in stable_memory
+     * to make it immune to restore.
      */
     if (pdevn_params->compressed_color_list == NULL) {
         pdevn_params->compressed_color_list =
-		init_compressed_color_list(pdev->memory);
+		init_compressed_color_list(pdev->memory->stable_memory);
         if (pdevn_params->compressed_color_list == NULL)
 	    return NON_ENCODEABLE_COLOR;	/* Unable to initialize list */
     }
@@ -1214,11 +1215,13 @@ devn_encode_compressed_color(gx_device *pdev, const gx_color_value colors[],
 
     /*
      * If our new colorant list was not found then add it to our encode color
-     * list.
+     * list. This needs to be in stable_memory to be immune to 'restore'.
      */
     if (!found) {
-	added = add_compressed_color_list(pdev->memory, &new_comp_bit_map,
-				pdevn_params->compressed_color_list, &list_index);
+	added = add_compressed_color_list(pdev->memory->stable_memory,
+					&new_comp_bit_map,
+					pdevn_params->compressed_color_list,
+					&list_index);
 	if (!added)
 	    return NON_ENCODEABLE_COLOR;
 	pbit_map = &new_comp_bit_map;

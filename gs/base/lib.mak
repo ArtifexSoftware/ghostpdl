@@ -2073,7 +2073,8 @@ $(GLD)psf0lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)cmaplib.dev $(psf0lib_)
 
 $(GLOBJ)gschar0.$(OBJ) : $(GLSRC)gschar0.c $(GXERR) $(memory__h)\
  $(gsfcmap_h) $(gsstruct_h)\
- $(gxdevice_h) $(gxfcmap_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxtext_h)
+ $(gxdevice_h) $(gxfcmap_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h)\
+ $(gxfcid_h) $(gxtext_h)
 	$(GLCC) $(GLO_)gschar0.$(OBJ) $(C_) $(GLSRC)gschar0.c
 
 $(GLOBJ)gsfont0.$(OBJ) : $(GLSRC)gsfont0.c $(GXERR) $(memory__h)\
@@ -2927,7 +2928,6 @@ GENHT_DEPS=$(malloc__h) $(stdio__h) $(string__h)\
  $(GLSRC)scantab.c $(GLOBJ)scantab.$(OBJ)\
  $(GLSRC)sstring.c $(GLOBJ)sstring.$(OBJ)
 GENHT_CFLAGS=$(I_)$(GLI_)$(_I) $(GLF_)
-# GENINIT_DEPS is in int.mak
 
 # ============================= Main program ============================== #
 

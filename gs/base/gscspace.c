@@ -294,7 +294,7 @@ void rc_decrement_only_cs(gs_color_space *pcs, const char *cname)
 
 void cs_adjust_counts_icc(gs_state *pgs, int delta)
 {
-    gs_color_space *pcs = pgs->color_space;
+    gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
 
     if (pcs) {
         if (pcs->cmm_icc_profile_data != NULL) {
@@ -471,6 +471,7 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
     gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
     gx_color_index          drawn_comps = 0;
     gs_overprint_params_t   params;
+    gx_device_color        *pdc;
 
     /* check if we require special handling */
     if ( !pgs->overprint                      ||
@@ -489,13 +490,14 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
 
     /* correct for any zero'ed color components */
     pgs->effective_overprint_mode = 1;
-    if (color_is_set(pgs->dev_color)) {
+    pdc = gs_currentdevicecolor_inline(pgs);
+    if (color_is_set(pdc)) {
         gx_color_index  nz_comps;
         int             code;
         dev_color_proc_get_nonzero_comps((*procp));
 
-        procp = pgs->dev_color->type->get_nonzero_comps;
-        if ((code = procp(pgs->dev_color, dev, &nz_comps)) < 0)
+        procp = pdc->type->get_nonzero_comps;
+        if ((code = procp(pdc, dev, &nz_comps)) < 0)
             return code;
         drawn_comps &= nz_comps;
     }

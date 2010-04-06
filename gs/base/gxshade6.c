@@ -889,6 +889,8 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
     int code;
     fixed ybot = max(ybot0, swap_axes ? pfs->rect.p.x : pfs->rect.p.y);
     fixed ytop = min(ytop0, swap_axes ? pfs->rect.q.x : pfs->rect.q.y);
+    fixed xleft  = (swap_axes ? pfs->rect.p.y : pfs->rect.p.x);
+    fixed xright = (swap_axes ? pfs->rect.q.y : pfs->rect.q.x);
     vd_save;
 
     if (ybot > ytop)
@@ -898,6 +900,395 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 	    return 0;
 #   endif
     make_trapezoid(q, vi0, vi1, vi2, vi3, ybot, ytop, swap_axes, orient, &le, &re);
+    if (!pfs->inside) {
+        bool clip = false;
+
+        /* We are asked to clip a trapezoid to a rectangle. If the rectangle
+         * is entirely contained within the rectangle, then no clipping is
+         * actually required. If the left edge is entirely to the right of
+         * the rectangle, or the right edge is entirely to the left, we
+         * clip away to nothing. If the left edge is entirely to the left of
+         * the rectangle, then we can simplify it to a vertical edge along
+         * the edge of the rectangle. Likewise with the right edge if it's
+         * entirely to the right of the rectangle.*/
+        if (le.start.x > xright) {
+            if (le.end.x > xright) {
+                return 0;
+            }
+            clip = true;
+        } else if (le.end.x > xright) {
+            clip = true;
+        }
+        if (le.start.x < xleft) {
+            if (le.end.x < xleft) {
+                le.start.x = xleft;
+                le.end.x   = xleft;
+                le.start.y = ybot;
+                le.end.y   = ytop;
+            } else {
+                clip = true;
+            }
+        } else if (le.end.x < xleft) {
+            clip = true;
+        }
+        if (re.start.x < xleft) {
+            if (re.end.x < xleft) {
+                return 0;
+            }
+            clip = true;
+        } else if (re.end.x < xleft) {
+            clip = true;
+        }
+        if (re.start.x > xright) {
+            if (re.end.x > xright) {
+                re.start.x = xright;
+                re.end.x   = xright;
+                re.start.y = ybot;
+                re.end.y   = ytop;
+            } else {
+                clip = true;
+            }
+        } else if (re.end.x > xright) {
+            clip = true;
+        }
+        if (clip)
+        {
+            /* Some form of clipping seems to be required. A certain amount
+             * of horridness goes on here to ensure that we round 'outwards'
+             * in all cases. */
+            gs_fixed_edge lenew, renew;
+            fixed ybl, ybr, ytl, ytr, ymid;
+
+            /* Reduce the clipping region horizontally if possible. */
+            if (re.start.x > re.end.x) {
+                if (re.start.x < xright)
+                    xright = re.start.x;
+            } else if (re.end.x < xright)
+                xright = re.end.x;
+            if (le.start.x > le.end.x) {
+                if (le.end.x > xleft)
+                    xleft = le.end.x;
+            } else if (le.start.x > xleft)
+                xleft = le.start.x;
+
+            /* Reduce the edges to the left/right of the clipping region. */
+            /* Only in the 4 cases which can bring ytop/ybot closer */
+            if (le.start.x > xright) {
+                le.start.y += (fixed)((int64_t)(le.end.y-le.start.y)*
+                                      (int64_t)(le.start.x-xright)/
+                                      (int64_t)(le.start.x-le.end.x));
+                if (le.start.y > ybot) {
+                    ybot = le.start.y;
+                }
+                le.start.x = xright;
+            }
+            if (re.start.x < xleft) {
+                re.start.y += (fixed)((int64_t)(re.end.y-re.start.y)*
+                                      (int64_t)(xleft-re.start.x)/
+                                      (int64_t)(re.end.x-re.start.x));
+                if (re.start.y > ybot)
+                    ybot = re.start.y;
+                re.start.x = xleft;
+            }
+            if (le.end.x > xright) {
+                le.end.y -= (fixed)((int64_t)(le.end.y-le.start.y)*
+                                    (int64_t)(le.end.x-xright)/
+                                    (int64_t)(le.end.x-le.start.x));
+                if (le.end.y < ytop)
+                    ytop = le.end.y;
+                le.end.x = xright;
+            }
+            if (re.end.x < xleft) {
+                re.end.y -= (fixed)((int64_t)(re.end.y-re.start.y)*
+                                    (int64_t)(xleft-re.end.x)/
+                                    (int64_t)(re.start.x-re.end.x));
+                if (re.end.y < ytop)
+                    ytop = re.end.y;
+                re.end.x = xleft;
+            }
+            if (ybot > ytop)
+                return 0;
+            /* Follow the edges in, so that le.start.y == ybot etc. */
+            if (le.start.y < ybot) {
+                int round = ((le.end.x < le.start.x) ?
+                             (le.end.y-le.start.y-1) : 0);
+                le.start.x += (fixed)(((int64_t)(ybot-le.start.y)*
+                                       (int64_t)(le.end.x-le.start.x)-round)/
+                                      (int64_t)(le.end.y-le.start.y));
+                le.start.y = ybot;
+            }
+            if (le.end.y > ytop) {
+                int round = ((le.end.x > le.start.x) ?
+                             (le.end.y-le.start.y-1) : 0);
+                le.end.x += (fixed)(((int64_t)(le.end.y-ytop)*
+                                     (int64_t)(le.start.x-le.end.x)-round)/
+                                    (int64_t)(le.end.y-le.start.y));
+                le.end.y = ytop;
+            }
+            if ((le.start.x < xleft) && (le.end.x < xleft)) {
+                le.start.x = xleft;
+                le.end.x   = xleft;
+                le.start.y = ybot;
+                le.end.y   = ytop;
+            }
+            if (re.start.y < ybot) {
+                int round = ((re.end.x > re.start.x) ?
+                             (re.end.y-re.start.y-1) : 0);
+                re.start.x += (fixed)(((int64_t)(ybot-re.start.y)*
+                                       (int64_t)(re.end.x-re.start.x)+round)/
+                                      (int64_t)(re.end.y-re.start.y));
+                re.start.y = ybot;
+            }
+            if (re.end.y > ytop) {
+                int round = ((re.end.x < re.start.x) ?
+                             (re.end.y-re.start.y-1) : 0);
+                re.end.x += (fixed)(((int64_t)(re.end.y-ytop)*
+                                     (int64_t)(re.start.x-re.end.x)+round)/
+                                    (int64_t)(re.end.y-re.start.y));
+                re.end.y = ytop;
+            }
+            if ((re.start.x > xright) && (re.end.x > xright)) {
+                re.start.x = xright;
+                re.end.x   = xright;
+                re.start.y = ybot;
+                re.end.y   = ytop;
+            }
+            /* Now, check whether the left and right edges cross. This can
+             * only happen (for well formed input) in the case where one of
+             * the edges was completely out of range and has now been pulled
+             * in to the edge of the clip region. */
+            if (le.start.x > re.start.x) {
+                if (le.start.x == le.end.x) {
+                    ybot += (fixed)((int64_t)(re.end.y-re.start.y)*
+                                    (int64_t)(le.start.x-re.start.x)/
+                                    (int64_t)(re.end.x-re.start.x));
+                    re.start.x = le.start.x;
+                } else {
+                    ybot += (fixed)((int64_t)(le.end.y-le.start.y)*
+                                    (int64_t)(le.start.x-re.start.x)/
+                                    (int64_t)(le.start.x-le.end.x));
+                    le.start.x = re.start.x;
+                }
+                if (ybot > ytop)
+                    return 0;
+                le.start.y = ybot;
+                re.start.y = ybot;
+            }
+            if (le.end.x > re.end.x) {
+                if (le.start.x == le.end.x) {
+                    ytop -= (fixed)((int64_t)(re.end.y-re.start.y)*
+                                    (int64_t)(le.end.x-re.end.x)/
+                                    (int64_t)(re.start.x-re.end.x));
+                    re.end.x = le.end.x;
+                } else {
+                    ytop -= (fixed)((int64_t)(le.end.y-le.start.y)*
+                                    (int64_t)(le.end.x-re.end.x)/
+                                    (int64_t)(le.end.x-le.start.x));
+                    le.end.x = re.end.x;
+                }
+                if (ybot > ytop)
+                    return 0;
+                le.end.y = ytop;
+                re.end.y = ytop;
+            }
+            /* At this point we are guaranteed that le and re are constrained
+             * as tightly as possible to the ybot/ytop range, and that the
+             * entire ybot/ytop range will be marked at least somewhere. All
+             * we need to do now is to actually fill the region.
+             */
+            lenew.start.x = xleft;
+            lenew.start.y = ybot;
+            lenew.end.x   = xleft;
+            lenew.end.y   = ytop;
+            renew.start.x = xright;
+            renew.start.y = ybot;
+            renew.end.x   = xright;
+            renew.end.y   = ytop;
+            /* Figure out where the left edge intersects with the left at
+             * the bottom */
+            ybl = ybot;
+            if (le.start.x > le.end.x) {
+                ybl += (fixed)((int64_t)(le.start.x-xleft) *
+                               (int64_t)(le.end.y-le.start.y) /
+                               (int64_t)(le.start.x-le.end.x));
+                if (ybl > ytop)
+                    ybl = ytop;
+            }
+            /* Figure out where the right edge intersects with the right at
+             * the bottom */
+            ybr = ybot;
+            if (re.start.x < re.end.x) {
+                ybr += (fixed)((int64_t)(xright-re.start.x) *
+                               (int64_t)(re.end.y-re.start.y) /
+                               (int64_t)(re.end.x-re.start.x));
+                if (ybr > ytop)
+                    ybr = ytop;
+            }
+            /* Figure out where the left edge intersects with the left at
+             * the top */
+            ytl = ytop;
+            if (le.end.x > le.start.x) {
+                ytl -= (fixed)((int64_t)(le.end.x-xleft) *
+                               (int64_t)(le.end.y-le.start.y) /
+                               (int64_t)(le.end.x-le.start.x));
+                if (ytl < ybot)
+                    ytl = ybot;
+            }
+            /* Figure out where the right edge intersects with the right at
+             * the bottom */
+            ytr = ytop;
+            if (re.end.x < re.start.x) {
+                ytr -= (fixed)((int64_t)(xright-re.end.x) *
+                               (int64_t)(re.end.y-re.start.y) /
+                               (int64_t)(re.start.x-re.end.x));
+                if (ytr < ybot)
+                    ytr = ybot;
+            }
+            /* Check for the 2 cases where top and bottom diagonal extents
+             * overlap, and deal with them explicitly. */
+            if (ytl < ybr) {
+                /*     |     |
+                 *  ---+-----+---
+                 *     | /222|
+                 *     |/111/|
+                 *     |000/ |
+                 *  ---+-----+---
+                 *     |     |
+                 */
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &lenew, &re, ybot, ytl,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &re, ytl, ybr,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                ybot = ybr;
+                return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &renew, ybr, ytop,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+            } else if (ytr < ybl) {
+                /*     |     |
+                 *  ---+-----+----
+                 *     |555\ |
+                 *     |\444\|
+                 *     | \333|
+                 *  ---+-----+---
+                 *     |     |
+                 */
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &renew, ybot, ytr,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &re, ytr, ybl,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &re, ybl, ytop,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+            }
+            /* Fill in any section where both left and right edges are
+             * diagonal at the bottom */
+            ymid = ybl;
+            if (ymid > ybr)
+                ymid = ybr;
+            if (ymid > ybot) {
+                /*     |\   |          |   /|
+                 *     | \6/|    or    |\6/ |
+                 *  ---+----+---    ---+----+---
+                 *     |    |          |    |
+                 */
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &re, ybot, ymid,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                ybot = ymid;
+            }
+            /* Fill in any section where both left and right edges are
+             * diagonal at the top */
+            ymid = ytl;
+            if (ymid < ytr)
+                ymid = ytr;
+            if (ymid < ytop) {
+                /*     |    |          |    |
+                 *  ---+----+---    ---+----+---
+                 *     |/7\ |    or    | /7\|
+                 *     |   \|          |/   |
+                 */
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &re, ymid, ytop,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                ytop = ymid;
+            }
+            /* Now do the single diagonal cases at the bottom */
+            if (ybl > ybot) {
+                /*     |    |
+                 *     |\666|
+                 *  ---+----+---
+                 *     |    |
+                 */
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &renew, ybot, ybl,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                ybot = ybl;
+            } else if (ybr > ybot) {
+                /*     |    |
+                 *     |777/|
+                 *  ---+----+---
+                 *     |    |
+                 */
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &lenew, &re, ybot, ybr,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                ybot = ybr;
+            }
+            /* Now do the single diagonal cases at the top */
+            if (ytl < ytop) {
+                /*     |    |
+                 *  ---+----+---
+                 *     |/888|
+                 *     |    |
+                 */
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &le, &renew, ytl, ytop,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                ytop = ytl;
+            } else if (ytr < ytop) {
+                /*     |    |
+                 *  ---+----+---
+                 *     |999\|
+                 *     |    |
+                 */
+                code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &lenew, &re, ytr, ytop,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+                if (code < 0)
+                    return code;
+                ytop = ytr;
+            }
+            /* And finally just whatever rectangular section is left over in
+             * the middle */
+            if (ybot > ytop)
+                return 0;
+            return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+                                        &lenew, &renew, ybot, ytop,
+                                        swap_axes, pdevc, pfs->pis->log_op);
+        }
+    }
     if (!VD_TRACE_DOWN)
 	vd_disable;
     code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,

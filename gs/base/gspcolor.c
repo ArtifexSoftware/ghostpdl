@@ -146,20 +146,22 @@ int
 gs_setpatternspace(gs_state * pgs)
 {
     int code = 0;
+    gs_color_space *ccs_old;
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
-    if (pgs->color_space->type->index != gs_color_space_index_Pattern) {
+    ccs_old = gs_currentcolorspace_inline(pgs);
+    if (ccs_old->type->index != gs_color_space_index_Pattern) {
 	gs_color_space *pcs;
 
 	pcs = gs_cspace_alloc(pgs->memory, &gs_color_space_type_Pattern);
 	if (pcs == NULL)
 	    return_error(gs_error_VMerror);
 	/* reference to base space shifts from pgs to pcs with no net change */
-	pcs->base_space = pgs->color_space;
+	pcs->base_space = ccs_old;
 	pcs->params.pattern.has_base_space = true;
-	pgs->color_space = pcs;
-	cs_full_init_color(pgs->ccolor, pcs);
+	pgs->color[0].color_space = pcs;
+	cs_full_init_color(pgs->color[0].ccolor, pcs);
 	gx_unset_dev_color(pgs);
     }
     return code;

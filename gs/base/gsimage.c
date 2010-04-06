@@ -205,7 +205,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
     gx_clip_path *pcpath;
     int code = gx_effective_clip_path(pgs, &pcpath);
     gx_device *dev2 = dev;
-    gx_device_color dc_temp, *pdevc = pgs->dev_color;
+    gx_device_color dc_temp, *pdevc = gs_currentdevicecolor_inline(pgs);
 
     if (code < 0)
 	return code;
@@ -227,7 +227,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 	gs_image_t *image = (gs_image_t *)pic;
 
 	if(image->ImageMask) {
-	    code = gx_image_fill_masked_start(dev, pgs->dev_color, pcpath, pgs->memory, &dev2);
+	    code = gx_image_fill_masked_start(dev, gs_currentdevicecolor_inline(pgs), pcpath, pgs->memory, &dev2);
 	    if (code < 0)
 		return code;
 	}
@@ -648,7 +648,7 @@ gs_image_cleanup(gs_image_enum * penum, gs_state *pgs)
 	    gx_device *cdev = penum->info->dev;
 
 	    code = gx_image_end(penum->info, !penum->error); /* Releases penum->info . */
-	    code1 = gx_image_fill_masked_end(cdev, penum->dev, pgs->dev_color);
+	    code1 = gx_image_fill_masked_end(cdev, penum->dev, gs_currentdevicecolor_inline(pgs));
 	    if (code == 0)
 		code = code1;
 	} else

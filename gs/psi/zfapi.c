@@ -54,6 +54,7 @@
 #include "gxchar.h"		/* for st_gs_show_enum */
 #include "ipacked.h"	    /* for packed_next */
 #include "iddict.h"
+#include "ifont42.h"        /* for string_array_access_proc */
 
 /* -------------------------------------------------------- */
 
@@ -502,7 +503,7 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
 		return r_size(&SubArray);
 	    }
 	case FAPI_FONT_FEATURE_DollarBlend_length:
-	    {   ref *DBlend, Element, name, string; 
+	    {   ref *DBlend, Element, string;
 		int i, length = 0;
 		char Buffer[32];
 		if (dict_find_string(pdr, "$Blend", &DBlend) <= 0)
@@ -577,7 +578,9 @@ static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int inde
 
     switch((int)var_id) {
         case FAPI_FONT_FEATURE_FontMatrix:
+#if 0
             {   double FontMatrix_div = (ff->is_cid && !IsCIDFont(pbfont) ? 1000 : 1);
+
                 switch(index) {
                     case 0 : return pbfont->base->FontMatrix.xx / FontMatrix_div;
                     case 1 : return pbfont->base->FontMatrix.xy / FontMatrix_div;
@@ -587,6 +590,19 @@ static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int inde
                     case 5 : return pbfont->base->FontMatrix.ty / FontMatrix_div;
                 }
             } 
+#else
+            /* Temporary: replace with a FAPI call to check *if* the library needs a replacement matrix */
+	    {
+                switch(index) {
+                    case 0 : return 1.0;
+                    case 1 : return 0.0;
+                    case 2 : return 0.0;
+                    case 3 : return 1.0;
+                    case 4 : return 0.0;
+                    case 5 : return 0.0;
+                }
+            }
+#endif
         case FAPI_FONT_FEATURE_WeightVector: 
 	    {   ref *Array, value; 
 
@@ -626,7 +642,7 @@ static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int inde
 	    }
 	case FAPI_FONT_FEATURE_BlendDesignMapArrayValue:
 	    {	ref *Info, *Array, SubArray, SubSubArray, value;
-		int array_index = index / 64, subarray_index = (index %64) / 8;
+		int array_index = index / 64;
 		index %= 8;
 		if (dict_find_string(pdr, "FontInfo", &Info) <= 0)
 		    return 0;
@@ -783,8 +799,7 @@ static ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_l
 static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
-    int i, glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
-    ulong off;
+    int glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
 
     sfnts_reader_init(&r, pdr);
     r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
@@ -881,8 +896,15 @@ static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort 
 	    }
             if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
                 return -1;
-            if (dict_find(CharStrings, &char_name, &glyph) <= 0)
+
+            if (dict_find(CharStrings, &char_name, &glyph) <= 0) {
+                if (name_ref(ff->memory, (const byte *)".notdef", 7, &char_name, -1) < 0) {
                 return -1;
+                }
+                if (dict_find(CharStrings, &char_name, &glyph) <= 0) {
+                    return -1;
+                }
+            }
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         }
     } else { /* type 42 */
@@ -1364,9 +1386,15 @@ static int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, gs
 
 static void compute_em_scale(const gs_font_base *pbfont, FAPI_metrics *metrics, double FontMatrix_div, double *em_scale_x, double *em_scale_y)
 {   /* optimize : move this stuff to FAPI_refine_font */
+    gs_matrix mat;
     gs_matrix *m = &pbfont->base->orig_FontMatrix;
     int rounding_x, rounding_y; /* Striking out the 'float' representation error in FontMatrix. */
     double sx, sy;
+
+    /* Temporary: replace with a FAPI call to check *if* the library needs a replacement matrix */
+    m = &mat;
+    memset(m, 0x00, sizeof(gs_matrix));
+    m->xx = m->yy = 1.0;
 
     if (m->xx == 0 && m->xy == 0 && m->yx == 0 && m->yy == 0)
 	m = &pbfont->base->FontMatrix;
@@ -1478,12 +1506,18 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 		    int dx = arith_rshift_slow((pgs->ctm.tx_fixed >> shift_rd) + rast_orig_x + rounding, frac_pixel_shift);
 		    int dy = arith_rshift_slow((pgs->ctm.ty_fixed >> shift_rd) + rast_orig_y + rounding, frac_pixel_shift);
 
-		    if (dx + rast.left_indent < 0 || dx + rast.left_indent + rast.black_width > dev1->width)
+		    if (dx + rast.left_indent < 0 || dx + rast.left_indent + rast.black_width > dev1->width) {
 			eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n", 
 				dx + rast.left_indent, dx + rast.left_indent + rast.black_width - dev1->width);
-		    if (dy + rast.top_indent < 0 || dy + rast.top_indent + rast.black_height > dev1->height)
+			if (dx + rast.left_indent < 0)
+			    dx -= dx + rast.left_indent;
+		    }
+		    if (dy + rast.top_indent < 0 || dy + rast.top_indent + rast.black_height > dev1->height) {
 			eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n", 
 				dy + rast.top_indent, dy + rast.top_indent + rast.black_height - dev1->height);
+			if (dy + rast.top_indent < 0)
+			    dy -= dy + rast.top_indent;
+		    }
 		    if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)
 			return code;
 
@@ -1614,8 +1648,7 @@ retry_oversampling:
 	I->face.HWResolution[1] != dev->HWResolution[1]
        ) {
 	FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
-        gs_matrix *base_font_matrix = &I->initial_FontMatrix;
-        double dx, dy;
+        gs_matrix scale_mat, scale_ctm;
 
 	I->face.font_id = pbfont->id;
 	I->face.ctm = *ctm;
@@ -1628,6 +1661,32 @@ retry_oversampling:
 	font_scale.subpixels[1] = 1 << log2_scale.y;
 	font_scale.align_to_pixels = align_to_pixels;
 
+#if 1
+	/* We apply the entire transform to the glyph (that is ctm x FontMatrix)
+	 * at render time.
+	 */
+
+	memset(&scale_ctm, 0x00, sizeof(gs_matrix));
+	scale_ctm.xx = dev->HWResolution[0]/72;
+	scale_ctm.yy = dev->HWResolution[1]/72;
+
+	code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm);
+
+	code = gs_matrix_multiply(ctm, &scale_ctm, &scale_mat);		/* scale_mat ==  CTM - resolution scaling */
+
+	font_scale.matrix[0] =  (FracInt)(scale_mat.xx * FontMatrix_div * scale + 0.5);
+	font_scale.matrix[1] =  -(FracInt)(scale_mat.xy * FontMatrix_div * scale + 0.5);
+        font_scale.matrix[2] =  (FracInt)(scale_mat.yx * FontMatrix_div * scale + 0.5);
+        font_scale.matrix[3] =  -(FracInt)(scale_mat.yy * FontMatrix_div * scale + 0.5);
+        font_scale.matrix[4] =  (FracInt)(scale_mat.tx * FontMatrix_div * scale + 0.5);
+        font_scale.matrix[5] =  (FracInt)(scale_mat.ty * FontMatrix_div * scale + 0.5);
+#else
+
+#  if 1
+	base_font_matrix = &I->initial_FontMatrix;
+#  else
+	base_font_matrix = &pbfont->base->orig_FontMatrix;
+#  endif
 	if (base_font_matrix->xx == 0 && base_font_matrix->xy == 0 &&
 	    base_font_matrix->yx == 0 && base_font_matrix->yy == 0)
 	    base_font_matrix = &pbfont->base->FontMatrix;
@@ -1649,6 +1708,7 @@ retry_oversampling:
         font_scale.matrix[3] = -(FracInt)(ctm->yy * FontMatrix_div / dy * 72 / dev->HWResolution[1] * scale + 0.5);
         font_scale.matrix[4] =  (FracInt)(ctm->tx * FontMatrix_div / dx * 72 / dev->HWResolution[0] * scale + 0.5);
         font_scale.matrix[5] =  (FracInt)(ctm->ty * FontMatrix_div / dy * 72 / dev->HWResolution[1] * scale + 0.5);
+#endif
         /* Note: the ctm mapping here is upside down. */
 	font_scale.HWResolution[0] = (FracInt)((double)dev->HWResolution[0] * font_scale.subpixels[0] * scale);
 	font_scale.HWResolution[1] = (FracInt)((double)dev->HWResolution[1] * font_scale.subpixels[1] * scale);
@@ -1760,29 +1820,39 @@ retry_oversampling:
                Call get_font_proportional_feature for proper choice.
             */
 	} else {
-            ref *CIDMap, Str;
+            ref *CIDMap;
 	    byte *Map;
 	    int ccode = client_char_code;
+            int gdb = 2;
+            int i;
+            ref *GDBytes;
+
+            if (dict_find_string(pdr, "GDBytes", &GDBytes) && r_has_type(GDBytes, t_integer)) {
+                gdb = GDBytes->value.intval;
+            }
 
 	    /* The PDF Reference says that we should use a CIDToGIDMap, but the PDF
 	     * interpreter converts this into a CIDMap (see pdf_font.ps, processCIDToGIDMap)
 	     */
 	    if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name)) {
+       
 		if (r_has_type(CIDMap, t_array)) {
+
 		    /* Too big for single string, so its an array of 2 strings */
-		    if (client_char_code < 32767) 
-			code = array_get(imemory, CIDMap, 0, &Str);
-		    else {
-			code = array_get(imemory, CIDMap, 1, &Str);
-			ccode -= 32767;
+                    code = string_array_access_proc(pbfont->memory, CIDMap, 1, client_char_code * gdb, gdb, NULL, NULL, (const byte **)&Map);
+
+                } else {
+                    if (CIDMap->tas.rsize < ccode * gdb) {
+                       ccode = 0;
 		    }
-		    if (code < 0)
-		        return code;
-		    Map = &Str.value.bytes[ccode * 2];
-        } else
-		    Map = &CIDMap->value.bytes[ccode * 2];
-		cr.char_codes[0] = (Map[0] << 8) + Map[1];
+                    Map = &CIDMap->value.bytes[ccode * gdb];
 	    }
+                cr.char_codes[0] = 0;
+
+                for (i = 0; i < gdb; i++) {
+                    cr.char_codes[0] = (cr.char_codes[0] << 8) + Map[i];
+                }
+            }
 	    else
             cr.char_codes[0] = client_char_code;
 	}
@@ -1977,10 +2047,10 @@ retry_oversampling:
 		cr.metrics_type = FAPI_METRICS_ADD;
 	    }
 	} else {
-	    cr.sb_x = fapi_round(sbw[2] * scale);
-	    cr.sb_y = fapi_round(sbw[3] * scale);
-	    cr.aw_x = fapi_round(sbw[0] * scale);
-	    cr.aw_y = fapi_round(sbw[1] * scale);
+	    cr.sb_x = fapi_round(sbw[0] * scale);
+	    cr.sb_y = fapi_round(sbw[1] * scale);
+	    cr.aw_x = fapi_round(sbw[2] * scale);
+	    cr.aw_y = fapi_round(sbw[3] * scale);
 	    cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
 	    cr.metrics_type = (code == metricsSideBearingAndWidth ? 
 				FAPI_METRICS_REPLACE : FAPI_METRICS_REPLACE_WIDTH);
@@ -2029,12 +2099,17 @@ retry_oversampling:
     }
     penum_s->fapi_glyph_shift.x = penum_s->fapi_glyph_shift.y = 0;
     if (sbw_state == SBW_FROM_RENDERER) {
+        int can_replace_metrics;
+	
+        if ((code = renderer_retcode(i_ctx_p, I, I->can_replace_metrics(I, &I->ff, &cr, &can_replace_metrics))) < 0)
+            return code;
+
 	sbw[2] = metrics.escapement / em_scale_x;
 	sbw[3] = metrics.v_escapement / em_scale_y;
-	if (pbfont->FontType == 2) {
+        if (pbfont->FontType == 2 && !can_replace_metrics) {
 	    gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
 
-	    sbw[2] += fixed2float(pfont1->data.defaultWidthX);
+            sbw[2] += fixed2float(pfont1->data.nominalWidthX);
 	}
     } else if (sbw_state == SBW_SCALE) {
 	sbw[0] = (double)cr.sb_x / scale / em_scale_x;

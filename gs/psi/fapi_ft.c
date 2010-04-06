@@ -48,6 +48,12 @@ typedef struct FF_face_s
     {
     FT_Face ft_face;
 
+    /* Currently in force scaling/transform for this face */
+    FT_Matrix ft_transform;
+    FT_F26Dot6 width, height;
+    FT_UInt horz_res;
+    FT_UInt vert_res;
+    
     /* If non-null, the incremental interface object passed to FreeType. */
     FT_Incremental_InterfaceRec *ft_inc_int;
 
@@ -199,7 +205,13 @@ static FT_Error
 get_fapi_glyph_metrics(FT_Incremental a_info, FT_UInt a_glyph_index,
 									   FT_Bool bVertical, FT_Incremental_MetricsRec* a_metrics)
 	{
-	    /* fixme : bVertical is not implemented. */
+    /* FreeType will create synthetic vertical metrics, including a vertical
+     * advance, if none is present. We don't want this, so if the font uses Truetype outlines
+     * and the WMode is not 1 (vertical) we ignore the advance by setting it to 0
+     */
+    if (bVertical && !a_info->fapi_font->is_type1)
+	a_metrics->advance = 0;
+
     if (a_info->glyph_metrics_index == a_glyph_index)
 		{
 	switch (a_info->metrics_type)
@@ -212,6 +224,8 @@ get_fapi_glyph_metrics(FT_Incremental a_info, FT_UInt a_glyph_index,
 				break;
 			case FAPI_METRICS_REPLACE:
 		*a_metrics = a_info->glyph_metrics;
+		/* We are replacing the horizontal metrics, so the vertical must be 0 */
+		a_metrics->advance_v = 0;
 				break;
 			default:
 				/* This can't happen. */
@@ -329,28 +343,65 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	face->ft_inc_int->object->glyph_metrics_index = index;
 	face->ft_inc_int->object->metrics_type = a_char_ref->metrics_type;
 		}
+    else
+	/* Make sure we don't leave this set to the last value, as we may then use inappropriate metrics values */
+	face->ft_inc_int->object->glyph_metrics_index = 0xFFFFFFFF;
 
-    ft_error = FT_Load_Glyph(ft_face,index,FT_LOAD_MONOCHROME | FT_LOAD_NO_SCALE);
+    /* We have to load the glyph, scale it correctly, and render it if we need a bitmap. */
+    if (!ft_error)
+    {
+	/* We disable loading bitmaps because if we allow it then FreeType invents metrics for them, which messes up our glyph positioning */
+	/* Also the bitmaps tend to look somewhat different (though more readable) than FreeType's rendering. By disabling them we */
+	/* maintain consistency better.  (FT_LOAD_NO_BITMAP) */
+	a_fapi_font->char_data = saved_char_data;
+	if (!a_fapi_font->is_type1)
+	    ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_BITMAP : FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP);
+	else
+	    /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
+	    ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+    }
+
+    if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index) {
+        a_fapi_font->char_data = saved_char_data;
+        ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+    }
+    /* Previously we interpreted the glyph unscaled, and derived the metrics from that. Now we only interpret it
+     * once, and work out the metrics from the scaled/hinted outline.
+     */
     if (!ft_error && a_metrics)
 	    {
-	    a_metrics->bbox_x0 = ft_face->glyph->metrics.horiBearingX;
-	    a_metrics->bbox_y0 = ft_face->glyph->metrics.horiBearingY - ft_face->glyph->metrics.height;
-	    a_metrics->bbox_x1 = a_metrics->bbox_x0 + ft_face->glyph->metrics.width;
-	    a_metrics->bbox_y1 = a_metrics->bbox_y0 + ft_face->glyph->metrics.height;
-	    a_metrics->escapement = ft_face->glyph->metrics.horiAdvance;
-	a_metrics->v_escapement = ft_face->glyph->metrics.vertAdvance;
+        FT_Long hx;
+        FT_Long hy;
+        FT_Long w;
+        FT_Long h;
+        FT_Long hadv;
+        FT_Long vadv;
+
+        /* In order to get the metrics in the form we need them, we have to remove the size scaling
+         * the resolution scaling, and convert to points.
+         */
+        hx = (((double)ft_face->glyph->metrics.horiBearingX * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        hy = (((double)ft_face->glyph->metrics.horiBearingY * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+
+        w = (((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        h = (((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+
+        hadv = (((double)ft_face->glyph->metrics.horiAdvance * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        vadv = (((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+        
+        a_metrics->bbox_x0 = hx;
+	a_metrics->bbox_y0 = hy - h;
+	a_metrics->bbox_x1 = a_metrics->bbox_x0 + w;
+	a_metrics->bbox_y1 = a_metrics->bbox_y0 + h;
+	a_metrics->escapement = hadv;
+	a_metrics->v_escapement = vadv;
 	    a_metrics->em_x = ft_face->units_per_EM;
 	    a_metrics->em_y = ft_face->units_per_EM;
 	    }
 
-    /* We have to load the glyph again, scale it correctly, and render it if we need a bitmap. */
-    if (!ft_error)
-		{
-		a_fapi_font->char_data = saved_char_data;
-	    ft_error = FT_Load_Glyph(ft_face,index,a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER: FT_LOAD_MONOCHROME);
-		}
     if (!ft_error && a_glyph)
 	    ft_error = FT_Get_Glyph(ft_face->glyph,a_glyph);
+
     if (ft_error == FT_Err_Too_Many_Hints) {
 	eprintf1 ("TrueType glyph %d uses more instructions than the declared maximum in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
 	ft_error = 0;
@@ -422,20 +473,51 @@ make_rotation(FT_Matrix *a_transform, const FT_Vector *a_vector)
 static void
 transform_decompose(FT_Matrix *a_transform, FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
 {
-	float a = a_transform->xx / 65536.0;
-	float b = a_transform->xy / 65536.0;
-	float c = a_transform->yx / 65536.0;
-	float d = a_transform->yy / 65536.0;
+    double scalex, scaley, fact = 1.0;
+    FT_Matrix ftscale_mat;
 
-	float scale = sqrt(fabs(a * d - b * c));
+    scalex = hypot ((double)a_transform->xx, (double)a_transform->xy) / 65536.0;
+    scaley = hypot ((double)a_transform->yx, (double)a_transform->yy) / 65536.0;
 
-	a_transform->xx = a / scale * 65536.0;
-	a_transform->xy = b / scale * 65536.0;
-	a_transform->yx = c / scale * 65536.0;
-	a_transform->yy = d / scale * 65536.0;
+    /* FT clamps the width and height to a lower limit of 1.0 units
+     * (note: as FT stores it in 64ths of a unit, that is 64)
+     * So if either the width or the height are <1.0 here, we scale
+     * the width and height appropriately, and then compensate using
+     * the "final" matrix for FT
+     */
+    /* We use 1 1/64th to calculate the scale, so that we *guarantee* the
+     * scalex/y we calculate will be >64 after rounding.
+     */
+    if (scalex > scaley)
+    {
+        if (scaley < 1.0)
+	{
+	    fact = 1.016 / scaley;
+	    scaley = scaley * fact;
+	    scalex = scalex * fact;
+	}
+    }
+    else
+    {
+        if (scalex < 1.0)
+	{
+	    fact = 1.016 / scalex;
+	    scalex = scalex * fact;
+	    scaley = scaley * fact;
+	}
+    }
 
-	*a_x_scale = scale * 65536.0;
-	*a_y_scale = scale * 65536.0;
+    ftscale_mat.xx = ((1.0 / scalex)) * 65536.0;
+    ftscale_mat.xy = 0;
+    ftscale_mat.yx = 0;
+    ftscale_mat.yy = ((1.0 / scaley)) * 65536.0;
+    
+    FT_Matrix_Multiply (a_transform, &ftscale_mat);
+    memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));
+        
+    /* Return values ready scaled for FT */
+    *a_x_scale = scalex * 64;
+    *a_y_scale = scaley * 64;
 }
 
 /*
@@ -580,30 +662,26 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
 	*/
 	if (face)
 		{
-		static const FT_Matrix ft_reflection = { 65536, 0, 0, -65536 };
-		FT_Matrix ft_transform;
-		FT_F26Dot6 width, height;
-
 	/* Convert the GS transform into an FT transform.
 	 * Ignore the translation elements because they contain very large values
 	 * derived from the current transformation matrix and so are of no use.
 		*/
-		ft_transform.xx = a_font_scale->matrix[0];
-		ft_transform.xy = a_font_scale->matrix[2];
-		ft_transform.yx = a_font_scale->matrix[1];
-		ft_transform.yy = a_font_scale->matrix[3];
+        face->ft_transform.xx = a_font_scale->matrix[0];
+        face->ft_transform.xy = a_font_scale->matrix[2];
+        face->ft_transform.yx = a_font_scale->matrix[1];
+        face->ft_transform.yy = a_font_scale->matrix[3];
 
+        face->horz_res = a_font_scale->HWResolution[0] >> 16;
+        face->vert_res = a_font_scale->HWResolution[1] >> 16;
+        
 	/* Split the transform into scale factors and a rotation-and-shear
 	 * transform.
 		*/
-		transform_decompose(&ft_transform,&width,&height);
+        transform_decompose(&face->ft_transform, &face->width, &face->height);
 
-		/* Convert width and height to 64ths of pixels and set the FreeType sizes. */
-		width >>= 10;
-		height >>= 10;
-	ft_error = FT_Set_Char_Size(face->ft_face, width, height,
-									a_font_scale->HWResolution[0] >> 16,
-									a_font_scale->HWResolution[1] >> 16);
+        ft_error = FT_Set_Char_Size(face->ft_face, face->width, face->height,
+                face->horz_res, face->vert_res);
+        
 		if (ft_error)
 			{
 			delete_face(face);
@@ -616,7 +694,7 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
 	 * first row at the bottom. That is what GhostScript needs.
 		*/
 		
-	FT_Set_Transform(face->ft_face, &ft_transform, NULL);
+	FT_Set_Transform(face->ft_face, &face->ft_transform, NULL);
 		}
 
 	/* dpf("get_scaled_font return %d\n",a_font->server_font_data ? 0 : -1); */
@@ -693,7 +771,7 @@ static FAPI_retcode
 can_replace_metrics(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_char_ref, int *a_result)
 	{
 	/* Replace metrics only if the metrics are supplied in font units. */
-    *a_result = a_char_ref->metrics_scale == 0;
+    *a_result = 1;
     return 0;
 	}
 

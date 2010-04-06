@@ -36,6 +36,13 @@ sub mylog($) {
   print "$d: $s\n";
 }
 
+sub updateStatus($) {
+  my $s=shift;
+  open(F,">status");
+  print F "$s";
+  close(F);
+}
+
 sub removeQueue {
   mylog "removing top element from queue\n";
   open(LOCK,">$lock") || die "can't write to $lock";
@@ -93,14 +100,12 @@ sub checkAbort {
 mylog "abort.job found\n";
     alarm 0;
     unlink "abort.job";
-    open(F,">status");
-    print F "Aborting current job";
-    close(F);
+    updateStatus "Aborting current job";
 
 # removeQueue();  not necessary
-
     abortAll();
  
+    updateStatus "Last job aborted";
     unlink $runningSemaphore;
     exit;
 
@@ -302,6 +307,7 @@ sub checkProblem {
   opendir(DIR, $usersDir) || die "can't opendir $usersDir: $!";
   foreach my $user (readdir(DIR)) {
     my $product="";
+    my $options;
     my $s="";
     if (open(F,"<$usersDir/$user/gs.run")) {
       close(F);
@@ -316,15 +322,20 @@ sub checkProblem {
     if (open(F,"<$usersDir/$user/ghostpdl/cluster_command.run")) {
       $product=<F>;
       chomp $product;
+      $options=<F>;
+      chomp $options;
       close(F);
       unlink "$usersDir/$user/ghostpdl/cluster_command.run";
     }
     if (open(F,"<$usersDir/$user/ghostpdl/gs/cluster_command.run")) {
       $product=<F>;
       chomp $product;
+      $options=<F>;
+      chomp $options;
       close(F);
       unlink "$usersDir/$user/ghostpdl/gs/cluster_command.run";
     }
+    $options="" if (!$options);
     if ($product) {
       $product =~ s/ +$//;
       mylog "user $product\n";
@@ -365,7 +376,7 @@ mylog "setting 'abort.job'\n";
         if (length($t)==0) {
           mylog "grep '$s' returns no match, adding to queue\n";
           open(F,">>$queue");
-          print F "$s\n";
+          print F "$s $options\n";
           close(F);
           mylog "running: find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u\n";
           `find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u`;
@@ -387,9 +398,7 @@ if (open(F,"<$runningSemaphore")) {
   my $t=time;
   if ($t-$fileTime>7200) {
     mylog "semaphore file too old, removing\n";
-    open(F,">status");
-    print F "Regression terminated due to timeout";
-    close(F);
+    updateStatus "Regression terminated due to timeout";
     unlink $runningSemaphore;
   }
   exit;
@@ -412,6 +421,7 @@ if (open(F,"<emails.tab")) {
 }
 
 my $product="";
+my $options="";
 
 #gs/base, gs/Resource: all languages
 #gs/psi: ps, pdf
@@ -448,7 +458,9 @@ my %rules=(
   'gs/doc' => 0,
   'gs/toolbin' => 0,
   'gs/examples' => 0,
-  'language_switch' => 0
+  'gs/lib' => 0,
+  'language_switch' => 0,
+  'tools' => 0
 );
 
 #my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
@@ -516,10 +528,11 @@ if ($regression =~ m/svn (\d+)/) {
           mylog "$s: $rules{$t}\n";
           $set|=$rules{$t};
         } else {
-          mylog "$s: missing, testing all\n";
+          mylog "$s ($t): missing, testing all\n";
           $set=15;
         }
       } else {
+        mylog "unknown commit: testing all\n";
         $set=15;
       }
     }
@@ -558,13 +571,13 @@ if ($regression =~ m/svn (\d+)/) {
   $product="gs pcl xps";
   $footer.="icc_work regression: $rev\n\nProducts tested: $product\n\n";
 } elsif ($regression=~/mupdf/) {
-  mylog "found mupdf entry in queue.lst, not yet handled, removing.\n";
+  mylog "found mupdf entry in queue.lst\n";
   my $cmd="touch mupdf.tar.gz ; rm mupdf.tar.gz ; tar cvf mupdf.tar --exclude=_darcs mupdf ; gzip mupdf.tar";
   `$cmd`;
   $cmd="cd mupdf ; darcs changes --count";
   $rev=`$cmd`;
   chomp $rev;
-# $mupdfRegression=1;
+$mupdfRegression=1;
   $product="mupdf";
 } elsif ($regression=~/updatebaseline/) {
   mylog "found updatebaseline in regression: $regression\n";
@@ -647,24 +660,51 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       my @a=split ' ',$userRegression,2;
       $userName=$a[0];
       $product=$a[1];
-      $bmpcmp=1 if ($product eq "bmpcmp");
-      $product="bmpcmp $userName" if ($bmpcmp);
-      mylog "userName=$userName product=$product\n" if ($verbose);
+      if ($product=~m/^bmpcmp/) {
+        $bmpcmp=1;
+        my @a=split ' ',$product,2;
+        $product="bmpcmp $userName";
+        $options=$a[1];
+#     print "userName=$userName product=$product options=$options\n"; exit;
+      }
+      mylog "userName=$userName product=$product options=$options\n" if ($verbose);
       my $t=`date +\"%D %H:%M:%S\"`;
       chomp $t;
-      $footer="\n\nUser regression: user $userName  options $product  start $t\n";
+      $footer="\n\nUser regression: user $userName  options $product $options start $t\n";
     }
 
     my $baseline="";
     $baseline="baseline" if ($updateBaseline);  # mhw
 
-    `./build.pl $product $baseline >$jobs`;
+    `./build.pl $product $baseline \"$options\" >$jobs`;
     if ($? != 0) {
       # horrible hack, fix later
       mylog "build.pl $product failed\n";
       unlink $runningSemaphore;
       exit;
     }
+
+if ($bmpcmp) {
+`head -1000 jobs >jobs.tmp ; mv jobs.tmp jobs`;
+        my $gs="";
+        my $pcl="";
+        my $xps="";
+        my $gsBin="gs/bin/gs";
+        my $pclBin="gs/bin/pcl6";
+        my $xpsBin="gs/bin/gxps";
+        if (open(F2,"<jobs")) {
+          while (<F2>) {
+            chomp;
+            $gs="gs " if (m/$gsBin/);
+            $pcl="pcl " if (m/$pclBin/);
+            $xps="xps " if (m/$xpsBin/);
+          }
+          close(F2);
+          $product=$gs.$pcl.$xps;
+        }
+mylog "done checking jobs, product=$product\n";
+        `touch bmpcmp.tmp ; rm -fr bmpcmp.tmp ; mv bmpcmp bmpcmp.tmp ; mkdir bmpcmp ; rm -fr bmpcmp.tmp &`;
+}
 
     checkPID();
     foreach (keys %machines) {
@@ -691,11 +731,11 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       } elsif ($icc_workRegression) {
         print F "svn-icc_work\t$rev\t$product";
       } elsif ($mupdfRegression) {
-        print F "mupdf\t$rev\t$product";
+        print F "mupdf\t$rev";
       } elsif ($updateBaseline) {
         print F "svn\thead\t$product";
       } elsif ($bmpcmp) {
-        print F "user\t$userName\tgs pcl xps\n";
+        print F "user\t$userName\t$product\n";
       } else {
         print F "user\t$userName\t$product\n";
       }
@@ -705,19 +745,17 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
     checkPID();
     $startText=`date +\"%D %H:%M:%S\"`;
     chomp $startText;
-    open (F,">status");
     if ($normalRegression) {
-      print F "Regression r$rev started at $startText UTC";
+      updateStatus "Regression r$rev started at $startText UTC";
     } elsif ($icc_workRegression) {
-      print F "Regression icc_work-r$rev started at $startText UTC";
+      updateStatus "Regression icc_work-r$rev started at $startText UTC";
     } elsif ($mupdfRegression) {
-      print F "Regression mupdf-r$rev started at $startText UTC";
+      updateStatus "Regression mupdf-r$rev started at $startText UTC";
     } elsif ($updateBaseline) {
-      print F "Update baseline started at $startText UTC";
+      updateStatus "Update baseline started at $startText UTC";
     } else {
-      print F "Regression $userRegression started at $startText UTC";
+      updateStatus "Regression $userRegression started at $startText UTC";
     }
-    close(F);
 
     %doneTime=();
     $abort=0;
@@ -728,6 +766,11 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       foreach (sort keys %machines) {
         mylog("  $_\n");
       }
+    }
+
+    if ($userRegression ne "") {
+      my $cmd="diff -w -c -r ./ghostpdl ./users/$userName/ghostpdl | grep -v \"Only in\" > $userName.diff";
+      `$cmd`;
     }
 
     use IO::Socket;
@@ -823,18 +866,16 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
           my $percentage=int(($totalJobs-scalar(@jobs))/$totalJobs*100+0.5);
           $s=`date +\"%H:%M:%S\"`;
           chomp $s;
-          open (F,">status");
           if ($normalRegression) {
-            print F "Regression r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($icc_workRegression) {
-            print F "Regression icc_work-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression icc_work-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($mupdfRegression) {
-            print F "Regression mupdf-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression mupdf-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($updateBaseline) {
           } else {
-            print F "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression $userRegression started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           }
-          close(F);
           checkProblem;
           checkPID();
         }
@@ -924,19 +965,17 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
   checkPID();
   $s=`date +\"%H:%M:%S\"`;
   chomp $s;
-  open (F,">status");
   if ($normalRegression) {
-    print F "Regression r$rev started at $startText UTC - finished at $s";
+    updateStatus "Regression r$rev started at $startText UTC - finished at $s";
   } elsif ($icc_workRegression) {
-    print F "Regression icc_work-r$rev started at $startText UTC - finished at $s";
+    updateStatus "Regression icc_work-r$rev started at $startText UTC - finished at $s";
   } elsif ($mupdfRegression) {
-    print F "Regression mupdf-r$rev started at $startText UTC - finished at $s";
+    updateStatus "Regression mupdf-r$rev started at $startText UTC - finished at $s";
   } elsif ($updateBaseline) {
-    print F "Update baseline started at $startText UTC - finished at $s";
+    updateStatus "Update baseline started at $startText UTC - finished at $s";
   } else {
-    print F "Regression $userRegression started at $startText UTC - finished at $s";
+    updateStatus "Regression $userRegression started at $startText UTC - finished at $s";
   }
-  close(F);
 
   checkPID();
   my $buildFail=0;  # did at least one machine report a build failure?
@@ -971,19 +1010,24 @@ sleep(10);
       $logs.=" $_.log $_.out";
       $tabs.=" $_.tab";
     } else {
-      mylog "ERROR: log or out missing for $_\n";
+      if ($failOccured) {
+        mylog "Warning: $_.log or $_.out missing (ignoring because failOccured is true)\n";
+      } else {
+        mylog "ERROR: $_.log or $_.out missing\n";
 my $a=`ls -ls *log* *out*`;
 mylog "ls:\n$a";
       unlink $runningSemaphore;
       exit;
     }
   }
+  }
 
   checkPID();
   $userName="email" if ($normalRegression);
   $userName="email" if ($icc_workRegression);
+  $userName="email" if ($mupdfRegression);
 
-  {
+  if (!$bmpcmp) {
     my @t=split '\n',$footer;
     open(F,">$userName.txt");
     foreach (@t) {
@@ -1056,6 +1100,26 @@ mylog "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elap
       `cp -p icc_work_previous.tab archive/icc_work-$rev/icc_work_previous.tab`;
       `cp -p icc_work_current.tab archive/icc_work-$rev.tab`;
     } elsif ($mupdfRegression) {
+      `mv mupdf_previous.tab mupdf_previous2.tab`;
+      `mv mupdf_current.tab mupdf_previous.tab`;
+      `cat $tabs | sort >mupdf_current.tab`;
+      `rm $tabs`;
+
+      checkPID();
+mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTime $machineCount false \"$product\"\n";
+      `./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTime $machineCount false \"$product\" >>email.txt`;
+
+      checkPID();
+      `touch archive/mupdf-$rev`;
+      `rm -fr archive/mupdf-$rev`;
+      `mkdir archive/mupdf-$rev`;
+      `mv $logs archive/mupdf-$rev/.`;
+      `gzip archive/mupdf-$rev/*log`;
+      `cp -p email.txt archive/mupdf-$rev/.`;
+      `cp -p mupdf_current.tab archive/mupdf-$rev/mupdf_current.tab`;
+      `cp -p mupdf_previous.tab archive/mupdf-$rev/mupdf_previous.tab`;
+      `cp -p mupdf_current.tab archive/mupdf-$rev.tab`;
+
     } elsif ($updateBaseline) {
     } elsif ($bmpcmp) {
     } else {
@@ -1082,7 +1146,7 @@ mylog "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elap
       print F "\n\nDifferences from previous clusterpush:\n\n";
       close(F);
       mylog "now running ./compare.pl temp.tab $usersDir/$userName/temp.tab $elapsedTime $machineCount true \"$product\"\n";
-      `./compare.pl temp.tab $usersDir/$userName/temp.tab 0 1 true \"$product\" >>$userName.txt`;
+      `./compare.pl temp.tab $usersDir/$userName/temp.tab 1 1 true \"$product\" >>$userName.txt`;
 
       `mv $logs $usersDir/$userName/.`;
       `cp -p $userName.txt $usersDir/$userName/.`;
@@ -1146,7 +1210,15 @@ mylog("finished cachearchive.pl");
   } elsif ($mupdfRegression) {
   } elsif ($updateBaseline) {
   } elsif ($bmpcmp) {
+    if (exists $emails{$userName}) {
+      `mail $emails{$userName} -s \"bmpcmp finished\" <$userName.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <bmpcmpFinished.txt`;
+    }
   } elsif ($userRegression) {
+    `echo >>$userName.txt`;
+    `echo "Source differences from trunk (first 2500 lines):" >>$userName.txt`;
+    `echo >>$userName.txt`;
+    `head -2500 $userName.diff >>$userName.txt`;
     if (exists $emails{$userName}) {
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos.woehrmann\@artifex.com -s \"$userRegression regression\" <$userName.txt`;
 #     `mail -a \"From: marcos.woehrmann\@artifex.com\" $emails{$userName} -s \"$userRegression \`cat revision.gs\`\" <$userName.txt`;
@@ -1169,11 +1241,18 @@ mylog("finished cachearchive.pl");
 }
 
 checkPID();
-
 removeQueue();
 
 checkPID();
+mylog("removing $runningSemaphore");
 unlink $runningSemaphore;
 
-mylog("removing $runningSemaphore");
+if ($bmpcmp) {
+  `touch ../public_html/$userName`;
+  `rm -fr ../public_html/$userName`;
+  `mkdir ../public_html/$userName`;
+  `chmod 777 ../public_html/$userName`;
+  `cd ../public_html/$userName; ln -s compare.html index.html`;
+  `./pngs2html.pl bmpcmp ../public_html/$userName`;
+}
 

@@ -1,3 +1,185 @@
+2010-04-05  Ken Sharp  <ken.sharp@artifex.com>
+
+	Fix Savannah bug #29335.
+
+	* src/raster/ftraster.c (Line_Up): Use slow multiplication to
+	prevent overflow.  This shouldn't have any serious impact on speed,
+	however.
+
+2010-04-05  Werner Lemberg  <wl@gnu.org>
+
+	Add new function `FT_Library_SetLcdFilterWeights'.
+
+	This is based on code written by Lifter
+	<http://unixforum.org/index.php?showuser=11691>.  It fixes
+	FreeDesktop bug #27386.
+
+	* src/base/ftlcdfil.c (FT_Library_SetLcdFilterWeights): New
+	function.
+
+	* include/freetype/ftlcdfil.h: Updated.
+
+	* docs/CHANGES: Updated.
+
+2010-04-01  John Tytgat  <John.Tytgat@esko.com>
+
+	Fix Savannah bug #29404.
+
+	* src/truetype/ttgload.c: Revert change 2752bd1a (check on bit 1
+	of `head' table of TrueType fonts).
+
+2010-03-14  suzuki toshiya  <mpsuzuki@hiroshima-u.ac.jp>
+
+	Fix `multi build' for Tytgat's CFF driver improvement.
+
+	* src/base/cffload.h (cff_index_get_name): Added.
+
+2010-03-12  suzuki toshiya  <mpsuzuki@hiroshima-u.ac.jp>
+
+	Remove duplicated inclusion of `FT_OUTLINE_H' in ftobjs.c.
+
+	* src/base/ftobjs.c: Remove 2nd inclusion of `FT_OUTLINE_H'.
+
+2010-03-11  Chris Liddell  <chris.liddell@artifex.com>
+
+	Fix Savannah bug #27442.
+
+	* src/raster/ftraster.c (ft_black_reset): Fix `buffer_size'.
+
+2010-03-09  Werner Lemberg  <wl@gnu.org>
+
+	Remove unused variable.
+	Reported by Graham.
+
+	* src/cff/cffparse.c (cff_parse_real): Remove `rest'.
+
+2010-03-02  John Tytgat  <John.Tytgat@esko.com>
+
+	Improve CFF string (especially glyphname) lookup performance.
+
+	We do this by avoiding memory allocation and file I/O.  This is
+	Savannah patch #7104.
+
+	* src/cff/cfftypes.h: Include PS cmaps service and
+	FT_INTERNAL_POSTSCRIPT_HINTS_H.
+	(CFF_SubFontRec): Remove `num_local_subrs'.
+	(CFF_FontRec): Add `num_strings', `strings', and `string_pool'
+	fields.
+	Remove `string_index' and `num_global_subrs' fields.
+	Use real types instead of `void' for `pshinter' and `psnames' fields.
+
+	* src/cff/cffload.c: Don't include PS cmaps service.
+	(cff_index_get_pointers): Add `pool' parameter which allows to
+	insert an extra NUL character for each String INDEX entry.
+	(cff_index_get_name): Make it a local function.
+	(cff_index_get_string): New function.
+	(cff_subfont_load): Updated.
+	(cff_font_load): Initialize `num_strings', `strings', and
+	`string_pool' fields in the `CFF_FontRec' structure.
+	(cff_index_get_sid_string): Use `cff_index_get_string' instead of
+	`cff_index_get_name'.
+	(cff_font_done): Updated.
+
+	* src/cff/cffload.h: Don't include PS cmaps service.
+	(cff_index_get_string): Added.
+	(cff_index_get_sid_string): Updated.
+
+	* src/cff/cffobjs.c: Don't include PS cmaps service and
+	FT_INTERNAL_POSTSCRIPT_HINTS_H.
+	(cff_size_get_globals_funcs, cff_slot_init): Updated.
+	(cff_face_init): Follow `cff_index_get_name',
+	`cff_index_get_string', and `cff_index_get_sid_string' changes.
+
+	* src/cff/cffcmap.c (cff_sid_free_glyph_name): Removed.
+	(cff_sid_to_glyph_name): Use `cff_index_get_cid_string'.
+	(cff_cmap_unicode_init): Updated.
+
+	* src/cff/cffdrivr.c: Don't include PS cmap service.
+	(cff_get_glyph_name): Avoid unnecessary lookup for POSTSCRIPT_CMAPS
+	service.
+	(cff_get_glyph_name, cff_ps_get_font_info, cff_get_ros): Follow API
+	`cff_index_get_sid_string' change.
+	(cff_get_name_index): Use `cff_index_get_string' instead of
+	`cff_index_get_name'.
+
+	* src/cff/cffgload.c: Don't include FT_INTERNAL_POSTSCRIPT_HINTS_H.
+	(cff_decoder_init, cff_decoder_prepare): Updated.
+
+2010-02-27  Werner Lemberg  <wl@gnu.org>
+
+	Simplify code.
+	Suggested by Behdad.
+
+	* src/base/ftobjs.c (FT_Get_First_Char): Don't use a loop since we
+	call FT_Get_Next_Char anyway if necessary.
+
+2010-02-26  Behdad Esfahbod  <behdad@behdad.org>
+
+	Improve handling of invalid glyph indices in char->index functions.
+
+	* src/base/ftobjs.c (FT_Get_First_Char, FT_Get_Next_Char): Use a
+	loop.
+
+2010-02-18  Chris Liddell  <chris.liddell@artifex.com>
+
+	Fix Savannah bug #28905.
+
+	Initialize phantom points before calling the incremental interface
+	to update glyph metrics.
+
+	* src/truetype/ttgload.c (tt_get_metrics_incr_overrides)
+	[FT_CONFIG_OPTION_INCREMENTAL]: New function, split off from...
+	(tt_get_metrics): This.
+	Updated.
+	(load_truetype_glyph): Use tt_get_metrics_incr_overrides.
+
+2010-02-13  Werner Lemberg  <wl@gnu.org>
+
+	* Version 2.3.12 released.
+	==========================
+
+
+	Tag sources with `VER-2-3-12'.
+
+	* docs/CHANGES: Updated.
+
+	* docs/VERSION.DLL: Update documentation and bump version number to
+	2.3.12.
+
+	* README, Jamfile (RefDoc),
+	builds/win32/vc2005/freetype.vcproj, builds/win32/vc2005/index.html,
+	builds/win32/vc2008/freetype.vcproj, builds/win32/vc2008/index.html,
+	builds/win32/visualc/freetype.dsp,
+	builds/win32/visualc/freetype.vcproj,
+	builds/win32/visualc/index.html, builds/win32/visualce/freetype.dsp,
+	builds/win32/visualce/freetype.vcproj,
+	builds/win32/visualce/index.html,
+	builds/wince/vc2005-ce/freetype.vcproj,
+	builds/wince/vc2005-ce/index.html,
+	builds/wince/vc2008-ce/freetype.vcproj,
+	builds/wince/vc2008-ce/index.html: s/2.3.11/2.3.12/, s/2311/2312/.
+
+	* include/freetype/freetype.h (FREETYPE_PATCH): Set to 12.
+
+	* builds/unix/configure.raw (version_info): Set to 10:0:4.
+
+2010-02-12  suzuki toshiya  <mpsuzuki@hiroshima-u.ac.jp>
+
+	Improve autotool version checking to work with beta releases.
+
+	* autogen.sh (check_tool_version): Improve the extraction of version
+	number from "tool --version" output.  Some beta releases of
+	autotools have extra strings before version number.
+
+2010-02-12  suzuki toshiya  <mpsuzuki@hiroshima-u.ac.jp>
+
+	Fix overallocating bug in FT_Outline_New_Internal().
+
+	* src/base/ftoutln.c (FT_Outline_New_Internal): The length of
+	FT_Outline->points[] should be numPoints, not 2 * numPoints.
+	Found by Paul Messmer, see
+	http://lists.gnu.org/archive/html/freetype-devel/2010-02/msg00003.html
+
 2010-02-10  Ken Sharp  <ken.sharp@artifex.com>
 
 	Really fix Savannah bug #28678 (part 2).

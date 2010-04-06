@@ -567,9 +567,6 @@ $(GENDEV_XE): $(GLSRCDIR)\gendev.c $(GENDEV_DEPS)
 $(GENHT_XE): $(PSSRCDIR)\genht.c $(GENHT_DEPS)
 	$(CCAUX) $(GENHT_CFLAGS) $(PSSRCDIR)\genht.c $(CCAUX_TAIL)
 
-$(GENINIT_XE): $(PSSRCDIR)\geninit.c $(GENINIT_DEPS)
-	$(CCAUX) $(PSSRCDIR)\geninit.c $(CCAUX_TAIL)
-
 # ----------------------------- Main program ------------------------------ #
 
 LIBCTR=$(PSGEN)libc32.tr

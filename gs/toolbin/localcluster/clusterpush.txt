@@ -7,40 +7,57 @@ Usage:
 
   clusterpush.pl [type [user]]
 
-Where type is either gs or ghostpdl.  If you do not specify 'type'
-clusterpush.pl will check the current directory name and if it is gs or
-ghostpdl will use that, otherwise it terminates with an error.
+type gs, pcl, and/or xps.  If you do not specify a type clusterpush.pl
+will guess what you want to do based on the current directory. You
+can specify a combination of types by enclosing them in quotes
+(e.g. clusterpush.pl "gs pcl").  You can also specify bmpcmp as the type
+to generate bitmaps that compare the results of the last clusterpush
+with the head code (see below for details).
 
-And user is one of alex, giles, henrys, ken, marcos, masaki, mvrhel,
-ray, or tor.  If you don't specify 'user' clusterpush.pl uses the value
+user is one of alex, giles, henrys, ken, marcos, masaki, mvrhel, ray,
+or tor.  If you don't specify 'user' clusterpush.pl uses the value
 of $USER.  This makes sense on Linux and Mac OS X and probably cygwin,
-but I'm not sure what happens when run under Windows.  If you prefer
-a different default username than the one listed above please let me know.
+but I'm not sure what happens when run under Windows.  If you prefer a
+different default username than the one listed above please let me know.
 
 You need to run clusterpush.pl from the top level directory (the same
-directory from where you normally run 'make').  There isn't any error
-checking for this, so be careful.
+directory from where you normally run 'make').  Clusterpush prints and
+error if you try to run it from a different directory.
 
 Results will be sent via email after the run is completed, which takes
-about 15 minuts, presuing the cluster isn't busy. Your code is compared
+about 25 minuts, presuing the cluster isn't busy.  Your code is compared
 to the most recent baseline, so for meaningful results you will want
 to sync your code with head if recent changes to head have resulted in
 regression differences.
 
-BTW, no checking is done to make sure that you actually are the user you
-claim to be, so you can use this script as a primitive denial-of-service
-attack by flooding someone's mailbox with regression results (and by
-'flooding' I mean one email every 15 minutes).
+The first time you run clusterpush.pl it will take a really long time
+to rsync your source to the master machine and then from the master to
+the nodes.  After that things will go much quicker (unless, like me,
+you accidently leave giant .ppm files in the current directory).
 
-Finally, the first time you run clusterpush.pl it will take a really
-long time to rsync your source to the master machine and then from the
-master to the nodes.  After that things will go much quicker (unless,
-like me, you accidently leave giant .ppm files in the current directory).
+bmpcmp mode:
 
-One last thing, the code runs the PostScript/EPS/PDF tests for Ghostscript
-changes and the PCL5/PCL6/XPS/SVG tests for GhostPDL changes.  This isn't
-ideal, since a Ghostscript change can break any of the GhostPDL languages
-and it's a waste of time to test XPS if a change is made to the GhostSVG
-specific source.  If enough people complain I'll eventually fix this.
+Starting with r10876 the local cluster can now generate bitmaps that
+show differences between clusterpush jobs and trunk.  
 
+To use the feature run clusterpush.pl with the option bmpcmp (i.e.
+"toolbin/localcluster/clusterpush.pl bmpcmp").  This will queue a job
+that looks at the most recent none-bmpcmp clusterpush job you ran and
+generates bitmaps of the differences for the first 1000 files listed
+in the report.  It puts these files on the internets in the location
+<http://www.ghostscript.com/~regression/$USER> and then sends you
+an email telling you that it's done.  Since some of the test files
+are customer confidential this directory is password protected, I've
+emailed out passwords, contact me if you have misplaced your password.
+BTW, I consider the fact that can look at output from other users, e.g.
+<http://www.ghostscript.com/~regression/marcos>, a feature.
 
+I'll add an option to clusterpush.pl real soon now (tm) that will allow
+you specify a regression test and a bitmap comparison in one step,
+but for now you can queue both by calling clusterpush.pl twice:
+
+ clusterpush.pl gs ; sleep 60 ; clusterpush.pl bmpcmp
+
+(the sleep 60 is required because the cluster master only checks for
+requests once a minute, and the second clusterpush request overwrites
+the first if it is run before the check happens).

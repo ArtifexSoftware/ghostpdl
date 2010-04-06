@@ -355,8 +355,12 @@ const stream_template s_PSSD_template =
 /* ------ Utilities ------ */
 
 /*
- * Convert hex data to binary.  Return 1 if we filled the string, 0 if
- * we ran out of input data before filling the string, or ERRC on error.
+ * Convert hex data to binary. 
+ * Return 1 if we filled the string,
+ *        0 if we ran out of input data before filling the string,
+ *        2 if hex_break_on_whitespace is on and we encounrered
+ *          a white space.
+ *        ERRC on error.
  * The caller must set *odd_digit to -1 before the first call;
  * after each call, if an odd number of hex digits has been read (total),
  * *odd_digit is the odd digit value, otherwise *odd_digit = -1.

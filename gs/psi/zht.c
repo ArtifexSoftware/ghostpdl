@@ -144,6 +144,7 @@ zsetscreen(i_ctx_t *i_ctx_p)
     return zscreen_enum_init(i_ctx_p, &order, &screen, op, 3,
 			     setscreen_finish, space_index);
 }
+
 /* We break out the body of this operator so it can be shared with */
 /* the code for Type 1 halftones in sethalftone. */
 int

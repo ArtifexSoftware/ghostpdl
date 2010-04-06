@@ -371,7 +371,7 @@ cie_set_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;
     }
-    istate->colorspace.procs.cie = *pcprocs;
+    istate->colorspace[0].procs.cie = *pcprocs;
     pop(1);
     return (ref_stack_count(&e_stack) == edepth ? 0 : o_push_estack);
 }
@@ -442,7 +442,7 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 
     pcs = gsicc_find_cs(dictkey, igs);
     push(1); /* Sacrificial */
-    procs = istate->colorspace.procs.cie;
+    procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
         if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
 	    return (code < 0 ? code : gs_note_error(e_rangecheck));
@@ -539,7 +539,7 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 
     pcs = gsicc_find_cs(dictkey, igs);
     push(1); /* Sacrificial */
-    procs = istate->colorspace.procs.cie;
+    procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
         if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
 	    return (code < 0 ? code : gs_note_error(e_rangecheck));
@@ -594,7 +594,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 /* See if the color space is in the profile cache */
     pcs = gsicc_find_cs(dictkey, igs);
     push(1); /* Sacrificial */
-    procs = istate->colorspace.procs.cie;
+    procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
         /* Stable memory due to current caching of color space */
         code = gs_cspace_build_CIEABC(&pcs, NULL, mem->stable_memory);
@@ -646,7 +646,7 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
 /* See if the color space is in the profile cache */
     pcs = gsicc_find_cs(dictkey, igs);
     push(1); /* Sacrificial */
-    procs = istate->colorspace.procs.cie;
+    procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
         /* Stable memory due to current caching of color space */
         code = gs_cspace_build_CIEA(&pcs, NULL, mem->stable_memory);

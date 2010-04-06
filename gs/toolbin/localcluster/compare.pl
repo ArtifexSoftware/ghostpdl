@@ -261,7 +261,7 @@ foreach my $t (sort keys %current) {
 }
 }
 
-if ($elapsedTime==0) {
+if ($elapsedTime==0 || $elapsedTime==1) {
 } else {
 print "ran ".($pdfwriteTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 }
@@ -334,6 +334,24 @@ if (0) {
   }
 }
 
+my $first=1;
+foreach my $t (sort keys %current) {
+  if ($t =~ m/(.+\.)1$/) {
+    $t2=$1.'0';
+    if (exists $current{$t2}) {
+      if ($current{$t} ne $current{$t2} && (!exists $previous{$t} || !exists $previous{$t2} || $previous{$t} eq $previous{$t2})) {
+        if ($first) {
+          print "\nThe following files are showing a new mismatch between banded and page mode:\n";
+          $first=0;
+        }
+        print "$t\n";
+      }
+    }
+  }
+}
+print "\n" if (!$first);
+
+
   if (@archiveMatch) {
     print "-------------------------------------------------------------------------------------------------------\n\n";
     print "The following ".scalar(@archiveMatch)." regression file(s) had differences but matched at least once in the previous $previousValues runs:\n";
@@ -343,12 +361,12 @@ if (0) {
     print "\n";
   }
 
-  open(F,">>baselineupdateneeded.lst");
-  while(my $t=shift @baselineUpdateNeeded) {
-    my @a=split ' ',$t;
-    $a[0] =~ s/\//__/g;
-    print F "$a[0]\n";
-}
-  close(F);
+# open(F,">>baselineupdateneeded.lst");
+# while(my $t=shift @baselineUpdateNeeded) {
+#   my @a=split ' ',$t;
+#   $a[0] =~ s/\//__/g;
+#   print F "$a[0]\n";
+# }
+# close(F);
 }
 

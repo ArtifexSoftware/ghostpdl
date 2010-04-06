@@ -205,14 +205,14 @@ gs_begin_transparency_group(gs_state *pgs,
     /* Note that we currently will use the concrete space for any space other than a 
         device space.  However, if the device is a sep device it will blend
         in DeviceN color space as required.  */
-    if (gs_color_space_get_index(pgs->color_space) <= gs_color_space_index_DeviceCMYK) {
-        blend_color_space = pgs->color_space;
+    if (gs_color_space_get_index(blend_color_space) > gs_color_space_index_DeviceCMYK) {
+        blend_color_space = gs_currentcolorspace_inline(pgs);
     } else {
        /* ICC and CIE based color space.  With upcoming code changes
           all CIE based spaces will actually be ICC based spaces and
           ICC spaces are already concrete. So this will return the
           ICC color space. */
-        blend_color_space = cs_concrete_space(pgs->color_space, pis);
+        blend_color_space = cs_concrete_space(blend_color_space, pis);
     }
     /* Note that if the /CS parameter was not present in the push 
        of the transparency group, then we must actually inherent 

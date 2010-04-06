@@ -21,7 +21,9 @@ my $lowres=0;
 my $highres=0;
 my %products;
 my $bmpcmp=0;
+my $local=0;
 my $filename="";
+my $bmpcmpOptions;
 
 my $t;
 
@@ -37,6 +39,10 @@ while ($t=shift) {
     $bmpcmp=1;
     $filename=shift;
     $filename.=".txt";
+    $bmpcmpOptions=shift;
+    $bmpcmpOptions="" if (!$bmpcmpOptions);
+  } elsif ($t eq "local") {
+    $local=1;
   } else {
     $products{$t}=1;
     die "usage: build.pl [gs] [pcl] [xps] [svg] [mupdf]" if (!exists $allowedProducts{$t});
@@ -87,8 +93,10 @@ my $baseDirectory='./';
 my $svnURLPrivate='file:///var/lib/svn-private/ghostpcl/trunk/';
 my $svnURLPublic ='http://svn.ghostscript.com/ghostscript/';
 
-#$svnURLPrivate='svn+ssh://svn.ghostscript.com/var/lib/svn-private/ghostpcl/trunk/';
-#$svnURLPublic='http://svn.ghostscript.com/ghostscript/';
+if ($local) {
+$svnURLPrivate='svn+ssh://svn.ghostscript.com/var/lib/svn-private/ghostpcl/trunk/';
+$svnURLPublic='http://svn.ghostscript.com/ghostscript/';
+}
 
 my $timeCommand="";
 my $niceCommand="";
@@ -96,12 +104,16 @@ my $niceCommand="";
 my $temp="./temp";
 #$temp="/tmp/space/temp";
 #$temp="/dev/shm/temp";
+#$temp="/media/sdd/temp";
 
 my $raster="$temp/raster";
 my $bmpcmpDir="$temp/bmpcmp";
 my $baselineRaster="./baselineraster";
 
 my $gsBin=$baseDirectory."gs/bin/gs";
+if ($local) {
+  $gsBin.=" -I./gs/lib";
+}
 my $pclBin=$baseDirectory."gs/bin/pcl6";
 my $xpsBin=$baseDirectory."gs/bin/gxps";
 my $svgBin=$baseDirectory."gs/bin/gsvg";
@@ -160,6 +172,7 @@ my %tests=(
     "ppmraw.72.0",
     "ppmraw.300.0",
     "ppmraw.300.1",
+    "pam.72.0",
     "psdcmyk.72.0",
 ##"psdcmyk.300.0",
 ##"psdcmyk.300.1",
@@ -237,15 +250,10 @@ my %tests=(
     #"pdf.pkmraw.300.0"
     ],
   'mupdf' => [
+# mupdf only supports ppmraw output, so don't bother specifying anything else
     "ppmraw.72.0",
-    "ppmraw.300.0"
-#   "ppmraw.300.1",
-#   "psdcmyk.72.0",
-##"psdcmyk.300.0",
-##"psdcmyk.300.1",
-#   "pdf.ppmraw.72.0",
-#   "pdf.ppmraw.300.0",
-#   "pdf.pkmraw.300.0"
+    "ppmraw.300.0",
+    "ppmraw.300.1"
     ]
   );
 
@@ -436,15 +444,20 @@ sub build($$$$$) {
       $cmd2a =~ s|/gs/|/head/|;
       $cmd2c =~ s|$temp|$baselineRaster|;
       $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
-      $cmd.=" ; bash -c \"./bmpcmp <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ";
-      $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
+      $cmd.=" ; bash -c \"./bmpcmp $bmpcmpOptions <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\""; # ; gzip $bmpcmpFilename.* ";
+      $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=\\\$?; if [ \\\$t == 0 ]; then break; fi; echo 'scp retry \\\$c' ; done \"";
+#     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
       $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+      if ($local) {
+        $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
+#       $cmd.=" ; md5sum $outputFilename.gz >$md5Filename";
+   }
    }
 
     if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2} && !exists $skip{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ; fi";
+      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp $bmpcmpOptions <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\" ; gzip $bmpcmpFilename.* ; fi";
     }
 
     #   $cmd.=" ; gzip -f $inputFilename >>$logFilename 2>&1";
@@ -473,6 +486,14 @@ sub build($$$$$) {
     }
 
     if ($product eq 'mupdf') {
+      $cmd2b.=" -r$a[1]";
+      $cmd2b.=" -b20"    if ($a[2]==1);
+      $cmd2b.=" -o $outputFilename.%04d";
+      $cmd2b.=" $inputFilename  ";
+      $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
+      $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; cat $outputFilename.???? >$outputFilename ";
+      $cmd.=" ; md5sum $outputFilename >>$md5Filename";
     } else {
     if ($updateBaseline) {
       $cmd2b.=" -sOutputFile='|gzip -1 -n >$baselineFilename.gz'";
@@ -506,15 +527,20 @@ sub build($$$$$) {
       $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
       $cmd2a =~ s|/gs/|/head/|;
       $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
-      $cmd.=" ; bash -c \"./bmpcmp <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ";
-      $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
+      $cmd.=" ; bash -c \"./bmpcmp $bmpcmpOptions <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\""; # ; gzip $bmpcmpFilename.* ";
+      $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=\\\$?; if [ \\\$t == 0 ]; then break; fi; echo 'scp retry \\\$c' ; done \"";
+#     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
       $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+      if ($local) {
+        $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
+#       $cmd.=" ; md5sum $outputFilename.gz >$md5Filename";
+   }
    }
 
     if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2} && !exists $skip{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 1 10\" ; gzip $bmpcmpFilename.* ; fi";
+      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp $bmpcmpOptions <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\" ; gzip $bmpcmpFilename.* ; fi";
     }
 
 
@@ -563,13 +589,17 @@ if ($bmpcmp) {
     my $filename="";
     if (m/^(.+)\.(pdf\.p.mraw\.\d+\.[01]) (\S+) pdfwrite /) {
 #       print "$1 $2 $3 -- pdfwrite\n";
-      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,1,1) if (!$done);
+      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1) if (!$done);
 print "$filename\t$cmd\n" if (!$done);
     } elsif (m/^(.+)\.(p.mraw\.\d+\.[01]) (\S+)/) {
 #      print "$1 $2 $3\n";
-      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,1,1) if (!$done);
+      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1) if (!$done);
 print "$filename\t$cmd\n" if (!$done);
-    } elsif (m/errors:$/) {
+    } elsif (m/^(.+)\.(pam\.\d+\.[01]) (\S+)/) {
+#      print "$1 $2 $3\n";
+      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1) if (!$done);
+print "$filename\t$cmd\n" if (!$done);
+    } elsif (m/errors:$/ || m/previous clusterpush/i) {
       $done=1;
     }
     
@@ -585,7 +615,7 @@ foreach my $testfile (sort keys %testfiles) {
     my $cmd="";
     my $outputFilenames="";
     my $filename="";
-    ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,1,0);
+    ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,!$local,0);
     if (exists $quickFiles{$filename}) {
       push @commands,$cmd;
       push @outputFilenames,$outputFilenames;

@@ -132,8 +132,10 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     for (i = 0; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
 	pis->effective_transfer[i] = pis->set_transfer.gray;
     pis->cie_joint_caches = NULL;
+    pis->cie_joint_caches_alt = NULL;
     pis->cmap_procs = cmap_procs_default;
     pis->pattern_cache = NULL;
+    pis->pattern_cache_alt = NULL;
     pis->have_pattern_streams = false;
     pis->devicergb_cs = gs_cspace_new_DeviceRGB(mem);
     pis->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
@@ -176,6 +178,7 @@ gs_imager_state_copied(gs_imager_state * pis)
     rc_increment(pis->set_transfer.green);
     rc_increment(pis->set_transfer.blue);
     rc_increment(pis->cie_joint_caches);
+    rc_increment(pis->cie_joint_caches_alt);
     rc_increment(pis->devicergb_cs);
     rc_increment(pis->devicecmyk_cs);
     rc_increment(pis->icc_link_cache);
@@ -193,6 +196,7 @@ gs_imager_state_pre_assign(gs_imager_state *pto, const gs_imager_state *pfrom)
     rc_pre_assign(pto->element, pfrom->element, cname)
 
     RCCOPY(cie_joint_caches);
+    RCCOPY(cie_joint_caches_alt);
     RCCOPY(set_transfer.blue);
     RCCOPY(set_transfer.green);
     RCCOPY(set_transfer.red);

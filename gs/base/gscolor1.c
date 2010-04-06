@@ -48,7 +48,7 @@ gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
     if (pcs == NULL)
 	return_error(gs_error_VMerror);
     if ((code = gs_setcolorspace(pgs, pcs)) >= 0) {
-       gs_client_color *    pcc = pgs->ccolor;
+       gs_client_color *pcc = gs_currentcolor_inline(pgs);
 
         cs_adjust_color_count(pgs, -1); /* not strictly necessary */
         pcc->paint.values[0] = FORCE_UNIT(c);
