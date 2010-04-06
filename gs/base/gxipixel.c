@@ -467,6 +467,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->buffer = buffer;
     penum->buffer_size = bsize;
     penum->line = 0;
+    penum->icc_link = NULL;
     penum->line_size = 0;
     penum->use_rop = lop != (masked ? rop3_T : rop3_S);
 #ifdef DEBUG
@@ -896,3 +897,22 @@ gx_image_scale_mask_colors(gx_image_enum *penum, int component_index)
 	values[1] = 255 - v0;
     }
 }
+
+/* Used to indicate for ICC procesing if we have decoding to do */
+bool 
+gx_has_transfer(const gs_imager_state *pis, int num_comps)
+{
+    int k;
+    gs_state *pgs;
+
+    if (pis->is_gstate) {
+        pgs = (gs_state *)pis;
+        for (k = 0; k < num_comps; k++) {
+            if (pgs->effective_transfer[k]->proc != gs_identity_transfer) {
+                return(true);
+            }
+        }
+    } 
+    return(false);
+}
+

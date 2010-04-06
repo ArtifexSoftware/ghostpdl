@@ -512,7 +512,7 @@ sidscale_h=$(GLSRC)sidscale.h $(sisparam_h)
 simscale_h=$(GLSRC)simscale.h $(scommon_h) $(sisparam_h)
 gximage_h=$(GLSRC)gximage.h $(gsiparam_h)\
  $(gxcspace_h) $(gxdda_h) $(gxiclass_h) $(gxiparam_h) $(gxsample_h)\
- $(sisparam_h) $(strimpl_h)
+ $(sisparam_h) $(strimpl_h) $(gscms_h)
 gxhldevc_h=$(GLSRC)gxhldevc.h $(gsdcolor_h)
 gsptype2_h=$(GLSRC)gsptype2.h $(gspcolor_h) $(gxhldevc_h) $(gxfixed_h)
 gdevddrw_h=$(GLSRC)gdevddrw.h
@@ -652,7 +652,7 @@ $(GLOBJ)gswts.$(OBJ) : $(GLSRC)gswts.c $(GXERR) $(gxwts_h) $(gswts_h)\
 	$(GLCC) $(GLO_)gswts.$(OBJ) $(C_) $(GLSRC)gswts.c
 
 $(GLOBJ)gxidata.$(OBJ) : $(GLSRC)gxidata.c $(GXERR) $(memory__h)\
- $(gxcpath_h) $(gxdevice_h) $(gximage_h)
+ $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicccache_h)
 	$(GLCC) $(GLO_)gxidata.$(OBJ) $(C_) $(GLSRC)gxidata.c
 
 $(GLOBJ)gxifast.$(OBJ) : $(GLSRC)gxifast.c $(GXERR) $(memory__h) $(gpcheck_h)\
@@ -2343,7 +2343,8 @@ $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(GXERR)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h) $(siinterp_h) $(siscale_h) $(stream_h) $(vdtrace_h)\
- $(gxcindex_h) $(gxcolor2_h) $(gscspace_h)
+ $(gxcindex_h) $(gxcolor2_h) $(gscspace_h) $(gsicccache_h)\
+ $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gxiscale.$(OBJ) $(C_) $(GLSRC)gxiscale.c
 
 # ---------------- Display Postscript / Level 2 support ---------------- #

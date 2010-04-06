@@ -56,6 +56,7 @@ iclass_proc(gs_image_class_4_color);
 
 static irender_proc(image_render_color_DeviceN);
 static irender_proc(image_render_color_icc);
+
 irender_proc_t
 gs_image_class_4_color(gx_image_enum * penum)
 {
@@ -94,6 +95,38 @@ gs_image_class_4_color(gx_image_enum * penum)
         penum->pcs->cmm_icc_profile_data == NULL ) {
         return &image_render_color_DeviceN;
     } else {
+        /* Set up the link now */
+        const gs_color_space *pcs;
+        gsicc_rendering_param_t rendering_params;
+        int k;
+        int src_num_comp = cs_num_components(penum->pcs);
+
+         penum->icc_setup.need_decode = false;
+        /* Check if we need to do any decoding.  If yes, then that will slow us down */
+        for (k = 0; k < src_num_comp; k++) {
+            if ( penum->map[k].decoding != sd_none ) {
+                penum->icc_setup.need_decode = true;
+                break;
+            }
+        }
+        /* Define the rendering intents */
+        rendering_params.black_point_comp = BP_ON;
+        rendering_params.object_type = GS_IMAGE_TAG;
+        rendering_params.rendering_intent = penum->pis->renderingintent;
+        if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
+            pcs = penum->pcs->icc_equivalent;
+        } else {
+            pcs = penum->pcs;
+        }
+        penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
+        penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
+        penum->icc_setup.has_transfer = gx_has_transfer(penum->pis,
+                                penum->pis->icc_manager->device_profile->num_comps);
+        if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
+        if (penum->icc_link == NULL) {
+            penum->icc_link = gsicc_get_link(penum->pis, pcs, NULL, 
+                &rendering_params, penum->memory, false);
+        }
         return &image_render_color_icc;
     }
 }
@@ -115,25 +148,8 @@ mask_color_matches(const byte *v, const gx_image_enum *penum,
     return true;
 }
 
-static bool 
-gx_has_transfer(const gs_imager_state *pis, int num_comps)
-{
-    int k;
-    gs_state *pgs;
-
-    if (pis->is_gstate) {
-        pgs = (gs_state *)pis;
-        for (k = 0; k < num_comps; k++) {
-            if (pgs->effective_transfer[k]->proc != gs_identity_transfer) {
-                return(true);
-            }
-        }
-    } 
-    return(false);
-}
-
 static void 
-decode_row(gx_image_enum *penum, byte *psrc, int spp, byte *pdes, 
+decode_row(const gx_image_enum *penum, byte *psrc, int spp, byte *pdes, 
                 byte *bufend)
 {
     byte *curr_pos = pdes;
@@ -198,8 +214,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     color_samples next;		/* next sample value */
     byte *bufend;
     int code = 0, mcode = 0;
-    gsicc_rendering_param_t rendering_params;
-    gsicc_link_t *icc_link;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
     unsigned char *psrc_cm, *psrc_cm_start, *psrc_decode;
@@ -207,18 +221,13 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
     gx_color_index color;
-    bool must_halftone = gx_device_must_halftone(dev);
-    bool has_transfer = gx_has_transfer(pis,
-                                pis->icc_manager->device_profile->num_comps);
     int src_num_comp = cs_num_components(penum->pcs);
-    bool need_decode = false;
-    
-   /* Check if we need to do any decoding.  If yes, then that will slow us down */
-   for (k = 0; k < src_num_comp; k++) {
-        if ( penum->map[k].decoding != sd_none ) {
-            need_decode = true;
-            break;
-        }
+    bool need_decode = penum->icc_setup.need_decode;
+    bool must_halftone = penum->icc_setup.must_halftone;
+    bool has_transfer = penum->icc_setup.has_transfer;
+
+    if (penum->icc_link == NULL) {
+        return gs_rethrow(-1, "ICC Link not created during image render color");
     }
     /* Needed for device N */
     memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
@@ -227,26 +236,16 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     } else {
         pcs = penum->pcs;
     }
-    if (pcs->cmm_icc_profile_data->islab ) need_decode = false;
     pdevc = &devc1;
     pdevc_next = &devc2;
     /* These used to be set by init clues */
     pdevc->type = gx_dc_type_none;
     pdevc_next->type = gx_dc_type_none;
-    /* Define the rendering intents */
-    rendering_params.black_point_comp = BP_ON;
-    rendering_params.object_type = GS_IMAGE_TAG;
-    rendering_params.rendering_intent = pis->renderingintent;
     if (h == 0)
 	return 0;
-    /* Request the ICC link for the transform that we will need to use */
-    icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
-    if (icc_link == NULL) {
-        return gs_rethrow(-1, "ICC Link not created during image render color");
-    }
     /* If the link is the identity, then we don't need to do any color 
        conversions except for potentially a decode. */
-    if (icc_link->is_identity && !need_decode) {
+    if (penum->icc_link->is_identity && !need_decode) {
         /* Fastest case.  No decode or CM needed */
         psrc_cm = (unsigned char *) psrc;
         spp_cm = spp;
@@ -257,7 +256,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
         psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, "image_render_color_icc");
         psrc_cm_start = psrc_cm;
         bufend = psrc_cm +  w * spp_cm/spp;
-        if (icc_link->is_identity) {
+        if (penum->icc_link->is_identity) {
             /* decode only. no CM.  This is slow but does not happen that often */
             decode_row(penum, psrc, spp, psrc_cm, bufend);    
         } else {
@@ -278,18 +277,18 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
                 /* Need decode and CM.  This is slow but does not happen that often */
                 psrc_decode = gs_alloc_bytes(pis->memory,  w, "image_render_color_icc");
                 decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
-                gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
-                                         (void*) psrc_decode, (void*) psrc_cm);
+                gscms_transform_color_buffer(penum->icc_link, &input_buff_desc, 
+                                        &output_buff_desc, (void*) psrc_decode, 
+                                        (void*) psrc_cm);
                 gs_free_object(pis->memory, (byte *)psrc_decode, "image_render_color_icc");
             } else {
                 /* CM only. No decode */
-                gscms_transform_color_buffer(icc_link, &input_buff_desc, &output_buff_desc, 
-                                         (void*) psrc, (void*) psrc_cm);
+                gscms_transform_color_buffer(penum->icc_link, &input_buff_desc, 
+                                            &output_buff_desc, (void*) psrc, 
+                                            (void*) psrc_cm);
             }
         }
     }
-    /* Release the link */
-    gsicc_release_link(icc_link);
     pnext = penum->dda.pixel0;
     xrun = xprev = dda_current(pnext.x);
     yrun = yprev = dda_current(pnext.y);

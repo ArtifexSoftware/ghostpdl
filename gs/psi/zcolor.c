@@ -5051,11 +5051,11 @@ static int checkrangeab(i_ctx_t * i_ctx_p, ref *labdict)
     return 0;
 }
 
-static int setlabspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIESubst)
+static int setlabspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, 
+                       int CIESubst)
 {
-
-    /* In this case, we will treat this as an ICC color space, with a CIELAB 16 bit profile */
-
+    /* In this case, we will treat this as an ICC color space, with a 
+       CIELAB 16 bit profile */
     ref labdict;
     int code = 0;
     float                   range_buff[4], white[3], black[3];
@@ -5068,52 +5068,27 @@ static int setlabspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
     code = array_get(imemory, r, 1, &labdict);
     if (code < 0)
 	return code;
-
-
 /* Get all the parts */
-
-    code = dict_floats_param( imemory, 
-			      &labdict,
-                              "Range",
-                              4,
-                              range_buff,
+    code = dict_floats_param( imemory, &labdict, "Range", 4, range_buff,
                               dflt_range );
     for (i = 0; i < 4 && range_buff[i + 1] >= range_buff[i]; i += 2);
     if (i != 4)
         return_error(e_rangecheck);
-
-     code = dict_floats_param( imemory, 
-			      &labdict,
-                              "BlackPoint",
-                              3,
-                              black,
+    code = dict_floats_param( imemory, &labdict, "BlackPoint", 3, black, 
                               dflt_black );
-
-
-     code = dict_floats_param( imemory, 
-			      &labdict,
-                              "WhitePoint",
-                              3,
-                              white,
+     code = dict_floats_param( imemory, &labdict, "WhitePoint", 3, white,
                               dflt_white );
-
      if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
         return_error(e_rangecheck);
-
     code = seticc_lab(i_ctx_p, white, black, range_buff);
-
     if ( code < 0)
         return gs_rethrow(code, "setting PDF lab color space");
-
     cc.pattern = 0x00;
     for (i=0;i<3;i++) 
         cc.paint.values[i] = 0;
     code = gs_setcolor(igs, &cc);
-
     return code;
-
 }
-
 
 static int validatelabspace(i_ctx_t * i_ctx_p, ref **r)
 {
@@ -5126,36 +5101,23 @@ static int validatelabspace(i_ctx_t * i_ctx_p, ref **r)
     /* Validate parameters, check we have enough operands */
     if (r_size(space) < 2)
 	return_error(e_rangecheck);
-
     code = array_get(imemory, space, 1, &labdict);
     if (code < 0)
 	return code;
-
-    /* Check the white point, which is required */
-
-    /* We have to have a white point */
-    /* Check white point exists, and is an array of three numbers */
+    /* Check the white point, which is required. */
     code = checkWhitePoint(i_ctx_p, &labdict);
     if (code != 0)
 	return code;
-
     /* The rest are optional.  Need to validate though */
-
     code = checkBlackPoint(i_ctx_p, &labdict);
     if (code < 0)
 	return code;
-
     /* Range on a b values */
-
     code = checkrangeab(i_ctx_p, &labdict);
     if (code < 0)
 	return code;
-
     *r = 0;  /* No nested space */
-
     return 0;
-
-
 }
 
 static int labrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)

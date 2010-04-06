@@ -19,6 +19,7 @@
 #include "gxdevice.h"
 #include "gxcpath.h"
 #include "gximage.h"
+#include "gsicccache.h"
 
 /* Forward declarations */
 static void update_strip(gx_image_enum *penum);
@@ -461,6 +462,9 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     if (scaler != 0) {
 	(*scaler->template->release) ((stream_state *) scaler);
 	gs_free_object(mem, scaler, "image scaler state");
+    }
+    if (penum->icc_link != NULL) {
+        gsicc_release_link(penum->icc_link);
     }
     gs_free_object(mem, penum->line, "image line");
     gs_free_object(mem, penum->buffer, "image buffer");

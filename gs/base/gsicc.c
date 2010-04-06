@@ -333,11 +333,16 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
        not color managed */
     memset(psrc_cm,0,sizeof(unsigned short)*GS_CLIENT_COLOR_MAX_COMPONENTS);
 
-     /* This needs to be optimized. And range corrected */
-   for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
-        psrc[k] = pcc->paint.values[k]*65535;
+     /* This needs to be optimized */
+    if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB) {
+        psrc[0] = pcc->paint.values[0]*65535.0/100.0;
+        psrc[1] = (pcc->paint.values[1]+128)/255.0*65535.0;
+        psrc[2] = (pcc->paint.values[2]+128)/255.0*65535.0;
+    } else {
+        for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
+            psrc[k] = pcc->paint.values[k]*65535.0;
+        }
     }
-
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
     if (icc_link->is_identity) {
