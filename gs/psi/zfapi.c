@@ -2047,10 +2047,10 @@ retry_oversampling:
 		cr.metrics_type = FAPI_METRICS_ADD;
 	    }
 	} else {
-	    cr.sb_x = fapi_round(sbw[2] * scale);
-	    cr.sb_y = fapi_round(sbw[3] * scale);
-	    cr.aw_x = fapi_round(sbw[0] * scale);
-	    cr.aw_y = fapi_round(sbw[1] * scale);
+	    cr.sb_x = fapi_round(sbw[0] * scale);
+	    cr.sb_y = fapi_round(sbw[1] * scale);
+	    cr.aw_x = fapi_round(sbw[2] * scale);
+	    cr.aw_y = fapi_round(sbw[3] * scale);
 	    cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
 	    cr.metrics_type = (code == metricsSideBearingAndWidth ?
 				FAPI_METRICS_REPLACE : FAPI_METRICS_REPLACE_WIDTH);
