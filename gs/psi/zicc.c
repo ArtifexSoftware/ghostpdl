@@ -107,6 +107,8 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     /* We have to get the profile handle due to the fact that we need to know
        if it has a data space that is CIELAB */
     picc_profile->profile_handle = gsicc_get_profile_handle_buffer(picc_profile->buffer);
+    if (picc_profile->profile_handle == NULL)
+        return gs_rethrow(code, "installing the profile");
     picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
 
     /* Lets go ahead and get the hash code and check if we match one of the default spaces */

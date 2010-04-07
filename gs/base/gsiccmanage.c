@@ -889,6 +889,7 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
    gs_free_object(icc_manager->memory, icc_manager, "rc_gsicc_manager_free");
 }
 
+#if 0
 /* Allocates and loads the icc buffer from the stream. */
 static int
 gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, 
@@ -923,6 +924,46 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
    profile->buffer_size = num_bytes;
    return(0);
 }
+
+#endif
+
+#if 1
+/* Allocates and loads the icc buffer from the stream. */
+static int
+gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, 
+                          gs_memory_t *memory)
+{
+    int                     num_bytes,profile_size;
+    unsigned char           buffer_size[4];
+    unsigned char           *buffer_ptr;
+
+    srewind(s);  /* Work around for issue with sfread return 0 bytes
+                    and not doing a retry if there is an issue.  This
+                    is a bug in the stream logic or strmio layer.  Occurs
+                    with smask_withicc.pdf on linux 64 bit system */
+    buffer_ptr = &(buffer_size[0]);
+    num_bytes = sfread(buffer_ptr,sizeof(unsigned char),4,s);
+    profile_size = gsicc_getprofilesize(buffer_ptr);
+
+    if (profile_size < ICC_HEADER_SIZE)
+        return(-1);
+    /* Allocate the buffer, stuff with the profile */
+   buffer_ptr = gs_alloc_bytes(memory, profile_size,
+					"gsicc_load_profile");
+   if (buffer_ptr == NULL)
+        return(-1);
+
+   srewind(s);
+   num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
+   if( num_bytes != profile_size) {
+       gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
+       return(-1);
+   }
+   profile->buffer = buffer_ptr;
+   profile->buffer_size = num_bytes;
+   return(0);
+}
+#endif
 
 /* Check if the profile is the same as any of the default profiles */
 static void
@@ -1020,6 +1061,9 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer)
 
      if( buffer != NULL) {
          profile_size = gsicc_getprofilesize(buffer);
+         if (profile_size < ICC_HEADER_SIZE) {
+             return(0);
+         }
          profile_handle = gscms_get_profile_handle_mem(buffer, profile_size);
          return(profile_handle);
      }
