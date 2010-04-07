@@ -895,17 +895,18 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
                           gs_memory_t *memory)
 {
     int                     num_bytes,profile_size;
-    unsigned char           buffer_size[4];
     unsigned char           *buffer_ptr;
+    int                     code;
 
-    srewind(s);  /* Work around for issue with sfread return 0 bytes
-                    and not doing a retry if there is an issue.  This
-                    is a bug in the stream logic or strmio layer.  Occurs
-                    with smask_withicc.pdf on linux 64 bit system */
-    buffer_ptr = &(buffer_size[0]);
-    num_bytes = sfread(buffer_ptr,sizeof(unsigned char),4,s);
-    profile_size = gsicc_getprofilesize(buffer_ptr);
-
+    code = srewind(s);  /* Work around for issue with sfread return 0 bytes
+                        and not doing a retry if there is an issue.  This
+                        is a bug in the stream logic or strmio layer.  Occurs
+                        with smask_withicc.pdf on linux 64 bit system */
+    /* Get the size from doing a seek to the end and then a rewind instead
+       of relying upon the profile size indicated in the header */
+    code = sfseek(s,0,SEEK_END);
+    profile_size = sftell(s);
+    code = srewind(s);
     if (profile_size < ICC_HEADER_SIZE)
         return(-1);
     /* Allocate the buffer, stuff with the profile */
@@ -913,8 +914,6 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
 					"gsicc_load_profile");
    if (buffer_ptr == NULL)
         return(-1);
-
-   srewind(s);
    num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
    if( num_bytes != profile_size) {
        gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
