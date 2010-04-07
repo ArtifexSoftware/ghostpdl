@@ -407,16 +407,8 @@ gx_concretize_ICC(
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_PATH_TAG;
     rendering_params.rendering_intent = pis->renderingintent;
-
-     /* This needs to be optimized */
-    if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB) {
-        psrc[0] = pcc->paint.values[0]*65535.0/100.0;
-        psrc[1] = (pcc->paint.values[1]+128)/255.0*65535.0;
-        psrc[2] = (pcc->paint.values[2]+128)/255.0*65535.0;
-    } else {
-        for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
-            psrc[k] = pcc->paint.values[k]*65535.0;
-        }
+    for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
+        psrc[k] = pcc->paint.values[k]*65535.0;
     }
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
