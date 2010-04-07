@@ -205,6 +205,7 @@ gs_begin_transparency_group(gs_state *pgs,
     /* Note that we currently will use the concrete space for any space other than a 
         device space.  However, if the device is a sep device it will blend
         in DeviceN color space as required.  */
+    blend_color_space = gs_currentcolorspace_inline(pgs);
     if (gs_color_space_get_index(blend_color_space) > gs_color_space_index_DeviceCMYK) {
         blend_color_space = gs_currentcolorspace_inline(pgs);
     } else {
