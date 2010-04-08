@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -27,10 +27,6 @@
 
 /* Import the IODevice table from gconf.c. */
 extern_gx_io_device_table();
-
-/* Define a table of local copies of the IODevices, */
-/* allocated at startup.  This just postpones the day of reckoning.... */
-static gx_io_device **io_device_table;
 
 private_st_io_device();
 gs_private_st_ptr(st_io_device_ptr, gx_io_device *, "gx_io_device *",
@@ -68,10 +64,11 @@ gs_iodev_init(gs_memory_t * mem)
 	gs_alloc_struct_array(mem, gx_io_device_table_count,
 			      gx_io_device *, &st_io_device_ptr_element,
 			      "gs_iodev_init(table)");
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
     int i, j;
     int code = 0;
 
-    if (table == 0)
+    if ((table == NULL) || (libctx == NULL))
 	return_error(gs_error_VMerror);
     for (i = 0; i < gx_io_device_table_count; ++i) {
 	gx_io_device *iodev =
@@ -83,8 +80,9 @@ gs_iodev_init(gs_memory_t * mem)
 	table[i] = iodev;
 	memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
     }
-    io_device_table = table;
-    code = gs_register_struct_root(mem, NULL, (void **)&io_device_table,
+    libctx->io_device_table = table;
+    code = gs_register_struct_root(mem, NULL,
+                                   (void **)&libctx->io_device_table,
 				   "io_device_table");
     if (code < 0)
 	goto fail;
@@ -100,7 +98,7 @@ gs_iodev_init(gs_memory_t * mem)
     for (; i >= 0; --i)
 	gs_free_object(mem, table[i - 1], "gs_iodev_init(iodev)");
     gs_free_object(mem, table, "gs_iodev_init(table)");
-    io_device_table = 0;
+    libctx->io_device_table = 0;
     return (code < 0 ? code : gs_note_error(gs_error_VMerror));
 }
 
@@ -263,24 +261,28 @@ os_get_params(gx_io_device * iodev, gs_param_list * plist)
 
 /* Get the N'th IODevice from the known device table. */
 gx_io_device *
-gs_getiodevice(int index)
+gs_getiodevice(const gs_memory_t *mem, int index)
 {
-    if (!io_device_table || index < 0 || index >= gx_io_device_table_count)
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+
+    if (libctx == NULL || libctx->io_device_table == NULL ||
+        index < 0      || index >= gx_io_device_table_count)
 	return 0;		/* index out of range */
-    return io_device_table[index];
+    return libctx->io_device_table[index];
 }
 
 /* Look up an IODevice name. */
 /* The name may be either %device or %device%. */
 gx_io_device *
-gs_findiodevice(const byte * str, uint len)
+gs_findiodevice(const gs_memory_t *mem, const byte * str, uint len)
 {
     int i;
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
     if (len > 1 && str[len - 1] == '%')
 	len--;
     for (i = 0; i < gx_io_device_table_count; ++i) {
-	gx_io_device *iodev = io_device_table[i];
+	gx_io_device *iodev = libctx->io_device_table[i];
 	const char *dname = iodev->dname;
 
 	if (dname && strlen(dname) == len + 1 && !memcmp(str, dname, len))
@@ -377,10 +379,10 @@ gs_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     int code = 0;
 
     /* Get the iodevice */
-    code = gs_parse_file_name(&pfn, pat, patlen);
+    code = gs_parse_file_name(&pfn, pat, patlen, mem);
     if (code < 0)
 	return NULL;
-    iodev = (pfn.iodev == NULL) ? iodev_default : pfn.iodev;
+    iodev = (pfn.iodev == NULL) ? iodev_default(mem) : pfn.iodev;
 
     /* Check for several conditions that just cause us to return success */
     if (pfn.len == 0 || iodev->procs.enumerate_files == iodev_no_enumerate_files) {

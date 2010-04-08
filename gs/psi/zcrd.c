@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -169,7 +169,7 @@ zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
 
 /* Get ColorRenderingType 1 procedures from the PostScript dictionary. */
 static int
-zcrd1_proc_params(const gs_memory_t *mem, 
+zcrd1_proc_params(const gs_memory_t *mem,
 		  os_ptr op, ref_cie_render_procs * pcprocs)
 {
     int code;
@@ -177,13 +177,13 @@ zcrd1_proc_params(const gs_memory_t *mem,
 
     code = dict_proc3_param(mem, op, "EncodeLMN", &pcprocs->EncodeLMN);
     if (code < 0)
-        return code;  
+        return code;
     code = dict_proc3_param(mem, op, "EncodeABC", &pcprocs->EncodeABC);
     if (code < 0)
-        return code;  
+        return code;
     code = dict_proc3_param(mem, op, "TransformPQR", &pcprocs->TransformPQR);
     if (code < 0)
-        return code;  
+        return code;
     if (code == 1)
 	return gs_note_error(e_undefined);
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {

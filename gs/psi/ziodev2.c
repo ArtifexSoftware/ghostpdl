@@ -66,7 +66,7 @@ zgetdevparams(i_ctx_t *i_ctx_p)
     ref *pmark;
 
     check_read_type(*op, t_string);
-    iodev = gs_findiodevice(op->value.bytes, r_size(op));
+    iodev = gs_findiodevice(imemory, op->value.bytes, r_size(op));
     if (iodev == 0)
 	return_error(e_undefined);
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
@@ -91,7 +91,7 @@ zputdevparams(i_ctx_t *i_ctx_p)
     password system_params_password;
 
     check_read_type(*op, t_string);
-    iodev = gs_findiodevice(op->value.bytes, r_size(op));
+    iodev = gs_findiodevice(imemory, op->value.bytes, r_size(op));
     if (iodev == 0)
 	return_error(e_undefined);
     code = stack_param_list_read(&list, &o_stack, 1, NULL, false, iimemory);

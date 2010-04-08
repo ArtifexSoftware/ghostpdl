@@ -1201,7 +1201,8 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
 	const char *fmt;
 
 	if (NULL != udev->fname &&
-	    0 <= gx_parse_output_file_name(&parsed, &fmt, udev->fname, strlen(udev->fname)) &&
+	    0 <= gx_parse_output_file_name(&parsed, &fmt, udev->fname,
+                                           strlen(udev->fname), udev->memory) &&
 	    fmt
 	    ) {
 	    if (0 < upd->strings[S_CLOSE].size)

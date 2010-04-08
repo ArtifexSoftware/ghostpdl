@@ -82,6 +82,13 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     return 0;
 }
 
+gs_lib_ctx_t *gs_lib_ctx_get_interp_instance(const gs_memory_t *mem)
+{
+    if (mem == NULL)
+        return NULL;
+    return mem->gs_lib_ctx;
+}
+
 /* Provide a single point for all "C" stdout and stderr.
  */
 

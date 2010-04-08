@@ -39,7 +39,8 @@ typedef struct gs_parsed_file_name_s {
 } gs_parsed_file_name_t;
 
 /* Parse a file name into device and individual name. */
-int gs_parse_file_name(gs_parsed_file_name_t *, const char *, uint);
+int gs_parse_file_name(gs_parsed_file_name_t *, const char *, uint,
+                       const gs_memory_t *);
 
 /* Parse a real (non-device) file name and convert to a C string. */
 int gs_parse_real_file_name(gs_parsed_file_name_t *, const char *, uint,

@@ -742,13 +742,13 @@ tiffsep1_prn_close(gx_device * pdev)
 
     if (code < 0)
 	return code;
-    code = gx_parse_output_file_name(&parsed, &fmt,
-		    			tfdev->fname, strlen(tfdev->fname));
+    code = gx_parse_output_file_name(&parsed, &fmt, tfdev->fname,
+                                     strlen(tfdev->fname), pdev->memory);
     if (code < 0)
 	return code;
 
     /* If we are doing separate pages, delete the old default file */
-    if (parsed.iodev == iodev_default) {		/* filename includes "%nnd" */
+    if (parsed.iodev == iodev_default(pdev->memory)) {		/* filename includes "%nnd" */
 	if (fmt) {
 	    char compname[MAX_FILE_NAME_SIZE];
 	    long count1 = pdev->PageCount;
@@ -1355,8 +1355,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
      * Check if the file name has a numeric format.  If so then we want to
      * create individual separation files for each page of the input.
     */
-    code = gx_parse_output_file_name(&parsed, &fmt,
-		    			tfdev->fname, strlen(tfdev->fname));
+    code = gx_parse_output_file_name(&parsed, &fmt, tfdev->fname,
+                                     strlen(tfdev->fname), pdev->memory);
     
     /* Write the page directory for the CMYK equivalent file. */
     pdev->color_info.depth = 32;	/* Create directory for 32 bit cmyk */
@@ -1520,12 +1520,12 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
      * Check if the file name has a numeric format.  If so then we want to
      * create individual separation files for each page of the input.
     */
-    code = gx_parse_output_file_name(&parsed, &fmt,
-		    			pdev->fname, strlen(pdev->fname));
+    code = gx_parse_output_file_name(&parsed, &fmt, pdev->fname,
+                                     strlen(pdev->fname), pdev->memory);
 
     /* If the output file is on disk and the name contains a page #, */
     /* then delete the previous file. */
-    if (pdev->file != NULL && parsed.iodev == iodev_default && fmt) {
+    if (pdev->file != NULL && parsed.iodev == iodev_default(pdev->memory) && fmt) {
         char compname[MAX_FILE_NAME_SIZE];
 	long count1 = pdev->PageCount;
 
@@ -1648,7 +1648,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 #ifdef USE_32_BIT_WRITES
 		uint32_t *dest = dithered_line;
 		uint32_t val = 0;
-		uint32_t *mask = &bit_order[0];
+		const uint32_t *mask = &bit_order[0];
 #else	/* example 8-bit code */
 		byte *dest = dithered_line;
 		byte val = 0;

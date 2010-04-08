@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -160,12 +160,12 @@ iodev_proc_fopen(iodev_os_fopen);
 iodev_proc_fclose(iodev_os_fclose);
 
 /* Get the N'th IODevice. */
-gx_io_device *gs_getiodevice(int);
+gx_io_device *gs_getiodevice(const gs_memory_t *,int);
 
-#define iodev_default (gs_getiodevice(0))
+#define iodev_default(mem) (gs_getiodevice(mem,0))
 
 /* Look up an IODevice name. */
-gx_io_device *gs_findiodevice(const byte *, uint);
+gx_io_device *gs_findiodevice(const gs_memory_t *,const byte *, uint);
 
 /* Get and put IODevice parameters. */
 int gs_getdevparams(gx_io_device *, gs_param_list *);

@@ -423,7 +423,7 @@ void gx_device_copy_params(gx_device *dev, const gx_device *target);
  */
 int gx_parse_output_file_name(gs_parsed_file_name_t *pfn,
 			      const char **pfmt, const char *fname,
-			      uint len);
+			      uint len, gs_memory_t *memory);
 
 /*
  * Open the output file for a device.  Note that if the file name is empty,

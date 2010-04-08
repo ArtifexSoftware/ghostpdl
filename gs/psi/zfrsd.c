@@ -263,13 +263,14 @@ make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
 
     if (sfilename(fs, &fname) < 0)
 	return_error(e_ioerror);
-    code = gs_parse_file_name(&pname, (const char *)fname.data, fname.size);
+    code = gs_parse_file_name(&pname, (const char *)fname.data, fname.size,
+                              imemory);
     if (code < 0)
 	return code;
     if (pname.len == 0)		/* %stdin% etc. won't have a filename */
 	return_error(e_invalidfileaccess); /* can't reopen */
     if (pname.iodev == NULL)
-	pname.iodev = iodev_default;
+	pname.iodev = iodev_default(imemory);
     /* Open the file again, to be independent of the source. */
     ialloc_set_space(idmemory, stream_space);
     code = zopen_file(i_ctx_p, &pname, "r", &s, imemory);

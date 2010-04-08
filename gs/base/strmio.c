@@ -40,7 +40,7 @@ sfopen(const char *path, const char *mode, gs_memory_t *memory)
     iodev_proc_open_file((*open_file));
     gs_memory_t *mem = (memory == NULL) ? gs_lib_ctx_get_non_gc_memory_t() : memory;
 
-    int code = gs_parse_file_name(&pfn, path, strlen(path));
+    int code = gs_parse_file_name(&pfn, path, strlen(path), memory);
     if (code < 0) {
 #	define EMSG	"sfopen: gs_parse_file_name failed.\n"
 	errwrite(EMSG, strlen(EMSG));
@@ -54,7 +54,7 @@ sfopen(const char *path, const char *mode, gs_memory_t *memory)
 	return NULL;
     }
     if (pfn.iodev == NULL)
-	pfn.iodev = iodev_default;
+	pfn.iodev = iodev_default(mem);
     open_file = pfn.iodev->procs.open_file;
     if (open_file == 0)
 	code = file_open_stream(pfn.fname, pfn.len, mode, 2048, &s,

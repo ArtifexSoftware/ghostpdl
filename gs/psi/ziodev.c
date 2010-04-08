@@ -74,7 +74,7 @@ zgetiodevice(i_ctx_t *i_ctx_p)
     const byte *dname;
 
     check_type(*op, t_integer);
-    iodev = gs_getiodevice((int)(op->value.intval));
+    iodev = gs_getiodevice(imemory, (int)(op->value.intval));
     if (iodev == 0)		/* index out of range */
 	return_error(e_rangecheck);
     dname = (const byte *)iodev->dname;
