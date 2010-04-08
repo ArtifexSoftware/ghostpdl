@@ -4626,6 +4626,7 @@ static int nInstrCount=0;
 
       A = CUR.stack[CUR.args + 1];
       B = CUR.stack[CUR.args];
+
 #if 0
       if ( BOUNDS( A, CUR.zp0.n_points ) )
 #else
@@ -4633,7 +4634,7 @@ static int nInstrCount=0;
       if ( BOUNDS( A, CUR.zp0.n_points + 2 ) )
 #endif
       {
-        CUR.error = TT_Err_Invalid_Reference;
+/*        CUR.error = TT_Err_Invalid_Reference;*/
         return;
       }
 
