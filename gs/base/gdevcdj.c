@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -153,7 +153,7 @@
   case 0:\
 	if ( pa.size != psize )\
 	  code = gs_error_rangecheck;\
-	else { 
+	else {
 /* The body of the processing code goes here. */
 /* If it succeeds, it should do a 'break'; */
 /* if it fails, it should set ecode and fall through. */
@@ -596,7 +596,7 @@ cdj_device(cdj550_procs, "picty180", 300, 300, BITSPERPIXEL,
 gx_device_cdj far_data gs_dj505j_device =
 cdj_device(dj505j_procs, "dj505j", 300, 300, 1,
  	   dj505j_print_page, 4, 0, 1);
- 
+
 gx_device_pj far_data gs_declj250_device =
 pj_device(pj_procs, "declj250", 180, 180, BITSPERPIXEL,
 	  declj250_print_page);
@@ -604,7 +604,7 @@ pj_device(pj_procs, "declj250", 180, 180, BITSPERPIXEL,
 gx_device_cdj far_data gs_dnj650c_device =
 cdj_device(dnj650c_procs, "dnj650c", 300, 300, BITSPERPIXEL,
 	   dnj650c_print_page, 0, 2, 1);
-	   
+
 gx_device_cdj far_data gs_lj4dith_device =
 cdj_device(lj4dith_procs, "lj4dith", 600, 600, 8,
 	   lj4dith_print_page, 4, 0, 1);
@@ -792,7 +792,7 @@ hp_colour_open(gx_device *pdev, int ptype)
     break;
   case LJ4DITH:
     m = lj4_all;
-    break;  
+    break;
   case PJ180:
   case PJXL300:
   case PJXL180:
@@ -841,7 +841,7 @@ hp_colour_open(gx_device *pdev, int ptype)
     /*NOTREACHED*/
 
     /*
-     * The margins must be set so that the resulting page length will be 
+     * The margins must be set so that the resulting page length will be
      * expressed exactly as a multiple of tenthes of inches.
      *
      */
@@ -867,7 +867,7 @@ hp_colour_open(gx_device *pdev, int ptype)
 
 /* Added parameters for DeskJet 5xxC */
 
-/* Get parameters.  In addition to the standard and printer 
+/* Get parameters.  In addition to the standard and printer
  * parameters, we supply shingling and depletion parameters,
  * and control over the bits-per-pixel used in output rendering */
 static int
@@ -912,7 +912,7 @@ cdj_put_params(gx_device *pdev, gs_param_list *plist)
 /* Added parameters for PaintJet XL and PaintJet XL300 */
 
 /* Get parameters.  In addition to the standard and printer
- * parameters, we supply print_quality and render_type 
+ * parameters, we supply print_quality and render_type
  * parameters, together with bpp control. */
 static int
 pjxl_get_params(gx_device *pdev, gs_param_list *plist)
@@ -1063,7 +1063,7 @@ bjc_get_params(gx_device *pdev, gs_param_list *plist)
 
 	version = bjcversion(pdev);
 	versionString.data = (byte *)bjcversionstring(pdev);
-		    
+
 	versionString.size = strlen((char *)versionString.data);
 	versionString.persistent = true;
 
@@ -1081,7 +1081,7 @@ bjc_get_params(gx_device *pdev, gs_param_list *plist)
 	    code = ncode;
  	}
     }
-    
+
     return code;
 }
 
@@ -1207,7 +1207,7 @@ mwe:   	    param_signal_error(plist, oname, code = ncode);
 	    if (hwra.data[0] != BJC_RESOLUTION_LOW &&
 		hwra.data[0] != BJC_RESOLUTION_NORMAL &&
 		hwra.data[0] != BJC_RESOLUTION_HIGH) {
-		ncode = gs_error_rangecheck; 
+		ncode = gs_error_rangecheck;
 	    }
 #else
 	    /* A small hack for checking resolution without logarithms. */
@@ -1217,9 +1217,9 @@ mwe:   	    param_signal_error(plist, oname, code = ncode);
 
 		for (n = 0; n < 8 * sizeof(n) / BJC_RESOLUTION_BASE; ++n) {
 		    float res = (float)(BJC_RESOLUTION_BASE * (1 << n));
-	    
+
 		    if (res == hwra.data[0]) break;
-	    
+
 		    if (res > hwra.data[0]) {
 			ncode = gs_error_rangecheck;
 		    }
@@ -1798,7 +1798,7 @@ bjc_compress(const byte *row, const byte *end_row, byte *compressed)
 {
   register const byte *exam = row;
   register byte *cptr = compressed; /* output pointer into compressed bytes */
-  
+
 
   while ( exam < end_row ) {
     /* Search ahead in the input looking for a run */
@@ -1815,23 +1815,23 @@ bjc_compress(const byte *row, const byte *end_row, byte *compressed)
 	  break;
       test = test2;
     }
-    
+
 
     /* Find out how long the run is */
     end_dis = exam - 1;
     if ( exam == end_row ) { /* no run */
       next = --end_row;
-    } else { 
+    } else {
 
       next = exam + 1;
       while ( next < end_row && *next == test ) next++;
     }
-    
+
 
     /* Now [compr..end_dis) should be encoded as dissimilar, */
     /* and [end_dis..next) should be encoded as similar. */
     /* Note that either of these ranges may be empty. */
-    
+
 
     for ( ; ; ) {	/* Encode up to 128 dissimilar bytes */
       uint count = end_dis - compr; /* uint for faster switch */
@@ -1855,13 +1855,13 @@ bjc_compress(const byte *row, const byte *end_row, byte *compressed)
       }
       break;
     }
-    
+
 
     {	/* Encode up to 128 similar bytes. */
       /* Note that count may be <0 at end of row. */
       int count = next - end_dis;
       if (next < end_row || test != 0)
-	while ( count > 0 ) { 
+	while ( count > 0 ) {
 
 	  int this = (count > 128 ? 128 : count);
 	  *cptr++ = 257 - this;
@@ -1878,19 +1878,23 @@ bjc_compress(const byte *row, const byte *end_row, byte *compressed)
  * For the ESC/P mode, resolution is fixed as 360dpi and we must transform
  * image data to serialized data.
  */
-static word *ep_storage;
-static uint ep_storage_size_words;
-static byte *ep_raster_buf[4][BJC_HEAD_ROWS], *ep_print_buf;
-static int ep_num_comps, ep_plane_size, img_rows=BJC_HEAD_ROWS;
+typedef struct {
+  word *storage;
+  uint  storage_size_words;
+  byte *raster_buf[4][BJC_HEAD_ROWS];
+  byte *print_buf;
+  int   num_comps;
+  int   plane_size;
+  int   img_rows;
+} ep_globals;
 
 
 #define row_bytes (img_rows / 8)
-#define row_words (row_bytes / sizeof(word))
 #define min_rows (32)		/* for optimization of text image printing */
 
 
 static int
-ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
+ep_print_image(FILE *prn_stream, ep_globals *eg, char cmd, byte *data, int size)
 {
   static int ln_idx=0, vskip1=0, vskip2=0, real_rows;
   int i;
@@ -1902,15 +1906,15 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
   case 2:			/* Cyan */
   case 1:			/* Magenta */
   case 0:			/* Yellow */
-    memcpy(ep_raster_buf[((int) cmd)][ln_idx+vskip2], data, size);
+    memcpy(eg->raster_buf[((int) cmd)][ln_idx+vskip2], data, size);
     return 0;
   case 'B':			/* blank line skip */
     if (!ln_idx) {
       vskip1 += size;
-    } else if (size >= img_rows - (ln_idx+vskip2) || ln_idx+vskip2 >= min_rows) {
+    } else if (size >= eg->img_rows - (ln_idx+vskip2) || ln_idx+vskip2 >= min_rows) {
       /* The 'I' cmd must precede 'B' cmd! */
       vskip2 += size;
-      ep_print_image(prn_stream, 'F', 0, 0); /* flush and reset status */
+      ep_print_image(prn_stream, eg, 'F', 0, 0); /* flush and reset status */
     } else {
       vskip2 += size;
     }
@@ -1918,8 +1922,8 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
   case 'I':			/* Increment index */
     ln_idx += vskip2 + 1;
     vskip2 = 0;
-    if (ln_idx < img_rows) return 0;
-    /* if ep_raster_buf filled up, then fall through here and flush buffer */
+    if (ln_idx < eg->img_rows) return 0;
+    /* if eg->raster_buf filled up, then fall through here and flush buffer */
   case 'F':			/* flush print buffer */
     if (!ln_idx) return 0;	/* The end of the page. */
 
@@ -1951,28 +1955,28 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
     }
 
 
-    for (i = 0; i < ep_num_comps; i++) {
+    for (i = 0; i < eg->num_comps; i++) {
       int lnum, hskip, print_size, img_rows;
       byte *p0, *p1, *p2, *p3;
       byte *inp, *inbuf, *outp, *outbuf;
 
 
-      img_rows = real_rows;	/* Note that this img_rows is not the one that
-				 * defined out of this function. */
-      outbuf = ep_print_buf;
+      img_rows = real_rows;	/* Note that this img_rows is not the one in
+				 * the globals struct. */
+      outbuf = eg->print_buf;
 
 
       /* Transpose raster image for serial printer image */
       for (lnum=0; lnum < img_rows; lnum+=8, outbuf++) {
-	inbuf = inp = ep_raster_buf[i][lnum];
-	for (outp = outbuf; inp < inbuf+ep_plane_size; inp++, outp += img_rows) {
-	  memflip8x8(inp, ep_plane_size, outp, row_bytes);
+	inbuf = inp = eg->raster_buf[i][lnum];
+	for (outp = outbuf; inp < inbuf+eg->plane_size; inp++, outp += img_rows) {
+	  memflip8x8(inp, eg->plane_size, outp, row_bytes);
 	}
       }
 
 
       /* Set color */
-      if (ep_num_comps == 1) {
+      if (eg->num_comps == 1) {
 	/* Don't set color (to enable user setting). */
 	putc('\015', prn_stream);
       } else {
@@ -1982,10 +1986,10 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
       }
 
 
-      *(outp = ep_print_buf + ep_plane_size * img_rows) = 1; /* sentinel */
+      *(outp = eg->print_buf + eg->plane_size * img_rows) = 1; /* sentinel */
 
 
-      p0 = p3 = ep_print_buf;
+      p0 = p3 = eg->print_buf;
 
 
       /* print image p0 to p1 and h skip p1 to p2 if p2<outp,
@@ -2020,12 +2024,12 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
 	p0 = p2;
       }
     }
-    return ep_print_image(prn_stream, 'R', 0, vskip2 + ln_idx); 
+    return ep_print_image(prn_stream, eg, 'R', 0, vskip2 + ln_idx);
   case 'R':			/* Reset status */
     ln_idx = 0;
     vskip1 = size;
     vskip2 = 0;
-    memset(ep_storage, 0, ep_storage_size_words * W);
+    memset(eg->storage, 0, eg->storage_size_words * W);
     return 0;
   default:			/* This should not happen */
     errprintf("ep_print_image: illegal command character `%c'.\n", cmd);
@@ -2062,6 +2066,10 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   byte *out_row, *out_row_alt;
   word *storage;
   uint storage_size_words;
+  ep_globals eg;
+
+  memset(&eg, 0, sizeof(eg));
+  eg.img_rows=BJC_HEAD_ROWS;
 
   /* Tricks and cheats ... */
   switch (ptype) {
@@ -2098,15 +2106,15 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   }
 
   plane_size = calc_buffsize(line_size, storage_bpp);
-  ep_plane_size = plane_size;
+  eg.plane_size = plane_size;
 
   if (bits_per_pixel == 1) {		/* Data printed direct from i/p */
     databuff_size = 0;			/* so no data buffer required, */
     outbuff_size = plane_size * 4;	/* but need separate output buffers */
   }
-  
+
   if (bits_per_pixel > 4) {		/* Error buffer for FS dithering */
-    storage_bpp = expanded_bpp = 
+    storage_bpp = expanded_bpp =
       num_comps * 8;			/* 8, 24 or 32 bits */
 
     if (cprn_device->cmyk > 0) {	/* Use CMYK dithering algorithm. */
@@ -2123,9 +2131,9 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 			databuff_size + errbuff_size + outbuff_size) / W;
 
   storage = (ulong *) gs_malloc(pdev->memory, storage_size_words, W, "hp_colour_print_page");
-  ep_storage_size_words = (plane_size * (num_comps + 1)) / W * img_rows
+  eg.storage_size_words = (plane_size * (num_comps + 1)) / W * eg.img_rows
       + 16;			/* Redundant space for sentinel and aligning. */
-  ep_storage = (word *) gs_malloc(pdev->memory, ep_storage_size_words, W, "ep_print_buffer");
+  eg.storage = (word *) gs_malloc(pdev->memory, eg.storage_size_words, W, "ep_print_buffer");
 
   /*
    * The principal data pointers are stored as pairs of values, with
@@ -2135,18 +2143,18 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
    * the buffer alternation required for line-difference compression.
    *
    * Thus, the number of pointers required is as follows:
-   * 
+   *
    *   errors:      2  (scan direction only)
    *   data:        4  (scan direction and alternating buffers)
    *   plane_data:  4  (scan direction and alternating buffers)
    */
 
-  if (storage == 0 || ep_storage == 0) /* can't allocate working area */
+  if (storage == 0 || eg.storage == 0) /* can't allocate working area */
     return_error(gs_error_VMerror);
   else {
     int i, j;
     byte *p = out_data = out_row = (byte *)storage;
-    byte *ep_p = (byte *)ep_storage;
+    byte *ep_p = (byte *)eg.storage;
     data[0] = data[1] = data[2] = p;
     data[3] = p + databuff_size;
     out_row_alt = out_row + plane_size * 2;
@@ -2174,16 +2182,16 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
       data[3] += databuff_size;
     }
     for (i = 0; i < num_comps; i++) {
-      for (j = 0; j < img_rows; j++) {
-	ep_raster_buf[i][j] = ep_p;
+      for (j = 0; j < eg.img_rows; j++) {
+	eg.raster_buf[i][j] = ep_p;
 	ep_p += plane_size;
       }
       /* Make a sentinel and align to word size.  */
-      ep_print_buf = (byte *)((word)(ep_p + sizeof(word)) & ~(sizeof(word)-1));
+      eg.print_buf = (byte *)((word)(ep_p + sizeof(word)) & ~(sizeof(word)-1));
     }
-    ep_num_comps = num_comps;
+    eg.num_comps = num_comps;
   }
-  
+
   /* Initialize printer. */
   if (ptype == DJ505J) {
     fputs("\033@",prn_stream); /* Reset printer */
@@ -2197,10 +2205,10 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
       } else {
 	  fputs("\033*rbC", prn_stream);                   /* End raster graphics */
       }
-      fprintf(prn_stream, "\033*t%dR", (int)x_dpi); 
+      fprintf(prn_stream, "\033*t%dR", (int)x_dpi);
   /* Set resolution */
   }
-  
+
   /* Clear temp storage */
   memset(storage, 0, storage_size_words * W);
 
@@ -2265,7 +2273,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     fprintf (prn_stream, "\033%%1A"); /* Enter HP-RTL mode */
     fprintf (prn_stream, "\033&a1N"); /* No negative motion - allow plotting
 						while receiving */
-    if (pdev->x_pixels_per_inch == 600) 
+    if (pdev->x_pixels_per_inch == 600)
         fprintf (prn_stream, "\033*t600R"); /* request 600dpi via HP RTL */
     { static const char temp[] = {
         033, '*', 'v', '6', 'W',
@@ -2401,7 +2409,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 
     word rmask = ~(word) 0 << ((-pdev->width * storage_bpp) & (W * 8 - 1));
 
-    lend = pdev->height - 
+    lend = pdev->height -
 	(int)((dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi);
 
     switch (ptype) {
@@ -2463,7 +2471,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
           fprintf(prn_stream,"\033_Y%c%c",
           num_blank_lines & 0xff, (num_blank_lines >> 8) & 0xff);
 	} else if (ptype == ESC_P) {
-	  ep_print_image(prn_stream, 'B', 0, num_blank_lines);
+	  ep_print_image(prn_stream, &eg, 'B', 0, num_blank_lines);
 	} else if (ptype == BJC600 || ptype == BJC800) {
 	    bjc_v_skip(num_blank_lines, pdev, prn_stream);
 	} else if (num_blank_lines < this_pass) {
@@ -2621,7 +2629,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 	for (zero_row_count = 0, i = num_comps - 1; i >= 0; i--) {
 	  int output_plane = 1;
 	  int out_count = 0;
-	  
+
 	  switch (ptype) {
 	  case DJ500C:    /* Always compress using mode 9 */
 	  case DJ550C:
@@ -2673,7 +2681,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 		  *wp = ~*wp;
 	      }
 	    /* fall through .. */
-	  case PJXL300:     /* Compression modes 2 and 3 are both 
+	  case PJXL300:     /* Compression modes 2 and 3 are both
 			     * available.  Try both and see which one
 			     * produces the least output data. */
 	  case LJ4DITH:
@@ -2686,7 +2694,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 	      int penalty = combined_escapes ? strlen("#m") : strlen("\033*b#M");
 	      int penalty2 = (compression == 2 ? 0 : penalty);
 	      int penalty3 = (compression == 3 ? 0 : penalty);
-	      
+
 	      if (count3 + penalty3 < count2 + penalty2)
 		{ if ( compression != 3 ) {
 		    if (combined_escapes)
@@ -2733,16 +2741,16 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 				out_count, out_data, pdev, prn_stream);
 	      if (i == 0) bjc_v_skip(1, pdev, prn_stream);
 	    } else if (ptype == ESC_P)
-		ep_print_image(prn_stream, (char)i, plane_data[scan][i], plane_size);
+		ep_print_image(prn_stream, &eg, (char)i, plane_data[scan][i], plane_size);
 	    else
 	      fprintf(prn_stream, "\033*b%d%c", out_count, "WVVV"[i]);
 	    if (ptype < ESC_P)
 	      fwrite(out_data, sizeof(byte), out_count, prn_stream);
 	  }
-	  
+
 	} /* Transfer Raster Graphics ... */
 	if (ptype == ESC_P)
-	    ep_print_image(prn_stream, 'I', 0, 0); /* increment line index */
+	    ep_print_image(prn_stream, &eg, 'I', 0, 0); /* increment line index */
 	scan = 1 - scan;          /* toggle scan direction */
       }	  /* Printing non-blank lines */
     }     /* for lnum ... */
@@ -2756,7 +2764,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     bjc_finish_page(pdev, prn_stream);
   } else if (ptype == DJ505J)
     fputs("\033_C", prn_stream);
-  else if (ptype != ESC_P) 
+  else if (ptype != ESC_P)
     fputs("\033*rbC\033E", prn_stream);
 
   /* eject page */
@@ -2769,13 +2777,13 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   else if (ptype == BJC600 || ptype == BJC800)
       ;				/* Already done */
   else if (ptype == ESC_P) {
-    ep_print_image(prn_stream, 'F', 0, 0); /* flush print buffer */
+    ep_print_image(prn_stream, &eg, 'F', 0, 0); /* flush print buffer */
     fputs("\014\033@", prn_stream);	/* reset after eject page */
-  } else 
+  } else
     fputs("\033&l0H", prn_stream);
 
   /* free temporary storage */
-  gs_free(pdev->memory, (char *) ep_storage, ep_storage_size_words, W, "ep_print_buffer");
+  gs_free(pdev->memory, (char *) eg.storage, eg.storage_size_words, W, "ep_print_buffer");
   gs_free(pdev->memory, (char *) storage, storage_size_words, W, "hp_colour_print_page");
 
   return 0;
@@ -2963,25 +2971,25 @@ gdev_pcl_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
     gx_color_value c = gx_max_color_value - r;
     gx_color_value m = gx_max_color_value - g;
     gx_color_value y = gx_max_color_value - b;
-    
+
     /* Colour correction for better blacks when using the colour ink
      * cartridge (on the DeskJet 500C only). We reduce the cyan component
      * by some fraction (eg. 4/5) to correct the slightly greenish cast
      * resulting from an equal mix of the three inks */
     if (correction) {
       ulong maxval, minval, range;
-      
+
       maxval = c >= m ? (c >= y ? c : y) : (m >= y ? m : y);
       if (maxval > 0) {
 	minval = c <= m ? (c <= y ? c : y) : (m <= y? m : y);
 	range = maxval - minval;
-	
+
 #define shift (gx_color_value_bits - 12)
 	c = ((c >> shift) * (range + (maxval * correction))) /
 	  ((maxval * (correction + 1)) >> shift);
       }
     }
-    
+
     switch (pdev->color_info.depth) {
     case 1:
       return ((c | m | y) > gx_max_color_value / 2 ?
@@ -3020,7 +3028,7 @@ gdev_pcl_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
   }
   return (gx_color_index)0;   /* This never happens */
 }
-    
+
 /* Map a color index to a r-g-b color. */
 static int
 gdev_pcl_map_color_rgb(gx_device *pdev, gx_color_index color,
@@ -3114,7 +3122,7 @@ cdj_expand_line(word *line, int linesize, short cmyk, int bpp, int ebpp)
 	      bs1 = (b0 >> 2) & 0x03;
 	      bs2 = (b0 >> 4) & 0x03;
 	      bs3 = (b0 >> 6) & 0x03;
-	      
+
 	      *--out = (bs0 << 2) + bs0 + (bs1 << 6) + (bs1 << 4);
 	      *--out = (bs2 << 2) + bs2 + (bs3 << 6) + (bs3 << 4);
 	  }
@@ -3122,7 +3130,7 @@ cdj_expand_line(word *line, int linesize, short cmyk, int bpp, int ebpp)
 
       if (bpp == 24) {
 	  endline = (endline + 2) / 3;
-	  
+
 	  in = start + endline * 3;
 	  out = start + endline * 4;
 
@@ -3163,7 +3171,7 @@ cdj_expand_line(word *line, int linesize, short cmyk, int bpp, int ebpp)
 	    endline = ((endline + 1) / 2);
 	    in = start + endline * 2;
 	    out = start + (endline *= 3);
-      
+
 	    while (in > start)
 		{ b0 = *--in;
 		  b1 = *--in;
@@ -3180,7 +3188,7 @@ cdj_expand_line(word *line, int linesize, short cmyk, int bpp, int ebpp)
 	    out = start + endline * 4;
 
 	    while (in > start)
-		{ 
+		{
 		  y = *--in;
 		  m = *--in;
 		  c = *--in;
@@ -3213,7 +3221,7 @@ cdj_put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue,
 		*pvalue = value;
 		return (ecode < 0 ? ecode : 1);
 	}
-}	
+}
 
 static int
 cdj_set_bpp(gx_device *pdev, int bpp, int ccomps)
@@ -3338,7 +3346,7 @@ bppe:  return gs_error_rangecheck;
 	if (pdev->is_open) {
 	    int				code;	/* Return code */
 	    gdev_prn_space_params	sp;	/* Space parameter data */
- 
+
 	    /* Reallocate memory for device */
 	    sp = ((gx_device_printer *)pdev)->space_params;
 
@@ -3452,7 +3460,7 @@ cdj_put_param_bpp(gx_device *pdev, gs_param_list *plist, int new_bpp,
 static uint
 gdev_prn_rasterwidth(const gx_device_printer *pdev, int pixelcount)
 {
-  ulong raster_width = (ulong)(pdev->width - 
+  ulong raster_width = (ulong)(pdev->width -
     pdev->x_pixels_per_inch * (dev_l_margin(pdev) + dev_r_margin(pdev)));
   return (pixelcount ?
           (uint)raster_width :
@@ -3611,19 +3619,19 @@ Just about the features of the code:
       be maintained:
                  SPOTSIZE = 2 * THRESHOLD + 1
       (The internal calculation is dedicated for limiting
-       ink-density at the 720x720DpI-Resolution of the 
+       ink-density at the 720x720DpI-Resolution of the
        Epson-Printers, without loss of dynamic color-range)
 
-    - In addition to that there are EMIN & EMAX-Values 
+    - In addition to that there are EMIN & EMAX-Values
       for the components. The Values are computed from
       the dithering-algorithm and can be replaced by
-      constants, if neither the implementation nor 
+      constants, if neither the implementation nor
       THRESHOLD and SPOTSIZE can change.
 
     - The algorithm is tuned for speed. (K-only, if gray-
       levels are detected, with EMIN/EMAX-clipping of
       stored CMY-Errors. [Notice: cerr, merr, yerr are
-      *not* reset to zero! Clearing them would cause 
+      *not* reset to zero! Clearing them would cause
       regular patterns & "Halos" to appear!])
 
 */
@@ -3688,7 +3696,7 @@ bjc_fscmyk(byte** inplanes, byte* outplanes[4][4], int** errplanes,
       /*KGHorig
       i = 4 * (5 + 1 + 1 + sd->stc.prt_pixels + 1) * sizeof(errv[0]);
       if((sd->stc.err_size < i) || (NULL == sd->stc.err)) {
-         if(NULL != sd->stc.err) 
+         if(NULL != sd->stc.err)
             gs_free(sd->stc.err,sd->stc.err_size,1,"stcm/err");
          sd->stc.err_size = i;
          sd->stc.err = gs_malloc(sd->stc.err_size,1,"stcm/err");
@@ -3836,7 +3844,7 @@ bjc_fscmyk(byte** inplanes, byte* outplanes[4][4], int** errplanes,
                FSdiffuse(kv,errv[3],kerr,errv[3-dir]);
 
                cv  = FSerror(in[IDX_C],errv[0],cerr);
-               cv -= SPOTSIZE(0); 
+               cv -= SPOTSIZE(0);
                if ((cv+CMYK_THRESHOLD(0)) < 0) cv = -CMYK_THRESHOLD(0);
                FSdiffuse(cv,errv[0],cerr,errv[0-dir]);
 
@@ -3871,7 +3879,7 @@ bjc_fscmyk(byte** inplanes, byte* outplanes[4][4], int** errplanes,
                   pixel[2] &= ~bit;
                   pixel[3] |=  bit;
                   kv -= SPOTSIZE(3);
-                  if ((kv+CMYK_THRESHOLD(3)) < 0) kv = -CMYK_THRESHOLD(0);  
+                  if ((kv+CMYK_THRESHOLD(3)) < 0) kv = -CMYK_THRESHOLD(0);
                   FSdiffuse(kv,errv[3],kerr,errv[3-dir]);
                }
 	   }
