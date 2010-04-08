@@ -34,7 +34,7 @@
  * divide the various horizontal and vertical motion commands into groups,
  * and identify the interaction of each group with the corresponding horizontal
  * or vertical boundaries. (Note that, if the current print direciton is not
- * zero, what is called the "left" logical page boundary would, from the 
+ * zero, what is called the "left" logical page boundary would, from the
  * point of view of the logical page, be given a different label.)
  *
  * Horizontal motion commmands (note: a movement "transitions" a boundary if
@@ -102,7 +102,7 @@
  *
  * In addtion, any horizontal movement to the left will "break" the current
  * underline (this is significant for floating underlines).
- * 
+ *
  * Vertical motion commands:
  *
  *     f. Vertical cursor position by decipoints or PCL units (but NOT by
@@ -138,7 +138,7 @@
  *             n - m rows, the process is repeated
  *         after an implicit page eject (see below), the cursor is positioned
  *             75% of the VMI distance below the "top" logical page boundary plus
- *             
+ *
  *         top text boundary is ignored
  *         bottom text boundary is ignored
  *         movement beyond the "bottom" page boundary causes an implicit
@@ -163,7 +163,7 @@
  *         "bottom" logical page boundary is irrelevant
  *
  *
- *     k. for a relative vertical motion command relative movement can extend 
+ *     k. for a relative vertical motion command relative movement can extend
  *        to the next logical page's lower boundary, where it is clamped.
  *        This should could be grouped with item h.
  *
@@ -195,7 +195,7 @@ pcl_set_cap_x(
     if (use_margins) {
         coord   min_x =  pcs->margins.left;
         coord   max_x = pcs->margins.right;
-        
+
         if ((old_x >= min_x) && (x < min_x))
             x = min_x;
         else if ((old_x <= max_x) && (x > max_x))
@@ -203,7 +203,7 @@ pcl_set_cap_x(
     }
 
     /* the logical page bounds always apply */
-    x = ( x > pcs->xfm_state.pd_size.x ? pcs->xfm_state.pd_size.x 
+    x = ( x > pcs->xfm_state.pd_size.x ? pcs->xfm_state.pd_size.x
                                        : (x < 0L ? 0L : x) );
 
     /* leftward motion "breaks" an underline */
@@ -259,7 +259,7 @@ pcl_set_cap_y(
         coord   y0 = pcs->cap.y;
 
         while (y > max_y) {
-            int    code = pcl_end_page_if_marked(pcs);
+            int    code = pcl_end_page_always(pcs);
 
             if (code < 0)
                 return code;
@@ -282,7 +282,7 @@ pcl_set_cap_y(
     return 0;
 }
 
-static inline float 
+static inline float
 motion_args(pcl_args_t *pargs, bool truncate)
 {
     float arg = float_arg(pargs);
@@ -290,7 +290,7 @@ motion_args(pcl_args_t *pargs, bool truncate)
         arg = floor(arg);
     return arg;
 }
-        
+
 /* some convenient short-hand for the cursor movement commands */
 
 static inline void
@@ -307,8 +307,8 @@ do_horiz_motion(
 
 
 static inline int
-do_vertical_move(pcl_state_t *pcs, pcl_args_t *pargs, float mul, 
-                 bool use_margins, bool by_row, bool by_row_command, bool truncate_arg) 
+do_vertical_move(pcl_state_t *pcs, pcl_args_t *pargs, float mul,
+                 bool use_margins, bool by_row, bool by_row_command, bool truncate_arg)
 {
     return pcl_set_cap_y(pcs, motion_args(pargs, truncate_arg) * mul,
                          arg_is_signed(pargs), use_margins, by_row,
@@ -342,7 +342,7 @@ pcl_do_LF(
     pcl_state_t *   pcs
 )
 {
-    return pcl_set_cap_y( pcs, 
+    return pcl_set_cap_y( pcs,
                           pcs->vmi_cp,
                           true,
                           (pcs->perforation_skip == 1),
@@ -364,7 +364,7 @@ pcl_do_FF(
 
     if (code >= 0) {
         code = pcl_set_cap_y(pcs, 0L, false, false, true, false);
-        pcl_continue_underline(pcs);	/* (after adjusting y!) */
+        pcl_continue_underline(pcs);    /* (after adjusting y!) */
     }
     return code;
 }
@@ -390,7 +390,7 @@ pcl_updated_hmi(
 )
 {
     coord                           hmi;
-    const pcl_font_selection_t *    pfs = 
+    const pcl_font_selection_t *    pfs =
                                      &(pcs->font_selection[pcs->font_selected]);
     int                             code = pcl_recompute_font(pcs, false);
     const pl_font_t *               plfont = pcs->font;
@@ -432,7 +432,7 @@ set_horiz_motion_index(
     pcl_state_t *   pcs
 )
 {
-    /* HMI in 120 units converted to 7200 units with roundup */ 
+    /* HMI in 120 units converted to 7200 units with roundup */
     pcs->hmi_cp = (coord)((fabs(float_arg(pargs)) * 60.0) + 0.5);
     return 0;
 }
@@ -457,7 +457,7 @@ set_vert_motion_index(
     pcl_state_t *   pcs
 )
 {
-    /* LMI :== 48.0 / lpi;  ie 0.16 = 48/300; 
+    /* LMI :== 48.0 / lpi;  ie 0.16 = 48/300;
      * convert to pcl_coord_scale (7200), roundup the float prior to truncation.
      */
     coord vcp = ((fabs(float_arg(pargs)) * 7200.0 / 48.0) + 0.5);
@@ -680,7 +680,7 @@ cmd_FF(
     pcl_state_t *   pcs
 )
 {
-    if ((pcs->line_termination & 2) != 0) 
+    if ((pcs->line_termination & 2) != 0)
         pcl_do_CR(pcs);
     return pcl_do_FF(pcs);
 }
@@ -728,28 +728,28 @@ push_pop_cursor(
 }
 
 static int
-pcursor_do_copy(pcl_state_t *psaved, 
-		const pcl_state_t *pcs, pcl_copy_operation_t operation)
+pcursor_do_copy(pcl_state_t *psaved,
+                const pcl_state_t *pcs, pcl_copy_operation_t operation)
 {
     int i;
 
     /* don't restore the current cap.  The cap is not part of the
        state */
     if ( operation & pcl_copy_after ) {
-	psaved->cap = pcs->cap;
+        psaved->cap = pcs->cap;
 
-	/* cursor stack isn't part of the state, either */
-	for (i = 0; i < pcs->cursor_stk_size; ++i) {
-	    psaved->cursor_stk[i] = pcs->cursor_stk[i];
-	}
-	psaved->cursor_stk_size = pcs->cursor_stk_size;
+        /* cursor stack isn't part of the state, either */
+        for (i = 0; i < pcs->cursor_stk_size; ++i) {
+            psaved->cursor_stk[i] = pcs->cursor_stk[i];
+        }
+        psaved->cursor_stk_size = pcs->cursor_stk_size;
 
         /* NB doesn't belong here */
         psaved->page_marked = pcs->page_marked;
     }
     return 0;
 }
-    
+
 /*
  * Initialization
  */
@@ -765,55 +765,55 @@ pcursor_do_registration(
         'k', 'H',
         PCL_COMMAND( "Horizontal Motion Index",
                      set_horiz_motion_index,
-		     pca_neg_ok | pca_big_clamp
+                     pca_neg_ok | pca_big_clamp
                      )
     },
     {
         'l', 'C',
-	PCL_COMMAND( "Vertical Motion Index",
+        PCL_COMMAND( "Vertical Motion Index",
                      set_vert_motion_index,
-	             pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'l', 'D',
         PCL_COMMAND( "Line Spacing",
                      set_line_spacing,
-		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'k', 'G',
          PCL_COMMAND( "Line Termination",
                       set_line_termination,
-    		      pca_neg_ok | pca_big_ignore
+                      pca_neg_ok | pca_big_ignore
                       )
     },
     {
         'a', 'C',
          PCL_COMMAND( "Horizontal Cursor Position Columns",
-    		      horiz_cursor_pos_columns,
-    		      pca_neg_ok | pca_big_ok
+                      horiz_cursor_pos_columns,
+                      pca_neg_ok | pca_big_ok
                       )
     },
     {
         'a', 'H',
         PCL_COMMAND( "Horizontal Cursor Position Decipoints",
-    		     horiz_cursor_pos_decipoints,
-		     pca_neg_ok | pca_big_ok
+                     horiz_cursor_pos_decipoints,
+                     pca_neg_ok | pca_big_ok
                      )
     },
     {
         'a', 'R',
         PCL_COMMAND( "Vertical Cursor Position Rows",
-    		     vert_cursor_pos_rows,
-    		     pca_neg_ok | pca_big_clamp
+                     vert_cursor_pos_rows,
+                     pca_neg_ok | pca_big_clamp
                      )
     },
     {
         'a', 'V',
         PCL_COMMAND( "Vertical Cursor Position Decipoints",
-    		     vert_cursor_pos_decipoints,
+                     vert_cursor_pos_decipoints,
                      pca_neg_ok | pca_big_ok
                      )
     },
@@ -821,7 +821,7 @@ pcursor_do_registration(
         'f', 'S',
         PCL_COMMAND( "Push/Pop Cursor",
                      push_pop_cursor,
-    		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     END_CLASS
@@ -830,15 +830,15 @@ pcursor_do_registration(
     {
         'p', 'X',
         PCL_COMMAND( "Horizontal Cursor Position Units",
-    		     horiz_cursor_pos_units,
-    		     pca_neg_ok | pca_big_ok | pca_in_rtl
+                     horiz_cursor_pos_units,
+                     pca_neg_ok | pca_big_ok | pca_in_rtl
                      )
     },
     {
         'p', 'Y',
         PCL_COMMAND( "Vertical Cursor Position Units",
-    	             vert_cursor_pos_units,
-    		     pca_neg_ok | pca_big_ok  | pca_in_rtl
+                     vert_cursor_pos_units,
+                     pca_neg_ok | pca_big_ok  | pca_in_rtl
                      )
     },
     END_CLASS
@@ -869,22 +869,22 @@ pcursor_do_reset(
     pcs->line_termination = 0;
     pcs->hmi_cp = HMI_DEFAULT;
     pcs->vmi_cp = pcs->margins.length
-    	  / pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "formlines"));
+          / pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "formlines"));
     if ( (type & pcl_reset_overlay) == 0 ) {
         pcs->cursor_stk_size = 0;
 
-        /* 
+        /*
          * If this is an initial reset, make sure underlining is
          * disabled (homing the cursor may cause an underline to be
          * put out.  And provide reasonable initial values for the
-         * cap.  
-	 */
+         * cap.
+         */
         if ((type & pcl_reset_initial) != 0) {
             pcs->underline_enabled = false;
-	    /* WRONG why is the cap set to 0 and then the
-	       pcl_home_cursor(pcs) */
-	    pcs->cap.x = pcs->cap.y = 0;
-	}
+            /* WRONG why is the cap set to 0 and then the
+               pcl_home_cursor(pcs) */
+            pcs->cap.x = pcs->cap.y = 0;
+        }
     }
     pcl_home_cursor(pcs);
 }
