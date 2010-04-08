@@ -1886,6 +1886,9 @@ typedef struct {
   int   num_comps;
   int   plane_size;
   int   img_rows;
+  int   ln_idx;
+  int   vskip1;
+  int   vskip2;
 } ep_globals;
 
 
@@ -1896,8 +1899,7 @@ typedef struct {
 static int
 ep_print_image(FILE *prn_stream, ep_globals *eg, char cmd, byte *data, int size)
 {
-  static int ln_idx=0, vskip1=0, vskip2=0, real_rows;
-  int i;
+  int i, real_rows;
   static const char color[4] = {4,1,2,0};
 
 
@@ -1906,49 +1908,49 @@ ep_print_image(FILE *prn_stream, ep_globals *eg, char cmd, byte *data, int size)
   case 2:			/* Cyan */
   case 1:			/* Magenta */
   case 0:			/* Yellow */
-    memcpy(eg->raster_buf[((int) cmd)][ln_idx+vskip2], data, size);
+    memcpy(eg->raster_buf[((int) cmd)][eg->ln_idx+eg->vskip2], data, size);
     return 0;
   case 'B':			/* blank line skip */
-    if (!ln_idx) {
-      vskip1 += size;
-    } else if (size >= eg->img_rows - (ln_idx+vskip2) || ln_idx+vskip2 >= min_rows) {
+    if (!eg->ln_idx) {
+      eg->vskip1 += size;
+    } else if (size >= eg->img_rows - (eg->ln_idx+eg->vskip2) || eg->ln_idx+eg->vskip2 >= min_rows) {
       /* The 'I' cmd must precede 'B' cmd! */
-      vskip2 += size;
+      eg->vskip2 += size;
       ep_print_image(prn_stream, eg, 'F', 0, 0); /* flush and reset status */
     } else {
-      vskip2 += size;
+      eg->vskip2 += size;
     }
     return 0;
   case 'I':			/* Increment index */
-    ln_idx += vskip2 + 1;
-    vskip2 = 0;
-    if (ln_idx < eg->img_rows) return 0;
+    eg->ln_idx += eg->vskip2 + 1;
+    eg->vskip2 = 0;
+    if (eg->ln_idx < eg->img_rows) return 0;
     /* if eg->raster_buf filled up, then fall through here and flush buffer */
   case 'F':			/* flush print buffer */
-    if (!ln_idx) return 0;	/* The end of the page. */
+    if (!eg->ln_idx) return 0;	/* The end of the page. */
 
 
     /* before print the image, perform vertical skip. */
-    while (vskip1 >= (255*2)) {
+    while (eg->vskip1 >= (255*2)) {
       fputs("\033J\377", prn_stream); /* n/180in. feeding */
-      vskip1 -= (255*2);
+      eg->vskip1 -= (255*2);
     }
-    if (vskip1 > 255) {
+    if (eg->vskip1 > 255) {
       fputs("\033J\200", prn_stream);
-      vskip1 -= 256;
+      eg->vskip1 -= 256;
     }
-    if (vskip1) {
+    if (eg->vskip1) {
       /* n/360in. feeding */
-      fputs("\033|J", prn_stream); putc(0, prn_stream); putc(vskip1, prn_stream);
+      fputs("\033|J", prn_stream); putc(0, prn_stream); putc(eg->vskip1, prn_stream);
     }
 
 
     /* Optimize the number of nozzles to be used. */
-    if (ln_idx > 56) {		/* use 64 nozzles */
+    if (eg->ln_idx > 56) {		/* use 64 nozzles */
       real_rows = 64;
-    } else if (ln_idx > 48) {	/* use 56 nozzles */
+    } else if (eg->ln_idx > 48) {	/* use 56 nozzles */
       real_rows = 56;
-    } else if (ln_idx > 32) {	/* use 48 nozzles */
+    } else if (eg->ln_idx > 32) {	/* use 48 nozzles */
       real_rows = 48;
     } else {			/* use 32 nozzles */
       real_rows = 32;
@@ -2024,11 +2026,11 @@ ep_print_image(FILE *prn_stream, ep_globals *eg, char cmd, byte *data, int size)
 	p0 = p2;
       }
     }
-    return ep_print_image(prn_stream, eg, 'R', 0, vskip2 + ln_idx);
+    return ep_print_image(prn_stream, eg, 'R', 0, eg->vskip2 + eg->ln_idx);
   case 'R':			/* Reset status */
-    ln_idx = 0;
-    vskip1 = size;
-    vskip2 = 0;
+    eg->ln_idx = 0;
+    eg->vskip1 = size;
+    eg->vskip2 = 0;
     memset(eg->storage, 0, eg->storage_size_words * W);
     return 0;
   default:			/* This should not happen */
