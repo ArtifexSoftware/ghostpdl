@@ -45,7 +45,7 @@ struct Rectangle {
 	Point min;
 	Point max;
 };
-static Point ZP = { 0, 0 };
+static const Point ZP = { 0, 0 };
 
 static WImage* initwriteimage(FILE *f, Rectangle r, int ldepth, gs_memory_t *mem);
 static int writeimageblock(WImage *w, uchar *data, int ndata, gs_memory_t *mem);
