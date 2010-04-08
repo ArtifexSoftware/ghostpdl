@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -507,7 +507,7 @@ static const char *const upd_int_a[] = {      /** */
 #define IA_ROWMASK         12                 /** The nozzle to row map */
 "upNozzleMapRowMask",
 #define IA_SCNOFS       13                 /** Mask to scan map */
-"upNozzleMapMaskScanOffset"        
+"upNozzleMapMaskScanOffset"
 };
 
 /** Names of the String-Parameters
@@ -730,7 +730,7 @@ UPD_MESSAGES, Is collection of Bits, that controls Messages
 #define UPD_M_MAPCALLS  0x0008 /** Log Color-Mapping-Calls */
 #define UPD_M_SETUP     0x0010 /** Log Setup-Activity */
 #define UPD_M_FSBUF     0x0020 /** Error-Summary for valbuf */
-#define UPD_M_FMTVARS   0x0040 /** (GR) Formatting variables */ 
+#define UPD_M_FMTVARS   0x0040 /** (GR) Formatting variables */
 
 /* ------------------------------------------------------------------- */
 /* The UPD-Routines                                                    */
@@ -1262,10 +1262,10 @@ upd_open(gx_device *pdev)
 
 /** enforce the UPD-Margins */
 
-   if((NULL != upd) && 
+   if((NULL != upd) &&
       (NULL != upd->float_a[FA_MARGINS].data) &&
       (4    == upd->float_a[FA_MARGINS].size)    ) {
-      static float m[4];
+      float m[4];
       m[1] = upd->float_a[FA_MARGINS].data[1] / 72.0;
       m[3] = upd->float_a[FA_MARGINS].data[3] / 72.0;
       if(B_YFLIP & upd->flags) {
@@ -1364,7 +1364,7 @@ buffer for the raw raster-data
         for(i = 0; countof(upd_choice) > i; ++i) {
           if(!upd_choice[i]) continue;
           l = strlen(upd_choice[i][0]);
-          if(ln < l) ln = l; 
+          if(ln < l) ln = l;
           for(j = 1; upd_choice[i][j]; ++j) {
             l = strlen(upd_choice[i][j]);
             if(lv < l) lv = l;
@@ -1728,7 +1728,7 @@ i am writing bad-nasty-hack-hack, visit http://www.zark.com )
          }
       }
 
-      if((0 == code) && 
+      if((0 == code) &&
          strncmp((const char *)fname.data,udev->fname,fname.size)) {
          if(upd->strings && 0 < udev->upd->strings[S_CLOSE].size)
             fwrite(upd->strings[S_CLOSE].data,1,
@@ -2622,12 +2622,12 @@ upd_rgb_ovcolor(gx_device *pdev, const gx_color_value cv[])
       m = gx_max_color_value - g;
       y = gx_max_color_value - b;
 
-      black = c     < m ? c     : m; 
+      black = c     < m ? c     : m;
       black = black < y ? black : y;
 
       if(black != gx_max_color_value) {
         float tmp,d;
-        
+
         d   = (float)(gx_max_color_value - black);
 
         tmp = (float) (c-black) / d;
@@ -2704,7 +2704,7 @@ upd_rgb_novcolor(gx_device *pdev, const gx_color_value cv[])
       m = gx_max_color_value - g;
       y = gx_max_color_value - b;
 
-      black = c     < m ? c     : m; 
+      black = c     < m ? c     : m;
       black = black < y ? black : y;
       c     = c - black;
       m     = m - black;
@@ -3121,58 +3121,58 @@ upd_procs_map(upd_device *udev)
 
    switch(imap) {
      case MAP_GRAY: /* Grayscale -> Grayscale */
-       set_dev_proc(udev,encode_color, upd_rgb_1color); 
-       set_dev_proc(udev,decode_color, upd_1color_rgb); 
+       set_dev_proc(udev,encode_color, upd_rgb_1color);
+       set_dev_proc(udev,decode_color, upd_1color_rgb);
        set_dev_proc(udev,map_rgb_color, upd_rgb_1color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_1color_rgb);
      break;
      case MAP_RGBW: /* RGB->RGBW */
-       set_dev_proc(udev,encode_color, upd_rgb_4color); 
-       set_dev_proc(udev,decode_color, upd_4color_rgb); 
+       set_dev_proc(udev,encode_color, upd_rgb_4color);
+       set_dev_proc(udev,decode_color, upd_4color_rgb);
        set_dev_proc(udev,map_rgb_color, upd_rgb_4color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_4color_rgb);
      break;
      case MAP_RGB: /* Plain RGB */
-       set_dev_proc(udev,encode_color, upd_rgb_3color); 
-       set_dev_proc(udev,decode_color, upd_3color_rgb); 
+       set_dev_proc(udev,encode_color, upd_rgb_3color);
+       set_dev_proc(udev,decode_color, upd_3color_rgb);
        set_dev_proc(udev,map_rgb_color, upd_rgb_3color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_3color_rgb);
      break;
      case MAP_CMYK: /* Plain KCMY */
-       set_dev_proc(udev,encode_color, upd_cmyk_icolor); 
-       set_dev_proc(udev,decode_color, upd_icolor_rgb); 
+       set_dev_proc(udev,encode_color, upd_cmyk_icolor);
+       set_dev_proc(udev,decode_color, upd_icolor_rgb);
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,upd_cmyk_icolor);
        set_dev_proc(udev,map_color_rgb, upd_icolor_rgb);
      break;
      case MAP_CMYKGEN: /* KCMY with black-generation */
-       set_dev_proc(udev,encode_color, upd_cmyk_kcolor); 
-       set_dev_proc(udev,decode_color, upd_kcolor_rgb); 
+       set_dev_proc(udev,encode_color, upd_cmyk_kcolor);
+       set_dev_proc(udev,decode_color, upd_kcolor_rgb);
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,upd_cmyk_kcolor);
        set_dev_proc(udev,map_color_rgb, upd_kcolor_rgb);
      break;
      case MAP_RGBOV: /* RGB -> KCMY with BG and UCR for CMYK-Output */
-       set_dev_proc(udev,encode_color, upd_rgb_ovcolor); 
-       set_dev_proc(udev,decode_color, upd_ovcolor_rgb); 
+       set_dev_proc(udev,encode_color, upd_rgb_ovcolor);
+       set_dev_proc(udev,decode_color, upd_ovcolor_rgb);
        set_dev_proc(udev,map_rgb_color, upd_rgb_ovcolor);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_ovcolor_rgb);
      break;
      case MAP_RGBNOV: /* RGB -> KCMY with BG and UCR for CMY+K-Output */
-       set_dev_proc(udev,encode_color, upd_rgb_novcolor); 
-       set_dev_proc(udev,decode_color, upd_novcolor_rgb); 
+       set_dev_proc(udev,encode_color, upd_rgb_novcolor);
+       set_dev_proc(udev,decode_color, upd_novcolor_rgb);
        set_dev_proc(udev,map_rgb_color, upd_rgb_novcolor);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_novcolor_rgb);
      break;
 
      default:
-       set_dev_proc(udev,encode_color, gx_default_map_rgb_color); 
-       set_dev_proc(udev,decode_color, gx_default_map_color_rgb); 
+       set_dev_proc(udev,encode_color, gx_default_map_rgb_color);
+       set_dev_proc(udev,decode_color, gx_default_map_color_rgb);
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, gx_default_map_color_rgb);
@@ -3193,7 +3193,7 @@ upd_close_map(upd_device *udev)
    int imap;
 
    if(upd) {
- 
+
       for(imap = 0; UPD_CMAP_MAX > imap; ++imap) {
 
          if(upd->cmap[imap].code)
@@ -3829,7 +3829,7 @@ upd_fscmyk(upd_p upd)
             return 0;
          }
       }
-      
+
       data        = upd->gsscan + 4 * (upd->rwidth-1);
 
    } else {                          /* This one forward */
@@ -4193,7 +4193,7 @@ upd_open_writer(upd_device *udev)
              - upd->ints[I_NYPASS] + 1;
 
          upd->ints[I_BEG_Y] = 0;
-         upd->ints[I_END_Y] = upd->ints[I_PHEIGHT] ? 
+         upd->ints[I_END_Y] = upd->ints[I_PHEIGHT] ?
                               upd->ints[I_PHEIGHT] : upd->gsheight;
       }
 
@@ -5394,9 +5394,9 @@ upd_open_wrtescp2(upd_device *udev)
 
       }
    }
-   
+
    /* Check the Nozzle Map parameters and set some defaults */
-   /* Used a switch construct in case FMT_ESCNMXY is added later */ 
+   /* Used a switch construct in case FMT_ESCNMXY is added later */
    switch(upd->choice[C_FORMAT]){
       case FMT_ESCNMY:
          /* RowsPerPass */
@@ -5479,7 +5479,7 @@ upd_open_wrtescp2(upd_device *udev)
          switch(upd->choice[C_FORMAT]){
             case FMT_ESCP2Y:
             case FMT_ESCP2XY:
-               *bp++ = (byte)(3600.0 * upd->ints[I_NYPASS] / 
+               *bp++ = (byte)(3600.0 * upd->ints[I_NYPASS] /
                                  udev->y_pixels_per_inch + 0.5);
                *bp++ = (byte)(3600.0 * upd->ints[I_NXPASS] /
                                  udev->x_pixels_per_inch + 0.5);
@@ -5575,7 +5575,7 @@ It must hold:
 
       if(1 < upd->ints[I_YSTEP])
          noutbuf += (upd->ints[I_YSTEP]-1) * upd->strings[S_YSTEP].size;
-            
+
       /* X-Positioning */
       if(0 == upd->strings[S_XMOVE].size) {
          noutbuf += 1; /* The CR */
@@ -5586,7 +5586,7 @@ It must hold:
          if(1 < upd->ints[I_XSTEP])
             noutbuf += (upd->ints[I_XSTEP]-1) * upd->strings[S_XSTEP].size;
       }
-      
+
       /* Component-Selection */
       if(0 < upd->string_a[SA_SETCOMP].size) {
           need = 0;
@@ -5595,14 +5595,14 @@ It must hold:
                 need = upd->string_a[SA_SETCOMP].data[i].size;
           noutbuf += need;
       }
-      
+
       /* The Raster-Command */
       need = 0;
       for(i = 0; i < upd->ocomp; ++i)
          if(need < upd->string_a[SA_WRITECOMP].data[i].size)
             need = upd->string_a[SA_WRITECOMP].data[i].size;
       noutbuf += need + 2;
-      
+
       /* The Data */
       noutbuf += 2*upd->nbytes + (upd->nbytes + 127) / 128;
 
@@ -5856,7 +5856,7 @@ upd_wrtescp2(upd_p upd, FILE *out)
 /* ------------------------------------------------------------------- */
 
 /*GR copied from upd_wrtescp2 and modified */
- 
+
 static int
 upd_wrtescnm(upd_p upd, FILE *out)
 {
@@ -5960,7 +5960,7 @@ upd_wrtescnm(upd_p upd, FILE *out)
 *     Always issue an ESC 'r' 0 - don't know why - that
 *     is just what the windows driver does.
 */
-      icomp=0; 
+      icomp=0;
       if((0 < upd->string_a[SA_SETCOMP].size) /* &&
          (upd->icomp != icomp               )   */) { /* Selection enabled */
          upd->icomp = icomp;
@@ -6042,7 +6042,7 @@ upd_wrtescnm(upd_p upd, FILE *out)
 *       Set the Pixels
 */
       irow=0; /* row counter for output data */
-      
+
       /*  pins at the top of the head that don't print */
       for(pin = 0; pin < pintop; ++pin) {
          int i;
@@ -6058,8 +6058,8 @@ upd_wrtescnm(upd_p upd, FILE *out)
       /*  I'm not really sure what this does */
       /* it looks like we're filling in empty rows */
       for(y = ybegin; 0 > y;    y += upd->ints[I_NYPASS]) {
-         
-         int i;        
+
+         int i;
          for(i=0 ; i < upd->ints[I_PATRPT]; i++){
             if(irow >= upd->ints[I_ROWS]) break;
             ioutbuf += upd_rle(upd->outbuf+ioutbuf,NULL,n);
@@ -6070,11 +6070,11 @@ upd_wrtescnm(upd_p upd, FILE *out)
       }
 
       for(; y < yend; y += upd->ints[I_NYPASS]) {
-         
+
          int i,masklen=upd->ints[I_PATRPT],yinc=0;
-                
+
          for(i=0 ; (i < upd->ints[I_PATRPT]); i++){
-            if(irow >= upd->ints[I_ROWS]) break;  
+            if(irow >= upd->ints[I_ROWS]) break;
             imask = irow%masklen;
             icomp = upd->int_a[IA_ROWMASK].data[imask];
             if(icomp == 0) {
@@ -6090,14 +6090,14 @@ upd_wrtescnm(upd_p upd, FILE *out)
             ioutbuf = 0;
             irow++;
          }
-           
+
          if (upd->ints[I_NYPASS] < upd->ints[I_PATRPT]) {
             y+=yinc;
             if (y > 0)
                y-=upd->ints[I_NYPASS];
-         }         
+         }
       }
-                  
+
       /*  I think this is the pins at the bottom of the head that don't print */
       for(pin = pinbot; pin < upd->ints[I_PINS2WRITE]; ++pin) {
          int i;
@@ -6109,7 +6109,7 @@ upd_wrtescnm(upd_p upd, FILE *out)
             irow++;
          }
       }
-      
+
       /* pad empty rows that haven't been filled yet*/
        if (irow < upd->ints[I_ROWS]) {
          for( ; irow < upd->ints[I_ROWS]; irow++){
@@ -6117,7 +6117,7 @@ upd_wrtescnm(upd_p upd, FILE *out)
             fwrite(upd->outbuf,1,ioutbuf,out);
             ioutbuf = 0;
          }
-      }      
+      }
 
    }              /* Some data to write */
 
@@ -6537,7 +6537,7 @@ upd_open_wrtrtl(upd_device *udev)
            else if(!((0x2f < c) && (c < 0x3a))) j     = i; /* Non-Number */
 
          break;
-           
+
 /* ----- got ESC * t */
 /*         Resolution might be replaced */
          case  4: /* esc * t */
@@ -7167,13 +7167,13 @@ upd_wrtcanon(upd_p upd, FILE *out)
         case 3:
         case 4:  fputc("YMCK"[icomp],out); break;
 /*
- *      Please Note: 
+ *      Please Note:
  *         the validity of the NCOMP-setting should be checked
  *         in the put_params-routine, thus the default-case is
  *         just a matter of coding-style.
  */
-        default: fputc('K',out); break;  
-      }    
+        default: fputc('K',out); break;
+      }
 
       fwrite(upd->outbuf, 1, ioutbuf, out);
 
