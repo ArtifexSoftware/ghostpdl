@@ -6,7 +6,7 @@ use warnings;
 use Data::Dumper;
 
 my $verbose=1;
-
+my $reportAllErrors=0;  # possibly changed below
 my $previousValues=50;
 
 my @errorDescription=(
@@ -32,7 +32,6 @@ my $products=shift;
 $products="gs pcl xps svg" if (!$products);
 
 my %skip;
-
 if (open(F,"<skip.lst")) {
   while(<F>) {
     chomp;
@@ -42,6 +41,7 @@ if (open(F,"<skip.lst")) {
   close(F);
 }
 
+$reportAllErrors=1 if ($current=~m/icc_work/);
 
 
 my %current;
@@ -324,7 +324,7 @@ if (!$skipMissing || $skipMissing eq "false" || $skipMissing eq "0") {
     print "\n";
   }
 
-if (0) {
+if ($reportAllErrors) {
   if (@allErrors) {
     print "The following ".scalar(@allErrors)." regression file(s) are producing errors:\n";
     while(my $t=shift @allErrors) {

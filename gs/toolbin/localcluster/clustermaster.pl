@@ -663,8 +663,13 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       if ($product=~m/^bmpcmp/) {
         $bmpcmp=1;
         my @a=split ' ',$product,2;
-        $product="bmpcmp $userName";
+        if ($userName eq "mvrhel") {
+          $product="bmpcmp_icc_work bmpcmp $userName";
+        } else {
+          $product="bmpcmp $userName";
+        }
         $options=$a[1];
+        $options="" if (!$options);
 #     print "userName=$userName product=$product options=$options\n"; exit;
       }
       mylog "userName=$userName product=$product options=$options\n" if ($verbose);
@@ -769,8 +774,13 @@ mylog "done checking jobs, product=$product\n";
     }
 
     if ($userRegression ne "") {
-      my $cmd="diff -w -c -r ./ghostpdl ./users/$userName/ghostpdl | grep -v \"Only in\" > $userName.diff";
+      if ($userName eq "mvrhel") {
+      my $cmd="diff -I '\$Id:' -w -c -r ./icc_work ./users/$userName/ghostpdl/gs | grep -v \"Only in\" > $userName.diff";
       `$cmd`;
+      } else {
+      my $cmd="diff -I '\$Id:' -w -c -r ./ghostpdl ./users/$userName/ghostpdl | grep -v \"Only in\" > $userName.diff";
+      `$cmd`;
+      }
     }
 
     use IO::Socket;
@@ -1139,8 +1149,16 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
 
       checkPID();
 
+      if ($userName eq "mvrhel") {
+        open(F,">>$userName.txt");
+        print F "\nComparison made to current icc_work branch md5sums\n\n";
+        close(F);
+        mylog "now running ./compare.pl temp.tab icc_work_current.tab $elapsedTime $machineCount true \"$product\"\n";
+        `./compare.pl temp.tab icc_work_current.tab $elapsedTime $machineCount true \"$product\" >>$userName.txt`;
+      } else {
       mylog "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\"\n";
       `./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\" >>$userName.txt`;
+      }
 
       open(F,">>$userName.txt");
       print F "\n\nDifferences from previous clusterpush:\n\n";

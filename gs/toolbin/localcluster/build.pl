@@ -24,6 +24,7 @@ my $bmpcmp=0;
 my $local=0;
 my $filename="";
 my $bmpcmpOptions;
+my $bmpcmp_icc_work=0;
 
 my $t;
 
@@ -35,6 +36,8 @@ while ($t=shift) {
     $lowres=1;
   } elsif ($t eq "highres") {
     $highres=1;
+  } elsif ($t eq "bmpcmp_icc_work") {
+    $bmpcmp_icc_work=1;
   } elsif ($t eq "bmpcmp") {
     $bmpcmp=1;
     $filename=shift;
@@ -98,8 +101,7 @@ $svnURLPrivate='svn+ssh://svn.ghostscript.com/var/lib/svn-private/ghostpcl/trunk
 $svnURLPublic='http://svn.ghostscript.com/ghostscript/';
 }
 
-my $timeCommand="";
-my $niceCommand="";
+my $preCommand="";
 
 my $temp="./temp";
 #$temp="/tmp/space/temp";
@@ -118,6 +120,7 @@ my $pclBin=$baseDirectory."gs/bin/pcl6";
 my $xpsBin=$baseDirectory."gs/bin/gxps";
 my $svgBin=$baseDirectory."gs/bin/gsvg";
 my $mupdfBin=$baseDirectory."gs/bin/pdfdraw";
+my $timeBin=$baseDirectory."gs/bin/time";
 
 # mupdf uses the same test files as gs but only ones ending in pdf (or PDF)
 
@@ -324,9 +327,9 @@ sub build($$$$$) {
   my $bmpcmp=shift;
 
   if ($md5sumOnly) {
-    $niceCommand = 'nice';
+    $preCommand = "nice $timeBin -f \"%U %S %E %P\"";
   } else {
-    $timeCommand = '/usr/bin/time -f "%U %S %E %P"';
+    $preCommand = "$timeBin -f \"%U %S %E %P\"";
   }
 
   my $cmd="";
@@ -367,13 +370,13 @@ sub build($$$$$) {
 
     $outputFilename="$temp/$tempname.$options.pdf";
     if ($product eq 'gs') {
-      $cmd1a.="$niceCommand $gsBin";
+      $cmd1a.="$gsBin";
     } elsif ($product eq 'pcl') {
-      $cmd1a.="$niceCommand $pclBin";
+      $cmd1a.="$pclBin";
     } elsif ($product eq 'xps') {
-      $cmd1a.="$niceCommand $xpsBin";
+      $cmd1a.="$xpsBin";
     } elsif ($product eq 'svg') {
-      $cmd1a.="$niceCommand $svgBin";
+      $cmd1a.="$svgBin";
     } else {
       die "unexpected product: $product";
     }
@@ -395,13 +398,17 @@ sub build($$$$$) {
     #   $cmd.=" 2>&1";
 
     if ($bmpcmp) {
-      $cmd.=" ; $timeCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
-      $cmd1a =~ s|/gs/|/head/|;
+      $cmd.=" ; $preCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
+      if ($bmpcmp_icc_work) {
+        $cmd1a =~ s|/gs/|/icc_work/|;
+      } else {
+        $cmd1a =~ s|/gs/|/head/|;
+      }
       $cmd1b =~ s|$temp|$baselineRaster|;
-      $cmd.=" ; $timeCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
+      $cmd.=" ; $preCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
     } else {
       $cmd.=" ; echo \"$cmd1a $cmd1b $cmd1c\" >>$logFilename ";
-      $cmd.=" ; $timeCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
+      $cmd.=" ; $preCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
     }
 
     $cmd.=" ; echo '---' >>$logFilename";
@@ -413,7 +420,7 @@ sub build($$$$$) {
     $rasterFilename="$raster/$tempname.$options";
     $bmpcmpFilename="$bmpcmpDir/$tempname.$options";
 
-    $cmd2a.=" $niceCommand $gsBin";
+    $cmd2a.=" $gsBin";
     if ($updateBaseline) {
       $cmd2b.=" -sOutputFile='|gzip -1 -n >$baselineFilename.gz'";
     } elsif ($md5sumOnly) {
@@ -440,16 +447,20 @@ sub build($$$$$) {
     $cmd2c.=" $inputFilename";
 
     if ($bmpcmp) {
-      $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
-      $cmd2a =~ s|/gs/|/head/|;
+      $cmd.=" ; $preCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
+      if ($bmpcmp_icc_work) {
+        $cmd2a =~ s|/gs/|/icc_work/|;
+      } else {
+        $cmd2a =~ s|/gs/|/head/|;
+      }
       $cmd2c =~ s|$temp|$baselineRaster|;
-      $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
-      $cmd.=" ; bash -c \"./bmpcmp $bmpcmpOptions <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\""; # ; gzip $bmpcmpFilename.* ";
+      $cmd.=" ; $preCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; bash -c \"nice ./bmpcmp $bmpcmpOptions <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\""; # ; gzip $bmpcmpFilename.* ";
       $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=\\\$?; if [ \\\$t == 0 ]; then break; fi; echo 'scp retry \\\$c' ; done \"";
 #     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
-      $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; $preCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
       if ($local) {
         $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
 #       $cmd.=" ; md5sum $outputFilename.gz >$md5Filename";
@@ -472,15 +483,15 @@ sub build($$$$$) {
     $bmpcmpFilename="$bmpcmpDir/$tempname.$options";
 
     if ($product eq 'gs') {
-      $cmd2a.=" $niceCommand $gsBin";
+      $cmd2a.=" $gsBin";
     } elsif ($product eq 'pcl') {
-      $cmd2a.=" $niceCommand $pclBin";
+      $cmd2a.=" $pclBin";
     } elsif ($product eq 'xps') {
-      $cmd2a.=" $niceCommand $xpsBin";
+      $cmd2a.=" $xpsBin";
     } elsif ($product eq 'svg') {
-      $cmd2a.=" $niceCommand $svgBin";
+      $cmd2a.=" $svgBin";
     } elsif ($product eq 'mupdf') {
-      $cmd2a.=" $niceCommand $mupdfBin";
+      $cmd2a.=" $mupdfBin";
     } else {
       die "unexpected product: $product";
     }
@@ -491,7 +502,7 @@ sub build($$$$$) {
       $cmd2b.=" -o $outputFilename.%04d";
       $cmd2b.=" $inputFilename  ";
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
-      $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; $preCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
       $cmd.=" ; cat $outputFilename.???? >$outputFilename ";
       $cmd.=" ; md5sum $outputFilename >>$md5Filename";
     } else {
@@ -524,15 +535,19 @@ sub build($$$$$) {
     $cmd2c.=" $inputFilename ";
 
     if ($bmpcmp) {
-      $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
-      $cmd2a =~ s|/gs/|/head/|;
-      $cmd.=" ; $timeCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
-      $cmd.=" ; bash -c \"./bmpcmp $bmpcmpOptions <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\""; # ; gzip $bmpcmpFilename.* ";
+      $cmd.=" ; $preCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
+      if ($bmpcmp_icc_work) {
+        $cmd2a =~ s|/gs/|/icc_work/|;
+      } else {
+        $cmd2a =~ s|/gs/|/head/|;
+      }
+      $cmd.=" ; $preCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; bash -c \"nice ./bmpcmp $bmpcmpOptions <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\""; # ; gzip $bmpcmpFilename.* ";
       $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=\\\$?; if [ \\\$t == 0 ]; then break; fi; echo 'scp retry \\\$c' ; done \"";
 #     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper3.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
-      $cmd.=" ; $timeCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
+      $cmd.=" ; $preCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
       if ($local) {
         $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
 #       $cmd.=" ; md5sum $outputFilename.gz >$md5Filename";
