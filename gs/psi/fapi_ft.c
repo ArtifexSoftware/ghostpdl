@@ -868,6 +868,17 @@ get_char_width(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_char_r
     return load_glyph(a_font, a_char_ref, a_metrics, NULL, false);
 }
 
+static FAPI_retcode get_fontmatrix(FAPI_server *server, gs_matrix *m)
+{
+    m->xx = 1.0;
+    m->xy = 0.0;
+    m->yx = 0.0;
+    m->yy = 1.0;
+    m->tx = 0.0;
+    m->ty = 0.0;
+    return 0;
+}
+
 /*
  * Rasterize the character a_char and return its metrics. Do not return the
  * bitmap but store this. It can be retrieved by a subsequent call to
@@ -1083,6 +1094,7 @@ static const FAPI_server TheFreeTypeServer =
     get_font_proportional_feature,
     can_retrieve_char_by_name,
     can_replace_metrics,
+    get_fontmatrix,
     get_char_width,
     get_char_raster_metrics,
     get_char_raster,

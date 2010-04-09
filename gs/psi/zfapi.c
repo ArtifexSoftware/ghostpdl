@@ -1390,11 +1390,16 @@ static void compute_em_scale(const gs_font_base *pbfont, FAPI_metrics *metrics, 
     gs_matrix *m = &pbfont->base->orig_FontMatrix;
     int rounding_x, rounding_y; /* Striking out the 'float' representation error in FontMatrix. */
     double sx, sy;
+    FAPI_server *I = pbfont->FAPI;
 
-    /* Temporary: replace with a FAPI call to check *if* the library needs a replacement matrix */
     m = &mat;
+#if 1
+    I->get_fontmatrix(I, m);
+#else
+    /* Temporary: replace with a FAPI call to check *if* the library needs a replacement matrix */
     memset(m, 0x00, sizeof(gs_matrix));
     m->xx = m->yy = 1.0;
+#endif
 
     if (m->xx == 0 && m->xy == 0 && m->yx == 0 && m->yy == 0)
 	m = &pbfont->base->FontMatrix;
@@ -1673,6 +1678,10 @@ retry_oversampling:
 	code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm);
 
 	code = gs_matrix_multiply(ctm, &scale_ctm, &scale_mat);		/* scale_mat ==  CTM - resolution scaling */
+
+	code = I->get_fontmatrix(I, &scale_ctm);
+	code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm);
+	code = gs_matrix_multiply(&scale_mat, &scale_ctm, &scale_mat);		/* scale_mat ==  CTM - resolution scaling - FontMatrix scaling */
 
 	font_scale.matrix[0] =  (FracInt)(scale_mat.xx * FontMatrix_div * scale + 0.5);
 	font_scale.matrix[1] =  -(FracInt)(scale_mat.xy * FontMatrix_div * scale + 0.5);

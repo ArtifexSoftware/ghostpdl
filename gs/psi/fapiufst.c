@@ -919,6 +919,18 @@ static void release_glyphs(fapi_ufst_server *r, ufst_common_font_data *d)
     }
 }
 
+static FAPI_retcode get_fontmatrix(FAPI_server *I, gs_matrix *m)
+{
+    gs_matrix *base_font_matrix = &I->initial_FontMatrix;
+    m->xx = I->initial_FontMatrix.xx;
+    m->xy = I->initial_FontMatrix.xy;
+    m->yx = I->initial_FontMatrix.yx;
+    m->yy = I->initial_FontMatrix.yy;
+    m->tx = I->initial_FontMatrix.tx;
+    m->ty = I->initial_FontMatrix.ty;
+    return 0;
+}
+
 static FAPI_retcode get_char_width(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics)
 {   fapi_ufst_server *r = If_to_I(server);
     UW16 buffer[2];
@@ -1295,6 +1307,7 @@ static const FAPI_server If0 = {
     get_font_proportional_feature,
     can_retrieve_char_by_name,
     can_replace_metrics,
+    get_fontmatrix,
     get_char_width,
     get_char_raster_metrics,
     get_char_raster,
