@@ -310,7 +310,7 @@ bind def
 } bind def
 
 /FAPIhook  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
-{ (In FAPIhook) == flush //is_device_compatible_to_FAPI exec
+{ //is_device_compatible_to_FAPI exec
   { //FAPIhook_aux exec
   } {
     { (FAPIhook is disabled for the current device.) = } //FAPI_hook_debug exec
