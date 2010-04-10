@@ -37,6 +37,13 @@ languagelevel 2 .setlanguagelevel
   } {
     exch pop exch pop 0 eq
   } ifelse
+  %
+  % Temporary switch to allow override of FAPI and fallback to GS font rendering
+  % to be removed at some date after FT integration is completed and released.
+  %
+  /DisableFAPI where {
+  /DisableFAPI get not and
+  }if
   % The code above assumes that only the requested parameter is rendered.
   % The commented-out code below may be useful for general case.
   % Keeping it for a while.
@@ -303,7 +310,7 @@ bind def
 } bind def
 
 /FAPIhook  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
-{ //is_device_compatible_to_FAPI exec
+{ (In FAPIhook) == flush //is_device_compatible_to_FAPI exec
   { //FAPIhook_aux exec
   } {
     { (FAPIhook is disabled for the current device.) = } //FAPI_hook_debug exec
