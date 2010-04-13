@@ -696,7 +696,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         exrunlength = params->SDNUMEXSYMS;
       else
         code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
-      if (exrunlength > params->SDNUMEXSYMS - j) {
+      if (exflag && exrunlength > params->SDNUMEXSYMS - j) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
           "runlength too large in export symbol table (%d > %d - %d)\n",
           exrunlength, params->SDNUMEXSYMS, j);
