@@ -404,8 +404,9 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	face->ft_inc_int->object->metrics_type = a_char_ref->metrics_type;
     }
     else
-	/* Make sure we don't leave this set to the last value, as we may then use inappropriate metrics values */
-	face->ft_inc_int->object->glyph_metrics_index = 0xFFFFFFFF;
+	if (face->ft_inc_int)
+	    /* Make sure we don't leave this set to the last value, as we may then use inappropriate metrics values */
+	    face->ft_inc_int->object->glyph_metrics_index = 0xFFFFFFFF;
     
     /* We have to load the glyph, scale it correctly, and render it if we need a bitmap. */
     if (!ft_error)
