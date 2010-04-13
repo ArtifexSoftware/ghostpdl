@@ -62,6 +62,15 @@ languagelevel 2 .setlanguagelevel
 
 /Config
 <<
+  % Setup the default FAPIConfig values to default to FreeType
+  %
+  /FontPath             (/Fonts)       % A default directory for FAPI-handled font files
+						   % path in FAPIfontmap.
+  /CIDFontPath          (/CIDFonts)    % A default directory for FAPI-handled CIDfont 							   % files path in FAPIcidfmap.
+  /HookDiskFonts        [1 2 9 11 42]  % FontType values for disk PS fonts to be
+						   % redirected to FAPI.
+  /HookEmbeddedFonts    [1 2 9 11 42]  % FontType values for embedded PS fonts to be
+						   % redirected to FAPI.
   systemdict /FAPIconfig known {/FAPIconfig .systemvar} {(FAPIconfig)} ifelse .runlibfile
   /ServerOptions 2 dict
 >> def
