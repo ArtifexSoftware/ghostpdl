@@ -1039,7 +1039,8 @@ get_char_outline(FAPI_server *a_server, FAPI_path *a_path)
     p.x = 0;
     p.y = 0;
     ft_error = FT_Outline_Decompose(&s->outline_glyph->outline, &TheFtOutlineFuncs, &p);
-    a_path->closepath(a_path);
+    if (a_path->gs_error == 0)
+        a_path->closepath(a_path);
     return ft_to_gs_error(ft_error);
 }
 

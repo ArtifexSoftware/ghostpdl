@@ -80,37 +80,40 @@ static int add_closepath(FAPI_path *I)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = false;
-    return gx_path_close_subpath_notes(olh->path, 0);
+    I->gs_error =  gx_path_close_subpath_notes(olh->path, 0);
+    return I->gs_error;
 }
 
 static int add_move(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
-    int code;
 
     if (olh->need_close && olh->close_path)
-        if ((code = add_closepath(I)) < 0)
-	    return code;
+        if ((I->gs_error = add_closepath(I)) < 0)
+	    return I->gs_error;
     olh->need_close = false;
-    return gx_path_add_point(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0);
+    I->gs_error = gx_path_add_point(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0);
+    return I->gs_error;
 }
 
 static int add_line(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = true;
-    return gx_path_add_line_notes(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0, 0);
+    I->gs_error =  gx_path_add_line_notes(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0, 0);
+    return I->gs_error;
 }
 
 static int add_curve(FAPI_path *I, FracInt x0, FracInt y0, FracInt x1, FracInt y1, FracInt x2, FracInt y2)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = true;
-    return gx_path_add_curve_notes(olh->path, import_shift(x0, I->shift) + olh->x0, -import_shift(y0, I->shift) + olh->y0,
+    I->gs_error =   gx_path_add_curve_notes(olh->path, import_shift(x0, I->shift) + olh->x0, -import_shift(y0, I->shift) + olh->y0,
 					      import_shift(x1, I->shift) + olh->x0, -import_shift(y1, I->shift) + olh->y0,
 					      import_shift(x2, I->shift) + olh->x0, -import_shift(y2, I->shift) + olh->y0, 0);
+    return I->gs_error;
 }
 
-static FAPI_path path_interface_stub = { NULL, 0, add_move, add_line, add_curve, add_closepath };
+static FAPI_path path_interface_stub = { NULL, 0, 0, add_move, add_line, add_curve, add_closepath };
 
 static inline bool IsCIDFont(const gs_font_base *pbfont)
 {   return (pbfont->FontType == ft_CID_encrypted ||
@@ -1377,8 +1380,12 @@ static int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, gs
     olh.need_close = false;
     path_interface.olh = &olh;
     path_interface.shift = import_shift_v;
-    if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline(I, &path_interface))) < 0)
-	return code;
+    if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline(I, &path_interface))) < 0 || path_interface.gs_error != 0) {
+	if (path_interface.gs_error != 0)
+            return path_interface.gs_error;
+        else
+            return code;
+    }
     if (olh.need_close && olh.close_path)
         if ((code = add_closepath(&path_interface)) < 0)
 	    return code;

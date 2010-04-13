@@ -973,24 +973,23 @@ static int export_outline(fapi_ufst_server *r, PIFOUTLINE pol, FAPI_path *p)
         segment = (LPSB8)((LPSB8)(outchar->loop) + outchar->loop[i].segmt_offset);
         points = (PINTRVECTOR)((LPSB8)(outchar->loop) + outchar->loop[i].coord_offset);
         for(j=0; j<num_segmts; j++) {
-	    int code;
 
             if(*segment == 0x00) {
-             	if ((code = p->moveto(p, points->x, points->y)) != 0)
-		    return code;
+             	if ((p->gs_error = p->moveto(p, points->x, points->y)) != 0)
+		    return p->gs_error;
                 points++;
             } else if (*segment == 0x01) {
-		if ((code = p->lineto(p, points->x, points->y)) != 0)
-		    return code;
+		if ((p->gs_error = p->lineto(p, points->x, points->y)) != 0)
+		    return p->gs_error;
                 points++;
             } else if (*segment == 0x02) {
                 points+=2;
                 return e_invalidfont; /* This must not happen */
             } else if (*segment == 0x03) {
-		if ((code = p->curveto(p, points[0].x, points[0].y,
+		if ((p->gs_error = p->curveto(p, points[0].x, points[0].y,
 					points[1].x, points[1].y,
 					points[2].x, points[2].y)) < 0)
-		    return code;
+		    return p->gs_error;
                 points+=3;
             } else
                 return e_invalidfont; /* This must not happen */

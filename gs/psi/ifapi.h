@@ -143,6 +143,7 @@ typedef struct FAPI_path_s FAPI_path;
 struct FAPI_path_s {
     void *olh; /* Client's data. */
     int shift;
+    int gs_error;
     int (*moveto   )(FAPI_path *, FracInt, FracInt);
     int (*lineto   )(FAPI_path *, FracInt, FracInt);
     int (*curveto  )(FAPI_path *, FracInt, FracInt, FracInt, FracInt, FracInt, FracInt);
