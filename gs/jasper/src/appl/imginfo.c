@@ -199,7 +199,6 @@ int main(int argc, char **argv)
 	jas_eprintf("%s %d %d %d %d %ld\n", fmtname, numcmpts, width, height, depth, (long) jas_image_rawsize(image));
 
 	jas_image_destroy(image);
-	jas_image_clearfmts();
 
 	return EXIT_SUCCESS;
 }

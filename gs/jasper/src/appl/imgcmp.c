@@ -381,7 +381,6 @@ int main(int argc, char **argv)
 
 	jas_image_destroy(origimage);
 	jas_image_destroy(reconimage);
-	jas_image_clearfmts();
 
 	return EXIT_SUCCESS;
 }
