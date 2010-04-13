@@ -3219,11 +3219,11 @@ static int ciedefgcompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
     return 1;
 }
 
-static char *CIESpaces[] = {
-    (char *)"CIEBasedA", 
-    (char *)"CIEBasedABC", 
-    (char *)"CIEBasedDEF", 
-    (char *)"CIEBasedDEFG"
+static char const * const CIESpaces[] = {
+    "CIEBasedA", 
+    "CIEBasedABC", 
+    "CIEBasedDEF", 
+    "CIEBasedDEFG"
 };
 /* This routine returns the Device space equivalents for a CIEBased space.
  * Used by currentgray, currentrgb and currentcmyk, the PLRM says that CIE 
