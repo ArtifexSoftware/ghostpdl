@@ -49,6 +49,11 @@ typedef struct gs_lib_ctx_s
     bool dict_auto_expand;  /* ps dictionary: false level 1 true level 2 or 3 */
     /* A table of local copies of the IODevices */
     struct gx_io_device_s **io_device_table;
+    /* Define the default value of AccurateScreens that affects setscreen
+       and setcolorscreen. */
+    bool screen_accurate_screens;
+    bool screen_use_wts;
+    uint screen_min_screen_levels;
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.

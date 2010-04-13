@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -49,7 +49,7 @@
  * and this holds true for the graphic library as well.
  *
  * Note also that implementing a generalized halftone cache is not trivial,
- * as the device-specific representation of spot halftones depends on the 
+ * as the device-specific representation of spot halftones depends on the
  * default transformation for the device, and more generally the device
  * specific representation of halftones may depend on the sense of the device
  * (additive or subtract). Hence, a halftone cache would need to be keyed
@@ -206,16 +206,15 @@ extern_st(st_halftone);
 
 /*
  * Set/get the default AccurateScreens value (for set[color]screen).
- * Note that this value is stored in a static variable.
  */
-void gs_setaccuratescreens(bool);
-bool gs_currentaccuratescreens(void);
+void gs_setaccuratescreens(gs_memory_t *, bool);
+bool gs_currentaccuratescreens(gs_memory_t *);
 
 /*
- * Set/get the value for UseWTS. Also a static, but it's going away.
+ * Set/get the value for UseWTS.
  */
-void gs_setusewts(bool);
-bool gs_currentusewts(void);
+void gs_setusewts(gs_memory_t *, bool);
+bool gs_currentusewts(gs_memory_t *);
 
 /* Initiate screen sampling with optional AccurateScreens. */
 int gs_screen_init_memory(gs_screen_enum *, gs_state *,
@@ -228,10 +227,8 @@ int gs_screen_init_memory(gs_screen_enum *, gs_state *,
 
 /*
  * Set/get the MinScreenLevels value.
- *
- * Note that this value is stored in a static variable.
  */
-void gs_setminscreenlevels(uint);
-uint gs_currentminscreenlevels(void);
+void gs_setminscreenlevels(gs_memory_t *, uint);
+uint gs_currentminscreenlevels(gs_memory_t *);
 
 #endif /* gxht_INCLUDED */

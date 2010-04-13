@@ -147,7 +147,7 @@ gs_setscreen(gs_state * pgs, gs_screen_halftone * phsp)
 {
     gs_screen_enum senum;
     int code = gx_ht_process_screen(&senum, pgs, phsp,
-				    gs_currentaccuratescreens());
+                                    gs_currentaccuratescreens(pgs->memory));
 
     if (code < 0)
 	return code;

@@ -410,12 +410,12 @@ set_WaitTimeout(i_ctx_t *i_ctx_p, long val)
 static long
 current_MinScreenLevels(i_ctx_t *i_ctx_p)
 {
-    return gs_currentminscreenlevels();
+    return gs_currentminscreenlevels(imemory);
 }
 static int
 set_MinScreenLevels(i_ctx_t *i_ctx_p, long val)
 {
-    gs_setminscreenlevels((uint) val);
+    gs_setminscreenlevels(imemory, (uint) val);
     return 0;
 }
 static long
@@ -475,24 +475,24 @@ static const long_param_def_t user_long_params[] =
 static bool
 current_AccurateScreens(i_ctx_t *i_ctx_p)
 {
-    return gs_currentaccuratescreens();
+    return gs_currentaccuratescreens(imemory);
 }
 static int
 set_AccurateScreens(i_ctx_t *i_ctx_p, bool val)
 {
-    gs_setaccuratescreens(val);
+    gs_setaccuratescreens(imemory, val);
     return 0;
 }
 /* Boolean values */
 static bool
 current_UseWTS(i_ctx_t *i_ctx_p)
 {
-    return gs_currentusewts();
+    return gs_currentusewts(imemory);
 }
 static int
 set_UseWTS(i_ctx_t *i_ctx_p, bool val)
 {
-    gs_setusewts(val);
+    gs_setusewts(imemory, val);
     return 0;
 }
 static bool

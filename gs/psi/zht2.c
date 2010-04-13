@@ -30,7 +30,8 @@
 #include "zht2.h"
 
 /* Forward references */
-static int dict_spot_params(const ref *, gs_spot_halftone *, ref *, ref *);
+static int dict_spot_params(const ref *, gs_spot_halftone *, ref *, ref *,
+                            gs_memory_t *);
 static int dict_spot_results(i_ctx_t *, ref *, const gs_spot_halftone *);
 static int dict_threshold_params(const ref *, gs_threshold_halftone *,
 				  ref *);
@@ -205,7 +206,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 		    break;
 		case 1:
 		    code = dict_spot_params(&rvalue[1], &pc->params.spot,
-		    				sprocs + j, tprocs + j);
+		    				sprocs + j, tprocs + j, mem);
 		    pc->params.spot.screen.spot_function = spot1_dummy;
 		    pc->type = ht_type_spot;
 		    break;
@@ -394,7 +395,7 @@ const op_def zht2_l2_op_defs[] =
 /* from a dictionary. */
 static int
 dict_spot_params(const ref * pdict, gs_spot_halftone * psp,
-		 ref * psproc, ref * ptproc)
+		 ref * psproc, ref * ptproc, gs_memory_t *mem)
 {
     int code;
 
@@ -405,7 +406,7 @@ dict_spot_params(const ref * pdict, gs_spot_halftone * psp,
 				 &psp->screen.angle)) != 0 ||
       (code = dict_proc_param(pdict, "SpotFunction", psproc, false)) != 0 ||
 	(code = dict_bool_param(pdict, "AccurateScreens",
-				gs_currentaccuratescreens(),
+				gs_currentaccuratescreens(mem),
 				&psp->accurate_screens)) < 0 ||
       (code = dict_proc_param(pdict, "TransferFunction", ptproc, false)) < 0
 	)

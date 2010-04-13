@@ -172,7 +172,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
     gx_ht_order_component *pocs = 0;
     int code = 0;
 
-    if (gs_currentusewts() && gs_sethalftone_try_wts(pht, pgs, pdht) == 0)
+    if (gs_currentusewts(mem) && gs_sethalftone_try_wts(pht, pgs, pdht) == 0)
 	return 0;
 
     switch (pht->type) {
@@ -195,8 +195,8 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 		    int ci = cindex[i];
 		    gx_ht_order_component *poc = &pocs[i];
 
-		    code = gx_ht_process_screen_memory(&senum, pgs,
-				&phc[ci], gs_currentaccuratescreens(), mem);
+		    code = gx_ht_process_screen_memory(&senum, pgs, &phc[ci],
+				        gs_currentaccuratescreens(mem), mem);
 		    if (code < 0)
 			break;
 		    poc->corder = senum.order;

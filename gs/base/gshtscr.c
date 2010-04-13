@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -31,7 +31,7 @@ static const bool FORCE_STRIP_HALFTONES = false;
 private_st_gs_screen_enum();
 
 /* GC procedures */
-static 
+static
 ENUM_PTRS_WITH(screen_enum_enum_ptrs, gs_screen_enum *eptr)
 {
     if (index < 1 + st_ht_order_max_ptrs) {
@@ -56,50 +56,51 @@ static RELOC_PTRS_WITH(screen_enum_reloc_ptrs, gs_screen_enum *eptr)
 }
 RELOC_PTRS_END
 
-/* Define the default value of AccurateScreens that affects setscreen
-   and setcolorscreen. Note that this is effectively a global, and
-   thus gets in the way of reentrancy. We'll want to fix that. */
-static bool screen_accurate_screens;
-
 /* Default AccurateScreens control */
 void
-gs_setaccuratescreens(bool accurate)
+gs_setaccuratescreens(gs_memory_t *mem, bool accurate)
 {
-    screen_accurate_screens = accurate;
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
+
+    ctx->screen_accurate_screens = accurate;
 }
 bool
-gs_currentaccuratescreens(void)
+gs_currentaccuratescreens(gs_memory_t *mem)
 {
-    return screen_accurate_screens;
-}
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
 
-/* As with AccurateScreens, this is also effectively a global. However,
-   it is going away soon. */
-static bool screen_use_wts;
+    return ctx->screen_accurate_screens;
+}
 
 void
-gs_setusewts(bool use_wts)
+gs_setusewts(gs_memory_t *mem, bool use_wts)
 {
-    screen_use_wts = use_wts;
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
+
+    ctx->screen_use_wts = use_wts;
 }
+
 bool
-gs_currentusewts(void)
+gs_currentusewts(gs_memory_t *mem)
 {
-    return screen_use_wts;
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
+
+    return ctx->screen_use_wts;
 }
 
-/* Define the MinScreenLevels user parameter similarly. */
-static uint screen_min_screen_levels;
-
 void
-gs_setminscreenlevels(uint levels)
+gs_setminscreenlevels(gs_memory_t *mem, uint levels)
 {
-    screen_min_screen_levels = levels;
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
+
+    ctx->screen_min_screen_levels = levels;
 }
 uint
-gs_currentminscreenlevels(void)
+gs_currentminscreenlevels(gs_memory_t *mem)
 {
-    return screen_min_screen_levels;
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
+
+    return ctx->screen_min_screen_levels;
 }
 
 /* Initialize the screen control statics at startup. */
@@ -107,8 +108,8 @@ init_proc(gs_gshtscr_init);     /* check prototype */
 int
 gs_gshtscr_init(gs_memory_t *mem)
 {
-    gs_setaccuratescreens(false);
-    gs_setminscreenlevels(1);
+    gs_setaccuratescreens(mem, false);
+    gs_setminscreenlevels(mem, 1);
     return 0;
 }
 
@@ -195,8 +196,10 @@ int
 gs_screen_init(gs_screen_enum * penum, gs_state * pgs,
                gs_screen_halftone * phsp)
 {
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(pgs->memory);
+
     return gs_screen_init_accurate(penum, pgs, phsp,
-                                   screen_accurate_screens);
+                                   ctx->screen_accurate_screens);
 }
 int
 gs_screen_init_memory(gs_screen_enum * penum, gs_state * pgs,
@@ -251,12 +254,13 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
     gs_matrix imat;
     ulong max_size = gx_ht_cache_default_bits_size();
     int code;
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
 
     if (phsp->frequency < 0.1)
         return_error(gs_error_rangecheck);
     gs_deviceinitialmatrix(gs_currentdevice(pgs), &imat);
     code = pick_cell_size(phsp, &imat, max_size,
-                          screen_min_screen_levels, accurate,
+                          ctx->screen_min_screen_levels, accurate,
                           &porder->params);
     if (code < 0)
         return code;
@@ -567,7 +571,7 @@ gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
     spot_center.y = floor(spot_center.y) + 0.5;
 
     /* compute the spot function arguments for the shifted spot : */
-    if ((code = gs_distance_transform(penum->x - spot_center.x + 0.501, 
+    if ((code = gs_distance_transform(penum->x - spot_center.x + 0.501,
                                       penum->y - spot_center.y + 0.498,
                                       &penum->mat, &pt)) < 0)
         return code;
