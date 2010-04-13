@@ -22,6 +22,16 @@
 
 typedef struct name_table_s *name_table_ptr;
 
+/* graphical object tags */
+typedef enum {
+    GS_DEVICE_DOESNT_SUPPORT_TAGS = 0, /* default */
+    GS_UNKNOWN_TAG = 0x1,
+    GS_TEXT_TAG = 0x2,
+    GS_IMAGE_TAG = 0x4,
+    GS_PATH_TAG = 0x8,
+    GS_UNTOUCHED_TAG = 0x10
+} gs_object_tag_type_t;
+
 typedef struct gs_lib_ctx_s
 {
     gs_memory_t *memory;  /* mem->gs_lib_ctx->memory == mem */
@@ -54,6 +64,8 @@ typedef struct gs_lib_ctx_s
     bool screen_accurate_screens;
     bool screen_use_wts;
     uint screen_min_screen_levels;
+    /* tag stuff */
+    gs_object_tag_type_t BITTAG;
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.

@@ -78,6 +78,10 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     pio->gs_next_id = 5;  /* this implies that each thread has its own complete state */
 
     pio->dict_auto_expand = false;
+    pio->screen_accurate_screens = false;
+    pio->screen_use_wts = false;
+    pio->screen_min_screen_levels = 0;
+    pio->BITTAG = GS_DEVICE_DOESNT_SUPPORT_TAGS;
 
     return 0;
 }
