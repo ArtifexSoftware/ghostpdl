@@ -181,6 +181,16 @@ MAKEDLL=1
 # Define the directory where the FreeType2 library sources are stored.
 # See freetype.mak for more information.
 
+!ifdef UFST_BRIDGE
+!if UFST_BRIDGE==1
+FT_BRIDGE=0
+!endif
+!endif
+
+!ifndef FT_BRIDGE
+FT_BRIDGE=1
+!endif
+
 !ifndef FTSRCDIR
 FTSRCDIR=freetype
 !ifndef FT_CFLAGS
@@ -864,13 +874,13 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def 
 
 DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1 SBRDIR=.\debugobj
 debug:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS)
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS)
 
 debugclean:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS) clean
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) clean
 
 debugbsc:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS) bsc
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) bsc
 
 
 

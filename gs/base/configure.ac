@@ -322,14 +322,14 @@ AC_SUBST(FONTCONFIG_LIBS)
 
 AC_CHECK_LIB(dl, dlopen)
 
-AC_ARG_ENABLE([freetype], AC_HELP_STRING([--enable-freetype],
-	[Use freetype for font rasterization]))
+AC_ARG_ENABLE([freetype], AC_HELP_STRING([--disable-freetype],
+	[Disable freetype for font rasterization]))
 FT_BRIDGE=0
 SHARE_FT=0
 FTSRCDIR=
 FT_CFLAGS=
 FT_LIBS=
-if test x"$enable_freetype" == xyes; then
+if test x"$enable_freetype" != xno; then
   AC_MSG_CHECKING([for local freetype library source])
   dnl We prefer freetype2 over freetype, so it is easy to override
   dnl the included freetype source with a checkout from upstream.
