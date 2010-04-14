@@ -712,7 +712,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i-m]);
           i++;
         }
-        exflag = !exflag;
+      exflag = !exflag;
     }
   }
 
