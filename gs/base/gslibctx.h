@@ -66,6 +66,9 @@ typedef struct gs_lib_ctx_s
     uint screen_min_screen_levels;
     /* tag stuff */
     gs_object_tag_type_t BITTAG;
+    /* real time clock 'bias' value. Not strictly required, but some FTS
+     * tests work better if realtime starts from 0 at boot time. */
+    long real_time_0[2];
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.

@@ -19,6 +19,7 @@
 
 /* Capture stdin/out/err before gs.h redefines them. */
 #include "stdio_.h"
+#include "gp.h"
 
 static void
 gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
@@ -82,6 +83,8 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     pio->screen_use_wts = false;
     pio->screen_min_screen_levels = 0;
     pio->BITTAG = GS_DEVICE_DOESNT_SUPPORT_TAGS;
+
+    gp_get_realtime(pio->real_time_0);
 
     return 0;
 }
