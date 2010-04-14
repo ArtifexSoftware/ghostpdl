@@ -1827,8 +1827,10 @@ retry_oversampling:
                  * matching character code. Otherwise it returns
                  * zero after setting c to zero (.notdef glyph id)
                  * or a negative value on error. */
+#if 0
 		if (code > 0)
 		    is_glyph_index = false;
+#endif
 	    }
 	    cr.char_codes[0] = c;
 	    cr.is_glyph_index = is_glyph_index;

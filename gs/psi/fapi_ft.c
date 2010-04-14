@@ -448,7 +448,16 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         h = (((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
 
         hadv = (((double)ft_face->glyph->metrics.horiAdvance * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
-        vadv = (((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+
+	/* Ugly. FreeType creates verticla metrics for TT fonts, normally we override them in the 
+	 * metrics callbacks, but those only work for incremental interface fonts, and TrueType fonts
+	 * loaded as CIDFont replacements are not incrementally handled. So here, if its a CIDFont, and
+	 * its not type 1 outlines, and its not a vertical mode fotn, ignore the advance.
+	 */
+	if(!a_fapi_font->is_type1 && a_fapi_font->is_cid && !a_fapi_font->is_vertical)
+	    vadv = 0;
+	else
+	    vadv = (((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
         
         a_metrics->bbox_x0 = hx;
         a_metrics->bbox_y0 = hy - h;
