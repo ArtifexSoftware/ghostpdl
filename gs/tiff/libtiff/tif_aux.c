@@ -100,6 +100,35 @@ bad:
 	return 0;
 }
 
+static int
+TIFFDefaultRefBlackWhite(TIFFDirectory* td)
+{
+	int i;
+
+	if (!(td->td_refblackwhite = (float *)_TIFFmalloc(6*sizeof (float))))
+		return 0;
+        if (td->td_photometric == PHOTOMETRIC_YCBCR) {
+		/*
+		 * YCbCr (Class Y) images must have the ReferenceBlackWhite
+		 * tag set. Fix the broken images, which lacks that tag.
+		 */
+		td->td_refblackwhite[0] = 0.0F;
+		td->td_refblackwhite[1] = td->td_refblackwhite[3] =
+			td->td_refblackwhite[5] = 255.0F;
+		td->td_refblackwhite[2] = td->td_refblackwhite[4] = 128.0F;
+	} else {
+		/*
+		 * Assume RGB (Class R)
+		 */
+		for (i = 0; i < 3; i++) {
+		    td->td_refblackwhite[2*i+0] = 0;
+		    td->td_refblackwhite[2*i+1] =
+			    (float)((1L<<td->td_bitspersample)-1L);
+		}
+	}
+	return 1;
+}
+
 /*
  * Like TIFFGetField, but return any default
  * value if the tag is not present in the directory.
@@ -167,7 +196,7 @@ TIFFVGetFieldDefaulted(TIFF* tif, ttag_t tag, va_list ap)
 		return (1);
 	case TIFFTAG_EXTRASAMPLES:
 		*va_arg(ap, uint16 *) = td->td_extrasamples;
-		*va_arg(ap, uint16 **) = td->td_sampleinfo;
+		*va_arg(ap, const uint16 **) = td->td_sampleinfo;
 		return (1);
 	case TIFFTAG_MATTEING:
 		*va_arg(ap, uint16 *) =
@@ -189,8 +218,8 @@ TIFFVGetFieldDefaulted(TIFF* tif, ttag_t tag, va_list ap)
 	case TIFFTAG_YCBCRCOEFFICIENTS:
 		{
 			/* defaults are from CCIR Recommendation 601-1 */
-			static float ycbcrcoeffs[] = { 0.299f, 0.587f, 0.114f };
-			*va_arg(ap, float **) = ycbcrcoeffs;
+			static const float ycbcrcoeffs[] = { 0.299f, 0.587f, 0.114f };
+			*va_arg(ap, const float **) = ycbcrcoeffs;
 			return 1;
 		}
 	case TIFFTAG_YCBCRSUBSAMPLING:
@@ -202,14 +231,12 @@ TIFFVGetFieldDefaulted(TIFF* tif, ttag_t tag, va_list ap)
 		return (1);
 	case TIFFTAG_WHITEPOINT:
 		{
-			static float whitepoint[2];
-
 			/* TIFF 6.0 specification tells that it is no default
 			   value for the WhitePoint, but AdobePhotoshop TIFF
 			   Technical Note tells that it should be CIE D50. */
-			whitepoint[0] =	D50_X0 / (D50_X0 + D50_Y0 + D50_Z0);
-			whitepoint[1] =	D50_Y0 / (D50_X0 + D50_Y0 + D50_Z0);
-			*va_arg(ap, float **) = whitepoint;
+		  	static const float whitepoint[] = { D50_X0 / (D50_X0 + D50_Y0 + D50_Z0),
+						      D50_Y0 / (D50_X0 + D50_Y0 + D50_Z0) };
+			*va_arg(ap, const float **) = whitepoint;
 			return 1;
 		}
 	case TIFFTAG_TRANSFERFUNCTION:
@@ -218,40 +245,17 @@ TIFFVGetFieldDefaulted(TIFF* tif, ttag_t tag, va_list ap)
 			TIFFErrorExt(tif->tif_clientdata, tif->tif_name, "No space for \"TransferFunction\" tag");
 			return (0);
 		}
-		*va_arg(ap, uint16 **) = td->td_transferfunction[0];
+		*va_arg(ap, const uint16 **) = td->td_transferfunction[0];
 		if (td->td_samplesperpixel - td->td_extrasamples > 1) {
-			*va_arg(ap, uint16 **) = td->td_transferfunction[1];
-			*va_arg(ap, uint16 **) = td->td_transferfunction[2];
+			*va_arg(ap, const uint16 **) = td->td_transferfunction[1];
+			*va_arg(ap, const uint16 **) = td->td_transferfunction[2];
 		}
 		return (1);
 	case TIFFTAG_REFERENCEBLACKWHITE:
-		{
-			int i;
-			static float ycbcr_refblackwhite[] = 
-			{ 0.0F, 255.0F, 128.0F, 255.0F, 128.0F, 255.0F };
-			static float rgb_refblackwhite[6];
-
-			for (i = 0; i < 3; i++) {
-				rgb_refblackwhite[2 * i + 0] = 0.0F;
-				rgb_refblackwhite[2 * i + 1] =
-					(float)((1L<<td->td_bitspersample)-1L);
-			}
-			
-			if (td->td_photometric == PHOTOMETRIC_YCBCR) {
-				/*
-				 * YCbCr (Class Y) images must have the
-				 * ReferenceBlackWhite tag set. Fix the
-				 * broken images, which lacks that tag.
-				 */
-				*va_arg(ap, float **) = ycbcr_refblackwhite;
-			} else {
-				/*
-				 * Assume RGB (Class R)
-				 */
-				*va_arg(ap, float **) = rgb_refblackwhite;
-			}
-			return 1;
-		}
+		if (!td->td_refblackwhite && !TIFFDefaultRefBlackWhite(td))
+			return (0);
+		*va_arg(ap, const float **) = td->td_refblackwhite;
+		return (1);
 	}
 	return 0;
 }
