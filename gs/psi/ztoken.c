@@ -48,7 +48,7 @@ ztoken(i_ctx_t *i_ctx_p)
 	    stream *s;
 	    scanner_state state;
 
-	    check_read_file(s, op);
+	    check_read_file(i_ctx_p, s, op);
 	    check_ostack(1);
 	    scanner_init(&state, op);
 	    return token_continue(i_ctx_p, &state, true);
@@ -158,7 +158,7 @@ ztokenexec(i_ctx_t *i_ctx_p)
     stream *s;
     scanner_state state;
 
-    check_read_file(s, op);
+    check_read_file(i_ctx_p, s, op);
     check_estack(1);
     scanner_init(&state, op);
     return tokenexec_continue(i_ctx_p, &state, true);

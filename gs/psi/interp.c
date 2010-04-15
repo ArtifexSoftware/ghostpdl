@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -71,7 +71,7 @@ public_st_dict_stack();
 public_st_exec_stack();
 public_st_op_stack();
 
-/* 
+/*
  * The procedure to call if an operator requests rescheduling.
  * This causes an error unless the context machinery has been installed.
  */
@@ -116,7 +116,7 @@ call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 #   endif
 # endif
     code = op_proc(i_ctx_p);
-# if defined(DEBUG_TRACE_PS_OPERATORS) && !defined(SHOW_STACK_DEPTHS)
+# if defined(DEBUG_TRACE_PS_OPERATORS) && defined(SHOW_STACK_DEPTHS)
     if_debug2('!', "[!][es=%d os=%d]\n",
 	    esp-i_ctx_p->exec_stack.stack.bot,
 	    osp-i_ctx_p->op_stack.stack.bot);
@@ -1321,7 +1321,7 @@ remap:		    if (iesp + 2 >= estop) {
 		stream *s;
 		scanner_state sstate;
 
-		check_read_known_file(s, IREF, return_with_error_iref);
+		check_read_known_file(i_ctx_p, s, IREF, return_with_error_iref);
 	    rt:
 		if (iosp >= ostop)	/* check early */
 		    return_with_stackoverflow_iref();

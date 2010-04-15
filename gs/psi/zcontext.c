@@ -585,14 +585,14 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
 	    return code;
 	pstdout = &ref_stdio[1];
     } else
-	check_read_file(s, pstdout);
+	check_read_file(i_ctx_p, s, pstdout);
     if (r_has_type(pstdin, t_null)) {
 	code = zget_stdin(i_ctx_p, &s);
 	if (code < 0)
 	    return code;
 	pstdin = &ref_stdio[0];
     } else
-	check_read_file(s, pstdin);
+	check_read_file(i_ctx_p, s, pstdin);
     dmem = gs_imemory;
     if (local) {
 	/* Share global VM, private local VM. */

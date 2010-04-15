@@ -890,7 +890,7 @@ zcurrentfile(i_ctx_t *i_ctx_p)
     } else if ((fp = zget_current_file(i_ctx_p)) == 0) {	/* Return an invalid file object. */
 	/* This doesn't make a lot of sense to me, */
 	/* but it's what the PostScript manual specifies. */
-	make_invalid_file(op);
+	make_invalid_file(i_ctx_p, op);
     } else {
 	ref_assign(op, fp);
 	esfile_set_cache(fp);

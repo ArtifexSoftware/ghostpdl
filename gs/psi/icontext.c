@@ -152,18 +152,37 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->LockFilePermissions = false;
     pcst->starting_arg_file = false;
     pcst->RenderTTNotdef = true;
+    /* Create and initialize an invalid (closed) stream. */
+    /* Initialize the stream for the sake of the GC, */
+    /* and so it can act as an empty input stream. */
+    {
+        stream *s;
+        
+        s = (stream*)gs_alloc_bytes_immovable(mem->non_gc_memory->stable_memory, 
+                                              sizeof(*s), 
+                                              "context_state_alloc");
+        if (s == NULL)
+            goto x3;
+        pcst->invalid_file_stream = s;
+
+        s_init(s, NULL);
+        sread_string(s, NULL, 0);
+        s->next = s->prev = 0;
+        s_init_no_id(s);
+    }
     /* The initial stdio values are bogus.... */
     make_file(&pcst->stdio[0], a_readonly | avm_invalid_file_entry, 1,
-	      invalid_file_entry);
+	      pcst->invalid_file_stream);
     make_file(&pcst->stdio[1], a_all | avm_invalid_file_entry, 1,
-	      invalid_file_entry);
+	      pcst->invalid_file_stream);
     make_file(&pcst->stdio[2], a_all | avm_invalid_file_entry, 1,
-	      invalid_file_entry);
+	      pcst->invalid_file_stream);
     for (i = countof(pcst->memory.spaces_indexed); --i >= 0;)
 	if (dmem->spaces_indexed[i] != 0)
 	    ++(dmem->spaces_indexed[i]->num_contexts);
     *ppcst = pcst;
     return 0;
+  x3:/* No need to delete dictionary here, as gc will do it for us. */
   x2:gs_state_free(pcst->pgs);
   x1:gs_interp_free_stacks(mem, pcst);
   x0:if (*ppcst == 0)
@@ -259,6 +278,9 @@ context_state_free(gs_context_state_t * pcst)
     int freed = 0;
     int i;
 
+    /* Invalid file stream is always in static space, so needs to be done
+     * separately. */
+    gs_free_object(mem->non_gc_memory->stable_memory, pcst->invalid_file_stream, "context_state_alloc");
     /*
      * If this context is the last one referencing a particular VM
      * (local / global / system), free the entire VM space;

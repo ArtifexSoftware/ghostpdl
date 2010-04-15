@@ -182,7 +182,7 @@ zreusablestream(i_ctx_t *i_ctx_p)
 	stream *source;
 	stream *s;
 
-	check_read_file(source, source_op);
+	check_read_file(i_ctx_p, source, source_op);
 	s = source;
 rs:
 	if (s->cbuf_string.data != 0) {	/* string stream */

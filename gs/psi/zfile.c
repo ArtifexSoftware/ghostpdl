@@ -108,32 +108,11 @@ stream_proc_report_error(filter_report_error);
 #define DEFAULT_BUFFER_SIZE 2048
 extern const uint file_default_buffer_size;
 
-/* An invalid file object */
-static stream invalid_file_stream;
-stream *const invalid_file_entry = &invalid_file_stream;
-
-/* Initialize the file table */
-static int
-zfile_init(i_ctx_t *i_ctx_p)
-{
-    /* Create and initialize an invalid (closed) stream. */
-    /* Initialize the stream for the sake of the GC, */
-    /* and so it can act as an empty input stream. */
-
-    stream *const s = &invalid_file_stream;
-
-    s_init(s, NULL);
-    sread_string(s, NULL, 0);
-    s->next = s->prev = 0;
-    s_init_no_id(s);
-    return 0;
-}
-
 /* Make an invalid file object. */
 void
-make_invalid_file(ref * fp)
+make_invalid_file(i_ctx_t *i_ctx_p, ref * fp)
 {
-    make_file(fp, avm_invalid_file_entry, ~0, invalid_file_entry);
+    make_file(fp, avm_invalid_file_entry, ~0, i_ctx_p->invalid_file_stream);
 }
 
 /* Check a file name for permission by stringmatch on one of the */
@@ -763,7 +742,7 @@ const op_def zfile_op_defs[] =
                 /* Internal operators */
     {"0%file_continue", file_continue},
     {"0%execfile_finish", execfile_finish},
-    op_def_end(zfile_init)
+    op_def_end(0)
 };
 
 /* ------ File name parsing ------ */

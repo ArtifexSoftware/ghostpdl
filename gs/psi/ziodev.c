@@ -129,7 +129,7 @@ zfilelineedit(i_ctx_t *i_ctx_p)
     count = (op-1)->value.intval;
     check_type(*(op-2), t_boolean);	/* statementedit/lineedit */
     statement = (op-2)->value.boolval;
-    check_read_file(ins, op - 3);	/* %stdin */
+    check_read_file(i_ctx_p, ins, op - 3);	/* %stdin */
 
     /* extend string */
     initial_buf_size = statement ? STATEMENTEDIT_BUF_SIZE : LINEEDIT_BUF_SIZE;
