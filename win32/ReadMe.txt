@@ -119,6 +119,35 @@ start the program by right hand clicking on the appropriate project and
 choosing "Debug => Start New Instance".
 
 
+Other projects
+~~~~~~~~~~~~~~
+
+By default this solution just builds the standard GhostPDL set of targets.
+We anticipate offering more project files that can be included by
+customers wanting to use some of the optional capabilities of the GhostPDL
+suite. These projects are not included by default as they require extra
+libraries that are not supplied as part of the standard distribution.
+
+Each of these can be added to the solution by choosing File => Add =>
+Existing Project... and navigating to the appropriate vcproj file.
+
+The first of these is now available, gs\ghostscript-ufst.vcproj. This
+project file allows customers to build a version of Ghostscript that uses
+the UFST font library. By default the project expects the UFST to be
+checked out and built in C:\ufst (using the project files in
+C:\ufst\demo\bin). This location can be changed if required by editing the
+value of UFST_ROOT set in each of the nmake invocation lines in the
+debugging section of the Project properties for ghostscript-ufst.vcproj.
+
+Example debugging arguments for this project are as follows:
+
+  ghostscript-ufst
+    Debug
+      Cmd     ..\gs\ufstdebugbin\gswin32c.exe
+      Args    -dUFST_SSDir=(/ufst/fontdata/mtfonts/pclps/mt3) -dUFST_Plugin=(/ufst/fontdata/mtfonts/pclps2/mt3/pclp2_xj.fco) gs/examples/alphabet.ps
+      Dir     ..
+
+
 Things to know about this solution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
