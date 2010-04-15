@@ -29,7 +29,7 @@ FTO_=$(O_)$(FTOBJ)
 
 # Define our local compiler alias
 # we must define FT2_BUILD_LIBRARY to get internal declarations
-FTCC=$(CC_) $(I_)$(FTSRCDIR)$(D)include$(_I) -DFT2_BUILD_LIBRARY
+FTCC=$(CC_) $(I_)$(FTSRCDIR)$(D)include$(_I) -DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON
 
 # Define the name of this makefile.
 FT_MAK=$(GLSRC)freetype.mak
