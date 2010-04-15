@@ -10865,7 +10865,7 @@
 		};
 		008DD730114C01C700787955 /* XPS */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "-f xcode.mak svg-$(CONFIG)-$(ACTION)";
+			buildArgumentsString = "-f xcode.mak xps-$(CONFIG)-$(ACTION)";
 			buildConfigurationList = 008DD733114C01E500787955 /* Build configuration list for PBXLegacyTarget "XPS" */;
 			buildPhases = (
 			);
