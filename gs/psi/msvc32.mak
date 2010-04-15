@@ -182,7 +182,7 @@ MAKEDLL=1
 # See freetype.mak for more information.
 
 !ifdef UFST_BRIDGE
-!if UFST_BRIDGE==1
+!if "$(UFST_BRIDGE)"=="1"
 FT_BRIDGE=0
 !endif
 !endif
@@ -881,6 +881,42 @@ debugclean:
 
 debugbsc:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) bsc
+
+
+
+# ---------------------- UFST targets ---------------------- #
+# Simply set some definitions and call ourselves back        #
+
+!ifndef UFST_ROOT
+UFST_ROOT=C:\ufst
+!endif
+
+UFSTBASEDEFS=UFST_BRIDGE=1 FT_BRIDGE=1 UFST_ROOT="$(UFST_ROOT)"
+UFSTDEBUGDEFS=BINDIR=.\ufstdebugbin GLGENDIR=.\ufstdebugobj GLOBJDIR=.\ufstdebugobj PSLIBDIR=.\lib PSGENDIR=.\ufstdebugobj PSOBJDIR=.\ufstdebugobj DEBUG=1 TDEBUG=1 SBRDIR=.\ufstdebugobj
+UFSTDEFS=BINDIR=.\ufstbin GLGENDIR=.\ufstobj GLOBJDIR=.\ufstobj PSLIBDIR=.\lib PSGENDIR=.\ufstobj PSOBJDIR=.\ufstobj SBRDIR=.\ufstobj
+
+ufst-lib:
+#	Could make this call a makefile in the ufst code? 
+#	cd $(UFST_ROOT)\rts\lib
+#	nmake -f makefile.artifex fco_lib.a if_lib.a psi_lib.a tt_lib.a
+
+ufst-debug: ufst-lib
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS)
+
+ufst-debugclean: ufst-lib
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) clean
+
+ufst-debugbsc: ufst-lib
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) bsc
+
+ufst: ufst-lib
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS)
+
+ufst-clean: ufst-lib
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) clean
+
+ufst-bsc: ufst-lib
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) bsc
 
 
 
