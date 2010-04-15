@@ -135,9 +135,12 @@ The first of these is now available, gs\ghostscript-ufst.vcproj. This
 project file allows customers to build a version of Ghostscript that uses
 the UFST font library. By default the project expects the UFST to be
 checked out and built in C:\ufst (using the project files in
-C:\ufst\demo\bin). This location can be changed if required by editing the
-value of UFST_ROOT set in each of the nmake invocation lines in the
-debugging section of the Project properties for ghostscript-ufst.vcproj.
+C:\ufst\demo\bin).
+
+This location can be changed if required by editing the value of UFST_ROOT
+set in each of the nmake invocation lines in the debugging section of the
+project properties for ghostscript-ufst.vcproj. If the path is changed the
+debugging runtime arguments below will need to be adjusted accordingly.
 
 Example debugging arguments for this project are as follows:
 
