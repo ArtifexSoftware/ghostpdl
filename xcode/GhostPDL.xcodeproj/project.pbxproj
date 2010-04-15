@@ -54,35 +54,35 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 00836B95114B837500D05F7F /* Ghostscript */;
+			remoteGlobalIDString = 00836B95114B837500D05F7F;
 			remoteInfo = Ghostscript;
 		};
 		00DD50F6114C998D0016D1C4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 008DD6FD114BF45D00787955 /* GhostPCL */;
+			remoteGlobalIDString = 008DD6FD114BF45D00787955;
 			remoteInfo = GhostPCL;
 		};
 		00DD50F8114C998D0016D1C4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 008DD713114BFEE300787955 /* Language Switch */;
+			remoteGlobalIDString = 008DD713114BFEE300787955;
 			remoteInfo = "Language Switch";
 		};
 		00DD50FA114C998D0016D1C4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 008DD723114C001300787955 /* SVG */;
+			remoteGlobalIDString = 008DD723114C001300787955;
 			remoteInfo = SVG;
 		};
 		00DD50FC114C998D0016D1C4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 008DD730114C01C700787955 /* XPS */;
+			remoteGlobalIDString = 008DD730114C01C700787955;
 			remoteInfo = XPS;
 		};
 /* End PBXContainerItemProxy section */
@@ -10808,12 +10808,12 @@
 /* Begin PBXLegacyTarget section */
 		00836B95114B837500D05F7F /* Ghostscript */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "-f base/macosx.mak $(ACTION) $(DEBUG)";
+			buildArgumentsString = "-f xcode.mak gs-$(CONFIG)-$(ACTION)";
 			buildConfigurationList = 00836B9A114B837A00D05F7F /* Build configuration list for PBXLegacyTarget "Ghostscript" */;
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = ../gs;
+			buildWorkingDirectory = .;
 			dependencies = (
 				008DD6A3114BEF6F00787955 /* PBXTargetDependency */,
 			);
@@ -10971,8 +10971,8 @@
 		00836B96114B837500D05F7F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CONFIG = debug;
 				COPY_PHASE_STRIP = NO;
-				DEBUG = "DEBUG=1 TDEBUG=1";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_NAME = Ghostscript;
@@ -10982,6 +10982,7 @@
 		00836B97114B837500D05F7F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CONFIG = release;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;

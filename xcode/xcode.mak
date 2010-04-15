@@ -1,3 +1,21 @@
+# Wrappers for GS builds
+
+gs-debug-:
+	echo "Building Ghostscript (Debug)..."
+	$(MAKE) -C ../gs -f base/macosx.mak debug DEBUG=1 TDEBUG=1 GENDIR="./debugobj"
+
+gs-release-:
+	echo "Building Ghostscript (Release)..."
+	$(MAKE) -C ../gs -f base/macosx.mak
+
+gs-debug-clean:
+	echo "Cleaning Ghostscript (Debug)..."
+	$(MAKE) -C ../gs -f base/macosx.mak debugclean GENDIR="./debugobj"
+
+gs-release-clean:
+	echo "Cleaning Ghostscript (Release)..."
+	$(MAKE) -C ../gs -f base/macosx.mak clean
+
 # Wrappers for PCL builds
 
 pcl-debug-:
