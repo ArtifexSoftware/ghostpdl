@@ -705,13 +705,14 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         SDEXSYMS = NULL;
         break;
       }
-      for(k = 0; k < exrunlength; k++)
+      for(k = 0; k < exrunlength; k++) {
         if (exflag) {
           SDEXSYMS->glyphs[j++] = (i < m) ?
             jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]) :
             jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i-m]);
-          i++;
         }
+        i++;
+      }
       exflag = !exflag;
     }
   }
