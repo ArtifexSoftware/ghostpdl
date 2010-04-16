@@ -65,7 +65,7 @@ file_open_stream(const char *fname, uint len, const char *file_access,
     char fmode[4];  /* r/w/a, [+], [b], null */
 
     if (!iodev)
-	iodev = iodev_default;
+	iodev = iodev_default(mem);
     code = file_prepare_stream(fname, len, file_access, buffer_size, ps, fmode, mem);
     if (code < 0)
 	return code;

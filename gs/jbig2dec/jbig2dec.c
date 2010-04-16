@@ -141,7 +141,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 
 	while (1) {
 		option = getopt_long(argc, argv,
-			"Vh?qvdo:t:", long_options, &option_idx);
+			"Vh?qv:do:t:", long_options, &option_idx);
 		if (option == -1) break;
 
 		switch (option) {

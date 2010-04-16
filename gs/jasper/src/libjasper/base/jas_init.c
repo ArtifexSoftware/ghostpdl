@@ -78,79 +78,6 @@
 /* Initialize the image format table. */
 int jas_init()
 {
-	jas_image_fmtops_t fmtops;
-	int fmtid;
-
-	fmtid = 0;
-
-#if !defined(EXCLUDE_MIF_SUPPORT)
-	fmtops.decode = mif_decode;
-	fmtops.encode = mif_encode;
-	fmtops.validate = mif_validate;
-	jas_image_addfmt(fmtid, "mif", "mif", "My Image Format (MIF)", &fmtops);
-	++fmtid;
-#endif
-
-#if !defined(EXCLUDE_PNM_SUPPORT)
-	fmtops.decode = pnm_decode;
-	fmtops.encode = pnm_encode;
-	fmtops.validate = pnm_validate;
-	jas_image_addfmt(fmtid, "pnm", "pnm", "Portable Graymap/Pixmap (PNM)",
-	  &fmtops);
-	jas_image_addfmt(fmtid, "pnm", "pgm", "Portable Graymap/Pixmap (PNM)",
-	  &fmtops);
-	jas_image_addfmt(fmtid, "pnm", "ppm", "Portable Graymap/Pixmap (PNM)",
-	  &fmtops);
-	++fmtid;
-#endif
-
-#if !defined(EXCLUDE_BMP_SUPPORT)
-	fmtops.decode = bmp_decode;
-	fmtops.encode = bmp_encode;
-	fmtops.validate = bmp_validate;
-	jas_image_addfmt(fmtid, "bmp", "bmp", "Microsoft Bitmap (BMP)", &fmtops);
-	++fmtid;
-#endif
-
-#if !defined(EXCLUDE_RAS_SUPPORT)
-	fmtops.decode = ras_decode;
-	fmtops.encode = ras_encode;
-	fmtops.validate = ras_validate;
-	jas_image_addfmt(fmtid, "ras", "ras", "Sun Rasterfile (RAS)", &fmtops);
-	++fmtid;
-#endif
-
-#if !defined(EXCLUDE_JP2_SUPPORT)
-	fmtops.decode = jp2_decode;
-	fmtops.encode = jp2_encode;
-	fmtops.validate = jp2_validate;
-	jas_image_addfmt(fmtid, "jp2", "jp2",
-	  "JPEG-2000 JP2 File Format Syntax (ISO/IEC 15444-1)", &fmtops);
-	++fmtid;
-	fmtops.decode = jpc_decode;
-	fmtops.encode = jpc_encode;
-	fmtops.validate = jpc_validate;
-	jas_image_addfmt(fmtid, "jpc", "jpc",
-	  "JPEG-2000 Code Stream Syntax (ISO/IEC 15444-1)", &fmtops);
-	++fmtid;
-#endif
-
-#if !defined(EXCLUDE_JPG_SUPPORT)
-	fmtops.decode = jpg_decode;
-	fmtops.encode = jpg_encode;
-	fmtops.validate = jpg_validate;
-	jas_image_addfmt(fmtid, "jpg", "jpg", "JPEG (ISO/IEC 10918-1)", &fmtops);
-	++fmtid;
-#endif
-
-#if !defined(EXCLUDE_PGX_SUPPORT)
-	fmtops.decode = pgx_decode;
-	fmtops.encode = pgx_encode;
-	fmtops.validate = pgx_validate;
-	jas_image_addfmt(fmtid, "pgx", "pgx", "JPEG-2000 VM Format (PGX)", &fmtops);
-	++fmtid;
-#endif
-
 	/* We must not register the JasPer library exit handler until after
 	at least one memory allocation is performed.  This is desirable
 	as it ensures that the JasPer exit handler is called before the
@@ -162,5 +89,5 @@ int jas_init()
 
 void jas_cleanup()
 {
-	jas_image_clearfmts();
+    /* stub */
 }

@@ -70,7 +70,7 @@ zread(i_ctx_t *i_ctx_p)
     stream *s;
     int ch;
 
-    check_read_file(s, op);
+    check_read_file(i_ctx_p, s, op);
     /* We 'push' first in case of ostack block overflow and the */
     /* usual case is we will need to push anyway. If we get EOF */
     /* we will need to 'pop' and decrement the 'op' pointer.    */
@@ -130,7 +130,7 @@ zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, int odd)
     stream_cursor_write cw;
     int status;
 
-    check_read_file(s, op - 1);
+    check_read_file(i_ctx_p, s, op - 1);
     /*check_write_type(*op, t_string); *//* done by caller */
     str = op->value.bytes;
     len = r_size(op);
@@ -282,7 +282,7 @@ zreadstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
     int status;
 
     check_write_type(*op, t_string);
-    check_read_file(s, op - 1);
+    check_read_file(i_ctx_p, s, op - 1);
     len = r_size(op);
     status = sgets(s, op->value.bytes + start, len - start, &rlen);
     rlen += start;
@@ -372,7 +372,7 @@ zreadline_at(i_ctx_t *i_ctx_p, os_ptr op, uint count, bool in_eol)
     gs_string str;
 
     check_write_type(*op, t_string);
-    check_read_file(s, op - 1);
+    check_read_file(i_ctx_p, s, op - 1);
     str.data = op->value.bytes;
     str.size = r_size(op);
     status = zreadline_from(s, &str, NULL, &count, &in_eol);
@@ -453,7 +453,7 @@ zbytesavailable(i_ctx_t *i_ctx_p)
     stream *s;
     long avail;
 
-    check_read_file(s, op);
+    check_read_file(i_ctx_p, s, op);
     switch (savailable(s, &avail)) {
 	default:
 	    return_error(e_ioerror);
@@ -680,7 +680,7 @@ zpeekstring(i_ctx_t *i_ctx_p)
     stream *s;
     uint len, rlen;
 
-    check_read_file(s, op - 1);
+    check_read_file(i_ctx_p, s, op - 1);
     check_write_type(*op, t_string);
     len = r_size(op);
     while ((rlen = sbufavailable(s)) < len) {
@@ -723,7 +723,7 @@ zunread(i_ctx_t *i_ctx_p)
     stream *s;
     ulong ch;
 
-    check_read_file(s, op - 1);
+    check_read_file(i_ctx_p, s, op - 1);
     check_type(*op, t_integer);
     ch = op->value.intval;
     if (ch > 0xff)

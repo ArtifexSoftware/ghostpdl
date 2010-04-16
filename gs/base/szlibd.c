@@ -106,6 +106,7 @@ s_zlibD_release(stream_state * st)
 {
     stream_zlib_state *const ss = (stream_zlib_state *)st;
 
+    if (ss->dynamic != NULL)
     inflateEnd(&ss->dynamic->zstate);
     s_zlib_free_dynamic_state(ss);
 }

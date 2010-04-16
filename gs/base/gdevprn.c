@@ -522,13 +522,13 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
 
 /* Validate an OutputFile name by checking any %-formats. */
 static int
-validate_output_file(const gs_param_string * ofs)
+validate_output_file(const gs_param_string * ofs, gs_memory_t *memory)
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
 
     return gx_parse_output_file_name(&parsed, &fmt, (const char *)ofs->data,
-				     ofs->size) >= 0;
+				     ofs->size, memory) >= 0;
 }
 
 /* Put parameters. */
@@ -642,7 +642,7 @@ label:\
 	        code = gs_error_invalidaccess;
 	    }
 	    else
-		code = validate_output_file(&ofs);
+		code = validate_output_file(&ofs, pdev->memory);
 	    if (code >= 0)
 		break;
 	    /* falls through */
@@ -1263,7 +1263,7 @@ gdev_prn_close_printer(gx_device * pdev)
     gs_parsed_file_name_t parsed;
     const char *fmt;
     int code = gx_parse_output_file_name(&parsed, &fmt, ppdev->fname,
-					 strlen(ppdev->fname));
+					 strlen(ppdev->fname), pdev->memory);
 
     if ((code >= 0 && fmt) /* file per page */ ||
 	ppdev->ReopenPerPage	/* close and reopen for each page */

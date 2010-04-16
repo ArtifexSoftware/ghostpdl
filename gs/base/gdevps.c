@@ -652,7 +652,8 @@ psw_is_separate_pages(gx_device_vector *const vdev)
 {
     const char *fmt;
     gs_parsed_file_name_t parsed;
-    int code = gx_parse_output_file_name(&parsed, &fmt, vdev->fname, strlen(vdev->fname));
+    int code = gx_parse_output_file_name(&parsed, &fmt, vdev->fname,
+                                         strlen(vdev->fname), vdev->memory);
     
     return (code >= 0 && fmt != 0);
 }

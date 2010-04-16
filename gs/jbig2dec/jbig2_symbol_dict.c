@@ -696,7 +696,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         exrunlength = params->SDNUMEXSYMS;
       else
         code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
-      if (exrunlength > params->SDNUMEXSYMS - j) {
+      if (exflag && exrunlength > params->SDNUMEXSYMS - j) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
           "runlength too large in export symbol table (%d > %d - %d)\n",
           exrunlength, params->SDNUMEXSYMS, j);
@@ -705,11 +705,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         SDEXSYMS = NULL;
         break;
       }
-      for(k = 0; k < exrunlength; k++)
+      for(k = 0; k < exrunlength; k++) {
         if (exflag) {
           SDEXSYMS->glyphs[j++] = (i < m) ? 
             jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]) :
             jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i-m]);
+        }
           i++;
         }
         exflag = !exflag;

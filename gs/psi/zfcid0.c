@@ -35,6 +35,9 @@
 #include "ifont2.h"
 #include "ifont42.h"
 #include "store.h"
+#include "imain.h"
+#include "iapi.h"
+#include "iminst.h"
 
 /* Type 1 font procedures (defined in zchar1.c) */
 font_proc_glyph_outline(zcharstring_glyph_outline);
@@ -140,8 +143,9 @@ cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
 	/* Get the bytes from DataSource (a stream). */
 	stream *s;
 	uint nread;
+        i_ctx_t *i_ctx_p = get_minst_from_memory(pfont->memory)->i_ctx_p;
 
-	check_read_known_file(s, &pfdata->u.cid0.DataSource, return_error);
+	check_read_known_file(i_ctx_p, s, &pfdata->u.cid0.DataSource, return_error);
 	if (sseek(s, base) < 0)
 	    return_error(e_ioerror);
 	if (data == 0) {	/* no buffer provided */
@@ -434,7 +438,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 
 	    if ((code = dict_find_string(op, "DataSource", &pds)) < 0)
 		return code;
-	    check_read_file(ignore_s, pds);
+	    check_read_file(i_ctx_p, ignore_s, pds);
 	    DataSource = *pds;
 	} else {
 	    if (!r_has_type(&GlyphData, t_string) && !r_is_array(&GlyphData))

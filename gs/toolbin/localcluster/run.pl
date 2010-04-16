@@ -53,6 +53,10 @@ if ($local) {
 }
 }
 
+# the commands below only need to be done once
+mkdir("icc_work");
+mkdir("icc_work/bin");
+
 
 my $user;
 my $revs;
@@ -113,14 +117,21 @@ close(F);
 
 mylog "starting run.pl:  pid=$$\n";
 
-if (0) {
-  mylog "about to kill any jobs still running from previous regression\n";
-  my $a=`ps -ef | grep nice | grep temp | grep true | grep -v grep`;
+if (1) {
+  mylog "about to kill any jobs that appear to be running from previous regression\n";
+  my $a=`ps -ef | grep md5sum | grep temp | grep -v grep`;
   my @a=split '\n',$a;
   foreach (@a) {
-    if (m/\S+ +(\d+)/) {
-      mylog "killing $1\n";
-      kill 9, $1;
+    chomp;
+    my @b=split ' ',$_,8;
+    my $minutes=-1;
+    $minutes=$1 if ($b[6]=~ m/\d+:(\d+):\d+/);    # ps -ef results from linux (I know, this isn't right)
+    $minutes=$1 if ($b[6]=~ m/^(\d+):\d+\.\d+/);  # ps -ef results from max os x
+    $minutes+=0;                                  # convert from 01 to 1
+#   print "$b[1] $b[6] $minutes\n";
+    if ($minutes>=10) {
+      mylog "killing $b[1] (running $minutes minutes): $b[7]\n";
+      kill 9, $b[1];
     }
   }
 }
@@ -447,13 +458,14 @@ if (!$abort) {
 
   }
 
+  mylog "$cmd";
   print "$cmd\n" if ($verbose);
   `$cmd`;
 }
 }
 
 #`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
-`svn update $baseDirectory/ghostpdl/gs`;
+`svn update $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c`;
 `cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
 
 mkdir("$gsBin");
@@ -538,6 +550,9 @@ if (!$dontBuild) {
     `$cmd`;
 
     if (-e "$gsBin/bin/gs") {
+      if ($icc_work) {
+        `cp -p $gsBin/bin/gs ./icc_work/bin/.`;
+      }
       if ($revs) {
         `cp -p $gsBin/bin/gs ./head/bin/.`;
       }
@@ -559,6 +574,9 @@ if ($products{'pcl'} && !$abort) {
     $cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;
+    if ($icc_work) {
+      `cp -p $gsBin/bin/pcl6 ./icc_work/bin/.`;
+    }
     if ($revs) {
       `cp -p $gsBin/bin/pcl6 ./head/bin/.`;
     }
@@ -579,6 +597,9 @@ if ($products{'xps'} && !$abort) {
     $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;
+    if ($icc_work) {
+      `cp -p $gsBin/bin/gxps ./icc_work/bin/.`;
+    }
     if ($revs) {
       `cp -p $gsBin/bin/gxps ./head/bin/.`;
     }
@@ -599,6 +620,9 @@ if ($products{'svg'} && !$abort) {
     $cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
     print "$cmd\n" if ($verbose);
     `$cmd`;
+    if ($icc_work) {
+      `cp -p $gsBin/bin/gsvg ./icc_work/bin/.`;
+    }
     if ($revs) {
       `cp -p $gsBin/bin/gsvg ./head/bin/.`;
     }
@@ -615,6 +639,12 @@ print "$cmd\n" if ($verbose);
 $cmd="touch urwfonts ; rm -fr urwfonts ; cp -pr $gpdlSource/urwfonts .";
 print "$cmd\n" if ($verbose);
 `$cmd`;
+
+if (-e '../bin/time') {
+  `cp ../bin/time $gsBin/bin/.`;    # which is different on Mac OS X, so get the one I built
+} else {
+  `cp /usr/bin/time $gsBin/bin/.`;  # get the generic time command
+}
 
 if ($md5sumFail ne "") {
   updateStatus('md5sum fail');
@@ -726,7 +756,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
     @commands = split '\n',$s;
     $totalJobs=scalar(@commands);
     mylog("received ".scalar(@commands)." commands\n");
-    mylog("commands[0] eq 'done'\n") if ($commands[0] eq "done");
+    mylog("commands[0] eq 'done'\n") if ((scalar @commands==0) || $commands[0] eq "done");
     if ((scalar @commands==0) || $commands[0] eq "done") {
       $poll=0;
       @commands=();
@@ -741,7 +771,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
   my %name;
   foreach (@a) {
     chomp;
-    if (m/\S+ +(\d+) +(\d+) .+ \d\d:\d\d:\d\d (.+)$/ && !m/<defunct>/ && !m/\(sh\)/) {
+    if (m/\S+ +(\d+) +(\d+) .+ \d+:\d\d.\d\d (.+)$/ && !m/<defunct>/ && !m/\(sh\)/) {
       $children{$2}=$1;
       $name{$1}=$3;
     }
@@ -819,7 +849,9 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch
       if ($elapsedTime>=30) {
         my $t=sprintf "%d tests completed",$jobs;
         updateStatus($t);
+        mylog("updateStatus() done");
         $abort=checkAbort;
+        mylog("checkAbort() done");
         $startTime=time;
 
 my @files = <$raster/*>;
@@ -892,7 +924,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
     my %children;
     my %name;
     foreach (@a) {
-      if (m/\S+ +(\d+) +(\d+) .+ \d\d:\d\d:\d\d (.+)$/ && !m/<defunct>/ && !m/\(sh\)/) {
+      if (m/\S+ +(\d+) +(\d+) .+ \d+:\d\d.\d\d (.+)$/ && !m/<defunct>/ && !m/\(sh\)/) {
         $children{$2}=$1;
         $name{$1}=$3;
       }

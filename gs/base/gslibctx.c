@@ -19,6 +19,7 @@
 
 /* Capture stdin/out/err before gs.h redefines them. */
 #include "stdio_.h"
+#include "gp.h"
 
 static void
 gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
@@ -78,8 +79,21 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     pio->gs_next_id = 5;  /* this implies that each thread has its own complete state */
 
     pio->dict_auto_expand = false;
+    pio->screen_accurate_screens = false;
+    pio->screen_use_wts = false;
+    pio->screen_min_screen_levels = 0;
+    pio->BITTAG = GS_DEVICE_DOESNT_SUPPORT_TAGS;
+
+    gp_get_realtime(pio->real_time_0);
 
     return 0;
+}
+
+gs_lib_ctx_t *gs_lib_ctx_get_interp_instance(const gs_memory_t *mem)
+{
+    if (mem == NULL)
+        return NULL;
+    return mem->gs_lib_ctx;
 }
 
 /* Provide a single point for all "C" stdout and stderr.

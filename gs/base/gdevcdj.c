@@ -1878,22 +1878,28 @@ bjc_compress(const byte *row, const byte *end_row, byte *compressed)
  * For the ESC/P mode, resolution is fixed as 360dpi and we must transform
  * image data to serialized data.
  */
-static word *ep_storage;
-static uint ep_storage_size_words;
-static byte *ep_raster_buf[4][BJC_HEAD_ROWS], *ep_print_buf;
-static int ep_num_comps, ep_plane_size, img_rows=BJC_HEAD_ROWS;
+typedef struct {
+  word *storage;
+  uint  storage_size_words;
+  byte *raster_buf[4][BJC_HEAD_ROWS];
+  byte *print_buf;
+  int   num_comps;
+  int   plane_size;
+  int   img_rows;
+  int   ln_idx;
+  int   vskip1;
+  int   vskip2;
+} ep_globals;
 
 
 #define row_bytes (img_rows / 8)
-#define row_words (row_bytes / sizeof(word))
 #define min_rows (32)		/* for optimization of text image printing */
 
 
 static int
-ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
+ep_print_image(FILE *prn_stream, ep_globals *eg, char cmd, byte *data, int size)
 {
-  static int ln_idx=0, vskip1=0, vskip2=0, real_rows;
-  int i;
+  int i, real_rows;
   static const char color[4] = {4,1,2,0};
 
 
@@ -1902,77 +1908,77 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
   case 2:			/* Cyan */
   case 1:			/* Magenta */
   case 0:			/* Yellow */
-    memcpy(ep_raster_buf[((int) cmd)][ln_idx+vskip2], data, size);
+    memcpy(eg->raster_buf[((int) cmd)][eg->ln_idx+eg->vskip2], data, size);
     return 0;
   case 'B':			/* blank line skip */
-    if (!ln_idx) {
-      vskip1 += size;
-    } else if (size >= img_rows - (ln_idx+vskip2) || ln_idx+vskip2 >= min_rows) {
+    if (!eg->ln_idx) {
+      eg->vskip1 += size;
+    } else if (size >= eg->img_rows - (eg->ln_idx+eg->vskip2) || eg->ln_idx+eg->vskip2 >= min_rows) {
       /* The 'I' cmd must precede 'B' cmd! */
-      vskip2 += size;
-      ep_print_image(prn_stream, 'F', 0, 0); /* flush and reset status */
+      eg->vskip2 += size;
+      ep_print_image(prn_stream, eg, 'F', 0, 0); /* flush and reset status */
     } else {
-      vskip2 += size;
+      eg->vskip2 += size;
     }
     return 0;
   case 'I':			/* Increment index */
-    ln_idx += vskip2 + 1;
-    vskip2 = 0;
-    if (ln_idx < img_rows) return 0;
-    /* if ep_raster_buf filled up, then fall through here and flush buffer */
+    eg->ln_idx += eg->vskip2 + 1;
+    eg->vskip2 = 0;
+    if (eg->ln_idx < eg->img_rows) return 0;
+    /* if eg->raster_buf filled up, then fall through here and flush buffer */
   case 'F':			/* flush print buffer */
-    if (!ln_idx) return 0;	/* The end of the page. */
+    if (!eg->ln_idx) return 0;	/* The end of the page. */
 
 
     /* before print the image, perform vertical skip. */
-    while (vskip1 >= (255*2)) {
+    while (eg->vskip1 >= (255*2)) {
       fputs("\033J\377", prn_stream); /* n/180in. feeding */
-      vskip1 -= (255*2);
+      eg->vskip1 -= (255*2);
     }
-    if (vskip1 > 255) {
+    if (eg->vskip1 > 255) {
       fputs("\033J\200", prn_stream);
-      vskip1 -= 256;
+      eg->vskip1 -= 256;
     }
-    if (vskip1) {
+    if (eg->vskip1) {
       /* n/360in. feeding */
-      fputs("\033|J", prn_stream); putc(0, prn_stream); putc(vskip1, prn_stream);
+      fputs("\033|J", prn_stream); putc(0, prn_stream); putc(eg->vskip1, prn_stream);
     }
 
 
     /* Optimize the number of nozzles to be used. */
-    if (ln_idx > 56) {		/* use 64 nozzles */
+    if (eg->ln_idx > 56) {		/* use 64 nozzles */
       real_rows = 64;
-    } else if (ln_idx > 48) {	/* use 56 nozzles */
+    } else if (eg->ln_idx > 48) {	/* use 56 nozzles */
       real_rows = 56;
-    } else if (ln_idx > 32) {	/* use 48 nozzles */
+    } else if (eg->ln_idx > 32) {	/* use 48 nozzles */
       real_rows = 48;
     } else {			/* use 32 nozzles */
       real_rows = 32;
     }
 
 
-    for (i = 0; i < ep_num_comps; i++) {
+    for (i = 0; i < eg->num_comps; i++) {
       int lnum, hskip, print_size, img_rows;
       byte *p0, *p1, *p2, *p3;
       byte *inp, *inbuf, *outp, *outbuf;
 
 
-      img_rows = real_rows;	/* Note that this img_rows is not the one that
-				 * defined out of this function. */
-      outbuf = ep_print_buf;
+      img_rows = real_rows;	/* Note that this img_rows is not the one in
+				 * the globals struct. */
+      outbuf = eg->print_buf;
 
 
       /* Transpose raster image for serial printer image */
       for (lnum=0; lnum < img_rows; lnum+=8, outbuf++) {
-	inbuf = inp = ep_raster_buf[i][lnum];
-	for (outp = outbuf; inp < inbuf+ep_plane_size; inp++, outp += img_rows) {
-	  memflip8x8(inp, ep_plane_size, outp, row_bytes);
+	inbuf = inp = eg->raster_buf[i][lnum];
+	for (outp = outbuf; inp < inbuf+eg->plane_size; inp++, outp += img_rows) {
+	  memflip8x8(inp, eg->plane_size, outp, row_bytes);
 	}
       }
 
 
       /* Set color */
-      if (ep_num_comps == 1) {
+      if (eg->num_comps == 1) {
 	/* Don't set color (to enable user setting). */
 	putc('\015', prn_stream);
       } else {
@@ -1982,10 +1988,10 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
       }
 
 
-      *(outp = ep_print_buf + ep_plane_size * img_rows) = 1; /* sentinel */
+      *(outp = eg->print_buf + eg->plane_size * img_rows) = 1; /* sentinel */
 
 
-      p0 = p3 = ep_print_buf;
+      p0 = p3 = eg->print_buf;
 
 
       /* print image p0 to p1 and h skip p1 to p2 if p2<outp,
@@ -2020,12 +2026,12 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
 	p0 = p2;
       }
     }
-    return ep_print_image(prn_stream, 'R', 0, vskip2 + ln_idx); 
+    return ep_print_image(prn_stream, eg, 'R', 0, eg->vskip2 + eg->ln_idx);
   case 'R':			/* Reset status */
-    ln_idx = 0;
-    vskip1 = size;
-    vskip2 = 0;
-    memset(ep_storage, 0, ep_storage_size_words * W);
+    eg->ln_idx = 0;
+    eg->vskip1 = size;
+    eg->vskip2 = 0;
+    memset(eg->storage, 0, eg->storage_size_words * W);
     return 0;
   default:			/* This should not happen */
     errprintf("ep_print_image: illegal command character `%c'.\n", cmd);
@@ -2062,6 +2068,10 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   byte *out_row, *out_row_alt;
   word *storage;
   uint storage_size_words;
+  ep_globals eg;
+
+  memset(&eg, 0, sizeof(eg));
+  eg.img_rows=BJC_HEAD_ROWS;
 
   /* Tricks and cheats ... */
   switch (ptype) {
@@ -2098,7 +2108,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   }
 
   plane_size = calc_buffsize(line_size, storage_bpp);
-  ep_plane_size = plane_size;
+  eg.plane_size = plane_size;
 
   if (bits_per_pixel == 1) {		/* Data printed direct from i/p */
     databuff_size = 0;			/* so no data buffer required, */
@@ -2123,9 +2133,9 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 			databuff_size + errbuff_size + outbuff_size) / W;
 
   storage = (ulong *) gs_malloc(pdev->memory, storage_size_words, W, "hp_colour_print_page");
-  ep_storage_size_words = (plane_size * (num_comps + 1)) / W * img_rows
+  eg.storage_size_words = (plane_size * (num_comps + 1)) / W * eg.img_rows
       + 16;			/* Redundant space for sentinel and aligning. */
-  ep_storage = (word *) gs_malloc(pdev->memory, ep_storage_size_words, W, "ep_print_buffer");
+  eg.storage = (word *) gs_malloc(pdev->memory, eg.storage_size_words, W, "ep_print_buffer");
 
   /*
    * The principal data pointers are stored as pairs of values, with
@@ -2141,12 +2151,12 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
    *   plane_data:  4  (scan direction and alternating buffers)
    */
 
-  if (storage == 0 || ep_storage == 0) /* can't allocate working area */
+  if (storage == 0 || eg.storage == 0) /* can't allocate working area */
     return_error(gs_error_VMerror);
   else {
     int i, j;
     byte *p = out_data = out_row = (byte *)storage;
-    byte *ep_p = (byte *)ep_storage;
+    byte *ep_p = (byte *)eg.storage;
     data[0] = data[1] = data[2] = p;
     data[3] = p + databuff_size;
     out_row_alt = out_row + plane_size * 2;
@@ -2174,14 +2184,14 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
       data[3] += databuff_size;
     }
     for (i = 0; i < num_comps; i++) {
-      for (j = 0; j < img_rows; j++) {
-	ep_raster_buf[i][j] = ep_p;
+      for (j = 0; j < eg.img_rows; j++) {
+	eg.raster_buf[i][j] = ep_p;
 	ep_p += plane_size;
       }
       /* Make a sentinel and align to word size.  */
-      ep_print_buf = (byte *)((word)(ep_p + sizeof(word)) & ~(sizeof(word)-1));
+      eg.print_buf = (byte *)((word)(ep_p + sizeof(word)) & ~(sizeof(word)-1));
     }
-    ep_num_comps = num_comps;
+    eg.num_comps = num_comps;
   }
   
   /* Initialize printer. */
@@ -2463,7 +2473,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
           fprintf(prn_stream,"\033_Y%c%c",
           num_blank_lines & 0xff, (num_blank_lines >> 8) & 0xff);
 	} else if (ptype == ESC_P) {
-	  ep_print_image(prn_stream, 'B', 0, num_blank_lines);
+	  ep_print_image(prn_stream, &eg, 'B', 0, num_blank_lines);
 	} else if (ptype == BJC600 || ptype == BJC800) {
 	    bjc_v_skip(num_blank_lines, pdev, prn_stream);
 	} else if (num_blank_lines < this_pass) {
@@ -2733,7 +2743,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 				out_count, out_data, pdev, prn_stream);
 	      if (i == 0) bjc_v_skip(1, pdev, prn_stream);
 	    } else if (ptype == ESC_P)
-		ep_print_image(prn_stream, (char)i, plane_data[scan][i], plane_size);
+		ep_print_image(prn_stream, &eg, (char)i, plane_data[scan][i], plane_size);
 	    else
 	      fprintf(prn_stream, "\033*b%d%c", out_count, "WVVV"[i]);
 	    if (ptype < ESC_P)
@@ -2742,7 +2752,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 	  
 	} /* Transfer Raster Graphics ... */
 	if (ptype == ESC_P)
-	    ep_print_image(prn_stream, 'I', 0, 0); /* increment line index */
+	    ep_print_image(prn_stream, &eg, 'I', 0, 0); /* increment line index */
 	scan = 1 - scan;          /* toggle scan direction */
       }	  /* Printing non-blank lines */
     }     /* for lnum ... */
@@ -2769,13 +2779,13 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   else if (ptype == BJC600 || ptype == BJC800)
       ;				/* Already done */
   else if (ptype == ESC_P) {
-    ep_print_image(prn_stream, 'F', 0, 0); /* flush print buffer */
+    ep_print_image(prn_stream, &eg, 'F', 0, 0); /* flush print buffer */
     fputs("\014\033@", prn_stream);	/* reset after eject page */
   } else 
     fputs("\033&l0H", prn_stream);
 
   /* free temporary storage */
-  gs_free(pdev->memory, (char *) ep_storage, ep_storage_size_words, W, "ep_print_buffer");
+  gs_free(pdev->memory, (char *) eg.storage, eg.storage_size_words, W, "ep_print_buffer");
   gs_free(pdev->memory, (char *) storage, storage_size_words, W, "hp_colour_print_page");
 
   return 0;

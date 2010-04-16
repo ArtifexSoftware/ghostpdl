@@ -16,7 +16,7 @@ print STDERR "reading archive directory\n" if ($verbose);
 my %archives;
 if (opendir(DIR, 'archive')) { # || die "can't opendir archive: $!";
 foreach (readdir(DIR)) {
-  $archives{$_}=1 if (!(-d $_) && (m/.tab$/));
+  $archives{$_}=1 if (!(-d $_) && (m/.tab$/) && !(m/mupdf/));
 }
 closedir DIR;
 }

@@ -839,7 +839,7 @@ gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
  */
 int
 gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
-			  const char *fname, uint fnlen)
+			  const char *fname, uint fnlen, gs_memory_t *memory)
 {
     int code;
 
@@ -854,7 +854,7 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
      * If the file name begins with a %, it might be either an IODevice
      * or a %nnd format.  Check (carefully) for this case.
      */
-    code = gs_parse_file_name(pfn, fname, fnlen);
+    code = gs_parse_file_name(pfn, fname, fnlen, memory);
     if (code < 0) {
 	if (fname[0] == '%') {
 	    /* not a recognized iodev -- may be a leading format descriptor */
@@ -867,13 +867,13 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
     }
     if (!pfn->iodev) {
 	if ( (pfn->len == 1) && (pfn->fname[0] == '-') ) {
-	    pfn->iodev = gs_findiodevice((const byte *)"%stdout", 7);
+	    pfn->iodev = gs_findiodevice(memory, (const byte *)"%stdout", 7);
 	    pfn->fname = NULL;
 	} else if (pfn->fname[0] == '|') {
-	    pfn->iodev = gs_findiodevice((const byte *)"%pipe", 5);
+	    pfn->iodev = gs_findiodevice(memory, (const byte *)"%pipe", 5);
 	    pfn->fname++, pfn->len--;
 	} else
-	    pfn->iodev = iodev_default;
+	    pfn->iodev = iodev_default(memory);
 	if (!pfn->iodev)
 	    return_error(gs_error_undefinedfilename);
     }
@@ -895,7 +895,8 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     gs_parsed_file_name_t parsed;
     const char *fmt;
     char pfname[gp_file_name_sizeof];
-    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname));
+    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname),
+                                         dev->memory);
 
     if (code < 0)
 	return code;
@@ -925,7 +926,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	parsed.fname = pfname;
 	parsed.len = strlen(parsed.fname);
     }
-    if (positionable || (parsed.iodev && parsed.iodev != iodev_default)) {
+    if (positionable || (parsed.iodev && parsed.iodev != iodev_default(dev->memory))) {
 	char fmode[4];
 
 	if (!parsed.fname)
@@ -953,7 +954,8 @@ gx_device_close_output_file(const gx_device * dev, const char *fname,
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
-    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname));
+    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname),
+                                         dev->memory);
 
     if (code < 0)
 	return code;
@@ -961,7 +963,7 @@ gx_device_close_output_file(const gx_device * dev, const char *fname,
 	if (!strcmp(parsed.iodev->dname, "%stdout%"))
 	    return 0;
 	/* NOTE: fname is unsubstituted if the name has any %nnd formats. */
-	if (parsed.iodev != iodev_default)
+	if (parsed.iodev != iodev_default(dev->memory))
 	    return parsed.iodev->procs.fclose(parsed.iodev, file);
     }
     gp_close_printer(file, (parsed.fname ? parsed.fname : fname));

@@ -80,8 +80,6 @@ static const char lbp8_init[] = {
   ESC, '[', '6', '3', 'k', 	/* Move 63 dots up (to top of printable area) */ 
 };
 
-static const char *lbp8_end = NULL;
-
 #ifdef NOCONTRIB
 static const char lips3_init[] = {
   ESC, '<', /* soft reset */
@@ -201,8 +199,9 @@ can_print_page(gx_device_printer *pdev, FILE *prn_stream,
 /* Print an LBP-8 page. */
 static int
 lbp8_print_page(gx_device_printer *pdev, FILE *prn_stream)
-{	return can_print_page(pdev, prn_stream, lbp8_init, sizeof(lbp8_init),
-			      lbp8_end, sizeof(lbp8_end));
+{
+    return can_print_page(pdev, prn_stream, lbp8_init, sizeof(lbp8_init),
+			      NULL, 0);
 }
 
 #ifdef NOCONTRIB

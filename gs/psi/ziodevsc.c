@@ -162,7 +162,7 @@ zget_stdin(i_ctx_t *i_ctx_p, stream ** ps)
 	*ps = s;
 	return 0;
     }
-    iodev = gs_findiodevice((const byte *)"%stdin", 6);
+    iodev = gs_findiodevice(imemory, (const byte *)"%stdin", 6);
     iodev->state = i_ctx_p;
     code = (*iodev->procs.open_device)(iodev, "r", ps, imemory_system);
     iodev->state = NULL;
@@ -240,7 +240,7 @@ zget_stdout(i_ctx_t *i_ctx_p, stream ** ps)
 	*ps = s;
 	return 0;
     }
-    iodev = gs_findiodevice((const byte *)"%stdout", 7);
+    iodev = gs_findiodevice(imemory, (const byte *)"%stdout", 7);
     iodev->state = i_ctx_p;
     code = (*iodev->procs.open_device)(iodev, "w", ps, imemory_system);
     iodev->state = NULL;
@@ -311,7 +311,7 @@ zget_stderr(i_ctx_t *i_ctx_p, stream ** ps)
 	*ps = s;
 	return 0;
     }
-    iodev = gs_findiodevice((const byte *)"%stderr", 7);
+    iodev = gs_findiodevice(imemory, (const byte *)"%stderr", 7);
     iodev->state = i_ctx_p;
     code = (*iodev->procs.open_device)(iodev, "w", ps, imemory_system);
     iodev->state = NULL;

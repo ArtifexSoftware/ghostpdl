@@ -51,7 +51,8 @@ extern_gx_io_device_table();
 extern const char iodev_dtype_stdio[];
 
 /* Forward references: file name parsing. */
-static int parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode);
+static int parse_file_name(const ref * op, gs_parsed_file_name_t * pfn,
+                           bool safemode, gs_memory_t *memory);
 static int parse_real_file_name(const ref * op,
 				 gs_parsed_file_name_t * pfn,
 				 gs_memory_t *mem, client_name_t cname);
@@ -107,32 +108,11 @@ stream_proc_report_error(filter_report_error);
 #define DEFAULT_BUFFER_SIZE 2048
 extern const uint file_default_buffer_size;
 
-/* An invalid file object */
-static stream invalid_file_stream;
-stream *const invalid_file_entry = &invalid_file_stream;
-
-/* Initialize the file table */
-static int
-zfile_init(i_ctx_t *i_ctx_p)
-{
-    /* Create and initialize an invalid (closed) stream. */
-    /* Initialize the stream for the sake of the GC, */
-    /* and so it can act as an empty input stream. */
-
-    stream *const s = &invalid_file_stream;
-
-    s_init(s, NULL);
-    sread_string(s, NULL, 0);
-    s->next = s->prev = 0;
-    s_init_no_id(s);
-    return 0;
-}
-
 /* Make an invalid file object. */
 void
-make_invalid_file(ref * fp)
+make_invalid_file(i_ctx_t *i_ctx_p, ref * fp)
 {
-    make_file(fp, avm_invalid_file_entry, ~0, invalid_file_entry);
+    make_file(fp, avm_invalid_file_entry, ~0, i_ctx_p->invalid_file_stream);
 }
 
 /* Check a file name for permission by stringmatch on one of the */
@@ -227,7 +207,7 @@ zfile(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    code = parse_file_name(op - 1, &pname, i_ctx_p->LockFilePermissions);
+    code = parse_file_name(op-1, &pname, i_ctx_p->LockFilePermissions, imemory);
     if (code < 0)
 	return code;
 	/*
@@ -242,7 +222,8 @@ zfile(i_ctx_t *i_ctx_p)
 	    return_error(e_invalidfileaccess);
 	if (statement || lineedit) {
 	    /* These need special code to support callouts */
-	    gx_io_device *indev = gs_findiodevice((const byte *)"%stdin", 6);
+            gx_io_device *indev = gs_findiodevice(imemory,
+                                                  (const byte *)"%stdin", 6);
 	    stream *ins;
 	    if (strcmp(file_access, "r"))
 		return_error(e_invalidfileaccess);
@@ -265,7 +246,7 @@ zfile(i_ctx_t *i_ctx_p)
 	pname.iodev->state = NULL;
     } else {
 	if (pname.iodev == NULL)
-	    pname.iodev = iodev_default;
+            pname.iodev = iodev_default(imemory);
 	code = zopen_file(i_ctx_p, &pname, file_access, &s, imemory);
     }
     if (code < 0)
@@ -313,7 +294,7 @@ zdeletefile(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if (pname.iodev == iodev_default) {
+    if (pname.iodev == iodev_default(imemory)) {
 	if ((code = check_file_permissions(i_ctx_p, pname.fname, pname.len,
 		"PermitFileControl")) < 0 &&
 		 !file_is_tempfile(i_ctx_p, op->value.bytes, r_size(op))) {
@@ -347,10 +328,10 @@ zfilenameforall(i_ctx_t *i_ctx_p)
     /* and the procedure, and invoke the continuation. */
     check_estack(7);
     /* Get the iodevice */
-    code = parse_file_name(op - 2, &pname, i_ctx_p->LockFilePermissions);
+    code = parse_file_name(op-2, &pname, i_ctx_p->LockFilePermissions, imemory);
     if (code < 0)
 	return code;
-    iodev = (pname.iodev == NULL) ? iodev_default : pname.iodev;
+    iodev = (pname.iodev == NULL) ? iodev_default(imemory) : pname.iodev;
 
     /* Check for several conditions that just cause us to return success */
     if (pname.len == 0 || iodev->procs.enumerate_files == iodev_no_enumerate_files) {
@@ -430,14 +411,15 @@ zrenamefile(i_ctx_t *i_ctx_p)
     pname1.fname = 0;
     code = parse_real_file_name(op - 1, &pname1, imemory, "renamefile(from)");
     if (code >= 0) {
+        gx_io_device *iodev_dflt = iodev_default(imemory);
 	if (pname1.iodev != pname2.iodev ) {
-	    if (pname1.iodev == iodev_default)
+            if (pname1.iodev == iodev_dflt)
 		pname1.iodev = pname2.iodev;
-	    if (pname2.iodev == iodev_default)
+            if (pname2.iodev == iodev_dflt)
 		pname2.iodev = pname1.iodev;
 	}
 	if (pname1.iodev != pname2.iodev ||
-	    (pname1.iodev == iodev_default &&
+            (pname1.iodev == iodev_dflt &&
 		/*
 		 * We require FileControl permissions on the source path
 		 * unless it is a temporary file. Also, we require FileControl
@@ -484,7 +466,8 @@ zstatus(i_ctx_t *i_ctx_p)
 	    {
 		gs_parsed_file_name_t pname;
 		struct stat fstat;
-		int code = parse_file_name(op, &pname, i_ctx_p->LockFilePermissions);
+                int code = parse_file_name(op, &pname,
+                                           i_ctx_p->LockFilePermissions, imemory);
 
 		if (code < 0)
 		    return code;
@@ -601,14 +584,16 @@ zlibfile(i_ctx_t *i_ctx_p)
     uint clen;
     gs_parsed_file_name_t pname;
     stream *s;
+    gx_io_device *iodev_dflt;
 
     check_ostack(2);
-    code = parse_file_name(op, &pname, i_ctx_p->LockFilePermissions);
+    code = parse_file_name(op, &pname, i_ctx_p->LockFilePermissions, imemory);
     if (code < 0)
 	return code;
+    iodev_dflt = iodev_default(imemory);
     if (pname.iodev == NULL)
-	pname.iodev = iodev_default;
-    if (pname.iodev != iodev_default) {		/* Non-OS devices don't have search paths (yet). */
+        pname.iodev = iodev_dflt;
+    if (pname.iodev != iodev_dflt) { /* Non-OS devices don't have search paths (yet). */
 	code = zopen_file(i_ctx_p, &pname, "r", &s, imemory);
 	if (code >= 0) {
 	    code = ssetfilename(s, op->value.const_bytes, r_size(op));
@@ -729,8 +714,9 @@ ztempfile(i_ctx_t *i_ctx_p)
     file_init_stream(s, sfile, fmode, buf, file_default_buffer_size);
     code = ssetfilename(s, (const unsigned char*) fname, fnlen);
     if (code < 0) {
+        gx_io_device *iodev_dflt = iodev_default(imemory);
 	sclose(s);
-	iodev_default->procs.delete_file(iodev_default, fname);
+        iodev_dflt->procs.delete_file(iodev_dflt, fname);
 	ifree_string(sbody, fnlen, ".tempfile(fname)");
 	return_error(e_VMerror);
     }
@@ -756,7 +742,7 @@ const op_def zfile_op_defs[] =
 		/* Internal operators */
     {"0%file_continue", file_continue},
     {"0%execfile_finish", execfile_finish},
-    op_def_end(zfile_init)
+    op_def_end(0)
 };
 
 /* ------ File name parsing ------ */
@@ -764,13 +750,14 @@ const op_def zfile_op_defs[] =
 /* Parse a file name into device and individual name. */
 /* See gsfname.c for details. */
 static int
-parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode)
+parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode,
+                gs_memory_t *memory)
 {
     int code;
 
     check_read_type(*op, t_string);
     code = gs_parse_file_name(pfn, (const char *)op->value.const_bytes,
-			      r_size(op));
+                              r_size(op), memory);
     if (code < 0)
 	return code;
     /*
@@ -918,7 +905,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
     bool search_with_combine = false;
     char fmode[4] = { 'r', 0, 0, 0 };		/* room for binary suffix */
     stream *s;
-    gx_io_device *iodev = iodev_default;
+    gx_io_device *iodev = iodev_default(mem);
 
     /* when starting arg files (@ files) iodev_default is not yet set */
     if (iodev == 0)
@@ -968,7 +955,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 
 		/* We concatenate directly since gp_file_name_combine_*
 		 * rules are not correct for other devices such as %rom% */
-		code = gs_parse_file_name(&pname, pstr, plen);
+                code = gs_parse_file_name(&pname, pstr, plen, mem);
 		if (code < 0)
 		    continue;
 		memcpy(buffer, pname.fname, pname.len);

@@ -255,9 +255,6 @@ typedef struct {
 * File format related classes.
 \******************************************************************************/
 
-#define	JAS_IMAGE_MAXFMTS	32
-/* The maximum number of image data formats supported. */
-
 /* Image format-dependent operations. */
 
 typedef struct {
@@ -280,13 +277,13 @@ typedef struct {
 	int id;
 	/* The ID for this format. */
 
-	char *name;
+	char name[4];
 	/* The name by which this format is identified. */
 
-	char *ext;
+	char ext[4];
 	/* The file name extension associated with this format. */
 
-	char *desc;
+	char desc[60];
 	/* A brief description of the format. */
 
 	jas_image_fmtops_t ops;

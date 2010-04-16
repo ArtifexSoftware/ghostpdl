@@ -487,7 +487,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	 */
 	stream *s;
 
-	check_read_file(s, &file);
+	check_read_file(i_ctx_p, s, &file);
 	pfont->data.loca = loca_glyph_pos[0][0];
 	pfont->data.glyf = loca_glyph_pos[1][0];
 	pfont->data.get_outline = gs_get_glyph_data_cached;

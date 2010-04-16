@@ -25,12 +25,6 @@ rm -f configure.ac Makefile.in
 ln -s base/configure.ac .
 ln -s base/Makefile.in .
 
-#echo "  aclocal $ACLOCAL_FLAGS"
-#aclocal $ACLOCAL_FLAGS || exit 1
-#echo "  autoheader"
-#autoheader || exit 1
-#echo "  automake --add-missing $AUTOMAKE_FLAGS"
-#automake --add-missing $AUTOMAKE_FLAGS || exit 1
 echo "  running autoconf"
 autoconf || exit 1
 

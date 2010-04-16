@@ -22,10 +22,14 @@ struct gx_device_mgr_s {
 	gx_prn_device_common;
 	/* Add MGR specific variables */
 	int mgr_depth;
+	/* globals for greymapped printing */
+        unsigned char bgreytable[16];
+        unsigned char bgreybacktable[16];
+        unsigned char bgrey256table[256];
+        unsigned char bgrey256backtable[256];
+        struct nclut clut[256];
 };
 typedef struct gx_device_mgr_s gx_device_mgr;
-
-static struct nclut clut[256];
 
 static unsigned int clut2mgr(int, int);
 static void swap_bwords(unsigned char *, int);
@@ -163,14 +167,13 @@ mgr_print_page(gx_device_printer *pdev, FILE *pstream)
 
 
 /* Print a gray-mapped page. */
-static unsigned char bgreytable[16], bgreybacktable[16];
-static unsigned char bgrey256table[256], bgrey256backtable[256];        
 static int
 mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 {	mgr_cursor cur;
 	int i = 0, j, k, mgr_wide;
 	uint mgr_line_size;
 	byte *bp, *data = NULL, *dp;
+	gx_device_mgr *mgr = (gx_device_mgr *)pdev;
         
 	int code = mgr_begin_page(bdev, pstream, &cur);
 	if ( code < 0 ) return code;
@@ -184,14 +187,14 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 
 	if ( bdev->mgr_depth == 4 )
             for ( i = 0; i < 16; i++ ) {
-		bgreytable[i] = mgrlut[LUT_BGREY][RGB_RED][i];
-		bgreybacktable[bgreytable[i]] = i;
+		mgr->bgreytable[i] = mgrlut[LUT_BGREY][RGB_RED][i];
+		mgr->bgreybacktable[mgr->bgreytable[i]] = i;
             }
 
 	if ( bdev->mgr_depth == 8 ) {
             for ( i = 0; i < 16; i++ ) {
-		bgrey256table[i] = mgrlut[LUT_BGREY][RGB_RED][i] << 4;
-		bgrey256backtable[bgrey256table[i]] = i;
+		mgr->bgrey256table[i] = mgrlut[LUT_BGREY][RGB_RED][i] << 4;
+		mgr->bgrey256backtable[mgr->bgrey256table[i]] = i;
             }
             for ( i = 16,j = 0; i < 256; i++ ) {
 		for ( k = 0; k < 16; k++ )
@@ -199,8 +202,8 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
                     j++;
                     break;
                   }
-		bgrey256table[i] = j;
-		bgrey256backtable[j++] = i;
+		mgr->bgrey256table[i] = j;
+		mgr->bgrey256backtable[j++] = i;
             }
 	}
 
@@ -223,8 +226,8 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 	                        
 			case 4:
 				for (i = 0,dp = data, bp = cur.data; i < mgr_line_size; i++) {
-					*dp =  bgreybacktable[*(bp++) >> 4] << 4;
-                                    *(dp++) |= bgreybacktable[*(bp++) >> 4];
+					*dp =  mgr->bgreybacktable[*(bp++) >> 4] << 4;
+                                    *(dp++) |= mgr->bgreybacktable[*(bp++) >> 4];
 				}
                 		if ( fwrite(data, sizeof(byte), mgr_line_size, pstream) < mgr_line_size )
                                 	return_error(gs_error_ioerror);
@@ -232,7 +235,7 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 	                        
 			case 8:
 				for (i = 0,bp = cur.data; i < mgr_line_size; i++, bp++)
-	                              *bp = bgrey256backtable[*bp];
+	                              *bp = mgr->bgrey256backtable[*bp];
                 		if ( fwrite(cur.data, sizeof(cur.data[0]), mgr_line_size, pstream)
 					< mgr_line_size )
                                 	return_error(gs_error_ioerror);
@@ -244,26 +247,26 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 
 	if (bdev->mgr_depth == 2) {
             for (i = 0; i < 4; i++) {
-               clut[i].colnum = i;
-               clut[i].red    = clut[i].green = clut[i].blue = clut2mgr(i, 2);
+               mgr->clut[i].colnum = i;
+               mgr->clut[i].red    = mgr->clut[i].green = mgr->clut[i].blue = clut2mgr(i, 2);
 	    }
    	}
 	if (bdev->mgr_depth == 4) {
             for (i = 0; i < 16; i++) {
-               clut[i].colnum = i;
-               clut[i].red    = clut[i].green = clut[i].blue = clut2mgr(bgreytable[i], 4);
+               mgr->clut[i].colnum = i;
+               mgr->clut[i].red    = mgr->clut[i].green = mgr->clut[i].blue = clut2mgr(mgr->bgreytable[i], 4);
 	    }
    	}
 	if (bdev->mgr_depth == 8) {
             for (i = 0; i < 256; i++) {
-               clut[i].colnum = i;
-               clut[i].red    = clut[i].green = clut[i].blue = clut2mgr(bgrey256table[i], 8);
+               mgr->clut[i].colnum = i;
+               mgr->clut[i].red    = mgr->clut[i].green = mgr->clut[i].blue = clut2mgr(mgr->bgrey256table[i], 8);
 	    }
    	}
 #if !arch_is_big_endian
-	swap_bwords( (unsigned char *) clut, sizeof( struct nclut ) * i );
+	swap_bwords( (unsigned char *) mgr->clut, sizeof( struct nclut ) * i );
 #endif
-	if ( fwrite(&clut, sizeof(struct nclut), i, pstream) < i )
+	if ( fwrite(&mgr->clut, sizeof(struct nclut), i, pstream) < i )
             return_error(gs_error_ioerror);
 	return (code < 0 ? code : 0);
 }
@@ -277,6 +280,7 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 	byte *bp, *data, *dp;
 	ushort prgb[3];
 	unsigned char table[256], backtable[256];
+	gx_device_mgr *mgr = (gx_device_mgr *)pdev;
         
 	int code = mgr_begin_page(bdev, pstream, &cur);
 	if ( code < 0 ) return code;
@@ -328,26 +332,26 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 	if (bdev->mgr_depth == 4) {
             for (i = 0; i < 16; i++) {
                pc_4bit_map_color_rgb((gx_device *)0, (gx_color_index) i, prgb);
-               clut[i].colnum = i;
-               clut[i].red    = clut2mgr(prgb[0], 16);
-               clut[i].green  = clut2mgr(prgb[1], 16);
-               clut[i].blue   = clut2mgr(prgb[2], 16);
+               mgr->clut[i].colnum = i;
+               mgr->clut[i].red    = clut2mgr(prgb[0], 16);
+               mgr->clut[i].green  = clut2mgr(prgb[1], 16);
+               mgr->clut[i].blue   = clut2mgr(prgb[2], 16);
 	    }
    	}
 	if (bdev->mgr_depth == 8) {
             for (i = 0; i < colors8; i++) {
                mgr_8bit_map_color_rgb((gx_device *)0, (gx_color_index)
                    table[i], prgb);
-               clut[i].colnum = MGR_RESERVEDCOLORS + i;
-               clut[i].red    = clut2mgr(prgb[0], 16);
-               clut[i].green  = clut2mgr(prgb[1], 16);
-               clut[i].blue   = clut2mgr(prgb[2], 16);
+               mgr->clut[i].colnum = MGR_RESERVEDCOLORS + i;
+               mgr->clut[i].red    = clut2mgr(prgb[0], 16);
+               mgr->clut[i].green  = clut2mgr(prgb[1], 16);
+               mgr->clut[i].blue   = clut2mgr(prgb[2], 16);
 	    }
    	}
 #if !arch_is_big_endian
-	swap_bwords( (unsigned char *) clut, sizeof( struct nclut ) * i );
+	swap_bwords( (unsigned char *) mgr->clut, sizeof( struct nclut ) * i );
 #endif    
-	if ( fwrite(&clut, sizeof(struct nclut), i, pstream) < i )
+	if ( fwrite(&mgr->clut, sizeof(struct nclut), i, pstream) < i )
             return_error(gs_error_ioerror);
 	return (code < 0 ? code : 0);
 }

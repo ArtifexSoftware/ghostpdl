@@ -22,6 +22,7 @@
 #include "idsdata.h"
 #include "iesdata.h"
 #include "iosdata.h"
+#include "stream.h"
 
 /*
  * Define the externally visible state of an interpreter context.
@@ -59,6 +60,7 @@ struct gs_context_state_s {
     bool RenderTTNotdef;	/* accessed from userparams */
     gs_file_path_ptr lib_path;	/* library search list (GS_LIB) */
     ref stdio[3];		/* t_file */
+    stream *invalid_file_stream;/* An invalid file object (stable memory) */
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;
     exec_stack_t exec_stack;

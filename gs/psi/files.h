@@ -43,9 +43,8 @@ bool zis_stdin(const stream *);
 #define ref_stderr ref_stdio[2]
 /* An invalid (closed) file. */
 #define avm_invalid_file_entry avm_foreign
-extern stream *const invalid_file_entry;
 /* Make an invalid file object. */
-void make_invalid_file(ref *);
+void make_invalid_file(i_ctx_t *,ref *);
 
 /*
  * If a file is open for both reading and writing, its read_id, write_id,
@@ -54,13 +53,13 @@ void make_invalid_file(ref *);
  */
 int file_switch_to_read(const ref *);
 
-#define check_read_file(svar,op)\
+#define check_read_file(ctx, svar,op)\
   BEGIN\
     check_read_type(*(op), t_file);\
-    check_read_known_file(svar, op, return);\
+    check_read_known_file(ctx, svar, op, return);\
   END
-#define check_read_known_file(svar,op,error_return)\
-  check_read_known_file_else(svar, op, error_return, svar = invalid_file_entry)
+#define check_read_known_file(ctx,svar,op,error_return)\
+  check_read_known_file_else(svar, op, error_return, svar = (ctx->invalid_file_stream))
 #define check_read_known_file_else(svar,op,error_return,invalid_action)\
   BEGIN\
     svar = fptr(op);\

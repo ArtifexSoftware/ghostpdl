@@ -377,6 +377,10 @@ _TIFFVSetField(TIFF* tif, ttag_t tag, va_list ap)
 			_TIFFsetShortArray(&td->td_transferfunction[i],
 			    va_arg(ap, uint16*), 1L<<td->td_bitspersample);
 		break;
+	case TIFFTAG_REFERENCEBLACKWHITE:
+		/* XXX should check for null range */
+		_TIFFsetFloatArray(&td->td_refblackwhite, va_arg(ap, float*), 6);
+		break;
 	case TIFFTAG_INKNAMES:
 		v = va_arg(ap, uint32);
 		s = va_arg(ap, char*);
@@ -745,17 +749,17 @@ _TIFFVGetField(TIFF* tif, ttag_t tag, va_list ap)
             *va_arg(ap, uint16*) = td->td_halftonehints[1];
             break;
 	case TIFFTAG_COLORMAP:
-            *va_arg(ap, uint16**) = td->td_colormap[0];
-            *va_arg(ap, uint16**) = td->td_colormap[1];
-            *va_arg(ap, uint16**) = td->td_colormap[2];
+            *va_arg(ap, const uint16**) = td->td_colormap[0];
+            *va_arg(ap, const uint16**) = td->td_colormap[1];
+            *va_arg(ap, const uint16**) = td->td_colormap[2];
             break;
 	case TIFFTAG_STRIPOFFSETS:
 	case TIFFTAG_TILEOFFSETS:
-            *va_arg(ap, uint32**) = td->td_stripoffset;
+            *va_arg(ap, const uint32**) = td->td_stripoffset;
             break;
 	case TIFFTAG_STRIPBYTECOUNTS:
 	case TIFFTAG_TILEBYTECOUNTS:
-            *va_arg(ap, uint32**) = td->td_stripbytecount;
+            *va_arg(ap, const uint32**) = td->td_stripbytecount;
             break;
 	case TIFFTAG_MATTEING:
             *va_arg(ap, uint16*) =
@@ -764,7 +768,7 @@ _TIFFVGetField(TIFF* tif, ttag_t tag, va_list ap)
             break;
 	case TIFFTAG_EXTRASAMPLES:
             *va_arg(ap, uint16*) = td->td_extrasamples;
-            *va_arg(ap, uint16**) = td->td_sampleinfo;
+            *va_arg(ap, const uint16**) = td->td_sampleinfo;
             break;
 	case TIFFTAG_TILEWIDTH:
             *va_arg(ap, uint32*) = td->td_tilewidth;
@@ -799,7 +803,7 @@ _TIFFVGetField(TIFF* tif, ttag_t tag, va_list ap)
             break;
 	case TIFFTAG_SUBIFD:
             *va_arg(ap, uint16*) = td->td_nsubifd;
-            *va_arg(ap, uint32**) = td->td_subifd;
+            *va_arg(ap, const uint32**) = td->td_subifd;
             break;
 	case TIFFTAG_YCBCRPOSITIONING:
             *va_arg(ap, uint16*) = td->td_ycbcrpositioning;
@@ -809,14 +813,17 @@ _TIFFVGetField(TIFF* tif, ttag_t tag, va_list ap)
             *va_arg(ap, uint16*) = td->td_ycbcrsubsampling[1];
             break;
 	case TIFFTAG_TRANSFERFUNCTION:
-            *va_arg(ap, uint16**) = td->td_transferfunction[0];
+            *va_arg(ap, const uint16**) = td->td_transferfunction[0];
             if (td->td_samplesperpixel - td->td_extrasamples > 1) {
-                *va_arg(ap, uint16**) = td->td_transferfunction[1];
-                *va_arg(ap, uint16**) = td->td_transferfunction[2];
+                *va_arg(ap, const uint16**) = td->td_transferfunction[1];
+                *va_arg(ap, const uint16**) = td->td_transferfunction[2];
             }
             break;
+	case TIFFTAG_REFERENCEBLACKWHITE:
+	    *va_arg(ap, const float**) = td->td_refblackwhite;
+	    break;
 	case TIFFTAG_INKNAMES:
-            *va_arg(ap, char**) = td->td_inknames;
+            *va_arg(ap, const char**) = td->td_inknames;
             break;
         default:
         {
@@ -857,7 +864,7 @@ _TIFFVGetField(TIFF* tif, ttag_t tag, va_list ap)
 				*va_arg(ap, uint32*) = (uint32)tv->count;
 			else	/* Assume TIFF_VARIABLE */
 				*va_arg(ap, uint16*) = (uint16)tv->count;
-			*va_arg(ap, void **) = tv->value;
+			*va_arg(ap, const void **) = tv->value;
 			ret_val = 1;
                 } else {
 			if ((fip->field_type == TIFF_ASCII
@@ -869,7 +876,7 @@ _TIFFVGetField(TIFF* tif, ttag_t tag, va_list ap)
 			    && fip->field_tag != TIFFTAG_HALFTONEHINTS
 			    && fip->field_tag != TIFFTAG_YCBCRSUBSAMPLING
 			    && fip->field_tag != TIFFTAG_DOTRANGE) {
-				*va_arg(ap, void **) = tv->value;
+				*va_arg(ap, const void **) = tv->value;
 				ret_val = 1;
 			} else {
 			    int j;
@@ -989,6 +996,7 @@ TIFFFreeDirectory(TIFF* tif)
 	CleanupField(td_sampleinfo);
 	CleanupField(td_subifd);
 	CleanupField(td_inknames);
+	CleanupField(td_refblackwhite);
 	CleanupField(td_transferfunction[0]);
 	CleanupField(td_transferfunction[1]);
 	CleanupField(td_transferfunction[2]);

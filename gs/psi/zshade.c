@@ -494,7 +494,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 	    case t_file: {
 		stream *s;
 
-		check_read_file(s, pDataSource);
+		check_read_file(i_ctx_p, s, pDataSource);
 		data_source_init_stream(&params->DataSource, s);
 		break;
 	    }

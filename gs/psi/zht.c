@@ -138,7 +138,7 @@ zsetscreen(i_ctx_t *i_ctx_p)
      * This keeps the space relationships consistent.
      */
     code = gs_screen_order_init_memory(&order, igs, &screen,
-				       gs_currentaccuratescreens(), mem);
+				       gs_currentaccuratescreens(mem), mem);
     if (code < 0)
 	return code;
     return zscreen_enum_init(i_ctx_p, &order, &screen, op, 3,

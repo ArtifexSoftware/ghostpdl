@@ -135,8 +135,9 @@ typedef struct MEMFILE_s MEMFILE;
 
 /* Declare the procedures for returning the prototype filter states */
 /* for compressing and decompressing the band list. */
-const stream_state *clist_compressor_state(void *);
-const stream_state *clist_decompressor_state(void *);
-int gs_cl_zlib_init(gs_memory_t * mem);
+const stream_template *clist_compressor_template(void);
+const stream_template *clist_decompressor_template(void);
+void clist_compressor_init(stream_state *state);
+void clist_decompressor_init(stream_state *state);
 
 #endif /* gxclmem_INCLUDED */

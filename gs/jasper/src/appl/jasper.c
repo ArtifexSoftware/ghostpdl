@@ -298,7 +298,6 @@ int main(int argc, char **argv)
 
 	cmdopts_destroy(cmdopts);
 	jas_image_destroy(image);
-	jas_image_clearfmts();
 
 	/* Success at last! :-) */
 	return EXIT_SUCCESS;

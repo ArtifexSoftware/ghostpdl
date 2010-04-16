@@ -26,7 +26,8 @@
 /* According to the Adobe documentation, %device and %device% */
 /* are equivalent; both return name==NULL. */
 int
-gs_parse_file_name(gs_parsed_file_name_t * pfn, const char *pname, uint len)
+gs_parse_file_name(gs_parsed_file_name_t * pfn, const char *pname, uint len,
+                   const gs_memory_t *memory)
 {
     uint dlen;
     const char *pdelim;
@@ -51,7 +52,7 @@ gs_parse_file_name(gs_parsed_file_name_t * pfn, const char *pname, uint len)
 	dlen = pdelim - pname;
 	pdelim++, len--;
     }
-    iodev = gs_findiodevice((const byte *)pname, dlen);
+    iodev = gs_findiodevice(memory, (const byte *)pname, dlen);
     if (iodev == 0)
 	return_error(gs_error_undefinedfilename);
     pfn->memory = 0;
@@ -66,7 +67,7 @@ int
 gs_parse_real_file_name(gs_parsed_file_name_t * pfn, const char *pname,
 			uint len, gs_memory_t *mem, client_name_t cname)
 {
-    int code = gs_parse_file_name(pfn, pname, len);
+    int code = gs_parse_file_name(pfn, pname, len, mem);
 
     if (code < 0)
 	return code;
@@ -84,7 +85,7 @@ gs_terminate_file_name(gs_parsed_file_name_t * pfn, gs_memory_t *mem,
     char *fname;
 
     if (pfn->iodev == NULL)	/* no device */
-	pfn->iodev = iodev_default;
+	pfn->iodev = iodev_default(mem);
     if (pfn->memory)
 	return 0;		/* already copied */
     /* Copy the file name to a C string. */

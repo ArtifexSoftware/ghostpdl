@@ -119,8 +119,145 @@ static void jas_image_dump(jas_image_t *image, FILE *out);
 * Global data.
 \******************************************************************************/
 
-static int jas_image_numfmts = 0;
-static jas_image_fmtinfo_t jas_image_fmtinfos[JAS_IMAGE_MAXFMTS];
+#define MIF_ID 0
+#define PNM_ID 1
+#define BMP_ID 2
+#define RAS_ID 3
+#define JP2_ID 4
+#define JPC_ID 5
+#define JPG_ID 6
+#define PGX_ID 7
+
+const jas_image_fmtinfo_t jas_image_fmtinfos[] = {
+#if !defined(EXCLUDE_MIF_SUPPORT)
+    {
+        MIF_ID,
+        "mif",
+        "mif",
+        "My Image Format (MIF)",
+        {
+            mif_decode,
+            mif_encode,
+            mif_validate,
+        },
+    },
+#endif /* EXCLUDE_MIF_SUPPORT */
+#if !defined(EXCLUDE_PNM_SUPPORT)
+    {
+        PNM_ID,
+        "pnm",
+        "pnm",
+        "Portable Graymap/Pixmap (PNM)",
+        {
+            pnm_decode,
+            pnm_encode,
+            pnm_validate,
+        },
+    },
+    {
+        PNM_ID,
+        "pnm",
+        "pgm",
+        "Portable Graymap/Pixmap (PNM)",
+        {
+            pnm_decode,
+            pnm_encode,
+            pnm_validate,
+        },
+    },
+    {
+        PNM_ID,
+        "pnm",
+        "ppm",
+        "Portable Graymap/Pixmap (PNM)",
+        {
+            pnm_decode,
+            pnm_encode,
+            pnm_validate,
+        },
+    },
+#endif /* EXCLUDE_PNM_SUPPORT */
+#if !defined(EXCLUDE_BMP_SUPPORT)
+    {
+        BMP_ID,
+        "bmp",
+        "bmp",
+        "Microsoft Bitmap (BMP)",
+        {
+            bmp_decode,
+            bmp_encode,
+            bmp_validate,
+        },
+    },
+#endif /* EXCLUDE_BMP_SUPPORT */
+#if !defined(EXCLUDE_RAS_SUPPORT)
+    {
+        RAS_ID,
+        "ras",
+        "ras",
+        "Sun Rastefile (RAS)",
+        {
+            ras_decode,
+            ras_encode,
+            ras_validate,
+        },
+    },
+#endif /* EXCLUDE_RAS_SUPPORT */
+#if !defined(EXCLUDE_JP2_SUPPORT)
+    {
+        JP2_ID,
+        "jp2",
+        "jp2",
+        "JPEG-2000 JP2 File Format Syntax (ISO/IEC 15444-1)",
+        {
+            jp2_decode,
+            jp2_encode,
+            jp2_validate,
+        },
+    },
+    {
+        JPC_ID,
+        "jpc",
+        "jpc",
+        "JPEG-2000 Code Stream Syntax (ISO/IEC 15444-1)",
+        {
+            jpc_decode,
+            jpc_encode,
+            jpc_validate,
+        },
+    },
+#endif /* EXCLUDE_JP2_SUPPORT */
+#if !defined(EXCLUDE_JPG_SUPPORT)
+    {
+        JPG_ID,
+        "jpg",
+        "jpg",
+        "JPEG (ISO/IEC 10918-1)",
+        
+        {
+            jpg_decode,
+            jpg_encode,
+            jpg_validate,
+        },
+    },
+#endif /* EXCLUDE_JPG_SUPPORT */
+#if !defined(EXCLUDE_PGX_SUPPORT)
+    {
+        PGX_ID,
+        "pgx",
+        "pgx",
+        "JPEG-2000 VM Format (PGX)",
+        {
+            pgx_decode,
+            pgx_encode,
+            pgx_validate,
+        }
+    }
+#endif /* EXCLUDE_PGX_SUPPORT */
+};
+
+const int jas_image_numfmts =
+    sizeof(jas_image_fmtinfos) / sizeof(jas_image_fmtinfos[0]);
 
 /******************************************************************************\
 * Create and destroy operations.
@@ -513,59 +650,6 @@ int jas_image_writecmpt(jas_image_t *image, int cmptno, jas_image_coord_t x, jas
 		}
 	}
 
-	return 0;
-}
-
-/******************************************************************************\
-* File format operations.
-\******************************************************************************/
-
-void jas_image_clearfmts()
-{
-	int i;
-	jas_image_fmtinfo_t *fmtinfo;
-	for (i = 0; i < jas_image_numfmts; ++i) {
-		fmtinfo = &jas_image_fmtinfos[i];
-		if (fmtinfo->name) {
-			jas_free(fmtinfo->name);
-			fmtinfo->name = 0;
-		}
-		if (fmtinfo->ext) {
-			jas_free(fmtinfo->ext);
-			fmtinfo->ext = 0;
-		}
-		if (fmtinfo->desc) {
-			jas_free(fmtinfo->desc);
-			fmtinfo->desc = 0;
-		}
-	}
-	jas_image_numfmts = 0;
-}
-
-int jas_image_addfmt(int id, char *name, char *ext, char *desc,
-  jas_image_fmtops_t *ops)
-{
-	jas_image_fmtinfo_t *fmtinfo;
-	assert(id >= 0 && name && ext && ops);
-	if (jas_image_numfmts >= JAS_IMAGE_MAXFMTS) {
-		return -1;
-	}
-	fmtinfo = &jas_image_fmtinfos[jas_image_numfmts];
-	fmtinfo->id = id;
-	if (!(fmtinfo->name = jas_strdup(name))) {
-		return -1;
-	}
-	if (!(fmtinfo->ext = jas_strdup(ext))) {
-		jas_free(fmtinfo->name);
-		return -1;
-	}
-	if (!(fmtinfo->desc = jas_strdup(desc))) {
-		jas_free(fmtinfo->name);
-		jas_free(fmtinfo->ext);
-		return -1;
-	}
-	fmtinfo->ops = *ops;
-	++jas_image_numfmts;
 	return 0;
 }
 

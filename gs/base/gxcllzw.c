@@ -19,28 +19,25 @@
 #include "gxclmem.h"
 #include "slzwx.h"
 
-static stream_LZW_state cl_LZWE_state;
-static stream_LZW_state cl_LZWD_state;
-
-/* Initialize the states to be copied. */
-int
-gs_cl_lzw_init(gs_memory_t * mem)
-{
-    s_LZW_set_defaults((stream_state *) & cl_LZWE_state);
-    cl_LZWE_state.template = &s_LZWE_template;
-    s_LZW_set_defaults((stream_state *) & cl_LZWD_state);
-    cl_LZWD_state.template = &s_LZWD_template;
-    return 0;
-}
-
 /* Return the prototypes for compressing/decompressing the band list. */
-const stream_state *
-clist_compressor_state(void *client_data)
+const stream_template *clist_compressor_template(void)
 {
-    return (const stream_state *)&cl_LZWE_state;
+    return &cl_LZWE_template;
 }
-const stream_state *
-clist_decompressor_state(void *client_data)
+const stream_template *
+clist_decompressor_state(void)
 {
-    return (const stream_state *)&cl_LZWD_state;
+    return &cl_LZWD_state;
+}
+void
+clist_compressor_init(stream_state *state)
+{
+    s_LZW_set_defaults(state);
+    state->template = &s_LZWE_template;
+}
+void
+clist_decompressor_init(stream_state *state)
+{
+    s_LZW_set_defaults(state);
+    state->template = &s_LZWD_template;
 }

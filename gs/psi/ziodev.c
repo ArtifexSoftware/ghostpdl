@@ -74,7 +74,7 @@ zgetiodevice(i_ctx_t *i_ctx_p)
     const byte *dname;
 
     check_type(*op, t_integer);
-    iodev = gs_getiodevice((int)(op->value.intval));
+    iodev = gs_getiodevice(imemory, (int)(op->value.intval));
     if (iodev == 0)		/* index out of range */
 	return_error(e_rangecheck);
     dname = (const byte *)iodev->dname;
@@ -129,7 +129,7 @@ zfilelineedit(i_ctx_t *i_ctx_p)
     count = (op-1)->value.intval;
     check_type(*(op-2), t_boolean);	/* statementedit/lineedit */
     statement = (op-2)->value.boolval;
-    check_read_file(ins, op - 3);	/* %stdin */
+    check_read_file(i_ctx_p, ins, op - 3);	/* %stdin */
 
     /* extend string */
     initial_buf_size = statement ? STATEMENTEDIT_BUF_SIZE : LINEEDIT_BUF_SIZE;

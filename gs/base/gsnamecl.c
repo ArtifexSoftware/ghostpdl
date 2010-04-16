@@ -207,7 +207,7 @@ custom_color_callback_put_params(gs_state * pgs, gs_param_list * plist)
 	 * Custom color processing can depend upon the type of object
 	 * being imaged so we enable object type tagging.
 	 */
-    gs_enable_object_tagging();
+    gs_enable_object_tagging(pgs->memory);
     }
 
     return 0;

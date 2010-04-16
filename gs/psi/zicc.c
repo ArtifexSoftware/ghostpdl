@@ -61,7 +61,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     /* verify the DataSource entry */
     if (dict_find_string(ICCdict, "DataSource", &pstrmval) <= 0)
         return_error(e_undefined);
-    check_read_file(s, pstrmval);
+    check_read_file(i_ctx_p, s, pstrmval);
 
     /* build the color space object */
     code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
@@ -218,7 +218,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
     /* verify the DataSource entry */
     if (dict_find_string(op, "DataSource", &pstrmval) <= 0)
         return_error(e_undefined);
-    check_read_file(s, pstrmval);
+    check_read_file(i_ctx_p, s, pstrmval);
     /*
      * Verify that the current color space can be a alternative color space.
      * The check for ICCBased color space is a hack to avoid introducing yet

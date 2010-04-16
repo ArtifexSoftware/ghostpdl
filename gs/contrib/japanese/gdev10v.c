@@ -234,12 +234,12 @@ bj10v_print_page(gx_device_printer *pdev, FILE *prn_stream)
 		/* them so badly that this code is faster. */
 		{	register long *zip = (long *)in;
 			register int zcnt = line_size;
-			static long zeroes[4] = { 0, 0, 0, 0 };
+			static const long zeroes[4] = { 0, 0, 0, 0 };
 			for ( ; zcnt >= 4 * sizeof(long); zip += 4, zcnt -= 4 * sizeof(long) )
 			    {	if ( zip[0] | zip[1] | zip[2] | zip[3] )
 				    goto notz;
 			    }
-			if ( !memcmp(in, (char *)zeroes, zcnt) )
+			if ( !memcmp(in, (const char *)zeroes, zcnt) )
 			    {	/* Line is all zero, skip */
 				if (++blank_lines >= y_skip_unit) {
 				    lnum += y_skip_unit;

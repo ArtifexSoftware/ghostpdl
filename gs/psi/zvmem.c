@@ -101,7 +101,7 @@ zsave(i_ctx_t *i_ctx_p)
 /* <save> restore - */
 static int restore_check_operand(os_ptr, alloc_save_t **, gs_dual_memory_t *);
 static int restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t *, const alloc_save_t *, bool);
-static void restore_fix_stack(ref_stack_t *, const alloc_save_t *, bool);
+static void restore_fix_stack(i_ctx_t *i_ctx_p, ref_stack_t *, const alloc_save_t *, bool);
 int
 zrestore(i_ctx_t *i_ctx_p)
 {
@@ -133,9 +133,9 @@ zrestore(i_ctx_t *i_ctx_p)
     }
     /* Reset l_new in all stack entries if the new save level is zero. */
     /* Also do some special fixing on the e-stack. */
-    restore_fix_stack(&o_stack, asave, false);
-    restore_fix_stack(&e_stack, asave, true);
-    restore_fix_stack(&d_stack, asave, false);
+    restore_fix_stack(i_ctx_p, &o_stack, asave, false);
+    restore_fix_stack(i_ctx_p, &e_stack, asave, true);
+    restore_fix_stack(i_ctx_p, &d_stack, asave, false);
     /* Iteratively restore the state of memory, */
     /* also doing a grestoreall at each step. */
     do {
@@ -306,8 +306,8 @@ restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
  * Note that this procedure is only called if restore_check_stack succeeded.
  */
 static void
-restore_fix_stack(ref_stack_t * pstack, const alloc_save_t * asave,
-		  bool is_estack)
+restore_fix_stack(i_ctx_t *i_ctx_p, ref_stack_t * pstack,
+                  const alloc_save_t * asave, bool is_estack)
 {
     ref_stack_enum_t rsenum;
 
@@ -337,7 +337,7 @@ restore_fix_stack(ref_stack_t * pstack, const alloc_save_t * asave,
 			if (alloc_is_since_save(stkp->value.pfile,
 						asave)
 			    ) {
-			    make_invalid_file(stkp);
+			    make_invalid_file(i_ctx_p, stkp);
 			    break;
 			}
 			continue;
@@ -389,9 +389,9 @@ zforgetsave(i_ctx_t *i_ctx_p)
 	return 0;
     vmsave = alloc_save_client_data(asave);
     /* Reset l_new in all stack entries if the new save level is zero. */
-    restore_fix_stack(&o_stack, asave, false);
-    restore_fix_stack(&e_stack, asave, false);
-    restore_fix_stack(&d_stack, asave, false);
+    restore_fix_stack(i_ctx_p, &o_stack, asave, false);
+    restore_fix_stack(i_ctx_p, &e_stack, asave, false);
+    restore_fix_stack(i_ctx_p, &d_stack, asave, false);
     /*
      * Forget the gsaves, by deleting the bottom gstate on
      * the current stack and the top one on the saved stack and then

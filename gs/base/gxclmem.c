@@ -130,8 +130,17 @@ LIMITATIONS.
    COMPRESSION_THRESHOLD amount of data.  The threshold should be at
    least as large as the fixed overhead of the compressor plus the
    decompressor, plus the expected compressed size of a block that size.
+
+   As a testing measure we have a a define TEST_BAND_LIST_COMPRESSION
+   which, if set, will set the threshold to a low value so as to cause
+   compression to trigger.
  */
-static const long COMPRESSION_THRESHOLD = 500000000;	/* 0.5 Gb for host machines */
+static const long COMPRESSION_THRESHOLD =
+#ifdef TEST_BAND_LIST_COMPRESSION
+    1024; /* Low value to force compression */
+#else
+    500000000;  /* 0.5 Gb for host machines */
+#endif
 
 #define NEED_TO_COMPRESS(f)\
   ((f)->ok_to_compress && (f)->total_space > COMPRESSION_THRESHOLD)
@@ -281,8 +290,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 		LOG_MEMFILE_BLK *log_block, *new_log_block;
 		int i;
 		int num_log_blocks = (f->log_length + MEMFILE_DATA_SIZE - 1) / MEMFILE_DATA_SIZE;
-		const stream_state *decompress_proto = clist_decompressor_state(NULL);
-		const stream_template *decompress_template = decompress_proto->template;
+                const stream_template *decompress_template = clist_decompressor_template();
 
 		new_log_block = MALLOC(f, num_log_blocks * sizeof(LOG_MEMFILE_BLK), "memfile_fopen" );
 		if (new_log_block == NULL) {
@@ -308,8 +316,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 		    code = gs_note_error(gs_error_VMerror);
 		    goto finish;
 		}
-		memcpy(f->decompress_state, decompress_proto,
-		       gs_struct_type_size(decompress_template->stype));
+                clist_decompressor_init(f->decompress_state);
 		f->decompress_state->memory = mem;
 		if (decompress_template->set_defaults)
 		    (*decompress_template->set_defaults) (f->decompress_state);
@@ -353,10 +360,8 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
     f->compress_state = 0;	/* make clean for GC */
     f->decompress_state = 0;
     if (f->ok_to_compress) {
-	const stream_state *compress_proto = clist_compressor_state(NULL);
-	const stream_state *decompress_proto = clist_decompressor_state(NULL);
-	const stream_template *compress_template = compress_proto->template;
-	const stream_template *decompress_template = decompress_proto->template;
+        const stream_template *compress_template = clist_compressor_template();
+        const stream_template *decompress_template = clist_decompressor_template();
 
 	f->compress_state =
 	    gs_alloc_struct(mem, stream_state, compress_template->stype,
@@ -369,11 +374,9 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	    code = gs_note_error(gs_error_VMerror);
 	    goto finish;
 	}
-	memcpy(f->compress_state, compress_proto,
-	       gs_struct_type_size(compress_template->stype));
+        clist_compressor_init(f->compress_state);
+        clist_decompressor_init(f->decompress_state);
 	f->compress_state->memory = mem;
-	memcpy(f->decompress_state, decompress_proto,
-	       gs_struct_type_size(decompress_template->stype));
 	f->decompress_state->memory = mem;
 	if (compress_template->set_defaults)
 	    (*compress_template->set_defaults) (f->compress_state);

@@ -80,37 +80,40 @@ static int add_closepath(FAPI_path *I)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = false;
-    return gx_path_close_subpath_notes(olh->path, 0);
+    I->gs_error =  gx_path_close_subpath_notes(olh->path, 0);
+    return I->gs_error;
 }
 
 static int add_move(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
-    int code;
 
     if (olh->need_close && olh->close_path)
-        if ((code = add_closepath(I)) < 0)
-	    return code;
+        if ((I->gs_error = add_closepath(I)) < 0)
+	    return I->gs_error;
     olh->need_close = false;
-    return gx_path_add_point(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0);
+    I->gs_error = gx_path_add_point(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0);
+    return I->gs_error;
 }
 
 static int add_line(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = true;
-    return gx_path_add_line_notes(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0, 0);
+    I->gs_error =  gx_path_add_line_notes(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0, 0);
+    return I->gs_error;
 }
 
 static int add_curve(FAPI_path *I, FracInt x0, FracInt y0, FracInt x1, FracInt y1, FracInt x2, FracInt y2)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
     olh->need_close = true;
-    return gx_path_add_curve_notes(olh->path, import_shift(x0, I->shift) + olh->x0, -import_shift(y0, I->shift) + olh->y0, 
+    I->gs_error =   gx_path_add_curve_notes(olh->path, import_shift(x0, I->shift) + olh->x0, -import_shift(y0, I->shift) + olh->y0,
 					      import_shift(x1, I->shift) + olh->x0, -import_shift(y1, I->shift) + olh->y0, 
 					      import_shift(x2, I->shift) + olh->x0, -import_shift(y2, I->shift) + olh->y0, 0);
+    return I->gs_error;
 }
 
-static FAPI_path path_interface_stub = { NULL, 0, add_move, add_line, add_curve, add_closepath };
+static FAPI_path path_interface_stub = { NULL, 0, 0, add_move, add_line, add_curve, add_closepath };
 
 static inline bool IsCIDFont(const gs_font_base *pbfont)
 {   return (pbfont->FontType == ft_CID_encrypted ||
@@ -575,34 +578,35 @@ static ulong FAPI_FF_get_long(FAPI_font *ff, fapi_font_feature var_id, int index
 static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int index)
 {   gs_font_base *pbfont = (gs_font_base *)ff->client_font_data;
     ref *pdr = (ref *)ff->client_font_data2;
+    FAPI_server *I = pbfont->FAPI;
 
     switch((int)var_id) {
         case FAPI_FONT_FEATURE_FontMatrix:
-#if 0
-            {   double FontMatrix_div = (ff->is_cid && !IsCIDFont(pbfont) ? 1000 : 1);
+            {
+                double FontMatrix_div;
+                gs_matrix m, *mptr;
 
-                switch(index) {
-                    case 0 : return pbfont->base->FontMatrix.xx / FontMatrix_div;
-                    case 1 : return pbfont->base->FontMatrix.xy / FontMatrix_div;
-                    case 2 : return pbfont->base->FontMatrix.yx / FontMatrix_div;
-                    case 3 : return pbfont->base->FontMatrix.yy / FontMatrix_div;
-                    case 4 : return pbfont->base->FontMatrix.tx / FontMatrix_div;
-                    case 5 : return pbfont->base->FontMatrix.ty / FontMatrix_div;
+                if (I && I->get_fontmatrix) {
+                    FontMatrix_div = 1;
+                    mptr = &m;
+                    I->get_fontmatrix (I, mptr);
                 }
+                else {
+                    FontMatrix_div = (ff->is_cid && !IsCIDFont(pbfont) ? 1000 : 1);
+                   
+                    mptr = &(pbfont->base->FontMatrix);
             } 
-#else
-            /* Temporary: replace with a FAPI call to check *if* the library needs a replacement matrix */
-	    {
+                   
                 switch(index) {
-                    case 0 : return 1.0;
-                    case 1 : return 0.0;
-                    case 2 : return 0.0;
-                    case 3 : return 1.0;
-                    case 4 : return 0.0;
-                    case 5 : return 0.0;
+                    case 0 : return mptr->xx / FontMatrix_div;
+                    case 1 : return mptr->xy / FontMatrix_div;
+                    case 2 : return mptr->yx / FontMatrix_div;
+                    case 3 : return mptr->yy / FontMatrix_div;
+                    case 4 : return mptr->tx / FontMatrix_div;
+                    case 5 : return mptr->ty / FontMatrix_div;
                 }
             }
-#endif
+
         case FAPI_FONT_FEATURE_WeightVector: 
 	    {   ref *Array, value; 
 
@@ -1376,8 +1380,12 @@ static int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, gs
     olh.need_close = false;
     path_interface.olh = &olh;
     path_interface.shift = import_shift_v;
-    if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline(I, &path_interface))) < 0)
+    if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline(I, &path_interface))) < 0 || path_interface.gs_error != 0) {
+	if (path_interface.gs_error != 0)
+            return path_interface.gs_error;
+        else
 	return code;
+    }
     if (olh.need_close && olh.close_path)
         if ((code = add_closepath(&path_interface)) < 0)
 	    return code;
@@ -1390,11 +1398,16 @@ static void compute_em_scale(const gs_font_base *pbfont, FAPI_metrics *metrics, 
     gs_matrix *m = &pbfont->base->orig_FontMatrix;
     int rounding_x, rounding_y; /* Striking out the 'float' representation error in FontMatrix. */
     double sx, sy;
+    FAPI_server *I = pbfont->FAPI;
 
-    /* Temporary: replace with a FAPI call to check *if* the library needs a replacement matrix */
     m = &mat;
+#if 1
+    I->get_fontmatrix(I, m);
+#else
+    /* Temporary: replace with a FAPI call to check *if* the library needs a replacement matrix */
     memset(m, 0x00, sizeof(gs_matrix));
     m->xx = m->yy = 1.0;
+#endif
 
     if (m->xx == 0 && m->xy == 0 && m->yx == 0 && m->yy == 0)
 	m = &pbfont->base->FontMatrix;
@@ -1674,6 +1687,10 @@ retry_oversampling:
 
 	code = gs_matrix_multiply(ctm, &scale_ctm, &scale_mat);		/* scale_mat ==  CTM - resolution scaling */
 
+	code = I->get_fontmatrix(I, &scale_ctm);
+	code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm);
+	code = gs_matrix_multiply(&scale_mat, &scale_ctm, &scale_mat);		/* scale_mat ==  CTM - resolution scaling - FontMatrix scaling */
+
 	font_scale.matrix[0] =  (FracInt)(scale_mat.xx * FontMatrix_div * scale + 0.5);
 	font_scale.matrix[1] =  -(FracInt)(scale_mat.xy * FontMatrix_div * scale + 0.5);
         font_scale.matrix[2] =  (FracInt)(scale_mat.yx * FontMatrix_div * scale + 0.5);
@@ -1810,8 +1827,10 @@ retry_oversampling:
                  * matching character code. Otherwise it returns
                  * zero after setting c to zero (.notdef glyph id)
                  * or a negative value on error. */
+#if 0
 		if (code > 0)
 		    is_glyph_index = false;
+#endif
 	    }
 	    cr.char_codes[0] = c;
 	    cr.is_glyph_index = is_glyph_index;
@@ -2311,12 +2330,13 @@ static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success
 	font_scale.HWResolution[0] = font_scale.HWResolution[1] = 72 << I->frac_shift;
 	font_scale.matrix[0] = font_scale.matrix[3] = 1 << I->frac_shift;
 
+        pbfont->FAPI = I; /* we need the FAPI server during this stage */
 	code = FAPI_prepare_font(i_ctx_p, I, pdr, pbfont, font_file_path, &font_scale, xlatmap, BBox, &decodingID);
 	if (code < 0) {
+            pbfont->FAPI = NULL;
             /* Failed, skip this renderer : */
 	    continue;
 	}
-        pbfont->FAPI = I; /* We found a good renderer, so go with it */
         if ((code = name_ref(imemory, (const byte *)I->ig.d->subtype, strlen(I->ig.d->subtype), &FAPI_ID, false)) < 0)
 	    return code;
 	if ((code = dict_put_string(pdr, "FAPI", &FAPI_ID, NULL)) < 0)
