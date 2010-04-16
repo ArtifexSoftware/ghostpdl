@@ -281,7 +281,8 @@ gsicc_get_devicen_names(cmm_profile_t *icc_profile, gs_memory_t *memory)
     if (icc_profile->profile_handle == NULL) {
         if (icc_profile->buffer != NULL) {
             icc_profile->profile_handle = 
-                gsicc_get_profile_handle_buffer(icc_profile->buffer);
+                gsicc_get_profile_handle_buffer(icc_profile->buffer,
+                                                icc_profile->buffer_size);
         } else
             return;
     }
@@ -458,11 +459,13 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
 
         /* Get the profile handle */
         icc_profile->profile_handle = 
-            gsicc_get_profile_handle_buffer(icc_profile->buffer);
+            gsicc_get_profile_handle_buffer(icc_profile->buffer,
+                                            icc_profile->buffer_size);
 
         /* Compute the hash code of the profile. Everything in the ICC manager will have 
            it's hash code precomputed */
-        gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode));
+        gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode),
+                                icc_profile->buffer_size);
         icc_profile->hash_is_valid = true;
         icc_profile->default_match = defaulttype;
         icc_profile->num_comps = 
@@ -526,10 +529,13 @@ gsicc_init_profile_info(cmm_profile_t *profile)
     int k;
 
     /* Get the profile handle */
-    profile->profile_handle = gsicc_get_profile_handle_buffer(profile->buffer);
+    profile->profile_handle = 
+        gsicc_get_profile_handle_buffer(profile->buffer,
+                                        profile->buffer_size);
 
     /* Compute the hash code of the profile. */
-    gsicc_get_icc_buff_hash(profile->buffer, &(profile->hashcode));
+    gsicc_get_icc_buff_hash(profile->buffer, &(profile->hashcode),
+                            profile->buffer_size);
     profile->hash_is_valid = true;
     profile->default_match = DEFAULT_NONE;
     profile->num_comps = gscms_get_channel_count(profile->profile_handle);
@@ -664,12 +670,14 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev,
 
                 /* Get the profile handle */
                 icc_profile->profile_handle = 
-                    gsicc_get_profile_handle_buffer(icc_profile->buffer);
+                    gsicc_get_profile_handle_buffer(icc_profile->buffer,
+                                                    icc_profile->buffer_size);
 
                 /* Compute the hash code of the profile. Everything in the 
                    ICC manager will have it's hash code precomputed */
                 gsicc_get_icc_buff_hash(icc_profile->buffer, 
-                                        &(icc_profile->hashcode));
+                                        &(icc_profile->hashcode),
+                                        icc_profile->buffer_size);
                 icc_profile->hash_is_valid = true;
 
                 /* Get the number of channels in the output profile */
@@ -889,7 +897,6 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
    gs_free_object(icc_manager->memory, icc_manager, "rc_gsicc_manager_free");
 }
 
-#if 0
 /* Allocates and loads the icc buffer from the stream. */
 static int
 gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, 
@@ -925,45 +932,6 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
    return(0);
 }
 
-#endif
-
-#if 1
-/* Allocates and loads the icc buffer from the stream. */
-static int
-gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s, 
-                          gs_memory_t *memory)
-{
-    int                     num_bytes,profile_size;
-    unsigned char           buffer_size[4];
-    unsigned char           *buffer_ptr;
-
-    srewind(s);  /* Work around for issue with sfread return 0 bytes
-                    and not doing a retry if there is an issue.  This
-                    is a bug in the stream logic or strmio layer.  Occurs
-                    with smask_withicc.pdf on linux 64 bit system */
-    buffer_ptr = &(buffer_size[0]);
-    num_bytes = sfread(buffer_ptr,sizeof(unsigned char),4,s);
-    profile_size = gsicc_getprofilesize(buffer_ptr);
-
-    if (profile_size < ICC_HEADER_SIZE)
-        return(-1);
-    /* Allocate the buffer, stuff with the profile */
-   buffer_ptr = gs_alloc_bytes(memory, profile_size,
-					"gsicc_load_profile");
-   if (buffer_ptr == NULL)
-        return(-1);
-
-   srewind(s);
-   num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
-   if( num_bytes != profile_size) {
-       gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
-       return(-1);
-   }
-   profile->buffer = buffer_ptr;
-   profile->buffer_size = num_bytes;
-   return(0);
-}
-#endif
 
 /* Check if the profile is the same as any of the default profiles */
 static void
@@ -1007,7 +975,8 @@ void
 gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis)
 {
     if ( !(picc_profile->hash_is_valid) ) {
-        gsicc_get_icc_buff_hash(picc_profile->buffer, &(picc_profile->hashcode));
+        gsicc_get_icc_buff_hash(picc_profile->buffer, &(picc_profile->hashcode),
+                                picc_profile->buffer_size);
         picc_profile->hash_is_valid = true;
     }
     gsicc_set_default_cs_value(picc_profile, pis);
@@ -1053,14 +1022,12 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
 }
 
 gcmmhprofile_t
-gsicc_get_profile_handle_buffer(unsigned char *buffer)
+gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size)
 {
 
     gcmmhprofile_t profile_handle = NULL;
-    unsigned int profile_size;
 
      if( buffer != NULL) {
-         profile_size = gsicc_getprofilesize(buffer);
          if (profile_size < ICC_HEADER_SIZE) {
              return(0);
          }
@@ -1081,6 +1048,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer)
      gs_color_space_index color_space_index = 
             gs_color_space_get_index(gs_colorspace);
      int code;
+     bool islab;
 
      if (profile != NULL )
         return(profile);
@@ -1128,7 +1096,9 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer)
                         &(gs_colorspace->cmm_icc_profile_data->buffer_size), 
                         icc_manager->memory,
                         &(gs_colorspace->params.abc->caches.DecodeABC.caches[0]),
-                        &(gs_colorspace->params.abc->common.caches.DecodeLMN[0]));
+                        &(gs_colorspace->params.abc->common.caches.DecodeLMN[0]),
+                        &islab);
+            if (islab) return(icc_manager->lab_profile);
             return(gs_colorspace->cmm_icc_profile_data);
             break;
         case gs_color_space_index_CIEA:

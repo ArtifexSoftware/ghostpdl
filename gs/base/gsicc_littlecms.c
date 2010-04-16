@@ -13,10 +13,17 @@
 
 /* gsicc interface to littleCMS */
 #include "gsicc_littlecms.h"
+#include "gserror.h"
 #include "lcms.h"
 
 #define DUMP_CMS_BUFFER 0
 #define LCMS_BYTES_MASK 0x7
+
+static int
+gscms_error(int error_code, const char *error_text){
+    gs_warn1("cmm error : %s",error_text);
+    return(1);
+}
 
 /* Get the number of channels for the profile.
   Input count */
@@ -88,6 +95,7 @@ gscms_get_profile_data_space(gcmmhprofile_t profile)
 gcmmhprofile_t
 gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
 {
+    cmsSetErrorHandler((cmsErrorHandlerFunction) gscms_error);
     return(cmsOpenProfileFromMem(buffer,input_size));
 }
 
@@ -316,7 +324,8 @@ gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle,
 void
 gscms_create(void **contextptr)
 {
-    /* Nothing to do here for lcms */
+    /* Set our own error handling function */
+    cmsSetErrorHandler((cmsErrorHandlerFunction) gscms_error);
 }
 
 /* Do any clean up when done with the CMS if needed */

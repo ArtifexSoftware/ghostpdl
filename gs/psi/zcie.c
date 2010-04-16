@@ -439,8 +439,10 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     int code = 0;
     ref *ptref;
     bool has_defg_procs, has_abc_procs, has_lmn_procs;
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
-    pcs = gsicc_find_cs(dictkey, igs);
+/*    pcs = gsicc_find_cs(dictkey, igs); */
+    pcs = NULL;
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
@@ -456,6 +458,7 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
         pcie = pcs->params.defg;
         pcie->Table.n = 4;
         pcie->Table.m = 3;
+        code = cie_cache_push_finish(i_ctx_p, cie_defg_finish, imem, pcie);
         code = cie_defg_param(i_ctx_p, imemory, CIEDict, pcie, &procs, 
             &has_abc_procs, &has_lmn_procs, &has_defg_procs,ptref);
         /* Add the color space to the profile cache */
@@ -536,8 +539,10 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     int code = 0;
     ref *ptref;
     bool has_def_procs, has_lmn_procs, has_abc_procs;
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
-    pcs = gsicc_find_cs(dictkey, igs);
+/*    pcs = gsicc_find_cs(dictkey, igs); */
+    pcs = NULL;
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
@@ -553,6 +558,7 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
         pcie = pcs->params.def;
         pcie->Table.n = 3;
         pcie->Table.m = 3;
+        code = cie_cache_push_finish(i_ctx_p, cie_def_finish, imem, pcie);
         code = cie_def_param(i_ctx_p, imemory, CIEDict, pcie, &procs, 
             &has_abc_procs, &has_lmn_procs, &has_def_procs, ptref);
         /* Add the color space to the profile cache */
@@ -590,9 +596,11 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     gs_cie_abc *pcie;
     int code = 0;
     bool has_lmn_procs, has_abc_procs;
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
 /* See if the color space is in the profile cache */
-    pcs = gsicc_find_cs(dictkey, igs);
+/*    pcs = gsicc_find_cs(dictkey, igs); */
+    pcs = NULL;
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
@@ -601,11 +609,15 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
         if (code < 0)
 	    return code;
         pcie = pcs->params.abc;
+        code = cie_cache_push_finish(i_ctx_p, cie_abc_finish, imem, pcie);
         code = cie_abc_param(i_ctx_p, imemory, CIEDict, pcie, &procs, 
             &has_abc_procs, &has_lmn_procs);
         /* Set the color space in the graphic state.  The ICC profile 
             will be set later if we actually use the space.  Procs will be 
-            sampled now though. */
+            sampled now though. Also, the finish procedure is on the stack
+            since that is where the vector cache is completed from the scalar
+            caches.  We may need the vector cache if we are going to go 
+            ahead and create an MLUT for this thing */
         /* Add the color space to the profile cache */
         gsicc_add_cs(igs, pcs,dictkey);
     } else {
@@ -644,7 +656,8 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
     bool has_lmn_procs;
 
 /* See if the color space is in the profile cache */
-    pcs = gsicc_find_cs(dictkey, igs);
+/*    pcs = gsicc_find_cs(dictkey, igs); */
+    pcs = NULL;
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
@@ -655,8 +668,11 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
         pcie = pcs->params.a;
         code = cie_a_param(imemory, CIEdict, pcie, &procs, &has_a_procs, 
                                 &has_lmn_procs);
+        /* Push finalize procedure on the execution stack */
+        code = cie_cache_push_finish(i_ctx_p, cie_a_finish, imem, pcie);
         if (!has_a_procs && !has_lmn_procs) {
-            pcie->common.caches.DecodeLMN->floats.params.is_identity = true;
+            pcie->common.caches.DecodeLMN->floats
+                .params.is_identity = true;
             (pcie->common.caches.DecodeLMN)[1].floats.params.is_identity = true;
             (pcie->common.caches.DecodeLMN)[2].floats.params.is_identity = true;
             pcie->caches.DecodeA.floats.params.is_identity = true;

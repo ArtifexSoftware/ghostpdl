@@ -24,7 +24,7 @@ int gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
 int gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **buffer, 
                          int *profile_size_out, gs_memory_t *memory,
                          gx_cie_vector_cache *abc_caches, 
-                         gx_cie_scalar_cache *lmn_caches);
+                         gx_cie_scalar_cache *lmn_caches, bool *islab);
 int gsicc_create_fromdefg(const gs_color_space *pcs, 
                           unsigned char **pp_buffer_in, int *profile_size_out, 
                           gs_memory_t *memory, gx_cie_vector_cache *abc_caches, 

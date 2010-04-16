@@ -220,6 +220,10 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     bool device_color = true;
     gs_fixed_rect obox, cbox;
 
+    penum->icc_setup.has_transfer = false;
+    penum->icc_setup.is_lab = false;
+    penum->icc_setup.must_halftone = false;
+    penum->icc_setup.need_decode = false;
     penum->Width = width;
     penum->Height = height;
     if (pmat == 0)
@@ -358,7 +362,17 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
            is not yet set, go ahead and handle that now.  It may already
            be done due to the above init_colors which may go through remap. */
         if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
-            gs_colorspace_set_icc_equivalent(pcs, pis->memory);
+            gs_colorspace_set_icc_equivalent(pcs, &(penum->icc_setup.is_lab),
+                                                pis->memory);
+            if (penum->icc_setup.is_lab) {
+                /* Free what ever profile was created and use the icc manager's
+                   cielab profile */
+                gs_color_space *curr_pcs = pcs;
+                rc_decrement(curr_pcs->icc_equivalent,"gx_image_enum_begin");
+                rc_decrement(curr_pcs->cmm_icc_profile_data,"gx_image_enum_begin");
+                curr_pcs->cmm_icc_profile_data = pis->icc_manager->lab_profile;
+                rc_increment(curr_pcs->cmm_icc_profile_data);
+            }
         }
 	/* Try to transform non-default RasterOps to something */
 	/* that we implement less expensively. */
@@ -468,6 +482,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->buffer_size = bsize;
     penum->line = 0;
     penum->icc_link = NULL;
+    penum->cie_range = NULL;
     penum->line_size = 0;
     penum->use_rop = lop != (masked ? rop3_T : rop3_S);
 #ifdef DEBUG

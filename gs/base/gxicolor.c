@@ -36,6 +36,8 @@
 #include "gsicc.h"
 #include "gsicccache.h"
 #include "gsicc_littlecms.h"
+#include "gxcie.h"
+#include "gscie.h"
 
 typedef union {
     byte v[GS_IMAGE_MAX_COLOR_COMPONENTS];
@@ -56,6 +58,41 @@ iclass_proc(gs_image_class_4_color);
 
 static irender_proc(image_render_color_DeviceN);
 static irender_proc(image_render_color_icc);
+
+/* Returns false if range is not 0 1 */
+static bool
+check_cie_range( const gs_color_space * pcs )
+{
+    switch(gs_color_space_get_index(pcs)){
+        case gs_color_space_index_CIEDEFG:
+            return(check_range(&(pcs->params.defg->RangeDEFG.ranges[0]), 4));
+        case gs_color_space_index_CIEDEF:
+            return(check_range(&(pcs->params.def->RangeDEF.ranges[0]), 3));
+        case gs_color_space_index_CIEABC:
+            return(check_range(&(pcs->params.abc->RangeABC.ranges[0]), 3));
+        case gs_color_space_index_CIEA:
+            return(check_range(&(pcs->params.a->RangeA), 1));
+        default:            
+            return true;
+    }
+}
+
+static gs_range*
+get_cie_range( const gs_color_space * pcs )
+{
+    switch(gs_color_space_get_index(pcs)){
+        case gs_color_space_index_CIEDEFG:
+            return(&(pcs->params.defg->RangeDEFG.ranges[0]));
+        case gs_color_space_index_CIEDEF:
+            return(&(pcs->params.def->RangeDEF.ranges[0]));
+        case gs_color_space_index_CIEABC:
+            return(&(pcs->params.abc->RangeABC.ranges[0]));
+        case gs_color_space_index_CIEA:
+            return(&(pcs->params.a->RangeA));
+        default:            
+            return NULL;
+    }
+}
 
 irender_proc_t
 gs_image_class_4_color(gx_image_enum * penum)
@@ -127,6 +164,19 @@ gs_image_class_4_color(gx_image_enum * penum)
             penum->icc_link = gsicc_get_link(penum->pis, pcs, NULL, 
                 &rendering_params, penum->memory, false);
         }
+        /* PS CIE color spaces may have addition decoding that needs to
+           be performed to ensure that the range of 0 to 1 is provided
+           to the CMM since ICC profiles are restricted to that range
+           but the PS color spaces are not. */
+        if (gs_color_space_is_PSCIE(penum->pcs) && 
+            penum->pcs->icc_equivalent != NULL) {
+            /* We have a PS CIE space.  Check the range */
+            if ( !check_cie_range(penum->pcs) ) {
+                /* It is not 0 to 1.  We will be doing decode
+                   plus an additional linear adjustment */
+                penum->cie_range = get_cie_range(penum->pcs);
+            }
+        }
         return &image_render_color_icc;
     }
 }
@@ -146,6 +196,53 @@ mask_color_matches(const byte *v, const gx_image_enum *penum,
 	    )
 	    return false;
     return true;
+}
+
+static inline float
+rescale_input_color(gs_range range, float input)
+{
+    return((input-range.rmin)/(range.rmax-range.rmin));
+}
+
+/* This one includes an extra adjustment for the CIE PS color space 
+   non standard range */
+static void 
+decode_row_cie(const gx_image_enum *penum, byte *psrc, int spp, byte *pdes, 
+                byte *bufend, gs_range range_array[])
+{
+    byte *curr_pos = pdes;
+    int k;
+    float temp;
+
+    while ( curr_pos < bufend ) {
+        for ( k = 0; k < spp; k ++ ) {
+            switch ( penum->map[k].decoding ) {
+                case sd_none:
+                    *curr_pos = *psrc;
+                    break;
+                case sd_lookup:	
+                    temp = penum->map[k].decode_lookup[(*psrc) >> 4]*255.0;
+                    temp = rescale_input_color(range_array[k], temp);
+                    temp = temp*255;
+                    if (temp > 255) temp = 255;
+                    if (temp < 0 ) temp = 0;
+                    *curr_pos = (unsigned char) temp;
+                    break;
+                case sd_compute:
+                    temp = penum->map[k].decode_base + 
+                        (*psrc) * penum->map[k].decode_factor;
+                    temp = rescale_input_color(range_array[k], temp);
+                    temp = temp*255;
+                    if (temp > 255) temp = 255;
+                    if (temp < 0 ) temp = 0;
+                    *curr_pos = (unsigned char) temp;
+                default:
+                    break;
+            }
+            curr_pos++;
+            psrc++;
+        }
+    }
 }
 
 static void 
@@ -276,7 +373,13 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
             if (need_decode) {
                 /* Need decode and CM.  This is slow but does not happen that often */
                 psrc_decode = gs_alloc_bytes(pis->memory,  w, "image_render_color_icc");
-                decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
+                if (penum->cie_range == NULL) {
+                    decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
+                } else {
+                    /* Decode needs to include adjustment for CIE range */
+                    decode_row_cie(penum, psrc, spp, psrc_decode, 
+                                    psrc_decode+w, penum->cie_range);
+                }
                 gscms_transform_color_buffer(penum->icc_link, &input_buff_desc, 
                                         &output_buff_desc, (void*) psrc_decode, 
                                         (void*) psrc_cm);

@@ -208,9 +208,8 @@ gsicc_mash_hash(gsicc_hashlink_t *hash)
 }
 
 void 
-gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash)
+gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash, int profile_size)
 {
-    int profile_size = gsicc_getprofilesize(buffer);
     gsicc_get_buff_hash(buffer,profile_size,hash);
 }
 
@@ -277,7 +276,8 @@ gsicc_get_cspace_hash(gsicc_manager_t *icc_manager,
         return;
     } else {
         /* We need to compute for this color space */
-        gsicc_get_icc_buff_hash(cmm_icc_profile_data->buffer, hash);
+        gsicc_get_icc_buff_hash(cmm_icc_profile_data->buffer, hash, 
+                                cmm_icc_profile_data->buffer_size);
         cmm_icc_profile_data->hashcode = *hash;
         cmm_icc_profile_data->hash_is_valid = true;
         return;
@@ -445,7 +445,8 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
     if (cms_input_profile == NULL) {
         if (gs_input_profile->buffer != NULL) {
             cms_input_profile = 
-                gsicc_get_profile_handle_buffer(gs_input_profile->buffer);
+                gsicc_get_profile_handle_buffer(gs_input_profile->buffer,
+                                                gs_input_profile->buffer_size);
             gs_input_profile->profile_handle = cms_input_profile;
         } else {
             /* See if we have a clist device pointer. */
@@ -468,7 +469,8 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
     if (cms_output_profile == NULL) {
         if (gs_output_profile->buffer != NULL) {
             cms_output_profile = 
-                gsicc_get_profile_handle_buffer(gs_output_profile->buffer);
+                gsicc_get_profile_handle_buffer(gs_output_profile->buffer,
+                                                gs_output_profile->buffer_size);
             gs_output_profile->profile_handle = cms_output_profile;
         } else {
               /* See if we have a clist device pointer. */

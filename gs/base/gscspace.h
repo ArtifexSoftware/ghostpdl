@@ -346,7 +346,8 @@ gs_color_space_index gs_color_space_get_index(const gs_color_space *);
 bool gs_color_space_is_CIE(const gs_color_space * pcs);
 bool gs_color_space_is_ICC(const gs_color_space * pcs);
 bool gs_color_space_is_PSCIE(const gs_color_space * pcs);
-int gs_colorspace_set_icc_equivalent(gs_color_space *pcs, gs_memory_t *memory);
+int gs_colorspace_set_icc_equivalent(gs_color_space *pcs, bool *islab,
+                                     gs_memory_t *memory);
 
 /* Get the number of components in a color space. */
 int gs_color_space_num_components(const gs_color_space *);

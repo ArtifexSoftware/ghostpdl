@@ -1096,7 +1096,8 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
 
     /* If the hash code is not valid then compute it now */
     if (icc_profile->hash_is_valid == false) {
-        gsicc_get_icc_buff_hash(icc_profile->buffer, &hashcode);
+        gsicc_get_icc_buff_hash(icc_profile->buffer, &hashcode, 
+                                icc_profile->buffer_size);
         icc_profile->hashcode = hashcode;
         icc_profile->hash_is_valid = true;
     } else {

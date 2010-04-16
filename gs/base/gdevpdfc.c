@@ -545,6 +545,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     byte *serialized = NULL, serialized0[100];
     pdf_resource_t *pres = NULL;
     int code;
+    bool islab = false;
 
     /* If color space is CIE based and we have compatibility then go ahead and use the ICC alternative */
     if ((pdev->CompatibilityLevel < 1.3) || !gs_color_space_is_PSCIE(pcs_in) ) {
@@ -554,7 +555,8 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
             pcs = pcs_in->icc_equivalent;
         } else {
             /* Need to create the equivalent object */
-            gs_colorspace_set_icc_equivalent(pcs_in, pdev->memory);
+            
+            gs_colorspace_set_icc_equivalent(pcs_in, &islab, pdev->memory);
             pcs = pcs_in->icc_equivalent;
         }
     }

@@ -2306,7 +2306,8 @@ $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gsccolor_h) $(gspaint_h) $(gzstate_h)\
  $(gxdevice_h) $(gxcmap_h) $(gxdcconv_h) $(gxdcolor_h)\
  $(gxistate_h) $(gxdevmem_h) $(gxcpath_h) $(gximage_h)\
- $(gsicc_h) $(gsicccache_h) $(gsicc_littlecms_h)
+ $(gsicc_h) $(gsicccache_h) $(gsicc_littlecms_h) $(gxcie_h)\
+ $(gscie_h)
 	$(GLCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
@@ -2505,7 +2506,7 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 	
 $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
- $(gsicc_littlecms_h) $(lcms_h)
+ $(gsicc_littlecms_h) $(lcms_h) $(gserror_h)
 	$(GLLCMSCC) $(GLO_)gsicc_littlecms.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
 	
 # Note that gsicc_create requires compile with lcms to obtain icc34.h 
