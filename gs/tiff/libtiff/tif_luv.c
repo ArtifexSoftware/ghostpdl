@@ -623,6 +623,7 @@ LogLuvEncodeTile(TIFF* tif, tidata_t bp, tsize_t cc, tsample_t s)
  */
 
 #include "uvcode.h"
+#include "oog_table.h"
 
 #ifndef UVSCALE
 #define U_NEU		0.210526316
@@ -750,62 +751,17 @@ LogL10fromY(double Y, int em)	/* get 10-bit LogL from Y */
 		return itrunc(64.*(log2(Y) + 12.), em);
 }
 
-#define NANGLES		100
-#define uv2ang(u, v)	( (NANGLES*.499999999/M_PI) \
-				* atan2((v)-V_NEU,(u)-U_NEU) + .5*NANGLES )
+#define uv2ang(u, v)	( (OOG_NANGLES*.499999999/M_PI) \
+				* atan2((v)-V_NEU,(u)-U_NEU) + .5*OOG_NANGLES )
 
 static int
 oog_encode(double u, double v)		/* encode out-of-gamut chroma */
 {
-	static int	oog_table[NANGLES];
-	static int	initialized = 0;
-	register int	i;
-	
-	if (!initialized) {		/* set up perimeter table */
-		double	eps[NANGLES], ua, va, ang, epsa;
-		int	ui, vi, ustep;
-		for (i = NANGLES; i--; )
-			eps[i] = 2.;
-		for (vi = UV_NVS; vi--; ) {
-			va = UV_VSTART + (vi+.5)*UV_SQSIZ;
-			ustep = uv_row[vi].nus-1;
-			if (vi == UV_NVS-1 || vi == 0 || ustep <= 0)
-				ustep = 1;
-			for (ui = uv_row[vi].nus-1; ui >= 0; ui -= ustep) {
-				ua = uv_row[vi].ustart + (ui+.5)*UV_SQSIZ;
-				ang = uv2ang(ua, va);
-                                i = (int) ang;
-				epsa = fabs(ang - (i+.5));
-				if (epsa < eps[i]) {
-					oog_table[i] = uv_row[vi].ncum + ui;
-					eps[i] = epsa;
-				}
-			}
-		}
-		for (i = NANGLES; i--; )	/* fill any holes */
-			if (eps[i] > 1.5) {
-				int	i1, i2;
-				for (i1 = 1; i1 < NANGLES/2; i1++)
-					if (eps[(i+i1)%NANGLES] < 1.5)
-						break;
-				for (i2 = 1; i2 < NANGLES/2; i2++)
-					if (eps[(i+NANGLES-i2)%NANGLES] < 1.5)
-						break;
-				if (i1 < i2)
-					oog_table[i] =
-						oog_table[(i+i1)%NANGLES];
-				else
-					oog_table[i] =
-						oog_table[(i+NANGLES-i2)%NANGLES];
-			}
-		initialized = 1;
-	}
-	i = (int) uv2ang(u, v);		/* look up hue angle */
+	int i = (int) uv2ang(u, v);		/* look up hue angle */
 	return (oog_table[i]);
 }
 
 #undef uv2ang
-#undef NANGLES
 
 #if !LOGLUV_PUBLIC
 static
