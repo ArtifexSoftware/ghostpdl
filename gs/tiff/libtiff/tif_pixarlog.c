@@ -102,9 +102,6 @@
 
 #define CODE_MASK 0x7ff         /* 11 bits. */
 
-static float  Fltsize;
-static float  LogK1, LogK2;
-
 #define REPEAT(n, op)   { int i; i=n; do { i--; op; } while (i>0); }
 
 static void
@@ -470,6 +467,9 @@ typedef	struct {
 	uint16  *FromLT2;
 	uint16  *From14; /* Really for 16-bit data, but we shift down 2 */
 	uint16  *From8;
+
+	float Fltsize;
+	float LogK1, LogK2;
 	
 } PixarLogState;
 
@@ -504,8 +504,8 @@ PixarLogMakeTables(PixarLogState *sp)
     b = exp(-c*ONE);	/* multiplicative scale factor [b*exp(c*ONE) = 1] */
     linstep = b*c*exp(1.);
 
-    LogK1 = (float)(1./c);	/* if (v >= 2)  token = k1*log(v*k2) */
-    LogK2 = (float)(1./b);
+    sp->LogK1 = (float)(1./c);	/* if (v >= 2)  token = k1*log(v*k2) */
+    sp->LogK2 = (float)(1./b);
     lt2size = (int)(2./linstep) + 1;
     FromLT2 = (uint16 *)_TIFFmalloc(lt2size*sizeof(uint16));
     From14 = (uint16 *)_TIFFmalloc(16384*sizeof(uint16));
@@ -575,7 +575,7 @@ PixarLogMakeTables(PixarLogState *sp)
 	From8[i] = j;
     }
 
-    Fltsize = (float)(lt2size/2);
+    sp->Fltsize = (float)(lt2size/2);
 
     sp->ToLinearF = ToLinearF;
     sp->ToLinear16 = ToLinear16;
@@ -875,20 +875,19 @@ PixarLogPreEncode(TIFF* tif, tsample_t s)
 }
 
 static void
-horizontalDifferenceF(float *ip, int n, int stride, uint16 *wp, uint16 *FromLT2)
+horizontalDifferenceF(PixarLogState *sp, float *ip, int n, uint16 *wp)
 {
 
     int32 r1, g1, b1, a1, r2, g2, b2, a2, mask;
-    float fltsize = Fltsize;
 
-#define  CLAMP(v) ( (v<(float)0.)   ? 0				\
-		  : (v<(float)2.)   ? FromLT2[(int)(v*fltsize)]	\
-		  : (v>(float)24.2) ? 2047			\
-		  : LogK1*log(v*LogK2) + 0.5 )
+#define  CLAMP(v) ( (v<(float)0.)   ? 0					\
+		  : (v<(float)2.)   ? sp->FromLT2[(int)(v*sp->Fltsize)]	\
+		  : (v>(float)24.2) ? 2047				\
+		  : sp->LogK1*log(v*sp->LogK2) + 0.5 )
 
     mask = CODE_MASK;
-    if (n >= stride) {
-	if (stride == 3) {
+    if (n >= sp->stride) {
+	if (sp->stride == 3) {
 	    r2 = wp[0] = (uint16) CLAMP(ip[0]);
 	    g2 = wp[1] = (uint16) CLAMP(ip[1]);
 	    b2 = wp[2] = (uint16) CLAMP(ip[2]);
@@ -901,7 +900,7 @@ horizontalDifferenceF(float *ip, int n, int stride, uint16 *wp, uint16 *FromLT2)
 		g1 = (int32) CLAMP(ip[1]); wp[1] = (g1-g2) & mask; g2 = g1;
 		b1 = (int32) CLAMP(ip[2]); wp[2] = (b1-b2) & mask; b2 = b1;
 	    }
-	} else if (stride == 4) {
+	} else if (sp->stride == 4) {
 	    r2 = wp[0] = (uint16) CLAMP(ip[0]);
 	    g2 = wp[1] = (uint16) CLAMP(ip[1]);
 	    b2 = wp[2] = (uint16) CLAMP(ip[2]);
@@ -919,15 +918,15 @@ horizontalDifferenceF(float *ip, int n, int stride, uint16 *wp, uint16 *FromLT2)
 	} else {
 	    ip += n - 1;	/* point to last one */
 	    wp += n - 1;	/* point to last one */
-	    n -= stride;
+	    n -= sp->stride;
 	    while (n > 0) {
-		REPEAT(stride, wp[0] = (uint16) CLAMP(ip[0]);
-				wp[stride] -= wp[0];
-				wp[stride] &= mask;
+		REPEAT(sp->stride, wp[0] = (uint16) CLAMP(ip[0]);
+				wp[sp->stride] -= wp[0];
+				wp[sp->stride] &= mask;
 				wp--; ip--)
-		n -= stride;
+		n -= sp->stride;
 	    }
-	    REPEAT(stride, wp[0] = (uint16) CLAMP(ip[0]); wp--; ip--)
+	    REPEAT(sp->stride, wp[0] = (uint16) CLAMP(ip[0]); wp--; ip--)
 	}
     }
 }
@@ -1077,8 +1076,7 @@ PixarLogEncode(TIFF* tif, tidata_t bp, tsize_t cc, tsample_t s)
 	for (i = 0, up = sp->tbuf; i < n; i += llen, up += llen) {
 		switch (sp->user_datafmt)  {
 		case PIXARLOGDATAFMT_FLOAT:
-			horizontalDifferenceF((float *)bp, llen, 
-				sp->stride, up, sp->FromLT2);
+			horizontalDifferenceF(sp, (float *)bp, llen, up);
 			bp += llen * sizeof(float);
 			break;
 		case PIXARLOGDATAFMT_16BIT:
