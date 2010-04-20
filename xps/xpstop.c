@@ -40,12 +40,12 @@ typedef struct xps_interp_instance_s xps_interp_instance_t;
 
 struct xps_interp_instance_s
 {
-    pl_interp_instance_t pl;		/* common part: must be first */
+    pl_interp_instance_t pl;            /* common part: must be first */
 
     pl_page_action_t pre_page_action;   /* action before page out */
-    void *pre_page_closure;		/* closure to call pre_page_action with */
+    void *pre_page_closure;             /* closure to call pre_page_action with */
     pl_page_action_t post_page_action;  /* action before page out */
-    void *post_page_closure;		/* closure to call post_page_action with */
+    void *post_page_closure;            /* closure to call post_page_action with */
 
     xps_context_t *ctx;
 };
@@ -59,20 +59,20 @@ xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t xps_characteristics =
     {
-	"XPS",
-	"PK", /* string to recognize XPS files */
-	"Artifex",
-	XPS_VERSION,
-	XPS_BUILD_DATE,
-	XPS_PARSER_MIN_INPUT_SIZE, /* Minimum input size */
+        "XPS",
+        "PK", /* string to recognize XPS files */
+        "Artifex",
+        XPS_VERSION,
+        XPS_BUILD_DATE,
+        XPS_PARSER_MIN_INPUT_SIZE, /* Minimum input size */
     };
     return &xps_characteristics;
 }
 
 static int
 xps_imp_allocate_interp(pl_interp_t **ppinterp,
-	const pl_interp_implementation_t *pimpl,
-	gs_memory_t *pmem)
+        const pl_interp_implementation_t *pimpl,
+        gs_memory_t *pmem)
 {
     static pl_interp_t interp; /* there's only one interpreter */
     *ppinterp = &interp;
@@ -82,18 +82,18 @@ xps_imp_allocate_interp(pl_interp_t **ppinterp,
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
 xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
-	pl_interp_t *pinterp,
-	gs_memory_t *pmem)
+        pl_interp_t *pinterp,
+        gs_memory_t *pmem)
 {
     xps_interp_instance_t *instance;
     xps_context_t *ctx;
     gs_state *pgs;
 
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
-	    sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
+            sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
 
     ctx = (xps_context_t *) gs_alloc_bytes(pmem,
-	    sizeof(xps_context_t), "xps_imp_allocate_interp_instance");
+            sizeof(xps_context_t), "xps_imp_allocate_interp_instance");
 
     pgs = gs_state_alloc(pmem);
 #ifdef ICCBRANCH
@@ -103,7 +103,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 
     if (!instance || !ctx || !pgs)
     {
-	if (instance)
+        if (instance)
             gs_free_object(pmem, instance, "xps_imp_allocate_interp_instance");
         if (ctx)
             gs_free_object(pmem, ctx, "xps_imp_allocate_interp_instance");
@@ -143,8 +143,8 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 /* Set a client language into an interperter instance */
 static int
 xps_imp_set_client_instance(pl_interp_instance_t *pinstance,
-	pl_interp_instance_t *pclient,
-	pl_interp_instance_clients_t which_client)
+        pl_interp_instance_t *pclient,
+        pl_interp_instance_clients_t which_client)
 {
     /* ignore */
     return 0;
@@ -152,7 +152,7 @@ xps_imp_set_client_instance(pl_interp_instance_t *pinstance,
 
 static int
 xps_imp_set_pre_page_action(pl_interp_instance_t *pinstance,
-	pl_page_action_t action, void *closure)
+        pl_page_action_t action, void *closure)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     instance->pre_page_action = action;
@@ -162,7 +162,7 @@ xps_imp_set_pre_page_action(pl_interp_instance_t *pinstance,
 
 static int
 xps_imp_set_post_page_action(pl_interp_instance_t *pinstance,
-	pl_page_action_t action, void *closure)
+        pl_page_action_t action, void *closure)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     instance->post_page_action = action;
@@ -178,7 +178,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     int code;
 
     gs_opendevice(pdevice);
-    
+
 #ifdef ICCBRANCH
     code = gsicc_init_device_profile(ctx->pgs, pdevice);
     if (code < 0)
@@ -187,7 +187,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
 
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
-	goto cleanup_setdevice;
+        goto cleanup_setdevice;
 
     gs_setaccuratecurves(ctx->pgs, true);  /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);
@@ -197,15 +197,15 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     /* Ensure that now. */
     code = gs_gsave(ctx->pgs);
     if (code < 0)
-	goto cleanup_gsave;
+        goto cleanup_gsave;
 
     code = gs_erasepage(ctx->pgs);
     if (code < 0)
-	goto cleanup_erase;
+        goto cleanup_erase;
 
     code = xps_install_halftone(ctx, pdevice);
     if (code < 0)
-	goto cleanup_halftone;
+        goto cleanup_halftone;
 
     return 0;
 
@@ -241,11 +241,11 @@ xps_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
 
     file = fopen(filename, "rb");
     if (!file)
-	return gs_error_ioerror;
+        return gs_error_ioerror;
 
     code = xps_process_file(ctx, file);
     if (code)
-	gs_catch1(code, "cannot process xps file (%s)", filename);
+        gs_catch1(code, "cannot process xps file (%s)", filename);
 
     fclose(file);
 
@@ -263,13 +263,13 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
     code = xps_process_data(ctx, pcursor);
     if (code == 1)
     {
-	code = xps_process_end_of_data(ctx);
-	if (code < 0)
-	    gs_catch(code, "cannot process xps data");
-	return e_ExitLanguage;
+        code = xps_process_end_of_data(ctx);
+        if (code < 0)
+            gs_catch(code, "cannot process xps data");
+        return e_ExitLanguage;
     }
     else if (code < 0)
-	gs_catch(code, "cannot process xps data");
+        gs_catch(code, "cannot process xps data");
     return code;
 }
 
@@ -294,7 +294,7 @@ xps_imp_process_eof(pl_interp_instance_t *pinstance)
 
     code = xps_process_end_of_data(ctx);
     if (code)
-	gs_catch(code, "cannot process xps file");
+        gs_catch(code, "cannot process xps file");
 
     return 0;
 }
@@ -302,10 +302,10 @@ xps_imp_process_eof(pl_interp_instance_t *pinstance)
 /* Report any errors after running a job */
 static int
 xps_imp_report_errors(pl_interp_instance_t *pinstance,
-	int code,           /* prev termination status */
-	long file_position, /* file position of error, -1 if unknown */
-	bool force_to_cout  /* force errors to cout */
-	)
+        int code,           /* prev termination status */
+        long file_position, /* file position of error, -1 if unknown */
+        bool force_to_cout  /* force errors to cout */
+        )
 {
     return 0;
 }
@@ -318,9 +318,9 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
     xps_context_t *ctx = instance->ctx;
 
     if (gs_debug_c('|'))
-	xps_zip_trace = 1;
+        xps_zip_trace = 1;
     if (gs_debug_c('|'))
-	xps_doc_trace = 1;
+        xps_doc_trace = 1;
 
     ctx->part_table = xps_hash_new(ctx);
     ctx->part_list = NULL;
@@ -332,7 +332,7 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
 
     ctx->use_transparency = 1;
     if (getenv("XPS_DISABLE_TRANSPARENCY"))
-	ctx->use_transparency = 0;
+        ctx->use_transparency = 0;
 
     ctx->opacity_only = 0;
     ctx->fill_rule = 0;
@@ -349,31 +349,31 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
     int i;
 
     if (gs_debug_c('|'))
-	xps_debug_parts(ctx);
+        xps_debug_parts(ctx);
     if (gs_debug_c('|'))
-	xps_debug_fixdocseq(ctx);
+        xps_debug_fixdocseq(ctx);
 
     /* Free XPS parsing stuff */
     {
-	xps_part_t *part = ctx->part_list;
-	while (part)
-	{
-	    xps_part_t *next = part->next;
-	    xps_free_part(ctx, part);
-	    part = next;
-	}
+        xps_part_t *part = ctx->part_list;
+        while (part)
+        {
+            xps_part_t *next = part->next;
+            xps_free_part(ctx, part);
+            part = next;
+        }
 
-	for (i = 0; i < ctx->zip_count; i++)
-	    xps_free(ctx, ctx->zip_table[i].name);
-	xps_free(ctx, ctx->zip_table);
+        for (i = 0; i < ctx->zip_count; i++)
+            xps_free(ctx, ctx->zip_table[i].name);
+        xps_free(ctx, ctx->zip_table);
 
-	xps_hash_free(ctx, ctx->part_table);
-	ctx->part_table = NULL;
-	ctx->part_list = NULL;
-	ctx->current_part = NULL;
+        xps_hash_free(ctx, ctx->part_table);
+        ctx->part_table = NULL;
+        ctx->part_list = NULL;
+        ctx->current_part = NULL;
 
-	xps_free_fixed_pages(ctx);
-	xps_free_fixed_documents(ctx);
+        xps_free_fixed_pages(ctx);
+        xps_free_fixed_documents(ctx);
     }
 
     return 0;
@@ -478,7 +478,7 @@ xps_show_page(xps_context_t *ctx, int num_copies, int flush)
     /* do post-page action */
     if (instance->post_page_action)
     {
-	code = instance->post_page_action(pinstance, instance->post_page_closure);
+        code = instance->post_page_action(pinstance, instance->post_page_closure);
         if (code < 0)
             return code;
     }
@@ -535,23 +535,23 @@ xps_install_halftone(xps_context_t *ctx, gx_device *pdevice)
 
     if (gx_device_must_halftone(pdevice))
     {
-	ht.type = ht_type_threshold;
-	ht.params.threshold.width = width;
-	ht.params.threshold.height = height;
-	ht.params.threshold.thresholds.data = thresh.data;
-	ht.params.threshold.thresholds.size = thresh.size;
-	ht.params.threshold.transfer = 0;
-	ht.params.threshold.transfer_closure.proc = 0;
+        ht.type = ht_type_threshold;
+        ht.params.threshold.width = width;
+        ht.params.threshold.height = height;
+        ht.params.threshold.thresholds.data = thresh.data;
+        ht.params.threshold.thresholds.size = thresh.size;
+        ht.params.threshold.transfer = 0;
+        ht.params.threshold.transfer_closure.proc = 0;
 
-	gs_settransfer(ctx->pgs, identity_transfer);
+        gs_settransfer(ctx->pgs, identity_transfer);
 
-	code = gs_sethalftone(ctx->pgs, &ht);
-	if (code < 0)
-	    return gs_throw(code, "could not install halftone");
+        code = gs_sethalftone(ctx->pgs, &ht);
+        if (code < 0)
+            return gs_throw(code, "could not install halftone");
 
-	code = gs_sethalftonephase(ctx->pgs, 0, 0);
-	if (code < 0)
-	    return gs_throw(code, "could not set halftone phase");
+        code = gs_sethalftonephase(ctx->pgs, 0, 0);
+        if (code < 0)
+            return gs_throw(code, "could not set halftone phase");
     }
 
     return 0;

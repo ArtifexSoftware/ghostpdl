@@ -43,8 +43,8 @@ xps_parse_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-	if (!strcmp(xps_tag(node), "VisualBrush.Visual"))
-	    visual_tag = xps_down(node);
+        if (!strcmp(xps_tag(node), "VisualBrush.Visual"))
+            visual_tag = xps_down(node);
     }
 
     visual_uri = base_uri;
@@ -52,7 +52,7 @@ xps_parse_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
     if (visual_tag)
     {
-	xps_parse_tiling_brush(ctx, visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
+        xps_parse_tiling_brush(ctx, visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
     }
 
     return 0;

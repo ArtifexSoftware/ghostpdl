@@ -47,7 +47,7 @@
 
 #include "gxpath.h"     /* gsshade.h depends on it */
 #include "gxfixed.h"    /* gsshade.h depends on it */
-#include "gxmatrix.h"	/* gxtype1.h depends on it */
+#include "gxmatrix.h"   /* gxtype1.h depends on it */
 #include "gsshade.h"
 #include "gsfunc.h"
 #include "gsfunc3.h"    /* we use stitching and exponential interp */
@@ -412,7 +412,7 @@ int xps_parse_radial_gradient_brush(xps_context_t *ctx, char *base_uri, xps_reso
 void xps_free_image(xps_context_t *ctx, xps_image_t *image);
 
 int xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root,
-	int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user);
+        int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user);
 
 void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix);
 void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);

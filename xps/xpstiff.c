@@ -512,8 +512,8 @@ xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
         for (k = 0; k < comps; k++)
         {
             v = getcomp(line, i * comps + k, bits);
-	    if (!alpha || k < comps - 1)
-		v = m - v;
+            if (!alpha || k < comps - 1)
+                v = m - v;
             putcomp(line, i * comps + k, bits, v);
         }
     }
@@ -640,15 +640,15 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
     case 2:
         image->xres = tiff->xresolution;
         image->yres = tiff->yresolution;
-	break;
+        break;
     case 3:
         image->xres = tiff->xresolution * 2.54 + 0.5;
         image->yres = tiff->yresolution * 2.54 + 0.5;
-	break;
+        break;
     default:
         image->xres = 96;
         image->yres = 96;
-	break;
+        break;
     }
 
     image->samples = gs_alloc_bytes(mem, image->stride * image->height, "samples");
@@ -681,31 +681,31 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
         switch (tiff->compression)
         {
         case 1:
-            error = xps_decode_tiff_uncompressed(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = xps_decode_tiff_uncompressed(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 2:
-            error = xps_decode_tiff_fax(mem, tiff, 2, rp, rp + rlen, wp, wp + wlen); 
+            error = xps_decode_tiff_fax(mem, tiff, 2, rp, rp + rlen, wp, wp + wlen);
             break;
         case 3:
-            error = xps_decode_tiff_fax(mem, tiff, 3, rp, rp + rlen, wp, wp + wlen); 
+            error = xps_decode_tiff_fax(mem, tiff, 3, rp, rp + rlen, wp, wp + wlen);
             break;
         case 4:
-            error = xps_decode_tiff_fax(mem, tiff, 4, rp, rp + rlen, wp, wp + wlen); 
+            error = xps_decode_tiff_fax(mem, tiff, 4, rp, rp + rlen, wp, wp + wlen);
             break;
         case 5:
-            error = xps_decode_tiff_lzw(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = xps_decode_tiff_lzw(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 6:
-            error = gs_throw(-1, "deprecated JPEG in TIFF compression not supported"); 
+            error = gs_throw(-1, "deprecated JPEG in TIFF compression not supported");
             break;
         case 7:
-            error = xps_decode_tiff_jpeg(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = xps_decode_tiff_jpeg(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 8:
-            error = xps_decode_tiff_flate(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = xps_decode_tiff_flate(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 32773:
-            error = xps_decode_tiff_packbits(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = xps_decode_tiff_packbits(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         default:
             error = gs_throw1(-1, "unknown TIFF compression: %d", tiff->compression);
@@ -918,9 +918,9 @@ xps_swap_byte_order(byte *buf, int n)
     int i, t;
     for (i = 0; i < n; i++)
     {
-	t = buf[i * 2 + 0];
-	buf[i * 2 + 0] = buf[i * 2 + 1];
-	buf[i * 2 + 1] = t;
+        t = buf[i * 2 + 0];
+        buf[i * 2 + 0] = buf[i * 2 + 1];
+        buf[i * 2 + 1] = t;
     }
 }
 
@@ -1016,8 +1016,8 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
      */
     if (image->bits == 16)
     {
-	if (tiff->order == TII)
-	    xps_swap_byte_order(image->samples, image->width * image->height * image->comps);
+        if (tiff->order == TII)
+            xps_swap_byte_order(image->samples, image->width * image->height * image->comps);
     }
 
     return gs_okay;

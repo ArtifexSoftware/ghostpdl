@@ -30,10 +30,10 @@ void xps_debug_parts(xps_context_t *ctx)
     xps_relation_t *rel;
     while (part)
     {
-	dprintf2("part '%s' size=%d\n", part->name, part->size);
-	for (rel = part->relations; rel; rel = rel->next)
-	    dprintf2("     target=%s type=%s\n", rel->target, rel->type);
-	part = part->next;
+        dprintf2("part '%s' size=%d\n", part->name, part->size);
+        for (rel = part->relations; rel; rel = rel->next)
+            dprintf2("     target=%s type=%s\n", rel->target, rel->type);
+        part = part->next;
     }
 }
 
@@ -44,7 +44,7 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
 
     part = xps_alloc(ctx, sizeof(xps_part_t));
     if (!part)
-	return NULL;
+        return NULL;
 
     part->name = NULL;
     part->size = 0;
@@ -63,21 +63,21 @@ xps_new_part(xps_context_t *ctx, char *name, int capacity)
     part->name = xps_strdup(ctx, name);
     if (!part->name)
     {
-	xps_free(ctx, part);
-	return NULL;
+        xps_free(ctx, part);
+        return NULL;
     }
 
     if (capacity == 0)
-	capacity = 1024;
+        capacity = 1024;
 
     part->size = 0;
     part->capacity = capacity;
     part->data = xps_alloc(ctx, part->capacity);
     if (!part->data)
     {
-	xps_free(ctx, part->name);
-	xps_free(ctx, part);
-	return NULL;
+        xps_free(ctx, part->name);
+        xps_free(ctx, part);
+        return NULL;
     }
 
     part->next = NULL;
@@ -96,7 +96,7 @@ void
 xps_free_part_data(xps_context_t *ctx, xps_part_t *part)
 {
     if (part->data)
-	xps_free(ctx, part->data);
+        xps_free(ctx, part->data);
     part->data = NULL;
     part->size = 0;
     part->capacity = 0;
@@ -110,12 +110,12 @@ xps_release_part(xps_context_t *ctx, xps_part_t *part)
     /* since fonts and colorspaces need to live for the duration of
        the job there's no point in freeing those parts */
     if (part->font || part->icc)
-	return;
+        return;
 
     /* never free the part data if we're in feed mode,
        since we may need it later */
     if (ctx->file)
-	xps_free_part_data(ctx, part);
+        xps_free_part_data(ctx, part);
 }
 
 void
@@ -124,10 +124,10 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
     xps_free_part_data(ctx, part);
 
     if (part->font)
-    	xps_free_font(ctx, part->font);
+        xps_free_font(ctx, part->font);
 
     if (part->name)
-	xps_free(ctx, part->name);
+        xps_free(ctx, part->name);
     part->name = NULL;
 
     xps_free_relations(ctx, part->relations);
@@ -157,11 +157,11 @@ xps_read_part(xps_context_t *ctx, char *name)
     part = xps_hash_lookup(ctx->part_table, name);
     if (ctx->file)
     {
-	if (!part)
-	    part = xps_read_zip_part(ctx, name);
-	if (part && !part->complete)
-	    part = xps_read_zip_part(ctx, name);
-	return part;
+        if (!part)
+            part = xps_read_zip_part(ctx, name);
+        if (part && !part->complete)
+            part = xps_read_zip_part(ctx, name);
+        return part;
     }
     return part;
 }
@@ -180,13 +180,13 @@ xps_part_name_from_relation_part_name(char *output, char *name)
     q = strstr(name, "_rels/");
     if (p)
     {
-	*p = 0;
-	strcat(output, q + 6);
+        *p = 0;
+        strcat(output, q + 6);
     }
     p = strstr(output, ".rels");
     if (p)
     {
-	*p = 0;
+        *p = 0;
     }
 }
 
@@ -201,28 +201,28 @@ xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
     /* No existing part found. Create a blank part and hook it in. */
     if (part == NULL)
     {
-	part = xps_new_part(ctx, source, 0);
-	if (!part)
-	    return gs_rethrow(-1, "cannot create new part");
+        part = xps_new_part(ctx, source, 0);
+        if (!part)
+            return gs_rethrow(-1, "cannot create new part");
     }
 
     /* Check for duplicates. */
     for (node = part->relations; node; node = node->next)
-	if (!strcmp(node->target, target))
-	    return 0;
+        if (!strcmp(node->target, target))
+            return 0;
 
     node = xps_alloc(ctx, sizeof(xps_relation_t));
     if (!node)
-	return gs_rethrow(-1, "cannot create new relation");
+        return gs_rethrow(-1, "cannot create new relation");
 
     node->target = xps_strdup(ctx, target);
     node->type = xps_strdup(ctx, type);
     if (!node->target || !node->type)
     {
-	if (node->target) xps_free(ctx, node->target);
-	if (node->type) xps_free(ctx, node->type);
-	xps_free(ctx, node);
-	return gs_rethrow(-1, "cannot copy relation strings");
+        if (node->target) xps_free(ctx, node->target);
+        if (node->type) xps_free(ctx, node->type);
+        xps_free(ctx, node);
+        return gs_rethrow(-1, "cannot copy relation strings");
     }
 
     node->next = part->relations;
@@ -230,7 +230,7 @@ xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type)
 
     if (xps_doc_trace)
     {
-	dprintf2("  relation %s -> %s\n", source, target);
+        dprintf2("  relation %s -> %s\n", source, target);
     }
 
     return 0;
@@ -242,11 +242,11 @@ xps_free_relations(xps_context_t *ctx, xps_relation_t *node)
     xps_relation_t *next;
     while (node)
     {
-	next = node->next;
-	xps_free(ctx, node->target);
-	xps_free(ctx, node->type);
-	xps_free(ctx, node);
-	node = next;
+        next = node->next;
+        xps_free(ctx, node->target);
+        xps_free(ctx, node->type);
+        xps_free(ctx, node);
+        node = next;
     }
 }
 
@@ -261,18 +261,18 @@ void xps_debug_fixdocseq(xps_context_t *ctx)
     xps_page_t *page = ctx->first_page;
 
     if (ctx->start_part)
-	dprintf1("start part %s\n", ctx->start_part);
+        dprintf1("start part %s\n", ctx->start_part);
 
     while (fixdoc)
     {
-	dprintf1("fixdoc %s\n", fixdoc->name);
-	fixdoc = fixdoc->next;
+        dprintf1("fixdoc %s\n", fixdoc->name);
+        fixdoc = fixdoc->next;
     }
 
     while (page)
     {
-	dprintf3("page %s w=%d h=%d\n", page->name, page->width, page->height);
-	page = page->next;
+        dprintf3("page %s w=%d h=%d\n", page->name, page->width, page->height);
+        page = page->next;
     }
 }
 
@@ -283,34 +283,34 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
 
     /* Check for duplicates first */
     for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
-	if (!strcmp(fixdoc->name, name))
-	    return 0;
+        if (!strcmp(fixdoc->name, name))
+            return 0;
 
     if (xps_doc_trace)
-	dprintf1("doc: adding fixdoc %s\n", name);
+        dprintf1("doc: adding fixdoc %s\n", name);
 
     fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
     if (!fixdoc)
-	return -1;
+        return -1;
 
     fixdoc->name = xps_strdup(ctx, name);
     if (!fixdoc->name)
     {
-	xps_free(ctx, fixdoc);
-	return -1;
+        xps_free(ctx, fixdoc);
+        return -1;
     }
 
     fixdoc->next = NULL;
 
     if (!ctx->first_fixdoc)
     {
-	ctx->first_fixdoc = fixdoc;
-	ctx->last_fixdoc = fixdoc;
+        ctx->first_fixdoc = fixdoc;
+        ctx->last_fixdoc = fixdoc;
     }
     else
     {
-	ctx->last_fixdoc->next = fixdoc;
-	ctx->last_fixdoc = fixdoc;
+        ctx->last_fixdoc->next = fixdoc;
+        ctx->last_fixdoc = fixdoc;
     }
 
     return 0;
@@ -322,10 +322,10 @@ xps_free_fixed_documents(xps_context_t *ctx)
     xps_document_t *node = ctx->first_fixdoc;
     while (node)
     {
-	xps_document_t *next = node->next;
-	xps_free(ctx, node->name);
-	xps_free(ctx, node);
-	node = next;
+        xps_document_t *next = node->next;
+        xps_free(ctx, node->name);
+        xps_free(ctx, node);
+        node = next;
     }
     ctx->first_fixdoc = NULL;
     ctx->last_fixdoc = NULL;
@@ -338,21 +338,21 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 
     /* Check for duplicates first */
     for (page = ctx->first_page; page; page = page->next)
-	if (!strcmp(page->name, name))
-	    return 0;
+        if (!strcmp(page->name, name))
+            return 0;
 
     if (xps_doc_trace)
-	dprintf1("doc: adding page %s\n", name);
+        dprintf1("doc: adding page %s\n", name);
 
     page = xps_alloc(ctx, sizeof(xps_page_t));
     if (!page)
-	return -1;
+        return -1;
 
     page->name = xps_strdup(ctx, name);
     if (!page->name)
     {
-	xps_free(ctx, page);
-	return -1;
+        xps_free(ctx, page);
+        return -1;
     }
 
     page->width = width;
@@ -361,18 +361,18 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 
     if (!ctx->first_page)
     {
-	ctx->first_page = page;
-	ctx->last_page = page;
+        ctx->first_page = page;
+        ctx->last_page = page;
     }
     else
     {
-	ctx->last_page->next = page;
-	ctx->last_page = page;
+        ctx->last_page->next = page;
+        ctx->last_page = page;
     }
 
     /* first page, or we processed all the previous pages */
     if (ctx->next_page == NULL)
-	ctx->next_page = page;
+        ctx->next_page = page;
 
     return 0;
 }
@@ -383,10 +383,10 @@ xps_free_fixed_pages(xps_context_t *ctx)
     xps_page_t *node = ctx->first_page;
     while (node)
     {
-	xps_page_t *next = node->next;
-	xps_free(ctx, node->name);
-	xps_free(ctx, node);
-	node = next;
+        xps_page_t *next = node->next;
+        xps_free(ctx, node->name);
+        xps_free(ctx, node);
+        node = next;
     }
     ctx->first_page = NULL;
     ctx->last_page = NULL;
@@ -417,67 +417,67 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
 
     if (!strcmp(name, "Relationship"))
     {
-	char realpart[1024];
-	char tgtbuf[1024];
-	char *target = NULL;
-	char *type = NULL;
+        char realpart[1024];
+        char tgtbuf[1024];
+        char *target = NULL;
+        char *type = NULL;
 
-	for (i = 0; atts[i]; i += 2)
-	{
-	    if (!strcmp(atts[i], "Target"))
-		target = atts[i + 1];
-	    if (!strcmp(atts[i], "Type"))
-		type = atts[i + 1];
-	}
+        for (i = 0; atts[i]; i += 2)
+        {
+            if (!strcmp(atts[i], "Target"))
+                target = atts[i + 1];
+            if (!strcmp(atts[i], "Type"))
+                type = atts[i + 1];
+        }
 
-	if (target && type)
-	{
-	    xps_part_name_from_relation_part_name(realpart, ctx->part_uri);
-	    xps_absolute_path(tgtbuf, ctx->base_uri, target);
-	    xps_add_relation(ctx, realpart, tgtbuf, type);
-	}
+        if (target && type)
+        {
+            xps_part_name_from_relation_part_name(realpart, ctx->part_uri);
+            xps_absolute_path(tgtbuf, ctx->base_uri, target);
+            xps_add_relation(ctx, realpart, tgtbuf, type);
+        }
     }
 
     if (!strcmp(name, "DocumentReference"))
     {
-	char *source = NULL;
-	char srcbuf[1024];
+        char *source = NULL;
+        char srcbuf[1024];
 
-	for (i = 0; atts[i]; i += 2)
-	{
-	    if (!strcmp(atts[i], "Source"))
-		source = atts[i + 1];
-	}
+        for (i = 0; atts[i]; i += 2)
+        {
+            if (!strcmp(atts[i], "Source"))
+                source = atts[i + 1];
+        }
 
-	if (source)
-	{
-	    xps_absolute_path(srcbuf, ctx->base_uri, source);
-	    xps_add_fixed_document(ctx, srcbuf);
-	}
+        if (source)
+        {
+            xps_absolute_path(srcbuf, ctx->base_uri, source);
+            xps_add_fixed_document(ctx, srcbuf);
+        }
     }
 
     if (!strcmp(name, "PageContent"))
     {
-	char *source = NULL;
-	char srcbuf[1024];
-	int width = 0;
-	int height = 0;
+        char *source = NULL;
+        char srcbuf[1024];
+        int width = 0;
+        int height = 0;
 
-	for (i = 0; atts[i]; i += 2)
-	{
-	    if (!strcmp(atts[i], "Source"))
-		source = atts[i + 1];
-	    if (!strcmp(atts[i], "Width"))
-		width = atoi(atts[i + 1]);
-	    if (!strcmp(atts[i], "Height"))
-		height = atoi(atts[i + 1]);
-	}
+        for (i = 0; atts[i]; i += 2)
+        {
+            if (!strcmp(atts[i], "Source"))
+                source = atts[i + 1];
+            if (!strcmp(atts[i], "Width"))
+                width = atoi(atts[i + 1]);
+            if (!strcmp(atts[i], "Height"))
+                height = atoi(atts[i + 1]);
+        }
 
-	if (source)
-	{
-	    xps_absolute_path(srcbuf, ctx->base_uri, source);
-	    xps_add_fixed_page(ctx, srcbuf, width, height);
-	}
+        if (source)
+        {
+            xps_absolute_path(srcbuf, ctx->base_uri, source);
+            xps_add_fixed_page(ctx, srcbuf, width, height);
+        }
     }
 }
 
@@ -492,7 +492,7 @@ xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
     strcpy(buf, part->name);
     s = strrchr(buf, '/');
     if (s)
-	s[0] = 0;
+        s[0] = 0;
 
     /* _rels parts are voodoo: their URI references are from
      * the part they are associated with, not the actual _rels
@@ -500,14 +500,14 @@ xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
      */
     s = strstr(buf, "/_rels");
     if (s)
-	*s = 0;
+        *s = 0;
 
     ctx->base_uri = buf;
     ctx->part_uri = part->name;
 
     xp = XML_ParserCreate(NULL);
     if (!xp)
-	return -1;
+        return -1;
 
     XML_SetUserData(xp, ctx);
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
@@ -539,7 +539,7 @@ xps_trim_url(char *path)
 {
     char *p = strrchr(path, '#');
     if (p)
-	*p = 0;
+        *p = 0;
 }
 
 static void
@@ -555,15 +555,15 @@ xps_parse_color_relation(xps_context_t *ctx, char *string)
     sp = strchr(buf, ' ');
     if (sp)
     {
-	sp ++;
-	ep = strchr(sp, ' ');
-	if (ep)
-	{
-	    *ep = 0;
-	    xps_absolute_path(path, ctx->base_uri, sp);
-	    xps_trim_url(path);
-	    xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
-	}
+        sp ++;
+        ep = strchr(sp, ' ');
+        if (ep)
+        {
+            *ep = 0;
+            xps_absolute_path(path, ctx->base_uri, sp);
+            xps_trim_url(path);
+            xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
+        }
     }
 }
 
@@ -578,36 +578,36 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
 
     if (strstr(string, "{ColorConvertedBitmap") == string)
     {
-	strcpy(buf, string);
-	sp = strchr(buf, ' ');
-	if (sp)
-	{
-	    sp ++;
-	    ep = strchr(sp, ' ');
-	    if (ep)
-	    {
-		*ep = 0;
-		xps_absolute_path(path, ctx->base_uri, sp);
-		xps_trim_url(path);
-		xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
+        strcpy(buf, string);
+        sp = strchr(buf, ' ');
+        if (sp)
+        {
+            sp ++;
+            ep = strchr(sp, ' ');
+            if (ep)
+            {
+                *ep = 0;
+                xps_absolute_path(path, ctx->base_uri, sp);
+                xps_trim_url(path);
+                xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
 
-		sp = ep + 1;
-		ep = strchr(sp, '}');
-		if (ep)
-		{
-		    *ep = 0;
-		    xps_absolute_path(path, ctx->base_uri, sp);
-		    xps_trim_url(path);
-		    xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
-		}
-	    }
-	}
+                sp = ep + 1;
+                ep = strchr(sp, '}');
+                if (ep)
+                {
+                    *ep = 0;
+                    xps_absolute_path(path, ctx->base_uri, sp);
+                    xps_trim_url(path);
+                    xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
+                }
+            }
+        }
     }
     else
     {
-	xps_absolute_path(path, ctx->base_uri, string);
-	xps_trim_url(path);
-	xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
+        xps_absolute_path(path, ctx->base_uri, string);
+        xps_trim_url(path);
+        xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
     }
 }
 
@@ -621,55 +621,55 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
 
     name = strchr(ns_name, ' ');
     if (name)
-	name ++;
+        name ++;
     else
-	name = ns_name;
+        name = ns_name;
 
     if (!strcmp(name, "Glyphs"))
     {
-	for (i = 0; atts[i]; i += 2)
-	{
-	    if (!strcmp(atts[i], "FontUri"))
-	    {
-		xps_absolute_path(path, ctx->base_uri, atts[i+1]);
-		xps_trim_url(path);
-		xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
-	    }
-	}
+        for (i = 0; atts[i]; i += 2)
+        {
+            if (!strcmp(atts[i], "FontUri"))
+            {
+                xps_absolute_path(path, ctx->base_uri, atts[i+1]);
+                xps_trim_url(path);
+                xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
+            }
+        }
     }
 
     if (!strcmp(name, "ImageBrush"))
     {
-	for (i = 0; atts[i]; i += 2)
-	    if (!strcmp(atts[i], "ImageSource"))
-		xps_parse_image_relation(ctx, atts[i + 1]);
+        for (i = 0; atts[i]; i += 2)
+            if (!strcmp(atts[i], "ImageSource"))
+                xps_parse_image_relation(ctx, atts[i + 1]);
     }
 
     if (!strcmp(name, "ResourceDictionary"))
     {
-	for (i = 0; atts[i]; i += 2)
-	{
-	    if (!strcmp(atts[i], "Source"))
-	    {
-		xps_absolute_path(path, ctx->base_uri, atts[i+1]);
-		xps_trim_url(path);
-		xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE_RECURSIVE);
-	    }
-	}
+        for (i = 0; atts[i]; i += 2)
+        {
+            if (!strcmp(atts[i], "Source"))
+            {
+                xps_absolute_path(path, ctx->base_uri, atts[i+1]);
+                xps_trim_url(path);
+                xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE_RECURSIVE);
+            }
+        }
     }
 
     if (!strcmp(name, "SolidColorBrush") || !strcmp(name, "GradientStop"))
     {
-	for (i = 0; atts[i]; i += 2)
-	    if (!strcmp(atts[i], "Color"))
-		xps_parse_color_relation(ctx, atts[i + 1]);
+        for (i = 0; atts[i]; i += 2)
+            if (!strcmp(atts[i], "Color"))
+                xps_parse_color_relation(ctx, atts[i + 1]);
     }
 
     if (!strcmp(name, "Glyphs") || !strcmp(name, "Path"))
     {
-	for (i = 0; atts[i]; i += 2)
-	    if (!strcmp(atts[i], "Fill") || !strcmp(atts[i], "Stroke"))
-		xps_parse_color_relation(ctx, atts[i + 1]);
+        for (i = 0; atts[i]; i += 2)
+            if (!strcmp(atts[i], "Fill") || !strcmp(atts[i], "Stroke"))
+                xps_parse_color_relation(ctx, atts[i + 1]);
     }
 }
 
@@ -684,17 +684,17 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
     strcpy(buf, part->name);
     s = strrchr(buf, '/');
     if (s)
-	s[0] = 0;
+        s[0] = 0;
 
     ctx->part_uri = part->name;
     ctx->base_uri = buf;
 
     if (xps_doc_trace)
-	dprintf1("doc: parsing relations from content (%s)\n", part->name);
+        dprintf1("doc: parsing relations from content (%s)\n", part->name);
 
     xp = XML_ParserCreateNS(NULL, ' ');
     if (!xp)
-	return -1;
+        return -1;
 
     XML_SetUserData(xp, ctx);
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);

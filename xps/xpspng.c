@@ -112,13 +112,13 @@ int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
 
     if (png_get_color_type(png, info) == PNG_COLOR_TYPE_PALETTE)
     {
-	png_set_palette_to_rgb(png);
+        png_set_palette_to_rgb(png);
     }
 
     if (png_get_valid(png, info, PNG_INFO_tRNS))
     {
-	/* this will also expand the depth to 8-bits */
-	png_set_tRNS_to_alpha(png);
+        /* this will also expand the depth to 8-bits */
+        png_set_tRNS_to_alpha(png);
     }
 
     png_read_update_info(png, info);

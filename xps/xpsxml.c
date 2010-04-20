@@ -47,7 +47,7 @@ static char *skip_namespace(char *s)
 {
     char *p = strchr(s, ' ');
     if (p)
-	return p + 1;
+        return p + 1;
     return s;
 }
 
@@ -64,7 +64,7 @@ static void on_open_tag(void *zp, char *ns_name, char **atts)
     int i;
 
     if (parser->error)
-	return;
+        return;
 
     /* check namespace */
 
@@ -73,20 +73,20 @@ static void on_open_tag(void *zp, char *ns_name, char **atts)
     p = strstr(ns_name, NS_XPS);
     if (p == ns_name)
     {
-	name = strchr(ns_name, ' ') + 1;
+        name = strchr(ns_name, ' ') + 1;
     }
 
     p = strstr(ns_name, NS_MC);
     if (p == ns_name)
     {
-	name = strchr(ns_name, ' ') + 1;
-	parser->compat = 1;
+        name = strchr(ns_name, ' ') + 1;
+        parser->compat = 1;
     }
 
     if (!name)
     {
-	dprintf1("unknown namespace: %s\n", ns_name);
-	name = ns_name;
+        dprintf1("unknown namespace: %s\n", ns_name);
+        name = ns_name;
     }
 
     /* count size to alloc */
@@ -96,17 +96,17 @@ static void on_open_tag(void *zp, char *ns_name, char **atts)
     textlen = 0;
     for (i = 0; atts[i]; i++)
     {
-	attslen += sizeof(char*);
-	if ((i & 1) == 0)
-	    textlen += strlen(skip_namespace(atts[i])) + 1;
-	else
-	    textlen += strlen(atts[i]) + 1;
+        attslen += sizeof(char*);
+        if ((i & 1) == 0)
+            textlen += strlen(skip_namespace(atts[i])) + 1;
+        else
+            textlen += strlen(atts[i]) + 1;
     }
 
     item = xps_alloc(ctx, sizeof(xps_item_t) + attslen + namelen + textlen);
     if (!item)
     {
-	parser->error = "out of memory";
+        parser->error = "out of memory";
     }
 
     /* copy strings to new memory */
@@ -118,12 +118,12 @@ static void on_open_tag(void *zp, char *ns_name, char **atts)
     strcpy(item->name, name);
     for (i = 0; atts[i]; i++)
     {
-	item->atts[i] = p;
-	if ((i & 1) == 0)
-	    strcpy(item->atts[i], skip_namespace(atts[i]));
-	else
-	    strcpy(item->atts[i], atts[i]);
-	p += strlen(p) + 1;
+        item->atts[i] = p;
+        if ((i & 1) == 0)
+            strcpy(item->atts[i], skip_namespace(atts[i]));
+        else
+            strcpy(item->atts[i], atts[i]);
+        p += strlen(p) + 1;
     }
 
     item->atts[i] = 0;
@@ -136,21 +136,21 @@ static void on_open_tag(void *zp, char *ns_name, char **atts)
 
     if (!parser->head)
     {
-	parser->root = item;
-	parser->head = item;
-	return;
+        parser->root = item;
+        parser->head = item;
+        return;
     }
 
     if (!parser->head->down)
     {
-	parser->head->down = item;
-	parser->head = item;
-	return;
+        parser->head->down = item;
+        parser->head = item;
+        return;
     }
 
     tail = parser->head->down;
     while (tail->next)
-	tail = tail->next;
+        tail = tail->next;
     tail->next = item;
     parser->head = item;
 }
@@ -160,10 +160,10 @@ static void on_close_tag(void *zp, char *name)
     xps_parser_t *parser = zp;
 
     if (parser->error)
-	return;
+        return;
 
     if (parser->head)
-	parser->head = parser->head->up;
+        parser->head = parser->head->up;
 }
 
 static inline int is_xml_space(int c)
@@ -179,30 +179,30 @@ static void on_text(void *zp, char *buf, int len)
     int i;
 
     if (parser->error)
-	return;
+        return;
 
     for (i = 0; i < len; i++)
     {
-	if (!is_xml_space(buf[i]))
-	{
-	    char *tmp = xps_alloc(ctx, len + 1);
-	    if (!tmp)
-	    {
-		parser->error = "out of memory";
-		return;
-	    }
+        if (!is_xml_space(buf[i]))
+        {
+            char *tmp = xps_alloc(ctx, len + 1);
+            if (!tmp)
+            {
+                parser->error = "out of memory";
+                return;
+            }
 
-	    atts[0] = "";
-	    atts[1] = tmp;
-	    atts[2] = NULL;
+            atts[0] = "";
+            atts[1] = tmp;
+            atts[2] = NULL;
 
-	    memcpy(tmp, buf, len);
-	    tmp[len] = 0;
-	    on_open_tag(zp, "", atts);
-	    on_close_tag(zp, "");
-	    xps_free(ctx, tmp);
-	    return;
-	}
+            memcpy(tmp, buf, len);
+            tmp[len] = 0;
+            on_open_tag(zp, "", atts);
+            on_close_tag(zp, "");
+            xps_free(ctx, tmp);
+            return;
+        }
     }
 }
 
@@ -229,8 +229,8 @@ xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
     xp = XML_ParserCreateNS(NULL, ' ');
     if (!xp)
     {
-	gs_throw(-1, "xml error: could not create expat parser");
-	return NULL;
+        gs_throw(-1, "xml error: could not create expat parser");
+        return NULL;
     }
 
     XML_SetUserData(xp, &parser);
@@ -242,17 +242,17 @@ xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
     code = XML_Parse(xp, (char*)buf, len, 1);
     if (code == 0)
     {
-	if (parser.root)
-	    xps_free_item(ctx, parser.root);
-	XML_ParserFree(xp);
-	gs_throw1(-1, "xml error: %s", XML_ErrorString(XML_GetErrorCode(xp)));
-	return NULL;
+        if (parser.root)
+            xps_free_item(ctx, parser.root);
+        XML_ParserFree(xp);
+        gs_throw1(-1, "xml error: %s", XML_ErrorString(XML_GetErrorCode(xp)));
+        return NULL;
     }
 
     XML_ParserFree(xp);
 
     if (parser.compat)
-	xps_process_compatibility(ctx, parser.root);
+        xps_process_compatibility(ctx, parser.root);
 
     return parser.root;
 }
@@ -280,8 +280,8 @@ xps_att(xps_item_t *item, char *att)
 {
     int i;
     for (i = 0; item->atts[i]; i += 2)
-	if (!strcmp(item->atts[i], att))
-	    return item->atts[i + 1];
+        if (!strcmp(item->atts[i], att))
+            return item->atts[i + 1];
     return NULL;
 }
 
@@ -291,18 +291,18 @@ xps_free_item(xps_context_t *ctx, xps_item_t *item)
     xps_item_t *next;
     while (item)
     {
-	next = item->next;
-	if (item->down)
-	    xps_free_item(ctx, item->down);
-	xps_free(ctx, item);
-	item = next;
+        next = item->next;
+        if (item->down)
+            xps_free_item(ctx, item->down);
+        xps_free(ctx, item);
+        item = next;
     }
 }
 
 static void indent(int n)
 {
     while (n--)
-	printf("  ");
+        printf("  ");
 }
 
 /* forward prototype for recursion */
@@ -315,32 +315,32 @@ xps_debug_item_imp(xps_item_t *item, int level, int loop)
 
     while (item)
     {
-	indent(level);
+        indent(level);
 
-	if (strlen(item->name) == 0)
-	    printf("%s\n", item->atts[1]);
-	else
-	{
-	    printf("<%s", item->name);
+        if (strlen(item->name) == 0)
+            printf("%s\n", item->atts[1]);
+        else
+        {
+            printf("<%s", item->name);
 
-	    for (i = 0; item->atts[i]; i += 2)
-		printf(" %s=\"%s\"", item->atts[i], item->atts[i+1]);
+            for (i = 0; item->atts[i]; i += 2)
+                printf(" %s=\"%s\"", item->atts[i], item->atts[i+1]);
 
-	    if (item->down)
-	    {
-		printf(">\n");
-		xps_debug_item_imp(item->down, level + 1, 1);
-		indent(level);
-		printf("</%s>\n", item->name);
-	    }
-	    else
-		printf(" />\n");
-	}
+            if (item->down)
+            {
+                printf(">\n");
+                xps_debug_item_imp(item->down, level + 1, 1);
+                indent(level);
+                printf("</%s>\n", item->name);
+            }
+            else
+                printf(" />\n");
+        }
 
-	item = item->next;
+        item = item->next;
 
-	if (!loop)
-	    return;
+        if (!loop)
+            return;
     }
 }
 

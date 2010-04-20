@@ -21,15 +21,15 @@ xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name, char **u
     xps_resource_t *head, *node;
     for (head = dict; head; head = head->parent)
     {
-	for (node = head; node; node = node->next)
-	{
-	    if (!strcmp(node->name, name))
-	    {
-		if (urip && head->base_uri)
-		    *urip = head->base_uri;
-		return node->data;
-	    }
-	}
+        for (node = head; node; node = node->next)
+        {
+            if (!strcmp(node->name, name))
+            {
+                if (urip && head->base_uri)
+                    *urip = head->base_uri;
+                return node->data;
+            }
+        }
     }
     return NULL;
 }
@@ -41,28 +41,28 @@ xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att
     char *s;
 
     if (strstr(att, "{StaticResource ") != att)
-	return NULL;
+        return NULL;
 
     strcpy(name, att + 16);
     s = strrchr(name, '}');
     if (s)
-	*s = 0;
+        *s = 0;
 
     return xps_find_resource(ctx, dict, name, urip);
 }
 
 int
 xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict,
-	char **attp, xps_item_t **tagp, char **urip)
+        char **attp, xps_item_t **tagp, char **urip)
 {
     if (*attp)
     {
-	xps_item_t *rsrc = xps_parse_resource_reference(ctx, dict, *attp, urip);
-	if (rsrc)
-	{
-	    *attp = NULL;
-	    *tagp = rsrc;
-	}
+        xps_item_t *rsrc = xps_parse_resource_reference(ctx, dict, *attp, urip);
+        if (rsrc)
+        {
+            *attp = NULL;
+            *tagp = rsrc;
+        }
     }
     return 0;
 }
@@ -82,33 +82,33 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
     part = xps_read_part(ctx, part_name);
     if (!part)
     {
-	gs_throw1(-1, "cannot find remote resource part '%s'", part_name);
-	return NULL;
+        gs_throw1(-1, "cannot find remote resource part '%s'", part_name);
+        return NULL;
     }
 
     xml = xps_parse_xml(ctx, part->data, part->size);
     if (!xml)
     {
-	gs_rethrow(-1, "cannot parse xml");
-	return NULL;
+        gs_rethrow(-1, "cannot parse xml");
+        return NULL;
     }
 
     if (strcmp(xps_tag(xml), "ResourceDictionary"))
     {
-	gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(xml));
-	return NULL;
+        gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(xml));
+        return NULL;
     }
 
     strcpy(part_uri, part_name);
     s = strrchr(part_uri, '/');
     if (s)
-	s[1] = 0;
+        s[1] = 0;
 
     dict = xps_parse_resource_dictionary(ctx, part_uri, xml);
     if (!dict)
     {
-	gs_rethrow1(-1, "cannot parse remote resource dictionary %s", part_uri);
-	return NULL;
+        gs_rethrow1(-1, "cannot parse remote resource dictionary %s", part_uri);
+        return NULL;
     }
 
     dict->base_xml = xml; /* pass on ownership */
@@ -129,36 +129,36 @@ xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *ro
 
     source = xps_att(root, "Source");
     if (source)
-	return xps_parse_remote_resource_dictionary(ctx, base_uri, source);
+        return xps_parse_remote_resource_dictionary(ctx, base_uri, source);
 
     head = NULL;
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-	/* Usually "x:Key"; we have already processed and stripped namespace */
-	key = xps_att(node, "Key");
-	if (key)
-	{
-	    entry = xps_alloc(ctx, sizeof(xps_resource_t));
-	    if (!entry)
-	    {
-		gs_throw(-1, "cannot allocate resource entry");
-		return head;
-	    }
-	    entry->name = key;
-	    entry->base_uri = NULL;
-	    entry->base_xml = NULL;
-	    entry->data = node;
-	    entry->next = head;
-	    entry->parent = NULL;
-	    head = entry;
-	}
+        /* Usually "x:Key"; we have already processed and stripped namespace */
+        key = xps_att(node, "Key");
+        if (key)
+        {
+            entry = xps_alloc(ctx, sizeof(xps_resource_t));
+            if (!entry)
+            {
+                gs_throw(-1, "cannot allocate resource entry");
+                return head;
+            }
+            entry->name = key;
+            entry->base_uri = NULL;
+            entry->base_xml = NULL;
+            entry->data = node;
+            entry->next = head;
+            entry->parent = NULL;
+            head = entry;
+        }
     }
 
     if (head)
     {
-	head->base_uri = xps_alloc(ctx, strlen(base_uri) + 1);
-	strcpy(head->base_uri, base_uri);
+        head->base_uri = xps_alloc(ctx, strlen(base_uri) + 1);
+        strcpy(head->base_uri, base_uri);
     }
 
     return head;
@@ -170,13 +170,13 @@ xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
     xps_resource_t *next;
     while (dict)
     {
-	next = dict->next;
-	if (dict->base_xml)
-	    xps_free_item(ctx, dict->base_xml);
-	if (dict->base_uri)
-	    xps_free(ctx, dict->base_uri);
-	xps_free(ctx, dict);
-	dict = next;
+        next = dict->next;
+        if (dict->base_xml)
+            xps_free_item(ctx, dict->base_xml);
+        if (dict->base_uri)
+            xps_free(ctx, dict->base_uri);
+        xps_free(ctx, dict);
+        dict = next;
     }
 }
 
@@ -185,16 +185,16 @@ xps_debug_resource_dictionary(xps_resource_t *dict)
 {
     while (dict)
     {
-	if (dict->base_uri)
-	    dprintf1("URI = '%s'\n", dict->base_uri);
-	dprintf2("KEY = '%s' VAL = %p\n", dict->name, dict->data);
-	if (dict->parent)
-	{
-	    dputs("PARENT = {\n");
-	    xps_debug_resource_dictionary(dict->parent);
-	    dputs("}\n");
-	}
-	dict = dict->next;
+        if (dict->base_uri)
+            dprintf1("URI = '%s'\n", dict->base_uri);
+        dprintf2("KEY = '%s' VAL = %p\n", dict->name, dict->data);
+        if (dict->parent)
+        {
+            dputs("PARENT = {\n");
+            xps_debug_resource_dictionary(dict->parent);
+            dputs("}\n");
+        }
+        dict = dict->next;
     }
 }
 

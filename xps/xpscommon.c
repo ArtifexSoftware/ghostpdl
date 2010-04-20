@@ -19,15 +19,15 @@ int
 xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
     if (!strcmp(xps_tag(node), "SolidColorBrush"))
-	return xps_parse_solid_color_brush(ctx, base_uri, dict, node);
+        return xps_parse_solid_color_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "ImageBrush"))
-	return xps_parse_image_brush(ctx, base_uri, dict, node);
+        return xps_parse_image_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "VisualBrush"))
-	return xps_parse_visual_brush(ctx, base_uri, dict, node);
+        return xps_parse_visual_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "LinearGradientBrush"))
-	return xps_parse_linear_gradient_brush(ctx, base_uri, dict, node);
+        return xps_parse_linear_gradient_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "RadialGradientBrush"))
-	return xps_parse_radial_gradient_brush(ctx, base_uri, dict, node);
+        return xps_parse_radial_gradient_brush(ctx, base_uri, dict, node);
     return gs_throw1(-1, "unknown brush tag: %s", xps_tag(node));
 }
 
@@ -35,11 +35,11 @@ int
 xps_parse_element(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
     if (!strcmp(xps_tag(node), "Path"))
-	return xps_parse_path(ctx, base_uri, dict, node);
+        return xps_parse_path(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "Glyphs"))
-	return xps_parse_glyphs(ctx, base_uri, dict, node);
+        return xps_parse_glyphs(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "Canvas"))
-	return xps_parse_canvas(ctx, base_uri, dict, node);
+        return xps_parse_canvas(ctx, base_uri, dict, node);
     /* skip unknown tags (like Foo.Resources and similar) */
     return 0;
 }
@@ -57,11 +57,11 @@ xps_parse_render_transform(xps_context_t *ctx, char *transform, gs_matrix *matri
 
     for (i = 0; i < 6 && *s; i++)
     {
-	args[i] = atof(s);
-	while (*s && *s != ',')
-	    s++;
-	if (*s == ',')
-	    s++;
+        args[i] = atof(s);
+        while (*s && *s != ',')
+            s++;
+        if (*s == ',')
+            s++;
     }
 
     matrix->xx = args[0]; matrix->xy = args[1];
@@ -78,9 +78,9 @@ xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matr
 
     if (!strcmp(xps_tag(root), "MatrixTransform"))
     {
-	transform = xps_att(root, "Matrix");
-	if (transform)
-	    xps_parse_render_transform(ctx, transform, matrix);
+        transform = xps_att(root, "Matrix");
+        if (transform)
+            xps_parse_render_transform(ctx, transform, matrix);
     }
 }
 
@@ -96,11 +96,11 @@ xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect)
 
     for (i = 0; i < 4 && *s; i++)
     {
-	args[i] = atof(s);
-	while (*s && *s != ',')
-	    s++;
-	if (*s == ',')
-	    s++;
+        args[i] = atof(s);
+        while (*s && *s != ',')
+            s++;
+        if (*s == ',')
+            s++;
     }
 
     rect->p.x = args[0];
