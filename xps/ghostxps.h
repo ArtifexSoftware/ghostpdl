@@ -137,7 +137,7 @@ size_t xps_strlcat(char *destination, const char *source, size_t size);
 int xps_strcasecmp(char *a, char *b);
 char *xps_strdup_imp(xps_context_t *ctx, const char *str, const char *function);
 char *xps_clean_path(char *name);
-void xps_absolute_path(char *output, char *base_uri, char *path);
+void xps_absolute_path(char *output, char *base_uri, char *path, int output_size);
 
 /* end of page device callback foo */
 int xps_show_page(xps_context_t *ctx, int num_copies, int flush);
@@ -286,7 +286,7 @@ struct xps_part_s
 
 xps_part_t *xps_read_zip_part(xps_context_t *ctx, char *name);
 
-void xps_part_name_from_relation_part_name(char *output, char *name);
+void xps_part_name_from_relation_part_name(char *output, char *name, int output_size);
 
 xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int capacity);
 xps_part_t *xps_find_part(xps_context_t *ctx, char *name);

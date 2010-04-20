@@ -558,7 +558,7 @@ xps_parse_glyphs(xps_context_t *ctx,
      * Find and load the font resource
      */
 
-    xps_absolute_path(partname, base_uri, font_uri_att);
+    xps_absolute_path(partname, base_uri, font_uri_att, sizeof partname);
     subfont = strrchr(partname, '#');
     if (subfont)
     {

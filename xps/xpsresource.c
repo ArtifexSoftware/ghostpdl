@@ -43,7 +43,7 @@ xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att
     if (strstr(att, "{StaticResource ") != att)
         return NULL;
 
-    strcpy(name, att + 16);
+    xps_strlcpy(name, att + 16, sizeof name);
     s = strrchr(name, '}');
     if (s)
         *s = 0;
@@ -78,7 +78,7 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
     char *s;
 
     /* External resource dictionaries MUST NOT reference other resource dictionaries */
-    xps_absolute_path(part_name, base_uri, source_att);
+    xps_absolute_path(part_name, base_uri, source_att, sizeof part_name);
     part = xps_read_part(ctx, part_name);
     if (!part)
     {
@@ -99,7 +99,7 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
         return NULL;
     }
 
-    strcpy(part_uri, part_name);
+    xps_strlcpy(part_uri, part_name, sizeof part_uri);
     s = strrchr(part_uri, '/');
     if (s)
         s[1] = 0;
@@ -158,7 +158,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *ro
     if (head)
     {
         head->base_uri = xps_alloc(ctx, strlen(base_uri) + 1);
-        strcpy(head->base_uri, base_uri);
+        xps_strlcpy(head->base_uri, base_uri, sizeof head->base_uri);
     }
 
     return head;

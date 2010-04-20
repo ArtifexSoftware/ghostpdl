@@ -151,8 +151,8 @@ xps_read_zip_entry(xps_context_t *ctx, char *name, xps_entry_t *ent)
     xps_part_t *part;
     int code;
 
-    strcpy(buf, "/");
-    strcat(buf, name);
+    xps_strlcpy(buf, "/", sizeof buf);
+    xps_strlcat(buf, name, sizeof buf);
 
     part = xps_find_part(ctx, buf);
     if (!part)
@@ -197,8 +197,8 @@ xps_read_zip_interleaved_entries(xps_context_t *ctx, char *name, int count, int 
     int code;
     int i;
 
-    strcpy(buf, "/");
-    strcat(buf, name);
+    xps_strlcpy(buf, "/", sizeof buf);
+    xps_strlcat(buf, name, sizeof buf);
 
     if (xps_zip_trace)
         dprintf3("zip: interleaved part '%s' pieces=%d size=%d\n", buf, count, size);

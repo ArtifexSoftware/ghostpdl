@@ -172,16 +172,16 @@ xps_read_part(xps_context_t *ctx, char *name)
  */
 
 void
-xps_part_name_from_relation_part_name(char *output, char *name)
+xps_part_name_from_relation_part_name(char *output, char *name, int output_size)
 {
     char *p, *q;
-    strcpy(output, name);
+    xps_strlcpy(output, name, output_size);
     p = strstr(output, "_rels/");
     q = strstr(name, "_rels/");
     if (p)
     {
         *p = 0;
-        strcat(output, q + 6);
+        xps_strlcat(output, q + 6, output_size);
     }
     p = strstr(output, ".rels");
     if (p)
@@ -432,8 +432,8 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
 
         if (target && type)
         {
-            xps_part_name_from_relation_part_name(realpart, ctx->part_uri);
-            xps_absolute_path(tgtbuf, ctx->base_uri, target);
+            xps_part_name_from_relation_part_name(realpart, ctx->part_uri, sizeof realpart);
+            xps_absolute_path(tgtbuf, ctx->base_uri, target, sizeof tgtbuf);
             xps_add_relation(ctx, realpart, tgtbuf, type);
         }
     }
@@ -451,7 +451,7 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
 
         if (source)
         {
-            xps_absolute_path(srcbuf, ctx->base_uri, source);
+            xps_absolute_path(srcbuf, ctx->base_uri, source, sizeof srcbuf);
             xps_add_fixed_document(ctx, srcbuf);
         }
     }
@@ -475,7 +475,7 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
 
         if (source)
         {
-            xps_absolute_path(srcbuf, ctx->base_uri, source);
+            xps_absolute_path(srcbuf, ctx->base_uri, source, sizeof srcbuf);
             xps_add_fixed_page(ctx, srcbuf, width, height);
         }
     }
@@ -489,7 +489,7 @@ xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
     char *s;
 
     /* Save directory name part */
-    strcpy(buf, part->name);
+    xps_strlcpy(buf, part->name, sizeof buf);
     s = strrchr(buf, '/');
     if (s)
         s[0] = 0;
@@ -551,7 +551,7 @@ xps_parse_color_relation(xps_context_t *ctx, char *string)
 
     /* "ContextColor /Resources/Foo.icc 1,0.3,0.5,1.0" */
 
-    strcpy(buf, string);
+    xps_strlcpy(buf, string, sizeof buf);
     sp = strchr(buf, ' ');
     if (sp)
     {
@@ -560,7 +560,7 @@ xps_parse_color_relation(xps_context_t *ctx, char *string)
         if (ep)
         {
             *ep = 0;
-            xps_absolute_path(path, ctx->base_uri, sp);
+            xps_absolute_path(path, ctx->base_uri, sp, sizeof path);
             xps_trim_url(path);
             xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
         }
@@ -578,7 +578,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
 
     if (strstr(string, "{ColorConvertedBitmap") == string)
     {
-        strcpy(buf, string);
+        xps_strlcpy(buf, string, sizeof buf);
         sp = strchr(buf, ' ');
         if (sp)
         {
@@ -587,7 +587,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
             if (ep)
             {
                 *ep = 0;
-                xps_absolute_path(path, ctx->base_uri, sp);
+                xps_absolute_path(path, ctx->base_uri, sp, sizeof path);
                 xps_trim_url(path);
                 xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
 
@@ -596,7 +596,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
                 if (ep)
                 {
                     *ep = 0;
-                    xps_absolute_path(path, ctx->base_uri, sp);
+                    xps_absolute_path(path, ctx->base_uri, sp, sizeof path);
                     xps_trim_url(path);
                     xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
                 }
@@ -605,7 +605,7 @@ xps_parse_image_relation(xps_context_t *ctx, char *string)
     }
     else
     {
-        xps_absolute_path(path, ctx->base_uri, string);
+        xps_absolute_path(path, ctx->base_uri, string, sizeof path);
         xps_trim_url(path);
         xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
     }
@@ -631,7 +631,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
         {
             if (!strcmp(atts[i], "FontUri"))
             {
-                xps_absolute_path(path, ctx->base_uri, atts[i+1]);
+                xps_absolute_path(path, ctx->base_uri, atts[i+1], sizeof path);
                 xps_trim_url(path);
                 xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE);
             }
@@ -651,7 +651,7 @@ xps_parse_content_relations_imp(void *zp, char *ns_name, char **atts)
         {
             if (!strcmp(atts[i], "Source"))
             {
-                xps_absolute_path(path, ctx->base_uri, atts[i+1]);
+                xps_absolute_path(path, ctx->base_uri, atts[i+1], sizeof path);
                 xps_trim_url(path);
                 xps_add_relation(ctx, ctx->part_uri, path, REL_REQUIRED_RESOURCE_RECURSIVE);
             }
@@ -681,7 +681,7 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
     char *s;
 
     /* Set current directory for resolving relative path names */
-    strcpy(buf, part->name);
+    xps_strlcpy(buf, part->name, sizeof buf);
     s = strrchr(buf, '/');
     if (s)
         s[0] = 0;

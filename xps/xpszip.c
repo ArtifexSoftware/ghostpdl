@@ -165,7 +165,7 @@ xps_process_part(xps_context_t *ctx, xps_part_t *part)
         {
             char realname[1024];
             xps_part_t *realpart;
-            xps_part_name_from_relation_part_name(realname, part->name);
+            xps_part_name_from_relation_part_name(realname, part->name, sizeof realname);
             realpart = xps_find_part(ctx, realname);
             if (realpart)
             {

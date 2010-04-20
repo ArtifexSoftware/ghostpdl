@@ -309,7 +309,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
         dprintf2("warning: ignoring color profile '%s' associated with image '%s'\n",
                 profile_name, image_name);
 
-    xps_absolute_path(partname, base_uri, image_name);
+    xps_absolute_path(partname, base_uri, image_name, sizeof partname);
     part = xps_read_part(ctx, partname);
     if (!part)
         return gs_throw1(-1, "cannot find image resource part '%s'", partname);
