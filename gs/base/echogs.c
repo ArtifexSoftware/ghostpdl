@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -92,7 +92,7 @@ main(int argc, char *argv[])
     const char *extn = "";
     char fmode[4];
 #define FNSIZE 1000
-    char *fnparam;
+    char *fnparam = NULL; /* Initialisation to shut up compilers */
     char fname[FNSIZE];
     int newline = 1;
     int interact = 0;

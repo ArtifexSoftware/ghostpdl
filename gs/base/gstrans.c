@@ -25,6 +25,7 @@
 #include "gxblend.h"
 #include "gdevp14.h"
 #include "gscspace.h"
+#include "gxarith.h"
 
 #define PUSH_TS 0
 
@@ -592,7 +593,7 @@ gs_begin_transparency_mask(gs_state * pgs,
            channel for this case would not be defined. */
 
         num_components = cs_num_components(blend_color_space);
-        switch (abs(num_components)) {
+        switch (any_abs(num_components)) {
 
             case 1:				
                 params.group_color = GRAY_SCALE;       

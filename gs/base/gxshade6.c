@@ -1757,22 +1757,6 @@ split_curve(const gs_fixed_point pole[4], gs_fixed_point q0[4], gs_fixed_point q
     split_curve_s(pole, q0, q1, 1);
 }
 
-
-static void
-generate_inner_vertices(gs_fixed_point *p, const gs_fixed_point pole[4], int k)
-{
-    /* Recure to get exactly same points as when devided a patch. */
-    /* An iteration can't give them preciselly. */
-    if (k > 1) {
-        gs_fixed_point q[2][4];
-
-        split_curve(pole, q[0], q[1]);
-        p[k / 2] = q[0][3];
-        generate_inner_vertices(p, q[0], k / 2);
-        generate_inner_vertices(p + k / 2, q[1], k / 2);
-    }
-}
-
 static inline void
 do_swap_axes(gs_fixed_point *p, int k)
 {

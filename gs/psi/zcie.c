@@ -530,7 +530,10 @@ cache_common(i_ctx_t *i_ctx_p, gs_cie_common * pcie,
 /* ------ Internal routines ------ */
 
 /* Prepare to cache the values for one or more procedures. */
-static int cie_cache_finish1(i_ctx_t *);
+/* RJW: No longer used, but keeping it around in case it becomes useful
+ * again in future.
+ * static int cie_cache_finish1(i_ctx_t *);
+ */
 static int cie_cache_finish(i_ctx_t *);
 int
 cie_prepare_cache(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
@@ -636,11 +639,14 @@ cie_cache_finish(i_ctx_t *i_ctx_p)
 {
     return cie_cache_finish_store(i_ctx_p, false);
 }
+#if 0
+/* RJW: No longer used, but might be useful in future. */
 static int
 cie_cache_finish1(i_ctx_t *i_ctx_p)
 {
     return cie_cache_finish_store(i_ctx_p, true);
 }
+#endif
 
 /* Push a finishing procedure on the e-stack. */
 /* ptr will be the top element of the o-stack. */

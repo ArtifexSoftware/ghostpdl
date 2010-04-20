@@ -138,10 +138,10 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
 	char fmode[4];
 
 	/* Opening with "w" mode deletes the contents when closing. */
-	freopen(fname, gp_fmode_wb, f);
+	(void)freopen(fname, gp_fmode_wb, f);
 	strcpy(fmode, "w+");
 	strcat(fmode, gp_fmode_binary_suffix);
-	freopen(fname, fmode, f);
+	(void)freopen(fname, fmode, f);
     } else {
 	rewind(f);
     }
