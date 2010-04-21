@@ -53,6 +53,7 @@ zDCTE(i_ctx_t *i_ctx_p)
       &st_jpeg_compress_data, "zDCTE");
     if (jcdp == 0)
 	return_error(e_VMerror);
+    state.memory = mem;
     if (s_DCTE_template.set_defaults)
 	(*s_DCTE_template.set_defaults) ((stream_state *) & state);
     state.data.compress = jcdp;

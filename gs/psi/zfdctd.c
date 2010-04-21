@@ -64,6 +64,7 @@ zDCTD(i_ctx_t *i_ctx_p)
     else
 	dop = 0, dspace = 0;
     mem = (gs_memory_t *)find_stream_memory(i_ctx_p, 0, dspace);
+    state.memory = mem;
     /* First allocate space for IJG parameters. */
     jddp = gs_alloc_struct_immovable(mem,jpeg_decompress_data,
       &st_jpeg_decompress_data, "zDCTD");

@@ -1,6 +1,6 @@
 /* Copyright (C) 2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,41 +38,41 @@ sfopen(const char *path, const char *mode, gs_memory_t *memory)
     gs_parsed_file_name_t pfn;
     stream *s;
     iodev_proc_open_file((*open_file));
-    gs_memory_t *mem = (memory == NULL) ? gs_lib_ctx_get_non_gc_memory_t() : memory;
+    gs_memory_t *mem = memory;
 
     int code = gs_parse_file_name(&pfn, path, strlen(path), mem);
     if (code < 0) {
-#	define EMSG	"sfopen: gs_parse_file_name failed.\n"
-	errwrite(EMSG, strlen(EMSG));
-#	undef EMSG
-	return NULL;
+#       define EMSG     "sfopen: gs_parse_file_name failed.\n"
+        errwrite(EMSG, strlen(EMSG));
+#       undef EMSG
+        return NULL;
     }
-    if (pfn.fname == NULL) {	/* just a device */
-#	define EMSG	"sfopen: not allowed with %device only.\n"
-	errwrite(EMSG, strlen(EMSG));
-#	undef EMSG
-	return NULL;
+    if (pfn.fname == NULL) {    /* just a device */
+#       define EMSG     "sfopen: not allowed with %device only.\n"
+        errwrite(EMSG, strlen(EMSG));
+#       undef EMSG
+        return NULL;
     }
     if (pfn.iodev == NULL)
-	pfn.iodev = iodev_default(mem);
+        pfn.iodev = iodev_default(mem);
     open_file = pfn.iodev->procs.open_file;
     if (open_file == 0)
-	code = file_open_stream(pfn.fname, pfn.len, mode, 2048, &s,
-				pfn.iodev, pfn.iodev->procs.fopen, mem);
+        code = file_open_stream(pfn.fname, pfn.len, mode, 2048, &s,
+                                pfn.iodev, pfn.iodev->procs.fopen, mem);
     else
-	code = open_file(pfn.iodev, pfn.fname, pfn.len, mode, &s, mem);
+        code = open_file(pfn.iodev, pfn.fname, pfn.len, mode, &s, mem);
     if (code < 0)
-	return NULL;
+        return NULL;
     s->position = 0;
     code = ssetfilename(s, (const byte *)path, strlen(path));
     if (code < 0) {
-	/* Only error is e_VMerror */
-	sclose(s);
-	gs_free_object(s->memory, s, "sfopen: allocation error");
-#	define EMSG	"sfopen: allocation error setting path name into stream.\n"
-	errwrite(EMSG, strlen(EMSG));
-#	undef EMSG
-	return NULL;
+        /* Only error is e_VMerror */
+        sclose(s);
+        gs_free_object(s->memory, s, "sfopen: allocation error");
+#       define EMSG     "sfopen: allocation error setting path name into stream.\n"
+        errwrite(EMSG, strlen(EMSG));
+#       undef EMSG
+        return NULL;
     }
     return s;
 }
@@ -111,18 +111,18 @@ sfseek(stream *s, long offset, int whence)
     long newpos = offset;
 
     if (whence == SEEK_CUR)
-	newpos += stell(s);
+        newpos += stell(s);
     if (whence == SEEK_END) {
-	long endpos;
+        long endpos;
 
-	if (savailable(s, &endpos) < 0)
-	    return -1;
-	newpos = endpos - offset;
+        if (savailable(s, &endpos) < 0)
+            return -1;
+        newpos = endpos - offset;
     }
     if (s_can_seek(s) || newpos == stell(s)) {
-	return sseek(s, newpos);
+        return sseek(s, newpos);
     }
-    return -1;		/* fail */
+    return -1;          /* fail */
 }
 
 /*
