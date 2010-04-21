@@ -152,6 +152,6 @@ int pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pf
 /*
  * Mark a FontDescriptor Flags value as symbolic
  */
-int mark_font_descriptor_symbolic(pdf_font_resource_t *pdfont);
+int mark_font_descriptor_symbolic(const pdf_font_resource_t *pdfont);
 
 #endif /* gdevpdtd_INCLUDED */
