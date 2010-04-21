@@ -127,7 +127,7 @@ sj48_print_page(gx_device_printer *pdev, FILE *prn_stream)
 		byte *out_beg = out;
 		byte *out_end = out + bytes_per_column * pdev->width;
 		byte *outl = out;
-		int count, bnum;
+		int bnum;
 
 		/* Copy 1 scan line and test for all zero. */
 		code = gdev_prn_get_bits(pdev, lnum, in, &in_data);

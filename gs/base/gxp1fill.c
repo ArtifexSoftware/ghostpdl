@@ -467,7 +467,6 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
     int x1 = x0 + w0, y1 = y0 + h0;
     int i0, i1, j0, j1, i, j;
     gs_matrix step_matrix;	/* translated by phase */
-    int code = 0;
     gx_pattern_trans_t *ptrans_pat = ptile->ttrans;
 
     ptfs->x0 = x0, ptfs->w0 = w0;

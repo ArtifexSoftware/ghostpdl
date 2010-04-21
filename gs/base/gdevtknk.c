@@ -196,7 +196,8 @@ tekink_print_page(gx_device_printer *pdev,FILE *prn_stream)
                not blank */
             *outdata=0xff;
             while (!(*outdataend)) outdataend--;
-            if (num_bytes=(outdataend-outdata)){
+            num_bytes=(outdataend-outdata);
+            if (num_bytes!=0){
             	line_blank=0;
             	/* On encountering the first non-blank data, output pending
             	   blank lines */

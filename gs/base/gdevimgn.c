@@ -247,7 +247,7 @@ const gx_device_printer far_data gs_imagen_device =
 static void 
 iWrite(FILE *Out, byte Val) 
 { /* iWrite */ 
-  char *hexList = "0123456789ABCDEF"; 
+  const char *hexList = "0123456789ABCDEF"; 
  
   /* if we are doing byte-stream, quote characters that would otherwise
      match EOF and QUOTE itself, or other special chars */
@@ -267,7 +267,7 @@ iWrite(FILE *Out, byte Val)
 } /* iWrite */ 
  
 /* Write out 16bit, high byte first */ 
-void 
+static void 
 iWrite2(FILE *Out, int Val) 
 { /* iWrite2 */ 
   iWrite(Out,(byte) (Val >> 8) & 0x00FF ); 
@@ -281,7 +281,7 @@ imagen_prn_open(gx_device *pdev)
 { /* imagen_prn_open */
   int	code;
 
-  char *impHeader;
+  const char *impHeader;
 
   /* ----------------------------------------- */
   DebugMsg(1,"%s\n","Start of imagen_prn_open");
