@@ -226,7 +226,7 @@ rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,
 static void
 cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-    color_cmyk_to_rgb(c, m, y, k, NULL, out);
+    color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
 }
 
 static void
@@ -261,7 +261,7 @@ cmyk_cs_to_rgbk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 	out[3] = frac_1 - k;
     }
     else {
-	color_cmyk_to_rgb(c, m, y, k, NULL, rgb);
+	color_cmyk_to_rgb(c, m, y, k, NULL, rgb, dev->memory);
 	rgb_cs_to_rgbk_cm(dev, NULL, rgb[0], rgb[1], rgb[2], out);
     }
 }
@@ -293,7 +293,7 @@ rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
   			   frac r, frac g, frac b, frac out[])
 {
     if (pis != 0)
-        color_rgb_to_cmyk(r, g, b, pis, out);
+        color_rgb_to_cmyk(r, g, b, pis, out, dev->memory);
     else {
         frac    c = frac_1 - r, m = frac_1 - g, y = frac_1 - b;
         frac    k = min(c, min(m, y));
@@ -1549,7 +1549,7 @@ gx_default_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     frac rgb[3];
     gx_color_value rgb_cv[3];
     color_cmyk_to_rgb(cv2frac(cv[0]), cv2frac(cv[1]), cv2frac(cv[2]), cv2frac(cv[3]),
-		      NULL, rgb);
+		      NULL, rgb, dev->memory);
     rgb_cv[0] = frac2cv(rgb[0]);
     rgb_cv[1] = frac2cv(rgb[1]);
     rgb_cv[2] = frac2cv(rgb[2]);

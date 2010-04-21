@@ -57,6 +57,9 @@ int gs_setrenderingintent(gs_state *, int);
 
 int gs_initgraphics(gs_state *);
 
+bool gs_currentcpsimode(const gs_memory_t *);
+void gs_setcpsimode(gs_memory_t *, bool);
+
 /* Device control */
 #include "gsdevice.h"
 

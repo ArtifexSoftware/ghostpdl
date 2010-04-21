@@ -23,6 +23,7 @@
 #include "gsdcolor.h"
 #include "gscspace.h"
 #include "gxdevcli.h"
+#include "gxistate.h"
 
 /* ---------------- Convert between 1/2/4/12 and 8 bits ---------------- */
 
@@ -345,7 +346,7 @@ s_C2R_process(stream_state * st, stream_cursor_read * pr,
 	frac rgb[3];
 
 	color_cmyk_to_rgb(byte2frac(bc), byte2frac(bm), byte2frac(by),
-			  byte2frac(bk), ss->pis, rgb);
+			  byte2frac(bk), ss->pis, rgb, ss->pis->memory);
 	q[1] = frac2byte(rgb[0]);
 	q[2] = frac2byte(rgb[1]);
 	q[3] = frac2byte(rgb[2]);

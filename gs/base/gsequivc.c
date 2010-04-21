@@ -322,7 +322,7 @@ cmap_rgb_capture_cmyk_color(frac r, frac g, frac b, gx_device_color * pdc,
     int sep_num = ((color_capture_device *)dev)->sep_num;
     frac cmyk[4];
 
-    color_rgb_to_cmyk(r, g, b, pis, cmyk);
+    color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
     save_spot_equivalent_cmyk_color(sep_num, pparams, cmyk);
 }
 
@@ -386,6 +386,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     temp_device.color_info = pdev->color_info;
     temp_device.sep_num = sep_num;
     temp_device.pequiv_cmyk_colors = pparams;
+    temp_device.memory = pgs->memory;
     /*
      * Create a temp copy of the imager state.  We do this so that we
      * can modify the color space mapping (cmap) procs.  We use our

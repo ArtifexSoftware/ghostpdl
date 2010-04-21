@@ -345,7 +345,7 @@ do3:	if(spp == 3 && pcs->type->index == gs_color_space_index_CIEICC)
 
 		color_cmyk_to_rgb(byte2frac(psrc[0]), byte2frac(psrc[1]),
 				  byte2frac(psrc[2]), byte2frac(psrc[3]),
-				  pis, rgb);
+				  pis, rgb, dev->memory);
 		/*
 		 * It seems silly to do all this converting between
 		 * fracs and bytes, but that's what the current

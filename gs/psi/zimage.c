@@ -164,7 +164,6 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
     image_params    ip;
     int             code;
     gs_color_space *csp = gs_currentcolorspace(igs);
-    extern bool CPSI_mode;
 
     /* Adobe interpreters accept sampled images when the current color
      * space is a pattern color space using the base color space instead
@@ -172,7 +171,7 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
      * If all conditions are not met the pattern color space goes through
      * triggering a rangecheck error.
      */
-    if (CPSI_mode && gs_color_space_num_components(csp) < 1) {
+    if (gs_currentcpsimode(imemory) && gs_color_space_num_components(csp) < 1) {
        gs_color_space *bsp = csp->base_space;
        if (bsp)
          csp = bsp;

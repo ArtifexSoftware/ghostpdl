@@ -69,6 +69,10 @@ typedef struct gs_lib_ctx_s
     /* real time clock 'bias' value. Not strictly required, but some FTS
      * tests work better if realtime starts from 0 at boot time. */
     long real_time_0[2];
+    /* True if we are emulating CPSI. Ideally this would be in the imager
+     * state, but this can't be done due to problems detecting changes in it
+     * for the clist based devices. */
+    bool CPSI_mode;
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.

@@ -97,7 +97,7 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
     int format;
     uint i, size, widths_needed;
     float *values;
-    extern bool CPSI_mode;
+    bool CPSI_mode = gs_currentcpsimode(imemory);
 
     if (code != 0)
 	return code;

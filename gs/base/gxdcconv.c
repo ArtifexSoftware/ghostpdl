@@ -22,8 +22,6 @@
 #include "gxlum.h"
 #include "gxistate.h"
 
-extern bool CPSI_mode;		/* not worth polluting a header file */
-
 /*
  * The CMYK to RGB algorithms specified by Adobe are, e.g.,
  *      R = 1.0 - min(1.0, C + K)
@@ -56,7 +54,7 @@ color_rgb_to_gray(frac r, frac g, frac b, const gs_imager_state * pis)
 /* Note that this involves black generation and undercolor removal. */
 void
 color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
-		  frac cmyk[4])
+		  frac cmyk[4], gs_memory_t *mem)
 {
     frac c = frac_1 - r, m = frac_1 - g, y = frac_1 - b;
     frac k = (c < m ? min(c, y) : min(m, y));
@@ -77,7 +75,7 @@ color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
     else if (ucr == frac_0)
 	cmyk[0] = c, cmyk[1] = m, cmyk[2] = y;
     else {
-	if (! CPSI_mode) {
+	if (!gs_currentcpsimode(mem)) {
 	    /* C = max(0.0, min(1.0, 1 - R - UCR)), etc. */
 	    signed_frac not_ucr = (ucr < 0 ? frac_1 + ucr : frac_1);
 
@@ -119,7 +117,7 @@ color_cmyk_to_gray(frac c, frac m, frac y, frac k, const gs_imager_state * pis)
 /* Convert CMYK to RGB. */
 void
 color_cmyk_to_rgb(frac c, frac m, frac y, frac k, const gs_imager_state * pis,
-		  frac rgb[3])
+		  frac rgb[3], gs_memory_t *mem)
 {
     switch (k) {
 	case frac_0:
@@ -131,7 +129,7 @@ color_cmyk_to_rgb(frac c, frac m, frac y, frac k, const gs_imager_state * pis,
 	    rgb[0] = rgb[1] = rgb[2] = frac_0;
 	    break;
 	default:
-	    if (! CPSI_mode) {
+	    if (!gs_currentcpsimode(mem)) {
 		/* R = 1.0 - min(1.0, C + K), etc. */
 		frac not_k = frac_1 - k;
 

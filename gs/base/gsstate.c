@@ -399,7 +399,6 @@ gs_grestore_only(gs_state * pgs)
     void *sdata;
     gs_transparency_state_t *tstack = pgs->transparency_stack;
     bool prior_overprint = pgs->overprint;
-    int code;
 
     if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
@@ -711,6 +710,23 @@ gs_currentoverprintmode(const gs_state * pgs)
     return pgs->overprint_mode;
 }
 
+void
+gs_setcpsimode(gs_memory_t *mem, bool mode)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+
+    libctx->CPSI_mode = mode;
+}
+
+/* currentcpsimode */
+bool
+gs_currentcpsimode(const gs_memory_t * mem)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+
+    return libctx->CPSI_mode;
+}
+
 /* setrenderingintent
  *
  *  Use ICC numbers from Table 18 (section 6.1.11) rather than the PDF order
@@ -997,7 +1013,6 @@ gstate_free_contents(gs_state * pgs)
 {
     gs_memory_t *mem = pgs->memory;
     const char *const cname = "gstate_free_contents";
-    int current_col;
 
     rc_decrement(pgs->device, cname);
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
@@ -1156,7 +1171,6 @@ void gs_swapcolors_quick(gs_state *pgs)
 int gs_swapcolors(gs_state *pgs)
 {
     int prior_overprint = pgs->overprint;
-    int prior_mode      = pgs->effective_overprint_mode;
 
     gs_swapcolors_quick(pgs);
 

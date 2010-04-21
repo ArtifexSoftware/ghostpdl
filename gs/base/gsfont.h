@@ -76,7 +76,7 @@ void gs_cachestatus(const gs_font_dir *, uint[7]);
 
 #define gs_setcachelimit(pdir,limit) gs_setcacheupper(pdir,limit)
 uint gs_currentcachesize(const gs_font_dir *);
-int gs_setcachesize(gs_font_dir *, uint);
+int gs_setcachesize(gs_state * pgs, gs_font_dir *, uint);
 uint gs_currentcachelower(const gs_font_dir *);
 int gs_setcachelower(gs_font_dir *, uint);
 uint gs_currentcacheupper(const gs_font_dir *);

@@ -378,7 +378,7 @@ cmyk_cs_to_psdrgb_cm(gx_device * dev,
 {
     int i = ((psd_device *)dev)->devn_params.separations.num_separations;
 
-    color_cmyk_to_rgb(c, m, y, k, NULL, out);
+    color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
     for(; i>0; i--)			/* Clear spot colors */
         out[2 + i] = 0;
 }
@@ -475,7 +475,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
     } else {
 	frac cmyk[4];
 
-	color_rgb_to_cmyk(r, g, b, pis, cmyk);
+	color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
 	cmyk_cs_to_spotn_cm(dev, cmyk[0], cmyk[1], cmyk[2], cmyk[3],
 			    out);
     }

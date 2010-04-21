@@ -164,7 +164,7 @@ zsetcacheparams(i_ctx_t *i_ctx_p)
     }
     switch (i) {
 	case 3:
-	    if ((code = gs_setcachesize(ifont_dir, params[2])) < 0)
+	    if ((code = gs_setcachesize(igs, ifont_dir, params[2])) < 0)
 		return code;
 	case 2:
 	    if ((code = gs_setcachelower(ifont_dir, params[1])) < 0)

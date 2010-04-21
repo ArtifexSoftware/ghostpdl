@@ -15,15 +15,6 @@
 /* Miscellaneous utilities for Ghostscript library */
 
 
-/****************************************************************************
- * This global should be put into either gs_imager_state or gs_device,
- * but the "plumbing" retrofit is more than we need for things that were
- * previously compile time modifications. CPSI_mode will at least make these
- * dynamic (but NOT thread safe)!!!
- ****************************************************************************
- */
-int CPSI_mode = 0; /* false */	/* default GS behavior is 'false' */
-
 /*
  * In order to capture the original definition of sqrt, which might be
  * either a procedure or a macro and might not have an ANSI-compliant

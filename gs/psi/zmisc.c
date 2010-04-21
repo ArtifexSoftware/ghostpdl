@@ -384,22 +384,15 @@ zsetdebug(i_ctx_t *i_ctx_p)
 /* There are a few cases where a customer/user might want CPSI behavior 
  * instead of the GS default behavior. cmyk_to_rgb and Type 1 char fill
  * method are two that have come up so far. This operator allows a PS
- * program to control the behavior without needing to recompile
- *
- * While this would better if it were in some context 'state', we use
- * a global, which we don't really like, but at least it is better
- * than a compile time #define, as in #USE_ADOBE_CMYK_RGB and allows
- * us to easily test with/without and not require recompilation.
+ * program to control the behavior without needing to recompile.
  */
-extern bool CPSI_mode;		/* not worth polluting a header file */
-
 /* <bool> .setCPSImode - */
 static int
 zsetCPSImode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     check_type(*op, t_boolean);
-    CPSI_mode = op->value.boolval;
+    gs_setcpsimode(imemory, op->value.boolval);
     pop(1);
     return 0;
 }
@@ -411,7 +404,7 @@ zgetCPSImode(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     push(1);
-    make_bool(op, CPSI_mode);
+    make_bool(op, gs_currentcpsimode(imemory));
     return 0;
 }
 
