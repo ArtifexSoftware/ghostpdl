@@ -504,9 +504,9 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
 	}
       z->n_pins = 96;
       z->printer_weave = 0;
+      z->plane_offsets[3] = z->yres / 360;
       z->plane_offsets[4] = z->yres / 360;
       z->plane_offsets[5] = z->yres / 360;
-      z->plane_offsets[6] = z->yres / 360;
     }
   else if (z->model && !strcmp (z->model, "Stylus Photo 7600"))
     {
