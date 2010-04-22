@@ -871,13 +871,12 @@ end readonly def
 
 currentdict /eexec_pdf_param_dict .undef
 
-/readtype1 {		% <font-resource> <stream-dict> readtype1 <font>
-   1 index exch                       % res res stream
-   PDFfile fileposition 3 1 roll      % res pos res stream
-   dup /PFB known exch                % res pos res pfb? stream
-   true resolvestream                 % res pos res pfb? file
+/readtype1 {		% <font-resource> <stream-dict> readtype1 <font|null>
+   PDFfile fileposition 3 1 roll      % pos res stream
+   dup /PFB known exch                % pos res pfb? stream
+   //true resolvestream               % pos res pfb? file
    exch {
-     //false /PFBDecode filter
+     //false /PFBDecode filter        % pos res file'
    } if
 		% Some buggy embedded fonts leave extra junk on the stack,
 		% so we have to make a closure that records the stack depth
@@ -886,17 +885,18 @@ currentdict /eexec_pdf_param_dict .undef
                 % Also restore dictstack depth.
                 % 
    //systemdict begin
-   //readtype1dict dup length 3 add dict copy begin
+   //readtype1dict dup length 5 add dict copy begin % pos res file'
+   /file-position 4 -1 roll def       % res file'
+   /stack-count count 3 sub def
    1 index /BaseFont oget /savedFontName exch def
-   /topFontDict null def
+   /topFontDict //null def
    /readtype1dictcopy currentdict def
-    { cvx exec } aload pop count 2 sub 3 packedarray cvx exec
-    % clean up the dictstack
-    { currentdict /topFontDict known not { end } { exit } ifelse } loop
-   count exch sub { pop } repeat
-   PDFfile 3 -1 roll setfileposition
-   pop pop
-   currentdict end end /topFontDict get
+   cvx stopped
+   { currentdict /topFontDict known not { end } { exit } ifelse } loop
+   { /topFontDict //null def } if
+   PDFfile file-position setfileposition
+   count stack-count sub { pop } repeat
+   topFontDict end end
  } bdef
 
 % ---------------- Type 3 fonts ---------------- %
@@ -1697,7 +1697,7 @@ currentdict /CMap_read_dict undef
     pop
   } bdef
 
-% <stream> run-fonttypeproc <font>
+% <res> run-fonttypeproc <font>
 /run-fonttypeproc {
   dup /Subtype knownoget not { 0 } if % res /subtype
   //fonttypeprocs 1 index known not {
@@ -1809,7 +1809,13 @@ currentdict /bndef undef
 	} if		
 	      
 	//font_tag_dict exch get exec
-   
+        dup //null eq {
+          pop
+          (   **** Warning: can't process font stream, loading font by the name.\n)
+          pdfformaterror
+          dup run-fonttypeproc            % /key res font
+        } if
+
         1 index /FontDescriptor oget      % /key res font desc
         4 -1 roll 2 index                 % res font desc /key font
         put  % Save pointer to the font.
