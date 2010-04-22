@@ -314,6 +314,8 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
 {
     const gs_color_space *pcs = psh->params.ColorSpace;
     float max_error = min(pis->smoothness, MAX_SMOOTHNESS);
+    bool is_lab;
+
     /*
      * There's no point in trying to achieve smoothness beyond what
      * the device can implement, i.e., the number of representable
@@ -375,6 +377,11 @@ top:
     } else {
         pfs->trans_device = dev;
     }
+    /* If the CS is PS based and we have not yet converted to the ICC form
+       then go ahead and do that now */
+    if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
+        gs_colorspace_set_icc_equivalent(pcs, &(is_lab), pis->memory);
+    }
     /* Grab the icc link transform that we need now */
     if (pcs->cmm_icc_profile_data != NULL) {
         rendering_params.black_point_comp = BP_ON;
@@ -383,7 +390,17 @@ top:
         pfs->icclink = gsicc_get_link(pis, pcs, NULL, &rendering_params, 
                                         pis->memory, false);
     } else {
-        pfs->icclink = NULL;
+        if (pcs->icc_equivalent != NULL ) {
+            /* We have a PS equivalent ICC profile.  We may need to go 
+               through special range adjustments in this case */
+            rendering_params.black_point_comp = BP_ON;
+            rendering_params.object_type = GS_PATH_TAG;
+            rendering_params.rendering_intent = pis->renderingintent;
+            pfs->icclink = gsicc_get_link(pis, pcs->icc_equivalent, NULL, 
+                                          &rendering_params, pis->memory, false);
+        } else {
+            pfs->icclink = NULL;
+        }
     }
 }
 
