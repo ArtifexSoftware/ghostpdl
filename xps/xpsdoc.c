@@ -709,4 +709,3 @@ xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part)
 
     return 0;
 }
-

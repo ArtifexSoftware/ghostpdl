@@ -556,4 +556,3 @@ xps_install_halftone(xps_context_t *ctx, gx_device *pdevice)
 
     return 0;
 }
-

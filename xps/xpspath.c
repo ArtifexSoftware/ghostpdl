@@ -176,7 +176,6 @@ xps_fill(xps_context_t *ctx)
         gs_fill(ctx->pgs);
 }
 
-
 /* Draw an arc segment transformed by the matrix, we approximate with straight
  * line segments. We cannot use the gs_arc function because they only draw
  * circular arcs, we need to transform the line to make them elliptical but
@@ -339,7 +338,6 @@ xps_draw_arc(xps_context_t *ctx,
 
     return 0;
 }
-
 
 /*
  * Parse an abbreviated geometry string, and call
@@ -1175,4 +1173,3 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
    return 0;
 }
-

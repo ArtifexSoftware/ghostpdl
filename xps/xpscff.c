@@ -577,7 +577,6 @@ xps_read_cff_file(xps_font_t *font, gs_font_type1 *pt1)
     return 0;
 }
 
-
 /*
  * Ghostscript font machinery callbacks.
  */
@@ -698,7 +697,6 @@ xps_post_callback_pop(void *callback_data, fixed *value)
 {
     return gs_throw(-1, "pop not implemented");
 }
-
 
 static int
 xps_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
@@ -942,4 +940,3 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
 
     return 0;
 }
-

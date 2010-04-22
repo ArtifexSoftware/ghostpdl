@@ -256,4 +256,3 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     return 0;
 }
-

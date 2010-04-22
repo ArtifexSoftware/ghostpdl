@@ -679,4 +679,3 @@ xps_process_end_of_data(xps_context_t *ctx)
 
     return gs_okay;
 }
-

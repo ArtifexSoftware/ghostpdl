@@ -384,4 +384,3 @@ xps_free_image(xps_context_t *ctx, xps_image_t *image)
         xps_free(ctx, image->alpha);
     xps_free(ctx, image);
 }
-

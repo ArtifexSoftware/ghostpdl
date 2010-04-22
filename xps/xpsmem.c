@@ -108,7 +108,6 @@ xps_strlcat(char *dst, const char *src, size_t siz)
     return dlen + (s - src);    /* count does not include NUL */
 }
 
-
 #define SEP(x)  ((x)=='/' || (x) == 0)
 
 char *
@@ -181,4 +180,3 @@ xps_absolute_path(char *output, char *base_uri, char *path, int output_size)
     }
     xps_clean_path(output);
 }
-

@@ -683,4 +683,3 @@ xps_parse_glyphs(xps_context_t *ctx,
 
     return 0;
 }
-

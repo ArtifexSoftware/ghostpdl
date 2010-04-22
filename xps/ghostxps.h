@@ -363,7 +363,6 @@ struct xps_glyph_metrics_s
     float hadv, vadv, vorg;
 };
 
-
 int xps_init_font_cache(xps_context_t *ctx);
 
 xps_font_t *xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index);
@@ -439,7 +438,6 @@ int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, 
 int xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
 int xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
 int xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root);
-
 
 /*
  * Static XML resources.

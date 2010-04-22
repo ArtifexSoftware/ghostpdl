@@ -808,4 +808,3 @@ xps_parse_radial_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource
         return gs_rethrow(code, "cannot parse radial gradient brush");
     return gs_okay;
 }
-

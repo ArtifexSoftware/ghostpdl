@@ -511,4 +511,3 @@ xps_process_file(xps_context_t *ctx, FILE *file)
 
     return gs_okay;
 }
-

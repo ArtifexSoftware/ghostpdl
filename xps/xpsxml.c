@@ -349,4 +349,3 @@ xps_debug_item(xps_item_t *item, int level)
 {
     xps_debug_item_imp(item, level, 0);
 }
-

@@ -108,4 +108,3 @@ xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect)
     rect->q.x = args[0] + args[2];
     rect->q.y = args[1] + args[3];
 }
-

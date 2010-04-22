@@ -197,4 +197,3 @@ xps_debug_resource_dictionary(xps_resource_t *dict)
         dict = dict->next;
     }
 }
-

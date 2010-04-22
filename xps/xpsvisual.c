@@ -57,4 +57,3 @@ xps_parse_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
     return 0;
 }
-

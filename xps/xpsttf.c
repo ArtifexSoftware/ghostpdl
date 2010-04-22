@@ -404,4 +404,3 @@ int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 
     return 0;
 }
-

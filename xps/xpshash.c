@@ -195,4 +195,3 @@ void xps_hash_debug(xps_hash_table_t *table)
                     table->entries[i].key, table->entries[i].value);
     }
 }
-

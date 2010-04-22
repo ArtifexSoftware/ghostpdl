@@ -113,4 +113,3 @@ int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
 
     return gs_okay;
 }
-

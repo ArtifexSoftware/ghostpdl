@@ -160,7 +160,6 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
         }
     }
 
-
     if (!strcmp(xps_tag(root), "ImageBrush"))
     {
         if (xps_image_brush_has_transparency(ctx, base_uri, root))
@@ -320,4 +319,3 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
 
     return 0;
 }
-

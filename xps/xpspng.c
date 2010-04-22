@@ -193,4 +193,3 @@ int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
 
     return gs_okay;
 }
-

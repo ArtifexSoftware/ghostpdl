@@ -39,7 +39,6 @@ static inline int u32(byte *p)
     return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
 
-
 int xps_init_font_cache(xps_context_t *ctx)
 {
     ctx->fontdir = gs_font_dir_alloc(ctx->memory);
@@ -122,7 +121,6 @@ xps_free_font(xps_context_t *ctx, xps_font_t *font)
     }
     xps_free(ctx, font);
 }
-
 
 /*
  * Find the offset and length of an SFNT table.
@@ -297,7 +295,6 @@ xps_select_font_encoding(xps_font_t *font, int idx)
     font->usepua = (pid == 3 && eid == 0);
     return 0;
 }
-
 
 /*
  * Encode a character using the selected cmap subtable.
@@ -546,4 +543,3 @@ int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_gl
 
     return 0;
 }
-

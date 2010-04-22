@@ -236,4 +236,3 @@ xps_parse_solid_color_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *
 
     return 0;
 }
-
