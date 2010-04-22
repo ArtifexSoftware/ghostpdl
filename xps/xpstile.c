@@ -260,8 +260,8 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
         /* gs_makepattern increments the pattern count stored in the color
          * structure. We will discard the color struct (its on the stack)
-	 * so we need to decrement the reference before we throw away
-	 * the structure.
+     * so we need to decrement the reference before we throw away
+     * the structure.
          */
         gs_pattern_reference(&gscolor, -1);
     }
