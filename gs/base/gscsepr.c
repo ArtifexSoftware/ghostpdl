@@ -312,6 +312,12 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 	     pis, pcs->params.separation.map->tint_transform_data);
         if (code < 0)
 	    return code;
+        if (pacs->cmm_icc_profile_data->data_cs == gsCIELAB) {
+            /* Get the data in a form that is concrete for the CMM */
+            cc.paint.values[0] /= 100.0;
+            cc.paint.values[1] = (cc.paint.values[1]+128)/255.0;
+            cc.paint.values[2] = (cc.paint.values[2]+128)/255.0;
+        } 
 	return cs_concretize_color(&cc, pacs, pconc, pis);
     }
     else {
