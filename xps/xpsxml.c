@@ -43,7 +43,8 @@ struct xps_item_s
     xps_item_t *next;
 };
 
-static char *skip_namespace(char *s)
+static char *
+skip_namespace(char *s)
 {
     char *p = strchr(s, ' ');
     if (p)
@@ -51,7 +52,8 @@ static char *skip_namespace(char *s)
     return s;
 }
 
-static void on_open_tag(void *zp, char *ns_name, char **atts)
+static void
+on_open_tag(void *zp, char *ns_name, char **atts)
 {
     xps_parser_t *parser = zp;
     xps_context_t *ctx = parser->ctx;
@@ -155,7 +157,8 @@ static void on_open_tag(void *zp, char *ns_name, char **atts)
     parser->head = item;
 }
 
-static void on_close_tag(void *zp, char *name)
+static void
+on_close_tag(void *zp, char *name)
 {
     xps_parser_t *parser = zp;
 
@@ -166,12 +169,14 @@ static void on_close_tag(void *zp, char *name)
         parser->head = parser->head->up;
 }
 
-static inline int is_xml_space(int c)
+static inline int
+is_xml_space(int c)
 {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
-static void on_text(void *zp, char *buf, int len)
+static void
+on_text(void *zp, char *buf, int len)
 {
     xps_parser_t *parser = zp;
     xps_context_t *ctx = parser->ctx;

@@ -22,13 +22,15 @@
 #include "sdct.h"
 #include "sjpeg.h"
 
-static int xps_report_error(stream_state * st, const char *str)
+static int
+xps_report_error(stream_state * st, const char *str)
 {
     (void) gs_throw1(-1, "%s", str);
     return 0;
 }
 
-int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
+int
+xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
 {
     jpeg_decompress_data jddp;
     stream_DCT_state state;

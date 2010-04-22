@@ -19,7 +19,8 @@
  * http://tools.ietf.org/html/rfc3629
  */
 
-int xps_utf8_to_ucs(int *p, const char *ss, int n)
+int
+xps_utf8_to_ucs(int *p, const char *ss, int n)
 {
     unsigned char *s = (unsigned char *)ss;
 

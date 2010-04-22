@@ -15,7 +15,8 @@
 
 #include "ghostxps.h"
 
-int xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
+int
+xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_resource_t *new_dict = NULL;
     xps_item_t *node;

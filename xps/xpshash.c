@@ -42,14 +42,16 @@ struct xps_hash_table_s
     xps_hash_entry_t *entries;
 };
 
-static inline int xps_tolower(int c)
+static inline int
+xps_tolower(int c)
 {
     if (c >= 'A' && c <= 'Z')
         return c + 32;
     return c;
 }
 
-static unsigned int xps_hash(char *s)
+static unsigned int
+xps_hash(char *s)
 {
     unsigned int h = 0;
     while (*s)
@@ -57,7 +59,8 @@ static unsigned int xps_hash(char *s)
     return h;
 }
 
-xps_hash_table_t *xps_hash_new(xps_context_t *ctx)
+xps_hash_table_t *
+xps_hash_new(xps_context_t *ctx)
 {
     xps_hash_table_t *table;
 
@@ -84,7 +87,8 @@ xps_hash_table_t *xps_hash_new(xps_context_t *ctx)
     return table;
 }
 
-static int xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
+static int
+xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
 {
     xps_hash_entry_t *old_entries;
     xps_hash_entry_t *new_entries;
@@ -121,13 +125,15 @@ static int xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
     return 0;
 }
 
-void xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table)
+void
+xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table)
 {
     xps_free(ctx, table->entries);
     xps_free(ctx, table);
 }
 
-void *xps_hash_lookup(xps_hash_table_t *table, char *key)
+void *
+xps_hash_lookup(xps_hash_table_t *table, char *key)
 {
     xps_hash_entry_t *entries = table->entries;
     unsigned int size = table->size;
@@ -145,7 +151,8 @@ void *xps_hash_lookup(xps_hash_table_t *table, char *key)
     }
 }
 
-int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *value)
+int
+xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *value)
 {
     xps_hash_entry_t *entries;
     unsigned int size, pos;
@@ -180,7 +187,8 @@ int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void
     }
 }
 
-void xps_hash_debug(xps_hash_table_t *table)
+void
+xps_hash_debug(xps_hash_table_t *table)
 {
     int i;
 
