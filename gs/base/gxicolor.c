@@ -268,6 +268,7 @@ decode_row(const gx_image_enum *penum, byte *psrc, int spp, byte *pdes,
                 case sd_compute:
                     temp = penum->map[k].decode_base + 
                         (*psrc) * penum->map[k].decode_factor;
+                    temp *= 255;
                     if (temp > 255) temp = 255;
                     if (temp < 0 ) temp = 0;
                     *curr_pos = (unsigned char) temp;
