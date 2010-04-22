@@ -417,25 +417,21 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
             u_offset = u_offset * 0.01 * size;
             v_offset = v_offset * 0.01 * size;
 
-            if (buf.count < XPS_TEXT_BUFFER_SIZE)
+            if (buf.count == XPS_TEXT_BUFFER_SIZE)
+                xps_flush_text_buffer(ctx, font, &buf, is_charpath);
+
+            if (is_sideways)
             {
-                if (is_sideways)
-                {
-                    buf.x[buf.count] = x + u_offset + (mtx.vorg * size);
-                    buf.y[buf.count] = y - v_offset + (mtx.hadv * 0.5 * size);
-                }
-                else
-                {
-                    buf.x[buf.count] = x + u_offset;
-                    buf.y[buf.count] = y - v_offset;
-                }
-                buf.g[buf.count] = glyph_index;
-                buf.count ++;
+                buf.x[buf.count] = x + u_offset + (mtx.vorg * size);
+                buf.y[buf.count] = y - v_offset + (mtx.hadv * 0.5 * size);
             }
             else
             {
-                xps_flush_text_buffer(ctx, font, &buf, is_charpath);
+                buf.x[buf.count] = x + u_offset;
+                buf.y[buf.count] = y - v_offset;
             }
+            buf.g[buf.count] = glyph_index;
+            buf.count ++;
 
             x += advance * 0.01 * size;
         }
