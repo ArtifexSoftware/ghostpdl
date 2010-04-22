@@ -89,9 +89,14 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	penum->interpolate = false;
 	return 0;
     }
-    if ( penum->pcs->cmm_icc_profile_data != NULL ) {
+    if ( pcs->cmm_icc_profile_data != NULL ) {
         use_icc = true;
     } 
+    if ( pcs->type->index == gs_color_space_index_Indexed) {
+        if ( pcs->base_space->cmm_icc_profile_data != NULL) {
+            use_icc = true;
+        }
+    }
 /*
  * USE_CONSERVATIVE_INTERPOLATION_RULES is normally NOT defined since
  * the MITCHELL digital filter seems OK as long as we are going out to
@@ -286,7 +291,12 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
             pcs = penum->pcs->icc_equivalent;
         } else {
-            pcs = penum->pcs;
+            /* Look for indexed space */
+            if ( penum->pcs->type->index == gs_color_space_index_Indexed) {
+                pcs = penum->pcs->base_space;
+            } else {
+                pcs = penum->pcs;
+            }
         }
         penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
         if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
