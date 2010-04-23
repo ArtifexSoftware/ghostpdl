@@ -623,7 +623,8 @@ pdf14_ctx_free(pdf14_ctx *ctx)
 
     if (ctx->maskbuf) {
 	/* A mask was created but was not used in this band. */
-        rc_decrement(ctx->maskbuf->rc_mask, "pdf14_ctx_free"); 
+        rc_decrement(ctx->maskbuf->rc_mask, "pdf14_ctx_free");
+        gs_free_object(ctx->memory,ctx->maskbuf,"pdf14_ctx_free");
     }
     for (buf = ctx->stack; buf != NULL; buf = next) {
 	next = buf->saved;
