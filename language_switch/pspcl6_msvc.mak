@@ -48,6 +48,10 @@ PSLIBDIR=..\gs\lib
 ICCSRCDIR=..\gs\icclib
 !endif
 
+!ifndef FTSRCDIR
+FTSRCDIR=..\gs\freetype
+!endif
+
 # Path for including gs/Resource into romfs (replaces the gs default) :
 !ifndef PSRESDIR
 PSRESDIR=..\gs\Resource
@@ -111,8 +115,14 @@ BAND_LIST_STORAGE=file
 COMPILE_INITS=1
 !endif
 
-!ifndef FT_BRIDGE
+!ifdef UFST_BRIDGE
+!if "$(UFST_BRIDGE)"=="1"
 FT_BRIDGE=0
+!endif
+!endif
+
+!ifndef FT_BRIDGE
+FT_BRIDGE=1
 !endif
 
 !ifndef APP_CCC
@@ -166,8 +176,11 @@ UFST_ROOT="../ufst"
 !ifndef FAPI_DEFS
 FAPI_DEFS= -DUFST_BRIDGE=1 -DUFST_LIB_EXT=.lib -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
 !endif
+
+!if $(FT_BRIDGE)!=1
 UFST_BRIDGE=1
 UFST_LIB_EXT=.lib
+!endif
 
 # specify agfa library locations and includes.
 UFST_LIB=$(UFST_ROOT)\rts\lib

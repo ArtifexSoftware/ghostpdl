@@ -139,12 +139,14 @@ ps_impl_allocate_interp_instance(
 	    "-dOSTACKPRINT", // NB: debuggging postscript Needs to be removed. 
 	    "-dESTACKPRINT", // NB: debuggging postscript Needs to be removed. 
 #endif
+#if UFST_BRIDGE==1
 	    "-dJOBSERVER", 
 	    "-sUFST_PlugIn=" UFSTFONTDIR "mtfonts/pcl45/mt3/plug__xi.fco",
             "-sFCOfontfile=" UFSTFONTDIR "mtfonts/pclps2/mt3/pclp2_xj.fco",
             "-sFCOfontfile2=" UFSTFONTDIR "mtfonts/pcl45/mt3/wd____xh.fco",
 	    "-sFAPIfontmap=FCOfontmap-PCLPS2",
 	    "-sFAPIconfig=FAPIconfig-FCO",
+#endif
 	    0
 	};
 #ifndef DEBUG
@@ -156,13 +158,16 @@ ps_impl_allocate_interp_instance(
 	char argbuf[1024];
 #endif
 #   undef MAX_ARGS
-
 	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
 	    = (ps_interp_instance_t *)
 	    gs_alloc_bytes( mem,
 			    sizeof(ps_interp_instance_t),
 			    "ps_allocate_interp_instance(ps_interp_instance_t)"	
 			    );
+
+#if UFST_BRIDGE!=1
+    argc -= 6;
+#endif
 
 
 	/* If allocation error, deallocate & return */
