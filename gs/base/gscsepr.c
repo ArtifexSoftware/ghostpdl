@@ -293,7 +293,8 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 {
     int code;
     gs_client_color cc;
-    const gs_color_space *pacs = pcs->base_space;
+    gs_color_space *pacs = pcs->base_space;
+    bool is_lab;
     
     if (pcs->params.separation.sep_type == SEP_OTHER &&
 	pcs->params.separation.use_alt_cspace) {
@@ -312,6 +313,11 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 	     pis, pcs->params.separation.map->tint_transform_data);
         if (code < 0)
 	    return code;
+        /* First check if this was PS based. */
+        if (gs_color_space_is_PSCIE(pacs) && pacs->icc_equivalent == NULL) {
+            gs_colorspace_set_icc_equivalent(pacs, &(is_lab), pis->memory);
+            pacs = pacs->icc_equivalent;
+        }
         if (pacs->cmm_icc_profile_data->data_cs == gsCIELAB) {
             /* Get the data in a form that is concrete for the CMM */
             cc.paint.values[0] /= 100.0;
