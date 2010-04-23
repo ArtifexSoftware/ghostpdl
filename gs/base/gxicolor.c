@@ -128,8 +128,8 @@ gs_image_class_4_color(gx_image_enum * penum)
 	penum->mask_color.mask = 0;
 	penum->mask_color.test = ~0;
     }
-    if ( gs_color_space_get_index(penum->pcs) == gs_color_space_index_DeviceN &&
-        penum->pcs->cmm_icc_profile_data == NULL ) {
+    if ( (gs_color_space_get_index(penum->pcs) == gs_color_space_index_DeviceN &&
+        penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ) {
         return &image_render_color_DeviceN;
     } else {
         /* Set up the link now */
@@ -552,7 +552,9 @@ err:
     return code;
 }
 
-/* Render a color image for deviceN source color with no ICC profile */
+/* Render a color image for deviceN source color with no ICC profile.  This   
+   is also used if the image has any masking (type4 image) since we will not 
+   be blasting through quickly */
 static int
 image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 		   uint w, int h, gx_device * dev)
@@ -585,6 +587,8 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     const byte *bufend = psrc + w;
     int code = 0, mcode = 0;
     int i;
+    bits32 mask = penum->mask_color.mask;
+    bits32 test = penum->mask_color.test;
 
     if (h == 0)
 	return 0;
@@ -624,6 +628,13 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
         }
         memcpy(next.v, psrc, spp);
         psrc += spp;
+        /* Check for transparent color. */
+        if ((next.all[0] & mask) == test &&
+            penum->mask_color.exact || 
+            mask_color_matches(next.v, penum, spp)) {
+            color_set_null(pdevc_next);
+            goto mapped;
+        }
         for (i = 0; i < spp; ++i)
             decode_sample(next.v[i], cc, i);
 #ifdef DEBUG
@@ -637,7 +648,7 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
 #endif
 	mcode = remap_color(&cc, pcs, pdevc_next, pis, dev,
 			   gs_color_select_source);
-	if (mcode < 0)
+mapped:	if (mcode < 0)
 	    goto fill;
 f:	if (sizeof(pdevc_next->colors.binary.color[0]) <= sizeof(ulong))
 	    if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> 0x%lx,0x%lx,0x%lx\n",
