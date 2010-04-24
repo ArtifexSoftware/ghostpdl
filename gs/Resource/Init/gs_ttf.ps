@@ -507,10 +507,7 @@ currentdict /tt_tag_dict .undef
   6 {		% Single interval lookup.
     dup 6 getu16a /firstcode exch def
     dup 8 getu16a /ng exch def
-    firstcode ng add dict
-		% Stack: tab array
-		% Fill elements 0 .. firstcode-1 with 0
-    0 1 firstcode 1 sub { 2 copy 0 put pop } for
+    ng dict
     dup 
 		% Stack: tab dict dict
 		% Fill elements firstcode .. firstcode+nvalue-1 with glyph values
