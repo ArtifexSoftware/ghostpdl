@@ -34,6 +34,8 @@
  *   cups_close()            - Close the output file.
  *   cups_decode_color()     - Decode a color value.
  *   cups_encode_color()     - Encode a color value.
+ *   cups_get_color_comp_index()
+ *                           - Color component to index
  *   cups_get_color_mapping_procs()
  *                           - Get the list of color mapping procedures.
  *   cups_get_matrix()       - Generate the default page matrix.
@@ -166,6 +168,7 @@ private cm_map_proc_rgb(cups_map_rgb);
 private cm_map_proc_cmyk(cups_map_cmyk);
 private dev_proc_decode_color(cups_decode_color);
 private dev_proc_encode_color(cups_encode_color);
+private dev_proc_get_color_comp_index(cups_get_color_comp_index);
 private dev_proc_get_color_mapping_procs(cups_get_color_mapping_procs);
 
 static const gx_cm_color_map_procs cups_color_mapping_procs =
@@ -257,7 +260,7 @@ private gx_device_procs	cups_procs =
    NULL,				/* discard_transparency_layer */
 #ifdef dev_t_proc_encode_color
    cups_get_color_mapping_procs,
-   gx_error_get_color_comp_index,	/* Dummy to avoid segfault */
+   cups_get_color_comp_index,
    cups_encode_color,
    cups_decode_color,
 #else
@@ -574,6 +577,145 @@ cups_encode_color(gx_device            *pdev,
   return (ci);
 }
 
+/*
+ * 'cups_get_color_comp_index()' - Color component to index
+ */
+
+#define compare_color_names(pname, name_size, name_str) \
+    (name_size == (int)strlen(name_str) && strncasecmp(pname, name_str, name_size) == 0)
+
+int                                     /* O - Index of the named color in
+					   the color space */
+cups_get_color_comp_index(gx_device * pdev, const char * pname,
+			  int name_size, int component_type)
+{
+  switch (cups->header.cupsColorSpace)
+  {
+    case CUPS_CSPACE_K :
+        if (compare_color_names(pname, name_size, "Black") ||
+	    compare_color_names(pname, name_size, "Gray") ||
+	    compare_color_names(pname, name_size, "Grey"))
+	    return 0;
+	else
+	    return -1; /* Indicate that the component name is "unknown" */
+        break;
+    case CUPS_CSPACE_W :
+    case CUPS_CSPACE_WHITE :
+        if (compare_color_names(pname, name_size, "White") ||
+	    compare_color_names(pname, name_size, "Luminance") ||
+	    compare_color_names(pname, name_size, "Gray") ||
+	    compare_color_names(pname, name_size, "Grey"))
+	    return 0;
+	else
+	    return -1;
+        break;
+    case CUPS_CSPACE_RGBA :
+        if (compare_color_names(pname, name_size, "Alpha") ||
+	    compare_color_names(pname, name_size, "Transparent") ||
+	    compare_color_names(pname, name_size, "Transparency"))
+	    return 3;
+    case CUPS_CSPACE_RGBW :
+        if (compare_color_names(pname, name_size, "White"))
+	    return 3;
+    case CUPS_CSPACE_RGB :
+        if (compare_color_names(pname, name_size, "Red"))
+	    return 0;
+	if (compare_color_names(pname, name_size, "Green"))
+	    return 1;
+	if (compare_color_names(pname, name_size, "Blue"))
+            return 2;
+	else
+	    return -1;
+        break;
+    case CUPS_CSPACE_CMYK :
+#  ifdef CUPS_RASTER_HAVE_COLORIMETRIC
+    case CUPS_CSPACE_CIEXYZ :
+    case CUPS_CSPACE_CIELab :
+    case CUPS_CSPACE_ICC1 :
+    case CUPS_CSPACE_ICC2 :
+    case CUPS_CSPACE_ICC3 :
+    case CUPS_CSPACE_ICC4 :
+    case CUPS_CSPACE_ICC5 :
+    case CUPS_CSPACE_ICC6 :
+    case CUPS_CSPACE_ICC7 :
+    case CUPS_CSPACE_ICC8 :
+    case CUPS_CSPACE_ICC9 :
+    case CUPS_CSPACE_ICCA :
+    case CUPS_CSPACE_ICCB :
+    case CUPS_CSPACE_ICCC :
+    case CUPS_CSPACE_ICCD :
+    case CUPS_CSPACE_ICCE :
+    case CUPS_CSPACE_ICCF :
+#  endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
+        if (compare_color_names(pname, name_size, "Black"))
+	    return 3;
+    case CUPS_CSPACE_CMY :
+        if (compare_color_names(pname, name_size, "Cyan"))
+	    return 0;
+	if (compare_color_names(pname, name_size, "Magenta"))
+	    return 1;
+	if (compare_color_names(pname, name_size, "Yellow"))
+	    return 2;
+	else
+	    return -1;
+        break;
+    case CUPS_CSPACE_GMCS :
+        if (compare_color_names(pname, name_size, "Silver") ||
+	    compare_color_names(pname, name_size, "Silver Foil"))
+	    return 3;
+    case CUPS_CSPACE_GMCK :
+        if (compare_color_names(pname, name_size, "Gold") ||
+	    compare_color_names(pname, name_size, "Gold Foil"))
+	    return 0;
+    case CUPS_CSPACE_YMCK :
+        if (compare_color_names(pname, name_size, "Black"))
+	    return 3;
+    case CUPS_CSPACE_YMC :
+	if (compare_color_names(pname, name_size, "Yellow"))
+	    return 0;
+	if (compare_color_names(pname, name_size, "Magenta"))
+	    return 1;
+        if (compare_color_names(pname, name_size, "Cyan"))
+	    return 2;
+	else
+	    return -1;
+        break;
+    case CUPS_CSPACE_KCMYcm :
+        if (compare_color_names(pname, name_size, "Light Cyan") ||
+	    compare_color_names(pname, name_size, "Photo Cyan"))
+	    return 4;
+        if (compare_color_names(pname, name_size, "Light Magenta") ||
+	    compare_color_names(pname, name_size, "Photo Magenta"))
+	    return 5;
+    case CUPS_CSPACE_KCMY :
+        if (compare_color_names(pname, name_size, "Black"))
+	    return 0;
+        if (compare_color_names(pname, name_size, "Cyan"))
+	    return 1;
+	if (compare_color_names(pname, name_size, "Magenta"))
+	    return 2;
+	if (compare_color_names(pname, name_size, "Yellow"))
+	    return 3;
+	else
+	    return -1;
+        break;
+    case CUPS_CSPACE_GOLD :
+        if (compare_color_names(pname, name_size, "Gold") ||
+	    compare_color_names(pname, name_size, "Gold Foil"))
+	    return 0;
+	else
+	    return -1;
+        break;
+    case CUPS_CSPACE_SILVER :
+        if (compare_color_names(pname, name_size, "Silver") ||
+	    compare_color_names(pname, name_size, "Silver Foil"))
+	    return 0;
+	else
+	    return -1;
+        break;
+  }
+  return -1;
+}
 
 /*
  * 'cups_get_color_mapping_procs()' - Get the list of color mapping procedures.
