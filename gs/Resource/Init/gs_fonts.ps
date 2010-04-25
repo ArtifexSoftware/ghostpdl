@@ -368,7 +368,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /.setnativefontmapbuilt { % set whether we've been run
   systemdict exch /.nativefontmapbuilt exch .forceput 
 } .bind executeonly def
-false .setnativefontmapbuilt
+systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
 /.buildnativefontmap {   % - .buildnativefontmap <bool>
   QUIET not {
     (Querying operating system for font files...\n)
