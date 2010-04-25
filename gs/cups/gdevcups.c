@@ -2737,6 +2737,8 @@ cups_print_pages(gx_device_printer *pdev,
   if (src == NULL)	/* can't allocate input buffer */
     return_error(gs_error_VMerror);
 
+  memset(src, 0, srcbytes);
+
  /*
   * Need an output buffer, too...
   */
@@ -2746,6 +2748,8 @@ cups_print_pages(gx_device_printer *pdev,
 
   if (dst == NULL)	/* can't allocate working area */
     return_error(gs_error_VMerror);
+
+  memset(dst, 0, 2 * cups->header.cupsBytesPerLine);
 
  /*
   * See if the stream has been initialized yet...
@@ -2869,15 +2873,15 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   if ((code = param_read_string(plist, sname, &stringval)) < 0) \
   { \
     dprintf2("ERROR: Error setting %s to \"%s\"...\n", sname, \
-             (char *)stringval.data); \
+             (char *)(stringval.data));			      \
     param_signal_error(plist, sname, code); \
     return (code); \
   } \
   else if (code == 0) \
   { \
     dprintf2("DEBUG: Setting %s to \"%s\"...\n", sname, \
-             (char *)stringval.data); \
-    strncpy(cups->header.name, (const char *)stringval.data, \
+             (char *)(stringval.data));			     \
+    strncpy(cups->header.name, (const char *)(stringval.data),	\
             stringval.size); \
     cups->header.name[stringval.size] = '\0'; \
   }
