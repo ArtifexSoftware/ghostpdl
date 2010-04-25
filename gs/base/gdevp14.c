@@ -2191,7 +2191,15 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
 	     */
 	    *ptempdevproto = gs_pdf14_custom_device;
 	    ptempdevproto->color_info = dev->color_info;
-	    *pdevproto = ptempdevproto;
+            /* The pdf14 device has to be 8 bit continuous tone. Force it */
+            ptempdevproto->color_info.depth = 
+                ptempdevproto->color_info.num_components * 8;
+            ptempdevproto->color_info.max_gray = 255; 
+            ptempdevproto->color_info.max_color = 255;
+            ptempdevproto->color_info.dither_grays = 256;
+            ptempdevproto->color_info.dither_colors = 256;
+            
+            *pdevproto = ptempdevproto;
 	    break;
 	default:			/* Should not occur */
 	    return_error(gs_error_rangecheck);
@@ -4915,6 +4923,13 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
 	     */
 	    *ptempdevproto = pdf14_clist_custom_device;
 	    ptempdevproto->color_info = dev->color_info;
+            /* The pdf14 device has to be 8 bit continuous tone. Force it */
+            ptempdevproto->color_info.depth = 
+                ptempdevproto->color_info.num_components * 8;
+            ptempdevproto->color_info.max_gray = 255; 
+            ptempdevproto->color_info.max_color = 255;
+            ptempdevproto->color_info.dither_grays = 256;
+            ptempdevproto->color_info.dither_colors = 256;
 	    *pdevproto = ptempdevproto;
 	    break;
 	default:			/* Should not occur */

@@ -26,6 +26,7 @@
 #include "gdevp14.h"
 #include "gscspace.h"
 #include "gxarith.h"
+#include "gxclist.h"
 
 #define PUSH_TS 0
 
@@ -141,6 +142,47 @@ pop_transparency_stack(gs_state *pgs, client_name_t cname)
 
 }
 
+/* This is used to keep pdf14 compositor actions from the interpreter from
+   corrupting pattern renderings.  For example, if the file has a softmask,
+   the intrepter will send push and pop transparency state commands when
+   q and Q operations are encountered.  If we are writing out to a pattern
+   clist that has no trasparency we do not want these state changes to 
+   be entered as compositor actions in the pattern clist */
+
+static int
+check_for_nontrans_pattern(gs_state *pgs, unsigned char *comp_name)
+{
+    gx_device * dev = pgs->device;
+    bool is_patt_clist = (strcmp("pattern-clist",dev->dname) == 0);
+    bool is_patt_acum = (strcmp("pattern accumulator",dev->dname) == 0);
+
+    /* Check if we are collecting data for a pattern that has no
+       transparency.  In that case, we need to ignore the state changes */
+    if (is_patt_clist || is_patt_acum) {
+        if (is_patt_clist) {
+            gx_device_clist_writer *clwdev = (gx_device_clist_writer*) dev;
+            const gs_pattern1_instance_t *pinst = clwdev->pinst;
+
+            if (!(pinst->template.uses_transparency)) {
+                if_debug1('v', 
+                    "[v]%s NOT sending in pattern\n",comp_name);
+                return(1);
+            }
+        }
+        if (is_patt_acum) {
+            gx_device_pattern_accum *padev = (gx_device_pattern_accum*) dev;
+            const gs_pattern1_instance_t *pinst = padev->instance;
+
+            if (!(pinst->template.uses_transparency)) {
+                if_debug1('v', 
+                    "[v]%s NOT sending in pattern\n",comp_name);
+                return(1);
+            }
+        }
+    }    
+    return(0);
+}
+   
 /*
  * Push a PDF 1.4 transparency compositor onto the current device. Note that
  * if the current device already is a PDF 1.4 transparency compositor, the
@@ -188,7 +230,9 @@ gs_begin_transparency_group(gs_state *pgs,
     const gs_color_space *blend_color_space;
     gs_imager_state * pis = (gs_imager_state *)pgs;
 
-
+    if (check_for_nontrans_pattern(pgs, "gs_begin_transparency_group")) {
+        return(0);
+    }
     /*
      * Put parameters into a compositor parameter and then call the
      * create_compositor.  This will pass the data to the PDF 1.4
@@ -346,6 +390,9 @@ gs_end_transparency_group(gs_state *pgs)
 {
     gs_pdf14trans_params_t params = { 0 };
 
+    if (check_for_nontrans_pattern(pgs, "gs_end_transparency_group")) {
+        return(0);
+    }
     if_debug0('v', "[v]gs_end_transparency_group\n");
     params.pdf14_op = PDF14_END_TRANS_GROUP;  /* Other parameters not used */
     return gs_state_update_pdf14trans(pgs, &params);
@@ -371,6 +418,9 @@ gs_push_transparency_state(gs_state *pgs)
     gs_imager_state * pis = (gs_imager_state *)pgs;
     int code;
 
+    if (check_for_nontrans_pattern(pgs, "gs_push_transparency_state")) {
+        return(0);
+    }
     /* Set the pending flag to true, which indicates
        that we need to watch for end transparency 
        soft masks when we are at this graphic state
@@ -416,11 +466,13 @@ gs_pop_transparency_state(gs_state *pgs)
     gs_imager_state * pis = (gs_imager_state *)pgs;
     int code;
 
+    if (check_for_nontrans_pattern(pgs, "gs_pop_transparency_state")) {
+        return(0);
+    }
     /* Check if flag is set, which indicates that we have 
        an active softmask for the graphic state.  We
        need to communicate to the compositor to pop
        the softmask */
-
     if ( pis->trans_flags.xstate_change ) {
     
         if_debug0('v', "[v]gs_pop_transparency_state sending\n");
@@ -499,6 +551,9 @@ gs_begin_transparency_mask(gs_state * pgs,
     gs_imager_state * pis = (gs_imager_state *)pgs;
     int num_components;
 
+    if (check_for_nontrans_pattern(pgs, "gs_pop_transparency_state")) {
+        return(0);
+    }
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
     params.subtype = ptmp->subtype;
@@ -665,6 +720,9 @@ gs_end_transparency_mask(gs_state *pgs,
     gs_pdf14trans_params_t params = { 0 };
     gs_imager_state * pis = (gs_imager_state *)pgs;
 
+    if (check_for_nontrans_pattern(pgs, "gs_end_transparency_mask")) {
+        return(0);
+    }
     /* If we have done a q then set a flag to watch for any Qs */
 
    /* if (pis->trans_flags.xstate_pending)
