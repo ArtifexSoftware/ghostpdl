@@ -600,9 +600,26 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    ) {
 	    if (res_name != NULL)
 		return 0; /* Ignore .includecolorspace */
-            return pdf_color_space_named( pdev, pvalue, ppranges,
-                                    pcs->base_space,
-                                    pcsn, by_name, NULL, 0);
+            if (pcs->base_space != NULL) {
+                return pdf_color_space_named( pdev, pvalue, ppranges,
+                                        pcs->base_space,
+                                        pcsn, by_name, NULL, 0);
+            } else {
+                /* Base space is NULL, use appropriate device space */
+                switch( cs_num_components(pcs) )  {
+                    case 1:
+	                cos_c_string_value(pvalue, pcsn->DeviceGray);
+	                return 0;
+                    case 3:
+	                cos_c_string_value(pvalue, pcsn->DeviceRGB);
+	                return 0;
+                    case 4:
+	                cos_c_string_value(pvalue, pcsn->DeviceCMYK);
+	                return 0;
+                    default:
+                        break;
+                } 
+            }
 	}
 
         break;
