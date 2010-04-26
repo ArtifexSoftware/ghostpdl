@@ -561,30 +561,31 @@ xps_parse_glyphs(xps_context_t *ctx,
         subfontid = atoi(subfont + 1);
         *subfont = 0;
     }
-    part = xps_read_part(ctx, partname);
-    if (!part)
-        return gs_throw1(-1, "cannot find font resource part '%s'", partname);
 
-    /* deobfuscate if necessary */
-    if (!part->deobfuscated)
+    font = xps_hash_lookup(ctx->font_table, partname);
+    if (!font)
     {
+        part = xps_read_part(ctx, partname);
+        if (!part)
+            return gs_throw1(-1, "cannot find font resource part '%s'", partname);
+
+        /* deobfuscate if necessary */
         if (strstr(part->name, ".odttf"))
             xps_deobfuscate_font_resource(ctx, part);
         if (strstr(part->name, ".ODTTF"))
             xps_deobfuscate_font_resource(ctx, part);
-        part->deobfuscated = 1;
-    }
 
-    if (!part->font)
-    {
-        part->font = xps_new_font(ctx, part->data, part->size, subfontid);
-        if (!part->font)
+        font = xps_new_font(ctx, part->data, part->size, subfontid);
+        if (!font)
             return gs_rethrow1(-1, "cannot load font resource '%s'", partname);
 
-        xps_select_best_font_encoding(part->font);
-    }
+        xps_select_best_font_encoding(font);
 
-    font = part->font;
+        xps_hash_insert(ctx, ctx->font_table, part->name, font);
+
+        /* NOTE: we kept part->name in the hashtable and part->data in the font */
+        xps_free(ctx, part);
+    }
 
     /*
      * Set up graphics state.
@@ -674,8 +675,6 @@ xps_parse_glyphs(xps_context_t *ctx,
     {
         xps_restore_bounds(ctx, &saved_bounds);
     }
-
-    xps_release_part(ctx, part);
 
     return 0;
 }

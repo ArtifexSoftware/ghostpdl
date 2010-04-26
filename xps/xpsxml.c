@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* Recursive descent XML parsing API on top of Expat. */
+/* Simple XML document object model on top of Expat. */
 
 #include "ghostxps.h"
 
@@ -281,7 +281,7 @@ xps_tag(xps_item_t *item)
 }
 
 char *
-xps_att(xps_item_t *item, char *att)
+xps_att(xps_item_t *item, const char *att)
 {
     int i;
     for (i = 0; item->atts[i]; i += 2)
@@ -309,9 +309,6 @@ static void indent(int n)
     while (n--)
         printf("  ");
 }
-
-/* forward prototype for recursion */
-static void xps_debug_item_imp(xps_item_t *item, int level, int loop);
 
 static void
 xps_debug_item_imp(xps_item_t *item, int level, int loop)

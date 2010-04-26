@@ -152,26 +152,25 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
         if (n == 5) /* alpha + CMYK */
             *csp = ctx->cmyk;
 
-        /* Find ICC colorspace part */
-
-        xps_absolute_path(partname, base_uri, profile, sizeof partname);
-        part = xps_read_part(ctx, partname);
-        if (!part)
-            return gs_throw1(-1, "cannot find icc profile part '%s'", partname);
-
 #if 0 /* disable ICC profiles until gsicc_manager is available */
+        /* Find ICC colorspace part */
+        xps_absolute_path(partname, base_uri, profile, sizeof partname);
 
-        if (!part->icc)
+        colorspace = xps_hash_lookup(ctx->colorspace_table, partname);
+        if (!colorspace)
         {
-            code = xps_parse_icc_profile(ctx, &part->icc, (byte*)part->data, part->size, n - 1);
+            part = xps_read_part(ctx, partname);
+            if (!part)
+                return gs_throw1(-1, "cannot find icc profile part '%s'", partname);
+            code = xps_parse_icc_profile(ctx, &colorspace, part, n - 1);
             if (code < 0)
                 return gs_rethrow1(code, "cannot parse icc profile part '%s'", partname);
+            xps_hash_insert(ctx->colorspace_table, xps_strdup(ctx, partname), colorspace);
+            xps_free_part(ctx, part);
         }
 
-        *csp = part->icc;
+        *csp = colorspace;
 #endif
-
-        xps_release_part(ctx, part);
 
         return 0;
     }
@@ -180,31 +179,6 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
     {
         return gs_throw1(-1, "cannot parse color (%s)", string);
     }
-}
-
-static stream *
-xps_stream_from_buffer(xps_context_t *ctx, byte *data, int length)
-{
-    stream *stm;
-
-    stm = xps_alloc(ctx, sizeof(struct stream_s));
-    if (!stm)
-    {
-        gs_throw(-1, "out of memory: stream struct");
-        return NULL;
-    }
-
-    sread_string(stm, data, length);
-
-    return stm;
-}
-
-int
-xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length, int ncomp)
-{
-    // TODO: implement using the icc_work branch
-    *csp = NULL;
-    return 0;
 }
 
 int

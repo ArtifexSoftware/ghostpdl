@@ -78,17 +78,15 @@
 #endif
 
 /*
- * Conditional compile time options.
- */
-#define noXPS_LOAD_TYPE_MAPS
-
-/*
  * XPS and ZIP strings
  */
 
-#define REL_START_PART "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
-#define REL_REQUIRED_RESOURCE "http://schemas.microsoft.com/xps/2005/06/required-resource"
-#define REL_REQUIRED_RESOURCE_RECURSIVE "http://schemas.microsoft.com/xps/2005/06/required-resource#recursive"
+#define REL_START_PART \
+    "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
+#define REL_REQUIRED_RESOURCE \
+    "http://schemas.microsoft.com/xps/2005/06/required-resource"
+#define REL_REQUIRED_RESOURCE_RECURSIVE \
+    "http://schemas.microsoft.com/xps/2005/06/required-resource#recursive"
 
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
@@ -102,10 +100,9 @@
 typedef struct xps_context_s xps_context_t;
 
 typedef struct xps_entry_s xps_entry_t;
-typedef struct xps_part_s xps_part_t;
-typedef struct xps_relation_s xps_relation_t;
 typedef struct xps_document_s xps_document_t;
 typedef struct xps_page_s xps_page_t;
+typedef struct xps_part_s xps_part_t;
 
 typedef struct xps_item_s xps_item_t;
 typedef struct xps_font_s xps_font_t;
@@ -148,28 +145,18 @@ unsigned int xps_crc32(unsigned int crc, unsigned char *buf, int n);
 
 typedef struct xps_hash_table_s xps_hash_table_t;
 xps_hash_table_t *xps_hash_new(xps_context_t *ctx);
-void xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table);
 void *xps_hash_lookup(xps_hash_table_t *table, char *key);
 int xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *value);
+void xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table,
+    void (*free_key)(xps_context_t *ctx, void *),
+    void (*free_value)(xps_context_t *ctx, void *));
 void xps_hash_debug(xps_hash_table_t *table);
 
 /*
  * Packages, parts and relations.
  */
 
-/* Process all of a seekable file at once */
-int xps_process_file(xps_context_t *ctx, FILE *file);
-
-/* Process one cursor full of data at a time */
-int xps_process_data(xps_context_t *ctx, stream_cursor_read *buf);
-int xps_process_end_of_data(xps_context_t *ctx);
-
-struct xps_relation_s
-{
-    char *target;
-    char *type;
-    xps_relation_t *next;
-};
+int xps_process_file(xps_context_t *ctx, char *filename);
 
 struct xps_document_s
 {
@@ -193,6 +180,14 @@ struct xps_entry_s
     int usize;
 };
 
+struct xps_part_s
+{
+    char *name;
+    int size;
+    byte *data;
+    int cap;
+};
+
 struct xps_context_s
 {
     void *instance;
@@ -205,8 +200,9 @@ struct xps_context_s
     gs_color_space *scrgb;
     gs_color_space *cmyk;
 
-    xps_hash_table_t *part_table;
-    xps_part_t *part_list;
+    FILE *file;
+    int zip_count;
+    xps_entry_t *zip_table;
 
     char *start_part; /* fixed document sequence */
     xps_document_t *first_fixdoc; /* first fixed document */
@@ -217,31 +213,12 @@ struct xps_context_s
     char *base_uri; /* base uri for parsing XML and resolving relative paths */
     char *part_uri; /* part uri for parsing metadata relations */
 
-    /* Seek mode state: */
+    /* We cache font and colorspace resources */
+    xps_hash_table_t *font_table;
+    xps_hash_table_t *colorspace_table;
 
-    FILE *file;
-    int zip_count;
-    xps_entry_t *zip_table;
-
-    /* Feed mode state: */
-
-    unsigned int zip_state;
-    unsigned int zip_version;
-    unsigned int zip_general;
-    unsigned int zip_method;
-    unsigned int zip_name_length;
-    unsigned int zip_extra_length;
-    unsigned int zip_compressed_size;
-    unsigned int zip_uncompressed_size;
-    z_stream zip_stream;
-    char zip_file_name[2048];
-
-    xps_page_t *next_page; /* next page to process when its resources are completed */
-    xps_part_t *current_part; /* part for the current zip entry being decompressed */
-
-    /* Graphics context state: */
-
-    int use_transparency; /* global toggle for transparency */
+    /* Global toggle for transparency */
+    int use_transparency;
 
     /* Hack to workaround ghostscript's lack of understanding
      * the pdf 1.4 specification of Alpha only transparency groups.
@@ -264,51 +241,12 @@ struct xps_context_s
     gs_rect bounds;
 };
 
-struct xps_part_s
-{
-    char *name;
-    int size;
-    int interleave; /* start of last interleave (for crc32 reasons) */
-    int capacity;
-    int complete;
-    byte *data;
-    xps_relation_t *relations;
-    int relations_complete; /* is corresponding .rels part finished? */
-
-    /* Some resource types have to persist across the lifetime of a job. */
-    xps_font_t *font; /* parsed font resource */
-    gs_color_space *icc; /* parsed icc profile resource */
-
-    int deobfuscated; /* have we deobfuscated the font data? */
-
-    xps_part_t *next;
-};
-
-xps_part_t *xps_read_zip_part(xps_context_t *ctx, char *name);
-
-void xps_part_name_from_relation_part_name(char *output, char *name, int output_size);
-
-xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int capacity);
-xps_part_t *xps_find_part(xps_context_t *ctx, char *name);
-xps_part_t *xps_read_part(xps_context_t *ctx, char *name);
+xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int size);
 void xps_free_part(xps_context_t *ctx, xps_part_t *part);
-void xps_free_part_caches(xps_context_t *ctx, xps_part_t *part);
-void xps_free_part_data(xps_context_t *ctx, xps_part_t *part);
-void xps_release_part(xps_context_t *ctx, xps_part_t *part);
-
-void xps_debug_item(xps_item_t *item, int level);
-
-int xps_add_relation(xps_context_t *ctx, char *source, char *target, char *type);
-
-void xps_free_relations(xps_context_t *ctx, xps_relation_t *node);
-void xps_free_fixed_pages(xps_context_t *ctx);
-void xps_free_fixed_documents(xps_context_t *ctx);
-
-void xps_debug_parts(xps_context_t *ctx);
-void xps_debug_fixdocseq(xps_context_t *ctx);
+xps_part_t *xps_read_part(xps_context_t *ctx, char *partname);
 
 /*
- * Various resources.
+ * Images.
  */
 
 /* type for the information derived directly from the raster file format */
@@ -333,6 +271,8 @@ int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image);
+
+void xps_free_image(xps_context_t *ctx, xps_image_t *image);
 
 /*
  * Fonts.
@@ -377,7 +317,7 @@ int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_gl
 int xps_draw_font_glyph_to_path(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y);
 int xps_fill_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, float x, float y);
 
-int xps_find_sfnt_table(xps_font_t *font, char *name, int *lengthp);
+int xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp);
 int xps_load_sfnt_cmap(xps_font_t *font);
 int xps_load_sfnt_name(xps_font_t *font, char *namep);
 int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font);
@@ -386,7 +326,15 @@ int xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font);
 void xps_debug_path(xps_context_t *ctx);
 
 /*
- * XML and content.
+ * Colorspaces and colors.
+ */
+
+int xps_parse_color(xps_context_t *ctx, char *base_uri, char *hexstring, gs_color_space **csp, float *samples);
+int xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
+int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length, int ncomp);
+
+/*
+ * XML document model
  */
 
 xps_item_t * xps_parse_xml(xps_context_t *ctx, byte *buf, int len);
@@ -394,10 +342,39 @@ xps_item_t * xps_next(xps_item_t *item);
 xps_item_t * xps_down(xps_item_t *item);
 void xps_free_item(xps_context_t *ctx, xps_item_t *item);
 char * xps_tag(xps_item_t *item);
-char * xps_att(xps_item_t *item, char *att);
+char * xps_att(xps_item_t *item, const char *att);
+void xps_debug_item(xps_item_t *item, int level);
 
-int xps_parse_content_relations(xps_context_t *ctx, xps_part_t *part);
 int xps_parse_metadata(xps_context_t *ctx, xps_part_t *part);
+void xps_free_fixed_pages(xps_context_t *ctx);
+void xps_free_fixed_documents(xps_context_t *ctx);
+void xps_debug_fixdocseq(xps_context_t *ctx);
+
+/*
+ * XML resource dictionaries.
+ */
+
+struct xps_resource_s
+{
+    char *name;
+    char *base_uri; /* only used in the head nodes */
+    xps_item_t *base_xml; /* only used in the head nodes, to free the xml document */
+    xps_item_t *data;
+    xps_resource_t *next;
+    xps_resource_t *parent; /* up to the previous dict in the stack */
+};
+
+xps_resource_t *xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *name);
+xps_resource_t *xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *root);
+void xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
+int xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char **attp, xps_item_t **tagp, char **urip);
+
+void xps_debug_resource_dictionary(xps_resource_t *dict);
+
+/*
+ * XML fixed page.
+ */
+
 int xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part);
 int xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
@@ -408,10 +385,7 @@ int xps_parse_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *d
 int xps_parse_linear_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_radial_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 
-void xps_free_image(xps_context_t *ctx, xps_image_t *image);
-
-int xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root,
-        int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user);
+int xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root, int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user);
 
 void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix);
 void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);
@@ -431,31 +405,6 @@ void xps_clip(xps_context_t *ctx, gs_rect *saved_bounds);
 void xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
 
-int xps_parse_color(xps_context_t *ctx, char *base_uri, char *hexstring, gs_color_space **csp, float *samples);
-int xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
-int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length, int ncomp);
-
 int xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
 int xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
 int xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root);
-
-/*
- * Static XML resources.
- */
-
-struct xps_resource_s
-{
-    char *name;
-    char *base_uri; /* only used in the head nodes */
-    xps_item_t *base_xml; /* only used in the head nodes, to free the xml document */
-    xps_item_t *data;
-    xps_resource_t *next;
-    xps_resource_t *parent; /* up to the previous dict in the stack */
-};
-
-xps_resource_t *xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *name);
-xps_resource_t *xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *root);
-void xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
-int xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char **attp, xps_item_t **tagp, char **urip);
-
-void xps_debug_resource_dictionary(xps_resource_t *dict);

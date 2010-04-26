@@ -48,6 +48,8 @@ struct xps_interp_instance_s
     void *post_page_closure;            /* closure to call post_page_action with */
 
     xps_context_t *ctx;
+    FILE *scratch_file;
+    char scratch_name[gp_file_name_sizeof];
 };
 
 /* version and build date are not currently used */
@@ -132,6 +134,8 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     instance->post_page_closure = 0;
 
     instance->ctx = ctx;
+    instance->scratch_file = NULL;
+    instance->scratch_name[0] = 0;
 
     xps_init_font_cache(ctx);
 
@@ -254,23 +258,33 @@ xps_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
 
 /* Parse a cursor-full of data */
 static int
-xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *pcursor)
+xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *cursor)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
-    int code;
+    int avail, n;
 
-    code = xps_process_data(ctx, pcursor);
-    if (code == 1)
+    if (!instance->scratch_file)
     {
-        code = xps_process_end_of_data(ctx);
-        if (code < 0)
-            gs_catch(code, "cannot process xps data");
+        instance->scratch_file = gp_open_scratch_file("ghostxps-scratch-", instance->scratch_name, "wb");
+        if (!instance->scratch_file)
+        {
+            gs_catch(gs_error_invalidfileaccess, "cannot open scratch file");
+            return e_ExitLanguage;
+        }
+        if_debug1('|', "xps: open scratch file '%s'\n", instance->scratch_name);
+    }
+
+    avail = cursor->limit - cursor->ptr;
+    n = fwrite(cursor->ptr + 1, 1, avail, instance->scratch_file);
+    if (n != avail)
+    {
+        gs_catch(gs_error_invalidfileaccess, "cannot write to scratch file");
         return e_ExitLanguage;
     }
-    else if (code < 0)
-        gs_catch(code, "cannot process xps data");
-    return code;
+    cursor->ptr = cursor->limit;
+
+    return 0;
 }
 
 /* Skip to end of job.
@@ -292,9 +306,19 @@ xps_imp_process_eof(pl_interp_instance_t *pinstance)
     xps_context_t *ctx = instance->ctx;
     int code;
 
-    code = xps_process_end_of_data(ctx);
-    if (code)
-        gs_catch(code, "cannot process xps file");
+    if (instance->scratch_file)
+    {
+        if_debug0('|', "xps: executing scratch file\n");
+        fclose(instance->scratch_file);
+        instance->scratch_file = NULL;
+        code = xps_process_file(ctx, instance->scratch_name);
+        unlink(instance->scratch_name);
+        if (code < 0)
+        {
+            gs_catch(code, "cannot process XPS file");
+            return e_ExitLanguage;
+        }
+    }
 
     return 0;
 }
@@ -322,13 +346,10 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
     if (gs_debug_c('|'))
         xps_doc_trace = 1;
 
-    ctx->part_table = xps_hash_new(ctx);
-    ctx->part_list = NULL;
-    ctx->current_part = NULL;
+    ctx->font_table = xps_hash_new(ctx);
+    ctx->colorspace_table = xps_hash_new(ctx);
 
     ctx->start_part = NULL;
-
-    ctx->zip_state = 0;
 
     ctx->use_transparency = 1;
     if (getenv("XPS_DISABLE_TRANSPARENCY"))
@@ -340,6 +361,16 @@ xps_imp_init_job(pl_interp_instance_t *pinstance)
     return 0;
 }
 
+static void xps_free_key_func(xps_context_t *ctx, void *ptr)
+{
+    xps_free(ctx, ptr);
+}
+
+static void xps_free_font_func(xps_context_t *ctx, void *ptr)
+{
+    xps_free_font(ctx, ptr);
+}
+
 /* Wrap up interp instance after a "job" */
 static int
 xps_imp_dnit_job(pl_interp_instance_t *pinstance)
@@ -349,32 +380,18 @@ xps_imp_dnit_job(pl_interp_instance_t *pinstance)
     int i;
 
     if (gs_debug_c('|'))
-        xps_debug_parts(ctx);
-    if (gs_debug_c('|'))
         xps_debug_fixdocseq(ctx);
 
-    /* Free XPS parsing stuff */
-    {
-        xps_part_t *part = ctx->part_list;
-        while (part)
-        {
-            xps_part_t *next = part->next;
-            xps_free_part(ctx, part);
-            part = next;
-        }
+    for (i = 0; i < ctx->zip_count; i++)
+        xps_free(ctx, ctx->zip_table[i].name);
+    xps_free(ctx, ctx->zip_table);
 
-        for (i = 0; i < ctx->zip_count; i++)
-            xps_free(ctx, ctx->zip_table[i].name);
-        xps_free(ctx, ctx->zip_table);
+    /* TODO: free resources too */
+    xps_hash_free(ctx, ctx->font_table, xps_free_key_func, xps_free_font_func);
+    xps_hash_free(ctx, ctx->colorspace_table, xps_free_key_func, NULL);
 
-        xps_hash_free(ctx, ctx->part_table);
-        ctx->part_table = NULL;
-        ctx->part_list = NULL;
-        ctx->current_part = NULL;
-
-        xps_free_fixed_pages(ctx);
-        xps_free_fixed_documents(ctx);
-    }
+    xps_free_fixed_pages(ctx);
+    xps_free_fixed_documents(ctx);
 
     return 0;
 }

@@ -113,7 +113,7 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
 
     dict->base_xml = xml; /* pass on ownership */
 
-    xps_release_part(ctx, part);
+    xps_free_part(ctx, part);
 
     return dict;
 }

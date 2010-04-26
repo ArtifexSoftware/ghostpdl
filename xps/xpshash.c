@@ -126,8 +126,20 @@ xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
 }
 
 void
-xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table)
+xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table,
+    void (*free_key)(xps_context_t *ctx, void *),
+    void (*free_value)(xps_context_t *ctx, void *))
 {
+    int i;
+
+    for (i = 0; i < table->size; i++)
+    {
+        if (table->entries[i].key && free_key)
+            free_key(ctx, table->entries[i].key);
+        if (table->entries[i].value && free_value)
+            free_value(ctx, table->entries[i].value);
+    }
+
     xps_free(ctx, table->entries);
     xps_free(ctx, table);
 }

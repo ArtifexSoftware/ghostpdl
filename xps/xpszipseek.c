@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* XPS interpreter - zip container parsing on a seekable file */
+/* XPS interpreter - zip container parsing */
 
 #include "ghostxps.h"
 
@@ -70,8 +70,12 @@ xps_find_zip_entry(xps_context_t *ctx, char *name)
     return NULL;
 }
 
+/*
+ * Inflate the data in a zip entry.
+ */
+
 static int
-xps_inflate_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
+xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
 {
     z_stream stream;
     unsigned char *inbuf;
@@ -144,165 +148,37 @@ xps_inflate_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbu
     return gs_okay;
 }
 
-static xps_part_t *
-xps_read_zip_entry(xps_context_t *ctx, char *name, xps_entry_t *ent)
-{
-    char buf[2048];
-    xps_part_t *part;
-    int code;
-
-    xps_strlcpy(buf, "/", sizeof buf);
-    xps_strlcat(buf, name, sizeof buf);
-
-    part = xps_find_part(ctx, buf);
-    if (!part)
-    {
-        part = xps_new_part(ctx, buf, ent->usize);
-        if (!part)
-        {
-            gs_rethrow1(-1, "cannot create part for zip entry '%s'", name);
-            return NULL;
-        }
-    }
-
-    if (part->capacity < ent->usize)
-    {
-        part->data = xps_realloc(ctx, part->data, ent->usize);
-        if (!part->data)
-        {
-            gs_throw(-1, "cannot extend part buffer");
-            return NULL;
-        }
-    }
-
-    code = xps_inflate_zip_entry(ctx, ent, part->data);
-    if (code)
-    {
-        gs_rethrow1(code, "cannot inflate zip entry '%s'", name);
-        return NULL;
-    }
-
-    part->size = ent->usize;
-    part->complete = 1;
-
-    return part;
-}
-
-static xps_part_t *
-xps_read_zip_interleaved_entries(xps_context_t *ctx, char *name, int count, int size)
-{
-    char buf[2048];
-    xps_part_t *part;
-    xps_entry_t *ent;
-    int code;
-    int i;
-
-    xps_strlcpy(buf, "/", sizeof buf);
-    xps_strlcat(buf, name, sizeof buf);
-
-    if (xps_zip_trace)
-        dprintf3("zip: interleaved part '%s' pieces=%d size=%d\n", buf, count, size);
-
-    part = xps_find_part(ctx, buf);
-    if (!part)
-    {
-        part = xps_new_part(ctx, buf, size);
-        if (!part)
-        {
-            gs_rethrow1(-1, "cannot create part for zip entry '%s'", buf);
-            return NULL;
-        }
-    }
-
-    if (part->capacity < size)
-    {
-        part->data = xps_realloc(ctx, part->data, size);
-        if (!part->data)
-        {
-            gs_throw(-1, "cannot extend part buffer");
-            return NULL;
-        }
-    }
-
-    for (i = 0; i < count; i++)
-    {
-        if (i == count - 1)
-            sprintf(buf, "%s/[%d].last.piece", name, i);
-        else
-            sprintf(buf, "%s/[%d].piece", name, i);
-
-        ent = xps_find_zip_entry(ctx, buf);
-        if (!ent)
-        {
-            gs_throw1(-1, "cannot find zip entry '%s'", buf);
-            return NULL;
-        }
-
-        code = xps_inflate_zip_entry(ctx, ent, part->data + part->size);
-        if (code)
-        {
-            gs_rethrow1(code, "cannot inflate zip entry '%s'", buf);
-            return NULL;
-        }
-
-        part->size += ent->usize;
-    }
-
-    part->complete = 1;
-
-    return part;
-}
-
 /*
- * Find and read the contents of a part.
- * De-interleaves and reassembles if necessary.
+ * Read the central directory in a zip file.
  */
-xps_part_t *
-xps_read_zip_part(xps_context_t *ctx, char *name)
-{
-    char buf[2048];
-    xps_entry_t *ent;
-    int count, size;
-
-    /* skip leading '/' */
-    if (name[0] == '/')
-        name ++;
-
-    ent = xps_find_zip_entry(ctx, name);
-    if (ent)
-        return xps_read_zip_entry(ctx, name, ent);
-
-    count = 0;
-    size = 0;
-    do
-    {
-        sprintf(buf, "%s/[%d].piece", name, count);
-        ent = xps_find_zip_entry(ctx, buf);
-        if (!ent)
-        {
-            sprintf(buf, "%s/[%d].last.piece", name, count);
-            ent = xps_find_zip_entry(ctx, buf);
-        }
-        if (ent)
-        {
-            count ++;
-            size += ent->usize;
-        }
-    } while (ent);
-    if (count)
-    {
-        return xps_read_zip_interleaved_entries(ctx, name, count, size);
-    }
-
-    return NULL;
-}
 
 static int
-xps_read_zip_dir(xps_context_t *ctx, int offset, int count)
+xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 {
     int sig;
+    int offset, count;
     int namesize, metasize, commentsize;
     int i;
+
+    fseek(ctx->file, start_offset, 0);
+
+    sig = getlong(ctx->file);
+    if (sig != ZIP_END_OF_CENTRAL_DIRECTORY_SIG)
+        return gs_throw1(-1, "wrong zip end of central directory signature (0x%x)", sig);
+
+    (void) getshort(ctx->file); /* this disk */
+    (void) getshort(ctx->file); /* start disk */
+    (void) getshort(ctx->file); /* entries in this disk */
+    count = getshort(ctx->file); /* entries in central directory disk */
+    (void) getlong(ctx->file); /* size of central directory */
+    offset = getlong(ctx->file); /* offset to central directory */
+
+    ctx->zip_count = count;
+    ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
+    if (!ctx->zip_table)
+        return gs_throw(-1, "cannot allocate zip entry table");
+
+    memset(ctx->zip_table, 0, sizeof(xps_entry_t) * count);
 
     fseek(ctx->file, offset, 0);
 
@@ -357,37 +233,7 @@ xps_read_zip_dir(xps_context_t *ctx, int offset, int count)
 }
 
 static int
-xps_read_zip_end_of_dir(xps_context_t *ctx, int start_offset)
-{
-    int sig;
-    int count;
-    int offset;
-
-    fseek(ctx->file, start_offset, 0);
-
-    sig = getlong(ctx->file);
-    if (sig != ZIP_END_OF_CENTRAL_DIRECTORY_SIG)
-        return gs_throw1(-1, "wrong zip end of central directory signature (0x%x)", sig);
-
-    (void) getshort(ctx->file); /* this disk */
-    (void) getshort(ctx->file); /* start disk */
-    (void) getshort(ctx->file); /* entries in this disk */
-    count = getshort(ctx->file); /* entries in central directory disk */
-    (void) getlong(ctx->file); /* size of central directory */
-    offset = getlong(ctx->file); /* offset to central directory */
-
-    ctx->zip_count = count;
-    ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
-    if (!ctx->zip_table)
-        return gs_throw(-1, "cannot allocate zip entry table");
-
-    memset(ctx->zip_table, 0, sizeof(xps_entry_t) * count);
-
-    return xps_read_zip_dir(ctx, offset, count);
-}
-
-static int
-xps_find_zip_end_of_dir(xps_context_t *ctx)
+xps_find_and_read_zip_dir(xps_context_t *ctx)
 {
     int filesize, back, maxback;
     int i, n;
@@ -409,7 +255,7 @@ xps_find_zip_end_of_dir(xps_context_t *ctx)
 
         for (i = n - 4; i > 0; i--)
             if (!memcmp(buf + i, "PK\5\6", 4))
-                return xps_read_zip_end_of_dir(ctx, filesize - back + i);
+                return xps_read_zip_dir(ctx, filesize - back + i);
 
         back += sizeof buf - 4;
     }
@@ -417,13 +263,82 @@ xps_find_zip_end_of_dir(xps_context_t *ctx)
     return gs_throw(-1, "cannot find end of central directory");
 }
 
+/*
+ * Read and interleave split parts.
+ */
+
+xps_part_t *
+xps_read_part(xps_context_t *ctx, char *partname)
+{
+    char buf[2048];
+    xps_entry_t *ent;
+    xps_part_t *part;
+    int count, size, offset, i;
+    char *name;
+
+    name = partname;
+    if (name[0] == '/')
+        name ++;
+
+    /* All in one piece */
+    ent = xps_find_zip_entry(ctx, name);
+    if (ent)
+    {
+        part = xps_new_part(ctx, partname, ent->usize);
+        xps_read_zip_entry(ctx, ent, part->data);
+        return part;
+    }
+
+    /* Count the number of pieces and their total size */
+    count = 0;
+    size = 0;
+    while (1)
+    {
+        sprintf(buf, "%s/[%d].piece", name, count);
+        ent = xps_find_zip_entry(ctx, buf);
+        if (!ent)
+        {
+            sprintf(buf, "%s/[%d].last.piece", name, count);
+            ent = xps_find_zip_entry(ctx, buf);
+        }
+        if (!ent)
+            break;
+        count ++;
+        size += ent->usize;
+    }
+
+    /* Inflate the pieces */
+    if (count)
+    {
+        part = xps_new_part(ctx, partname, size);
+        offset = 0;
+        for (i = 0; i < count; i++)
+        {
+            if (i < count - 1)
+                sprintf(buf, "%s/[%d].piece", name, i);
+            else
+                sprintf(buf, "%s/[%d].last.piece", name, i);
+            ent = xps_find_zip_entry(ctx, buf);
+            xps_read_zip_entry(ctx, ent, part->data + offset);
+            offset += ent->usize;
+        }
+        return part;
+    }
+
+    return NULL;
+}
+
+/*
+ * Read and process the XPS document.
+ */
+
 static int
 xps_read_and_process_metadata_part(xps_context_t *ctx, char *name)
 {
     xps_part_t *part;
     int code;
 
-    part = xps_read_zip_part(ctx, name);
+    part = xps_read_part(ctx, name);
     if (!part)
         return gs_rethrow1(-1, "cannot read zip part '%s'", name);
 
@@ -431,7 +346,7 @@ xps_read_and_process_metadata_part(xps_context_t *ctx, char *name)
     if (code)
         return gs_rethrow1(code, "cannot process metadata part '%s'", name);
 
-    xps_release_part(ctx, part);
+    xps_free_part(ctx, part);
 
     return gs_okay;
 }
@@ -442,7 +357,7 @@ xps_read_and_process_page_part(xps_context_t *ctx, char *name)
     xps_part_t *part;
     int code;
 
-    part = xps_read_zip_part(ctx, name);
+    part = xps_read_part(ctx, name);
     if (!part)
         return gs_rethrow1(-1, "cannot read zip part '%s'", name);
 
@@ -450,23 +365,27 @@ xps_read_and_process_page_part(xps_context_t *ctx, char *name)
     if (code)
         return gs_rethrow1(code, "cannot parse fixed page part '%s'", name);
 
-    xps_release_part(ctx, part);
+    xps_free_part(ctx, part);
 
     return gs_okay;
 }
 
+/*
+ * Called by xpstop.c
+ */
+
 int
-xps_process_file(xps_context_t *ctx, FILE *file)
+xps_process_file(xps_context_t *ctx, char *filename)
 {
-    xps_relation_t *rel;
     xps_document_t *doc;
     xps_page_t *page;
-    xps_part_t *part;
     int code;
 
-    ctx->file = file;
+    ctx->file = fopen(filename, "rb");
+    if (!ctx->file)
+        return gs_throw(-1, "cannot open XPS file");
 
-    code = xps_find_zip_end_of_dir(ctx);
+    code = xps_find_and_read_zip_dir(ctx);
     if (code < 0)
         return gs_rethrow(code, "cannot read zip central directory");
 
@@ -474,22 +393,8 @@ xps_process_file(xps_context_t *ctx, FILE *file)
     if (code)
         return gs_rethrow(code, "cannot process root relationship part");
 
-    part = xps_find_part(ctx, "/");
-    if (!part)
-        return gs_rethrow(code, "cannot find root part");
-
-    for (rel = part->relations; rel; rel = rel->next)
-    {
-        if (!strcmp(rel->type, REL_START_PART))
-        {
-            ctx->start_part = rel->target;
-            if (xps_doc_trace)
-                dprintf1("doc: adding fixdocseq %s\n", ctx->start_part);
-        }
-    }
-
     if (!ctx->start_part)
-        return gs_throw(-1, "cannot find fixed document sequence relationship");
+        return gs_throw(-1, "cannot find fixed document sequence start part");
 
     code = xps_read_and_process_metadata_part(ctx, ctx->start_part);
     if (code)
@@ -508,6 +413,8 @@ xps_process_file(xps_context_t *ctx, FILE *file)
         if (code)
             return gs_rethrow(code, "cannot process FixedPage part");
     }
+
+    fclose(ctx->file);
 
     return gs_okay;
 }

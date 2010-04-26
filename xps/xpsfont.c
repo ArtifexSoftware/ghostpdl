@@ -128,7 +128,7 @@ xps_free_font(xps_context_t *ctx, xps_font_t *font)
  */
 
 int
-xps_find_sfnt_table(xps_font_t *font, char *name, int *lengthp)
+xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
 {
     int offset;
     int ntables;
