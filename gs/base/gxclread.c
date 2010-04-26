@@ -448,6 +448,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
             return gs_rethrow(-1, "insufficient memory for icc table entry");
         memcpy(&(curr_entry->serial_data), buf, sizeof(clist_icc_serial_entry_t));
         buf += sizeof(clist_icc_serial_entry_t);
+        curr_entry->icc_profile = NULL;
         if ( icc_table->head == NULL ) {
             icc_table->head = curr_entry;
             icc_table->final = curr_entry;

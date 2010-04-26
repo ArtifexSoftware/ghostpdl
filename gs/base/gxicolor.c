@@ -295,7 +295,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     fixed pdyx, pdyy;		/* edge of parallelogram */
     int vci, vdi;
     const gs_color_space *pcs;
-    gs_client_color cc;
     gx_device_color devc1;
     gx_device_color devc2;
     gx_device_color *pdevc;
@@ -413,7 +412,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
 	      penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
     memset(&run, 0, sizeof(run));
     memset(&next, 0, sizeof(next));
-    cs_full_init_color(&cc, pcs);
     run.v[0] = ~psrc_cm[0];	/* Force intial setting */
     while (psrc_cm < bufend) {
         dda_next(pnext.x);
