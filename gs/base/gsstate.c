@@ -551,6 +551,7 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
     gx_clip_path *view_clip = pgs->view_clip;
     gs_transparency_state_t *tstack = pgs->transparency_stack;
     int code;
+    int prior_op = pfrom->overprint;
 
     pgs->view_clip = 0;		/* prevent refcount decrementing */
     code = gstate_copy(pgs, pfrom, copy_for_setgstate, "gs_setgstate");
@@ -562,8 +563,11 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
 	(pgs->show_gstate == pfrom ? pgs : saved_show);
     pgs->transparency_stack = tstack;
 
-    /* update the overprint compositor */
-    return gs_do_set_overprint(pgs);
+    /* update the overprint compositor but only if it is different */
+    if (pgs->overprint != prior_op )
+        return(gs_do_set_overprint(pgs));
+
+    return(0);
 }
 
 /* Get the allocator pointer of a graphics state. */
