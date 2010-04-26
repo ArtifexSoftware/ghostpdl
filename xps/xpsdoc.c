@@ -75,8 +75,7 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
         if (!strcmp(fixdoc->name, name))
             return 0;
 
-    if (xps_doc_trace)
-        dprintf1("doc: adding fixdoc %s\n", name);
+    if_debug1('|', "doc: adding fixdoc %s\n", name);
 
     fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
     if (!fixdoc)
@@ -130,8 +129,7 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
         if (!strcmp(page->name, name))
             return 0;
 
-    if (xps_doc_trace)
-        dprintf1("doc: adding page %s\n", name);
+    if_debug1('|', "doc: adding page %s\n", name);
 
     page = xps_alloc(ctx, sizeof(xps_page_t));
     if (!page)

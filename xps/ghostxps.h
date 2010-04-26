@@ -114,9 +114,6 @@ typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
  * Context and memory.
  */
 
-extern int xps_zip_trace;
-extern int xps_doc_trace;
-
 void * xps_realloc_imp(xps_context_t *ctx, void *ptr, int size, const char *func);
 
 #define xps_alloc(ctx, size) \
@@ -200,6 +197,7 @@ struct xps_context_s
     gs_color_space *scrgb;
     gs_color_space *cmyk;
 
+    char *directory;
     FILE *file;
     int zip_count;
     xps_entry_t *zip_table;

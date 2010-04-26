@@ -15,6 +15,17 @@
 
 #include "ghostxps.h"
 
+static int isfile(char *path)
+{
+    FILE *file = fopen(path, "rb");
+    if (file)
+    {
+        fclose(file);
+        return 1;
+    }
+    return 0;
+}
+
 static inline int getshort(FILE *file)
 {
     int a = getc(file);
@@ -84,8 +95,7 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
     int namelength, extralength;
     int code;
 
-    if (xps_zip_trace)
-        dprintf1("zip: inflating entry '%s'\n", ent->name);
+    if_debug1('|', "zip: inflating entry '%s'\n", ent->name);
 
     fseek(ctx->file, ent->offset, 0);
 
@@ -218,15 +228,12 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 
     qsort(ctx->zip_table, count, sizeof(xps_entry_t), xps_compare_entries);
 
-    if (xps_zip_trace)
+    for (i = 0; i < ctx->zip_count; i++)
     {
-        for (i = 0; i < ctx->zip_count; i++)
-        {
-            dprintf3("zip entry '%s' csize=%d usize=%d\n",
-                    ctx->zip_table[i].name,
-                    ctx->zip_table[i].csize,
-                    ctx->zip_table[i].usize);
-        }
+        if_debug3('|', "zip entry '%s' csize=%d usize=%d\n",
+                ctx->zip_table[i].name,
+                ctx->zip_table[i].csize,
+                ctx->zip_table[i].usize);
     }
 
     return gs_okay;
@@ -264,11 +271,11 @@ xps_find_and_read_zip_dir(xps_context_t *ctx)
 }
 
 /*
- * Read and interleave split parts.
+ * Read and interleave split parts from a ZIP file.
  */
 
-xps_part_t *
-xps_read_part(xps_context_t *ctx, char *partname)
+static xps_part_t *
+xps_read_zip_part(xps_context_t *ctx, char *partname)
 {
     char buf[2048];
     xps_entry_t *ent;
@@ -329,6 +336,84 @@ xps_read_part(xps_context_t *ctx, char *partname)
 }
 
 /*
+ * Read and interleave split parts from files in the directory.
+ */
+
+static xps_part_t *
+xps_read_dir_part(xps_context_t *ctx, char *name)
+{
+    char buf[2048];
+    xps_part_t *part;
+    FILE *file;
+    int count, size, offset, i, n;
+
+    xps_strlcpy(buf, ctx->directory, sizeof buf);
+    xps_strlcat(buf, name, sizeof buf);
+
+    /* All in one piece */
+    file = fopen(buf, "rb");
+    if (file)
+    {
+        fseek(file, 0, SEEK_END);
+        size = ftell(file);
+        fseek(file, 0, SEEK_SET);
+        part = xps_new_part(ctx, name, size);
+        fread(part->data, 1, size, file);
+        fclose(file);
+        return part;
+    }
+
+    /* Count the number of pieces and their total size */
+    count = 0;
+    size = 0;
+    while (1)
+    {
+        sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, count);
+        file = fopen(buf, "rb");
+        if (!file)
+        {
+            sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, count);
+            file = fopen(buf, "rb");
+        }
+        if (!file)
+            break;
+        count ++;
+        fseek(file, 0, SEEK_END);
+        size += ftell(file);
+        fclose(file);
+    }
+
+    /* Inflate the pieces */
+    if (count)
+    {
+        part = xps_new_part(ctx, name, size);
+        offset = 0;
+        for (i = 0; i < count; i++)
+        {
+            if (i < count - 1)
+                sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, i);
+            else
+                sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, i);
+            file = fopen(buf, "rb");
+            n = fread(part->data + offset, 1, size - offset, file);
+            offset += n;
+            fclose(file);
+        }
+        return part;
+    }
+
+    return NULL;
+}
+
+xps_part_t *
+xps_read_part(xps_context_t *ctx, char *partname)
+{
+    if (ctx->directory)
+        return xps_read_dir_part(ctx, partname);
+    return xps_read_zip_part(ctx, partname);
+}
+
+/*
  * Read and process the XPS document.
  */
 
@@ -377,17 +462,77 @@ xps_read_and_process_page_part(xps_context_t *ctx, char *name)
 int
 xps_process_file(xps_context_t *ctx, char *filename)
 {
+    char buf[2048];
     xps_document_t *doc;
     xps_page_t *page;
     int code;
+    char *p;
 
     ctx->file = fopen(filename, "rb");
     if (!ctx->file)
-        return gs_throw(-1, "cannot open XPS file");
+        return gs_throw1(-1, "cannot open file: '%s'", filename);
 
-    code = xps_find_and_read_zip_dir(ctx);
-    if (code < 0)
-        return gs_rethrow(code, "cannot read zip central directory");
+    if (strstr(filename, ".fpage"))
+    {
+        xps_part_t *part;
+        int size;
+
+        if_debug0('|', "zip: single page mode\n");
+        xps_strlcpy(buf, filename, sizeof buf);
+        while (1)
+        {
+            p = strrchr(buf, '/');
+            if (!p)
+                p = strrchr(buf, '\\');
+            if (!p)
+                break;
+            xps_strlcpy(p, "/_rels/.rels", buf + sizeof buf - p);
+            if_debug1('|', "zip: testing if '%s' exists\n", buf);
+            if (isfile(buf))
+            {
+                *p = 0;
+                ctx->directory = xps_strdup(ctx, buf);
+                if_debug1('|', "zip: using '%s' as root directory\n", ctx->directory);
+                break;
+            }
+            *p = 0;
+        }
+        if (!ctx->directory)
+        {
+            if_debug0('|', "zip: no /_rels/.rels found; assuming absolute paths\n");
+            ctx->directory = xps_strdup(ctx, "");
+        }
+
+        fseek(ctx->file, 0, SEEK_END);
+        size = ftell(ctx->file);
+        fseek(ctx->file, 0, SEEK_SET);
+        part = xps_new_part(ctx, filename, size);
+        fread(part->data, 1, size, ctx->file);
+
+        code = xps_parse_fixed_page(ctx, part);
+        if (code)
+            return gs_rethrow1(code, "cannot parse fixed page part '%s'", part->name);
+
+        xps_free_part(ctx, part);
+        return gs_okay;
+    }
+
+    if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
+    {
+        xps_strlcpy(buf, filename, sizeof buf);
+        p = strstr(buf, "/_rels/.rels");
+        if (!p)
+            p = strstr(buf, "\\_rels\\.rels");
+        *p = 0;
+        ctx->directory = xps_strdup(ctx, buf);
+        if_debug1('|', "zip: using '%s' as root directory\n", ctx->directory);
+    }
+    else
+    {
+        code = xps_find_and_read_zip_dir(ctx);
+        if (code < 0)
+            return gs_rethrow(code, "cannot read zip central directory");
+    }
 
     code = xps_read_and_process_metadata_part(ctx, "/_rels/.rels");
     if (code)
@@ -414,7 +559,10 @@ xps_process_file(xps_context_t *ctx, char *filename)
             return gs_rethrow(code, "cannot process FixedPage part");
     }
 
-    fclose(ctx->file);
+    if (ctx->directory)
+        xps_free(ctx, ctx->directory);
+    if (ctx->file)
+        fclose(ctx->file);
 
     return gs_okay;
 }
