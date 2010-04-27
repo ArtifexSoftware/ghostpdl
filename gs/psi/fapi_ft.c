@@ -470,6 +470,9 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         a_metrics->em_y = ft_face->units_per_EM;
     }
 
+    if (!ft_error && a_glyph)
+        ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
+
     if (ft_error == FT_Err_Too_Many_Hints) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
@@ -502,7 +505,6 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 #endif
 	ft_error = 0;
     }
-
     return ft_to_gs_error(ft_error);
 } 
 
@@ -1014,7 +1016,7 @@ static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObje
     Control2x = float2fixed((x + Controlx * 2) / 3) << 8;
     Control2y = float2fixed((y + Controly * 2) / 3) << 8;
 
-    return p->path->curveto(p->path, (FracInt)Control1x,
+    return p->path->curveto(p->path, Control1x,
 	    (FracInt)Control1y,
 	    (FracInt)Control2x,
 	    (FracInt)Control2y,
