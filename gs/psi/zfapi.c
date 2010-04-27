@@ -55,6 +55,7 @@
 #include "ipacked.h"	    /* for packed_next */
 #include "iddict.h"
 #include "ifont42.h"        /* for string_array_access_proc */
+#include "gdebug.h"
 
 /* -------------------------------------------------------- */
 
@@ -1520,15 +1521,23 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 		    int dy = arith_rshift_slow((pgs->ctm.ty_fixed >> shift_rd) + rast_orig_y + rounding, frac_pixel_shift);
 
 		    if (dx + rast.left_indent < 0 || dx + rast.left_indent + rast.black_width > dev1->width) {
-			eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n",
-				dx + rast.left_indent, dx + rast.left_indent + rast.black_width - dev1->width);
-			if (dx + rast.left_indent < 0)
+#ifdef DEBUG
+			if (gs_debug_c('m')) {
+                            eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n",
+				    dx + rast.left_indent, dx + rast.left_indent + rast.black_width - dev1->width);
+			}
+#endif
+                        if (dx + rast.left_indent < 0)
 			    dx -= dx + rast.left_indent;
 		    }
 		    if (dy + rast.top_indent < 0 || dy + rast.top_indent + rast.black_height > dev1->height) {
-			eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n",
-				dy + rast.top_indent, dy + rast.top_indent + rast.black_height - dev1->height);
-			if (dy + rast.top_indent < 0)
+#ifdef DEBUG
+			if (gs_debug_c('m')) {
+			    eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n",
+				    dy + rast.top_indent, dy + rast.top_indent + rast.black_height - dev1->height);
+			}
+#endif
+                        if (dy + rast.top_indent < 0)
 			    dy -= dy + rast.top_indent;
 		    }
 		    if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)

@@ -29,6 +29,7 @@
 #include "gsmemory.h"
 #include "gsmalloc.h"
 #include "gxfixed.h"
+#include "gdebug.h"
 
 /* FreeType headers */
 #include <ft2build.h>
@@ -441,13 +442,13 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         /* In order to get the metrics in the form we need them, we have to remove the size scaling
          * the resolution scaling, and convert to points.
          */
-        hx = (((double)ft_face->glyph->metrics.horiBearingX * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
-        hy = (((double)ft_face->glyph->metrics.horiBearingY * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+        hx = (FT_Long)(((double)ft_face->glyph->metrics.horiBearingX * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        hy = (FT_Long)(((double)ft_face->glyph->metrics.horiBearingY * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
 
-        w = (((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
-        h = (((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+        w = (FT_Long)(((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        h = (FT_Long)(((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
 
-        hadv = (((double)ft_face->glyph->metrics.horiAdvance * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        hadv = (FT_Long)(((double)ft_face->glyph->metrics.horiAdvance * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
 
 	/* Ugly. FreeType creates verticla metrics for TT fonts, normally we override them in the 
 	 * metrics callbacks, but those only work for incremental interface fonts, and TrueType fonts
@@ -457,7 +458,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	if(!a_fapi_font->is_type1 && a_fapi_font->is_cid && !a_fapi_font->is_vertical)
 	    vadv = 0;
 	else
-	    vadv = (((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+	    vadv = (FT_Long)(((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
         
         a_metrics->bbox_x0 = hx;
         a_metrics->bbox_y0 = hy - h;
@@ -469,25 +470,39 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         a_metrics->em_y = ft_face->units_per_EM;
     }
 
-    if (!ft_error && a_glyph)
-	ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
-
     if (ft_error == FT_Err_Too_Many_Hints) {
-	eprintf1 ("TrueType glyph %d uses more instructions than the declared maximum in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+#ifdef DEBUG
+	if (gs_debug_c('1')) {
+            eprintf1 ("TrueType glyph %d uses more instructions than the declared maximum in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+        }
+#endif
 	ft_error = 0;
     }
     if (ft_error == FT_Err_Invalid_Argument) {
-	eprintf1 ("TrueType parsing error in glyph %d in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+#ifdef DEBUG
+	if (gs_debug_c('1')) {
+	    eprintf1 ("TrueType parsing error in glyph %d in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+        }
+#endif
 	ft_error = 0;
     }
     if (ft_error == FT_Err_Too_Many_Function_Defs) {
-	eprintf1 ("TrueType instruction error in glyph %d in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+#ifdef DEBUG
+	if (gs_debug_c('1')) {
+	    eprintf1 ("TrueType instruction error in glyph %d in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+        }
+#endif
 	ft_error = 0;
     }
     if (ft_error == FT_Err_Invalid_Glyph_Index) {
-	eprintf1 ("FreeType is unable to find the glyph %d in the font. Continuing, ignoring missing glyph\n", a_char_ref->char_code);
+#ifdef DEBUG
+	if (gs_debug_c('1')) {
+	    eprintf1 ("FreeType is unable to find the glyph %d in the font. Continuing, ignoring missing glyph\n", a_char_ref->char_code);
+        }
+#endif
 	ft_error = 0;
     }
+
     return ft_to_gs_error(ft_error);
 } 
 
@@ -601,17 +616,17 @@ transform_decompose(FT_Matrix *a_transform, FT_Fixed *a_x_scale, FT_Fixed *a_y_s
 	}
     }
     
-    ftscale_mat.xx = ((1.0 / scalex)) * 65536.0;
+    ftscale_mat.xx = (FT_Fixed)(((1.0 / scalex)) * 65536.0);
     ftscale_mat.xy = 0;
     ftscale_mat.yx = 0;
-    ftscale_mat.yy = ((1.0 / scaley)) * 65536.0;
+    ftscale_mat.yy = (FT_Fixed)(((1.0 / scaley)) * 65536.0);
     
     FT_Matrix_Multiply (a_transform, &ftscale_mat);
     memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));
         
     /* Return values ready scaled for FT */
-    *a_x_scale = scalex * 64;
-    *a_y_scale = scaley * 64;
+    *a_x_scale = (FT_Fixed)(scalex * 64);
+    *a_y_scale = (FT_Fixed)(scaley * 64);
 }
 
 /*
@@ -942,7 +957,7 @@ typedef struct FF_path_info_s
     FracInt y;
 } FF_path_info;
 
-static int move_to(FT_Vector *aTo, void *aObject)
+static int move_to(const FT_Vector *aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info*)aObject;
 
@@ -958,7 +973,7 @@ static int move_to(FT_Vector *aTo, void *aObject)
     return p->path->moveto(p->path, p->x, p->y) ? -1 : 0;
 }
 
-static int line_to(FT_Vector *aTo, void *aObject)
+static int line_to(const FT_Vector *aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info*)aObject;
 
@@ -969,7 +984,7 @@ static int line_to(FT_Vector *aTo, void *aObject)
     return p->path->lineto(p->path, p->x, p->y) ? -1 : 0;
 }
 
-static int conic_to(FT_Vector *aControl, FT_Vector *aTo, void *aObject)
+static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info*)aObject;
     floatp x, y, Controlx, Controly, Control1x, Control1y, Control2x, Control2y;
@@ -999,14 +1014,14 @@ static int conic_to(FT_Vector *aControl, FT_Vector *aTo, void *aObject)
     Control2x = float2fixed((x + Controlx * 2) / 3) << 8;
     Control2y = float2fixed((y + Controly * 2) / 3) << 8;
 
-    return p->path->curveto(p->path, Control1x,
-	    Control1y,
-	    Control2x,
-	    Control2y,
+    return p->path->curveto(p->path, (FracInt)Control1x,
+	    (FracInt)Control1y,
+	    (FracInt)Control2x,
+	    (FracInt)Control2y,
 	    p->x, p->y) ? -1 : 0;
 }
 
-static int cubic_to(FT_Vector *aControl1, FT_Vector *aControl2, FT_Vector *aTo, void *aObject)
+static int cubic_to(const FT_Vector *aControl1, const FT_Vector *aControl2, const FT_Vector *aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info*)aObject;
     unsigned long Control1x, Control1y, Control2x, Control2y;
