@@ -782,7 +782,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         /* unfortunately device finalize procedures will clobber the
            stype which is used for later debugging with "A" debug
            tracing, so we save stype it in a local. */
-        if (gs_debug['a'])
+        if (gs_debug['a'] || gs_debug['A'])
             saved_stype = *pstype;
 
 	if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
@@ -790,7 +790,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 		  (ulong) ptr, client_name_string(cname));
 	(*finalize) (ptr);
 
-        if (gs_debug['a'])
+        if (gs_debug['a'] || gs_debug['A'])
             pstype = &saved_stype;
     }
     if ((byte *) ptr + rounded_size == imem->cc.cbot) {
