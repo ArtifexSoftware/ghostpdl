@@ -32,6 +32,7 @@
 #include "gzcpath.h"
 #include "gxpaint.h"
 #include "vdtrace.h"
+#include "gsstate.h"            /* for gs_currentcpsimode */
 
 /* RJW: There appears to be a difference in the xps and postscript models
  * (at least in as far as Microsofts implementation of xps and Acrobats of

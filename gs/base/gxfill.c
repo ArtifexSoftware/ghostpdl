@@ -50,6 +50,7 @@
 #include "memory_.h"
 #include "stdint_.h"
 #include "vdtrace.h"
+#include "gsstate.h"            /* for gs_currentcpsimode */
 /*
 #include "gxfilltr.h" - Do not remove this comment. "gxfilltr.h" is included below.
 #include "gxfillsl.h" - Do not remove this comment. "gxfillsl.h" is included below.

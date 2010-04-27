@@ -477,11 +477,11 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 		    y_scale = max(((floatp) abs(xdev->points.data[i].y - temp_origin_y))/0x7FFF , y_scale);
 		}
 		for (i = 0; i < count; ++i) {
-		    xdev->points.data[i].x = (xdev->points.data[i].x - temp_origin_x)/x_scale + 0.5;
-		    xdev->points.data[i].y = (xdev->points.data[i].y - temp_origin_y)/y_scale + 0.5;
+		    xdev->points.data[i].x = (int)((xdev->points.data[i].x - temp_origin_x)/x_scale + 0.5);
+		    xdev->points.data[i].y = (int)((xdev->points.data[i].y - temp_origin_y)/y_scale + 0.5);
 		}
-		x = (x - temp_origin_x)/x_scale + 0.5;
-		y = (y - temp_origin_y)/y_scale + 0.5;
+		x = (int)((x - temp_origin_x)/x_scale + 0.5);
+		y = (int)((y - temp_origin_y)/y_scale + 0.5);
 		pclxl_set_page_scale(xdev, x_scale, y_scale);
 	    } else {
 		/* don't reset origin if we did not scale */

@@ -230,7 +230,8 @@ gs_begin_transparency_group(gs_state *pgs,
     const gs_color_space *blend_color_space;
     gs_imager_state * pis = (gs_imager_state *)pgs;
 
-    if (check_for_nontrans_pattern(pgs, "gs_begin_transparency_group")) {
+    if (check_for_nontrans_pattern(pgs,
+                  (unsigned char *)"gs_begin_transparency_group")) {
         return(0);
     }
     /*
@@ -390,7 +391,8 @@ gs_end_transparency_group(gs_state *pgs)
 {
     gs_pdf14trans_params_t params = { 0 };
 
-    if (check_for_nontrans_pattern(pgs, "gs_end_transparency_group")) {
+    if (check_for_nontrans_pattern(pgs,
+                  (unsigned char *)"gs_end_transparency_group")) {
         return(0);
     }
     if_debug0('v', "[v]gs_end_transparency_group\n");
@@ -418,7 +420,8 @@ gs_push_transparency_state(gs_state *pgs)
     gs_imager_state * pis = (gs_imager_state *)pgs;
     int code;
 
-    if (check_for_nontrans_pattern(pgs, "gs_push_transparency_state")) {
+    if (check_for_nontrans_pattern(pgs,
+                  (unsigned char *)"gs_push_transparency_state")) {
         return(0);
     }
     /* Set the pending flag to true, which indicates
@@ -466,7 +469,8 @@ gs_pop_transparency_state(gs_state *pgs)
     gs_imager_state * pis = (gs_imager_state *)pgs;
     int code;
 
-    if (check_for_nontrans_pattern(pgs, "gs_pop_transparency_state")) {
+    if (check_for_nontrans_pattern(pgs,
+                  (unsigned char *)"gs_pop_transparency_state")) {
         return(0);
     }
     /* Check if flag is set, which indicates that we have 
@@ -551,7 +555,8 @@ gs_begin_transparency_mask(gs_state * pgs,
     gs_imager_state * pis = (gs_imager_state *)pgs;
     int num_components;
 
-    if (check_for_nontrans_pattern(pgs, "gs_pop_transparency_state")) {
+    if (check_for_nontrans_pattern(pgs,
+                  (unsigned char *)"gs_pop_transparency_state")) {
         return(0);
     }
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
@@ -720,7 +725,8 @@ gs_end_transparency_mask(gs_state *pgs,
     gs_pdf14trans_params_t params = { 0 };
     gs_imager_state * pis = (gs_imager_state *)pgs;
 
-    if (check_for_nontrans_pattern(pgs, "gs_end_transparency_mask")) {
+    if (check_for_nontrans_pattern(pgs,
+                  (unsigned char *)"gs_end_transparency_mask")) {
         return(0);
     }
     /* If we have done a q then set a flag to watch for any Qs */

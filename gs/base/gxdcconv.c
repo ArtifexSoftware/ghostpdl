@@ -21,6 +21,7 @@
 #include "gxfarith.h"
 #include "gxlum.h"
 #include "gxistate.h"
+#include "gsstate.h"            /* for gs_currentcpsimode */
 
 /*
  * The CMYK to RGB algorithms specified by Adobe are, e.g.,

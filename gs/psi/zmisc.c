@@ -28,6 +28,7 @@
 #include "ipacked.h"
 #include "ivmspace.h"
 #include "store.h"
+#include "igstate.h"            /* for gs_currentcpsimode */
 
 /**********************************************************************/
 

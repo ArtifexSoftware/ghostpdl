@@ -1140,7 +1140,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 	    }
 	}
 
-	code = rinkj_device_write(cmyk_dev, split_plane_data);
+	code = rinkj_device_write(cmyk_dev, (const char **)split_plane_data);
     }
 
     rinkj_device_write(cmyk_dev, NULL);
