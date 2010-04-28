@@ -234,7 +234,7 @@ gx_dc_ht_colored_write(
         if (num_comps > 8 * sizeof(uint)) {
             tmp_mask = (uint)plane_mask;
             req_size += enc_u_sizew(tmp_mask);
-            tmp_mask = (uint)(plane_mask >> (8 * sizeof(uint)));
+            tmp_mask = (uint)((plane_mask >> (8*sizeof(uint)-1)) >> 1);
             req_size += enc_u_sizew(tmp_mask);
         } else {
             tmp_mask = (uint)plane_mask;
@@ -299,7 +299,7 @@ gx_dc_ht_colored_write(
         if (num_comps > 8 * sizeof(uint)) {
             tmp_mask = (uint)plane_mask;
             enc_u_putw(tmp_mask, pdata);
-            tmp_mask = (uint)(plane_mask >> (8 * sizeof(uint)));
+            tmp_mask = (uint)((plane_mask >> (8*sizeof(uint)-1))>>1);
             enc_u_putw(tmp_mask, pdata);
         } else {
             tmp_mask = (uint)plane_mask;
@@ -428,7 +428,7 @@ gx_dc_ht_colored_read(
             enc_u_getw(tmp_mask, pdata);
             plane_mask = (gx_color_index)tmp_mask;
             enc_u_getw(tmp_mask, pdata);
-            plane_mask = (gx_color_index)tmp_mask << (8 * sizeof(uint));
+            plane_mask = (((gx_color_index)tmp_mask)<<(8 * sizeof(uint)-1))<<1;
         } else {
             enc_u_getw(tmp_mask, pdata);
             plane_mask = (gx_color_index)tmp_mask;
