@@ -46,10 +46,12 @@ CLEAR_MARKS_PROC(context_state_clear_marks)
     r_clear_attrs(&pcst->stdio[2], l_mark);
     r_clear_attrs(&pcst->error_object, l_mark);
     r_clear_attrs(&pcst->userparams, l_mark);
+    r_clear_attrs(&pcst->op_array_table_global.table, l_mark);
+    r_clear_attrs(&pcst->op_array_table_local.table, l_mark);
 }
 static 
 ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
-    index -= 6;
+    index -= 10;
     if (index < st_gs_dual_memory_num_ptrs)
 	return ENUM_USING(st_gs_dual_memory, &pcst->memory,
 			  sizeof(pcst->memory), index);
@@ -71,6 +73,10 @@ ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
     case 3: ENUM_RETURN_REF(&pcst->stdio[2]);
     case 4: ENUM_RETURN_REF(&pcst->error_object);
     case 5: ENUM_RETURN_REF(&pcst->userparams);
+    ENUM_PTR(6, gs_context_state_t, op_array_table_global.nx_table);
+    ENUM_PTR(7, gs_context_state_t, op_array_table_local.nx_table);
+    case 8: ENUM_RETURN_REF(&pcst->op_array_table_global.table);
+    case 9: ENUM_RETURN_REF(&pcst->op_array_table_local.table);
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
     RELOC_PTR(gs_context_state_t, pgs);
@@ -83,6 +89,12 @@ static RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
     r_clear_attrs(&pcst->error_object, l_mark);
     RELOC_REF_VAR(pcst->userparams);
     r_clear_attrs(&pcst->userparams, l_mark);
+    RELOC_PTR(gs_context_state_t, op_array_table_global.nx_table);
+    RELOC_PTR(gs_context_state_t, op_array_table_local.nx_table);
+    RELOC_REF_VAR(pcst->op_array_table_global.table);
+    r_clear_attrs(&pcst->op_array_table_global.table, l_mark);
+    RELOC_REF_VAR(pcst->op_array_table_local.table);
+    r_clear_attrs(&pcst->op_array_table_local.table, l_mark);
     RELOC_USING(st_dict_stack, &pcst->dict_stack, sizeof(pcst->dict_stack));
     RELOC_USING(st_exec_stack, &pcst->exec_stack, sizeof(pcst->exec_stack));
     RELOC_USING(st_op_stack, &pcst->op_stack, sizeof(pcst->op_stack));

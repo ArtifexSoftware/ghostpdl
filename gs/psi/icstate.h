@@ -23,6 +23,7 @@
 #include "iesdata.h"
 #include "iosdata.h"
 #include "stream.h"
+#include "opdef.h"
 
 /*
  * Define the externally visible state of an interpreter context.
@@ -61,6 +62,8 @@ struct gs_context_state_s {
     gs_file_path_ptr lib_path;	/* library search list (GS_LIB) */
     ref stdio[3];		/* t_file */
     stream *invalid_file_stream;/* An invalid file object (stable memory) */
+    op_array_table op_array_table_global; /* Global operator table */
+    op_array_table op_array_table_local;  /* Local operator table */
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;
     exec_stack_t exec_stack;

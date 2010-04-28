@@ -90,6 +90,28 @@ gs_main_alloc_instance(gs_memory_t *mem)
     return minst;
 }
 
+op_array_table *
+get_op_array(const gs_memory_t *mem, int size)
+{
+    gs_main_instance *minst = get_minst_from_memory(mem);
+    return op_index_op_array_table(minst->i_ctx_p,size);
+}
+
+op_array_table *
+get_global_op_array(const gs_memory_t *mem)
+{
+    gs_main_instance *minst = get_minst_from_memory(mem);
+    return &minst->i_ctx_p->op_array_table_global;
+}
+
+op_array_table *
+get_local_op_array(const gs_memory_t *mem)
+{
+    gs_main_instance *minst = get_minst_from_memory(mem);
+    return &minst->i_ctx_p->op_array_table_local;
+}
+
+
 /* ------ Forward references ------ */
 
 static int gs_run_init_file(gs_main_instance *, int *, ref *);

@@ -66,7 +66,7 @@ struct gc_mark_stack_s {
 
 static void gc_init_mark_stack(gc_mark_stack *, uint);
 static void gc_objects_clear_marks(const gs_memory_t *mem, chunk_t *);
-static void gc_unmark_names(name_table *);
+static void gc_unmark_names(name_table *, op_array_table *, op_array_table *);
 static int gc_trace(gs_gc_root_t *, gc_state_t *, gc_mark_stack *);
 static int gc_rescan_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
 static int gc_trace_chunk(const gs_memory_t *mem, chunk_t *, gc_state_t *, gc_mark_stack *);
@@ -276,8 +276,11 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     end_phase("clear root marks");
 
-    if (global)
-	gc_unmark_names(state.ntable);
+    if (global) {
+        op_array_table *global_ops = get_global_op_array(cmem);
+        op_array_table *local_ops  = get_local_op_array(cmem);
+	gc_unmark_names(state.ntable, global_ops, local_ops);
+    }
 
     /* Initialize the (default) mark stack. */
 
@@ -605,18 +608,19 @@ gc_objects_clear_marks(const gs_memory_t *mem, chunk_t * cp)
 /* Mark 0- and 1-character names, and those referenced from the */
 /* op_array_nx_table, and unmark all the rest. */
 static void
-gc_unmark_names(name_table * nt)
+gc_unmark_names(name_table * nt, op_array_table *op_array_table_global,
+                op_array_table *op_array_table_local)
 {
     uint i;
 
     names_unmark_all(nt);
-    for (i = 0; i < op_array_table_global.count; i++) {
-	name_index_t nidx = op_array_table_global.nx_table[i];
+    for (i = 0; i < op_array_table_global->count; i++) {
+	name_index_t nidx = op_array_table_global->nx_table[i];
 
 	names_mark_index(nt, nidx);
     }
-    for (i = 0; i < op_array_table_local.count; i++) {
-	name_index_t nidx = op_array_table_local.nx_table[i];
+    for (i = 0; i < op_array_table_local->count; i++) {
+	name_index_t nidx = op_array_table_local->nx_table[i];
 
 	names_mark_index(nt, nidx);
     }

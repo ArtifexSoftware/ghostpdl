@@ -504,7 +504,7 @@ other:
 	goto nl;
     case t_oparray: {
 	uint index = op_index(op);
-	const op_array_table *opt = op_index_op_array_table(index);
+	const op_array_table *opt = get_op_array(mem, index);
 
 	name_index_ref(mem, opt->nx_table[index - opt->base_index], &nref);
 	name_string_ref(mem, &nref, &nref);
@@ -629,7 +629,7 @@ op_find_index(const ref * pref /* t_operator */ )
  * so it doesn't have to be very fast.
  */
 void
-op_index_ref(uint index, ref * pref)
+op_index_ref(const gs_memory_t *mem, uint index, ref * pref)
 {
     const op_array_table *opt;
 
@@ -637,7 +637,7 @@ op_index_ref(uint index, ref * pref)
 	make_oper(pref, index, op_index_proc(index));
 	return;
     }
-    opt = op_index_op_array_table(index);
+    opt = get_op_array(mem, index);
     make_tasv(pref, t_oparray, opt->attrs, index,
 	      const_refs, (opt->table.value.const_refs
 			   + index - opt->base_index));
@@ -697,7 +697,7 @@ packed_get(const gs_memory_t *mem, const ref_packed * packed, ref * pref)
 	    make_null(pref);
 	    break;
 	case pt_executable_operator:
-	    op_index_ref(value, pref);
+	    op_index_ref(mem, value, pref);
 	    break;
 	case pt_integer:
 	    make_int(pref, (int)value + packed_min_intval);

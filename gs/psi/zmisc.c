@@ -280,10 +280,10 @@ zmakeoperator(i_ctx_t *i_ctx_p)
     check_proc(*op);
     switch (r_space(op)) {
 	case avm_global:
-	    opt = &op_array_table_global;
+	    opt = &i_ctx_p->op_array_table_global;
 	    break;
 	case avm_local:
-	    opt = &op_array_table_local;
+	    opt = &i_ctx_p->op_array_table_local;
 	    break;
 	default:
 	    return_error(e_invalidaccess);
@@ -304,7 +304,7 @@ zmakeoperator(i_ctx_t *i_ctx_p)
 	return_error(e_limitcheck);
     ref_assign_old(&opt->table, &tab[count], op, "makeoperator");
     opt->nx_table[count] = name_index(imemory, op - 1);
-    op_index_ref(opt->base_index + count, op - 1);
+    op_index_ref(imemory, opt->base_index + count, op - 1);
     opt->count = count + 1;
     pop(1);
     return 0;

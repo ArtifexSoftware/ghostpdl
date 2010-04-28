@@ -422,7 +422,6 @@ alloc_op_array_table(i_ctx_t *i_ctx_p, uint size, uint space,
     if (opt->nx_table == 0)
 	return_error(e_VMerror);
     opt->count = 0;
-    opt->root_p = &opt->table;
     opt->attrs = space | a_executable;
     return 0;
 }
@@ -483,32 +482,18 @@ op_init(i_ctx_t *i_ctx_p)
     }
     /* Allocate the tables for `operator' procedures. */
     /* Make one of them local so we can have local operators. */
-
     if ((code = alloc_op_array_table(i_ctx_p, OP_ARRAY_TABLE_GLOBAL_SIZE,
-				     avm_global, &op_array_table_global) < 0))
+				     avm_global,
+                                     &i_ctx_p->op_array_table_global) < 0))
 	return code;
-    op_array_table_global.base_index = op_def_count;
-    if ((code = gs_register_ref_root(imemory, NULL,
-				     (void **)&op_array_table_global.root_p,
-				     "op_array_table(global)")) < 0 ||
-	(code = gs_register_struct_root(imemory, NULL,
-				(void **)&op_array_table_global.nx_table,
-					"op_array nx_table(global)")) < 0 ||
-	(code = alloc_op_array_table(i_ctx_p, OP_ARRAY_TABLE_LOCAL_SIZE,
-				     avm_local, &op_array_table_local) < 0)
-	)
+    i_ctx_p->op_array_table_global.base_index = op_def_count;
+    if ((code = alloc_op_array_table(i_ctx_p, OP_ARRAY_TABLE_LOCAL_SIZE,
+				     avm_local,
+                                     &i_ctx_p->op_array_table_local) < 0))
 	return code;
-    op_array_table_local.base_index =
-	op_array_table_global.base_index +
-	r_size(&op_array_table_global.table);
-    if ((code = gs_register_ref_root(imemory, NULL,
-				     (void **)&op_array_table_local.root_p,
-				     "op_array_table(local)")) < 0 ||
-	(code = gs_register_struct_root(imemory, NULL,
-				(void **)&op_array_table_local.nx_table,
-					"op_array nx_table(local)")) < 0
-	)
-	return code;
+    i_ctx_p->op_array_table_local.base_index =
+	i_ctx_p->op_array_table_global.base_index +
+	r_size(&i_ctx_p->op_array_table_global.table);
 
     return 0;
 }
