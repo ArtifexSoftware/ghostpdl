@@ -196,10 +196,6 @@ typedef struct gx_device_cups_s
   cups_raster_t		*stream;	/* Raster stream */
   cups_page_header_t	header;		/* PostScript page device info */
   int			landscape;	/* Non-zero if this is landscape */
-  int			width_old;	/* Previous width */
-  int			height_old;	/* Previous height */
-  int			colorspace_old;	/* Previous color space */
-  int			bitspercolor_old;/* Previous bits per color */
   int			lastpage;
   int			HaveProfile;	/* Has a color profile been defined? */
   char			*Profile;	/* Current simple color profile string */
@@ -398,10 +394,6 @@ gx_device_cups	gs_cups_device =
 #endif /* CUPS_RASTER_SYNCv1 */
   },
   0,                                    /* landscape */
-  0,                                    /* width_old */
-  0,                                    /* height_old */
-  0,                                    /* colorspace_old */
-  0,                                    /* bitspercolor_old */
   0,                                    /* lastpage */
   0,                                    /* HaveProfile */
   NULL,                                 /* Profile */
@@ -789,8 +781,8 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
   }
 #endif /* CUPS_RASTER_SYNCv1 */
 
-  dprintf2("DEBUG2: width = %d, height = %d\n", cups->width,
-	   cups->height);
+  dprintf2("DEBUG2: width = %d, height = %d\n", cups->header.cupsWidth,
+	   cups->header.cupsHeight);
   dprintf4("DEBUG2: PageSize = [ %d %d ], HWResolution = [ %d %d ]\n",
 	   cups->header.PageSize[0], cups->header.PageSize[1],
 	   cups->header.HWResolution[0], cups->header.HWResolution[1]);
@@ -1070,7 +1062,6 @@ cups_get_space_params(const gx_device_printer *pdev,
 
   space_params->MaxBitmap   = (long)cache_size;
   space_params->BufferSpace = (long)cache_size / 10;
-  space_params->banding_type = BandingAlways;  /* always force banding */
 }
 
 
@@ -2847,8 +2838,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   gdev_prn_space_params	sp;		/* Space parameter data */
   int			width,		/* New width of page */
                         height,		/* New height of page */
-                        colorspace,     /* New color space */
-                        bitspercolor;   /* New bits per color */
+                        width_old = 0,  /* Previous width of page */
+                        height_old = 0; /* Previous height of page */
   ppd_attr_t            *backside = NULL,
                         *backsiderequiresflippedmargins = NULL;
   float                 swap;
@@ -3206,6 +3197,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 	gx_device_set_media_size(pdev, size->width, size->length);
 
+	cups->landscape = 0;
+
 	margins[0] = size->left / 72.0;
 	margins[1] = size->bottom / 72.0;
 	margins[2] = (size->width - size->right) / 72.0;
@@ -3284,6 +3277,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 	  dprintf("DEBUG: size = Custom\n");
 
+          cups->landscape = 0;
+
 	  for (i = 0; i < 4; i ++)
             margins[i] = cups->PPD->custom_margins[i] / 72.0;
 	  if (xflip == 1)
@@ -3309,50 +3304,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   }
 
  /*
-  * Set CUPS raster header values...
-  */
-
-  cups->header.HWResolution[0] = pdev->HWResolution[0];
-  cups->header.HWResolution[1] = pdev->HWResolution[1];
-
-#ifdef CUPS_RASTER_SYNCv1
-  cups->header.cupsPageSize[0] = pdev->MediaSize[0];
-  cups->header.cupsPageSize[1] = pdev->MediaSize[1];
-
-  cups->header.cupsImagingBBox[0] = pdev->HWMargins[0];
-  cups->header.cupsImagingBBox[1] = pdev->HWMargins[1];
-  cups->header.cupsImagingBBox[2] = pdev->MediaSize[0] - pdev->HWMargins[2];
-  cups->header.cupsImagingBBox[3] = pdev->MediaSize[1] - pdev->HWMargins[3];
-
-  if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
-    sf = 1.0;
-
-  cups->header.Margins[0] = pdev->HWMargins[0] * sf;
-  cups->header.Margins[1] = pdev->HWMargins[1] * sf;
-
-  cups->header.PageSize[0] = pdev->MediaSize[0] * sf;
-  cups->header.PageSize[1] = pdev->MediaSize[1] * sf;
-
-  cups->header.ImagingBoundingBox[0] = pdev->HWMargins[0] * sf;
-  cups->header.ImagingBoundingBox[1] = pdev->HWMargins[1] * sf;
-  cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[0] -
-                                        pdev->HWMargins[2]) * sf;
-  cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[1] -
-                                        pdev->HWMargins[3]) * sf;
-#else
-  cups->header.Margins[0] = pdev->HWMargins[0];
-  cups->header.Margins[1] = pdev->HWMargins[1];
-
-  cups->header.PageSize[0] = pdev->MediaSize[0];
-  cups->header.PageSize[1] = pdev->MediaSize[1];
-
-  cups->header.ImagingBoundingBox[0] = pdev->HWMargins[0];
-  cups->header.ImagingBoundingBox[1] = pdev->HWMargins[3];
-  cups->header.ImagingBoundingBox[2] = pdev->MediaSize[0] - pdev->HWMargins[2];
-  cups->header.ImagingBoundingBox[3] = pdev->MediaSize[1] - pdev->HWMargins[1];
-#endif /* CUPS_RASTER_SYNCv1 */
-
- /*
   * Reallocate memory if the size or color depth was changed...
   */
 
@@ -3363,6 +3314,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     * does not keep track of the margins in the bitmap size...
     */
 
+    width_old = pdev->width;
+    height_old = pdev->height;
     if (cups->landscape)
     {
       width  = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
@@ -3385,37 +3338,31 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       height *= cups->header.cupsBorderlessScalingFactor;
     }
 #endif /* CUPS_RASTER_SYNCv1 */
-
-    colorspace = cups->header.cupsColorSpace;
-    bitspercolor = cups->header.cupsBitsPerColor;
+    pdev->width  = width;
+    pdev->height = height;
 
    /*
     * Don't reallocate memory unless the device has been opened...
     * Also reallocate only if the size has actually changed...
     */
 
-    if (pdev->is_open &&
-	(width != cups->width_old || height != cups->height_old ||
-	 colorspace != cups->colorspace_old || bitspercolor != cups->bitspercolor_old))
+    if (pdev->is_open)
     {
-
-      cups->width_old = width;
-      cups->height_old = height;
-      cups->colorspace_old = colorspace;
-      cups->bitspercolor_old = bitspercolor;
 
      /*
       * Device is open and size has changed, so reallocate...
       */
 
-      dprintf6("DEBUG2: Reallocating memory, [%.0f %.0f] = %dx%d pixels, color space: %d, bits per color: %d...\n",
-	       pdev->MediaSize[0], pdev->MediaSize[1], width, height,
-	       colorspace, bitspercolor);
+      dprintf4("DEBUG2: Reallocating memory, [%.0f %.0f] = %dx%d pixels...\n",
+	       pdev->MediaSize[0], pdev->MediaSize[1], width, height);
 
       sp = ((gx_device_printer *)pdev)->space_params;
 
-      if ((code = gdev_prn_reallocate_memory(pdev, &sp, width, height)) < 0)
+      if ((code = gdev_prn_maybe_realloc_memory(pdev, &sp, 
+						width_old, height_old)) < 0)
 	return (code);
+      dprintf4("DEBUG2: Reallocated memory, [%.0f %.0f] = %dx%d pixels...\n",
+	       pdev->MediaSize[0], pdev->MediaSize[1], width, height);
     }
     else
     {
@@ -3430,6 +3377,105 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       pdev->height = height;
     }
   }
+
+ /*
+  * Set CUPS raster header values...
+  */
+
+  cups->header.HWResolution[0] = pdev->HWResolution[0];
+  cups->header.HWResolution[1] = pdev->HWResolution[1];
+
+#ifdef CUPS_RASTER_SYNCv1
+
+  if (cups->landscape)
+  {
+    cups->header.cupsPageSize[0] = pdev->MediaSize[1];
+    cups->header.cupsPageSize[1] = pdev->MediaSize[0];
+
+    cups->header.cupsImagingBBox[0] = pdev->HWMargins[1];
+    cups->header.cupsImagingBBox[1] = pdev->HWMargins[2];
+    cups->header.cupsImagingBBox[2] = pdev->MediaSize[1] - pdev->HWMargins[3];
+    cups->header.cupsImagingBBox[3] = pdev->MediaSize[0] - pdev->HWMargins[0];
+
+    if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
+      sf = 1.0;
+
+    cups->header.Margins[0] = pdev->HWMargins[1] * sf;
+    cups->header.Margins[1] = pdev->HWMargins[2] * sf;
+
+    cups->header.PageSize[0] = pdev->MediaSize[1] * sf;
+    cups->header.PageSize[1] = pdev->MediaSize[0] * sf;
+
+    cups->header.ImagingBoundingBox[0] = pdev->HWMargins[1] * sf;
+    cups->header.ImagingBoundingBox[1] = pdev->HWMargins[2] * sf;
+    cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[1] -
+					  pdev->HWMargins[3]) * sf;
+    cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[0] -
+					  pdev->HWMargins[0]) * sf;
+  } 
+  else
+  {
+    cups->header.cupsPageSize[0] = pdev->MediaSize[0];
+    cups->header.cupsPageSize[1] = pdev->MediaSize[1];
+
+    cups->header.cupsImagingBBox[0] = pdev->HWMargins[0];
+    cups->header.cupsImagingBBox[1] = pdev->HWMargins[1];
+    cups->header.cupsImagingBBox[2] = pdev->MediaSize[0] - pdev->HWMargins[2];
+    cups->header.cupsImagingBBox[3] = pdev->MediaSize[1] - pdev->HWMargins[3];
+
+    if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
+      sf = 1.0;
+
+    cups->header.Margins[0] = pdev->HWMargins[0] * sf;
+    cups->header.Margins[1] = pdev->HWMargins[1] * sf;
+
+    cups->header.PageSize[0] = pdev->MediaSize[0] * sf;
+    cups->header.PageSize[1] = pdev->MediaSize[1] * sf;
+
+    cups->header.ImagingBoundingBox[0] = pdev->HWMargins[0] * sf;
+    cups->header.ImagingBoundingBox[1] = pdev->HWMargins[1] * sf;
+    cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[0] -
+					  pdev->HWMargins[2]) * sf;
+    cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[1] -
+					  pdev->HWMargins[3]) * sf;
+  }
+
+#else
+
+  if (cups->landscape)
+  {
+    cups->header.Margins[0] = pdev->HWMargins[1];
+    cups->header.Margins[1] = pdev->HWMargins[2];
+
+    cups->header.PageSize[0] = pdev->MediaSize[1];
+    cups->header.PageSize[1] = pdev->MediaSize[0];
+
+    cups->header.ImagingBoundingBox[0] = pdev->HWMargins[1];
+    cups->header.ImagingBoundingBox[1] = pdev->HWMargins[0];
+    cups->header.ImagingBoundingBox[2] = pdev->MediaSize[1] - 
+                                         pdev->HWMargins[3];
+    cups->header.ImagingBoundingBox[3] = pdev->MediaSize[0] -
+                                         pdev->HWMargins[2];
+  } 
+  else
+  {
+    cups->header.Margins[0] = pdev->HWMargins[0];
+    cups->header.Margins[1] = pdev->HWMargins[1];
+
+    cups->header.PageSize[0] = pdev->MediaSize[0];
+    cups->header.PageSize[1] = pdev->MediaSize[1];
+
+    cups->header.ImagingBoundingBox[0] = pdev->HWMargins[0];
+    cups->header.ImagingBoundingBox[1] = pdev->HWMargins[3];
+    cups->header.ImagingBoundingBox[2] = pdev->MediaSize[0] - 
+                                         pdev->HWMargins[2];
+    cups->header.ImagingBoundingBox[3] = pdev->MediaSize[1] -
+                                         pdev->HWMargins[1];
+  }
+
+#endif /* CUPS_RASTER_SYNCv1 */
+  cups->header.cupsWidth  = cups->width;
+  cups->header.cupsHeight = cups->height;
 
   dprintf1("DEBUG2: ppd = %p\n", cups->PPD);
   dprintf2("DEBUG2: PageSize = [ %.3f %.3f ]\n",
