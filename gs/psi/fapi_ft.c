@@ -1016,7 +1016,7 @@ static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObje
     Control2x = float2fixed((x + Controlx * 2) / 3) << 8;
     Control2y = float2fixed((y + Controly * 2) / 3) << 8;
 
-    return p->path->curveto(p->path, Control1x,
+    return p->path->curveto(p->path, (FracInt)Control1x,
 	    (FracInt)Control1y,
 	    (FracInt)Control2x,
 	    (FracInt)Control2y,
