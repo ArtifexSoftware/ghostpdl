@@ -1766,7 +1766,7 @@ currentdict /bndef undef
         pop dup /CIDFontType0 eq exch /CIDFontType2 eq or
       } if { /CIDFontObject } { /FontObject } ifelse
                                           % font-res font-res font-desc /key
-      2 copy .knownget {
+      2 index 1 index .knownget {
         4 1 roll pop pop pop              % font-res obj
       } {    
         4 1 roll                          % /key font-res font-res font-desc
@@ -1816,7 +1816,7 @@ currentdict /bndef undef
           dup run-fonttypeproc            % /key res font
         } if
 
-        1 index /FontDescriptor oget      % /key res font desc
+        1 index                           % /key res font res
         4 -1 roll 2 index                 % res font desc /key font
         put  % Save pointer to the font.
       } ifelse
