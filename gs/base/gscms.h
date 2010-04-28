@@ -107,7 +107,7 @@ typedef enum {
 
 #define gsicc_serial_data\
     unsigned char num_comps;		/* number of device dependent values */\
-    unsigned char pcs_num_comps;	/* usually 3 but could be more if device link type */\
+    unsigned char num_comps_out;	/* usually 3 but could be more if device link type */\
     bool islab;				/* Needed since we want to detect this to avoid */\
 					/*  expensive decode on LAB images.  Is true */\
 					/* if PDF color space is \Lab */\

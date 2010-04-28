@@ -373,7 +373,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
     if (link != NULL) {
 	unsigned short in[4];
 	unsigned short tmp[MAX_CHAN];
-	int outn = xdev->cmyk_profile->pcs_num_comps;
+	int outn = xdev->cmyk_profile->num_comps_out;
 
 	in[0] = frac2ushort(c);
 	in[1] = frac2ushort(m);
@@ -420,7 +420,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
     if (link != NULL) {
 	unsigned short in[3];
 	unsigned short tmp[MAX_CHAN];
-	int outn = xdev->rgb_profile->pcs_num_comps;
+	int outn = xdev->rgb_profile->num_comps_out;
 
 	in[0] = frac2ushort(r);
 	in[1] = frac2ushort(g);

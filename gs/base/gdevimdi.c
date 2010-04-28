@@ -120,9 +120,9 @@ imdi_open_device(gx_device *dev)
     if (idev->icc_link_profile->num_comps != 3)
 	return gs_throw1(-1, "profile must have 3 input channels. got %d.", 
                     idev->icc_link_profile->num_comps);
-    if (idev->icc_link_profile->pcs_num_comps != 4)
+    if (idev->icc_link_profile->num_comps_out != 4)
 	return gs_throw1(-1, "profile must have 4 output channels. got %d.", 
-                    idev->icc_link_profile->pcs_num_comps);
+                    idev->icc_link_profile->num_comps_out);
 
 
     rendering_params.black_point_comp = false;

@@ -450,7 +450,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 
 	unsigned short in[4];
 	unsigned short tmp[MAX_CHAN];
-	int outn = xdev->cmyk_profile->pcs_num_comps;
+	int outn = xdev->cmyk_profile->num_comps_out;
 
 	in[0] = frac2ushort(c);
 	in[1] = frac2ushort(m);
@@ -495,7 +495,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 	
         unsigned short in[3];
 	unsigned short tmp[MAX_CHAN];
-	int outn = xdev->rgb_profile->pcs_num_comps;
+	int outn = xdev->rgb_profile->num_comps_out;
 
 	in[0] = frac2ushort(r);
 	in[1] = frac2ushort(g);
@@ -1247,7 +1247,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 	        } else {
 		    psd_calib_row(xc, &sep_line, unpacked, data_pos, 
                         link, xdev->output_profile->num_comps,
-                        xdev->output_profile->pcs_num_comps);  
+                        xdev->output_profile->num_comps_out);  
 	        }	
 	        psd_write(xc, sep_line, xc->width);
 	    } else {
