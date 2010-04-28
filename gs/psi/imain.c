@@ -70,19 +70,23 @@ get_minst_from_memory(const gs_memory_t *mem)
 gs_main_instance *
 gs_main_alloc_instance(gs_memory_t *mem)
 {
-    gs_main_instance *minst = 0;
-    if (mem) {
-	minst = (gs_main_instance *) gs_alloc_bytes_immovable(mem, 
-							      sizeof(gs_main_instance),
-							      "init_main_instance");
-	memcpy(minst, &gs_main_instance_init_values, sizeof(gs_main_instance_init_values));
-	minst->heap = mem;
+    gs_main_instance *minst;
+    if (mem == NULL)
+        return NULL;
+
+    minst = (gs_main_instance *)gs_alloc_bytes_immovable(mem, 
+                                                         sizeof(gs_main_instance),
+                                                         "init_main_instance");
+    if (minst == NULL)
+        return NULL;
+    memcpy(minst, &gs_main_instance_init_values, sizeof(gs_main_instance_init_values));
+    minst->heap = mem;
 	
-#       ifndef PSI_INCLUDED
-	mem->gs_lib_ctx->top_of_system = minst;
-        /* else top of system is pl_universe */
-#       endif
-    }
+#   ifndef PSI_INCLUDED
+    mem->gs_lib_ctx->top_of_system = minst;
+    /* else top of system is pl_universe */
+#   endif
+
     return minst;
 }
 

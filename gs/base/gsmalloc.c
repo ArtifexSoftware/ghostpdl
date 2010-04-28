@@ -109,6 +109,9 @@ gs_malloc_memory_init(void)
     gs_malloc_memory_t *mem =
 	(gs_malloc_memory_t *)malloc(sizeof(gs_malloc_memory_t));
 
+    if (mem == NULL)
+        return NULL;
+
     mem->stable_memory = 0;	/* just for tidyness, never referenced */
     mem->procs = gs_malloc_memory_procs;
     mem->allocated = 0;
@@ -529,6 +532,9 @@ gs_malloc_init(const gs_memory_t *parent)
 {
     gs_malloc_memory_t *malloc_memory_default = gs_malloc_memory_init();
     gs_memory_t *memory_t_default;
+
+    if (malloc_memory_default == NULL)
+        return NULL;
 
     if (parent)
 	malloc_memory_default->gs_lib_ctx = parent->gs_lib_ctx;
