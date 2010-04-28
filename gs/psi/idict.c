@@ -57,7 +57,9 @@
 const uint dict_max_size = max_array_size - 1;
 
 /* Define whether dictionaries are packed by default. */
-bool dict_default_pack = true;
+enum {
+    dict_default_pack = true
+};
 
 /*
  * Define the check for whether we can set the 1-element cache.
