@@ -442,13 +442,13 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         /* In order to get the metrics in the form we need them, we have to remove the size scaling
          * the resolution scaling, and convert to points.
          */
-        hx = (FT_Long)(((double)ft_face->glyph->metrics.horiBearingX * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
-        hy = (FT_Long)(((double)ft_face->glyph->metrics.horiBearingY * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+        hx = (FT_Long)((((double)ft_face->glyph->metrics.horiBearingX * ft_face->units_per_EM / face->width) / face->horz_res) * 72);
+        hy = (FT_Long)((((double)ft_face->glyph->metrics.horiBearingY * ft_face->units_per_EM / face->height) / face->vert_res) * 72);
 
-        w = (FT_Long)(((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
-        h = (FT_Long)(((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+        w = (FT_Long)((((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72);
+        h = (FT_Long)((((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72);
 
-        hadv = (FT_Long)(((double)ft_face->glyph->metrics.horiAdvance * ft_face->units_per_EM / face->width) / face->horz_res) * 72;
+        hadv = (FT_Long)((((double)ft_face->glyph->metrics.horiAdvance * ft_face->units_per_EM / face->width) / face->horz_res) * 72);
 
 	/* Ugly. FreeType creates verticla metrics for TT fonts, normally we override them in the 
 	 * metrics callbacks, but those only work for incremental interface fonts, and TrueType fonts
@@ -458,7 +458,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	if(!a_fapi_font->is_type1 && a_fapi_font->is_cid && !a_fapi_font->is_vertical)
 	    vadv = 0;
 	else
-	    vadv = (FT_Long)(((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72;
+	    vadv = (FT_Long)((((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72);
         
         a_metrics->bbox_x0 = hx;
         a_metrics->bbox_y0 = hy - h;
