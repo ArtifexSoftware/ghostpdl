@@ -28,7 +28,9 @@
 #include "gxdither.h"
 #include "gxcdevn.h"
 #include "string_.h"
-#include "gsnamecl.h"  /* Custom color call back define */
+#include "gsiccmanage.h"
+#include "gdevdevn.h"
+#include "gsicccache.h"
 
 /* Structure descriptor */
 public_st_device_color();
@@ -1162,6 +1164,56 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
         cmap_separation_halftoned(all, pdc, pis, dev, select);
 }
 
+/* Routines for handling CM of CMYK components of a DeviceN color space */
+static bool
+devicen_has_cmyk(gx_device * dev)
+{
+    gs_devn_params *devn_params;
+    devn_params = dev_proc(dev, ret_devn_params)(dev);
+
+    if (devn_params == NULL) {
+        return false;
+    }
+    return(devn_params->num_std_colorant_names == 4);
+}
+
+static int
+devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis)
+{
+    gsicc_link_t *icc_link;
+    gsicc_rendering_param_t rendering_params;
+    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int k;
+    unsigned short *psrc_temp;
+
+    /* Define the rendering intents. */
+    rendering_params.black_point_comp = BP_ON;
+    rendering_params.object_type = GS_PATH_TAG;
+    rendering_params.rendering_intent = pis->renderingintent;
+    /* Sigh, frac to full 16 bit.  Need to clean this up */
+    for (k = 0; k < 4; k++){
+        psrc[k] = frac2cv(cm_comps[k]);
+    }
+    icc_link = gsicc_get_link_profile(pis, pis->icc_manager->default_cmyk, 
+                pis->icc_manager->device_profile,
+                &rendering_params, pis->memory, false);
+    /* Transform the color */
+    if (icc_link->is_identity) {
+        psrc_temp = &(psrc[0]);
+    } else {
+        /* Transform the color */
+        psrc_temp = &(psrc_cm[0]);
+        gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+    }
+    /* This needs to be optimized */
+    for (k = 0; k < 4; k++){
+        cm_comps[k] = float2frac(((float) psrc_temp[k])/65535.0);
+    }
+    /* Release the link */
+    gsicc_release_link(icc_link);
+    return(0);
+}
 
 /* ------ DeviceN color mapping */
 
@@ -1176,12 +1228,17 @@ cmap_devicen_halftoned(const frac * pcc,
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int code;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
 	cm_comps[i] = 0;
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);
-
+    /* See comments in cmap_devicen_direct for details on below operations */
+    if (devicen_has_cmyk(dev) && 
+        pis->icc_manager->device_profile->data_cs == gsCMYK) {
+        code = devicen_icc_cmyk(cm_comps, pis);
+    } 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
@@ -1193,7 +1250,6 @@ cmap_devicen_halftoned(const frac * pcc,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
 
     /* We need to finish halftoning */
-
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pis->dev_ht,
     					&pis->screen_phase[select]) == 1)
 	gx_color_load_select(pdc, pis, dev, select);
@@ -1212,12 +1268,34 @@ cmap_devicen_direct(const frac * pcc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    int code;
 
+    /*   See the comment below */
     /* map to the color model */
     for (i=0; i < ncomps; i++)
 	cm_comps[i] = 0;
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);;
-
+    /*  Check if we have the standard colorants.  If yes, then we will apply
+       ICC color management to those colorants. To understand why, consider
+       the example where I have a Device with CMYK + O  and I have a 
+       DeviceN color in the document that is specified for any set of 
+       these colorants, and suppose that I let them pass through 
+       witout any color management.  This is probably  not the 
+       desired effect since I could have a DeviceN color fill that had 10% C, 
+       20% M 0% Y 0% K and 0% O.  I would like this to look the same 
+       as a CMYK color that will be color managed and specified with 10% C, 
+       20% M 0% Y 0% K. Hence the CMYK values should go through the same
+       color management as a stand alone CMYK value.  */
+    if (devicen_has_cmyk(dev) && 
+        pis->icc_manager->device_profile->data_cs == gsCMYK) {
+        /* We need to do a CMYK to CMYK conversion here.  This will always
+           use the default CMYK profile and the device's output profile.
+           We probably need to add some checking here
+           and possibly permute the colorants, much as is done on the input
+           side for the case when we add DeviceN icc source profiles for use
+           in PDF and PS data. */
+        code = devicen_icc_cmyk(cm_comps, pis);
+    } 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
@@ -1227,10 +1305,8 @@ cmap_devicen_direct(const frac * pcc,
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
-
     /* encode as a color index */
     color = dev_proc(dev, encode_color)(dev, cv);
-
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
         color_set_pure(pdc, color);

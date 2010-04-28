@@ -594,7 +594,8 @@ $(GLOBJ)gxcmap.$(OBJ) : $(GLSRC)gxcmap.c $(GXERR)\
  $(gsccolor_h)\
  $(gxalpha_h) $(gxcspace_h) $(gxfarith_h) $(gxfrac_h)\
  $(gxdcconv_h) $(gxdevice_h) $(gxcmap_h) $(gsnamecl_h) $(gxlum_h)\
- $(gzstate_h) $(gxdither_h) $(gxcdevn_h) $(string__h)
+ $(gzstate_h) $(gxdither_h) $(gxcdevn_h) $(string__h)\
+ $(gsiccmanage_h) $(gdevdevn_h) $(gsicccache_h)
 	$(GLCC) $(GLO_)gxcmap.$(OBJ) $(C_) $(GLSRC)gxcmap.c
 
 $(GLOBJ)gxcpath.$(OBJ) : $(GLSRC)gxcpath.c $(GXERR)\
