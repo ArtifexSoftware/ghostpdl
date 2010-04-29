@@ -518,7 +518,7 @@ pcl_impl_report_errors(
 	uint count;
 
 	while ( (count = pcl_status_read(buf, sizeof(buf), &pcli->pcs)) != 0 )
-	  errwrite(buf, count);
+	  errwrite((const char *)buf, count);
 
 	return 0;
 }

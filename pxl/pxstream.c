@@ -163,13 +163,13 @@ pxExecStream(px_args_t *par, px_state_t *pxs)
           default: return_error(errorUnsupportedBinding);
           }
         if ( def_size < 16 ||
-             strncmp(def_data + 1, " HP-PCL XL", 10)
+             strncmp((const char *)def_data + 1, " HP-PCL XL", 10)
            )
           return_error(errorUnsupportedClassName);
         /* support protocol level 1, 2 and 3 */
-        if ( strncmp(def_data + 11, ";1;", 3) && 
-             strncmp(def_data + 11, ";2;", 3) &&
-             strncmp(def_data + 11, ";3;", 3) )
+        if ( strncmp((const char *)def_data + 11, ";1;", 3) && 
+             strncmp((const char *)def_data + 11, ";2;", 3) &&
+             strncmp((const char *)def_data + 11, ";3;", 3) )
             return_error(errorUnsupportedProtocol);
         start = memchr(def_data + 14, '\n', def_size - 14);
         if ( !start )

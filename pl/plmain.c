@@ -964,11 +964,11 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                     return -1;
                 }
                 /* copy and concatenate newline */
-                strcpy(buf, arg); strcat(buf, "\n");
+                strcpy((char *)buf, arg); strcat((char *)buf, "\n");
                 /* starting pos for pointer is always one position back */
                 cursor.ptr = buf - 1;
                 /* set the end of data pointer */
-                cursor.limit = cursor.ptr + strlen(buf);
+                cursor.limit = cursor.ptr + strlen((char *)buf);
                 /* process the pjl */
                 code = pl_process(pjl_instance, &cursor);
                 if ( code < 0 ) {
@@ -1110,7 +1110,7 @@ pl_select_implementation(pl_interp_instance_t *pjl_instance, pl_main_instance_t 
     if ( (impl = pl_pjl_select(pjl_instance, pdl_implementation)) != 0 )
 	return impl;
     /* lookup string in name field for each implementation */
-    return pl_auto_sense(r.cursor.ptr + 1, (r.cursor.limit - r.cursor.ptr), pdl_implementation);
+    return pl_auto_sense((const char *)r.cursor.ptr + 1, (r.cursor.limit - r.cursor.ptr), pdl_implementation);
 }
 
 /* Find default language implementation */

@@ -362,7 +362,7 @@ ps_impl_process(
             return 0;
         else
             /* compare beginning of stream with pdf id */
-            if ( !strncmp(pdf_idstr, cursor->ptr + 1, pdf_idstr_len) ) {
+            if ( !strncmp(pdf_idstr, (const char *)cursor->ptr + 1, pdf_idstr_len) ) {
                 char fmode[4];
                 /* open the temporary pdf file.  If the file open
                    fails PDF fails and we allow the job to be sent
@@ -478,7 +478,7 @@ ps_impl_dnit_job(
 	/* gp_file_name_sizeof + 7 is 
 	 * max filename size + space + (run) + new line + null 
 	 */
-        byte buf[gp_file_name_sizeof + 7];
+        char buf[gp_file_name_sizeof + 7];
         /* at this point we have finished writing the spooled pdf file
            and we need to close it */
         fclose(psi->pdf_filep);

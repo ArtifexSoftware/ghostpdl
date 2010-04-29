@@ -135,7 +135,7 @@ px_find_font(px_value_t *pfnv, uint symbol_set, px_font_t **ppxfont,
         const char *default_font = "Courier         ";
         char message[px_max_error_line + 1];
         default_font_value.type = pxd_ubyte | pxd_array;
-        default_font_value.value.array.data = default_font;
+        default_font_value.value.array.data = (const byte *)default_font;
         default_font_value.value.array.size = strlen(default_font);
         code = px_find_existing_font(&default_font_value, ppxfont, pxs);
         /* shouldn't fail */
