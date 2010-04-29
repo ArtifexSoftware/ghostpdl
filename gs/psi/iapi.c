@@ -70,12 +70,12 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
 
     if (*pinstance == NULL)
 	/* first instance in this process */
-	mem = gs_malloc_init(NULL);
+	mem = gs_malloc_init();
     else {
 	/* nothing different for second thread initialization 
 	 * seperate memory, ids, only stdio is process shared.
 	 */
-	mem = gs_malloc_init(NULL);
+	mem = gs_malloc_init();
 	
     }
     if (mem == NULL)
