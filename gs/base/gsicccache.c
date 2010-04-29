@@ -498,6 +498,58 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
     return(link);
 }
 
+/* This function is used to transform a named color value at a particular tint
+   value to the output device values.  This function is provided only as a
+   demonstration and should be altered for those wishing to perform full spot
+   color look-up support.  
+   
+   The object used to perform the transformation is typically
+   a look-up table that contains the spot color name and a CIELAB value for
+   100% colorant.  It can be more complex where-by you have a 1-D lut that 
+   provides CIELAB values or direct device values as a function of tint.  The
+   table is interpolated to compute all possible tint values.  If CIELAB values
+   are provided, they can be pushed through the device profile using the CMM.  In
+   this particular demonstration, we simply provide CIELAB for a few color names
+   in the file toolbin/color/named_color/named_color_table.txt 
+   The tint value is used to scale the CIELAB value from 100% colorant to a D50
+   whitepoint.  The resulting CIELAB value is then pushed through the CMM to
+   obtain device values for the current device.  Running the file SpotColors.pdf
+   which is in the Public test suite of files provided by Artifex contains these
+   spot colors and will enable the user to see how the code behaves.  The named
+   color table is specified to ghostscript by the command line option
+   -sNamedProfile=./toolbin/color/named_color/named_color_table.txt (or with
+   full path name).  If it is desired to have ghostscript compiled with the
+   named color table, it can be placed in the iccprofiles directory and then
+   build ghostscript with COMPILE_INITS=1.
+
+   Note that there are calls defined in gsicc_littlecms.c that will create link
+   transforms between Named Color ICC profiles and the output device.  Such
+   profiles are rarely used (at least I have not run across any yet) so the
+   code is currently not used.  Also note that for those serious about named
+   color support, a cache as well as efficient table-look-up methods would 
+   likely be important for performance.
+
+   Finally note that PANTONE is a registered trademark and PANTONE colors are a
+   licensed product of Pantone Inc. See http://www.pantone.com
+   for more information.  Licensees of Pantone color libraries or similar 
+   libraries should find it straight forward to interface.  Pantone names are
+   referred to in named_color_table.txt and contained in the file SpotColors.pdf.
+
+*/
+
+/* Function return -1 if name not found */
+int
+gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
+                            gx_color_value device_values[], 
+                            const gs_imager_state *pis, 
+                            cmm_profile_t *gs_output_profile, 
+                            gsicc_rendering_param_t *rendering_params, 
+                            bool include_softproof)
+{
+
+    return(-1);
+
+}
 
 /* Used by gs to notify the ICC manager that we are done with this link for now */
 

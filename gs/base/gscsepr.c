@@ -30,7 +30,7 @@
 #include "gxdevcli.h"
 #include "gsovrc.h"
 #include "stream.h"
-#include "gsnamecl.h"
+#include "gsicccache.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -295,11 +295,39 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
     gs_client_color cc;
     gs_color_space *pacs = pcs->base_space;
     bool is_lab;
+    int k;
     
     if (pcs->params.separation.sep_type == SEP_OTHER &&
 	pcs->params.separation.use_alt_cspace) {
         gs_device_n_map *map = pcs->params.separation.map;
+        /* First see if we have a named color object that we can use to try 
+           to map from the spot color into device values.  */
+        if (pis->icc_manager->device_named != NULL) {
+            /* There is a table present.  If we have the colorant name
+               then get the device values */
+            gx_color_value device_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
+            const gs_separation_name name = pcs->params.separation.sep_name;
+            byte *pname;
+            uint name_size;
+            gsicc_rendering_param_t rendering_params;
 
+            /* Define the rendering intents. */
+            rendering_params.black_point_comp = BP_ON;
+            rendering_params.object_type = GS_PATH_TAG;
+            rendering_params.rendering_intent = pis->renderingintent;
+
+            pcs->params.separation.get_colorname_string(pis->memory, name,
+						&pname, &name_size);
+            code = gsicc_transform_named_color(pc->paint.values[0], pname, 
+                            name_size, device_values, pis, NULL, 
+                            &rendering_params, false);
+            if (code == 0) {
+                for (k = 0; k < pis->icc_manager->device_profile->num_comps; k++){
+                    pconc[k] = float2frac(((float) device_values[k])/65535.0);
+                }
+                return(0);
+            }
+        }
 	/* Check the 1-element cache first. */
 	if (map->cache_valid && map->tint[0] == pc->paint.values[0]) {
 	    int i, num_out = gs_color_space_num_components(pacs);
