@@ -79,6 +79,12 @@
 #undef private
 #define private
 
+/* This should go into gdevprn.h, or, better yet, gdevprn should
+   acquire an API for changing resolution. */
+int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
+                                  gdev_prn_space_params *old_space,
+                                  int old_width, int old_height,
+                                  bool old_page_uses_transparency);
 
 /*
  * Check if we are compiling against CUPS 1.2.  If so, enable
@@ -3358,8 +3364,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
       sp = ((gx_device_printer *)pdev)->space_params;
 
-      if ((code = gdev_prn_maybe_realloc_memory(pdev, &sp, 
-						width_old, height_old)) < 0)
+      if ((code = gdev_prn_maybe_realloc_memory((gx_device_printer *)pdev, &sp, 
+						width_old, height_old,
+						cups->page_uses_transparency))
+	  < 0)
 	return (code);
       dprintf4("DEBUG2: Reallocated memory, [%.0f %.0f] = %dx%d pixels...\n",
 	       pdev->MediaSize[0], pdev->MediaSize[1], width, height);
