@@ -1169,8 +1169,13 @@ static bool
 devicen_has_cmyk(gx_device * dev)
 {
     gs_devn_params *devn_params;
-    devn_params = dev_proc(dev, ret_devn_params)(dev);
 
+    /* Device may not have ret_devn_params! */
+    if (dev->procs.ret_devn_params != NULL) {
+        devn_params = dev_proc(dev, ret_devn_params)(dev);
+    } else {
+        return false;
+    }
     if (devn_params == NULL) {
         return false;
     }
