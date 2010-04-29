@@ -513,7 +513,7 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
    in the file toolbin/color/named_color/named_color_table.txt 
    The tint value is used to scale the CIELAB value from 100% colorant to a D50
    whitepoint.  The resulting CIELAB value is then pushed through the CMM to
-   obtain device values for the current device.  Running the file SpotColors.pdf
+   obtain device values for the current device.  Running the file named_colors.pdf
    which is in the Public test suite of files provided by Artifex contains these
    spot colors and will enable the user to see how the code behaves.  The named
    color table is specified to ghostscript by the command line option

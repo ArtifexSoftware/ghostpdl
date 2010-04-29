@@ -65,6 +65,9 @@ static cmm_profile_t* gsicc_get_profile( gsicc_profile_t profile_type,
                                         gsicc_manager_t *icc_manager );
 static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table, 
                                       int64_t icc_hashcode, int *size);
+static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s, 
+                          gs_memory_t *memory);
+
 
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
@@ -454,7 +457,24 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
     str = gsicc_open_search(pname, namelen, mem_gc, icc_manager);
     if (str != NULL) {
         icc_profile = gsicc_profile_new(str, mem_gc, pname, namelen);
+        /* Add check so that we detect cases where we are loading a named
+           color structure that is not a standard profile type */
+        if (icc_profile == NULL && defaulttype == NAMED_TYPE) {
+            /* Failed to load the named color profile.  Just load the file
+               into the buffer as it is.  The profile_handle member
+               variable can then be used to hold the named color 
+               structure that is actually search. This is created later
+               when needed. */
+            icc_profile = gsicc_profile_new(NULL, mem_gc, NULL, 0);
+            icc_profile->data_cs = gsNAMED;
+            code = gsicc_load_namedcolor_buffer(icc_profile, str, mem_gc);
+            if (code < 0) gs_rethrow1(-1, "problems with profile %s",pname);
+            return(0);  /* Done now, since this is not a standard ICC profile */
+        } 
         code = sfclose(str);
+        if (icc_profile == NULL) {
+            return gs_rethrow1(-1, "problems with profile %s",pname);
+        }
         *manager_default_profile = icc_profile;
 
         /* Get the profile handle */
@@ -932,7 +952,33 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
    return(0);
 }
 
+/* Allocates and loads the named color structure from the stream. */
+static int
+gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s, 
+                          gs_memory_t *memory)
+{
+    int                     num_bytes,profile_size;
+    unsigned char           *buffer_ptr;
+    int                     code;
 
+    code = srewind(s);  
+    code = sfseek(s,0,SEEK_END);
+    profile_size = sftell(s);
+    code = srewind(s);
+    /* Allocate the buffer, stuff with the profile */
+   buffer_ptr = gs_alloc_bytes(memory, profile_size,
+					"gsicc_load_profile");
+   if (buffer_ptr == NULL)
+        return(-1);
+   num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
+   if( num_bytes != profile_size) {
+       gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
+       return(-1);
+   }
+   profile->buffer = buffer_ptr;
+   profile->buffer_size = num_bytes;
+   return(0);
+}
 /* Check if the profile is the same as any of the default profiles */
 static void
 gsicc_set_default_cs_value(cmm_profile_t *picc_profile, gs_imager_state *pis)

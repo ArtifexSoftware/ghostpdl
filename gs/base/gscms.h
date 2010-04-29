@@ -52,6 +52,7 @@ typedef enum {
     gsNCHANNEL,
     gsCIEXYZ,
     gsCIELAB,
+    gsNAMED,
     gsUNDEFINED
 } gsicc_colorbuffer_t;
 
