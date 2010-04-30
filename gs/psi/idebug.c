@@ -105,7 +105,7 @@ debug_print_full_ref(const gs_memory_t *mem, const ref * pref)
 	case t_oparray:
 	    dprintf2("op_array(%u)0x%lx:", size, (ulong) pref->value.const_refs);
 	    {
-		const op_array_table *opt = op_index_op_array_table(size);
+		const op_array_table *opt = get_op_array(mem, size);
 
 		name_index_ref(mem, opt->nx_table[size - opt->base_index], &nref);
 	    }
@@ -156,7 +156,7 @@ debug_print_packed_ref(const gs_memory_t *mem, const ref_packed *pref)
     switch (*pref >> r_packed_type_shift) {
 	case pt_executable_operator:
 	    dprintf("<op_name>");
-	    op_index_ref(elt, &nref);
+	    op_index_ref(mem, elt, &nref);
 	    debug_print_ref(mem, &nref);
 	    break;
 	case pt_integer:

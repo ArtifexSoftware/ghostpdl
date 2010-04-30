@@ -1328,7 +1328,7 @@ pdf_close(gx_device * dev)
 	    ulong pos;
 	    char str[21];
 
-	    fread(&pos, sizeof(pos), 1, tfile);
+	    (void)fread(&pos, sizeof(pos), 1, tfile);
 	    if (pos & ASIDES_BASE_POSITION)
 		pos += resource_pos - ASIDES_BASE_POSITION;
 	    pos -= pdev->OPDFRead_procset_length;

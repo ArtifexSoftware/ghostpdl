@@ -25,6 +25,7 @@
 #include "idparam.h"
 #include "ifunc.h"
 #include "store.h"
+#include "igstate.h"
 
 /* Check prototypes */
 build_function_proc(gs_build_function_2);
@@ -69,7 +70,6 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 {
     gs_function_1ItSg_params_t params;
     int code;
-    extern bool CPSI_mode;
 
     *(gs_function_params_t *) & params = *mnDR;
     params.Functions = 0;
@@ -99,7 +99,7 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     }
     if ((code = fn_build_float_array(op, "Bounds", true, false, &params.Bounds, mem)) != params.k - 1)
 	goto fail;
-    if (CPSI_mode) {
+    if (gs_currentcpsimode(imemory)) {
 	/* Adobe implementation doesn't check the Encode length. */
 	/* Extra elements are ignored; missing elements are filled with 0. */
 	/* CET 12-14m.ps depends on this bug */

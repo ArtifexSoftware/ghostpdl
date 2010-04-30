@@ -320,7 +320,7 @@ const gx_device_bit gs_bitrgbtags_device =
 static void
 cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-    color_cmyk_to_rgb(c, m, y, k, NULL, out);
+    color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
 };
 
 static void

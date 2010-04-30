@@ -109,6 +109,9 @@ gs_malloc_memory_init(void)
     gs_malloc_memory_t *mem =
 	(gs_malloc_memory_t *)malloc(sizeof(gs_malloc_memory_t));
 
+    if (mem == NULL)
+        return NULL;
+
     mem->stable_memory = 0;	/* just for tidyness, never referenced */
     mem->procs = gs_malloc_memory_procs;
     mem->allocated = 0;
@@ -525,15 +528,16 @@ gs_malloc_unwrap(gs_memory_t *wrapped)
 
 /* Create the default allocator, and return it. */
 gs_memory_t *
-gs_malloc_init(const gs_memory_t *parent)
+gs_malloc_init(void)
 {
     gs_malloc_memory_t *malloc_memory_default = gs_malloc_memory_init();
     gs_memory_t *memory_t_default;
 
-    if (parent)
-	malloc_memory_default->gs_lib_ctx = parent->gs_lib_ctx;
-    else 
-        gs_lib_ctx_init((gs_memory_t *)malloc_memory_default);
+    if (malloc_memory_default == NULL)
+        return NULL;
+
+    if (gs_lib_ctx_init((gs_memory_t *)malloc_memory_default) != 0)
+        return NULL;
 
 #if defined(USE_RETRY_MEMORY_WRAPPER)
     gs_malloc_wrap(&memory_t_default, malloc_memory_default);

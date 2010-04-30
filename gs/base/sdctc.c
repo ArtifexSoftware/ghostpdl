@@ -26,7 +26,7 @@ s_DCT_set_defaults(stream_state * st)
 {
     stream_DCT_state *const ss = (stream_DCT_state *) st;
 
-    ss->jpeg_memory = (gs_memory_t *)gs_lib_ctx_get_non_gc_memory_t(); /* cast away const */
+    ss->jpeg_memory = ss->memory->non_gc_memory;
     ss->data.common = 0;
 	/****************
 	  ss->data.common->Picky = 0;

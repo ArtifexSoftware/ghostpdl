@@ -27,7 +27,7 @@
 /* smoothing polygons by Maxim Shemanarev. */
 /* http://www.antigrain.com/research/bezier_interpolation/ */
 /* <mark> <x0> <y0> ... <xn> <yn> .pdfinkpath - */
-int
+static int
 zpdfinkpath(i_ctx_t *i_ctx_p)
 {
     os_ptr optr, op = osp;

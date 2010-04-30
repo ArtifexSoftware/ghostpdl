@@ -89,7 +89,7 @@ const gx_device_printer far_data gs_oki182_device =
 static void
 oki_transpose(byte *in, byte *out, int scanBits, register int lineSize)
 {
-	register bitMask = 0x80;
+	register int bitMask = 0x80;
 	register byte *inPtr;
 	register byte outByte;
 

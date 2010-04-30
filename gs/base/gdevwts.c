@@ -179,6 +179,8 @@ wts_halftone_line(void **wts, int y, int width, int n_planes,
 }
 #endif
 
+#if 0
+/* RJW: Not used currently */
 static void
 wts_halftone_line_16(wts_cooked_halftone *wch, int y, int width, int n_planes,
 		     long band_offset_x, long band_offset_y,
@@ -241,6 +243,7 @@ wts_halftone_line_16(wts_cooked_halftone *wch, int y, int width, int n_planes,
 	}
     }
 }
+#endif
 
 static void
 wts_halftone_line_8(wts_cooked_halftone *wch, int y, int width, int n_planes,
@@ -305,7 +308,7 @@ wts_load_halftone(gs_memory_t *mem, wts_cooked_halftone *wch, const char *fn)
     if (buf == 0) {
 	return gs_error_VMerror;
     }
-    fread(buf, 1, size, f);
+    (void)fread(buf, 1, size, f);
     fclose(f);
     wts = gs_wts_from_buf(buf, size);
     gs_free(mem, buf, size, 1, "wts_load_halftone");

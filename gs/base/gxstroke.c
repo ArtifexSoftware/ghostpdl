@@ -32,6 +32,7 @@
 #include "gzcpath.h"
 #include "gxpaint.h"
 #include "vdtrace.h"
+#include "gsstate.h"            /* for gs_currentcpsimode */
 
 /* RJW: There appears to be a difference in the xps and postscript models
  * (at least in as far as Microsofts implementation of xps and Acrobats of
@@ -410,7 +411,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	       const gs_imager_state * pis, const gx_stroke_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
-    extern bool CPSI_mode;
+    bool CPSI_mode = gs_currentcpsimode(pis->memory);
     bool traditional = CPSI_mode | params->traditional;
     stroke_line_proc_t line_proc =
                ((to_path == 0 && !gx_dc_is_pattern1_color_clist_based(pdevc))

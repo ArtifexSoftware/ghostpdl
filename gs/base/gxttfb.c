@@ -685,6 +685,7 @@ static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	if (code < 0)
 	    return code;
 	memset(&is_stub, 0, sizeof(is_stub));
+        is_stub.memory = padev->memory;
 	set_nonclient_dev_color(&devc_stub, 1);
 	params.rule = gx_rule_winding_number;
 	params.adjust.x = params.adjust.y = 0;

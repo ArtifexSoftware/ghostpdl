@@ -36,7 +36,7 @@ gs_lib_init0(FILE * debug_out)
 {
     gs_memory_t *mem;
 
-    mem = (gs_memory_t *) gs_malloc_init(NULL);
+    mem = (gs_memory_t *) gs_malloc_init();
 
     /* Reset debugging flags */
     memset(gs_debug, 0, 128);

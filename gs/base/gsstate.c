@@ -552,6 +552,7 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
     gx_clip_path *view_clip = pgs->view_clip;
     gs_transparency_state_t *tstack = pgs->transparency_stack;
     int code;
+    int prior_op = pfrom->overprint;
 
     pgs->view_clip = 0;		/* prevent refcount decrementing */
     code = gstate_copy(pgs, pfrom, copy_for_setgstate, "gs_setgstate");
@@ -563,8 +564,11 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
 	(pgs->show_gstate == pfrom ? pgs : saved_show);
     pgs->transparency_stack = tstack;
 
-    /* update the overprint compositor */
-    return gs_do_set_overprint(pgs);
+    /* update the overprint compositor but only if it is different */
+    if (pgs->overprint != prior_op )
+        return(gs_do_set_overprint(pgs));
+
+    return(0);
 }
 
 /* Get the allocator pointer of a graphics state. */
@@ -710,6 +714,23 @@ int
 gs_currentoverprintmode(const gs_state * pgs)
 {
     return pgs->overprint_mode;
+}
+
+void
+gs_setcpsimode(gs_memory_t *mem, bool mode)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+
+    libctx->CPSI_mode = mode;
+}
+
+/* currentcpsimode */
+bool
+gs_currentcpsimode(const gs_memory_t * mem)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+
+    return libctx->CPSI_mode;
 }
 
 /* setrenderingintent
@@ -1156,7 +1177,6 @@ void gs_swapcolors_quick(gs_state *pgs)
 int gs_swapcolors(gs_state *pgs)
 {
     int prior_overprint = pgs->overprint;
-    int prior_mode      = pgs->effective_overprint_mode;
 
     gs_swapcolors_quick(pgs);
 

@@ -192,7 +192,7 @@ lp8000_print_page(gx_device_printer *pdev, FILE *prn_stream)
         byte *out = buf2;
                         
         int lnum, top, bottom, left, width;
-        int count, i, left1, left2, left0;
+        int count, left1, left2, left0;
 
 /* Check  memory allocations  */         
         

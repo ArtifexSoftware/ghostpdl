@@ -39,8 +39,6 @@
 #include "store.h"
 #include "zchar42.h"
 
-extern bool CPSI_mode;
-
 /* Forward references */
 static bool map_glyph_to_char(const gs_memory_t *mem, 
 			       const ref *, const ref *, ref *);
@@ -446,9 +444,8 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
     gs_text_enum_t *osenum = op_show_find(i_ctx_p);
     es_ptr ep = esp + snumpush;
     gs_glyph glyph;
-    extern bool CPSI_mode;
 
-    if (CPSI_mode) {
+    if (gs_currentcpsimode(igs->memory)) {
 	/* CET 14-03.PS page 2 emits rangecheck before rendering a character.
 	   Early check the text to font compatibility 
 	   with decomposing the text into characters.*/
@@ -908,7 +905,7 @@ font_bbox_param(const gs_memory_t *mem, const ref * pfdict, double bbox[4])
 		)
 		bbox[0] = bbox[1] = bbox[2] = bbox[3] = 0.0;
 	}
-    } else if (CPSI_mode) {
+    } else if (gs_currentcpsimode(mem)) {
         return_error(e_invalidfont); /* CPSI requires FontBBox */
     }
     return 0;

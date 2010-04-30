@@ -111,10 +111,14 @@ STRICT { (%END SIZES) .skipeof } if
  /pa4 {595 792 //.setpagesize exec} bind def
 	% Japanese postcard size, 100mm x 148mm
  /hagaki {283 420 //.setpagesize exec} bind def
-% /tabloid {792 1224 //.setpagesize exec} bind def  % 11x17 portrait
-% /csheet {1224 1584 //.setpagesize exec} bind def % ANSI C 17x22
-% /dsheet {1584 2448 //.setpagesize exec} bind def % ANSI D 22x34
-% /esheet {2448 3168 //.setpagesize exec} bind def % ANSI E 34x44
+	% U.S. ANSI/ASME Y14.1 paper sizes
+ /ANSI_A  //letter def
+ /ANSI_B  //11x17  def
+ /tabloid //11x17  def
+ /ANSI_C {1224 1585 //.setpagesize exec} bind def
+ /ANSI_D {1585 2448 //.setpagesize exec} bind def
+ /ANSI_E {2448 3168 //.setpagesize exec} bind def
+ /ANSI_F {2016 2880 //.setpagesize exec} bind def
 %END SIZES
 end
 currentdict /.setpagesize .undef
@@ -137,8 +141,9 @@ STRICT { (%END SIZES) .skipeof } if
    /isob0 /isob1 /isob2 /isob3 /isob4 /isob5 /isob6
    /jisb0 /jisb1 /jisb2 /jisb3 /jisb4 /jisb5 /jisb6
    /pa4 /hagaki
+   /ANSI_A /ANSI_B /tabloid /ANSI_C /ANSI_D /ANSI_E /ANSI_F
 %END SIZES
- ] cvlit readonly def
+ ] readonly def
 
 %%%%%% The following items were suggested by a user as useful.
 

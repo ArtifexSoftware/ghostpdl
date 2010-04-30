@@ -94,7 +94,7 @@ main(int argc, const char *argv[])
     int code;
 
     gp_init();
-    mem =  gs_malloc_init(NULL);
+    mem = gs_malloc_init();
     gs_lib_init1(mem);
     if (argc < 2 || (achar = argv[1][0]) < '1' ||
 	achar > '0' + countof(tests) - 1 

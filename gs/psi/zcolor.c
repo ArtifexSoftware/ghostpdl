@@ -1053,6 +1053,7 @@ static int hsb2rgb(float *HSB)
     switch ((int)floor(6.0 * HSB[0])) {
 	case 6:
 	    HSB[0] = (float)0;
+	default: /* Shuts up compiler warning about RGB being uninited */
 	case 0:
 	    RGB[0] = HSB[2];
 	    RGB[1] = mn + (HSB[0] * md);
@@ -6509,8 +6510,7 @@ zcurrentcmykcolor(i_ctx_t * i_ctx_p)
     return o_push_estack;
 }
 
-/* Can't be static, as setcolorscreen needs to call it */
-int
+static int
 zswapcolors(i_ctx_t * i_ctx_p)
 {
     ref_colorspace tmp_cs;

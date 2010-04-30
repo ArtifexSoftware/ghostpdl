@@ -40,7 +40,7 @@ gs_malloc_memory_t *gs_malloc_memory_init(void);
   gs_memory_free_all((gs_memory_t *)mem, FREE_ALL_EVERYTHING,\
 		     "gs_malloc_memory_release")
 
-gs_memory_t * gs_malloc_init(const gs_memory_t *parent);
+gs_memory_t * gs_malloc_init(void);
 void gs_malloc_release(gs_memory_t *mem);
 
 #define gs_malloc(mem, nelts, esize, cname)\

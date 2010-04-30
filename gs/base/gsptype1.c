@@ -172,8 +172,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
        if possible.  Note that any skew or rotation matrix will make it 
        neccessary to perform blending */
 
-    { int width = inst.template.BBox.q.x - inst.template.BBox.p.x;
-      int height = inst.template.BBox.q.y - inst.template.BBox.p.y;
+    { float width = inst.template.BBox.q.x - inst.template.BBox.p.x;
+      float height = inst.template.BBox.q.y - inst.template.BBox.p.y;
 
       if ( inst.template.XStep < width || inst.template.YStep < height || ctm_only(saved).xy != 0 || 
           ctm_only(saved).yx != 0 ){

@@ -167,9 +167,7 @@ s_jpxd_init(stream_state * ss)
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
 
     if (state->jpx_memory == NULL) {
-      state->jpx_memory = ss->memory ?
-		ss->memory->non_gc_memory :
-		gs_lib_ctx_get_non_gc_memory_t();
+        state->jpx_memory = ss->memory->non_gc_memory;
     }
 
     state->handle = (JP2_Decomp_Handle)NULL;

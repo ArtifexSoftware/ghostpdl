@@ -49,8 +49,6 @@ extern const int gs_hit_detected;
  * The 'upath_compat' Boolean controls this behavior.
  */
 
-extern bool CPSI_mode;
-
 /* Forward references */
 static int upath_append(os_ptr, i_ctx_t *, bool);
 static int upath_stroke(i_ctx_t *, gs_matrix *, bool);
@@ -367,7 +365,7 @@ zueofill(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, i_ctx_p, CPSI_mode)) >= 0)
+    if ((code = upath_append(op, i_ctx_p, gs_currentcpsimode(imemory))) >= 0)
 	code = gs_eofill(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -385,7 +383,7 @@ zufill(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, i_ctx_p, CPSI_mode)) >= 0)
+    if ((code = upath_append(op, i_ctx_p, gs_currentcpsimode(imemory))) >= 0)
 	code = gs_fill(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -404,7 +402,7 @@ zustroke(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if ((code = npop = upath_stroke(i_ctx_p, NULL, CPSI_mode)) >= 0)
+    if ((code = npop = upath_stroke(i_ctx_p, NULL, gs_currentcpsimode(imemory))) >= 0)
 	code = gs_stroke(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -509,7 +507,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 	 * not in CPSI compatibility mode, we set a reasonable default
 	 * bbox instead.
 	 */
-	if (code != e_nocurrentpoint || CPSI_mode)
+	if (code != e_nocurrentpoint || gs_currentcpsimode(imemory))
 	    return code;
 	bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
     }

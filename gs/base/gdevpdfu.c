@@ -1273,7 +1273,7 @@ pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
     while (left > 0) {
 	uint copy = min(left, sbuf_size);
 
-	fread(buf, 1, copy, file);
+	(void)fread(buf, 1, copy, file);
 	if (ss)
 	    s_arcfour_process_buffer(ss, buf, copy);
 	stream_write(s, buf, copy);
@@ -1295,7 +1295,7 @@ pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
 	long end_pos = ftell(file);
 
 	fseek(file, position + count - left, SEEK_SET);
-	fread(buf, 1, copy, file);
+	(void)fread(buf, 1, copy, file);
 	fseek(file, end_pos, SEEK_SET);
 	stream_write(s, buf, copy);
 	sflush(s);

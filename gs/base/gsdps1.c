@@ -97,7 +97,7 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
 static int
 gs_rectappend_compat(gs_state * pgs, const gs_rect * pr, uint count, bool clip)
 {
-    extern bool CPSI_mode;
+    bool CPSI_mode = gs_currentcpsimode(pgs->memory);
 
     for (; count != 0; count--, pr++) {
 	floatp px = pr->p.x, py = pr->p.y, qx = pr->q.x, qy = pr->q.y;

@@ -284,7 +284,7 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     int i = ((rinkj_device *)dev)->separation_names.num_names;
 
-    color_cmyk_to_rgb(c, m, y, k, NULL, out);
+    color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
     for(; i>0; i--)			/* Clear spot colors */
         out[2 + i] = 0;
 };
@@ -310,7 +310,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
     int n = rdev->separation_names.num_names;
     int i;
 
-    color_rgb_to_cmyk(r, g, b, pis, out);
+    color_rgb_to_cmyk(r, g, b, pis, out, dev->memory);
     for(i = 0; i < n; i++)			/* Clear spot colors */
 	out[4 + i] = 0;
 }
@@ -363,7 +363,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     frac cmyk[4];
 
-    color_rgb_to_cmyk(r, g, b, pis, cmyk);
+    color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
     cmyk_cs_to_spotn_cm(dev, cmyk[0], cmyk[1], cmyk[2], cmyk[3],
 			out);
 }
@@ -849,7 +849,7 @@ typedef struct rinkj_lutset_s rinkj_lutset;
 typedef struct rinkj_lutchain_s rinkj_lutchain;
 
 struct rinkj_lutset_s {
-    char *plane_names;
+    const char *plane_names;
     rinkj_lutchain *lut[MAX_CHAN];
 };
 
@@ -1022,8 +1022,8 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     rinkj_device *rdev = (rinkj_device *)pdev;
     int raster = gdev_prn_raster(rdev);
     byte *line;
-    char *plane_data[MAX_CHAN];
-    const char *split_plane_data[MAX_CHAN];
+    byte *plane_data[MAX_CHAN];
+    const byte *split_plane_data[MAX_CHAN];
     int xsb;
     int n_planes;
     int n_planes_in = pdev->color_info.num_components;
@@ -1179,7 +1179,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 	    }
 	}
 
-	code = rinkj_device_write(cmyk_dev, split_plane_data);
+	code = rinkj_device_write(cmyk_dev, (const char **)split_plane_data);
     }
 
     rinkj_device_write(cmyk_dev, NULL);

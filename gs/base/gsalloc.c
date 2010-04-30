@@ -61,7 +61,7 @@ alloc_trace(const char *chars, gs_ref_memory_t * imem, client_name_t cname,
 static bool
 alloc_size_is_ok(gs_memory_type_ptr_t stype)
 {
-    return (stype->ssize > 0 && stype->ssize < 0x100000);
+    return (stype->ssize > 0 && stype->ssize < 0x200000);
 }
 #  define ALLOC_CHECK_SIZE(stype)\
     BEGIN\

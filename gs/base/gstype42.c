@@ -676,7 +676,6 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
 {   /* A rough trial implementation, possibly needs improvements or optimization. */
     /* Fixme: optimize : Initialize subtable_ptr when the font is defined. */
     byte *gsub_ptr = pfont->data.gsub;
-    ulong gsub_size = pfont->data.gsub_size;
     typedef struct GSUB_s {
 	uint32_t Version;
 	uint16_t ScriptList;
@@ -684,6 +683,7 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
 	uint16_t LookupList;
     } GSUB;
 #if 0 /* Currently unused, but maybe useful for future. */
+    ulong gsub_size = pfont->data.gsub_size;
     typedef struct ScriptRecord_s {
 	byte Tag[4];
 	uint16_t Offset; /* Offset to Script table from beginning of ScriptList */
@@ -1476,6 +1476,8 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
     *pgd = glyph_data;
     return 1;			/* composite */
 }
+#if 0
+/* RJW: Does not appear to be used */
 static int
 append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 		 gx_path * ppath, gs_fixed_point *ppts, int point_index,
@@ -1535,6 +1537,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
     gs_glyph_data_free(&glyph_data, "append_component");
     return code;
 }
+#endif
 
 static int
 append_outline_fitted(uint glyph_index, const gs_matrix * pmat,

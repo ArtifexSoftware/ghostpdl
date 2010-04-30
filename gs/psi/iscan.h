@@ -114,10 +114,16 @@ struct scanner_state_s {
    (pstate)->s_error.string[0] = 0)
 };
 
+/* Remember the allocator for proper freeing. */
+typedef struct scanner_state_dynamic_s {
+    scanner_state state;
+    gs_memory_t *mem;
+} scanner_state_dynamic;
+
 /* The type descriptor is public only for checking. */
-extern_st(st_scanner_state);
-#define public_st_scanner_state()	/* in iscan.c */\
-  gs_public_st_complex_only(st_scanner_state, scanner_state, "scanner state",\
+extern_st(st_scanner_state_dynamic);
+#define public_st_scanner_state_dynamic()	/* in iscan.c */\
+  gs_public_st_complex_only(st_scanner_state_dynamic, scanner_state_dynamic, "scanner state",\
     scanner_clear_marks, scanner_enum_ptrs, scanner_reloc_ptrs, 0)
 
 /* Initialize a scanner with a given set of options. */

@@ -258,7 +258,7 @@ okiibm_output_run(byte *data, int count, int y_mult,
 	int xcount = count / y_mult;
 
 	fputc(033, prn_stream);
-	fputc("KLYZ"[start_graphics], prn_stream);
+	fputc((int)("KLYZ"[start_graphics]), prn_stream);
 	fputc(xcount & 0xff, prn_stream);
 	fputc(xcount >> 8, prn_stream);
 	if ( !pass )

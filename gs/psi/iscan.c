@@ -221,7 +221,7 @@ static RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
 }
 RELOC_PTRS_END
 /* Structure type */
-public_st_scanner_state();
+public_st_scanner_state_dynamic();
 
 /* Initialize a scanner. */
 void
@@ -316,11 +316,12 @@ scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
 		scanner_state *pstate;
 
 		if (save) {
-		    pstate =
-			ialloc_struct(scanner_state, &st_scanner_state,
+		    pstate = (scanner_state *)
+			ialloc_struct(scanner_state_dynamic, &st_scanner_state_dynamic,
 				      "scan_handle_refill");
 		    if (pstate == 0)
 			return_error(e_VMerror);
+		    ((scanner_state_dynamic *)pstate)->mem = imemory;
 		    *pstate = *sstate;
 		} else
 		    pstate = sstate;

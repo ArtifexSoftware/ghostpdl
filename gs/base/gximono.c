@@ -119,6 +119,7 @@ image_set_gray(byte sample_value, const bool masked, uint mask_base,
     return(0);
 }
 
+
 /*
  * Rendering procedure for general mono-component images, dealing with
  * multiple bit-per-sample images, general transformations, arbitrary
@@ -431,7 +432,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 #else
                     IMAGE_SET_GRAY(run);
 #endif		
-                }
+		}
 		code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
 				      ytf - yrun, pdyx, pdyy, pdevc, lop);
 		if (code < 0)

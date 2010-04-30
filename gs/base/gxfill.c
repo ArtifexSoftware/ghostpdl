@@ -50,6 +50,7 @@
 #include "memory_.h"
 #include "stdint_.h"
 #include "vdtrace.h"
+#include "gsstate.h"            /* for gs_currentcpsimode */
 /*
 #include "gxfilltr.h" - Do not remove this comment. "gxfilltr.h" is included below.
 #include "gxfillsl.h" - Do not remove this comment. "gxfillsl.h" is included below.
@@ -279,7 +280,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     bool big_path = ppath->subpath_count > 50;
     fill_options fo;
     line_list lst;
-    extern bool CPSI_mode;
 
     *(const fill_options **)&lst.fo = &fo; /* break 'const'. */
     /*
@@ -478,7 +478,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    init_section(lst.margin_set0.sect, 0, lst.bbox_width);
 	    init_section(lst.margin_set1.sect, 0, lst.bbox_width);
 	}
-	if (CPSI_mode && is_character) {
+	if (gs_currentcpsimode(pis->memory) && is_character) {
 	    if (lst.contour_count > countof(lst.local_windings)) {
 		lst.windings = (int *)gs_alloc_byte_array(pdev->memory, lst.contour_count, 
 				sizeof(int), "gx_general_fill_path");

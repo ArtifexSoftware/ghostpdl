@@ -3609,7 +3609,7 @@ opvp_begin_image(
 			       byte2frac((*(p + 1 + (count * 4)))),
 			       byte2frac((*(p + 2 + (count * 4)))),
 			       byte2frac((*(p + 3 + (count * 4)))),
-			       pis, rgb);
+                               pis, rgb, mem);
 			    *(palette + 0 + (count * 3)) = frac2byte(rgb[0]);
 			    *(palette + 1 + (count * 3)) = frac2byte(rgb[1]);
 			    *(palette + 2 + (count * 3)) = frac2byte(rgb[2]);

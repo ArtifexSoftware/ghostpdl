@@ -121,20 +121,26 @@ typedef struct op_array_table_s {
     uint count;			/* # of occupied entries */
     uint base_index;		/* operator index of first entry */
     uint attrs;			/* ref attrs of ops in this table */
-    ref *root_p;		/* self-pointer for GC root */
 } op_array_table;
-extern op_array_table
-       op_array_table_global, op_array_table_local;
 
-#define op_index_op_array_table(index)\
-  ((index) < op_array_table_local.base_index ?\
-   &op_array_table_global : &op_array_table_local)
+#define op_index_op_array_table(i_ctx_p,index)\
+  ((index) < i_ctx_p->op_array_table_local.base_index ?\
+   &i_ctx_p->op_array_table_global : &i_ctx_p->op_array_table_local)
+
+op_array_table *
+get_op_array(const gs_memory_t *, int);
+
+op_array_table *
+get_global_op_array(const gs_memory_t *);
+
+op_array_table *
+get_local_op_array(const gs_memory_t *);
 
 /*
  * Convert an operator index to an operator or oparray ref.
  * This is only used for debugging and for 'get' from packed arrays,
  * so it doesn't have to be very fast.
  */
-void op_index_ref(uint, ref *);
+void op_index_ref(const gs_memory_t *,uint, ref *);
 
 #endif /* opdef_INCLUDED */

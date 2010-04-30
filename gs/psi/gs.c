@@ -72,8 +72,10 @@ main(int argc, char *argv[])
     commit_stack_pages();
 #endif
     exit_status = 0;
-    mem = gs_malloc_init(NULL);
+    mem = gs_malloc_init();
     minst = gs_main_alloc_instance(mem);
+    code = (minst == NULL ? e_Fatal : 0);
+    if (code >= 0)
     code = gs_main_init_with_args(minst, argc, argv);
     
 #ifdef RUN_STRINGS

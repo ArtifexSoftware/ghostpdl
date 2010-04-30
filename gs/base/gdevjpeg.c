@@ -425,8 +425,11 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     /* Create the DCT encoder state. */
     jcdp->template = s_DCTE_template;
     s_init_state((stream_state *)&state, &jcdp->template, 0);
-    if (state.template->set_defaults)
+    if (state.template->set_defaults) {
+        state.memory = mem;
 	(*state.template->set_defaults) ((stream_state *) & state);
+        state.memory = NULL;
+    }
     state.QFactor = 1.0;	/* disable quality adjustment in zfdcte.c */
     state.ColorTransform = 1;	/* default for RGB */
     /* We insert no markers, allowing the IJG library to emit */

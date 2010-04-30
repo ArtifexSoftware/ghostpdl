@@ -554,8 +554,11 @@ static int
 zfillIdentityCIDMap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    ref *Decoding = op - 4, *TT_cmap = op - 3, *SubstNWP = op - 2, 
-        *GDBytes = op - 1, *CIDMap = op;
+    /* ref *Decoding = op - 4; */
+    /* ref *TT_cmap  = op - 3; */
+    /* ref *SubstNWP = op - 2; */ 
+    /* ref *GDBytes  = op - 1; */
+    ref *CIDMap = op;
     int code;
 
     check_type(*CIDMap, t_array);

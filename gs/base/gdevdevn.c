@@ -55,7 +55,7 @@ rgb_cs_to_devn_cm(gx_device * dev, int * map,
 
     for(; i >= 0; i--)			/* Clear colors */
         out[i] = frac_0;
-    color_rgb_to_cmyk(r, g, b, pis, cmyk);
+    color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
     if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
         out[i] = cmyk[0];
     if ((i = map[1]) != GX_DEVICE_COLOR_MAX_COMPONENTS)

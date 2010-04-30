@@ -93,7 +93,7 @@ ztoken_continue(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     scanner_state *pstate;
 
-    check_stype(*op, st_scanner_state);
+    check_stype(*op, st_scanner_state_dynamic);
     pstate = r_ptr(op, scanner_state);
     return token_continue(i_ctx_p, pstate, false);
 }
@@ -173,7 +173,7 @@ ztokenexec_continue(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     scanner_state *pstate;
 
-    check_stype(*op, st_scanner_state);
+    check_stype(*op, st_scanner_state_dynamic);
     pstate = r_ptr(op, scanner_state);
     return tokenexec_continue(i_ctx_p, pstate, false);
 }
@@ -224,7 +224,7 @@ again:
 	    break;
     }
     if (!save) {		/* Deallocate the scanner state record. */
-	ifree_object(pstate, "token_continue");
+	gs_free_object(((scanner_state_dynamic *)pstate)->mem, pstate, "token_continue");
     }
     return code;
 }
@@ -269,10 +269,11 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, scanner_state *sstate,
     if (code < 0)
 	return code;
     if (save) {
-	pstate = ialloc_struct(scanner_state, &st_scanner_state,
+	pstate = (scanner_state *)ialloc_struct(scanner_state_dynamic, &st_scanner_state_dynamic,
 			       "ztoken_handle_comment");
 	if (pstate == 0)
 	    return_error(e_VMerror);
+	((scanner_state_dynamic *)pstate)->mem = imemory;    
 	*pstate = *sstate;
     } else
 	pstate = sstate;

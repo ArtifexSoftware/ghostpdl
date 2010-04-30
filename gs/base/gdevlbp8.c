@@ -191,7 +191,7 @@ can_print_page(gx_device_printer *pdev, FILE *prn_stream,
 
 	/* terminate */
 	if (end != NULL)
-	    fwrite(end, end_size, 1, prn_stream);
+	    (void)fwrite(end, end_size, 1, prn_stream);
 
 	return 0;
 }

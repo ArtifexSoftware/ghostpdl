@@ -756,7 +756,7 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
     return 0;
 }
 
-int mark_font_descriptor_symbolic(pdf_font_resource_t *pdfont)
+int mark_font_descriptor_symbolic(const pdf_font_resource_t *pdfont)
 {
     pdf_font_descriptor_values_t *desc;
     

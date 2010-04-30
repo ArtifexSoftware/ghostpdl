@@ -1507,11 +1507,11 @@ remap:		    if (iesp + 2 >= estop) {
 			    /* Call the operator procedure. */
 			    index -= op_def_count;
 			    pvalue = (const ref *)
-				(index < r_size(&op_array_table_global.table) ?
-			      op_array_table_global.table.value.const_refs +
+				(index < r_size(&i_ctx_p->op_array_table_global.table) ?
+			         i_ctx_p->op_array_table_global.table.value.const_refs +
 				 index :
-			       op_array_table_local.table.value.const_refs +
-			    (index - r_size(&op_array_table_global.table)));
+			         i_ctx_p->op_array_table_local.table.value.const_refs +
+			         (index - r_size(&i_ctx_p->op_array_table_global.table)));
 			    goto oppr;
 			}
 			INCR(p_exec_operator);
@@ -1869,7 +1869,7 @@ errorexec_find(i_ctx_t *i_ctx_p, ref *perror_object)
 		uint opindex = (uint)ep[1].value.intval;
 		if (opindex == 0) /* internal operator, ignore */
 		    continue;
-		op_index_ref(opindex, perror_object);
+		op_index_ref(imemory, opindex, perror_object);
 		return 1;
 	    }
 	    if (ep->value.opproc == oparray_no_cleanup)

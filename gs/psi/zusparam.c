@@ -144,7 +144,7 @@ current_MaxFontCache(i_ctx_t *i_ctx_p)
 static int
 set_MaxFontCache(i_ctx_t *i_ctx_p, long val)
 {
-    return gs_setcachesize(ifont_dir,
+    return gs_setcachesize(igs, ifont_dir,
 			   (uint)(val < 0 ? 0 : val > max_uint ? max_uint :
 				   val));
 }

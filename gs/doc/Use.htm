@@ -2428,6 +2428,13 @@ look undesirably different from the scalable fonts.
 </dl>
 
 <dl>
+<dt><code>-dNONATIVEFONTMAP</code>
+<dd>Disables the use of font map and corresponding fonts supplied by the
+underlying platform. This may be needed to ensure consistent rendering on
+the platforms with different fonts, for instance, during regression testing.
+</dl>
+
+<dl>
 <dt><code>-sFONTMAP=</code><em>filename1</em><b><tt>;</tt></b><em>filename2</em><b><tt>;</tt></b><em>...</em>
 <dd>Specifies alternate name or names for the Fontmap file.  Note that the
 names are separated by "<code>:</code>" on Unix systems, by

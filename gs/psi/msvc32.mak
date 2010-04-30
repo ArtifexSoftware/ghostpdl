@@ -193,9 +193,9 @@ FT_BRIDGE=1
 
 !ifndef FTSRCDIR
 FTSRCDIR=freetype
+!endif
 !ifndef FT_CFLAGS
 FT_CFLAGS=-I$(FTSRCDIR)\include
-!endif
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,

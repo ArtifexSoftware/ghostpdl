@@ -693,7 +693,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     while (j < params->SDNUMEXSYMS) {
       if (params->SDHUFF)
       	/* FIXME: implement reading from huff table B.1 */
-        exrunlength = params->SDNUMEXSYMS;
+        exrunlength = exflag ? params->SDNUMEXSYMS : 0;
       else
         code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
       if (exflag && exrunlength > params->SDNUMEXSYMS - j) {

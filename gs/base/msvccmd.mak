@@ -150,7 +150,8 @@ CD=
 !if $(MSVC_VERSION) >= 8
 CPCH=/Fp$(GLOBJDIR)\gs.pch
 !else
-CPCH=/YX /Fp$(GLOBJDIR)\gs.pch
+# Precompiled headers don't work with #include MACRO used by freetype
+CPCH=
 !endif
 
 !ifndef DEBUGSYM
