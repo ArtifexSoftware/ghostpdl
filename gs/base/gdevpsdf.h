@@ -196,6 +196,8 @@ typedef struct psdf_distiller_params_s {
 
 } psdf_distiller_params;
 
+
+
 /* Define PostScript/PDF versions, corresponding roughly to Adobe versions. */
 typedef enum {
     psdf_version_level1 = 1000,	/* Red Book Level 1 */
