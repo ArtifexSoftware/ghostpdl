@@ -469,6 +469,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             icc_profile->data_cs = gsNAMED;
             code = gsicc_load_namedcolor_buffer(icc_profile, str, mem_gc);
             if (code < 0) gs_rethrow1(-1, "problems with profile %s",pname);
+            *manager_default_profile = icc_profile;
             return(0);  /* Done now, since this is not a standard ICC profile */
         } 
         code = sfclose(str);

@@ -26,7 +26,8 @@
 #include "gsiccmanage.h"
 #include "gsicccache.h"
 #include "gserrors.h"
-
+#include "gsmalloc.h" /* Needed for named color structure allocation */
+#include "string_.h"  /* Needed for named color structure allocation */
         /*
 	 *  Note that the the external memory used to maintain 
          *  links in the CMS is generally not visible to GS.  
@@ -498,29 +499,37 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
     return(link);
 }
 
-/* This function is used to transform a named color value at a particular tint
+/* The following is used to transform a named color value at a particular tint
    value to the output device values.  This function is provided only as a
-   demonstration and should be altered for those wishing to perform full spot
-   color look-up support.  
+   demonstration and will likely need to be altered and optimized for those wishing 
+   to perform full spot color look-up support.  
    
    The object used to perform the transformation is typically
    a look-up table that contains the spot color name and a CIELAB value for
-   100% colorant.  It can be more complex where-by you have a 1-D lut that 
-   provides CIELAB values or direct device values as a function of tint.  The
-   table is interpolated to compute all possible tint values.  If CIELAB values
-   are provided, they can be pushed through the device profile using the CMM.  In
-   this particular demonstration, we simply provide CIELAB for a few color names
-   in the file toolbin/color/named_color/named_color_table.txt 
+   100% colorant (it could also contain device values in the table).  
+   It can be more complex where-by you have a 1-D lut that 
+   provides CIELAB values or direct device values as a function of tint.  In
+   such a case, the table would be interpolated to compute all possible tint values.  
+   If CIELAB values are provided, they can be pushed through the 
+   device profile using the CMM.  In this particular demonstration, we simply 
+   provide CIELAB for a few color names in the file 
+   toolbin/color/named_color/named_color_table.txt .
    The tint value is used to scale the CIELAB value from 100% colorant to a D50
    whitepoint.  The resulting CIELAB value is then pushed through the CMM to
-   obtain device values for the current device.  Running the file named_colors.pdf
-   which is in the Public test suite of files provided by Artifex contains these
+   obtain device values for the current device.  The file named_colors.pdf
+   which is in toolbin/color/named_color/ contains these
    spot colors and will enable the user to see how the code behaves.  The named
    color table is specified to ghostscript by the command line option
    -sNamedProfile=./toolbin/color/named_color/named_color_table.txt (or with
    full path name).  If it is desired to have ghostscript compiled with the
    named color table, it can be placed in the iccprofiles directory and then
-   build ghostscript with COMPILE_INITS=1.
+   build ghostscript with COMPILE_INITS=1.  When specified the file contents
+   are pointed to by the buffer member variable of the device_named profile in
+   profile manager.  When the first call occurs in here, the contents of the
+   buffer are parsed and placed into a custom stucture that is pointed to by
+   the profile pointer.  Note that this pointer is not visible to the garbage
+   collector and should be allocated in non-gc memory as is demonstrated in
+   this sample.
 
    Note that there are calls defined in gsicc_littlecms.c that will create link
    transforms between Named Color ICC profiles and the output device.  Such
@@ -530,14 +539,51 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
    likely be important for performance.
 
    Finally note that PANTONE is a registered trademark and PANTONE colors are a
-   licensed product of Pantone Inc. See http://www.pantone.com
+   licensed product of XRITE Inc. See http://www.pantone.com
    for more information.  Licensees of Pantone color libraries or similar 
    libraries should find it straight forward to interface.  Pantone names are
-   referred to in named_color_table.txt and contained in the file SpotColors.pdf.
+   referred to in named_color_table.txt and contained in the file named_colors.pdf.
+
+   !!!!IT WILL BE NECESSARY TO PERFORM THE PROPER DEALLOCATION 
+       CLEAN-UP OF THE STRUCTURES WHEN rc_free_icc_profile OCCURS FOR THE NAMED 
+       COLOR PROFILE!!!!!!  
 
 */
 
-/* Function return -1 if name not found */
+/* Define the demo structure and function for named color look-up */
+
+typedef struct gsicc_namedcolor_s {
+    char *colorant_name;            /* The name */
+    unsigned int name_size;         /* size of name */
+    unsigned short lab[3];          /* CIELAB D50 values */
+} gsicc_namedcolor_t;
+
+typedef struct gsicc_namedcolortable_s {
+    gsicc_namedcolor_t *named_color;    /* The named color */
+    unsigned int number_entries;        /* The number of entries */
+} gsicc_namedcolortable_t;
+
+/* Support functions for parsing buffer */
+
+static int
+get_to_next_line(unsigned char **buffptr, int *buffer_count) 
+{
+    while (1) {
+        if (**buffptr == ';') {
+            (*buffptr)++;
+            (*buffer_count)--;
+            return(0);
+        } else {
+            (*buffptr)++;
+            (*buffer_count)--;
+        }
+        if (*buffer_count <= 0) {
+            return -1;
+        }
+    }
+}
+
+/* Function returns -1 if name not found.  Otherwise transform the color. */
 int
 gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                             gx_color_value device_values[], 
@@ -547,8 +593,174 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                             bool include_softproof)
 {
 
-    return(-1);
+    gsicc_namedcolor_t *namedcolor_data;
+    unsigned int num_entries;
+    cmm_profile_t *named_profile;
+    gsicc_namedcolortable_t *namedcolor_table;
+    int k,j;
+    float lab[3];
+    unsigned char *buffptr;
+    int buffer_count;
+    int count;
+    int code;
+    char *pch, *temp_ptr;
+    bool done;
+    int curr_name_size;
+    bool found_match;
+    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short *psrc_temp;
+    float temp;
+    unsigned short white_lab[3] = {65535, 32767, 32767};
+    gsicc_link_t *icc_link;
+    cmm_profile_t *curr_output_profile;
 
+    /* Check if the data that we have has already been generated. */
+    if (pis->icc_manager != NULL) {
+        if (pis->icc_manager->device_named != NULL) {
+            named_profile = pis->icc_manager->device_named;
+            if (named_profile->buffer != NULL && 
+                named_profile->profile_handle == NULL) {
+                /* Create the structure that we will use in searching */
+                /*  Note that we do this in non-GC memory since the
+                    profile pointer is not GC'd */
+                namedcolor_table = 
+                    (gsicc_namedcolortable_t*) gs_malloc(pis->memory, 1, 
+                                                    sizeof(gsicc_namedcolortable_t),
+                                                    "gsicc_transform_named_color");
+                if (namedcolor_table == NULL) return(-1);
+                /* Parse buffer and load the structure we will be searching */
+                buffptr = named_profile->buffer;
+                buffer_count = named_profile->buffer_size;
+                count = sscanf(buffptr,"%d",&num_entries);
+                if (num_entries < 1 || count == 0) {
+                    gs_free(pis->memory, namedcolor_table, 1, 
+                            sizeof(gsicc_namedcolortable_t),
+                            "gsicc_transform_named_color");
+                    return (-1);
+                }
+                code = get_to_next_line(&buffptr,&buffer_count);
+                if (code < 0) {
+                    gs_free(pis->memory, 
+                            namedcolor_table, 1, 
+                            sizeof(gsicc_namedcolortable_t),
+                            "gsicc_transform_named_color");
+                    return (-1);
+                }
+                namedcolor_data = 
+                    (gsicc_namedcolor_t*) gs_malloc(pis->memory, num_entries, 
+                                                    sizeof(gsicc_namedcolor_t),
+                                                    "gsicc_transform_named_color");
+                if (namedcolor_data == NULL) {
+                    gs_free(pis->memory, namedcolor_table, 1, 
+                            sizeof(gsicc_namedcolortable_t),
+                            "gsicc_transform_named_color");
+                    return (-1);
+                }
+                namedcolor_table->number_entries = num_entries;
+                namedcolor_table->named_color = namedcolor_data;
+                for (k = 0; k < num_entries; k++) {
+                    if (k == 0) {
+                        pch = strtok(buffptr,",;");
+                    } else {
+                        pch = strtok(NULL,",;");
+                    }
+                    /* Remove any /0d /0a stuff from start */
+                    temp_ptr = pch;
+                    done = 0;
+                    while (!done) {
+                        if (*temp_ptr == 0x0d || *temp_ptr == 0x0a) {
+                            temp_ptr++;
+                        } else {
+                            done = 1;
+                        }
+                    }
+                    curr_name_size = strlen(temp_ptr);
+                    namedcolor_data[k].name_size = curr_name_size;
+                    /* +1 for the null */
+                    namedcolor_data[k].colorant_name = 
+                        (char*) gs_malloc(pis->memory,1,name_size+1,
+                                        "gsicc_transform_named_color");
+                    strncpy(namedcolor_data[k].colorant_name,temp_ptr,
+                            namedcolor_data[k].name_size+1);
+                    for (j = 0; j < 3; j++) {
+                        pch = strtok(NULL,",;");
+                        count = sscanf(pch,"%f",&(lab[j]));
+                    }
+                    lab[0] = lab[0]*65535/100.0;
+                    lab[1] = (lab[1] + 128.0)*65535/255;
+                    lab[2] = (lab[2] + 128.0)*65535/255;
+                    for (j = 0; j < 3; j++) {
+                        if (lab[j] > 65535) lab[j] = 65535;
+                        if (lab[j] < 0) lab[j] = 0;
+                        namedcolor_data[k].lab[j] = lab[j];
+                    }
+                    if (code < 0) {
+                        gs_free(pis->memory, namedcolor_table, 1, 
+                                sizeof(gsicc_namedcolortable_t),
+                                "gsicc_transform_named_color");
+                        gs_free(pis->memory, namedcolor_data, num_entries, 
+                                sizeof(gsicc_namedcolordata_t),
+                                "gsicc_transform_named_color");
+                        return (-1);
+                    }
+                }
+                /* Assign to the profile pointer */
+                named_profile->profile_handle = namedcolor_table;
+            } else {
+                if (named_profile->profile_handle != NULL ) {
+                    namedcolor_table = 
+                        (gsicc_namedcolortable_t*) named_profile->profile_handle;
+                   num_entries = namedcolor_table->number_entries;
+                } else {
+                    return(-1);
+                }
+            }
+            /* Search our structure for the color name */
+            found_match = false;
+            for (k = 0; k < num_entries; k++) {
+                if (name_size == namedcolor_table->named_color[k].name_size) {
+                    if( strncmp(namedcolor_table->named_color[k].colorant_name,
+                        color_name, name_size) == 0) {
+                            found_match = true;
+                            break;
+                    }
+                }
+            }
+            if (found_match) {
+                /* Apply tint and push through CMM */
+                for (j = 0; j < 3; j++) {
+                    temp = (float) namedcolor_table->named_color[k].lab[j] * tint_value
+                            + (float) white_lab[j] * (1.0 - tint_value);
+                    psrc[j] = temp;
+                }
+                if ( gs_output_profile != NULL ) {
+                    curr_output_profile = gs_output_profile;
+                } else {
+                    /* Use the device profile */
+                    curr_output_profile = pis->icc_manager->device_profile;
+                }
+                icc_link = gsicc_get_link_profile(pis, pis->icc_manager->lab_profile, 
+                                                    curr_output_profile, rendering_params, 
+                                                    pis->memory, false);
+                if (icc_link->is_identity) {
+                    psrc_temp = &(psrc[0]);
+                } else {
+                    /* Transform the color */
+                    psrc_temp = &(psrc_cm[0]);
+                    gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+                }
+                gsicc_release_link(icc_link);
+                for ( k = 0; k < curr_output_profile->num_comps; k++){
+                    device_values[k] = psrc_temp[k];
+                }
+                return(0);
+            } else {
+                return (-1);
+            }
+        }
+    }
+    return(-1);
 }
 
 /* Used by gs to notify the ICC manager that we are done with this link for now */

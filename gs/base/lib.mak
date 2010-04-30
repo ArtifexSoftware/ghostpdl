@@ -2496,7 +2496,7 @@ $(GLOBJ)gsiccmanage.$(OBJ) : $(GLSRC)gsiccmanage.c $(GX) $(stdpre_h)\
 $(GLOBJ)gsicccache.$(OBJ) : $(GLSRC)gsicccache.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(smd5_h)\
  $(gxistate_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)\
- $(gserrors_h)
+ $(gserrors_h) $(gsmalloc_h) $(string__h)
 	$(GLCC) $(GLO_)gsicccache.$(OBJ) $(C_) $(GLSRC)gsicccache.c
 	
 $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
