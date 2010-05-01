@@ -16,7 +16,17 @@
 #ifndef gsicc_create_INCLUDED
 #  define gsicc_create_INCLUDED
 
+typedef enum {
+    CMYK2GRAY,
+    CMYK2RGB,
+    GRAY2RGB,
+    GRAY2CMYK,
+    RGB2GRAY,
+    RGB2CMYK
+} link_t;
+
 int create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_colors, int num_samples, TCHAR FileName[]);
 
+int create_devicelink_profile(TCHAR FileName[],link_t link_type);
 
 #endif

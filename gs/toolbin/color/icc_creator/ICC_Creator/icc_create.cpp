@@ -23,9 +23,14 @@
 #include <string.h>
 #include "CIELAB.h"
 #include <math.h>
+#include "icc_create.h"
 
 typedef unsigned long ulong;
 typedef unsigned short ushort;
+
+
+#define ROUND( a )      ( ( (a) < 0 ) ? (int) ( (a) - 0.5 ) : \
+                                                  (int) ( (a) + 0.5 ) )
 
 static void
 add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
@@ -47,7 +52,8 @@ static const float BlackPoint[] = {0, 0, 0};
 
 
 static const char desc_name[] = "Artifex DeviceN Profile";
-static const char copy_right[] = "Copyright Artifex Software 2009";
+static const char desc_name_link[] = "Artifex DeviceLink Profile";
+static const char copy_right[] = "Copyright Artifex Software 2010";
 
 typedef struct {
     icTagSignature      sig;            /* The tag signature */
@@ -209,9 +215,9 @@ float2u8Fixed8(float number_in){
 
 
 static
-void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
+void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag,
+                       int is_link)
 {
-
 
  /*    profileDescriptionTag
        copyrightTag
@@ -219,20 +225,20 @@ void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
 
     int curr_tag, temp_size;
 
-    if (*last_tag < 0)
-    {
+    if (*last_tag < 0) {
         curr_tag = 0;
-    
     } else {
-
         curr_tag = (*last_tag)+1;
-
     }
  
     tag_list[curr_tag].offset = HEADER_SIZE+num_tags*TAG_SIZE + 4;
     tag_list[curr_tag].sig = icSigProfileDescriptionTag;
     /* temp_size = DATATYPE_SIZE + 4 + strlen(desc_name) + 1 + 4 + 4 + 3 + 67; */
-    temp_size = 2*strlen(desc_name) + 28;
+    if (is_link) {
+        temp_size = 2*strlen(desc_name) + 28;
+    } else {
+        temp_size = 2*strlen(desc_name) + 28;
+    }
     /* +1 for NULL + 4 + 4 for unicode + 3 + 67 script code */
     tag_list[curr_tag].byte_padding = get_padding(temp_size);
     tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
@@ -245,9 +251,7 @@ void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
     temp_size = 2*strlen(copy_right) + 28;
     tag_list[curr_tag].byte_padding = get_padding(temp_size);
     tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
-
     *last_tag = curr_tag;
-
 }
 
 static void
@@ -310,7 +314,6 @@ add_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], int 
 static void
 add_v4_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], int curr_tag)
 {
-    ulong value;
     unsigned char *curr_ptr;
     int k;
 
@@ -340,14 +343,18 @@ add_v4_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[], i
 
 
 static void
-add_common_tag_data(unsigned char *buffer,gsicc_tag tag_list[])
+add_common_tag_data(unsigned char *buffer,gsicc_tag tag_list[], int is_link)
 {
 
     unsigned char *curr_ptr;
 
     curr_ptr = buffer;
 
-    add_v4_text_tag(curr_ptr, desc_name, tag_list, 0);
+    if (is_link) {
+        add_v4_text_tag(curr_ptr, desc_name_link, tag_list, 0);
+    } else {
+        add_v4_text_tag(curr_ptr, desc_name, tag_list, 0);
+    }
     curr_ptr += tag_list[0].size;
 
     add_v4_text_tag(curr_ptr, copy_right, tag_list, 1);
@@ -761,19 +768,22 @@ add_namesdata(unsigned char *input_ptr, colornames_t *colorant_names, int num_co
 }
 
 static void
-add_tabledata(unsigned char *input_ptr, cielab_t *cielab, int num_colors, int num_samples)
+add_tabledata(unsigned char *input_ptr, void *table_data, int num_colors, 
+              int num_samples, int is_link, int numout)
 {
 
-   int gridsize, numin, numout, numinentries, numoutentries;
+   int gridsize, numin, numinentries, numoutentries;
    unsigned char *curr_ptr;
    icS15Fixed16Number matrix_fixed[9];
    float ident[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
    int mlut_size;
    int k;
+   int clut_size, num_entries;
+   unsigned short *curr_clut_ptr;
+
 
    gridsize = num_samples;  /* Sampling points in MLUT */
    numin = num_colors;      /* Number of input colorants */
-   numout = 3;              /* Number of output colorants */
    numinentries = 2;        /* input 1-D LUT samples */
    numoutentries = 2;       /* output 1-D LUT samples */
 
@@ -821,9 +831,20 @@ add_tabledata(unsigned char *input_ptr, cielab_t *cielab, int num_colors, int nu
 
     /* Now the CLUT data */
 
-    add_clut_labdata_16bit(curr_ptr, cielab, num_colors, num_samples); 
-    mlut_size = (int) pow((float) num_samples, (int) num_colors) * 2 * numout;
-    curr_ptr += mlut_size;
+    if (is_link) {
+        clut_size = (int) pow((float) num_samples, (int) num_colors);
+        num_entries = clut_size*numout;
+        curr_clut_ptr = (unsigned short*) table_data;
+        for ( k = 0; k < num_entries; k++) {
+            write_bigendian_2bytes(curr_ptr, *curr_clut_ptr);
+            curr_ptr += 2;
+            curr_clut_ptr++;
+        }
+    } else {
+        add_clut_labdata_16bit(curr_ptr, (cielab_t*) table_data, num_colors, num_samples);
+        mlut_size = (int) pow((float) num_samples, (int) num_colors) * 2 * numout;
+        curr_ptr += mlut_size;
+    }
 
     /* Now the output curve data */
  
@@ -841,7 +862,347 @@ add_tabledata(unsigned char *input_ptr, cielab_t *cielab, int num_colors, int nu
 
 }
 
+/*
+ * The CMYK to RGB algorithms specified by Adobe are, e.g.,
+ *      R = 1.0 - min(1.0, C + K)
+ *      C = max(0.0, min(1.0, 1 - R - UCR))
+ * We got better results on displays with
+ *      R = (1.0 - C) * (1.0 - K)
+ *      C = max(0.0, min(1.0, 1 - R / (1 - UCR)))
+ * For PLRM compatibility, we use the Adobe algorithms by default,
+ * but what Adobe says and what they do are two different things.
+ * Testing on CPSI shows that they use the 'better' algorithm.
+ */
 
+
+float
+color_rgb_to_gray(float r, float g, float b)
+{
+    return (r * 0.3 + g * 0.59 + b * 0.11);
+}
+
+/* Convert CMYK to Gray. */
+float
+color_cmyk_to_gray(float c, float m, float y, float k)
+{
+    float not_gray = color_rgb_to_gray(c, m, y);
+
+    return (not_gray > 1.0 - k ? 0 : 1.0 - (not_gray + k));
+}
+
+#if 0
+/* Convert RGB to CMYK. */
+/* Note that this involves black generation and undercolor removal. */
+void
+color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
+		  frac cmyk[4], gs_memory_t *mem)
+{
+    frac c = frac_1 - r, m = frac_1 - g, y = frac_1 - b;
+    frac k = (c < m ? min(c, y) : min(m, y));
+
+    /*
+     * The default UCR and BG functions are pretty arbitrary,
+     * but they must agree with the ones in gs_init.ps.
+     */
+    frac bg =
+	(pis == NULL ? k : pis->black_generation == NULL ? frac_0 :
+	 gx_map_color_frac(pis, k, black_generation));
+    signed_frac ucr =
+	(pis == NULL ? k : pis->undercolor_removal == NULL ? frac_0 :
+	 gx_map_color_frac(pis, k, undercolor_removal));
+
+    if (ucr == frac_1)
+	cmyk[0] = cmyk[1] = cmyk[2] = 0;
+    else if (ucr == frac_0)
+	cmyk[0] = c, cmyk[1] = m, cmyk[2] = y;
+    else {
+	if (!gs_currentcpsimode(mem)) {
+	    /* C = max(0.0, min(1.0, 1 - R - UCR)), etc. */
+	    signed_frac not_ucr = (ucr < 0 ? frac_1 + ucr : frac_1);
+
+	    cmyk[0] = (c < ucr ? frac_0 : c > not_ucr ? frac_1 : c - ucr);
+	    cmyk[1] = (m < ucr ? frac_0 : m > not_ucr ? frac_1 : m - ucr);
+	    cmyk[2] = (y < ucr ? frac_0 : y > not_ucr ? frac_1 : y - ucr);
+	} else {
+	    /* Adobe CPSI method */
+	    /* C = max(0.0, min(1.0, 1 - R / (1 - UCR))), etc. */
+	    float denom = frac2float(frac_1 - ucr);		/* unscaled */
+	    float v;
+
+	    v = (float)frac_1 - r / denom;	/* unscaled */
+	    cmyk[0] =
+		(is_fneg(v) ? frac_0 : v >= (float)frac_1 ? frac_1 : (frac) v);
+	    v = (float)frac_1 - g / denom;	/* unscaled */
+	    cmyk[1] =
+		(is_fneg(v) ? frac_0 : v >= (float)frac_1 ? frac_1 : (frac) v);
+	    v = (float)frac_1 - b / denom;	/* unscaled */
+	    cmyk[2] =
+		(is_fneg(v) ? frac_0 : v >= (float)frac_1 ? frac_1 : (frac) v);
+	}
+    }
+    cmyk[3] = bg;
+    if_debug7('c', "[c]RGB 0x%x,0x%x,0x%x -> CMYK 0x%x,0x%x,0x%x,0x%x\n",
+	      r, g, b, cmyk[0], cmyk[1], cmyk[2], cmyk[3]);
+}
+
+
+/* Convert CMYK to RGB. */
+void
+color_cmyk_to_rgb(frac c, frac m, frac y, frac k, const gs_imager_state * pis,
+		  frac rgb[3], gs_memory_t *mem)
+{
+    switch (k) {
+	case frac_0:
+	    rgb[0] = frac_1 - c;
+	    rgb[1] = frac_1 - m;
+	    rgb[2] = frac_1 - y;
+	    break;
+	case frac_1:
+	    rgb[0] = rgb[1] = rgb[2] = frac_0;
+	    break;
+	default:
+	    if (!gs_currentcpsimode(mem)) {
+		/* R = 1.0 - min(1.0, C + K), etc. */
+		frac not_k = frac_1 - k;
+
+		rgb[0] = (c > not_k ? frac_0 : not_k - c);
+		rgb[1] = (m > not_k ? frac_0 : not_k - m);
+		rgb[2] = (y > not_k ? frac_0 : not_k - y);
+	    } else {
+		/* R = (1.0 - C) * (1.0 - K), etc. */
+		ulong not_k = frac_1 - k;
+
+		/* Compute not_k * (frac_1 - v) / frac_1 efficiently. */
+		ulong prod;
+
+#define deduct_black(v)\
+  (prod = (frac_1 - (v)) * not_k, frac_1_quo(prod))
+		rgb[0] = deduct_black(c);
+		rgb[1] = deduct_black(m);
+		rgb[2] = deduct_black(y);
+#undef deduct_black
+	    }
+    }
+    if_debug7('c', "[c]CMYK 0x%x,0x%x,0x%x,0x%x -> RGB 0x%x,0x%x,0x%x\n",
+	      c, m, y, k, rgb[0], rgb[1], rgb[2]);
+}
+
+#endif
+
+static void
+create_cmyk2gray(unsigned short *table_data, int mlut_size, int num_samples)
+{
+
+    int c,m,y,k;
+    float cyan,magenta,yellow,black,gray;
+    unsigned short *buffptr = table_data;
+
+    
+    /* Step through the CMYK values, compute the gray and place in the table */
+    for (c = 0; c < num_samples; c++) {
+        cyan = (float) c / (float) (num_samples -1);
+        for (m = 0; m < num_samples; m++) {
+            magenta = (float) m / (float) (num_samples -1);
+            for (y = 0; y < num_samples; y++) {
+                yellow = (float) y / (float) (num_samples -1);
+                for (k = 0; k < num_samples; k++) {
+                    black = (float) k / (float) (num_samples -1);
+
+                    gray =  color_cmyk_to_gray(cyan, magenta, yellow, black);
+                    if (gray < 0) gray = 0;
+                    if (gray > 1) gray = 1;
+
+                    *buffptr ++= ROUND(gray * 65535);
+
+                }
+            }
+        }
+    }
+
+}
+
+static void
+create_cmyk2rgb(unsigned short *table_data, int mlut_size, int num_samples)
+{
+
+
+
+
+}
+
+static void
+create_rgb2gray(unsigned short *table_data, int mlut_size, int num_samples)
+{
+
+
+
+
+}
+
+static void
+create_rgb2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
+{
+
+
+
+
+}
+
+static void
+create_gray2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
+{
+
+
+
+
+}
+
+static void
+create_gray2rgb(unsigned short *table_data, int mlut_size, int num_samples)
+{
+
+
+
+
+}
+
+int
+create_devicelink_profile(TCHAR FileName[],link_t link_type)
+{
+
+    icProfile iccprofile;
+    icHeader  *header = &(iccprofile.header);
+    int profile_size,k;
+    int num_tags;
+    gsicc_tag *tag_list;
+    int tag_offset = 0;
+    unsigned char *curr_ptr;
+    int last_tag;
+    int tag_location;
+    int debug_catch = 1;
+    unsigned char *buffer;
+    int numinentries = 2;        /* input 1-D LUT samples */
+    int numoutentries = 2;       /* output 1-D LUT samples */
+    int mlut_size;
+    int tag_size;
+    int num_colors, numout;
+    int num_samples = 9;  /* Should be a settable variable */
+    unsigned short *table_data;
+
+    /* Fill in the common stuff */
+
+    setheader_common(header);
+    profile_size = HEADER_SIZE;
+    header->deviceClass = icSigLinkClass;
+
+    switch(link_type) {
+        case CMYK2GRAY:
+            header->colorSpace = icSigCmykData;
+            header->pcs = icSigGrayData;
+            num_colors = 4;
+            numout = 1;
+            break;
+        case CMYK2RGB:
+            header->colorSpace = icSigCmykData;
+            header->pcs = icSigRgbData;
+            num_colors = 4;
+            numout = 3;
+            break;
+        case GRAY2RGB:
+            header->colorSpace = icSigGrayData;
+            header->pcs = icSigRgbData;
+            num_colors = 1;
+            numout = 3;
+            break;
+        case GRAY2CMYK:
+            header->colorSpace = icSigGrayData;
+            header->pcs = icSigCmykData;
+            num_colors = 1;
+            numout = 4;
+            break;
+        case RGB2GRAY:
+            header->colorSpace = icSigRgbData;
+            header->pcs = icSigGrayData;
+            num_colors = 3;
+            numout = 1;
+            break;
+        case RGB2CMYK:
+            header->colorSpace = icSigRgbData;
+            header->pcs = icSigCmykData;
+            num_colors = 3;
+            numout = 4;
+            break;
+    }
+    num_tags = 3;  /* common (2) + ATOB0 */   
+    tag_list = (gsicc_tag*) malloc(sizeof(gsicc_tag)*num_tags);
+
+    /* Let us precompute the sizes of everything and all our offsets */
+    profile_size += TAG_SIZE*num_tags;
+    profile_size += 4; /* number of tags.... */
+
+    last_tag = -1;
+    init_common_tags(tag_list, num_tags, &last_tag, 1);  
+
+    /* Now the ATOB0 Tag */
+    mlut_size = (int) pow((float) num_samples, (int) num_colors);
+    tag_size = 52+num_colors*numinentries*2+numout*numoutentries*2+mlut_size*numout*2;
+    init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
+    for (k = 0; k < num_tags; k++) {
+        profile_size += tag_list[k].size;
+    }
+
+    table_data = (unsigned short*) malloc(mlut_size*sizeof(unsigned short)*numout);
+    /* Create the table */
+    switch(link_type) {
+        case CMYK2GRAY:
+            create_cmyk2gray(table_data, mlut_size, num_samples); 
+            break;
+        case CMYK2RGB:
+            create_cmyk2rgb(table_data, mlut_size, num_samples); 
+            break;
+        case GRAY2RGB:
+            create_gray2rgb(table_data, mlut_size, num_samples); 
+            break;
+        case GRAY2CMYK:
+            create_gray2cmyk(table_data, mlut_size, num_samples); 
+            break;
+        case RGB2GRAY:
+            create_rgb2gray(table_data, mlut_size, num_samples); 
+            break;
+        case RGB2CMYK:
+            create_rgb2cmyk(table_data, mlut_size, num_samples); 
+            break;
+    }
+
+    /* Now we can go ahead and fill our buffer with the data */
+    buffer = (unsigned char*) malloc(profile_size);
+    curr_ptr = buffer;
+
+    /* The header */
+    header->size = profile_size;
+    copy_header(curr_ptr,header);
+    curr_ptr += HEADER_SIZE;
+
+    /* Tag table */
+    copy_tagtable(curr_ptr,tag_list,num_tags);
+    curr_ptr += TAG_SIZE*num_tags;
+    curr_ptr += 4;
+
+    /* Now the data.  Must be in same order as we created the tag table */
+    /* First the common tags */
+    add_common_tag_data(curr_ptr, tag_list, 1);
+    for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
+        curr_ptr += tag_list[k].size;
+    }
+    tag_location = NUMBER_COMMON_TAGS;
+
+    /* Now the ATOB0 */
+    add_tabledata(curr_ptr, (void *) table_data, num_colors, num_samples, 1, numout);
+
+    /* Save the profile */
+    save_profile(buffer,FileName,profile_size);
+    return(0);
+}
 
 /* This creates an NCLR input (source) ICC profile with the Artifex Private Color Names Tag */
 
@@ -875,90 +1236,58 @@ create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_c
     header->deviceClass = icSigInputClass;
 
     switch(num_colors) {
-
         case 2:
-
             header->colorSpace = icSig2colorData;
             break;
-
         case 3:
-
             header->colorSpace = icSig3colorData;
             break;
-
         case 4:
-
             header->colorSpace = icSig4colorData;
             break;
-
         case 5:
-
             header->colorSpace = icSig5colorData;
             break;
-
         case 6:
-
             header->colorSpace = icSig6colorData;
             break;
-
         case 7:
-
             header->colorSpace = icSig7colorData;
             break;
-
         case 8:
-
             header->colorSpace = icSig8colorData;
             break;
-
         case 9:
-
             header->colorSpace = icSig9colorData;
             break;
-
         case 10:
-
             header->colorSpace = icSig10colorData;
             break;
-
         case 11:
-
             header->colorSpace = icSig11colorData;
             break;
-
         case 12:
-
             header->colorSpace = icSig12colorData;
             break;
-
         case 13:
-
             header->colorSpace = icSig13colorData;
             break;
-
         case 14:
-
             header->colorSpace = icSig14colorData;
             break;
-
         case 15:
-
             header->colorSpace = icSig15colorData;
             break;
-
     }
-
     num_tags = 6;  /* common (2) + ATOB0,bkpt,wtpt + color names */   
-
     tag_list = (gsicc_tag*) malloc(sizeof(gsicc_tag)*num_tags);
 
     /* Let us precompute the sizes of everything and all our offsets */
-
     profile_size += TAG_SIZE*num_tags;
     profile_size += 4; /* number of tags.... */
 
     last_tag = -1;
-    init_common_tags(tag_list, num_tags, &last_tag);  
+    init_common_tags(tag_list, num_tags, &last_tag, 0);  
 
     init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
     init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
@@ -1008,7 +1337,7 @@ create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_c
 
     /* First the common tags */
 
-    add_common_tag_data(curr_ptr, tag_list);
+    add_common_tag_data(curr_ptr, tag_list, 0);
 
     for (k = 0; k< NUMBER_COMMON_TAGS; k++)
     {
@@ -1042,7 +1371,7 @@ create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_c
 
     /* Now the ATOB0 */
 
-    add_tabledata(curr_ptr, cielab, num_colors, num_samples);
+    add_tabledata(curr_ptr, (void*) cielab, num_colors, num_samples, 0, 3);
 
 
     /* Dump the buffer to a file for testing if its a valid ICC profile */

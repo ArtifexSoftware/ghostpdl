@@ -80,6 +80,10 @@ BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
         ON_BN_CLICKED(IDC_NAMES, &CICC_CreatorDlg::OnBnClickedNames)
         ON_BN_CLICKED(IDC_ICC_PROFILE, &CICC_CreatorDlg::OnBnClickedIccProfile)
         ON_BN_CLICKED(IDC_ICC_HELP, &CICC_CreatorDlg::OnBnClickedIccHelp)
+        ON_BN_CLICKED(IDC_GRAY2CMYK, &CICC_CreatorDlg::OnBnClickedGray2cmyk)
+        ON_BN_CLICKED(IDC_CMYK2RGB, &CICC_CreatorDlg::OnBnClickedCmyk2rgb)
+        ON_BN_CLICKED(IDC_RGB2CMYK, &CICC_CreatorDlg::OnBnClickedRgb2cmyk)
+        ON_BN_CLICKED(IDC_CMYK2GRAY2, &CICC_CreatorDlg::OnBnClickedCmyk2gray2)
 END_MESSAGE_MAP()
 
 
@@ -273,7 +277,6 @@ void CICC_CreatorDlg::OnBnClickedIccProfile()
 
     /* Should be good.  Create the ICC profile */
 
-     int code;
     TCHAR szFile[MAX_PATH];
     ZeroMemory(szFile, MAX_PATH);
     OPENFILENAME ofn;
@@ -437,9 +440,139 @@ void CICC_CreatorDlg::OnBnClickedIccHelp()
 
     /* Throw out the help/read me window */
 
-    
+}
 
+void CICC_CreatorDlg::OnBnClickedCmyk2gray()
+{
+    // Create a device link profile that uses
+    // default PS methods to map CMYK values
+    // into gray
 
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
 
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
 
+    ofn.lpstrTitle	= _T("Load Names File");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+        ok = create_devicelink_profile(szFile,CMYK2GRAY);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Link Profile Created"));
+    } 
+}
+
+ 
+
+void CICC_CreatorDlg::OnBnClickedGray2cmyk()
+    {
+    // Create a device link profile that uses
+    // default PS methods to map gray values
+    // into CMYK
+
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
+
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+
+    ofn.lpstrTitle	= _T("Load Names File");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+         ok = create_devicelink_profile(szFile,GRAY2CMYK);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Link Profile Created"));
+    } 
+}
+void CICC_CreatorDlg::OnBnClickedCmyk2rgb()
+    {
+    // Create a device link profile that uses
+    // default PS methods to map gray values
+    // into CMYK
+
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
+
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+
+    ofn.lpstrTitle	= _T("Load Names File");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+         ok = create_devicelink_profile(szFile,CMYK2RGB);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Link Profile Created"));
+    } 
+}
+void CICC_CreatorDlg::OnBnClickedRgb2cmyk()
+    {
+    // Create a device link profile that uses
+    // default PS methods to map gray values
+    // into CMYK
+
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
+
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+
+    ofn.lpstrTitle	= _T("Load Names File");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+         ok = create_devicelink_profile(szFile,RGB2CMYK);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Link Profile Created"));
+    } 
+} 
+void CICC_CreatorDlg::OnBnClickedCmyk2gray2()
+{
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
+
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+
+    ofn.lpstrTitle	= _T("Load Names File");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+         ok = create_devicelink_profile(szFile,CMYK2GRAY);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Link Profile Created"));
+    } 
 }

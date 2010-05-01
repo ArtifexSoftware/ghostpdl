@@ -57,4 +57,9 @@ public:
     afx_msg void OnBnClickedIccHelp();
 
 
+    afx_msg void OnBnClickedCmyk2gray();
+    afx_msg void OnBnClickedGray2cmyk();
+    afx_msg void OnBnClickedCmyk2rgb();
+    afx_msg void OnBnClickedRgb2cmyk();
+    afx_msg void OnBnClickedCmyk2gray2();
 };
