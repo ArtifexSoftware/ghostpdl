@@ -1741,11 +1741,6 @@ currentdict /PDF2PS_matrix_key undef
 
 % ------ Transparency support ------ %
 
-% Define minimum PDF version for checking for transparency features.
-% Transparency is a 1.4 feature however we have seen files that claimed
-% to be PDF 1.2 with transparency features. Bug 689288.
-/PDFtransparencyversion 1.2 def
-
 % Determine whether a page might invoke any transparency features:
 %	- Non-default BM, ca, CA, or SMask in an ExtGState
 %	- Image XObject with SMask
@@ -1754,8 +1749,11 @@ currentdict /PDF2PS_matrix_key undef
 % a page-level group whether transparency is actually used or not.
 % Ignoring the presence of Group is justified because, in the absence
 % of any other transparency features, they have no effect.
+%
+% Transparency is a 1.4 feature however we have seen files that claimed
+% to be PDF 1.1 with transparency features. Bugs 689288, 691273.
 /pageusestransparency {		% <pagedict> pageusestransparency <bool>
-  PDFversion PDFtransparencyversion lt NOTRANSPARENCY or {
+  NOTRANSPARENCY {
     pop //false
   } {
     dup //false exch {
