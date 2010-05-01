@@ -22,6 +22,11 @@
 
 typedef struct name_table_s *name_table_ptr;
 
+#ifndef gs_font_dir_DEFINED
+#  define gs_font_dir_DEFINED
+typedef struct gs_font_dir_s gs_font_dir;
+#endif
+
 /* graphical object tags */
 typedef enum {
     GS_DEVICE_DOESNT_SUPPORT_TAGS = 0, /* default */
@@ -69,6 +74,9 @@ typedef struct gs_lib_ctx_s
     /* real time clock 'bias' value. Not strictly required, but some FTS
      * tests work better if realtime starts from 0 at boot time. */
     long real_time_0[2];
+
+    /* font directory - see gsfont.h */
+    gs_font_dir *font_dir;
     /* True if we are emulating CPSI. Ideally this would be in the imager
      * state, but this can't be done due to problems detecting changes in it
      * for the clist based devices. */

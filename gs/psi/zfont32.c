@@ -58,7 +58,7 @@ zbuildfont32(i_ctx_t *i_ctx_p)
     /* The encode_char procedure of a Type 32 font */
     /* should never be called. */
     pfont->procs.encode_char = zfont_no_encode_char;
-    return define_gs_font((gs_font *) pfont);
+    return define_gs_font(i_ctx_p, (gs_font *) pfont);
 }
 
 /* - .getshowoperator <oper|null> */

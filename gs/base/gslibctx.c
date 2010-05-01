@@ -84,6 +84,7 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     pio->screen_min_screen_levels = 0;
     pio->BITTAG = GS_DEVICE_DOESNT_SUPPORT_TAGS;
     pio->CPSI_mode = false;
+    pio->font_dir = NULL;
 
     gp_get_realtime(pio->real_time_0);
 

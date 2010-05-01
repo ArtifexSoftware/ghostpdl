@@ -37,9 +37,6 @@
 #include "gsnamecl.h"
 #include "igstate.h"
 
-/* The (global) font directory */
-extern gs_font_dir *ifont_dir;	/* in zfont.c */
-
 /* Define an individual user or system parameter. */
 /* Eventually this will be made public. */
 #define param_def_common\
@@ -130,6 +127,12 @@ current_BuildTime(i_ctx_t *i_ctx_p)
 {
     return gs_buildtime;
 }
+
+/* we duplicate this definition here instead of including bfont.h and
+   all its dependencies */
+
+#define ifont_dir (gs_lib_ctx_get_interp_instance(imemory)->font_dir)
+
 static long
 current_MaxFontCache(i_ctx_t *i_ctx_p)
 {
@@ -441,6 +444,9 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
     gs_setgridfittt(ifont_dir, (uint)val);
     return 0;
 }
+
+#undef ifont_dir
+
 static const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,

@@ -59,7 +59,7 @@ zbuildfont10(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     ((gs_font_cid1 *)pfont)->cidata.CIDSystemInfo = cidsi;
-    return define_gs_font((gs_font *)pfont);
+    return define_gs_font(i_ctx_p, (gs_font *)pfont);
 }
 
 /* ---------------- CIDFontType 2 (FontType 11) ---------------- */
@@ -493,7 +493,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	pfont->data.get_outline = gs_get_glyph_data_cached;
    	pfont->data.gdcache = gs_glyph_cache__alloc(pfont, s, gs_type42_get_outline_from_TT_file);
     }
-    return define_gs_font((gs_font *)pfont);
+    return define_gs_font(i_ctx_p, (gs_font *)pfont);
 }
 
 /* <cid11font> <cid> .type11mapcid <glyph_index> */

@@ -72,7 +72,7 @@ zbuildfont3(i_ctx_t *i_ctx_p)
 				&st_gs_font_base, &build, bf_options_none);
     if (code < 0)
 	return code;
-    return define_gs_font((gs_font *) pfont);
+    return define_gs_font(i_ctx_p, (gs_font *) pfont);
 }
 
 /* Encode a character. */
@@ -844,7 +844,7 @@ copy_font_name(gs_font_name * pfstr, const ref * pfname)
 
 /* Finish building a font, by calling gs_definefont if needed. */
 int
-define_gs_font(gs_font * pfont)
+define_gs_font(i_ctx_t *i_ctx_p, gs_font * pfont)
 {
     return (pfont->base == pfont && pfont->dir == 0 ?
 	    /* i.e., unregistered original font */
