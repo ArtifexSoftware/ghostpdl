@@ -88,7 +88,7 @@ $(GSSOX_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
 
 # ------------------------- Recursive make targets ------------------------- #
 
-SODEFS=LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
+SODEFS=\
  GS_XE=$(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR)\
  STDIO_IMPLEMENTATION=c\
  DISPLAY_DEV=$(DD)$(SOOBJRELDIR)/display.dev\
@@ -104,7 +104,8 @@ so: SODIRS
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) $(SODEFS) CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
+	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)
+	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
 
 # Debug shared object
 # Note that this is in the same directory as the normal shared
