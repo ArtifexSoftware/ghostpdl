@@ -53,6 +53,15 @@ s_aes_set_key(stream_aes_state * state, const unsigned char *key,
     return 0;
 }
 
+/* Specify whether the plaintext stream uses RFC 1423-style padding
+ * (allowing it to be an arbitrary length), or is unpadded (and must
+ * therefore be a multiple of 16 bytes long). */
+void
+s_aes_set_padding(stream_aes_state *state, int use_padding)
+{
+    state->use_padding = use_padding;
+}
+
 /* initialize our state object. */
 static int
 s_aes_init(stream_state *ss)
@@ -131,15 +140,37 @@ s_aes_process(stream_state * ss, stream_cursor_read * pr,
 				pr->ptr + 1, temp);
       pr->ptr += 16;
       if (last && pr->ptr == pr->limit) {
-        /* we're on the last block; unpad */
-        int pad = temp[15];
-        if (pad < 1 || pad > 16) return ERRC;
+        /* we're on the last block; unpad if necessary */
+        int pad;
+
+        if (state->use_padding) {
+          /* we are using RFC 1423-style padding, so the last byte of the
+             plaintext gives the number of bytes to discard */
+          pad = temp[15];
+          if (pad < 1 || pad > 16) {
+            gs_throw1(gs_error_rangecheck, "invalid aes padding byte (0x%02x)",
+                  (unsigned char)pad);
+            return ERRC;
+          }
+        } else {
+          /* not using padding */
+          pad = 0;
+        }
+
         memcpy(pw->ptr + 1, temp, 16 - pad);
         pw->ptr +=  16 - pad;
         return EOFC;
       }
       memcpy(pw->ptr + 1, temp, 16);
       pw->ptr += 16;
+    }
+
+    /* if we got to the end of the file without triggering the padding
+       check, the input must not have been a multiple of 16 bytes long.
+       complain. */
+    if (status == EOFC) {
+      gs_throw(gs_error_rangecheck, "aes stream isn't a multiple of 16 bytes");
+      return ERRC;
     }
 
     return status;

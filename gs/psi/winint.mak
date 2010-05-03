@@ -181,6 +181,18 @@ $(PSOBJ)dwreg.obj: $(PSSRC)dwreg.c $(AK) $(dwreg_h)
         $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwreg.obj $(C_) $(PSSRC)dwreg.c
 
 
+# ------------ Windows version of the .locale_to_utf8 operator ------------ #
+
+zwinutf8_=$(PSOBJ)zwinutf8.$(OBJ)
+$(PSD)winutf8.dev : $(MAKEFILE) $(ECHOGS_XE) $(zwinutf8_)
+	$(SETMOD) $(PSD)winutf8 $(zwinutf8_)
+	$(ADDMOD) $(PSD)winutf8 -oper zwinutf8
+
+$(PSOBJ)zwinutf8.$(OBJ) : $(PSSRC)zwinutf8.c $(OP)\
+ $(ghost_h) $(oper_h) $(iutil_h) $(store_h) $(windows__h)
+	$(PSCCWIN) $(PSO_)zwinutf8.$(OBJ) $(C_) $(PSSRC)zwinutf8.c
+
+
 # ---------------------- Setup and uninstall program ---------------------- #
 
 

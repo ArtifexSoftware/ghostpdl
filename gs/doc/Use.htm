@@ -622,7 +622,10 @@ finished printed page.
 <dl>
 <dt><code>-sPDFPassword=</code><em>password</em>
 <dd>Sets the user or owner password to be used in decoding encrypted
-PDF files.
+PDF files. For files created with encryption method 4 or earlier, the
+password is an arbitrary string of bytes; with encryption method 5 or
+later, it should be text in either UTF-8 or your locale's character
+set (Ghostscript tries both).
 </dl>
 
 <dl>

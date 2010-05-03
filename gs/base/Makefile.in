@@ -131,8 +131,14 @@ GENOPT=
 #
 # -DHAVE_MKSTEMP64
 #	use non-standard function mkstemp64()
+#
+# -DHAVE_LIBIDN
+#	use libidn to canonicalize Unicode passwords
+#
+# -DHAVE_SETLOCALE
+#	call setlocale(LC_CTYPE) when running as a standalone app
 
-CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@
+CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@ @HAVE_LIBIDN@ @HAVE_SETLOCALE@
 
 # Define the name of the executable file.
 
@@ -371,11 +377,11 @@ CAIRO_LIBS	=	@CAIRO_LIBS@
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)roplib.dev $(GLD)htxlib.dev $(PSD)fapi.dev @JBIG2DEVS@ @JPXDEVS@
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)roplib.dev $(GLD)htxlib.dev $(PSD)fapi.dev @JBIG2DEVS@ @JPXDEVS@ @UTF8DEVS@
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev @JBIG2DEVS@ @JPXDEVS@
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev @JBIG2DEVS@ @JPXDEVS@ @UTF8DEVS@
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # The list of resources to be included in the %rom% file system.

@@ -1144,6 +1144,18 @@ $(PSOBJ)zfmd5.$(OBJ) : $(PSSRC)zfmd5.c $(OP) $(memory__h)\
  $(smd5_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfmd5.$(OBJ) $(C_) $(PSSRC)zfmd5.c
 
+# SHA-256 digest filter
+fsha2_=$(PSOBJ)zfsha2.$(OBJ)
+$(PSD)fsha2.dev : $(INT_MAK) $(ECHOGS_XE) $(fsha2_) $(GLD)ssha2.dev
+	$(SETMOD) $(PSD)fsha2 $(fsha2_)
+	$(ADDMOD) $(PSD)fsha2 -include $(GLD)ssha2
+	$(ADDMOD) $(PSD)fsha2 -oper zfsha2
+
+$(PSOBJ)zfsha2.$(OBJ) : $(PSSRC)zfsha2.c $(OP) $(memory__h)\
+ $(ghost_h) $(oper_h) $(gsstruct_h) $(stream_h) $(strimpl_h)\
+ $(ialloc_h) $(ifilter_h) $(ssha2_h)
+	$(PSCC) $(PSO_)zfsha2.$(OBJ) $(C_) $(PSSRC)zfsha2.c
+
 # Arcfour cipher filter
 farc4_=$(PSOBJ)zfarc4.$(OBJ)
 $(PSD)farc4.dev : $(INT_MAK) $(ECHOGS_XE) $(farc4_) $(GLD)sarc4.dev
@@ -1164,7 +1176,7 @@ $(PSD)faes.dev : $(INT_MAK) $(ECHOGS_XE) $(faes_) $(GLD)saes.dev
 	$(ADDMOD) $(PSD)faes -oper zfaes
 
 $(PSOBJ)zfaes.$(OBJ) : $(PSSRC)zfaes.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
+ $(gsstruct_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h)\
  $(saes_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfaes.$(OBJ) $(C_) $(PSSRC)zfaes.c
 
@@ -1716,12 +1728,13 @@ $(GLD)diskn.dev : $(LIB_MAK) $(ECHOGS_XE) $(diskn_)
 $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
- $(PSD)fmd5.dev $(PSD)farc4.dev $(PSD)faes.dev\
+ $(PSD)fmd5.dev $(PSD)fsha2.dev $(PSD)farc4.dev $(PSD)faes.dev\
  $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev $(PSD)pdfops.dev 
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
-	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)farc4 $(PSD)faes.dev
+	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)fsha2
+	$(ADDMOD) $(PSD)pdf -include $(PSD)farc4 $(PSD)faes.dev
 	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont $(PSD)type2
 	$(ADDMOD) $(PSD)pdf -include $(PSD)icc $(PSD)pdfops
 	$(ADDMOD) $(PSD)pdf -functiontype 4
@@ -1854,16 +1867,28 @@ $(PSD)pdfops.dev : $(INT_MAK) $(ECHOGS_XE) $(zpdfops_)
 	$(SETMOD) $(PSD)pdfops $(zpdfops_)
 	$(ADDMOD) $(PSD)pdfops -oper zpdfops
 
-$(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP)\
- $(igstate_h) $(istack_h) $(iutil_h) $(gspath_h) $(math__h)
+$(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP) $(MAKEFILE)\
+ $(igstate_h) $(istack_h) $(iutil_h) $(gspath_h) $(math__h) $(ialloc_h)\
+ $(string__h) $(store_h)
 	$(PSCC) $(PSO_)zpdfops.$(OBJ) $(C_) $(PSSRC)zpdfops.c
+
+zutf8_=$(PSOBJ)zutf8.$(OBJ)
+$(PSD)utf8.dev : $(INT_MAK) $(ECHOGS_XE) $(zutf8_)
+	$(SETMOD) $(PSD)utf8 $(zutf8_)
+	$(ADDMOD) $(PSD)utf8 -oper zutf8
+
+$(PSOBJ)zutf8.$(OBJ) : $(PSSRC)zutf8.c $(OP)\
+ $(ghost_h) $(oper_h) $(iutil_h) $(ialloc_h) $(malloc__h) $(string__h)\
+ $(store_h)
+	$(PSCC) $(PSO_)zutf8.$(OBJ) $(C_) $(PSSRC)zutf8.c
 
 # ================ Dependencies for auxiliary programs ================ #
 
 # ============================= Main program ============================== #
 
 $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\
- $(ierrors_h) $(iapi_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gsmalloc_h)
+ $(ierrors_h) $(iapi_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gsmalloc_h)\
+ $(locale__h)
 	$(PSCC) $(PSO_)gs.$(OBJ) $(C_) $(PSSRC)gs.c
 
 $(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK)\

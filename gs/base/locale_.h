@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2009 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -10,26 +10,22 @@
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
-/* $Id$ */
-/* Generic substitute for Unix errno.h */
 
-#ifndef errno__INCLUDED
-#  define errno__INCLUDED
+/* $Id$ */
+/* Generic substitute for locale.h */
+
+#ifndef locale__INCLUDED
+#  define locale__INCLUDED
 
 /* We must include std.h before any file that includes sys/types.h. */
 #include "std.h"
 
-/* All environments provide errno.h, but in some of them, errno.h */
-/* only defines the error numbers, and doesn't declare errno. */
-#include <errno.h>
-#ifndef errno			/* in case it was #defined (very implausible!) */
-extern int errno;
+/* If the system has setlocale, include the real <locale.h>; otherwise,
+ * just fake it. */
+#ifdef HAVE_SETLOCALE
+#  include <locale.h>
+#else
+#  define setlocale(c,l) ((char *)0)
 #endif
 
-/* Some systems don't have EILSEQ, so (following GNU iconv) we use */
-/* ENOENT instead if necessary. */
-#ifndef EILSEQ
-#  define EILSEQ ENOENT
-#endif
-
-#endif /* errno__INCLUDED */
+#endif /* locale__INCLUDED */

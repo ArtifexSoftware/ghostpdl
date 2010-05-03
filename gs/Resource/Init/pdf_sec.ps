@@ -21,6 +21,9 @@
 
 % Modified by Ralph Giles for PDF 1.6 AES encryption.
 
+% Modified by Michael Constant for PDF 1.7 ExtensionLevel 3
+% AES-256 encryption.
+
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal true .setglobal
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
@@ -55,13 +58,26 @@ pdfdict begin
   /AESDecode filter
 } bind def
 
+% AES decrypt a string, returning a string.  The second argument can
+% be a dictionary of the form << /Key key /Padding false >>, which
+% specifies the key and any options for the AESDecode filter, or it
+% can just be a string (the key).
+%
+% <ciphertext> <dict> aesdecode <plaintext>
 % <ciphertext> <key> aesdecode <plaintext>
 /aesdecode {
   1 index length 0 eq {
     pop
   } {
     1 index length string 3 1 roll
-    aesdecodefilter exch readstring pop
+
+    % If our second argument is a dictionary, it's the full set
+    % of decoding options (including the key); pass it directly
+    % to the AESDecode filter.  Otherwise, it's just the key, so
+    % call aesdecodefilter to construct the dictionary.
+    dup type /dicttype eq { /AESDecode filter } { aesdecodefilter } ifelse
+
+    exch readstring pop
   } ifelse
 } bind def
 
@@ -71,6 +87,15 @@ pdfdict begin
 
 /md5_trunk {
   md5 0 pdf_key_length getinterval
+} bind def
+
+/sha256 {
+  32 string dup /SHA256Encode filter dup 4 3 roll writestring closefile
+} bind def
+
+% <string> contains_non_ascii <bool>
+/contains_non_ascii {
+  false exch { 128 ge { pop true exit } if } forall
 } bind def
 
 
@@ -208,17 +233,18 @@ def
       dup 4 eq {	% 4 uses the algorithm as 3
         pop pdf_gen_user_password_R3
       } {
-        (   **** This file uses an unknown standard security handler revision: )
-        exch =string cvs concatstrings pdfformaterror printProducer
-        /pdf_check_user_password cvx /undefined signalerror
+        % This procedure is only used if R is between 2 and 4,
+        % so we should never get here.
+        /pdf_gen_user_password cvx /undefined signalerror
       } ifelse
     } ifelse
   } ifelse
 } bind def
 
 % Algorithm 3.6
-/pdf_check_user_password { % <password> pdf_check_user_password <filekey> true
-                           % <password> pdf_check_user_password false
+% <password> pdf_check_pre_r5_user_password <filekey> true
+% <password> pdf_check_pre_r5_user_password false
+/pdf_check_pre_r5_user_password {
   pdf_gen_user_password
 
   Trailer /Encrypt oget /U oget
@@ -248,8 +274,9 @@ def
 } bind def
 
 % Algorithm 3.7
-/pdf_check_owner_password { % <password> pdf_check_owner_password <filekey> true
-                            % <password> pdf_check_owner_password false
+% <password> pdf_check_pre_r5_owner_password <filekey> true
+% <password> pdf_check_pre_r5_owner_password false
+/pdf_check_pre_r5_owner_password {
   % Step 1.
   pdf_owner_key
 
@@ -266,7 +293,123 @@ def
   exch pop
   % <result-of-step-3>
 
-  pdf_check_user_password
+  pdf_check_pre_r5_user_password
+} bind def
+
+% Algorithm 3.2a
+% <password> pdf_check_r5_password <filekey> true
+% <password> pdf_check_r5_password false
+/pdf_check_r5_password {
+  10 dict begin                   % temporary dict for local variables
+
+  % Step 1.
+  % If the .saslprep operator isn't available (because ghostscript
+  % wasn't built with libidn support), just skip this step.  ASCII
+  % passwords will still work fine, and even most non-ASCII passwords
+  % will be okay; any non-ASCII passwords that fail will produce a
+  % warning from pdf_process_Encrypt.
+  /.saslprep where { pop .saslprep } if
+
+  % Step 2.
+  dup length 127 gt { 0 127 getinterval } if
+  /Password exch def
+
+  % Step 3.
+  /O Trailer /Encrypt oget /O oget def
+  /U Trailer /Encrypt oget /U oget def
+
+  Password O 32 8 getinterval concatstrings
+  U 0 48 getinterval concatstrings sha256
+
+  O 0 32 getinterval eq {
+    % Step 3, second paragraph.
+
+    Password O 40 8 getinterval concatstrings
+    U 0 48 getinterval concatstrings sha256
+
+    16 string Trailer /Encrypt oget /OE oget concatstrings
+    << /Key 4 -1 roll /Padding false >> aesdecode true
+  } {
+    % Step 4.
+    Password U 32 8 getinterval concatstrings sha256
+    U 0 32 getinterval eq {
+      % Step 4, second paragraph.
+      Password U 40 8 getinterval concatstrings sha256
+
+      16 string Trailer /Encrypt oget /UE oget concatstrings
+      << /Key 4 -1 roll /Padding false >> aesdecode true
+    } {
+      false
+    } ifelse
+  } ifelse
+
+  % Step 5.
+  dup {
+    % Adobe says to decrypt the Perms string using "ECB mode with
+    % an initialization vector of zero", which must be a mistake --
+    % ECB mode doesn't use initialization vectors.  It looks like
+    % they meant "ECB mode, or CBC mode with an initialization
+    % vector of zero", since the two are equivalent for a single-
+    % block message.  We use the latter.
+    16 string Trailer /Encrypt oget /Perms oget concatstrings
+    << /Key 4 index /Padding false >> aesdecode
+
+    9 3 getinterval (adb) eq not {
+      (   **** Failed to decrypt Perms string.\n) pdfformaterror
+      printProducer
+      /pdf_check_r5_password cvx /rangecheck signalerror
+    } if
+  } if
+
+  end
+} bind def
+
+% <password> pdf_check_password <filekey> true
+% <password> pdf_check_password false
+/pdf_check_password {
+  % If R is 2, 3, or 4, use Algorithms 3.6 and 3.7 to see if this is
+  % a valid user or owner password.  Following historical practice,
+  % we treat the password as an arbitrary string of bytes and don't
+  % interpret it in any way.  (If the password fails, it would be
+  % nice to try some plausible character set conversions, but this
+  % gets complicated.  Even Adobe products don't seem to handle it
+  % consistently.)
+  %
+  % If R is 5, use Algorithm 3.2a.  The password should be text, in
+  % either UTF-8 or the current locale's charset.
+
+  Trailer /Encrypt oget /R oget
+
+  dup dup 2 ge exch 4 le and {
+    pop
+    dup pdf_check_pre_r5_user_password {
+      exch pop true
+    } {
+      pdf_check_pre_r5_owner_password
+    } ifelse
+  } {
+    dup 5 eq {
+      pop
+      % First, try the password as UTF-8.
+      dup pdf_check_r5_password {
+        exch pop true
+      } {
+        % The password didn't work as UTF-8, so maybe it's in the
+        % locale character set instead.  If possible, convert it to
+        % UTF-8 and try again.
+        /.locale_to_utf8 where {
+          pop .locale_to_utf8 pdf_check_r5_password
+        } {
+          pop false
+        } ifelse
+      } ifelse
+    } {
+      (   **** This file uses an unknown standard security handler revision: )
+      exch =string cvs concatstrings (\n) concatstrings pdfformaterror
+      printProducer
+      /pdf_check_password cvx /undefined signalerror
+    } ifelse
+  } ifelse
 } bind def
 
 % Process the encryption information in the Trailer.
@@ -277,23 +420,50 @@ def
     printProducer
     /pdf_process_Encrypt cvx /undefined signalerror
   } if
-  () pdf_check_user_password
+  () pdf_check_password
   {
     /FileKey exch def
   } {
     /PDFPassword where {
-       pop PDFPassword pdf_check_user_password
+       pop PDFPassword pdf_check_password
        {
          /FileKey exch def
        } {
-         PDFPassword pdf_check_owner_password
-         {
-           /FileKey exch def
-         } {
-           (   **** Password did not work.\n) pdfformaterror
-	   printProducer
-	   /pdf_process_Encrypt cvx /invalidfileaccess signalerror
-         } ifelse
+         (   **** Password did not work.\n) pdfformaterror
+
+         % If ghostscript was built without libidn, it's missing the
+         % .saslprep operator and thus can't do proper Unicode password
+         % normalization.  Similarly, if the system provides neither
+         % iconv nor the Windows MultiByteToWideChar function, then we
+         % won't have the .locale_to_utf8 operator to convert passwords
+         % from the locale character set to UTF-8.
+         % 
+         % It's not a huge problem if you're missing either or both of
+         % these.  ASCII passwords will work fine regardless, and even
+         % Unicode passwords will often be okay.
+         %
+         % However, if .saslprep or .locale_to_utf8 is missing, and the
+         % user enters a non-ASCII password that doesn't work, we give
+         % a warning message.
+         PDFPassword contains_non_ascii {
+           /.saslprep where not {
+             (   **** WARNING: Ghostscript was configured without libidn,\n)
+             (   **** so non-ASCII passwords aren't supported!\n)
+             concatstrings pdfformaterror
+           } {
+             pop
+             /.locale_to_utf8 where not {
+               (   **** WARNING: Ghostscript was configured without iconv,\n)
+               (   **** so non-ASCII passwords aren't supported!\n)
+               concatstrings pdfformaterror
+             } {
+               pop
+             } ifelse
+           } ifelse
+         } if
+
+         printProducer
+         /pdf_process_Encrypt cvx /invalidfileaccess signalerror
        } ifelse
     } {
       (   **** This file requires a password for access.\n) pdfformaterror
@@ -314,32 +484,38 @@ def
 % put into a stream dictionary).
 /computeobjkey	% <object#> <generation#> computeobjkey <keystring>
 {
-  exch
-  FileKey length 5 add string
-  dup 0 FileKey putinterval
-  exch
-		% stack:  gen# string obj#
-    2 copy 255 and FileKey length exch put
-    2 copy -8 bitshift 255 and FileKey length 1 add exch put
-    2 copy -16 bitshift 255 and FileKey length 2 add exch put
-  pop exch
-    2 copy 255 and FileKey length 3 add exch put
-    2 copy -8 bitshift 255 and FileKey length 4 add exch put
-  pop
-    % this step is for the AES cipher only
-    Trailer /Encrypt oget
-    dup /StmF knownoget {
-      exch /CF knownoget {
-        exch oget /CFM oget /AESV2 eq {
-          (sAlT) concatstrings
-        } if
+  Trailer /Encrypt oget /V oget 5 eq {
+    % Encrypt version 5 doesn't use object keys; everything is
+    % encrypted with the file key.
+    pop pop FileKey
+  } {
+    exch
+    FileKey length 5 add string
+    dup 0 FileKey putinterval
+    exch
+		  % stack:  gen# string obj#
+      2 copy 255 and FileKey length exch put
+      2 copy -8 bitshift 255 and FileKey length 1 add exch put
+      2 copy -16 bitshift 255 and FileKey length 2 add exch put
+    pop exch
+      2 copy 255 and FileKey length 3 add exch put
+      2 copy -8 bitshift 255 and FileKey length 4 add exch put
+    pop
+      % this step is for the AES cipher only
+      Trailer /Encrypt oget
+      dup /StmF knownoget {
+        exch /CF knownoget {
+          exch oget /CFM oget /AESV2 eq {
+            (sAlT) concatstrings
+          } if
+        } {
+          pop
+        } ifelse
       } {
         pop
       } ifelse
-    } {
-      pop
-    } ifelse
-  md5 0 FileKey length 5 add 2 index length .min getinterval
+    md5 0 FileKey length 5 add 2 index length .min getinterval
+  } ifelse
 } bind def
 
 % As .pdfrun, but decrypt strings with key <key>.
@@ -386,20 +562,21 @@ def
        { exch pop PDFDEBUG { dup ==only ( ) print flush } if
 	 dup type /stringtype eq
           {
-	% Check if we have encrypted strings R=4 allows for
+	% Check if we have encrypted strings R>=4 allows for
 	% selection of encryption on streams and strings
             Trailer /Encrypt oget	% Get encryption dictionary
-            dup /R oget 4 lt		% only 4 has selectable
+            dup /R oget 4 lt		% only >=4 has selectable
              {				% R < 4 --> arc4 strings
 	       pop 1 index arc4decode	% Decrypt string
 	       PDFDEBUG { (%Decrypted: ) print dup == flush } if
-             } {			% Else R = 4
+             } {			% Else R >= 4
 	       /StrF knownoget		% Get StrF (if present)
 	        {			% If StrF is present ...
 		  dup /Identity eq not	% Check if StrF != Identity
 	  	   { /StdCF eq
 		       { Trailer /Encrypt oget /CF knownoget {
-                           /StdCF oget /CFM oget /AESV2 eq
+                           /StdCF oget /CFM oget
+                           dup /AESV2 eq exch /AESV3 eq or
                          } {
                            //false
                          } ifelse {     % Decrypt string
@@ -515,7 +692,7 @@ currentdict /PDFScanRules_null undef
        {                        % stack: key Encrypt StmF
 	exch /CF knownoget {
 	  exch oget /CFM oget	% stack: key StmF-CFM
-	  /AESV2 eq
+	  dup /AESV2 eq exch /AESV3 eq or
         } { pop //false } ifelse
 	 { aesdecodefilter }	% install the requested filter
 	 { arc4decodefilter }

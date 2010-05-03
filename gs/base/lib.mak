@@ -86,6 +86,7 @@ ctype__h=$(GLSRC)ctype_.h $(std_h)
 dirent__h=$(GLSRC)dirent_.h $(std_h) $(gconfig__h)
 errno__h=$(GLSRC)errno_.h $(std_h)
 fcntl__h=$(GLSRC)fcntl_.h $(std_h)
+locale__h=$(GLSRC)locale_.h $(std_h) $(MAKEFILE)
 malloc__h=$(GLSRC)malloc_.h $(std_h)
 math__h=$(GLSRC)math_.h $(std_h) $(vmsmath_h)
 memory__h=$(GLSRC)memory_.h $(std_h)
@@ -278,6 +279,12 @@ $(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(memory__h) $(md5_h)
 	$(CP_) $(GLSRC)md5.c $(GLGEN)md5.c
 	$(GLCC) $(GLO_)md5.$(OBJ) $(C_) $(GLGEN)md5.c
 	$(RM_) $(GLGEN)md5.c $(GLGEN)md5.h
+
+# SHA-256 digest
+sha2_h=$(GLSRC)sha2.h $(std_h) $(stdint__h)
+sha2_=$(GLOBJ)sha2.$(OBJ)
+$(GLOBJ)sha2.$(OBJ) : $(GLSRC)sha2.c $(AK) $(std_h) $(string__h) $(sha2_h)
+	$(GLCC) $(GLO_)sha2.$(OBJ) $(C_) $(GLSRC)sha2.c
 
 # AES cipher
 aes_h=$(GLSRC)aes.h
@@ -1400,6 +1407,17 @@ $(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_) $(md5_)
 $(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h)\
  $(smd5_h) $(strimpl_h) $(stream_h)
 	$(GLCC) $(GLO_)smd5.$(OBJ) $(C_) $(GLSRC)smd5.c
+
+# -------------- SHA-256 digest filter -------------- #
+
+ssha2_h=$(GLSRC)ssha2.h $(sha2_h)
+ssha2_=$(GLOBJ)ssha2.$(OBJ)
+$(GLD)ssha2.dev : $(LIB_MAK) $(ECHOGS_XE) $(ssha2_) $(sha2_)
+	$(SETMOD) $(GLD)ssha2 $(ssha2_) $(sha2_)
+
+$(GLOBJ)ssha2.$(OBJ) : $(GLSRC)ssha2.c $(AK) $(memory__h)\
+ $(strimpl_h) $(stream_h) $(ssha2_h) 
+	$(GLCC) $(GLO_)ssha2.$(OBJ) $(C_) $(GLSRC)ssha2.c
 
 # -------------- Arcfour cipher filter --------------- #
 

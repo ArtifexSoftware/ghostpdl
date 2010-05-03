@@ -20,6 +20,7 @@
 #include "iminst.h"
 #include "ierrors.h"
 #include "gsmalloc.h"
+#include "locale_.h"
 
 #ifdef __GNUC__
 #  if (__GNUC__ == 2 && __GNUC_MINOR__ == 96)
@@ -72,6 +73,22 @@ main(int argc, char *argv[])
     commit_stack_pages();
 #endif
     exit_status = 0;
+
+    /*
+     * Call setlocale(LC_CTYPE), so that we can convert PDF passwords
+     * from the locale character set to UTF-8 if necessary.  Note that
+     * we only do this when running as a standalone application -- we
+     * can't use setlocale at all if ghostscript is built as a library,
+     * because it would affect the rest of the program.  Applications
+     * that use ghostscript as a library are responsible for setting
+     * the locale themselves.
+     *
+     * For now, we ignore the return value of setlocale, since there's
+     * not much we can do here if it fails.  It might be nice to set
+     * a flag instead, so we could warn the user if they later enter
+     * a non-ASCII PDF password that doesn't work.
+     */
+    (void)setlocale(LC_CTYPE, "");
     mem = gs_malloc_init();
     minst = gs_main_alloc_instance(mem);
     code = (minst == NULL ? e_Fatal : 0);
