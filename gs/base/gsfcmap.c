@@ -500,12 +500,20 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
 	    break;
     }
     penum->index[1] = j;
-    penum->entry.key[0][0] = (uchar)(i >> 8);
-    penum->entry.key[0][cmap->key_size - 1] = (uchar)(i & 0xFF);
-    penum->entry.key[1][0] = (uchar)(j >> 8);
-    penum->entry.key[1][cmap->key_size - 1] = (uchar)((j - 1) & 0xFF);
-    memcpy(penum->temp_value, map + i * gs_cmap_ToUnicode_code_bytes, 
+    if (i > 255) {
+	penum->entry.key[0][0] = (uchar)(i >> 8);
+	penum->entry.key[0][cmap->key_size - 1] = (uchar)(i & 0xFF);
+	penum->entry.key[1][0] = (uchar)(j >> 8);
+	penum->entry.key[1][cmap->key_size - 1] = (uchar)((j - 1) & 0xFF);
+	memcpy(penum->temp_value, map + i * gs_cmap_ToUnicode_code_bytes, 
 			gs_cmap_ToUnicode_code_bytes);
+    } else {
+	penum->entry.key[0][0] = (uchar)(i);
+	penum->entry.key[1][0] = (uchar)(j-1);
+	penum->entry.key_size = 1;
+	memcpy(penum->temp_value, map + i * gs_cmap_ToUnicode_code_bytes, 
+			gs_cmap_ToUnicode_code_bytes);
+    }
     return 0;
 }
 
