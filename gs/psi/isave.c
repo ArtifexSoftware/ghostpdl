@@ -1400,5 +1400,5 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
 gs_memory_t *
 gs_save_any_memory(const alloc_save_t *save)
 {
-    return(save->space_local);
+    return((gs_memory_t *)save->space_local);
 }
