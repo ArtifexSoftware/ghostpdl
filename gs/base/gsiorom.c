@@ -214,7 +214,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 	    if (max_count < count) {
 #ifdef DEBUG
 		if ((sbufptr(s)) != s->srlimit)
-		    eprintf("cbuf not empty as expected\n.");
+		    emprintf(s->memory, "cbuf not empty as expected\n.");
 #endif
 		dest = s->cbuf;
 		need_copy = true;

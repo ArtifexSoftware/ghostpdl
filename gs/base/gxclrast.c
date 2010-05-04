@@ -2336,7 +2336,7 @@ read_ht_segment(
 	if (code < 0)
 	    return code;
 	if (pcb->end - cbp < (int)seg_size) {
-	    eprintf(" *** ht segment size doesn't fit in buffer ***\n");
+	    emprintf(mem, " *** ht segment size doesn't fit in buffer ***\n");
             return_error(gs_error_unknownerror);
 	}
     }

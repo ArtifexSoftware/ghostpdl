@@ -723,7 +723,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    if (pdf_key_eq(pair, "/F")) {
 		code = sscanf((const char *)pair[1].data, "%ld", &Flags);
 		if (code != 1)
-		    eprintf("Annotation has an invalid /Flags attribute\n");
+		    emprintf(pdev->memory,
+                             "Annotation has an invalid /Flags attribute\n");
 		break;
 	    }
 	}
@@ -734,7 +735,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		 * output file will not be PDF/A compliant
 		 */
 		case 0:
-		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, reverting to normal PDF output\n");
+		    emprintf(pdev->memory,
+                             "Annotation set to non-printing,\n not permitted in PDF/A, reverting to normal PDF output\n");
 		    pdev->AbortPDFAX = true;
 		    pdev->PDFA = false;
 		    break;
@@ -742,11 +744,13 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		     * include it, but warn the user that it has been dropped.
 		     */
 		case 1:
-		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, annotation will not be present in output file\n");
+		    emprintf(pdev->memory,
+                             "Annotation set to non-printing,\n not permitted in PDF/A, annotation will not be present in output file\n");
 		    return 0;
 		    break;
 		default:
-		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+		    emprintf(pdev->memory,
+                             "Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
 		    pdev->AbortPDFAX = true;
 		    pdev->PDFA = false;
 		    break;
@@ -813,7 +817,9 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
     if (pnode->action != NULL)
 	pnode->action->id = pnode->id;
     else {
-	eprintf1("pdfmark error: Outline node %ld has no action or destination.\n", pnode->id);
+	emprintf1(pdev->memory,
+                  "pdfmark error: Outline node %ld has no action or destination.\n",
+                  pnode->id);
 	code = gs_note_error(gs_error_undefined);
     }
     s = pdev->strm;

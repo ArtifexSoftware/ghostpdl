@@ -449,23 +449,27 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	  strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
 	(pdev->params.ColorConversionStrategy == ccs_Gray &&
 	  strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
-	eprintf("ColorConversionStrategy is incompatible to ProcessColorModel.\n");
+	emprintf(pdev->memory,
+                 "ColorConversionStrategy is incompatible to ProcessColorModel.\n");
 	ecode = gs_note_error(gs_error_rangecheck);
 	pdev->params.ColorConversionStrategy = save_ccs;
     }
     if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColor) {
 	if (!pdev->UseCIEColor) {
-	    eprintf("Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
+	    emprintf(pdev->memory,
+                     "Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
 	    ecode = gs_note_error(gs_error_rangecheck);
 	    pdev->UseCIEColor = true;
 	}
     }
     if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColorForImages) {
 	if (!pdev->UseCIEColor) {
-	    eprintf("UseDeviceDependentColorForImages is not supported. Use UseDeviceIndependentColor.\n");
+	    emprintf(pdev->memory,
+                     "UseDeviceDependentColorForImages is not supported. Use UseDeviceIndependentColor.\n");
 	    pdev->params.ColorConversionStrategy = ccs_UseDeviceIndependentColor;
 	    if (!pdev->UseCIEColor) {
-		eprintf("Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
+		emprintf(pdev->memory,
+                         "Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
 		ecode = gs_note_error(gs_error_rangecheck);
 		pdev->UseCIEColor = true;
 	    }
@@ -473,29 +477,35 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     }
     if (pdev->params.ColorConversionStrategy == ccs_UseDeviceDependentColor) {
 	if (!strcmp(pdev->color_info.cm_name, "DeviceCMYK")) {
-	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with CMYK.\n");
+	    emprintf(pdev->memory,
+                     "Replacing the deprecated device parameter value UseDeviceDependentColor with CMYK.\n");
 	    pdev->params.ColorConversionStrategy = ccs_CMYK;
 	} else if (!strcmp(pdev->color_info.cm_name, "DeviceRGB")) {
-	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with sRGB.\n");
+	    emprintf(pdev->memory,
+                     "Replacing the deprecated device parameter value UseDeviceDependentColor with sRGB.\n");
 	    pdev->params.ColorConversionStrategy = ccs_sRGB;
 	} else {
-	    eprintf("Replacing the deprecated device parameter value UseDeviceDependentColor with Gray.\n");
+	    emprintf(pdev->memory,
+                     "Replacing the deprecated device parameter value UseDeviceDependentColor with Gray.\n");
 	    pdev->params.ColorConversionStrategy = ccs_Gray;
 	}
     }
     if (cl < 1.5 && pdev->params.ColorImage.Filter != NULL &&
 	    !strcmp(pdev->params.ColorImage.Filter, "JPXEncode")) {
-	eprintf("JPXEncode requires CompatibilityLevel >= 1.5 .\n");
+	emprintf(pdev->memory,
+                 "JPXEncode requires CompatibilityLevel >= 1.5 .\n");
 	ecode = gs_note_error(gs_error_rangecheck);
     }
     if (cl < 1.5 && pdev->params.GrayImage.Filter != NULL &&
 	    !strcmp(pdev->params.GrayImage.Filter, "JPXEncode")) {
-	eprintf("JPXEncode requires CompatibilityLevel >= 1.5 .\n");
+	emprintf(pdev->memory,
+                 "JPXEncode requires CompatibilityLevel >= 1.5 .\n");
 	ecode = gs_note_error(gs_error_rangecheck);
     }
     if (cl < 1.4  && pdev->params.MonoImage.Filter != NULL &&
 	    !strcmp(pdev->params.MonoImage.Filter, "JBIG2Encode")) {
-	eprintf("JBIG2Encode requires CompatibilityLevel >= 1.4 .\n");
+	emprintf(pdev->memory,
+                 "JBIG2Encode requires CompatibilityLevel >= 1.4 .\n");
 	ecode = gs_note_error(gs_error_rangecheck);
     }
     if (pdev->HaveTrueTypes && pdev->version == psdf_version_level2) {

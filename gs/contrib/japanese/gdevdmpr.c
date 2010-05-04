@@ -664,8 +664,10 @@ gdev_dmprt_close(gx_device *pdev)
     if (code < 0) return gdev_dmprt_error_no_dviprt_to_gs(code);
   }
   if (pddev->dmprt.verbose_f && pddev->PageCount>0) {
-    eprintf2("%s: Total %lu bytes output.\n",
-      pddev->dname,dviprt_getoutputbytes(pprint));
+      emprintf2(pdev->memory,
+              "%s: Total %lu bytes output.\n",
+              pddev->dname,
+              dviprt_getoutputbytes(pprint));
   }
   code = dviprt_unsetbuffer(pprint);
   if (code < 0) return gdev_dmprt_error_no_dviprt_to_gs(code);
@@ -686,7 +688,7 @@ gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
   byte *in;
   
   /* get work buffer */
-  in = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 1, i_buf_size ,"gdev_dmprt_print_page(in)");
+  in = (byte *)gs_malloc(pdev->memory->non_gc_memory, 1, i_buf_size ,"gdev_dmprt_print_page(in)");
   if ( in == 0 )
     return e_VMerror;
   
@@ -697,8 +699,14 @@ gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
   }
   if (pddev->dmprt.verbose_f) {
     if (pddev->PageCount == 1)
-      eprintf2("%s: %s\n", pddev->dname,  pddev->dmprt.prtcfg.strings[CFG_NAME]);
-    eprintf2("%s: [%ld]",pddev->dname, pddev->PageCount);
+      emprintf2(pdev->memory,
+                "%s: %s\n",
+                pddev->dname,
+                pddev->dmprt.prtcfg.strings[CFG_NAME]);
+    emprintf2(pdev->memory,
+              "%s: [%ld]",
+              pddev->dname,
+              pddev->PageCount);
   }
   prev_bytes = dviprt_getoutputbytes(pprint);
   code = dviprt_beginpage(pprint);
@@ -734,10 +742,12 @@ gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
   }
   fflush(pddev->file);
   if (pddev->dmprt.verbose_f) {
-    eprintf1(" %lu bytes\n",dviprt_getoutputbytes(pprint)-prev_bytes);
+    emprintf1(pdev->memory,
+              " %lu bytes\n",
+              dviprt_getoutputbytes(pprint)-prev_bytes);
   }
 error_ex:
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)in, 1, i_buf_size,"gdev_dmprt_print_page(in)");
+  gs_free(pdev->memory->non_gc_memory, (char *)in, 1, i_buf_size,"gdev_dmprt_print_page(in)");
   
   return code;
 }

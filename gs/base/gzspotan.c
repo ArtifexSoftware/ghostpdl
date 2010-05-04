@@ -447,11 +447,12 @@ gx_san__release(gx_device_spot_analyzer **ppadev)
     gx_device_spot_analyzer *padev = *ppadev;
 
     if (padev == NULL) {
+        /* Can't use emprintf here! */
 	eprintf("Extra call to gx_san__release.");
 	return;
     }
     if(--padev->lock < 0) {
-	eprintf("Wrong lock to gx_san__release.");
+	emprintf(padev->memory, "Wrong lock to gx_san__release.");
 	return;
     }
     if (padev->lock == 0) {

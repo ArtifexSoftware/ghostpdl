@@ -156,8 +156,9 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     if (!memcmp(OffsetTable, version_ttcf, 4)) {
     	version = u32(OffsetTable + 4);
     	if (version != 0x00010000 && version !=0x00020000) {
-	    eprintf2("Unknown TTC header version %08X in the font %s.\n", 
-		version, pfont->key_name.chars);
+            emprintf2(pfont->memory,
+                      "Unknown TTC header version %08X in the font %s.\n", 
+                      version, pfont->key_name.chars);
     	    return_error(gs_error_invalidfont);
     	}
 	numFonts = u32(OffsetTable + 8);
@@ -273,8 +274,9 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 	} else
 	    buf[0] = 0;
 
-	eprintf3("Warning: 'loca' length %d is greater than numGlyphs %d in the font %s.\n", 
-		pfont->data.numGlyphs + 1, pfont->data.trueNumGlyphs, buf);
+	emprintf3(pfont->memory,
+                  "Warning: 'loca' length %d is greater than numGlyphs %d in the font %s.\n", 
+                  pfont->data.numGlyphs + 1, pfont->data.trueNumGlyphs, buf);
 	if (loca_size > pfont->data.trueNumGlyphs + 1) {
 	    /* Bug 689516 demonstrates a font, in which numGlyps is smaller than loca size,
 	       and there are useful glyphs behind maxp.numGlyphs. */

@@ -63,7 +63,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 	      sizeof(clist_render_thread_control_t), "clist_setup_render_threads" );
     /* fallback to non-threaded if allocation fails */
     if (crdev->render_threads == NULL) {
-	eprintf(" VMerror prevented threads from starting.\n");
+	emprintf(mem, " VMerror prevented threads from starting.\n");
 	return_error(gs_error_VMerror);
     }
 
@@ -81,7 +81,7 @@ clist_setup_render_threads(gx_device *dev, int y)
         (code = cdev->page_info.io_procs->fclose(cdev->page_bfile, cdev->page_bfname, false)) < 0) {
 	gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
 	crdev->render_threads = NULL;
-	eprintf("Closing clist files prevented threads from starting.\n");
+	emprintf(mem, "Closing clist files prevented threads from starting.\n");
         return_error(gs_error_unknownerror); /* shouldn't happen */
     }
     cdev->page_cfile = cdev->page_bfile = NULL;
@@ -92,13 +92,16 @@ clist_setup_render_threads(gx_device *dev, int y)
 	if (strcmp(protodev->dname, dev->dname) == 0)
 	    break;
     if (protodev == NULL) {
-	eprintf("Could not find prototype device. Rendering threads not started.\n");
+	emprintf(mem,
+                 "Could not find prototype device. Rendering threads not started.\n");
 	return gs_error_rangecheck;
     }
 
     gs_c_param_list_write(&paramlist, mem);
     if ((code = gs_getdeviceparams(dev, (gs_param_list *)&paramlist)) < 0) {
-	eprintf1("Error getting device params, code=%d. Rendering threads not started.\n", code);
+	emprintf1(mem,
+                  "Error getting device params, code=%d. Rendering threads not started.\n",
+                  code);
 	return code;
     }
 
@@ -115,7 +118,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 	 * This improves performance of the threads.
 	 */
 	if ((code = gs_memory_chunk_wrap(&(thread->memory), mem )) < 0) {
-	    eprintf1("chunk_wrap returned error code: %d\n", code);
+	    emprintf1(mem, "chunk_wrap returned error code: %d\n", code);
 	    break;
 	}
 
@@ -212,7 +215,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 				mem, cdev->bandlist_memory, false);
 	    cdev->page_info.io_procs->fseek(cdev->page_bfile, 0, SEEK_SET, cdev->page_bfname);
 	}
-	eprintf1("Rendering threads not started, code=%d.\n", code);
+	emprintf1(mem, "Rendering threads not started, code=%d.\n", code);
 	return_error(code);
     }
     crdev->num_render_threads = i;

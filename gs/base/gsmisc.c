@@ -193,6 +193,21 @@ eprintf_program_ident(const char *program_name,
 	epf(": ");
     }
 }
+void
+emprintf_program_ident(const gs_memory_t *mem,
+                       const char *program_name,
+                       long revision_number)
+{
+    if (program_name) {
+	epfm(mem, (revision_number ? "%s " : "%s"), program_name);
+	if (revision_number) {
+	    int fpart = revision_number % 100;
+
+	    epfm(mem, "%d.%02d", (int)(revision_number / 100), fpart);
+	}
+	epfm(mem, ": ");
+    }
+}
 #if __LINE__			/* compiler provides it */
 void
 lprintf_file_and_line(const char *file, int line)

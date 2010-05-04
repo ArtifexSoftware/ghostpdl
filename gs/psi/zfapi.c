@@ -988,7 +988,10 @@ static int FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
 static int renderer_retcode(i_ctx_t *i_ctx_p, FAPI_server *I, FAPI_retcode rc)
 {   if (rc == 0)
 	return 0;
-    eprintf2("Error: Font Renderer Plugin ( %s ) return code = %d\n", I->ig.d->subtype, rc);
+    emprintf2(imemory,
+              "Error: Font Renderer Plugin ( %s ) return code = %d\n",
+              I->ig.d->subtype,
+              rc);
     return rc < 0 ? rc : e_invalidfont;
 }
 
@@ -1523,8 +1526,10 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 		    if (dx + rast.left_indent < 0 || dx + rast.left_indent + rast.black_width > dev1->width) {
 #ifdef DEBUG
 			if (gs_debug_c('m')) {
-                            eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n",
-				    dx + rast.left_indent, dx + rast.left_indent + rast.black_width - dev1->width);
+                            emprintf2(dev1->memory,
+                                      "Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n",
+				      dx + rast.left_indent,
+                                      dx + rast.left_indent + rast.black_width - dev1->width);
 			}
 #endif
                         if (dx + rast.left_indent < 0)
@@ -1533,8 +1538,10 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 		    if (dy + rast.top_indent < 0 || dy + rast.top_indent + rast.black_height > dev1->height) {
 #ifdef DEBUG
 			if (gs_debug_c('m')) {
-			    eprintf2("Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n",
-				    dy + rast.top_indent, dy + rast.top_indent + rast.black_height - dev1->height);
+			    emprintf2(dev1->memory,
+                                      "Warning : Cropping a FAPI glyph while caching : dx=%d,%d.\n",
+				      dy + rast.top_indent,
+                                      dy + rast.top_indent + rast.black_height - dev1->height);
 			}
 #endif
                         if (dy + rast.top_indent < 0)
@@ -1981,7 +1988,9 @@ retry_oversampling:
 			    l = sizeof(buf) - 1;
 			memcpy(buf, cr.char_name, l);
 			buf[l] = 0;
-			eprintf1("Wrong decoding entry for the character '%s'.\n", buf);
+			emprintf1(imemory,
+                                  "Wrong decoding entry for the character '%s'.\n",
+                                  buf);
 			return_error(e_rangecheck);
 		    }
 		}

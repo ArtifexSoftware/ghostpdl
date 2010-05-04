@@ -67,7 +67,9 @@ psdf_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
 	    break;
 	default:
 	    /* Ensure we don't write a broken file if we don't recognise the cap */
-	    eprintf1("Unknown line cap enumerator %d, substituting butt\n", cap);
+	    emprintf1(vdev->memory,
+                      "Unknown line cap enumerator %d, substituting butt\n",
+                      cap);
 	    pprintd1(gdev_vector_stream(vdev), "%d J\n", gs_cap_butt);
 	    break;
     }
@@ -93,7 +95,9 @@ psdf_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 	    break;
 	default:
 	    /* Ensure we don't write a broken file if we don't recognise the join */
-	    eprintf1("Unknown line join enumerator %d, substituting miter\n", join);
+	    emprintf1(vdev->memory,
+                      "Unknown line join enumerator %d, substituting miter\n",
+                      join);
 	    pprintd1(gdev_vector_stream(vdev), "%d j\n", gs_join_miter);
 	    break;
     }
@@ -457,8 +461,9 @@ int
 psdf_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {
     if (dev_proc(dev, get_alpha_bits)(dev, go_graphics) > 1)
-	eprintf1("Can't set GraphicsAlphaBits > 1 with a vector device %s.\n",
-	    dev->dname);
+	emprintf1(dev->memory,
+                  "Can't set GraphicsAlphaBits > 1 with a vector device %s.\n",
+	          dev->dname);
     return_error(gs_error_unregistered);
 }
 

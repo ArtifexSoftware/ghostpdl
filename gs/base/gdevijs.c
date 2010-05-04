@@ -803,7 +803,7 @@ gsijs_open(gx_device *dev)
     int fd = -1;
 
     if (strlen(ijsdev->IjsServer) == 0) {
-	eprintf("ijs server not specified\n");
+	emprintf(dev->memory, "ijs server not specified\n");
 	return gs_note_error(gs_error_ioerror);
     }
 
@@ -838,18 +838,19 @@ gsijs_open(gx_device *dev)
      */
     ijsdev->ctx = ijs_invoke_server(ijsdev->IjsServer);
     if (ijsdev->ctx == (IjsClientCtx *)NULL) {
-	eprintf1("Can't start ijs server \042%s\042\n", ijsdev->IjsServer);
+	emprintf1(ijsdev->memory,
+                  "Can't start ijs server \042%s\042\n", ijsdev->IjsServer);
 	return gs_note_error(gs_error_ioerror);
     }
 
     ijsdev->ijs_version = ijs_client_get_version (ijsdev->ctx);
 
     if (ijs_client_open(ijsdev->ctx) < 0) {
-	eprintf("Can't open ijs\n");
+	emprintf(ijsdev->memory, "Can't open ijs\n");
 	return gs_note_error(gs_error_ioerror);
     }
     if (ijs_client_begin_job(ijsdev->ctx, 0) < 0) {
-	eprintf("Can't begin ijs job 0\n");
+	emprintf(ijsdev->memory, "Can't begin ijs job 0\n");
 	ijs_client_close(ijsdev->ctx);
 	return gs_note_error(gs_error_ioerror);
     }

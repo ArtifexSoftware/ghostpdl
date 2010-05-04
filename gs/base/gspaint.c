@@ -71,7 +71,9 @@ gs_fillpage(gs_state * pgs)
     /* If we get here without a valid get_color_mapping_procs, fail */
     if (dev_proc(dev, get_color_mapping_procs) == NULL || 
         dev_proc(dev, get_color_mapping_procs) == gx_error_get_color_mapping_procs) {
-	eprintf1("\n   *** Error: No get_color_mapping_procs for device: %s\n", dev->dname);
+	emprintf1(dev->memory,
+                  "\n   *** Error: No get_color_mapping_procs for device: %s\n",
+                  dev->dname);
 	return_error(gs_error_Fatal);
     }
     /* Processing a fill object operation */

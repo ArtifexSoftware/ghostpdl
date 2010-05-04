@@ -1195,7 +1195,7 @@ sep1_ht_order_to_thresholds(gx_device *pdev, const gs_imager_state *pis)
         threshold_array_t *dptr;
 
 	if (pis->dev_ht == NULL) {
-	    eprintf("sep1_order_to_thresholds: no dev_ht available\n");
+	    emprintf(mem, "sep1_order_to_thresholds: no dev_ht available\n");
 	    return_error(gs_error_rangecheck);	/* error condition */
 	}
 	nc = pis->dev_ht->num_comp;
@@ -1204,7 +1204,8 @@ sep1_ht_order_to_thresholds(gx_device *pdev, const gs_imager_state *pis)
 	    dptr = &(tfdev->thresholds[j]);
 	    dptr->dstart = threshold_from_order( d_order, &(dptr->dwidth), &(dptr->dheight), mem);
 	    if( dptr->dstart == NULL ) {
-		eprintf("sep1_order_to_thresholds: conversion to thresholds failed.\n");
+		emprintf(mem,
+                         "sep1_order_to_thresholds: conversion to thresholds failed.\n");
 		return_error(gs_error_rangecheck);	/* error condition */
 	    }
 	}
@@ -1255,11 +1256,11 @@ if ( gs_debug_c('h') ) {
                                   "tiffsep1_threshold_array");
    if( thresh == NULL ) {
 #ifdef DEBUG
-      eprintf("threshold_from_order, malloc failed\n");
-      eprintf2("   width=%d, height=%d,",
-	      d_order->width, d_order->height );
-      eprintf2(" num_levels=%d, raster=%d\n",
-	      d_order->num_levels, d_order->raster );
+      emprintf(memory, "threshold_from_order, malloc failed\n");
+      emprintf2(memory, "   width=%d, height=%d,",
+	        d_order->width, d_order->height );
+      emprintf2(memory, " num_levels=%d, raster=%d\n",
+	        d_order->num_levels, d_order->raster );
 #endif
  	return thresh ;		/* error if allocation failed	*/
    }

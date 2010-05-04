@@ -389,7 +389,8 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     stream_arcfour_state sarc4;
 
     if (pdev->PDFX && pdev->KeyLength != 0) {
-	eprintf("Encryption is not allowed in a PDF/X doucment.\n");
+	emprintf(pdev->memory,
+                 "Encryption is not allowed in a PDF/X doucment.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength == 0)
@@ -399,34 +400,41 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     if (pdev->EncryptionV == 0 && pdev->KeyLength > 40)
 	pdev->EncryptionV = 2;	
     if (pdev->EncryptionV > 1 && pdev->CompatibilityLevel < 1.4) {
-	eprintf("PDF 1.3 only supports 40 bits keys.\n");
+	emprintf(pdev->memory, "PDF 1.3 only supports 40 bits keys.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR == 0)
 	pdev->EncryptionR = 2;
     if (pdev->EncryptionR < 2 || pdev->EncryptionR > 3) {
-	eprintf("Encryption revisions 2 and 3 are only supported.\n");
+	emprintf(pdev->memory,
+                 "Encryption revisions 2 and 3 are only supported.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR > 2 && pdev->CompatibilityLevel < 1.4) {
-	eprintf("PDF 1.3 only supports the encryption revision 2.\n");
+	emprintf(pdev->memory,
+                 "PDF 1.3 only supports the encryption revision 2.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength > 128) {
-	eprintf("The maximal length of PDF encryption key is 128 bits.\n");
+	emprintf(pdev->memory,
+                 "The maximal length of PDF encryption key is 128 bits.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength % 8) {
-	eprintf("PDF encryption key length must be a multiple of 8.\n");
+	emprintf(pdev->memory,
+                 "PDF encryption key length must be a multiple of 8.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR == 2 &&
 	((pdev->Permissions & (0xFFFFFFC3)) != 0xFFFFFFC0)) {
-	eprintf("Some of Permissions are not allowed with R=2.\n");
+	emprintf(pdev->memory,
+                 "Some of Permissions are not allowed with R=2.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionV == 2 && pdev->EncryptionR == 2 && pdev->KeyLength > 40) {
-	eprintf("Encryption version 2 revision 2 with KeyLength > 40 appears incompatible to some viewers. With long keys use revision 3.\n");
+	emprintf(pdev->memory, "Encryption version 2 revision 2 with "
+                 "KeyLength > 40 appears incompatible to some viewers. With "
+                 "long keys use revision 3.\n");
 	return_error(gs_error_rangecheck);
     }
     /* Compute O : */
@@ -627,10 +635,12 @@ pdf_open(gx_device * dev)
 	if (code < 0)
 	    goto fail;
     } else if(pdev->UserPassword.size > 0) {
-	eprintf("User password is specified. Need an Owner password or both.\n");
+	emprintf(pdev->memory,
+                 "User password is specified. Need an Owner password or both.\n");
 	return_error(gs_error_rangecheck);
     } else if (pdev->KeyLength) {
-	eprintf("Can't accept encryption options without a password.\n");
+	emprintf(pdev->memory,
+                 "Can't accept encryption options without a password.\n");
 	return_error(gs_error_rangecheck);
     }
     /* Now create a new dictionary for the local named objects. */
@@ -1399,8 +1409,9 @@ pdf_close(gx_device * dev)
     if (pdev->max_referred_page >= pdev->next_page + 1) {
         /* Note : pdev->max_referred_page counts from 1, 
 	   and pdev->next_page counts from 0. */
-	eprintf2("ERROR: A pdfmark destination page %d points beyond the last page %d.\n",
-		pdev->max_referred_page, pdev->next_page);
+	emprintf2(pdev->memory, "ERROR: A pdfmark destination page %d "
+                  "points beyond the last page %d.\n",
+                  pdev->max_referred_page, pdev->next_page);
 #if 0 /* Temporary disabled due to Bug 687686. */
 	if (code >= 0)
 	    code = gs_note_error(gs_error_rangecheck);

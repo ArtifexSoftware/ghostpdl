@@ -369,7 +369,9 @@ gx_error_get_color_mapping_procs(const gx_device * dev)
      * routine for the device. This will be noisy, but better than returning NULL which
      * would lead to SEGV (Segmentation Fault) errors when this is used.
      */
-    eprintf1("No get_color_mapping_procs proc defined for device '%s'\n", dev->dname);
+    emprintf1(dev->memory,
+              "No get_color_mapping_procs proc defined for device '%s'\n",
+              dev->dname);
     switch (dev->color_info.num_components) {
       case 1:     /* DeviceGray or DeviceInvertGray */
 	return gx_default_DevGray_get_color_mapping_procs(dev);

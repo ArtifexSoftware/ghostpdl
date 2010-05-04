@@ -267,7 +267,7 @@ gdev_x_setup_colors(gx_device_X * xdev)
 	    nitems = sscanf(buf, "%*s %ld %ld", &(xdev->foreground),
 			    &(xdev->background));
 	    if (nitems != 2 || (*buf != 'M' && *buf != 'G' && *buf != 'C')) {
-		eprintf("Malformed GHOSTVIEW_COLOR property.\n");
+		emprintf(xdev->memory, "Malformed GHOSTVIEW_COLOR property.\n");
 		return_error(gs_error_rangecheck);
 	    }
 	    palette = max(palette, *buf);
@@ -305,7 +305,9 @@ gdev_x_setup_colors(gx_device_X * xdev)
 	xdev->color_info.depth = 16;
 	break;
     default:
-	eprintf1("Unsupported X visual depth: %d\n", xdev->vinfo->depth);
+	emprintf1(xdev->memory,
+                  "Unsupported X visual depth: %d\n",
+                  xdev->vinfo->depth);
 	return_error(gs_error_rangecheck);
     }
     {	/* Set up the reverse map from pixel values to RGB. */
@@ -362,8 +364,11 @@ gdev_x_setup_colors(gx_device_X * xdev)
 		    xdev->color_info.dither_colors = ramp_size;
 		if (!setup_cube(xdev, ramp_size, true)) {
 #ifdef DEBUG
-		    eprintf3("Warning: failed to allocate %dx%dx%d RGB cube.\n",
-			     ramp_size, ramp_size, ramp_size);
+		    emprintf3(xdev->memory,
+                              "Warning: failed to allocate %dx%dx%d RGB cube.\n",
+			      ramp_size,
+                              ramp_size,
+                              ramp_size);
 #endif
 		    ramp_size--;
 		    continue;
@@ -409,8 +414,9 @@ grayscale:
 		xdev->color_info.dither_grays = ramp_size;
 		if (!setup_cube(xdev, ramp_size, false)) {
 #ifdef DEBUG
-		    eprintf1("Warning: failed to allocate %d level gray ramp.\n",
-			     ramp_size);
+		    emprintf1(xdev->memory,
+                              "Warning: failed to allocate %d level gray ramp.\n",
+			      ramp_size);
 #endif
 		    ramp_size /= 2;
 		    continue;
@@ -432,7 +438,7 @@ monochrome:
 	xdev->color_info.dither_grays = 2;
 	break;
     default:
-	eprintf1("Unknown palette: %s\n", xdev->palette);
+	emprintf1(xdev->memory, "Unknown palette: %s\n", xdev->palette);
 	if (xdev->cman.color_to_rgb.values) {
 	    gs_x_free(xdev->memory, xdev->cman.color_to_rgb.values, "gdevx color_to_rgb");
 	    xdev->cman.color_to_rgb.values = 0;

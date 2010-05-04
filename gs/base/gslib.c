@@ -945,31 +945,31 @@ test10(gs_state * pgs, gs_memory_t * mem)
 	lprintf1("reading HWSize failed! code = %d\n", code);
 	gs_abort(mem);
     }
-    eprintf3("HWSize[%d] = [ %d, %d ]\n", HWSa.size,
-	     HWSa.data[0], HWSa.data[1]);
+    emprintf3(mem, "HWSize[%d] = [ %d, %d ]\n", HWSa.size,
+              HWSa.data[0], HWSa.data[1]);
     code = param_read_float_array((gs_param_list *) & list,
 				  "HWResolution", &HWRa);
     if (code < 0) {
 	lprintf1("reading Resolution failed! code = %d\n", code);
 	gs_abort(mem);
     }
-    eprintf3("HWResolution[%d] = [ %f, %f ]\n", HWRa.size,
-	     HWRa.data[0], HWRa.data[1]);
+    emprintf3(mem, "HWResolution[%d] = [ %f, %f ]\n", HWRa.size,
+              HWRa.data[0], HWRa.data[1]);
     code = param_read_float_array((gs_param_list *) & list,
 				  "PageSize", &PSa);
     if (code < 0) {
 	lprintf1("reading PageSize failed! code = %d\n", code);
 	gs_abort(mem);
     }
-    eprintf3("PageSize[%d] = [ %f, %f ]\n", PSa.size,
-	     PSa.data[0], PSa.data[1]);
+    emprintf3(mem, "PageSize[%d] = [ %f, %f ]\n", PSa.size,
+              PSa.data[0], PSa.data[1]);
     code = param_read_long((gs_param_list *) & list,
 			   "MaxBitmap", &MaxBitmap);
     if (code < 0) {
 	lprintf1("reading MaxBitmap failed! code = %d\n", code);
 	gs_abort(mem);
     }
-    eprintf1("MaxBitmap = %ld\n", MaxBitmap);
+    emprintf1(mem, "MaxBitmap = %ld\n", MaxBitmap);
     /* Switch to param list functions to "write" */
     gs_c_param_list_write(&list, mem);
     /* Always set the PageSize. */
@@ -998,8 +998,8 @@ test10(gs_state * pgs, gs_memory_t * mem)
 	HWRa.data = HWResolution;
 	HWSize[0] = (int)(HWResolution[0] * ypage_wid);
 	HWSize[1] = (int)(HWResolution[1] * xpage_len);
-	eprintf3("	HWSize = [%d,%d], HWResolution = %f dpi\n",
-		 HWSize[0], HWSize[1], HWResolution[0]);
+	emprintf3(mem, "\tHWSize = [%d,%d], HWResolution = %f dpi\n",
+                  HWSize[0], HWSize[1], HWResolution[0]);
 	HWSa.data = HWSize;
 	code = param_write_float_array((gs_param_list *) & list,
 				       "HWResolution", &HWRa);
@@ -1011,7 +1011,7 @@ test10(gs_state * pgs, gs_memory_t * mem)
     }
     gs_c_param_list_read(&list);
     code = gs_putdeviceparams(dev, (gs_param_list *) & list);
-    eprintf1("putdeviceparams: code=%d\n", code);
+    emprintf1(mem, "putdeviceparams: code=%d\n", code);
     gs_c_param_list_release(&list);
 
     /* note: initgraphics no longer resets the color or color space */
@@ -1026,8 +1026,8 @@ test10(gs_state * pgs, gs_memory_t * mem)
     
     gs_clippath(pgs);
     gs_pathbbox(pgs, &cliprect);
-    eprintf4("	cliprect = [[%g,%g],[%g,%g]]\n",
-	     cliprect.p.x, cliprect.p.y, cliprect.q.x, cliprect.q.y);
+    emprintf4(mem, "\tcliprect = [[%g,%g],[%g,%g]]\n",
+              cliprect.p.x, cliprect.p.y, cliprect.q.x, cliprect.q.y);
     gs_newpath(pgs);
 
     switch (((rotate_value + 270) / 90) & 3) {
@@ -1049,7 +1049,7 @@ test10(gs_state * pgs, gs_memory_t * mem)
 	    xlate_y = cliprect.q.y;
 	    break;
     }
-    eprintf2("translate origin to [ %f, %f ]\n", xlate_x, xlate_y);
+    emprintf2(mem, "translate origin to [ %f, %f ]\n", xlate_x, xlate_y);
     gs_translate(pgs, xlate_x, xlate_y);
 
     /* further move (before rotate) by user requested amount */

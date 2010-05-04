@@ -490,8 +490,9 @@ pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[])
     if (pdevn_params == NULL) {
 #ifdef DEBUG
 	if (strncmp(dev->dname, "pdf14", 5))
-	    eprintf1("pdf14_compressed_encode_color devn_params not from pdf14 device, device = '%s'\n",
-			dev->dname);
+            emprintf1(dev->memory,
+                      "pdf14_compressed_encode_color devn_params not from pdf14 device, device = '%s'\n",
+                      dev->dname);
 #endif
     	pdevn_params = &(((pdf14_device *)dev)->devn_params);
     }
@@ -515,8 +516,9 @@ pdf14_compressed_decode_color(gx_device * dev, gx_color_index color,
     if (pdevn_params == NULL) {
 #ifdef DEBUG
 	if (strncmp(dev->dname, "pdf14", 5))
-	    eprintf1("pdf14_compressed_decode_color devn_params not from pdf14 device, device = '%s'\n",
-			dev->dname);
+            emprintf1(dev->memory,
+                      "pdf14_compressed_decode_color devn_params not from pdf14 device, device = '%s'\n",
+                      dev->dname);
 #endif
     	pdevn_params = &(((pdf14_device *)dev)->devn_params);
     }

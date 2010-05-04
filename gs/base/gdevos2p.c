@@ -656,8 +656,9 @@ os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql)
 	}
     } else {
 	/* If we are here we had a bad error code. Print it and some other info. */
-	eprintf4("SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
-		splerr, cTotal, cReturned, cbNeeded);
+	emprintf4(mem,
+                 "SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
+		 splerr, cTotal, cReturned, cbNeeded);
     }
     if (splerr)
 	return splerr;

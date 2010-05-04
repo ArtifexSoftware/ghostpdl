@@ -263,7 +263,9 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
             f = gs_alloc_struct(mem, MEMFILE, &st_MEMFILE,
                                 "memfile_fopen_instance(MEMFILE)");
             if (f == NULL) {
-                eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
+                emprintf1(mem,
+                          "memfile_open_scratch(%s): gs_alloc_struct failed\n",
+                          fname);
                 code = gs_note_error(gs_error_VMerror);
                 goto finish;
             }
@@ -312,7 +314,9 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
                     gs_alloc_struct(mem, stream_state, decompress_template->stype,
                                     "memfile_open_scratch(decompress_state)");
                 if (f->decompress_state == 0) {
-                    eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
+                    emprintf1(mem,
+                              "memfile_open_scratch(%s): gs_alloc_struct failed\n",
+                              fname);
                     code = gs_note_error(gs_error_VMerror);
                     goto finish;
                 }
@@ -331,7 +335,9 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
     f = gs_alloc_struct(mem, MEMFILE, &st_MEMFILE,
                         "memfile_open_scratch(MEMFILE)");
     if (f == NULL) {
-        eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
+        emprintf1(mem,
+                  "memfile_open_scratch(%s): gs_alloc_struct failed\n",
+                  fname);
         code = gs_note_error(gs_error_VMerror);
         goto finish;
     }
@@ -370,7 +376,9 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
             gs_alloc_struct(mem, stream_state, decompress_template->stype,
                             "memfile_open_scratch(decompress_state)");
         if (f->compress_state == 0 || f->decompress_state == 0) {
-            eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
+            emprintf1(mem,
+                      "memfile_open_scratch(%s): gs_alloc_struct failed\n",
+                      fname);
             code = gs_note_error(gs_error_VMerror);
             goto finish;
         }
@@ -430,7 +438,9 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
                 if (prev_f->openlist == f)
                     break;
             if (prev_f == NULL) {
-                eprintf1("Could not find %p on memfile openlist\n", f);
+                emprintf1(f->memory,
+                          "Could not find %p on memfile openlist\n",
+                          f);
                 return_error(gs_error_invalidfileaccess);
             }
             prev_f->openlist = f->openlist;     /* link around the one being fclosed */
@@ -475,7 +485,9 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
     /* leaks if other users of the memfile don't 'fclose with delete=true */
     if (f->openlist != NULL || ((f->base_memfile != NULL) && f->base_memfile->is_open)) {
         /* TODO: do the cleanup rather than just giving an error */
-        eprintf1("Attempt to delete a memfile still open for read: %p\n", f);
+        emprintf1(f->memory,
+                  "Attempt to delete a memfile still open for read: %p\n",
+                  f);
         return_error(gs_error_invalidfileaccess);
     } else {
         /* Free the memory used by this memfile */
@@ -639,15 +651,18 @@ compress_log_blk(MEMFILE * f, LOG_MEMFILE_BLK * bp)
              * block never ends up getting split across 3 dest blocks.
              */
             /* CHANGE memfile_set_memory_warning if this assumption changes. */
-            eprintf("Compression required more than one full block!\n");
+            emprintf(f->memory,
+                     "Compression required more than one full block!\n");
             return_error(gs_error_Fatal);
         }
         newphys->data_limit = (char *)(f->wt.ptr);
     }
     compressed_size += f->wt.ptr - start_ptr;
     if (compressed_size > MEMFILE_DATA_SIZE) {
-        eprintf2("\nCompression didn't - raw=%d, compressed=%ld\n",
-                 MEMFILE_DATA_SIZE, compressed_size);
+        emprintf2(f->memory,
+                  "\nCompression didn't - raw=%d, compressed=%ld\n",
+                  MEMFILE_DATA_SIZE,
+                  compressed_size);
     }
 #ifdef DEBUG
     tot_compressed += compressed_size;
@@ -782,7 +797,8 @@ memfile_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
         }
     }
     if (f->log_curr_blk->link != 0) {
-        eprintf(" Write file truncate -- need to free physical blocks.\n");
+        emprintf(f->memory,
+                 " Write file truncate -- need to free physical blocks.\n");
     }
     while (count) {
         uint move_count = f->pdata_end - f->pdata;
@@ -942,7 +958,8 @@ memfile_get_pdata(MEMFILE * f)
                 status = (*f->decompress_state->template->process)
                     (f->decompress_state, &(f->rd), &(f->wt), true);
                 if (status == 0) {
-                    eprintf("Decompression required more than one full block!\n");
+                    emprintf(f->memory,
+                             "Decompression required more than one full block!\n");
                     return_error(gs_error_Fatal);
                 }
             }
@@ -1036,7 +1053,9 @@ memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
         /* Check first to make sure that we have exclusive access */
         if (f->openlist != NULL || f->base_memfile != NULL) {
             /* TODO: Move the data so it is still connected to other open files */
-            eprintf1("memfile_rewind(%p) with discard_data=true failed: ", f);
+            emprintf1(f->memory,
+                      "memfile_rewind(%p) with discard_data=true failed: ",
+                      f);
             f->error_code = gs_note_error(gs_error_ioerror);
             return;
         }
@@ -1191,7 +1210,7 @@ memfile_init_empty(MEMFILE * f)
     /* File empty - get a physical mem block (includes the buffer area)  */
     pphys = MALLOC(f, sizeof(*pphys), "memfile pphys");
     if (!pphys) {
-        eprintf("memfile_init_empty: MALLOC for 'pphys' failed\n");
+        emprintf(f->memory, "memfile_init_empty: MALLOC for 'pphys' failed\n");
         return_error(gs_error_VMerror);
     }
     f->total_space += sizeof(*pphys);
@@ -1201,7 +1220,8 @@ memfile_init_empty(MEMFILE * f)
     plog = (LOG_MEMFILE_BLK *)MALLOC( f, sizeof(*plog), "memfile_init_empty" );
     if (plog == NULL) {
         FREE(f, pphys, "memfile_init_empty");
-        eprintf("memfile_init_empty: MALLOC for log_curr_blk failed\n");
+        emprintf(f->memory,
+                 "memfile_init_empty: MALLOC for log_curr_blk failed\n");
         return_error(gs_error_VMerror);
     }
     f->total_space += sizeof(*plog);

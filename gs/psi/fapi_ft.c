@@ -476,7 +476,9 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     if (ft_error == FT_Err_Too_Many_Hints) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
-            eprintf1 ("TrueType glyph %d uses more instructions than the declared maximum in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+            emprintf1(a_fapi_font->memory,
+                      "TrueType glyph %d uses more instructions than the declared maximum in the font. Continuing, ignoring broken glyph\n",
+                      a_char_ref->char_code);
         }
 #endif
 	ft_error = 0;
@@ -484,7 +486,9 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     if (ft_error == FT_Err_Invalid_Argument) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
-	    eprintf1 ("TrueType parsing error in glyph %d in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+	    emprintf1(a_fapi_font->memory,
+                      "TrueType parsing error in glyph %d in the font. Continuing, ignoring broken glyph\n",
+                      a_char_ref->char_code);
         }
 #endif
 	ft_error = 0;
@@ -492,7 +496,9 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     if (ft_error == FT_Err_Too_Many_Function_Defs) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
-	    eprintf1 ("TrueType instruction error in glyph %d in the font. Continuing, ignoring broken glyph\n", a_char_ref->char_code);
+	    emprintf1(a_fapi_font->memory,
+                      "TrueType instruction error in glyph %d in the font. Continuing, ignoring broken glyph\n",
+                      a_char_ref->char_code);
         }
 #endif
 	ft_error = 0;
@@ -500,7 +506,9 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     if (ft_error == FT_Err_Invalid_Glyph_Index) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
-	    eprintf1 ("FreeType is unable to find the glyph %d in the font. Continuing, ignoring missing glyph\n", a_char_ref->char_code);
+	    emprintf1(a_fapi_font->memory,
+                      "FreeType is unable to find the glyph %d in the font. Continuing, ignoring missing glyph\n",
+                      a_char_ref->char_code);
         }
 #endif
 	ft_error = 0;

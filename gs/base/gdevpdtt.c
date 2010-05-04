@@ -2538,8 +2538,9 @@ pdf_text_process(gs_text_enum_t *pte)
 		memcpy(KeyName, penum->current_font->key_name.chars, len);
 		KeyName[len] = 0x00;
 
-		eprintf4("ERROR: Page %d used undefined glyph '%s' from type 3 font '%s', key '%s'\n",
-		    pdev->next_page, glyph, FontName, KeyName);
+		emprintf4(pdev->memory,
+                          "ERROR: Page %d used undefined glyph '%s' from type 3 font '%s', key '%s'\n",
+		          pdev->next_page, glyph, FontName, KeyName);
 	        stream_puts(pdev->strm, "0 0 0 0 0 0 d1\n");
 	    }
 	    

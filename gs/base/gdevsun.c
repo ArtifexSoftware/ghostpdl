@@ -286,8 +286,9 @@ if ( gs_debug['X'] )
 	     xdev->truecolor = 1;
 	     break;
 	default:
-	     eprintf1("gs: Cannot handle display of depth %d.\n",
-	              xdev->pw->pw_pixrect->pr_depth);
+	     emprintf1(dev->memory,
+                       "gs: Cannot handle display of depth %d.\n",
+	               xdev->pw->pw_pixrect->pr_depth);
 	     return -1;
 	}
 		
@@ -307,7 +308,7 @@ if ( gs_debug['X'] )
 		xdev->green = (byte *)malloc(CMS_SIZE);
 		xdev->blue = (byte *)malloc(CMS_SIZE);
 		if (!xdev->red || !xdev->green || !xdev->blue) {
-			eprintf("gs: no memory for colormap\n");
+			emprintf(dev->memory, "gs: no memory for colormap\n");
 			return -1;
 		}
 
@@ -501,7 +502,8 @@ sun_map_rgb_color(gx_device *dev, unsigned short red,
 		 */
 		if (xdev->freecols <= 1) {
 		    if (warn) {
-			eprintf("gs: last spare color map entry allocated\n");
+			emprintf(dev->memory,
+                                 "gs: last spare color map entry allocated\n");
 			warn = 0;
 		    }
 		    return gx_no_color_index; 
@@ -541,7 +543,9 @@ sun_map_color_rgb(gx_device *dev, gx_color_index color,
 		 * We just use the colormap to map back to rgb values.
 		 */
 		if (color < xdev->freecols || color >= CMS_SIZE) {
-			eprintf1("gs: attempt to get RGB values for unallocated color index %d\n", (int)color);
+			emprintf1(dev->memory,
+                                  "gs: attempt to get RGB values for unallocated color index %d\n",
+                                  (int)color);
 			return -1;
 		}
 		rgb[0] = (double)xdev->red[color] / (ALL_COLS - 1)

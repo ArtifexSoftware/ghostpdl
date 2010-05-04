@@ -41,7 +41,7 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
     } else
 	*pcf = gp_fopen(fname, fmode);
     if (*pcf == NULL) {
-	eprintf1("Could not open the scratch file %s.\n", fname);
+	emprintf1(mem, "Could not open the scratch file %s.\n", fname);
 	return_error(gs_error_invalidfileaccess);
     }
     return 0;

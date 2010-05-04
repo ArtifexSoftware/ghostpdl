@@ -168,7 +168,9 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 
 		memcpy(buf, font->font_name.chars, l);
 		buf[l] = 0;
-    		eprintf1("Can't embed the complete font %s as it is too large, embedding a subset.\n", buf);
+    		emprintf1(pdev->memory,
+                          "Can't embed the complete font %s as it is too large, embedding a subset.\n",
+                          buf);
 	    }
 	}
 	break;
@@ -234,7 +236,9 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 
 	    memcpy(buf, copied->font_name.chars, l);
 	    buf[l] = 0;
-    	    eprintf1("Can't embed the complete font %s due to font error.\n", buf);
+    	    emprintf1(pdev->memory,
+                      "Can't embed the complete font %s due to font error.\n",
+                      buf);
 	    goto fail;
 	}
 	if (code < 0) {
