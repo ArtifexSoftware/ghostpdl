@@ -281,7 +281,7 @@ sub checkProblem {
 }
 
 
-{
+if (0) {
   my $cmd="cd mupdf ; darcs pull -a";
   my $value=`$cmd`;
   chomp $value;

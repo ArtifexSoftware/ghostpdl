@@ -365,11 +365,11 @@ sub checkAbort {
   return(0) if ($local);
   checkPID();
   return (1) if ($abort==1);
-  spawn(60,"scp -q -i ~/.ssh/cluster_key  regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.abort . >/dev/null 2>/dev/null");
+  spawn(60,"scp -q -i ~/.ssh/cluster_key  regression\@casper.ghostscript.com:/home/regression/cluster/$machine.abort . >/dev/null 2>/dev/null");
   if (-e "$machine.abort") {
     mylog("found $machine.abort on casper\n");
     mylog("removing $machine.abort on casper\n");
-    spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
+    spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
     killAll();
     return(1);
   }
@@ -380,7 +380,7 @@ sub updateStatus($) {
   my $message=shift;
 if (!$local) {
   `echo '$message' >$machine.status`;
-  spawn(0,"scp -q -i ~/.ssh/cluster_key $machine.status regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.status");
+  spawn(0,"scp -q -i ~/.ssh/cluster_key $machine.status regression\@casper.ghostscript.com:/home/regression/cluster/$machine.status");
 }
   mylog($message);
 }
@@ -422,7 +422,7 @@ if (!$abort) {
     updateStatus('Fetching mupdf.tar.gz');
     `touch mupdf ; rm -fr mupdf; touch mupdf.tar.gz ; rm mupdf.tar.gz`;
     for (my $retry=0;  $retry<5;  $retry++) {
-      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
       last if ($?==0);
       my $b=$?;
       chomp $a;
@@ -648,13 +648,13 @@ if (-e '../bin/time') {
 
 if ($md5sumFail ne "") {
   updateStatus('md5sum fail');
-mylog("setting $machine.fail on casper3\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+mylog("setting $machine.fail on casper\n");
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } elsif ($compileFail ne "") {
   updateStatus('Compile fail');
-mylog("setting $machine.fail on casper3\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+mylog("setting $machine.fail on casper\n");
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } else {
   updateStatus('Starting jobs');
@@ -800,8 +800,8 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
 #     mylog "killed:  $pids{$pid}{'filename'}\n";  # mhw
       if ($count>=$maxTimeout) {
         $timeoutFail="too many timeouts";
-mylog("setting $machine.fail on casper3\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+mylog("setting $machine.fail on casper\n");
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
         updateStatus('Timeout fail');
         @commands=();
         $maxCount=0;
@@ -953,8 +953,8 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
 #       mylog "killed:  $pids{$pid}{'filename'}\n";  # mhw
         if ($count>=$maxTimeout) {
           $timeoutFail="too many timeouts";
-mylog("setting $machine.fail on casper3\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+mylog("setting $machine.fail on casper\n");
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
           updateStatus('Timeout fail');
           @commands=();
           $maxCount=0;
@@ -1068,7 +1068,7 @@ if (!$local) {
 
     for (my $retry=0;  $retry<5;  $retry++) {
       mylog "about to upload $machine.log.gz";
-      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.log.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.log.gz`;
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.log.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.log.gz`;
       last if ($?==0);
       my $b=$?;
       chomp $a;
@@ -1079,7 +1079,7 @@ if (!$local) {
  
     for (my $retry=0;  $retry<5;  $retry++) {
       mylog "about to upload $machine.out.gz";
-      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper3.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1`;
+      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1`;
       last if ($?==0);
       my $b=$?;
       chomp $a;
@@ -1103,10 +1103,10 @@ if ($abort) {
 }
 
 if (!$local) {
-mylog("setting $machine.done on casper3\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
+mylog("setting $machine.done on casper\n");
+spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
 mylog("removing $machine.abort on casper\n");
-spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper3.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
+spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
 }
 
 system("date") if ($debug2);
