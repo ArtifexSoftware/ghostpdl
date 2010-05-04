@@ -46,7 +46,7 @@
 #endif
 
 /*
- * Define bookeeping for interperters and devices 
+ * Define bookeeping for interpreters and devices 
  */
 typedef struct pl_main_universe_s {
     gs_memory_t             *mem;                /* mem alloc to dealloc devices */
@@ -541,11 +541,21 @@ pl_main_universe_init(
 	/* but for now it's simpler to just create all instances up front. */
 	for (index = 0; pdl_implementation[index] != 0; ++index) {
 	  pl_interp_instance_t *instance;
+          int code;
 
-	  if ( pl_allocate_interp(&universe->pdl_interp_array[index],
-	    pdl_implementation[index], mem) < 0
-	  || pl_allocate_interp_instance(&universe->pdl_instance_array[index],
-	   universe->pdl_interp_array[index], mem) < 0 ) {
+          code = pl_allocate_interp(&universe->pdl_interp_array[index],
+                                    pdl_implementation[index],
+                                    mem);
+          if (code >= 0) {
+              /* Whatever instance we allocate here will become the current
+               * instance during initialisation; this allows init files to be
+               * successfully read etc. */
+              code = pl_allocate_interp_instance(&universe->curr_instance,
+	                                         universe->pdl_interp_array[index],
+                                                 mem);
+          }
+          universe->pdl_instance_array[index] = universe->curr_instance;
+          if (code < 0) {
 	      if (err_str)
 	        sprintf(err_str, "Unable to create %s interpreter.\n",
 	         pl_characteristics(pdl_implementation[index])->language);
@@ -1313,4 +1323,3 @@ main(int argc, char **argv) {
     return pl_main(argc, argv);
 }
 #endif /* !defined(NO_MAIN) */
-
