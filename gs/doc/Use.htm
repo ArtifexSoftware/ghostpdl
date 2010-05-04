@@ -3674,12 +3674,12 @@ symbol set files in the current directory.
 
 <p>
 Note that UFST and Free Type cannot handle some Ghostscript fonts because
-they does not include a PostScript interpreter and therefore has stronger restrictions on
+they do not include a PostScript interpreter and therefore have stronger restrictions on
 font formats than Ghostscript itself does.
 If their font types are listed in <code>HookDiskFonts</code> or in 
-<code>HookEmbeddedFonts</code>, Ghostscript interpret them as PS files, 
+<code>HookEmbeddedFonts</code>, Ghostscript interprets them as PS files, 
 then serializes font data into a RAM buffer and passes it to FAPI as 
-PCLEOs.
+PCLEOs. (see the FAPI-related source code for details).
 
 <p>
 
