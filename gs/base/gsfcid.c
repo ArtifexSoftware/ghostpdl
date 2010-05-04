@@ -212,7 +212,9 @@ gs_cid0_indexed_font(const gs_font *font, int fidx)
     gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
 
     if (font->FontType != ft_CID_encrypted) {
-	eprintf1("Unexpected font type: %d\n", font->FontType);
+	emprintf1(font->memory,
+                  "Unexpected font type: %d\n",
+                  font->FontType);
         return 0;
     }
     return (const gs_font*) (pfont->cidata.FDArray[fidx]);
@@ -226,7 +228,9 @@ gs_cid0_has_type2(const gs_font *font)
     int i;
 
     if (font->FontType != ft_CID_encrypted) {
-	eprintf1("Unexpected font type: %d\n", font->FontType);
+	emprintf1(font->memory,
+                  "Unexpected font type: %d\n",
+                  font->FontType);
         return false;
     }
     for (i = 0; i < pfont->cidata.FDArray_size; i++)
