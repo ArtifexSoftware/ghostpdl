@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -63,7 +63,7 @@
 
 /* Define unsigned 16- and 32-bit types.  These are needed in */
 /* a surprising number of places that do bit manipulation. */
-#if ARCH_SIZEOF_SHORT == 2	/* no plausible alternative! */
+#if ARCH_SIZEOF_SHORT == 2      /* no plausible alternative! */
 typedef ushort bits16;
 #endif
 #if ARCH_SIZEOF_INT == 4
@@ -114,7 +114,7 @@ typedef ulong bits32;
 #  define arith_rshift(x,n) ((x) >> (n))
 #  define arith_rshift_1(x) ((x) >> 1)
 #else
-#if arch_arith_rshift == 1	/* OK except for n=1 */
+#if arch_arith_rshift == 1      /* OK except for n=1 */
 #  define arith_rshift(x,n) ((x) >> (n))
 #  define arith_rshift_1(x) arith_rshift_slow(x,1)
 #else
@@ -153,17 +153,24 @@ typedef struct gs_memory_s gs_memory_t;
 
 
 /* dpf and epf may be redefined */
-#define dpf errprintf
-#define epf errprintf
+#define dpf errprintf_nomem
+#define epf errprintf_nomem
 
-/* To allow stdout and stderr to be redirected, all stdout goes 
+/* To allow stdout and stderr to be redirected, all stdout goes
  * though outwrite and all stderr goes through errwrite.
  */
 
 int outwrite(const gs_memory_t *mem, const char *str, int len);
-int errwrite(const char *str, int len);
+int errwrite(const gs_memory_t *mem, const char *str, int len);
 void outflush(const gs_memory_t *mem);
-void errflush(void);
+void errflush(const gs_memory_t *mem);
+
+/* As a temporary measure, we allow forms of errwrite/errflush that do not
+ * need to be given a memory pointer. Any uses of this (largely the debugging
+ * system) will fail with multithreaded usage. */
+int errwrite_nomem(const char *str, int len);
+void errflush_nomem(void);
+
 /* Formatted output to outwrite and errwrite.
  * The maximum string length is 1023 characters.
  */
@@ -178,14 +185,16 @@ void errflush(void);
 #    endif
 #  endif
 int outprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
-int errprintf(const char *fmt, ...) __printflike(1, 2);
+int errprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
+int errprintf_nomem(const char *fmt, ...) __printflike(1, 2);
 #else
 int outprintf();
 int errprintf();
+int errprintf_nomem();
 #endif
 
 /* Print the program line # for debugging. */
-#if __LINE__			/* compiler provides it */
+#if __LINE__                    /* compiler provides it */
 void dprintf_file_and_line(const char *, int);
 #  define _dpl dprintf_file_and_line(__FILE__, __LINE__),
 #else
@@ -193,7 +202,7 @@ void dprintf_file_only(const char *);
 #  define _dpl dprintf_file_only(__FILE__),
 #endif
 
-void dflush(void);		/* flush stderr */
+void dflush(void);              /* flush stderr */
 #define dputc(chr) dprintf1("%c", chr)
 #define dlputc(chr) dlprintf1("%c", chr)
 #define dputs(str) dprintf1("%s", str)
@@ -281,7 +290,7 @@ long gs_revision_number(void);
 #define eprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
-#if __LINE__			/* compiler provides it */
+#if __LINE__                    /* compiler provides it */
 void lprintf_file_and_line(const char *, int);
 #  define _epl _epi lprintf_file_and_line(__FILE__, __LINE__),
 #else

@@ -111,7 +111,7 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
 	return 0;
     if (pio->stdout_is_redirected) {
 	if (pio->stdout_to_stderr)
-	    return errwrite(str, len);
+	    return errwrite(mem, str, len);
 	fout = pio->fstdout2;
     }
     else if (pio->stdout_fn) {
@@ -125,16 +125,21 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
     return code;
 }
 
-int errwrite(const char *str, int len)
+int errwrite_nomem(const char *str, int len)
+{
+    return errwrite(mem_err_print, str, len);
+}
+
+int errwrite(const gs_memory_t *mem, const char *str, int len)
 {    
     int code;
     if (len == 0)
 	return 0;
-    if (mem_err_print->gs_lib_ctx->stderr_fn)
-	return (*mem_err_print->gs_lib_ctx->stderr_fn)(mem_err_print->gs_lib_ctx->caller_handle, str, len);
+    if (mem->gs_lib_ctx->stderr_fn)
+	return (*mem->gs_lib_ctx->stderr_fn)(mem->gs_lib_ctx->caller_handle, str, len);
 
-    code = fwrite(str, 1, len, mem_err_print->gs_lib_ctx->fstderr);
-    fflush(mem_err_print->gs_lib_ctx->fstderr);
+    code = fwrite(str, 1, len, mem->gs_lib_ctx->fstderr);
+    fflush(mem->gs_lib_ctx->fstderr);
     return code;
 }
 
@@ -152,10 +157,14 @@ void outflush(const gs_memory_t *mem)
         fflush(mem->gs_lib_ctx->fstdout);
 }
 
-void errflush(void)
+void errflush_nomem(void)
 {
-    if (!mem_err_print->gs_lib_ctx->stderr_fn)
-        fflush(mem_err_print->gs_lib_ctx->fstderr);
+    errflush(mem_err_print);
+}
+void errflush(const gs_memory_t *mem)
+{
+    if (!mem->gs_lib_ctx->stderr_fn)
+        fflush(mem->gs_lib_ctx->fstderr);
     /* else nothing to flush */
 }
 

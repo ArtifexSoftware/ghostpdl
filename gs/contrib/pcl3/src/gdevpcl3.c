@@ -5,21 +5,21 @@
             Germany. E-mail: Martin.Lottermoser@t-online.de.
 
 *******************************************************************************
-*									      *
-*	Copyright (C) 2000, 2001 by Martin Lottermoser			      *
-*	All rights reserved						      *
-*									      *
+*                                                                             *
+*       Copyright (C) 2000, 2001 by Martin Lottermoser                        *
+*       All rights reserved                                                   *
+*                                                                             *
 *******************************************************************************
 
   Preprocessor symbols:
 
     GS_REVISION (integer)
-	If defined, this must be the ghostscript version number, e.g., 601 for
-	ghostscript 6.01.
+        If defined, this must be the ghostscript version number, e.g., 601 for
+        ghostscript 6.01.
 
     PCL3_MEDIA_FILE (const char *)
-	Define this to set a media configuration file for the "unspec" device
-	unless the user overrides it.
+        Define this to set a media configuration file for the "unspec" device
+        unless the user overrides it.
 
 ******************************************************************************/
 
@@ -32,7 +32,7 @@ static const char
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE	500
+#define _XOPEN_SOURCE   500
 #endif
 
 /* Special Aladdin header, must be included before <sys/types.h> on some
@@ -50,7 +50,7 @@ static const char
 /* Ghostscript headers */
 #ifdef EPRN_TRACE
 #include "gdebug.h"
-#endif	/* EPRN_TRACE */
+#endif  /* EPRN_TRACE */
 
 /* Driver-specific headers */
 #include "gdeveprn.h"
@@ -61,7 +61,7 @@ static const char
 /*****************************************************************************/
 
 /* Does the argument point to an instance of the generic (pcl3) device? */
-#define is_generic_device(dev)	(strcmp(dev->dname, "pcl3") == 0)
+#define is_generic_device(dev)  (strcmp(dev->dname, "pcl3") == 0)
 
 /*****************************************************************************/
 
@@ -74,18 +74,18 @@ typedef enum {Duplex_none, Duplex_sameLeadingEdge, Duplex_oppositeLeadingEdge,
 
 /* Device structure */
 typedef struct {
-  gx_eprn_device_common;	/* eprn part including base types */
+  gx_eprn_device_common;        /* eprn part including base types */
 
   /* Printer selection and other data not directly mappable to PCL */
   pcl_Printer printer;
   bool_or_null use_card;
   DuplexCapabilities duplex_capability;
-  bool tumble;	/* only relevant if 'Duplex' is 'true' */
+  bool tumble;  /* only relevant if 'Duplex' is 'true' */
 
   /* PCL generation */
   bool
-    initialized,	/* Has init() been run on this device instance? */
-    configured,		/* Has the output file been configured? */
+    initialized,        /* Has init() been run on this device instance? */
+    configured,         /* Has the output file been configured? */
     configure_every_page;  /* Repeat the configuration for every page? */
   pcl_FileData file_data;
 } pcl3_Device;
@@ -131,25 +131,25 @@ static void pcl3_flag_mismatch_reporter(FILE *err,
   const struct s_eprn_Device *eprn, bool no_match);
 
 /* Macro for creating device structure instances */
-#define pcl3_device_instance(dname, printer)			\
-  pcl3_Device gs_##dname##_device = {				\
-    eprn_device_initdata(					\
-      pcl3_Device,	/* device type */			\
-      pcl3_procs,	/* static device procedure table */	\
-      #dname,		/* device name */			\
-      300.0, 300.0,	/* horizontal and vertical resolution */\
-      pcl3_print_page,	/* print page routine */		\
+#define pcl3_device_instance(dname, printer)                    \
+  pcl3_Device gs_##dname##_device = {                           \
+    eprn_device_initdata(                                       \
+      pcl3_Device,      /* device type */                       \
+      pcl3_procs,       /* static device procedure table */     \
+      #dname,           /* device name */                       \
+      300.0, 300.0,     /* horizontal and vertical resolution */\
+      pcl3_print_page,  /* print page routine */                \
       &pcl3_printers[printer].desc, /* printer capability description */ \
-      flag_description,	/* flag descriptions */			\
-      ms_none,		/* desired media flags */		\
-      card_is_optional,	/* list of optional flags */		\
-      &pcl3_flag_mismatch_reporter),	/* reporting function */\
-    printer,		/* printer */				\
-    bn_null,		/* use_card */				\
-    Duplex_none,	/* duplex_capability */			\
-    false,		/* tumble */				\
-    false		/* initialized */			\
-    /* The remaining fields will be set in init(). */		\
+      flag_description, /* flag descriptions */                 \
+      ms_none,          /* desired media flags */               \
+      card_is_optional, /* list of optional flags */            \
+      &pcl3_flag_mismatch_reporter),    /* reporting function */\
+    printer,            /* printer */                           \
+    bn_null,            /* use_card */                          \
+    Duplex_none,        /* duplex_capability */                 \
+    false,              /* tumble */                            \
+    false               /* initialized */                       \
+    /* The remaining fields will be set in init(). */           \
   }
 
 /* Generic and flexible device structure instance */
@@ -158,106 +158,106 @@ pcl3_device_instance(pcl3, pcl3_generic_new);
 /* Printer-specific and fixed device structure instances */
 /* At present there is no entry for the HP DeskJet because its natural name
    collides with the hpdj driver. */
-pcl3_device_instance(hpdjplus,	HPDeskJetPlus);
+pcl3_device_instance(hpdjplus,  HPDeskJetPlus);
 pcl3_device_instance(hpdjportable, HPDJPortable);
-pcl3_device_instance(hpdj310,	HPDJ310);
-pcl3_device_instance(hpdj320,	HPDJ320);
-pcl3_device_instance(hpdj340,	HPDJ340);
-pcl3_device_instance(hpdj400,	HPDJ400);
-pcl3_device_instance(hpdj500,	HPDJ500);
-pcl3_device_instance(hpdj500c,	HPDJ500C);
-pcl3_device_instance(hpdj510,	HPDJ510);
-pcl3_device_instance(hpdj520,	HPDJ520);
-pcl3_device_instance(hpdj540,	HPDJ540);
-pcl3_device_instance(hpdj550c,	HPDJ550C);
-pcl3_device_instance(hpdj560c,	HPDJ560C);
-pcl3_device_instance(hpdj600,	HPDJ600);
-pcl3_device_instance(hpdj660c,	HPDJ660C);
-pcl3_device_instance(hpdj670c,	HPDJ670C);
-pcl3_device_instance(hpdj680c,	HPDJ680C);
-pcl3_device_instance(hpdj690c,	HPDJ690C);
-pcl3_device_instance(hpdj850c,	HPDJ850C);
-pcl3_device_instance(hpdj855c,	HPDJ855C);
-pcl3_device_instance(hpdj870c,	HPDJ870C);
-pcl3_device_instance(hpdj890c,	HPDJ890C);
-pcl3_device_instance(hpdj1120c,	HPDJ1120C);
+pcl3_device_instance(hpdj310,   HPDJ310);
+pcl3_device_instance(hpdj320,   HPDJ320);
+pcl3_device_instance(hpdj340,   HPDJ340);
+pcl3_device_instance(hpdj400,   HPDJ400);
+pcl3_device_instance(hpdj500,   HPDJ500);
+pcl3_device_instance(hpdj500c,  HPDJ500C);
+pcl3_device_instance(hpdj510,   HPDJ510);
+pcl3_device_instance(hpdj520,   HPDJ520);
+pcl3_device_instance(hpdj540,   HPDJ540);
+pcl3_device_instance(hpdj550c,  HPDJ550C);
+pcl3_device_instance(hpdj560c,  HPDJ560C);
+pcl3_device_instance(hpdj600,   HPDJ600);
+pcl3_device_instance(hpdj660c,  HPDJ660C);
+pcl3_device_instance(hpdj670c,  HPDJ670C);
+pcl3_device_instance(hpdj680c,  HPDJ680C);
+pcl3_device_instance(hpdj690c,  HPDJ690C);
+pcl3_device_instance(hpdj850c,  HPDJ850C);
+pcl3_device_instance(hpdj855c,  HPDJ855C);
+pcl3_device_instance(hpdj870c,  HPDJ870C);
+pcl3_device_instance(hpdj890c,  HPDJ890C);
+pcl3_device_instance(hpdj1120c, HPDJ1120C);
 
 /*****************************************************************************/
 
-#define ERRPREF		"? pcl3: "
-#define WARNPREF	"?-W pcl3: "
+#define ERRPREF         "? pcl3: "
+#define WARNPREF        "?-W pcl3: "
 
-#define array_size(a)	(sizeof(a)/sizeof(a[0]))
+#define array_size(a)   (sizeof(a)/sizeof(a[0]))
 
 /*****************************************************************************/
 
 static const eprn_StringAndInt
   /* Names for duplex capabilities */
   duplex_capabilities_list[] = {
-    { "none",		Duplex_none },
+    { "none",           Duplex_none },
     { "sameLeadingEdge", Duplex_sameLeadingEdge },
     { "oppositeLeadingEdge", Duplex_oppositeLeadingEdge },
-    { "both",		Duplex_both },
-    { NULL,		0 }
+    { "both",           Duplex_both },
+    { NULL,             0 }
   },
   /* Names for PCL Media Type values */
   media_type_list[] = {
     /* Canonical names */
-    { "plain paper",	0 },
-    { "bond paper",	1 },
+    { "plain paper",    0 },
+    { "bond paper",     1 },
     { "HP Premium paper", 2 },
-    { "glossy paper",	3 },
+    { "glossy paper",   3 },
     { "transparency film", 4 },
     { "quick dry glossy", 5 },
     { "quick dry transparency", 6 },
     /* Shortened names */
-    { "plain",		0 },
-    { "bond",		1 },
-    { "Premium",	2 },
-    { "glossy",		3 },
-    { "transparency",	4 },
-    { NULL,		0 }
+    { "plain",          0 },
+    { "bond",           1 },
+    { "Premium",        2 },
+    { "glossy",         3 },
+    { "transparency",   4 },
+    { NULL,             0 }
   },
   /* Print Quality */
   print_quality_list[] = {
-    { "draft",	       -1 },
-    { "normal",		0 },
-    { "presentation",	1 },
+    { "draft",         -1 },
+    { "normal",         0 },
+    { "presentation",   1 },
     /* Start of synonyms */
-    { "econo",		-1 },
-    { "best",		1 },
-    { NULL,		0 }
+    { "econo",          -1 },
+    { "best",           1 },
+    { NULL,             0 }
   },
   /* Subdevice names. They must be ordered by 'value' except for the last
      (NULL) entry. At present, there are 26 non-NULL entries here. */
   subdevice_list[] = {
-    { "hpdj",		HPDeskJet },
-    { "hpdjplus",	HPDeskJetPlus },
-    { "hpdjportable",	HPDJPortable },
-    { "hpdj310",	HPDJ310 },
-    { "hpdj320",	HPDJ320 },
-    { "hpdj340",	HPDJ340 },
-    { "hpdj400",	HPDJ400 },
-    { "hpdj500",	HPDJ500 },
-    { "hpdj500c",	HPDJ500C },
-    { "hpdj510",	HPDJ510 },
-    { "hpdj520",	HPDJ520 },
-    { "hpdj540",	HPDJ540 },
-    { "hpdj550c",	HPDJ550C },
-    { "hpdj560c",	HPDJ560C },
-    { "unspecold",	pcl3_generic_old },
-    { "hpdj600",	HPDJ600 },
-    { "hpdj660c",	HPDJ660C },
-    { "hpdj670c",	HPDJ670C },
-    { "hpdj680c",	HPDJ680C },
-    { "hpdj690c",	HPDJ690C },
-    { "hpdj850c",	HPDJ850C },
-    { "hpdj855c",	HPDJ855C },
-    { "hpdj870c",	HPDJ870C },
-    { "hpdj890c",	HPDJ890C },
-    { "hpdj1120c",	HPDJ1120C },
-    { "unspec",		pcl3_generic_new },
-    { NULL,		0 }
+    { "hpdj",           HPDeskJet },
+    { "hpdjplus",       HPDeskJetPlus },
+    { "hpdjportable",   HPDJPortable },
+    { "hpdj310",        HPDJ310 },
+    { "hpdj320",        HPDJ320 },
+    { "hpdj340",        HPDJ340 },
+    { "hpdj400",        HPDJ400 },
+    { "hpdj500",        HPDJ500 },
+    { "hpdj500c",       HPDJ500C },
+    { "hpdj510",        HPDJ510 },
+    { "hpdj520",        HPDJ520 },
+    { "hpdj540",        HPDJ540 },
+    { "hpdj550c",       HPDJ550C },
+    { "hpdj560c",       HPDJ560C },
+    { "unspecold",      pcl3_generic_old },
+    { "hpdj600",        HPDJ600 },
+    { "hpdj660c",       HPDJ660C },
+    { "hpdj670c",       HPDJ670C },
+    { "hpdj680c",       HPDJ680C },
+    { "hpdj690c",       HPDJ690C },
+    { "hpdj850c",       HPDJ850C },
+    { "hpdj855c",       HPDJ855C },
+    { "hpdj870c",       HPDJ870C },
+    { "hpdj890c",       HPDJ890C },
+    { "hpdj1120c",      HPDJ1120C },
+    { "unspec",         pcl3_generic_new },
+    { NULL,             0 }
   };
 
 /******************************************************************************
@@ -300,7 +300,7 @@ static void get_string_for_int(int in_value, const eprn_StringAndInt *table,
     out_value->persistent = true;
   }
   else {
-    static char buffer[22];	/* Must be sufficient for an 'int' */
+    static char buffer[22];     /* Must be sufficient for an 'int' */
 
     sprintf(buffer, "%d", in_value);
     assert(strlen(buffer) < sizeof(buffer));
@@ -333,7 +333,7 @@ static int get_int_for_string(const gs_param_string *in_value,
   const eprn_StringAndInt *table, int *out_value)
 {
   char *s;
-  int read;	/* counter */
+  int read;     /* counter */
 
   /* First we construct a properly NUL-terminated string */
   s = (char *) malloc(in_value->size + 1);
@@ -396,7 +396,7 @@ static void init(pcl3_Device *dev)
     for (j = 1; j < array_size(subdevice_list) - 1; j++)
       assert(cmp_by_value(subdevice_list + j - 1, subdevice_list + j) <= 0);
   }
-#endif	/* !NDEBUG */
+#endif  /* !NDEBUG */
 
   /* Base class fields */
   if (is_generic_device(dev)) dev->Duplex_set = 0;
@@ -456,7 +456,7 @@ static void pcl3_flag_mismatch_reporter(FILE *err,
       "%s" ERRPREF "Banner printing on postcards?? You must be joking!\n",
       epref);
   }
-    
+
   return;
 }
 
@@ -699,7 +699,7 @@ static int pcl3_get_params(gx_device *device, gs_param_list *plist)
   be copied to '*s'.
 
   The function returns a negative ghostscript error code on error and zero
-  otherwise. In the former case an error message will have been issued, 
+  otherwise. In the former case an error message will have been issued,
   using 'epref' as a prefix for the message.
 
 ******************************************************************************/
@@ -729,7 +729,7 @@ static int fetch_octets(const char *epref,
     if (s->str == NULL) {
       s->length = 0;
       eprintf1("%s" ERRPREF
-	"Memory allocation failure from gs_malloc().\n", epref);
+        "Memory allocation failure from gs_malloc().\n", epref);
       rc = gs_error_VMerror;
       param_signal_error(plist, pname, rc);
     }
@@ -785,7 +785,7 @@ static int fetch_cstring(const char *epref,
 
     if (*s == NULL) {
       eprintf1("%s" ERRPREF
-	"Memory allocation failure from gs_malloc().\n", epref);
+        "Memory allocation failure from gs_malloc().\n", epref);
       rc = gs_error_VMerror;
       param_signal_error(plist, pname, rc);
     }
@@ -823,7 +823,7 @@ static void set_palette(pcl3_Device *dev)
       else data->palette = pcl_no_palette;
     }
     data->number_of_colorants = 1;
-    data->depletion = 0;	/* Depletion is only meaningful for colour. */
+    data->depletion = 0;        /* Depletion is only meaningful for colour. */
     break;
   case eprn_DeviceCMY:
     data->palette = pcl_CMY;
@@ -869,7 +869,7 @@ static void set_palette(pcl3_Device *dev)
 
 static int pcl3_put_params(gx_device *device, gs_param_list *plist)
 {
-  bool new_quality = false;	/* has someone requested the new variables? */
+  bool new_quality = false;     /* has someone requested the new variables? */
   gs_param_name pname;
   gs_param_string string_value;
   pcl3_Device *dev = (pcl3_Device *)device;
@@ -894,23 +894,24 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
       /* This property must be a known string. */
       int j = 0;
       while (subdevice_list[j].name != NULL &&
-	  (string_value.size != strlen(subdevice_list[j].name) ||
-	    strncmp((const char *)string_value.data, subdevice_list[j].name,
-	      string_value.size) != 0))
-	j++;
-	/* param_read_string() does not return NUL-terminated strings. */
+          (string_value.size != strlen(subdevice_list[j].name) ||
+            strncmp((const char *)string_value.data, subdevice_list[j].name,
+              string_value.size) != 0))
+        j++;
+        /* param_read_string() does not return NUL-terminated strings. */
       if (subdevice_list[j].name != NULL) {
-	if (dev->is_open) gs_closedevice(device);
-	dev->printer = subdevice_list[j].value;
-	dev->initialized = false;
-	eprn_init_device((eprn_Device *)dev, &pcl3_printers[dev->printer].desc);
+        if (dev->is_open) gs_closedevice(device);
+        dev->printer = subdevice_list[j].value;
+        dev->initialized = false;
+        eprn_init_device((eprn_Device *)dev, &pcl3_printers[dev->printer].desc);
       }
       else {
-	eprintf1("%s" ERRPREF "Unknown subdevice name: `", epref);
-	errwrite(string_value.data, sizeof(char)*string_value.size);
-	eprintf("'.\n");
-	last_error = gs_error_rangecheck;
-	param_signal_error(plist, pname, last_error);
+        eprintf1("%s" ERRPREF "Unknown subdevice name: `", epref);
+        errwrite(dev->memory,
+                 string_value.data, sizeof(char)*string_value.size);
+        eprintf("'.\n");
+        last_error = gs_error_rangecheck;
+        param_signal_error(plist, pname, last_error);
       }
     }
     else if (rc < 0) last_error = rc;
@@ -923,21 +924,21 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
   if ((rc = param_read_int(plist, (pname = "CompressionMethod"), &temp))
       == 0) {
     if (temp != pcl_cm_none && temp != pcl_cm_rl && temp != pcl_cm_tiff &&
-	temp != pcl_cm_delta && temp != pcl_cm_crdr) {
+        temp != pcl_cm_delta && temp != pcl_cm_crdr) {
       eprintf2("%s" ERRPREF "Unsupported compression method: %d.\n",
-	epref, temp);
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
     else {
       if (temp == pcl_cm_crdr && (dev->printer == HPDeskJet ||
-	  dev->printer == HPDeskJetPlus || dev->printer == HPDJ500)) {
-	/* This I know to be the case for the DJ 500. The others are guessed. */
-	eprintf2(
-	  "%s" ERRPREF "The %s does not support compression method 9.\n",
-	  epref, dev->eprn.cap->name);
-	last_error = gs_error_rangecheck;
-	param_signal_error(plist, pname, last_error);
+          dev->printer == HPDeskJetPlus || dev->printer == HPDJ500)) {
+        /* This I know to be the case for the DJ 500. The others are guessed. */
+        eprintf2(
+          "%s" ERRPREF "The %s does not support compression method 9.\n",
+          epref, dev->eprn.cap->name);
+        last_error = gs_error_rangecheck;
+        param_signal_error(plist, pname, last_error);
       }
       else data->compression= temp;
     }
@@ -956,7 +957,7 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
       requested.depletion = temp;
     else {
       eprintf2("%s" ERRPREF "Invalid value for depletion: %d.\n",
-	epref, temp);
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -970,24 +971,24 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
       (rc = param_read_int(plist, pname, &temp)) == 0) {
     if (0 <= temp && temp <= 1200) {
       if (dev->printer == HPDJ500 || dev->printer == HPDJ500C) {
-	 /* According to HP (DJ6/8 p. 18), only some of the series 600 and 800
-	    DeskJets respond to this command. I also suspect that the same is
-	    true for pre-DeskJet-500 printers. This should not matter, though,
-	    because the PCL interpreter should merely ignore the command.
-	    Hence I'm giving an error message only in those cases where HP
-	    explicitly states that the printer does not support the command.
-	  */
-	eprintf2(
-	  "%s" ERRPREF "The %s does not support setting a dry time.\n",
-	  epref, dev->eprn.cap->name);
-	last_error = gs_error_rangecheck;
-	param_signal_error(plist, pname, last_error);
+         /* According to HP (DJ6/8 p. 18), only some of the series 600 and 800
+            DeskJets respond to this command. I also suspect that the same is
+            true for pre-DeskJet-500 printers. This should not matter, though,
+            because the PCL interpreter should merely ignore the command.
+            Hence I'm giving an error message only in those cases where HP
+            explicitly states that the printer does not support the command.
+          */
+        eprintf2(
+          "%s" ERRPREF "The %s does not support setting a dry time.\n",
+          epref, dev->eprn.cap->name);
+        last_error = gs_error_rangecheck;
+        param_signal_error(plist, pname, last_error);
       }
       else data->dry_time = temp;
     }
     else {
       eprintf2("%s" ERRPREF "Invalid value for the dry time: %d.\n",
-	epref, temp);
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -997,29 +998,30 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
   /* Duplex capability */
   if (is_generic_device(dev)) {
     if ((rc = param_read_string(plist, (pname = "DuplexCapability"),
-	&string_value)) == 0) {
+        &string_value)) == 0) {
       rc = eprn_get_int(&string_value, duplex_capabilities_list, &temp);
       if (rc == 0) {
-	if (dev->printer == pcl3_generic_new ||
-	    dev->printer == pcl3_generic_old || temp == Duplex_none) {
-	  dev->duplex_capability = temp;
-	  if (dev->duplex_capability == Duplex_none) 
-	    dev->Duplex_set = 0;	/* force to "null" */
-	}
-	else {
-	  eprintf2("%s" ERRPREF
-	    "You can use a non-trivial value for DuplexCapability\n"
-	    "%s  only for unspec and unspecold.\n", epref, epref);
-	  last_error = gs_error_rangecheck;
-	  param_signal_error(plist, pname, last_error);
-	}
+        if (dev->printer == pcl3_generic_new ||
+            dev->printer == pcl3_generic_old || temp == Duplex_none) {
+          dev->duplex_capability = temp;
+          if (dev->duplex_capability == Duplex_none)
+            dev->Duplex_set = 0;        /* force to "null" */
+        }
+        else {
+          eprintf2("%s" ERRPREF
+            "You can use a non-trivial value for DuplexCapability\n"
+            "%s  only for unspec and unspecold.\n", epref, epref);
+          last_error = gs_error_rangecheck;
+          param_signal_error(plist, pname, last_error);
+        }
       }
       else {
-	eprintf1("%s" ERRPREF "Invalid duplex capability: `", epref);
-	errwrite(string_value.data, sizeof(char)*string_value.size);
-	eprintf("'.\n");
-	last_error = gs_error_rangecheck;
-	param_signal_error(plist, pname, last_error);
+        eprintf1("%s" ERRPREF "Invalid duplex capability: `", epref);
+        errwrite(dev->memory,
+                 string_value.data, sizeof(char)*string_value.size);
+        eprintf("'.\n");
+        last_error = gs_error_rangecheck;
+        param_signal_error(plist, pname, last_error);
       }
     }
     else if (rc < 0) last_error = rc;
@@ -1034,16 +1036,16 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
   {
     bool temp;
     if ((rc = param_read_bool(plist, (pname = "Duplex"), &temp)) == 0 &&
-	temp && dev->duplex_capability == Duplex_none) {
+        temp && dev->duplex_capability == Duplex_none) {
       if (dev->printer == pcl3_generic_new || dev->printer == pcl3_generic_old)
-	eprintf3("%s" ERRPREF
+        eprintf3("%s" ERRPREF
           "The '%s' device does not support duplex printing unless\n"
-	  "%s  'DuplexCapability' is not 'none'.\n",
-	  epref, find_subdevice_name(dev->printer), epref);
+          "%s  'DuplexCapability' is not 'none'.\n",
+          epref, find_subdevice_name(dev->printer), epref);
       else
-	eprintf2("%s" ERRPREF
-	  "The %s does not support duplex printing.\n",
-	  epref, dev->eprn.cap->name);
+        eprintf2("%s" ERRPREF
+          "The %s does not support duplex printing.\n",
+          epref, dev->eprn.cap->name);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1061,18 +1063,19 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
   /* PCL media type */
   if ((rc = param_read_string(plist, (pname = "Medium"), &string_value)) == 0) {
     /*  We accept numerical and string values. Numerical values at present
-	officially defined are 0-6, but not all printers know all these values.
-	We give the user the benefit of the doubt, though, because the
-	value is simply passed through to the printer, except for the older
-	DeskJets where we map illegal values to "plain paper".
-	If the user specifies a string, however, it must be a known one.
+        officially defined are 0-6, but not all printers know all these values.
+        We give the user the benefit of the doubt, though, because the
+        value is simply passed through to the printer, except for the older
+        DeskJets where we map illegal values to "plain paper".
+        If the user specifies a string, however, it must be a known one.
     */
     rc = get_int_for_string(&string_value, media_type_list, &temp);
     if (rc != 0) {
       if (rc != gs_error_VMerror) {
-	eprintf1("%s" ERRPREF "Unknown medium: `", epref);
-	errwrite(string_value.data, sizeof(char)*string_value.size);
-	eprintf("'.\n");
+        eprintf1("%s" ERRPREF "Unknown medium: `", epref);
+        errwrite(dev->memory,
+                 string_value.data, sizeof(char)*string_value.size);
+        eprintf("'.\n");
       }
       last_error = rc;
       param_signal_error(plist, pname, last_error);
@@ -1080,8 +1083,8 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
     else {
       new_quality = true;
       if (temp < 0 || 6 < temp)
-	eprintf2("%s" WARNPREF "Unknown media type code: %d.\n",
-	  wpref, temp);
+        eprintf2("%s" WARNPREF "Unknown media type code: %d.\n",
+          wpref, temp);
       pcl3_set_mediatype(data, temp);
     }
   }
@@ -1104,12 +1107,12 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
 
     if ((rc = param_read_bool(plist, (pname = "OnlyCRD"), &temp)) == 0) {
       if (pcl_has_CRD(data->level))
-	data->level = (temp? pcl_level_3plus_CRD_only: pcl_level_3plus_S68);
+        data->level = (temp? pcl_level_3plus_CRD_only: pcl_level_3plus_S68);
       else if (temp == true) {
-	eprintf1("%s" ERRPREF
-	  "OnlyCRD may be set only for group-3 devices.\n", epref);
-	last_error = gs_error_rangecheck;
-	param_signal_error(plist, pname, last_error);
+        eprintf1("%s" ERRPREF
+          "OnlyCRD may be set only for group-3 devices.\n", epref);
+        last_error = gs_error_rangecheck;
+        param_signal_error(plist, pname, last_error);
       }
     }
     else if (rc < 0) last_error = rc;
@@ -1135,13 +1138,14 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
   if ((rc = param_read_string(plist, (pname = "PrintQuality"), &string_value))
       == 0) {
     /*  The only known values are -1, 0 and 1. Again, however, we assume the
-	user knows what s/he is doing if another value is given. */
+        user knows what s/he is doing if another value is given. */
     rc = get_int_for_string(&string_value, print_quality_list, &temp);
     if (rc != 0) {
       if (rc != gs_error_VMerror) {
-	eprintf1("%s" ERRPREF "Unknown print quality: `", epref);
-	errwrite(string_value.data, sizeof(char)*string_value.size);
-	eprintf("'.\n");
+        eprintf1("%s" ERRPREF "Unknown print quality: `", epref);
+        errwrite(dev->memory,
+                 string_value.data, sizeof(char)*string_value.size);
+        eprintf("'.\n");
       }
       last_error = rc;
       param_signal_error(plist, pname, last_error);
@@ -1149,8 +1153,8 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
     else {
       new_quality = true;
       if (temp < -1 || 1 < temp)
-	eprintf2("%s" WARNPREF "Unknown print quality: %d.\n",
-	  wpref, temp);
+        eprintf2("%s" WARNPREF "Unknown print quality: %d.\n",
+          wpref, temp);
       pcl3_set_printquality(data, temp);
     }
   }
@@ -1158,15 +1162,15 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
 
   /* Raster Graphics Quality */
   if ((rc = param_read_null(plist, (pname = "RasterGraphicsQuality"))) == 0)
-    ;	/* ignore */
+    ;   /* ignore */
   else if (rc  < 0 &&
       (rc = param_read_int(plist, (pname = "RasterGraphicsQuality"), &temp))
-	== 0) {
+        == 0) {
     if (0 <= temp && temp <= 2) requested.quality = temp;
     else {
       eprintf2(
-	"%s" ERRPREF "Invalid value for raster graphics quality: %d.\n",
-	epref, temp);
+        "%s" ERRPREF "Invalid value for raster graphics quality: %d.\n",
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1186,8 +1190,8 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
     if (data->NULs_to_send >= 0) data->NULs_to_send = temp;
     else {
       eprintf2(
-	"%s" ERRPREF "Invalid value for SendNULs parameter: %d.\n",
-	epref, temp);
+        "%s" ERRPREF "Invalid value for SendNULs parameter: %d.\n",
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1196,13 +1200,13 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
 
   /* Shingling */
   if ((rc = param_read_null(plist, (pname = "Shingling"))) == 0)
-    ;	/* ignore */
+    ;   /* ignore */
   else if (rc  < 0 &&
       (rc = param_read_int(plist, pname, &temp)) == 0) {
     if (0 <= temp && temp <= 2) requested.shingling = temp;
     else {
       eprintf2("%s" ERRPREF "Invalid value for shingling: %d.\n",
-	epref, temp);
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1221,7 +1225,7 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
     if ((rc = param_read_null(plist, (pname = "UseCard"))) == 0)
       dev->use_card = bn_null;
     else if (rc < 0 &&
-	(rc = param_read_bool(plist, pname, &temp)) == 0)
+        (rc = param_read_bool(plist, pname, &temp)) == 0)
       dev->use_card = (temp? bn_true: bn_false);
     else if (rc < 0 ) last_error = rc;
   }
@@ -1303,60 +1307,60 @@ static int pcl3_open_device(gx_device *device)
     data->size = pcl3_page_size(dev->eprn.code);
     if (data->size == pcl_ps_default) {
       /*  This is due to a media description using a media size code for which
-	  there is no PCL Page Size code. This is either an error in a builtin
-	  description or the user specified it in a media configuration file.
-	  Note that there might be a "Card" flag, hence we should not talk
-	  about "size" only.
+          there is no PCL Page Size code. This is either an error in a builtin
+          description or the user specified it in a media configuration file.
+          Note that there might be a "Card" flag, hence we should not talk
+          about "size" only.
       */
       char buffer[50];
 
       eprintf2("%s" ERRPREF
-	"The current configuration for this driver has identified the\n"
-	"%s  page setup requested by the document as being for `",
-	epref, epref);
+        "The current configuration for this driver has identified the\n"
+        "%s  page setup requested by the document as being for `",
+        epref, epref);
       if (ms_find_name_from_code(buffer, sizeof(buffer),
-	  dev->eprn.code, flag_description) == 0) eprintf1("%s", buffer);
-      else eprintf("UNKNOWN");	/* should never happen */
+          dev->eprn.code, flag_description) == 0) eprintf1("%s", buffer);
+      else eprintf("UNKNOWN");  /* should never happen */
       eprintf3("' (%.0f x %.0f bp).\n"
-	"%s  The driver does not know how to do this in PCL.\n",
-	dev->MediaSize[0], dev->MediaSize[1], epref);
+        "%s  The driver does not know how to do this in PCL.\n",
+        dev->MediaSize[0], dev->MediaSize[1], epref);
       if (dev->eprn.media_file != NULL)
-	eprintf2(
-	  "%s  You should therefore not include such an entry in the\n"
-	  "%s  media configuration file.\n", epref, epref);
+        eprintf2(
+          "%s  You should therefore not include such an entry in the\n"
+          "%s  media configuration file.\n", epref, epref);
       return_error(gs_error_rangecheck);
     }
     data->duplex = -1;
-    if (dev->Duplex_set > 0) {	/* Duplex is not null */
+    if (dev->Duplex_set > 0) {  /* Duplex is not null */
       if (dev->Duplex) {
-	bool same_leading_edge;
+        bool same_leading_edge;
 
-	/* Find direction of default user space y axis in device space */
-	int orient = dev->eprn.default_orientation;
-	if (dev->MediaSize[1] < dev->MediaSize[0]) /* landscape */
-	  orient++;	/* rotate +90 degrees */
+        /* Find direction of default user space y axis in device space */
+        int orient = dev->eprn.default_orientation;
+        if (dev->MediaSize[1] < dev->MediaSize[0]) /* landscape */
+          orient++;     /* rotate +90 degrees */
 
-	same_leading_edge = (orient % 2 == 0  /* y axis is vertical */) !=
-	  (dev->tumble != false);
-	  /* If there were a native 'bool' type in C, the last parenthesis
-	     could be reliably replaced by "dev->tumble". This is safer and
-	     just as fast, provided the compiler is sufficiently intelligent. */
+        same_leading_edge = (orient % 2 == 0  /* y axis is vertical */) !=
+          (dev->tumble != false);
+          /* If there were a native 'bool' type in C, the last parenthesis
+             could be reliably replaced by "dev->tumble". This is safer and
+             just as fast, provided the compiler is sufficiently intelligent. */
 
-	dev->eprn.soft_tumble = dev->duplex_capability != Duplex_both &&
-	    (same_leading_edge &&
-		dev->duplex_capability != Duplex_sameLeadingEdge ||
-	      !same_leading_edge &&
-		dev->duplex_capability != Duplex_oppositeLeadingEdge);
-	if (dev->eprn.soft_tumble) same_leading_edge = !same_leading_edge;
+        dev->eprn.soft_tumble = dev->duplex_capability != Duplex_both &&
+            (same_leading_edge &&
+                dev->duplex_capability != Duplex_sameLeadingEdge ||
+              !same_leading_edge &&
+                dev->duplex_capability != Duplex_oppositeLeadingEdge);
+        if (dev->eprn.soft_tumble) same_leading_edge = !same_leading_edge;
 
-	/*  I am assuming here that the values 1 and 2, specified by HP in
-	    BPL02705 as meaning "Long-Edge Binding" and "Short-Edge Binding",
-	    respectively, in fact mean what I've called the "same leading edge"
-	    and "opposite leading edge" settings for the second pass. */
-	if (same_leading_edge) data->duplex = 1;
-	else data->duplex = 2;
+        /*  I am assuming here that the values 1 and 2, specified by HP in
+            BPL02705 as meaning "Long-Edge Binding" and "Short-Edge Binding",
+            respectively, in fact mean what I've called the "same leading edge"
+            and "opposite leading edge" settings for the second pass. */
+        if (same_leading_edge) data->duplex = 1;
+        else data->duplex = 2;
       }
-      else data->duplex = 0;			/* simplex */
+      else data->duplex = 0;                    /* simplex */
     }
 
     /* It is almost not necessary to set the palette here because the default
@@ -1372,11 +1376,11 @@ static int pcl3_open_device(gx_device *device)
     }
     if (data->palette == pcl_CMY || data->palette == pcl_RGB)
       for (j = 0; j < 3; j++)
-	data->colorant_array[j].levels = dev->eprn.non_black_levels;
+        data->colorant_array[j].levels = dev->eprn.non_black_levels;
     else {
       data->colorant_array[0].levels = dev->eprn.black_levels;
       for (j = 1; j < data->number_of_colorants; j++)
-	data->colorant_array[j].levels = dev->eprn.non_black_levels;
+        data->colorant_array[j].levels = dev->eprn.non_black_levels;
     }
   }
 
@@ -1433,10 +1437,10 @@ static int pcl3_close_device(gx_device *device)
 ******************************************************************************/
 
 /* Macro to handle return codes from calls to pclgen routines */
-#define guard(call)							\
-    if ((rc = (call)) != 0) {						\
+#define guard(call)                                                     \
+    if ((rc = (call)) != 0) {                                           \
       if (rc > 0) return_error(gs_error_Fatal); /* bugs are fatal :-) */ \
-      return_error(gs_error_ioerror);	/* actually any environment error */ \
+      return_error(gs_error_ioerror);   /* actually any environment error */ \
     }
 
 static int pcl3_print_page(gx_device_printer *device, FILE *out)
@@ -1470,14 +1474,14 @@ static int pcl3_print_page(gx_device_printer *device, FILE *out)
     rd.previous = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
   if (lengths == NULL || rd.next == NULL ||
       pcl_cm_is_differential(dev->file_data.compression) &&
-	rd.previous == NULL) {
+        rd.previous == NULL) {
     free(lengths); free(rd.next); free(rd.previous);
     eprintf1("%s" ERRPREF "Memory allocation failure from malloc().\n",
       epref);
     return_error(gs_error_VMerror);
   }
   eprn_number_of_octets((eprn_Device *)dev, lengths);
-  rd.width = 8*lengths[0];	/* all colorants have equal resolution */
+  rd.width = 8*lengths[0];      /* all colorants have equal resolution */
   for (j = 0; j < planes; j++)
     rd.next[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
     /* Note: 'pcl_Octet' must be identical with 'eprn_Octet'. */
@@ -1500,7 +1504,7 @@ static int pcl3_print_page(gx_device_printer *device, FILE *out)
     j = 0;
     while (j < planes && rd.previous[j].str != NULL) j++;
     if (j == planes && dev->file_data.compression == pcl_cm_delta &&
-	rd.workspace[1] == NULL) j = 0;
+        rd.workspace[1] == NULL) j = 0;
   }
   if (j < planes || rd.workspace[0] == NULL) {
     /* Free everything. Note that free(NULL) is legal and we did a memset()
@@ -1508,7 +1512,7 @@ static int pcl3_print_page(gx_device_printer *device, FILE *out)
     for (j = 0; j < planes; j++) {
       free(rd.next[j].str);
       if (pcl_cm_is_differential(dev->file_data.compression))
-	free(rd.previous[j].str);
+        free(rd.previous[j].str);
     }
     free(lengths); free(rd.next); free(rd.previous);
     for (j = 0; j < 2; j++) free(rd.workspace[j]);
@@ -1528,23 +1532,23 @@ static int pcl3_print_page(gx_device_printer *device, FILE *out)
     /* Is this a blank (white) line? */
     if (dev->eprn.colour_model == eprn_DeviceRGB) {
       /*  White results if all three colorants use their highest intensity.
-	  Fortunately, PCL-3+ can only support two intensity levels for all
-	  colorants in an RGB palette, hence this intensity must be one for all
-	  colorants simultaneously.
-	  Because the planes returned by eprn_get_planes() are guaranteed to
-	  have no trailing zero octets, we can easily check that they are of
-	  equal length before proceeding further.
+          Fortunately, PCL-3+ can only support two intensity levels for all
+          colorants in an RGB palette, hence this intensity must be one for all
+          colorants simultaneously.
+          Because the planes returned by eprn_get_planes() are guaranteed to
+          have no trailing zero octets, we can easily check that they are of
+          equal length before proceeding further.
       */
       for (j = 1; j < planes && rd.next[j].length == rd.next[0].length; j++);
       if (j >= planes && rd.next[0].length == lengths[0]) {
-	int k;
-	/* All planes have the same length and cover the whole width of the
-	   page. Check that they all contain 0xFF. */
-	j = 0;
-	do {
-	  k = rd.next[j].length - 1;
-	  while (k > 0 && rd.next[j].str[k] == 0xFF) k--;
-	} while (k == 0 && rd.next[j].str[0] == 0xFF && ++j < planes);
+        int k;
+        /* All planes have the same length and cover the whole width of the
+           page. Check that they all contain 0xFF. */
+        j = 0;
+        do {
+          k = rd.next[j].length - 1;
+          while (k > 0 && rd.next[j].str[k] == 0xFF) k--;
+        } while (k == 0 && rd.next[j].str[0] == 0xFF && ++j < planes);
       }
     }
     else
@@ -1554,8 +1558,8 @@ static int pcl3_print_page(gx_device_printer *device, FILE *out)
     if (j == planes) blank_lines++;
     else {
       if (blank_lines > 0) {
-	guard(pcl3_skip_groups(out, &rd, blank_lines))
-	blank_lines = 0;
+        guard(pcl3_skip_groups(out, &rd, blank_lines))
+        blank_lines = 0;
       }
       guard(pcl3_transfer_group(out, &rd))
     }

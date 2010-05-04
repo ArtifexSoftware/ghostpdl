@@ -6,30 +6,30 @@
             Germany. E-mail: Martin.Lottermoser@t-online.de.
 
 *******************************************************************************
-*									      *
-*	Copyright (C) 2000, 2001 by Martin Lottermoser			      *
-*	All rights reserved						      *
-*									      *
+*                                                                             *
+*       Copyright (C) 2000, 2001 by Martin Lottermoser                        *
+*       All rights reserved                                                   *
+*                                                                             *
 *******************************************************************************
 
   Preprocessor variables:
 
     EPRN_NO_PAGECOUNTFILE
-	Define this if you do not want to use eprn's pagecount-file feature.
-	You very likely must define this on Microsoft Windows.
+        Define this if you do not want to use eprn's pagecount-file feature.
+        You very likely must define this on Microsoft Windows.
 
     EPRN_TRACE
-	Define this to enable tracing. Only useful for development.
+        Define this to enable tracing. Only useful for development.
 
     EPRN_USE_GSTATE (integer)
-	Define this to be non-zero if the graphics state should be accessed
-	directly instead of via the interpreter context state. Newer ghostscript
-	versions require the latter path. The default is zero unless
-	GS_REVISION is defined and less than 600.
+        Define this to be non-zero if the graphics state should be accessed
+        directly instead of via the interpreter context state. Newer ghostscript
+        versions require the latter path. The default is zero unless
+        GS_REVISION is defined and less than 600.
 
     GS_REVISION (integer)
-	If defined, this must be the ghostscript version number, e.g., 601 for
-	ghostscript 6.01.
+        If defined, this must be the ghostscript version number, e.g., 601 for
+        ghostscript 6.01.
 
 ******************************************************************************/
 
@@ -42,17 +42,17 @@ static const char
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE	500
+#define _XOPEN_SOURCE   500
 #endif
 
 /* Preprocessor symbol with version-dependent default */
 #ifndef EPRN_USE_GSTATE
 #if !defined(GS_REVISION) || GS_REVISION >= 600
-#define EPRN_USE_GSTATE	0
+#define EPRN_USE_GSTATE 0
 #else
-#define EPRN_USE_GSTATE	1
+#define EPRN_USE_GSTATE 1
 #endif
-#endif	/* !EPRN_USE_GSTATE */
+#endif  /* !EPRN_USE_GSTATE */
 
 /*****************************************************************************/
 
@@ -68,7 +68,7 @@ static const char
 #include <stdlib.h>
 #ifdef EPRN_TRACE
 #include <time.h>
-#endif	/* EPRN_TRACE */
+#endif  /* EPRN_TRACE */
 
 /*  Ghostscript headers. With the exception of gdebug.h, these files are only
     needed to compile eprn_forget_defaultmatrix() which needs the prototypes
@@ -77,30 +77,30 @@ static const char
     ghostscript's header files are not self-contained. Therefore, if this file
     does not compile because of undefined symbols, just add include directives
     until it does.  */
-#include "iref.h"	/* needed by icstate.h */
-#include "gsmemraw.h"	/* needed by icstate.h */
-#include "gsmemory.h"	/* needed by icstate.h */
-#include "gstypes.h"	/* needed by gsstate.h */
-#include "gsstate.h"	/* needed by icstate.h */
-#include "icstate.h"	/* for struct gs_context_state_s */
+#include "iref.h"       /* needed by icstate.h */
+#include "gsmemraw.h"   /* needed by icstate.h */
+#include "gsmemory.h"   /* needed by icstate.h */
+#include "gstypes.h"    /* needed by gsstate.h */
+#include "gsstate.h"    /* needed by icstate.h */
+#include "icstate.h"    /* for struct gs_context_state_s */
 #if !defined(GS_REVISION) || GS_REVISION >= 700
-#include "iapi.h"	/* needed by iminst.h */
-#endif	/* GS_REVISION */
-#include "iminst.h"	/* for struct gs_main_instance_s */
-#include "imain.h"	/* for gs_main_instance_default() */
-#include "gscoord.h"	/* for gs_setdefaultmatrix() */
+#include "iapi.h"       /* needed by iminst.h */
+#endif  /* GS_REVISION */
+#include "iminst.h"     /* for struct gs_main_instance_s */
+#include "imain.h"      /* for gs_main_instance_default() */
+#include "gscoord.h"    /* for gs_setdefaultmatrix() */
 #if EPRN_USE_GSTATE
 #include "igstate.h"
-#endif	/* EPRN_USE_GSTATE */
+#endif  /* EPRN_USE_GSTATE */
 #ifdef EPRN_TRACE
 #include "gdebug.h"
-#endif	/* EPRN_TRACE */
+#endif  /* EPRN_TRACE */
 #include "gxstdio.h"
 
 /* Special headers for this device */
 #ifndef EPRN_NO_PAGECOUNTFILE
 #include "pagecount.h"
-#endif	/* EPRN_NO_PAGECOUNTFILE */
+#endif  /* EPRN_NO_PAGECOUNTFILE */
 #include "gdeveprn.h"
 
 /*****************************************************************************/
@@ -125,10 +125,10 @@ void eprn_get_initial_matrix(gx_device *device, gs_matrix *mptr)
   eprn_Device *dev = (eprn_Device *)device;
   float
     /*  The following two arrays are oriented w.r.t. pixmap device space, i.e.,
-	the index 0 refers to the x coordinate (horizontal) and the index 1 to
-	the y coordinate (vertical) in pixmap device space. */
-    extension[2],	/* media extension in pixels */
-    pixels_per_bp[2];	/* resolution */
+        the index 0 refers to the x coordinate (horizontal) and the index 1 to
+        the y coordinate (vertical) in pixmap device space. */
+    extension[2],       /* media extension in pixels */
+    pixels_per_bp[2];   /* resolution */
   int
     j,
     quarters;
@@ -145,20 +145,20 @@ void eprn_get_initial_matrix(gx_device *device, gs_matrix *mptr)
 #endif
     if (eprn_set_page_layout(dev) != 0)
       eprintf("  Processing can't be stopped at this point although this error "
-	"occurred.\n");
+        "occurred.\n");
       /* The current function has a signature without the ability to signal
-	 an error condition. */
+         an error condition. */
   }
 
   quarters = dev->eprn.default_orientation +
     (dev->MediaSize[0] <= dev->MediaSize[1]? 0: 1);
      /* Number of quarter-circle rotations by +90 degrees necessary to obtain
-	default user space starting with the y axis upwards in pixmap device
-	space.
-	It's not documented, but 'MediaSize' is the requested "PageSize" page
-	device parameter value and hence is to be interpreted in default (not
-	default default!) user space. The condition above therefore tests
-	whether landscape orientation has been requested.
+        default user space starting with the y axis upwards in pixmap device
+        space.
+        It's not documented, but 'MediaSize' is the requested "PageSize" page
+        device parameter value and hence is to be interpreted in default (not
+        default default!) user space. The condition above therefore tests
+        whether landscape orientation has been requested.
       */
 
   /* Soft tumble option: rotate default user space by 180 degrees on every
@@ -188,48 +188,48 @@ void eprn_get_initial_matrix(gx_device *device, gs_matrix *mptr)
   switch (quarters % 4) {
   case 0:
     /*  The y axis of default user space points upwards in pixmap device space.
-	The CTM is uniquely characterized by the following mappings from
-	default user space to pixmap device space:
-	  (0, 0)		-> (0, height in pixels)
-	  (width in bp, 0)	-> (width in pixels, height in pixels)
-	  (0, height in bp)	-> (0, 0)
-	'width' and 'height' refer to the sheet's extension as seen from pixmap
-	device space, i.e., width in pixels == extension[0] and
-	height in pixels == extension[1].
+        The CTM is uniquely characterized by the following mappings from
+        default user space to pixmap device space:
+          (0, 0)                -> (0, height in pixels)
+          (width in bp, 0)      -> (width in pixels, height in pixels)
+          (0, height in bp)     -> (0, 0)
+        'width' and 'height' refer to the sheet's extension as seen from pixmap
+        device space, i.e., width in pixels == extension[0] and
+        height in pixels == extension[1].
 
-	From the PLR we find that the CTM is a PostScript matrix
-	[a b c d tx ty] used for mapping user space coordinates (x, y) to
-	device space coordinates (x', y') as follows:
-	  x' = a*x + c*y + tx
-	  y' = b*x + d*y + ty
-	Ghostscript's matrix type 'gs_matrix' writes its structure components
-	'xx' etc. in storage layout order into a PostScript matrix (see
-	write_matrix() in iutil.c), hence we obtain by comparison with
-	gsmatrix.h the PostScript matrix [ xx xy yx yy tx ty ].
-	The correspondence can also be seen by comparison of the equations
-	above with the code in gs_point_transform() in gsmatrix.c.
-	It would, however, still be reassuring to have a corresponding
-	statement in ghostscript's documentation.
+        From the PLR we find that the CTM is a PostScript matrix
+        [a b c d tx ty] used for mapping user space coordinates (x, y) to
+        device space coordinates (x', y') as follows:
+          x' = a*x + c*y + tx
+          y' = b*x + d*y + ty
+        Ghostscript's matrix type 'gs_matrix' writes its structure components
+        'xx' etc. in storage layout order into a PostScript matrix (see
+        write_matrix() in iutil.c), hence we obtain by comparison with
+        gsmatrix.h the PostScript matrix [ xx xy yx yy tx ty ].
+        The correspondence can also be seen by comparison of the equations
+        above with the code in gs_point_transform() in gsmatrix.c.
+        It would, however, still be reassuring to have a corresponding
+        statement in ghostscript's documentation.
     */
     gx_default_get_initial_matrix(device, mptr);
     /*  Of course, I could also set this directly:
-	  mptr->xx = pixels_per_bp[0];
-	  mptr->xy = 0;
-	  mptr->yx = 0;
-	  mptr->yy = -pixels_per_bp[1];
-	  mptr->tx = 0;
-	  mptr->ty = extension[1];
+          mptr->xx = pixels_per_bp[0];
+          mptr->xy = 0;
+          mptr->yx = 0;
+          mptr->yy = -pixels_per_bp[1];
+          mptr->tx = 0;
+          mptr->ty = extension[1];
         Doing it in this way is, however, more stable against dramatic changes
         in ghostscript.
     */
     break;
   case 1:
     /*  The y axis of default user space points to the left in pixmap device
-	space. The CTM is uniquely characterized by the following mappings from
-	default user space to pixmap device space:
-	  (0, 0)		-> (width in pixels, height in pixels)
-	  (height in bp, 0)	-> (width in pixels, 0)
-	  (0, width in bp)	-> (0, height in pixels)
+        space. The CTM is uniquely characterized by the following mappings from
+        default user space to pixmap device space:
+          (0, 0)                -> (width in pixels, height in pixels)
+          (height in bp, 0)     -> (width in pixels, 0)
+          (0, width in bp)      -> (0, height in pixels)
     */
     mptr->xx = 0;
     mptr->xy = -pixels_per_bp[1];
@@ -240,11 +240,11 @@ void eprn_get_initial_matrix(gx_device *device, gs_matrix *mptr)
     break;
   case 2:
     /*  The y axis of default user space points downwards in pixmap device
-	space. The CTM is uniquely characterized by the following mappings from
-	default user space to pixmap device space:
-	  (0, 0)		-> (width in pixels, 0)
-	  (width in bp, 0)	-> (0, 0)
-	  (0, height in bp)	-> (width in pixels, height in pixels)
+        space. The CTM is uniquely characterized by the following mappings from
+        default user space to pixmap device space:
+          (0, 0)                -> (width in pixels, 0)
+          (width in bp, 0)      -> (0, 0)
+          (0, height in bp)     -> (width in pixels, height in pixels)
     */
     mptr->xx = -pixels_per_bp[0];
     mptr->xy = 0;
@@ -255,11 +255,11 @@ void eprn_get_initial_matrix(gx_device *device, gs_matrix *mptr)
     break;
   case 3:
     /*  The y axis of default user space points to the right in pixmap device
-	space. The CTM is uniquely characterized by the following mappings from
-	default user space to pixmap device space:
-	  (0, 0)		-> (0, 0)
-	  (height in bp, 0)	-> (0, height in pixels)
-	  (0, width in bp)	-> (width in pixels, 0)
+        space. The CTM is uniquely characterized by the following mappings from
+        default user space to pixmap device space:
+          (0, 0)                -> (0, 0)
+          (height in bp, 0)     -> (0, height in pixels)
+          (0, width in bp)      -> (width in pixels, 0)
     */
     mptr->xx = 0;
     mptr->xy = pixels_per_bp[1];
@@ -280,8 +280,8 @@ void eprn_get_initial_matrix(gx_device *device, gs_matrix *mptr)
   {
     gs_matrix translation;
 
-    /*	Translation of pixmap device space origin by top and left margins in
-	pixmap device space */
+    /*  Translation of pixmap device space origin by top and left margins in
+        pixmap device space */
     gs_make_translation(
       -dev->eprn.right_shift*pixels_per_bp[0],
       -dev->eprn.down_shift *pixels_per_bp[1],
@@ -314,8 +314,8 @@ static void print_flags(ms_MediaCode flags, const ms_Flag *user_flags)
   if (user_flags != NULL) {
     while (user_flags->code != ms_none) {
       if (user_flags->code & flags) {
-	errprintf("%s", user_flags->name);
-	flags &= ~user_flags->code;
+        errprintf_nomem("%s", user_flags->name);
+        flags &= ~user_flags->code;
       }
       user_flags++;
     }
@@ -371,8 +371,8 @@ static void eprn_flag_mismatch(const struct s_eprn_Device *eprn,
     {
       ms_MediaCode optional = MS_TRANSVERSE_FLAG;
       if (eprn->optional_flags != NULL) {
-	const ms_MediaCode *of = eprn->optional_flags;
-	while (*of != ms_none) optional |= *of++;
+        const ms_MediaCode *of = eprn->optional_flags;
+        while (*of != ms_none) optional |= *of++;
       }
       print_flags(optional, eprn->flag_desc);
     }
@@ -390,15 +390,15 @@ static void eprn_flag_mismatch(const struct s_eprn_Device *eprn,
 
   This function returns true iff the flags in 'new_code' match the requested
   flags (strictly) better than those in 'old_code'.
-  
+
 ******************************************************************************/
 
 static bool better_flag_match(ms_MediaCode desired,
   const ms_MediaCode *optional, ms_MediaCode old_code, ms_MediaCode new_code)
 {
   ms_MediaCode
-    old_diff,	/* difference between old flags and desired flags */
-    new_diff;	/* difference between new flags and desired flags */
+    old_diff,   /* difference between old flags and desired flags */
+    new_diff;   /* difference between new flags and desired flags */
 
   /* Ignore the size information */
   old_code = ms_flags(old_code);
@@ -426,27 +426,27 @@ static bool better_flag_match(ms_MediaCode desired,
       old_diff = old_diff & ~*opt;
       new_diff = new_diff & ~*opt;
       if (old_diff == 0) {
-	if (new_diff != 0) return false;
-	/* At this point both are matches at the same level of optional flags.
-	   Now look for the last preceding flag in which they differ. */
-	{
-	  ms_MediaCode diff = ms_flags(old_code ^ new_code);
-	  while (optional < opt && (diff & *opt) == 0) opt--;
-	  if ((diff & *opt) == 0) {
-	    if ((diff & MS_TRANSVERSE_FLAG) == 0) return false;
-	    /* old and new differ in MS_TRANSVERSE_FLAG */
-	    return (new_code & MS_TRANSVERSE_FLAG) ==
-	      (desired & MS_TRANSVERSE_FLAG);
-	  }
-	  return (new_code & *opt) == (desired & *opt);
-	}
+        if (new_diff != 0) return false;
+        /* At this point both are matches at the same level of optional flags.
+           Now look for the last preceding flag in which they differ. */
+        {
+          ms_MediaCode diff = ms_flags(old_code ^ new_code);
+          while (optional < opt && (diff & *opt) == 0) opt--;
+          if ((diff & *opt) == 0) {
+            if ((diff & MS_TRANSVERSE_FLAG) == 0) return false;
+            /* old and new differ in MS_TRANSVERSE_FLAG */
+            return (new_code & MS_TRANSVERSE_FLAG) ==
+              (desired & MS_TRANSVERSE_FLAG);
+          }
+          return (new_code & *opt) == (desired & *opt);
+        }
       }
       if (new_diff == 0) return true;
       opt++;
     }
   }
 
-  return false;	/* Both codes are mismatches at this point */
+  return false; /* Both codes are mismatches at this point */
 }
 
 /******************************************************************************
@@ -500,17 +500,17 @@ int eprn_set_page_layout(eprn_Device *dev)
      /* Are the requested flags supported for some size? */
     landscape = dev->MediaSize[0] > dev->MediaSize[1];
      /* It's not documented, but 'MediaSize' is the requested "PageSize" page
-	device parameter value and hence is to be interpreted in default (not
-	default default!) user space. */
+        device parameter value and hence is to be interpreted in default (not
+        default default!) user space. */
   const char *epref = dev->eprn.CUPS_messages? CUPS_ERRPREF: "";
   const eprn_CustomPageDescription
-    *best_cmatch = NULL;	/* best custom page size match */
+    *best_cmatch = NULL;        /* best custom page size match */
   eprn_Eprn
     *eprn = &dev->eprn;
   const eprn_PageDescription
     *best_cdmatch = NULL,     /* best custom page size match in discrete list*/
-    *best_dmatch = NULL,	/* best discrete match */
-    *pd;			/* loop variable */
+    *best_dmatch = NULL,        /* best discrete match */
+    *pd;                        /* loop variable */
   float
     /* Page width and height in bp with w <= h (in a moment): */
     w = dev->MediaSize[0],
@@ -542,7 +542,7 @@ int eprn_set_page_layout(eprn_Device *dev)
 
   /* Put the LeadingEdge value into the desired flag pattern if it's set */
   if (eprn->leading_edge_set) {
-    if (eprn->default_orientation % 2 == 0)	/* true on short edge first */
+    if (eprn->default_orientation % 2 == 0)     /* true on short edge first */
       desired &= ~MS_TRANSVERSE_FLAG;
     else
       desired |= MS_TRANSVERSE_FLAG;
@@ -554,20 +554,20 @@ int eprn_set_page_layout(eprn_Device *dev)
   while (pd->code != ms_none) {
     const ms_SizeDescription *ms = ms_find_size_from_code(pd->code);
     if (ms->dimen[0] > 0.0 /* ignore variable sizes */ &&
-	fabs(w - ms->dimen[0])  <= 5.0 &&
-	fabs(h - ms->dimen[1]) <= 5.0) {
+        fabs(w - ms->dimen[0])  <= 5.0 &&
+        fabs(h - ms->dimen[1]) <= 5.0) {
        /* The size does match at 5 bp tolerance. This value has been chosen
-	  arbitrarily to be equal to PostScript's PageSize matching tolerance
-	  during media selection. The tolerance should really be that at which
-	  the printer in question distinguishes between sizes or smaller than
-	  that in order to at least prevent printing on unsupported sizes.
+          arbitrarily to be equal to PostScript's PageSize matching tolerance
+          during media selection. The tolerance should really be that at which
+          the printer in question distinguishes between sizes or smaller than
+          that in order to at least prevent printing on unsupported sizes.
         */
       if (best_dmatch == NULL ||
-	  better_flag_match(desired, eprn->optional_flags, best_dmatch->code,
-	    pd->code))
-	best_dmatch = pd;
+          better_flag_match(desired, eprn->optional_flags, best_dmatch->code,
+            pd->code))
+        best_dmatch = pd;
       if (flag_match(desired, eprn->optional_flags, pd->code))
-	no_match = false;
+        no_match = false;
     }
     pd++;
   }
@@ -579,15 +579,15 @@ int eprn_set_page_layout(eprn_Device *dev)
     /* First check whether the size is in the supported range */
     while (cp->width_max > 0.0) {
       if (cp->width_min  <= w && w <= cp->width_max &&
-	  cp->height_min <= h && h <= cp->height_max) {
-	/* The size does match. */
-	if (best_cmatch == NULL ||
-	    better_flag_match(desired, eprn->optional_flags, best_cmatch->code,
-	      cp->code))
-	  best_cmatch = cp;
-	if (eprn->media_overrides == NULL &&
-	    flag_match(desired, eprn->optional_flags, cp->code))
-	  no_match = false;
+          cp->height_min <= h && h <= cp->height_max) {
+        /* The size does match. */
+        if (best_cmatch == NULL ||
+            better_flag_match(desired, eprn->optional_flags, best_cmatch->code,
+              cp->code))
+          best_cmatch = cp;
+        if (eprn->media_overrides == NULL &&
+            flag_match(desired, eprn->optional_flags, cp->code))
+          no_match = false;
       }
       cp++;
     }
@@ -596,14 +596,14 @@ int eprn_set_page_layout(eprn_Device *dev)
        must be sought in 'media_overrides'. */
     if (best_cmatch != NULL && eprn->media_overrides != NULL) {
       for (pd = eprn->media_overrides; pd->code != ms_none; pd++) {
-	if (ms_without_flags(pd->code) == ms_CustomPageSize) {
-	  if (best_cdmatch == NULL ||
-	      better_flag_match(desired, eprn->optional_flags,
-		best_cdmatch->code, pd->code))
-	    best_cdmatch = pd;
-	  if (flag_match(desired, eprn->optional_flags, pd->code))
-	    no_match = false;
-	}
+        if (ms_without_flags(pd->code) == ms_CustomPageSize) {
+          if (best_cdmatch == NULL ||
+              better_flag_match(desired, eprn->optional_flags,
+                best_cdmatch->code, pd->code))
+            best_cdmatch = pd;
+          if (flag_match(desired, eprn->optional_flags, pd->code))
+            no_match = false;
+        }
       }
     }
   }
@@ -617,34 +617,34 @@ int eprn_set_page_layout(eprn_Device *dev)
     if (best_cmatch == NULL) {
       /* No match at all. */
       eprintf3("%s" ERRPREF
-	"This document requests a page size of %.0f x %.0f bp.\n",
-	   epref, dev->MediaSize[0], dev->MediaSize[1]);
+        "This document requests a page size of %.0f x %.0f bp.\n",
+           epref, dev->MediaSize[0], dev->MediaSize[1]);
       if (eprn->cap->custom == NULL) {
-	/* The printer does not support custom page sizes */
-	if (eprn->media_overrides != NULL)
-	  eprintf1(
-	    "%s  The media configuration file does not contain an entry for "
-	      " this size.\n", epref);
-	else
-	  eprintf2("%s  This size is not supported by the %s.\n",
-	    epref, eprn->cap->name);
+        /* The printer does not support custom page sizes */
+        if (eprn->media_overrides != NULL)
+          eprintf1(
+            "%s  The media configuration file does not contain an entry for "
+              " this size.\n", epref);
+        else
+          eprintf2("%s  This size is not supported by the %s.\n",
+            epref, eprn->cap->name);
       }
       else
-	eprintf3(
-	  "%s  This size is not supported as a discrete size and it exceeds "
-	    "the\n"
-	  "%s  custom page size limits for the %s.\n",
-	  epref, epref, eprn->cap->name);
+        eprintf3(
+          "%s  This size is not supported as a discrete size and it exceeds "
+            "the\n"
+          "%s  custom page size limits for the %s.\n",
+          epref, epref, eprn->cap->name);
       return -1;
     }
     if (eprn->media_overrides != NULL && best_cdmatch == NULL) {
       eprintf6("%s" ERRPREF
-	"This document requests a page size of %.0f x %.0f bp\n"
-	"%s  but there is no entry for this size in the "
-	  "media configuration file\n"
-	"%s  %s.\n",
-	epref, dev->MediaSize[0], dev->MediaSize[1], epref, epref,
-	eprn->media_file);
+        "This document requests a page size of %.0f x %.0f bp\n"
+        "%s  but there is no entry for this size in the "
+          "media configuration file\n"
+        "%s  %s.\n",
+        epref, dev->MediaSize[0], dev->MediaSize[1], epref, epref,
+        eprn->media_file);
       return -1;
     }
   }
@@ -656,38 +656,38 @@ int eprn_set_page_layout(eprn_Device *dev)
     ms_MediaCode custom_code = ms_none;
       /* best custom page size match (either from cmatch or dcmatch) */
     if (best_cmatch != NULL &&
-	(eprn->media_overrides == NULL || best_cdmatch != NULL))
+        (eprn->media_overrides == NULL || best_cdmatch != NULL))
       custom_code = (eprn->media_overrides == NULL?
-	best_cmatch->code: best_cdmatch->code);
+        best_cmatch->code: best_cdmatch->code);
 
     if (best_dmatch == NULL ||
-	best_cmatch != NULL &&
-	  better_flag_match(desired, eprn->optional_flags, best_dmatch->code,
-	    custom_code)) {
+        best_cmatch != NULL &&
+          better_flag_match(desired, eprn->optional_flags, best_dmatch->code,
+            custom_code)) {
       if (flag_match(desired, eprn->optional_flags, custom_code)) {
-	if (eprn->media_overrides == NULL) {
-	  eprn->code = best_cmatch->code;
-	  margins[0] = best_cmatch->left;
-	  margins[1] = best_cmatch->bottom;
-	  margins[2] = best_cmatch->right;
-	  margins[3] = best_cmatch->top;
-	}
-	else {
-	  eprn->code = best_cdmatch->code;
-	  margins[0] = best_cdmatch->left;
-	  margins[1] = best_cdmatch->bottom;
-	  margins[2] = best_cdmatch->right;
-	  margins[3] = best_cdmatch->top;
-	}
+        if (eprn->media_overrides == NULL) {
+          eprn->code = best_cmatch->code;
+          margins[0] = best_cmatch->left;
+          margins[1] = best_cmatch->bottom;
+          margins[2] = best_cmatch->right;
+          margins[3] = best_cmatch->top;
+        }
+        else {
+          eprn->code = best_cdmatch->code;
+          margins[0] = best_cdmatch->left;
+          margins[1] = best_cdmatch->bottom;
+          margins[2] = best_cdmatch->right;
+          margins[3] = best_cdmatch->top;
+        }
       }
     }
     else {
       if (flag_match(desired, eprn->optional_flags, best_dmatch->code)) {
-	eprn->code = best_dmatch->code;
-	margins[0] = best_dmatch->left;
-	margins[1] = best_dmatch->bottom;
-	margins[2] = best_dmatch->right;
-	margins[3] = best_dmatch->top;
+        eprn->code = best_dmatch->code;
+        margins[0] = best_dmatch->left;
+        margins[1] = best_dmatch->bottom;
+        margins[2] = best_dmatch->right;
+        margins[3] = best_dmatch->top;
       }
     }
   }
@@ -713,7 +713,7 @@ int eprn_set_page_layout(eprn_Device *dev)
    */
   if (fabs(w - h) > 1 /* arbitrary */ &&
     (eprn->default_orientation % 2 == 0) !=
-	(dev->width/dev->HWResolution[0] <= dev->height/dev->HWResolution[1])) {
+        (dev->width/dev->HWResolution[0] <= dev->height/dev->HWResolution[1])) {
     bool reallocate = false;
 
 #ifdef EPRN_TRACE
@@ -728,32 +728,32 @@ int eprn_set_page_layout(eprn_Device *dev)
 #endif
       reallocate = true;
        /* One could try and call the allocation/reallocation routines of the
-	  prn device directly, but they are not available in older ghostscript
-	  versions and this method is safer anyway because it relies on a
-	  documented API. */
-      gdev_prn_close((gx_device *)dev);		/* ignore the result */
+          prn device directly, but they are not available in older ghostscript
+          versions and this method is safer anyway because it relies on a
+          documented API. */
+      gdev_prn_close((gx_device *)dev);         /* ignore the result */
     }
 
     /*  Now set width and height via gx_device_set_media_size(). This function
-	sets 'MediaSize[]', 'width', and 'height' based on the assumption that
-	default user space has a y axis which is vertical in pixmap device
-	space. This may be wrong and we have to fix it. Because fixing
-	'MediaSize[]' is simpler, gx_device_set_media_size() is called such
-	that it gives the correct values for 'width' and 'height'. */
+        sets 'MediaSize[]', 'width', and 'height' based on the assumption that
+        default user space has a y axis which is vertical in pixmap device
+        space. This may be wrong and we have to fix it. Because fixing
+        'MediaSize[]' is simpler, gx_device_set_media_size() is called such
+        that it gives the correct values for 'width' and 'height'. */
     if (eprn->default_orientation % 2 == 0) {
       /* portrait orientation of the sheet in pixmap device space */
       gx_device_set_media_size((gx_device *)dev, w, h);
       if (landscape) {
-	dev->MediaSize[0] = h;
-	dev->MediaSize[1] = w;
+        dev->MediaSize[0] = h;
+        dev->MediaSize[1] = w;
       }
     }
     else {
       /* landscape orientation in pixmap device space (transverse) */
       gx_device_set_media_size((gx_device *)dev, h, w);
       if (!landscape) {
-	dev->MediaSize[0] = w;
-	dev->MediaSize[1] = h;
+        dev->MediaSize[0] = w;
+        dev->MediaSize[1] = h;
       }
     }
 
@@ -763,10 +763,10 @@ int eprn_set_page_layout(eprn_Device *dev)
 
       rc = gdev_prn_open((gx_device *)dev);
       if (rc < 0) {
-	eprintf2("%s" ERRPREF
-	  "Failure of gdev_prn_open(), code is %d.\n",
-	  epref, rc);
-	return rc;
+        eprintf2("%s" ERRPREF
+          "Failure of gdev_prn_open(), code is %d.\n",
+          epref, rc);
+        return rc;
       }
     }
   }
@@ -803,11 +803,11 @@ int eprn_set_page_layout(eprn_Device *dev)
 
     if (quarters != 0) {
        /* The "canonical margin order" for ghostscript is left, bottom, right,
-	  top. Hence for, e.g., a +90-degree rotation ('quarters' is 1) of
-	  default user space with respect to pixmap device space the left
-	  margin (index 0) in default user space is actually the bottom margin
-	  (index 1) in pixmap device space, the bottom margin is the right one,
-	  etc.
+          top. Hence for, e.g., a +90-degree rotation ('quarters' is 1) of
+          default user space with respect to pixmap device space the left
+          margin (index 0) in default user space is actually the bottom margin
+          (index 1) in pixmap device space, the bottom margin is the right one,
+          etc.
         */
       for (j = 0; j < 4; j++) dev->HWMargins[j] = margins[(j+quarters)%4];
       /* 'HWMargins[]' is in bp (see gxdevcli.h) */
@@ -818,9 +818,9 @@ int eprn_set_page_layout(eprn_Device *dev)
 
       gx_device_set_margins((gx_device *)dev, margins, false);
        /* Of course, I could set HWMargins[] directly also in this case. This
-	  way is however less prone to break on possible future incompatible
-	  changes to ghostscript and it covers the most frequent case (portrait
-	  and short edge first). */
+          way is however less prone to break on possible future incompatible
+          changes to ghostscript and it covers the most frequent case (portrait
+          and short edge first). */
     }
   }
 
@@ -941,7 +941,7 @@ int eprn_open_device(gx_device *device)
 
   /* Check the rendering parameters */
   if (eprn_check_colour_info(eprn->cap->colour_info, &eprn->colour_model,
-      &device->HWResolution[0], &device->HWResolution[1], 
+      &device->HWResolution[0], &device->HWResolution[1],
       &eprn->black_levels, &eprn->non_black_levels) != 0) {
     gs_param_string str;
 
@@ -950,7 +950,7 @@ int eprn_open_device(gx_device *device)
     str.size = 0;
     if (eprn_get_string(eprn->colour_model, eprn_colour_model_list, &str) != 0)
       assert(0); /* Bug. No harm on NDEBUG because I've just set the size. */
-    errwrite((const char *)str.data, str.size * sizeof(str.data[0]));
+    errwrite(device->memory, (const char *)str.data, str.size * sizeof(str.data[0]));
     eprintf7("),\n"
       "%s  resolution (%gx%g ppi) and intensity levels (%d, %d) is\n"
       "%s  not supported by the %s.\n",
@@ -984,18 +984,18 @@ int eprn_open_device(gx_device *device)
 
     if (eprn->colour_model == eprn_DeviceRGB) {
       if (eprn->intensity_rendering == eprn_IR_FloydSteinberg)
-	set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_RGB_max);
+        set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_RGB_max);
       else if (device->color_info.max_color > 1)
-	set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_RGB_flex);
+        set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_RGB_flex);
       else
-	set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_RGB);
+        set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_RGB);
     } else {
       if (eprn->intensity_rendering == eprn_IR_FloydSteinberg)
-	set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_CMY_or_K_max);
+        set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_CMY_or_K_max);
       else if (device->color_info.max_gray > 1 || device->color_info.max_color > 1)
-	set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_CMY_or_K_flex);
+        set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_CMY_or_K_flex);
       else
-	set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_CMY_or_K);
+        set_dev_proc(device, map_rgb_color, &eprn_map_rgb_color_for_CMY_or_K);
     }
   }
   eprn->output_planes = eprn_bits_for_levels(eprn->black_levels) +
@@ -1017,20 +1017,20 @@ int eprn_open_device(gx_device *device)
     if (pcf_getcount(eprn->pagecount_file, &count) == 0)
       device->PageCount = count;
        /* unsigned to signed. The C standard permits
-	  an implementation to generate an overflow indication if the value is
-	  too large. I consider this to mean that the type of 'PageCount' is
-	  inappropriate :-). Note that eprn does not use 'PageCount' for
-	  updating the file. */
+          an implementation to generate an overflow indication if the value is
+          too large. I consider this to mean that the type of 'PageCount' is
+          inappropriate :-). Note that eprn does not use 'PageCount' for
+          updating the file. */
     else {
       /* pcf_getcount() has issued an error message. */
       eprintf(
         "  No further attempts will be made to access the page count file.\n");
       gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
-	sizeof(char), "eprn_open_device");
+        sizeof(char), "eprn_open_device");
       eprn->pagecount_file = NULL;
     }
   }
-#endif	/* !EPRN_NO_PAGECOUNTFILE */
+#endif  /* !EPRN_NO_PAGECOUNTFILE */
 
   /* Open the "prn" device part */
   if ((rc = gdev_prn_open(device)) != 0) return rc;
@@ -1055,7 +1055,7 @@ int eprn_open_device(gx_device *device)
       sizeof(eprn_Octet), "eprn_open_device");
     if (eprn->next_scan_line.str == NULL && eprn->scan_line.str != NULL) {
       gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
-	"eprn_open_device");
+        "eprn_open_device");
       eprn->scan_line.str = NULL;
     }
   }
@@ -1163,17 +1163,17 @@ int eprn_output_page(gx_device *dev, int num_copies, int flush)
 #ifndef EPRN_NO_PAGECOUNTFILE
   /* On success, record the number of pages printed */
   if (rc == 0 && eprn->pagecount_file != NULL) {
-    assert(num_copies > 0);	/* because of signed/unsigned */
+    assert(num_copies > 0);     /* because of signed/unsigned */
     if (pcf_inccount(eprn->pagecount_file, num_copies) != 0) {
       /* pcf_inccount() has issued an error message. */
       eprintf(
-	"  No further attempts will be made to access the page count file.\n");
+        "  No further attempts will be made to access the page count file.\n");
       gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
-	sizeof(char), "eprn_output_page");
+        sizeof(char), "eprn_output_page");
       eprn->pagecount_file = NULL;
     }
   }
-#endif	/* !EPRN_NO_PAGECOUNTFILE */
+#endif  /* !EPRN_NO_PAGECOUNTFILE */
 
   /* If soft tumble has been demanded, ensure the get_initial_matrix procedure
      is consulted for the next page */

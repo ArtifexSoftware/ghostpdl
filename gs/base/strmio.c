@@ -33,23 +33,22 @@
  * to explicilty access the host file system.
  */
 stream *
-sfopen(const char *path, const char *mode, gs_memory_t *memory)
+sfopen(const char *path, const char *mode, gs_memory_t *mem)
 {
     gs_parsed_file_name_t pfn;
     stream *s;
     iodev_proc_open_file((*open_file));
-    gs_memory_t *mem = memory;
 
     int code = gs_parse_file_name(&pfn, path, strlen(path), mem);
     if (code < 0) {
 #       define EMSG     "sfopen: gs_parse_file_name failed.\n"
-        errwrite(EMSG, strlen(EMSG));
+        errwrite(mem, EMSG, strlen(EMSG));
 #       undef EMSG
         return NULL;
     }
     if (pfn.fname == NULL) {    /* just a device */
 #       define EMSG     "sfopen: not allowed with %device only.\n"
-        errwrite(EMSG, strlen(EMSG));
+        errwrite(mem, EMSG, strlen(EMSG));
 #       undef EMSG
         return NULL;
     }
@@ -70,7 +69,7 @@ sfopen(const char *path, const char *mode, gs_memory_t *memory)
         sclose(s);
         gs_free_object(s->memory, s, "sfopen: allocation error");
 #       define EMSG     "sfopen: allocation error setting path name into stream.\n"
-        errwrite(EMSG, strlen(EMSG));
+        errwrite(mem, EMSG, strlen(EMSG));
 #       undef EMSG
         return NULL;
     }

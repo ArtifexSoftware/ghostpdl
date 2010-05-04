@@ -1010,9 +1010,9 @@ pclxl_beginpage(gx_device_vector * vdev)
     xdev->page ++;
 
 /*
-    errprintf("PAGE: %d %d\n", xdev->page, xdev->NumCopies);
-    errprintf("INFO: Printing page %d...\n", xdev->page);
-    errflush();
+    errprintf(vdev->memory, "PAGE: %d %d\n", xdev->page, xdev->NumCopies);
+    errprintf(vdev->memory, "INFO: Printing page %d...\n", xdev->page);
+    errflush(vdev->memory);
 */
 
     px_write_page_header(s, (const gx_device *)vdev);

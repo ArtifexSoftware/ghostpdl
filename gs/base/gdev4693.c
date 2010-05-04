@@ -120,7 +120,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 	*p = 0x02; /* end of line. */
 	/* write header */
 	if (fwrite(header,1,22,ps_stream) != 22) {
-		errprintf("Could not write header (t4693d).\n");
+		errprintf(dev->memory, "Could not write header (t4693d).\n");
 		gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
 		return_error(gs_error_ioerror);
 	}
@@ -146,13 +146,13 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 			case 24:
 				break;
 			default:
-				errprintf("Bad depth (%d) t4693d.\n",depth);
+				errprintf(dev->memory,"Bad depth (%d) t4693d.\n",depth);
 				gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
 				return_error(gs_error_rangecheck);
 			}
 
 			if (fwrite(&data[i],1,data_size,ps_stream) != data_size) {
-				errprintf("Could not write pixel (t4693d).\n");
+				errprintf(dev->memory,"Could not write pixel (t4693d).\n");
 				gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
 				return_error(gs_error_ioerror);
 			}
@@ -160,7 +160,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 		}
 
 		if (fputc(0x02,ps_stream) != 0x02) {
-			errprintf("Could not write EOL (t4693d).\n");
+			errprintf(dev->memory,"Could not write EOL (t4693d).\n");
 			gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
 			return_error(gs_error_ioerror);
 		}
@@ -168,7 +168,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 	}
 
 	if (fputc(0x01,ps_stream) != 0x01) {
-		errprintf("Could not write EOT (t4693d).\n");
+		errprintf(dev->memory,"Could not write EOT (t4693d).\n");
 		gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
 		return_error(gs_error_ioerror);
 	}

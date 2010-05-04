@@ -192,7 +192,7 @@ get_device_index(const gs_memory_t *mem, const char *value)
 	if ( !strcmp(gs_devicename(dev_list[di]), value) )
 	    break;
     if ( di == num_devs ) {
-	errprintf("Unknown device name %s.\n", value);
+	errprintf(mem, "Unknown device name %s.\n", value);
 	return -1;
     }
     return di;
@@ -272,14 +272,14 @@ pl_main(
     /* Create PJL instance */
     if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0
 	 || pl_allocate_interp_instance(&pjl_instance, pjl_interp, pjl_mem) < 0 ) {
-	errprintf("Unable to create PJL interpreter.");
+	errprintf(mem, "Unable to create PJL interpreter.");
 	return -1;
     }
 
     /* Create PDL instances, etc */
     if (pl_main_universe_init(&universe, err_buf, mem, pdl_implementation,
 			      pjl_instance, &inst, &pl_pre_finish_page, &pl_post_finish_page) < 0) {
-	errprintf(err_buf);
+	errprintf(mem, err_buf);
 	return -1;
     }
 
@@ -306,7 +306,7 @@ pl_main(
 
 
         if ( pl_init_job(pjl_instance) < 0 ) {
-            errprintf("Unable to init PJL job.\n");
+            errprintf(mem, "Unable to init PJL job.\n");
             return -1;
         }
 
@@ -321,19 +321,21 @@ pl_main(
 	    const gx_device **dev_list;
 	    int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
 
-	    errprintf(pl_usage, argv[0]);
+	    errprintf(mem, pl_usage, argv[0]);
 
 	    if (pl_characteristics(&pjl_implementation)->version)
-		errprintf("Version: %s\n", pl_characteristics(&pjl_implementation)->version);
+		errprintf(mem, "Version: %s\n",
+                          pl_characteristics(&pjl_implementation)->version);
 	    if (pl_characteristics(&pjl_implementation)->build_date)
-		errprintf("Build date: %s\n", pl_characteristics(&pjl_implementation)->build_date);
-	    errprintf("Devices:");
+		errprintf(mem, "Build date: %s\n",
+                          pl_characteristics(&pjl_implementation)->build_date);
+	    errprintf(mem, "Devices:");
 	    for ( i = 0; i < num_devs; ++i ) {
 		if ( ( (i + 1) )  % 9 == 0 )
-		    errprintf("\n");
-		errprintf(" %s", gs_devicename(dev_list[i]));
+		    errprintf(mem, "\n");
+		errprintf(mem, " %s", gs_devicename(dev_list[i]));
 	    }
-	    errprintf("\n");
+	    errprintf(mem, "\n");
 
 	    return -1;
 	}
@@ -346,7 +348,7 @@ pl_main(
            requirements specified by each implementation in the
            characteristics structure */
         if (pl_main_cursor_open(mem, &r, filename, buf, sizeof(buf)) < 0) {
-            errprintf("Unable to open %s for reading.\n", filename);
+            errprintf(mem, "Unable to open %s for reading.\n", filename);
             return -1;
         }
 #if defined(DEBUG) && defined(ALLOW_VD_TRACE)
@@ -1168,7 +1170,7 @@ pl_print_usage(const pl_main_instance_t *pti,
 void
 pl_log_string(const gs_memory_t *mem, const char *str, int wait_for_key)
 {
-    errwrite(str, strlen(str)); 
+    errwrite(mem, str, strlen(str)); 
     if (wait_for_key)
 	fgetc(mem->gs_lib_ctx->fstdin);
 }

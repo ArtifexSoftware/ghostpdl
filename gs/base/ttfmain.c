@@ -180,11 +180,13 @@ void ttfInterpreter__release(ttfInterpreter **ptti)
 
 void ttfFont__init(ttfFont *this, ttfMemory *mem, 
 		    void (*DebugRepaint)(ttfFont *),
-		    int (*DebugPrint)(ttfFont *, const char *s, ...))
+		    int (*DebugPrint)(ttfFont *, const char *s, ...),
+                    const gs_memory_t *DebugMem)
 {
     memset(this, 0, sizeof(*this));
     this->DebugRepaint = DebugRepaint;
-    this->DebugPrint = DebugPrint;
+    this->DebugPrint   = DebugPrint;
+    this->DebugMem     = DebugMem;
 }
 
 void ttfFont__finit(ttfFont *this)

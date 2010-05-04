@@ -249,7 +249,7 @@ static int DebugPrint(ttfFont *ttf, const char *fmt, ...)
 	count = vsprintf(buf, fmt, args);
 	/* NB: moved debug output from stdout to stderr
 	 */
-	errwrite(buf, count);
+	errwrite_nomem(buf, count);
 	va_end(args);
     }
     return 0;
@@ -398,7 +398,8 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
 	return 0;
-    ttfFont__init(ttf, &dir->ttm->super, DebugRepaint, (gs_debug_c('Y') ? DebugPrint : NULL));
+    ttfFont__init(ttf, &dir->ttm->super, DebugRepaint,
+                  (gs_debug_c('Y') ? DebugPrint : NULL), mem);
     return ttf;
 }
 

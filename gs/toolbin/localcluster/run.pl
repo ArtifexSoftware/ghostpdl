@@ -65,7 +65,7 @@ my $mupdf;
 #my $product;
 my @commands;
 
-my $products;
+my $products="";
 
 my $runningSemaphore="./run.pid";
 

@@ -5,29 +5,29 @@
             Germany. E-mail: Martin.Lottermoser@t-online.de.
 
 *******************************************************************************
-*									      *
-*	Copyright (C) 2000, 2001 by Martin Lottermoser			      *
-*	All rights reserved						      *
-*									      *
+*                                                                             *
+*       Copyright (C) 2000, 2001 by Martin Lottermoser                        *
+*       All rights reserved                                                   *
+*                                                                             *
 *******************************************************************************
 
   Preprocessor symbols:
 
     EPRN_GS_HAS_MEDIAPOSITION
-	Define this if ghostscript should in the future implement the standard
-	PostScript page device parameter "MediaPosition" as a device parameter.
-	Otherwise it will be stored in the eprn device. Note that
-	ghostscript's input media selection algorithm *does* react to the
-	parameter, and you could also specify it from PostScript. This
-	implementation is only needed to make the parameter available as a
-	command line option.
+        Define this if ghostscript should in the future implement the standard
+        PostScript page device parameter "MediaPosition" as a device parameter.
+        Otherwise it will be stored in the eprn device. Note that
+        ghostscript's input media selection algorithm *does* react to the
+        parameter, and you could also specify it from PostScript. This
+        implementation is only needed to make the parameter available as a
+        command line option.
 
     EPRN_NO_PAGECOUNTFILE
-	Define this if you do not want to use eprn's pagecount-file feature.
-	You very likely must define this on Microsoft Windows.
+        Define this if you do not want to use eprn's pagecount-file feature.
+        You very likely must define this on Microsoft Windows.
 
     EPRN_TRACE
-	Define this to enable tracing. Only useful for development.
+        Define this to enable tracing. Only useful for development.
 
 ******************************************************************************/
 
@@ -40,7 +40,7 @@ static const char
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE	500
+#define _XOPEN_SOURCE   500
 #endif
 
 /* Special Aladdin header, must be included before <sys/types.h> on some
@@ -58,15 +58,15 @@ static const char
 /* Ghostscript headers */
 #ifdef EPRN_TRACE
 #include "gdebug.h"
-#endif	/* EPRN_TRACE */
+#endif  /* EPRN_TRACE */
 
 /* Special headers */
 #include "gdeveprn.h"
 
 /*****************************************************************************/
 
-#define ERRPREF		"? eprn: "
-#define WARNPREF	"?-W eprn: "
+#define ERRPREF         "? eprn: "
+#define WARNPREF        "?-W eprn: "
 
 /*****************************************************************************/
 
@@ -77,19 +77,19 @@ const eprn_StringAndInt
   eprn_colour_model_list[] = {
     /* Values of type 'eprn_ColourModel' are assumed to be usable as indices
        into this array in order to find string representations for them. */
-    { "Gray",	eprn_DeviceGray },
-    { "RGB",	eprn_DeviceRGB },
-    { "CMY",	eprn_DeviceCMY },
-    { "CMY+K",	eprn_DeviceCMY_plus_K },
-    { "CMYK",	eprn_DeviceCMYK },
-    { NULL,	0 }
+    { "Gray",   eprn_DeviceGray },
+    { "RGB",    eprn_DeviceRGB },
+    { "CMY",    eprn_DeviceCMY },
+    { "CMY+K",  eprn_DeviceCMY_plus_K },
+    { "CMYK",   eprn_DeviceCMYK },
+    { NULL,     0 }
   };
 
 static const eprn_StringAndInt
   /* Intensity rendering methods */
   intensity_rendering_list[] = {
-    { "printer",	eprn_IR_printer },
-    { "halftones",	eprn_IR_halftones },
+    { "printer",        eprn_IR_printer },
+    { "halftones",      eprn_IR_halftones },
     { "Floyd-Steinberg", eprn_IR_FloydSteinberg },
     { NULL, 0}
   };
@@ -198,7 +198,7 @@ void eprn_dump_parameter_list(gs_param_list *plist)
   return;
 }
 
-#endif	/* EPRN_TRACE */
+#endif  /* EPRN_TRACE */
 /******************************************************************************
 
   Function: eprn_get_params
@@ -283,7 +283,7 @@ int eprn_get_params(gx_device *device, gs_param_list *plist)
   }
   else
     if ((rc = param_write_null(plist, "MediaPosition")) < 0) return rc;
-#endif	/* EPRN_GS_HAS_MEDIAPOSITION */
+#endif  /* EPRN_GS_HAS_MEDIAPOSITION */
 
 #ifndef EPRN_NO_PAGECOUNTFILE
   /* Page count file */
@@ -297,7 +297,7 @@ int eprn_get_params(gx_device *device, gs_param_list *plist)
     if ((rc = param_write_string(plist, "PageCountFile", &string_value)) < 0)
       return rc;
   }
-#endif	/* EPRN_NO_PAGECOUNTFILE */
+#endif  /* EPRN_NO_PAGECOUNTFILE */
 
   return 0;
 }
@@ -356,10 +356,10 @@ static char *next_word(char *s)
 
 ******************************************************************************/
 
-#define BUFFER_SIZE	200
+#define BUFFER_SIZE     200
   /* should be large enough for a single line */
 
-#define cleanup()	(free(list), fclose(f))
+#define cleanup()       (free(list), fclose(f))
 
 
 static int eprn_read_media_data(eprn_Eprn *eprn)
@@ -372,8 +372,8 @@ static int eprn_read_media_data(eprn_Eprn *eprn)
   float conversion_factor = BP_PER_IN;
     /* values read have to be multiplied by this value to obtain bp */
   int
-    line = 0,	/* line number */
-    read = 0;	/* number of entries read so far */
+    line = 0,   /* line number */
+    read = 0;   /* number of entries read so far */
   eprn_PageDescription *list = NULL;
 
   /* Open the file */
@@ -395,8 +395,8 @@ static int eprn_read_media_data(eprn_Eprn *eprn)
     /* Check for buffer overflow */
     if ((s = strchr(buffer, '\n')) == NULL && fgetc(f) != EOF) {
       eprintf5("%s" ERRPREF "Exceeding line length %d in "
-	  "media configuration file\n%s  %s, line %d.\n",
-	epref, BUFFER_SIZE - 2 /* '\n'+'\0' */, epref, eprn->media_file, line);
+          "media configuration file\n%s  %s, line %d.\n",
+        epref, BUFFER_SIZE - 2 /* '\n'+'\0' */, epref, eprn->media_file, line);
       cleanup();
       return_error(gs_error_limitcheck);
     }
@@ -410,10 +410,10 @@ static int eprn_read_media_data(eprn_Eprn *eprn)
         version 6 (_MSC_VER is 1200) because the variable for %n will never be
         set. If one drops the blank, it will be set, also if there are
         additional directives after %n. In addition, Cygwin does not (as of
-	early 2001) set the %n variable if there is trailing white space in the
-	string scanned. I don't want to know what's going on there, I just 
-	foil these bugs by removing all trailing white space from the input
-	line which means I don't have to scan it afterwards.
+        early 2001) set the %n variable if there is trailing white space in the
+        string scanned. I don't want to know what's going on there, I just
+        foil these bugs by removing all trailing white space from the input
+        line which means I don't have to scan it afterwards.
     */
     if (s == NULL) s = strchr(buffer, '\0');
     while (buffer < s && isspace(*(s-1))) s--;
@@ -428,21 +428,21 @@ static int eprn_read_media_data(eprn_Eprn *eprn)
     if (is_word(s, "unit")) {
       char *unit_name = next_word(s);
       if (unit_name != NULL) {
-	s = next_word(unit_name);
-	if (s == NULL) {
-	  if (is_word(unit_name, "in")) {
-	    conversion_factor = BP_PER_IN;
-	    continue;
-	  }
-	  if (is_word(unit_name, "mm")) {
-	    conversion_factor = BP_PER_MM;
-	    continue;
-	  }
-	}
-	/* If 's' is not NULL or the unit is not recognized, the error message
-	   will be generated when the attempt to read the whole line as a media
-	   specification will fail because there is no media size called
-	   "unit". */
+        s = next_word(unit_name);
+        if (s == NULL) {
+          if (is_word(unit_name, "in")) {
+            conversion_factor = BP_PER_IN;
+            continue;
+          }
+          if (is_word(unit_name, "mm")) {
+            conversion_factor = BP_PER_MM;
+            continue;
+          }
+        }
+        /* If 's' is not NULL or the unit is not recognized, the error message
+           will be generated when the attempt to read the whole line as a media
+           specification will fail because there is no media size called
+           "unit". */
       }
     }
 
@@ -450,13 +450,13 @@ static int eprn_read_media_data(eprn_Eprn *eprn)
     {
       eprn_PageDescription *new_list;
       new_list = (eprn_PageDescription *)
-	realloc(list, (read+1)*sizeof(eprn_PageDescription));
+        realloc(list, (read+1)*sizeof(eprn_PageDescription));
       if (new_list == NULL) {
-	eprintf2("%s" ERRPREF
-	  "Memory allocation failure in eprn_read_media_data(): %s.\n",
-	  epref, strerror(errno));
-	cleanup();
-	return_error(gs_error_VMerror);
+        eprintf2("%s" ERRPREF
+          "Memory allocation failure in eprn_read_media_data(): %s.\n",
+          epref, strerror(errno));
+        cleanup();
+        return_error(gs_error_VMerror);
       }
       list = new_list;
     }
@@ -467,7 +467,7 @@ static int eprn_read_media_data(eprn_Eprn *eprn)
     /* Isolate and identify the media size name */
     s = buffer;
     while (isspace(*s)) s++;
-    t = s + 1;	/* we checked above that the line is not empty */
+    t = s + 1;  /* we checked above that the line is not empty */
     while (*t != '\0' && !isspace(*t)) t++;
     if (*t != '\0') {
       *t = '\0';
@@ -476,42 +476,42 @@ static int eprn_read_media_data(eprn_Eprn *eprn)
     {
       ms_MediaCode code = ms_find_code_from_name(s, eprn->flag_desc);
       if (code == ms_none) {
-	eprintf5("%s" ERRPREF "Unknown media name (%s) in "
-	    "media configuration file\n%s  %s, line %d.\n",
-	  epref, s, epref, eprn->media_file, line);
-	cleanup();
-	return_error(gs_error_rangecheck);
+        eprintf5("%s" ERRPREF "Unknown media name (%s) in "
+            "media configuration file\n%s  %s, line %d.\n",
+          epref, s, epref, eprn->media_file, line);
+        cleanup();
+        return_error(gs_error_rangecheck);
       }
       if (code & MS_ROTATED_FLAG) {
-	eprintf5("%s" ERRPREF "Invalid substring \"" MS_ROTATED_STRING
-	    "\" in media name (%s)\n"
-	  "%s  in media configuration file %s, line %d.\n",
-	  epref, s, epref, eprn->media_file, line);
-	cleanup();
-	return_error(gs_error_rangecheck);
+        eprintf5("%s" ERRPREF "Invalid substring \"" MS_ROTATED_STRING
+            "\" in media name (%s)\n"
+          "%s  in media configuration file %s, line %d.\n",
+          epref, s, epref, eprn->media_file, line);
+        cleanup();
+        return_error(gs_error_rangecheck);
       }
       current->code = code;
     }
 
     /* Look for margins */
     if (sscanf(t, "%g %g %g %g%n", &current->left,
-	  &current->bottom, &current->right, &current->top, &chars_read) != 4 ||
-	t[chars_read] != '\0') {
-      if (*t != '\0') *(t-1) = ' ';	/* remove NUL after media name */
+          &current->bottom, &current->right, &current->top, &chars_read) != 4 ||
+        t[chars_read] != '\0') {
+      if (*t != '\0') *(t-1) = ' ';     /* remove NUL after media name */
       eprintf5("%s" ERRPREF
-	"Syntax error in media configuration file %s, line %d:\n%s    %s\n",
-	epref, eprn->media_file, line, epref, buffer);
+        "Syntax error in media configuration file %s, line %d:\n%s    %s\n",
+        epref, eprn->media_file, line, epref, buffer);
       cleanup();
       return_error(gs_error_rangecheck);
     }
 
     /* Check for sign */
     if (current->left < 0 || current->bottom < 0 || current->right < 0 ||
-	current->top < 0) {
+        current->top < 0) {
       eprintf4("%s" ERRPREF
-	"Ghostscript does not support negative margins (line %d in the\n"
-	"%s  media configuration file %s).\n",
-	epref, line, epref, eprn->media_file);
+        "Ghostscript does not support negative margins (line %d in the\n"
+        "%s  media configuration file %s).\n",
+        epref, line, epref, eprn->media_file);
       cleanup();
       return_error(gs_error_rangecheck);
     }
@@ -528,12 +528,12 @@ static int eprn_read_media_data(eprn_Eprn *eprn)
        the printer is useless although it would not lead to a failure of eprn.
        The user might not notice the reason without help, hence we check. */
     if (ms_without_flags(current->code) == ms_CustomPageSize &&
-	eprn->cap->custom == NULL)
+        eprn->cap->custom == NULL)
       eprintf6("%s" WARNPREF "The media configuration file %s\n"
-	"%s    contains a custom page size entry in line %d, "
-	  "but custom page sizes\n"
-	"%s    are not supported by the %s.\n",
-	wpref, eprn->media_file, wpref, line, wpref, eprn->cap->name);
+        "%s    contains a custom page size entry in line %d, "
+          "but custom page sizes\n"
+        "%s    are not supported by the %s.\n",
+        wpref, eprn->media_file, wpref, line, wpref, eprn->cap->name);
   }
   if (ferror(f)) {
     eprintf2("%s" ERRPREF
@@ -628,18 +628,18 @@ int eprn_set_media_data(eprn_Device *dev, const char *media_file, size_t length)
       "eprn_set_media_data");
     if (eprn->media_file == NULL) {
       eprintf1("%s" ERRPREF
-	"Memory allocation failure from gs_malloc() in "
-	"eprn_set_media_data().\n",
-	epref);
+        "Memory allocation failure from gs_malloc() in "
+        "eprn_set_media_data().\n",
+        epref);
       rc = gs_error_VMerror;
     }
     else {
       strncpy(eprn->media_file, media_file, length);
       eprn->media_file[length] = '\0';
       if ((rc = eprn_read_media_data(eprn)) != 0) {
-	gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->media_file, length + 1, sizeof(char),
-	  "eprn_set_media_data");
-	eprn->media_file = NULL;
+        gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->media_file, length + 1, sizeof(char),
+          "eprn_set_media_data");
+        eprn->media_file = NULL;
       }
     }
   }
@@ -736,37 +736,37 @@ int eprn_check_colour_info(const eprn_ColourInfo *list,
   /* Search for a match. Successful exits are in the middle of the loop. */
   for (entry = list; entry->info[0] != NULL; entry++)
     if (entry->colour_model == *model ||
-	entry->colour_model == eprn_DeviceCMYK &&
-	  *model == eprn_DeviceCMY_plus_K) {
+        entry->colour_model == eprn_DeviceCMYK &&
+          *model == eprn_DeviceCMY_plus_K) {
       const eprn_ResLev *rl;
       unsigned int levels = (entry->colour_model == eprn_DeviceRGB ||
-	  entry->colour_model == eprn_DeviceCMY? *non_black_levels:
-	*black_levels);
+          entry->colour_model == eprn_DeviceCMY? *non_black_levels:
+        *black_levels);
 
       for (rl = entry->info[0]; rl->levels != NULL; rl++)
-	if (reslev_supported(rl, *hres, *vres, levels)) {
-	  const eprn_ResLev *rl2 = NULL;
+        if (reslev_supported(rl, *hres, *vres, levels)) {
+          const eprn_ResLev *rl2 = NULL;
 
-	  /* Check on info[1] needed? */
-	  if (entry->colour_model == eprn_DeviceGray ||
-	      entry->colour_model == eprn_DeviceRGB ||
-	      entry->colour_model == eprn_DeviceCMY)
-	    return 0;
+          /* Check on info[1] needed? */
+          if (entry->colour_model == eprn_DeviceGray ||
+              entry->colour_model == eprn_DeviceRGB ||
+              entry->colour_model == eprn_DeviceCMY)
+            return 0;
 
-	  /* CMY+K or CMYK process colour models */
-	  if (entry->info[1] != NULL) {
-	    for (rl2 = entry->info[1]; rl2->levels != NULL; rl2++)
-	      if (reslev_supported(rl2, *hres, *vres, *non_black_levels)) break;
-	  }
-	  if (entry->info[1] == NULL && *black_levels == *non_black_levels ||
-	      entry->info[1] != NULL && rl2->levels != NULL)
-	    return 0;
-	}
+          /* CMY+K or CMYK process colour models */
+          if (entry->info[1] != NULL) {
+            for (rl2 = entry->info[1]; rl2->levels != NULL; rl2++)
+              if (reslev_supported(rl2, *hres, *vres, *non_black_levels)) break;
+          }
+          if (entry->info[1] == NULL && *black_levels == *non_black_levels ||
+              entry->info[1] != NULL && rl2->levels != NULL)
+            return 0;
+        }
     }
 
   return -1;
 }
-  
+
 /******************************************************************************
 
   Function: set_derived_colour_data
@@ -815,15 +815,15 @@ static void set_derived_colour_data(eprn_Device *dev)
   */
   if (eprn->intensity_rendering != eprn_IR_halftones) {
     /*  Here we cover two cases: retaining as much colour information as
-	possible and effectively setting up 1-pixel halftone cells. Both
-	demand that ghostscript is prevented from doing halftoning; the
-	remaining difference (which is the essential part) is then handled in
-	our colour mapping functions.
-	According to Drivers.htm, a value of at least 31 for max_gray or
-	max_color (actually, the documentation says "max_rgb") leads to
-	ghostscript using the colour returned by the device if valid
-	instead of using the dither parameters for halftoning. The actual
-	values for the max_* parameters should then be irrelevant.
+        possible and effectively setting up 1-pixel halftone cells. Both
+        demand that ghostscript is prevented from doing halftoning; the
+        remaining difference (which is the essential part) is then handled in
+        our colour mapping functions.
+        According to Drivers.htm, a value of at least 31 for max_gray or
+        max_color (actually, the documentation says "max_rgb") leads to
+        ghostscript using the colour returned by the device if valid
+        instead of using the dither parameters for halftoning. The actual
+        values for the max_* parameters should then be irrelevant.
     */
     if (eprn->non_black_levels > 0) dev->color_info.max_color = 255;
     else dev->color_info.max_color = 0;
@@ -899,7 +899,7 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
       "! eprn_put_params() called with the following device parameters:\n");
     eprn_dump_parameter_list(plist);
   }
-#endif	/* EPRN_TRACE */
+#endif  /* EPRN_TRACE */
 
   /* Remember initial page size */
   for (temp = 0; temp < 2; temp++) mediasize[temp] = dev->MediaSize[temp];
@@ -921,24 +921,24 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
   /* Read colour model into 'temp'. For those colonials across the pond we also
      accept the barbarized spelling variant.
   */
-#define colour_model(option)						\
+#define colour_model(option)                                            \
   if ((rc = param_read_string(plist, (pname = option), &string_value)) == 0) { \
-    rc = eprn_get_int(&string_value, eprn_colour_model_list, &temp);	\
-    if (rc != 0) {							\
-      if (rc != gs_error_VMerror) {					\
-	eprintf1("%s" ERRPREF "Unknown colour model: `", epref);	\
-	errwrite(string_value.data, sizeof(char)*string_value.size);	\
-	eprintf("'.\n");						\
-      }									\
-      last_error = rc;							\
-      param_signal_error(plist, pname, last_error);			\
-    }									\
-    else colour_mode_given_and_valid = true;				\
-  }									\
+    rc = eprn_get_int(&string_value, eprn_colour_model_list, &temp);    \
+    if (rc != 0) {                                                      \
+      if (rc != gs_error_VMerror) {                                     \
+        eprintf1("%s" ERRPREF "Unknown colour model: `", epref);        \
+        errwrite(dev->memory, string_value.data, sizeof(char)*string_value.size); \
+        eprintf("'.\n");                                                \
+      }                                                                 \
+      last_error = rc;                                                  \
+      param_signal_error(plist, pname, last_error);                     \
+    }                                                                   \
+    else colour_mode_given_and_valid = true;                            \
+  }                                                                     \
   else if (rc < 0) last_error = rc;
 
   colour_model("ColorModel")
-  colour_model("ColourModel")	/* overrides if both are given */
+  colour_model("ColourModel")   /* overrides if both are given */
 
 #undef colour_model
 
@@ -964,11 +964,11 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
     }
 
     dev->color_info.polarity =
-	dci_std_polarity(dev->color_info.num_components);
+        dci_std_polarity(dev->color_info.num_components);
 
     /* Adjust black levels */
     if (eprn->colour_model == eprn_DeviceCMY ||
-	eprn->colour_model == eprn_DeviceRGB) {
+        eprn->colour_model == eprn_DeviceRGB) {
       if (eprn->black_levels != 0) eprn->black_levels = 0;
     }
     else
@@ -984,17 +984,17 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
   /* BlackLevels. Various depending values will be adjusted below. */
   if ((rc = param_read_int(plist, (pname = "BlackLevels"), &temp)) == 0) {
     if (temp == 0 && (eprn->colour_model == eprn_DeviceRGB ||
-	  eprn->colour_model == eprn_DeviceCMY) ||
-	2 <= temp && temp <= 256 &&
-	  eprn->colour_model != eprn_DeviceRGB &&
-	  eprn->colour_model != eprn_DeviceCMY) {
+          eprn->colour_model == eprn_DeviceCMY) ||
+        2 <= temp && temp <= 256 &&
+          eprn->colour_model != eprn_DeviceRGB &&
+          eprn->colour_model != eprn_DeviceCMY) {
       if (eprn->black_levels != temp && dev->is_open) gs_closedevice(dev);
       eprn->black_levels = temp;
     }
     else {
       eprintf2("%s" ERRPREF
-	"The value for BlackLevels is outside the range permitted: %d.\n",
-	epref, temp);
+        "The value for BlackLevels is outside the range permitted: %d.\n",
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1004,14 +1004,14 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
   /* CMYLevels */
   if ((rc = param_read_int(plist, (pname = "CMYLevels"), &temp)) == 0) {
     if (temp == 0 && eprn->colour_model == eprn_DeviceGray ||
-	2 <= temp && temp <= 256 && eprn->colour_model != eprn_DeviceGray) {
+        2 <= temp && temp <= 256 && eprn->colour_model != eprn_DeviceGray) {
       if (eprn->non_black_levels != temp && dev->is_open) gs_closedevice(dev);
       eprn->non_black_levels = temp;
     }
     else {
       eprintf2("%s" ERRPREF
-	"The value for CMYLevels is outside the range permitted: %d.\n",
-	epref, temp);
+        "The value for CMYLevels is outside the range permitted: %d.\n",
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1023,8 +1023,8 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
     bool temp;
     if ((rc = param_read_bool(plist, "CUPSAccounting", &temp)) == 0) {
       if (eprn->CUPS_accounting && !temp)
-	eprintf(CUPS_WARNPREF WARNPREF
-	  "Attempt to set CUPSAccounting from true to false.\n");
+        eprintf(CUPS_WARNPREF WARNPREF
+          "Attempt to set CUPSAccounting from true to false.\n");
       else eprn->CUPS_accounting = temp;
     }
     else if (rc < 0) last_error = rc;
@@ -1042,7 +1042,7 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
     else {
       eprintf1("%s" ERRPREF "Invalid method for IntensityRendering: `",
         epref);
-      errwrite(string_value.data, sizeof(char)*string_value.size);
+      errwrite(dev->memory, string_value.data, sizeof(char)*string_value.size);
       eprintf("'.\n");
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
@@ -1059,14 +1059,14 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
   else if ((rc = param_read_int(plist, (pname = "LeadingEdge"), &temp)) == 0) {
     if (0 <= temp && temp <= 3) {
       if ((!eprn->leading_edge_set || eprn->default_orientation != temp) &&
-	dev->is_open) gs_closedevice(dev);
+        dev->is_open) gs_closedevice(dev);
       eprn->leading_edge_set = true;
       eprn->default_orientation = temp;
     }
     else {
       eprintf2(
-	"%s" ERRPREF "LeadingEdge may only have values 0 to 3, not %d.\n",
-	epref, temp);
+        "%s" ERRPREF "LeadingEdge may only have values 0 to 3, not %d.\n",
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1082,12 +1082,12 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
   else if ((rc = param_read_string(plist, pname, &string_value)) == 0) {
     if (string_value.size > 0) {
       if ((eprn->media_file == NULL ||
-	  strncmp(eprn->media_file, (const char *)string_value.data,
-	    string_value.size) != 0 ||
-	  eprn->media_file[string_value.size] != '\0') && dev->is_open)
-	gs_closedevice(dev);
+          strncmp(eprn->media_file, (const char *)string_value.data,
+            string_value.size) != 0 ||
+          eprn->media_file[string_value.size] != '\0') && dev->is_open)
+        gs_closedevice(dev);
       rc = eprn_set_media_data((eprn_Device *)dev,
-	(const char *)string_value.data, string_value.size);
+        (const char *)string_value.data, string_value.size);
     }
     else {
       if (eprn->media_file != NULL && dev->is_open) gs_closedevice(dev);
@@ -1110,22 +1110,22 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
        negative MediaPosition values. */
     if (eprn->media_position < 0)
       eprintf3("%s" WARNPREF
-	"Ghostscript does not accept negative values (%d) for the\n"
-	  "%s    `MediaPosition' parameter.\n",
-	wpref, eprn->media_position, wpref);
+        "Ghostscript does not accept negative values (%d) for the\n"
+          "%s    `MediaPosition' parameter.\n",
+        wpref, eprn->media_position, wpref);
       /* The error message is left for ghostscript to generate during input
-	 media selection, should such an entry be a match. */
+         media selection, should such an entry be a match. */
     eprn->media_position_set = true;
   }
   else if (rc < 0) last_error = rc;
-#endif	/* EPRN_GS_HAS_MEDIAPOSITION */
+#endif  /* EPRN_GS_HAS_MEDIAPOSITION */
 
 #ifndef EPRN_NO_PAGECOUNTFILE
   /* Page count file */
   if ((rc = param_read_null(plist, (pname = "PageCountFile"))) == 0) {
     if (eprn->pagecount_file != NULL) {
       gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
-	sizeof(char), "eprn_put_params");
+        sizeof(char), "eprn_put_params");
       eprn->pagecount_file = NULL;
     }
   }
@@ -1134,29 +1134,29 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
     /* Free old storage */
     if (eprn->pagecount_file != NULL) {
       gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
-	sizeof(char), "eprn_put_params");
+        sizeof(char), "eprn_put_params");
       eprn->pagecount_file = NULL;
     }
 
     /* Store file name unless it is the empty string */
     if (string_value.size > 0) {
       eprn->pagecount_file = (char *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), string_value.size + 1,
-	sizeof(char), "eprn_put_params");
+        sizeof(char), "eprn_put_params");
       if (eprn->pagecount_file == NULL) {
-	eprintf1( "%s" ERRPREF
-	  "Memory allocation failure from gs_malloc() in eprn_put_params().\n",
-	  epref);
-	last_error = gs_error_VMerror;
-	param_signal_error(plist, pname, last_error);
+        eprintf1( "%s" ERRPREF
+          "Memory allocation failure from gs_malloc() in eprn_put_params().\n",
+          epref);
+        last_error = gs_error_VMerror;
+        param_signal_error(plist, pname, last_error);
       }
       else {
-	strncpy(eprn->pagecount_file, (const char *)string_value.data,
-	  string_value.size);
-	eprn->pagecount_file[string_value.size] = '\0';
+        strncpy(eprn->pagecount_file, (const char *)string_value.data,
+          string_value.size);
+        eprn->pagecount_file[string_value.size] = '\0';
       }
     }
   }
-#endif	/* EPRN_NO_PAGECOUNTFILE */
+#endif  /* EPRN_NO_PAGECOUNTFILE */
 
   /* RGBLevels */
   if ((rc = param_read_int(plist, (pname = "RGBLevels"), &temp)) == 0) {
@@ -1166,8 +1166,8 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
     }
     else {
       eprintf2("%s" ERRPREF
-	"The value for RGBLevels is outside the range permitted: %d.\n",
-	epref, temp);
+        "The value for RGBLevels is outside the range permitted: %d.\n",
+        epref, temp);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1186,9 +1186,9 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
   if ((rc = param_read_int(plist, (pname = "BitsPerPixel"), &temp)) == 0) {
     if (temp != dev->color_info.depth) {
       eprintf3("%s" ERRPREF
-	"Attempt to set `BitsPerPixel' to a value (%d)\n"
-	"%s  other than the one selected by the driver.\n",
-	epref, temp, epref);
+        "Attempt to set `BitsPerPixel' to a value (%d)\n"
+        "%s  other than the one selected by the driver.\n",
+        epref, temp, epref);
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);
     }
@@ -1202,7 +1202,7 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
       /* ".HWMargins" is specified */
 #ifdef EPRN_TRACE
       if_debug1(EPRN_TRACE_CHAR, "! .HWMargins is specified: type is %d.\n",
-	(int)temp.type);
+        (int)temp.type);
 #endif
       eprn->keep_margins = true;
     }

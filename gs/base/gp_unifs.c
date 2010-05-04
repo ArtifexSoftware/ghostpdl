@@ -184,10 +184,10 @@ wmatch(const byte * str, uint len, const byte * pstr, uint plen,
 	int i;
 	dlputs("[e]string_match(\"");
 	for (i=0; i<len; i++)
-	    errprintf("%c", str[i]);
+	    errprintf_nomem("%c", str[i]);
 	dputs("\", \"");
 	for (i=0; i<plen; i++)
-	    errprintf("%c", pstr[i]);
+	    errprintf_nomem("%c", pstr[i]);
 	dprintf1("\") = %s\n", (match ? "TRUE" : "false"));
     }
     return match;

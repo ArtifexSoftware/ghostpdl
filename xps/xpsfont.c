@@ -105,7 +105,7 @@ xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index)
     code = xps_load_sfnt_cmap(font);
     if (code < 0)
     {
-        errprintf("warning: no cmap table found in font\n");
+        errprintf_nomem("warning: no cmap table found in font\n");
     }
 
     return font;
@@ -397,7 +397,7 @@ xps_encode_font_char_int(xps_font_t *font, int code)
     case 2: /* High-byte mapping through table. */
     case 8: /* Mixed 16-bit and 32-bit coverage (like 2) */
     default:
-        errprintf("error: unknown cmap format: %d\n", u16(table));
+        errprintf_nomem("error: unknown cmap format: %d\n", u16(table));
         return 0;
     }
 

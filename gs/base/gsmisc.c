@@ -73,7 +73,7 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
     return count;
 }
 
-int errprintf(const char *fmt, ...)
+int errprintf_nomem(const char *fmt, ...)
 {
     int count;
     char buf[PRINTF_BUF_LENGTH];
@@ -82,10 +82,28 @@ int errprintf(const char *fmt, ...)
     va_start(args, fmt);
     count = vsnprintf(buf, sizeof(buf), fmt, args);
     if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
-        errwrite(buf, sizeof(buf) - 1);
-        errwrite(msg_truncated, sizeof(msg_truncated) - 1);
+        errwrite_nomem(buf, sizeof(buf) - 1);
+        errwrite_nomem(msg_truncated, sizeof(msg_truncated) - 1);
     } else {
-        errwrite(buf, count);
+        errwrite_nomem(buf, count);
+    }
+    va_end(args);
+    return count;
+}
+
+int errprintf(const gs_memory_t *mem, const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+    count = vsnprintf(buf, sizeof(buf), fmt, args);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        errwrite(mem, buf, sizeof(buf) - 1);
+        errwrite(mem, msg_truncated, sizeof(msg_truncated) - 1);
+    } else {
+        errwrite(mem, buf, count);
     }
     va_end(args);
     return count;
@@ -121,7 +139,7 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
 void
 dflush(void)
 {
-    errflush();
+    errflush_nomem();
 }
 static const char *
 dprintf_file_tail(const char *file)
@@ -241,19 +259,19 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
 
     /* throw */
     if (op == 0)
-	errprintf("+ %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf_nomem("+ %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* rethrow */
     if (op == 1)
-	errprintf("| %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf_nomem("| %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* catch */
     if (op == 2)
-	errprintf("- %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf_nomem("- %s:%d: %s(): %s\n", file, line, func, msg);
 
     /* warn */
     if (op == 3)
-	errprintf("  %s:%d: %s(): %s\n", file, line, func, msg);
+	errprintf_nomem("  %s:%d: %s(): %s\n", file, line, func, msg);
 
     return code;
 }

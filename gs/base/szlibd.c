@@ -93,7 +93,8 @@ s_zlibD_process(stream_state * st, stream_cursor_read * pr,
                  * Adobe, Apple and xpdf don't fail on pdf:s where this happens,
                  * so neither should we. fixes bug 688716.
                  */
-                errprintf("warning: ignoring zlib error: %s\n", zs->msg);
+                errprintf(st->memory,
+                          "warning: ignoring zlib error: %s\n", zs->msg);
                 return EOFC;
             }
             return ERRC;

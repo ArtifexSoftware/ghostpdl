@@ -522,12 +522,12 @@ pxl_impl_report_errors(
 	   code, st, pxs)) >= 0
 	)
 	  { if ( (report & eBackChannel) || force_to_cout )
-	      errprintf(message);
+	      errprintf(pxli->memory, message);
 	    if ( report & eErrorPage )
 	      y = px_error_page_show(message, y, pxs);
 	  }
 	if ( ((report & pxeErrorReport_next) && file_position != -1L) || force_to_cout )
-	  errprintf("file position of error = %ld\n", file_position);
+	  errprintf(pxli->memory, "file position of error = %ld\n", file_position);
 	if ( report & eErrorPage )
 	  { px_args_t args;
 	    args.pv[0] = 0;

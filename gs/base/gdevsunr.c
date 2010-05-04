@@ -63,7 +63,7 @@ sunhmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int code = 0;
 
     /*
-      errprintf("pdev->width:%d (%d/%d) gsLineBytes:%d rasLineBytes:%d\n",
+      errprintf(pdev->memory, "pdev->width:%d (%d/%d) gsLineBytes:%d rasLineBytes:%d\n",
       pdev->width, pdev->width/8, pdev->width%8,gsLineBytes,rasLineBytes);
     */
     lineStorage = gs_malloc(pdev->memory, gsLineBytes, 1, "rasterfile_print_page(in)");

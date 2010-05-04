@@ -97,7 +97,7 @@ arg_next(arg_list * pal, int *code)
 	/* this	string is a "pushed-back" argument		     */
 	/* (retrieved by a precedeing arg_next(), but not processed) */
 	if (strlen(pas->u.s.str) >= arg_str_max) {
-	    errprintf("Command too long: %s\n", pas->u.s.str);
+	    errprintf(pas->u.s.memory, "Command too long: %s\n", pas->u.s.str);
 	    *code = gs_error_Fatal;
 	    return NULL;
 	} else {
@@ -122,7 +122,8 @@ arg_next(arg_list * pal, int *code)
 	if (c == endc) {
 	    if (in_quote) {
 		cstr[i] = 0;
-		errprintf("Unterminated quote in @-file: %s\n", cstr);
+		errprintf(pas->u.s.memory,
+                          "Unterminated quote in @-file: %s\n", cstr);
 		*code = gs_error_Fatal;
 		return NULL;
 	    }
@@ -174,7 +175,7 @@ arg_next(arg_list * pal, int *code)
 	    /* This is different from the Unix shells. */
 	    if (i == arg_str_max - 1) {
 		cstr[i] = 0;
-		errprintf("Command too long: %s\n", cstr);
+		errprintf(pas->u.s.memory, "Command too long: %s\n", cstr);
 		*code = gs_error_Fatal;
 		return NULL;
 	    }
@@ -185,7 +186,7 @@ arg_next(arg_list * pal, int *code)
 	/* c will become part of the argument */
 	if (i == arg_str_max - 1) {
 	    cstr[i] = 0;
-	    errprintf("Command too long: %s\n", cstr);
+	    errprintf(pas->u.s.memory, "Command too long: %s\n", cstr);
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}
@@ -203,14 +204,14 @@ arg_next(arg_list * pal, int *code)
 	pas->u.s.str = astr;
   at:if (pal->expand_ats && result[0] == '@') {
 	if (pal->depth == arg_depth_max) {
-	    lprintf("Too much nesting of @-files.\n");
+	    errprintf(pas->u.s.memory, "Too much nesting of @-files.\n");
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}
 	result++;		/* skip @ */
 	f = (*pal->arg_fopen) (result, pal->fopen_data);
 	if (f == NULL) {
-	    errprintf("Unable to open command line file %s\n", result);
+	    errprintf(pas->u.s.memory, "Unable to open command line file %s\n", result);
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}

@@ -1138,7 +1138,7 @@ pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
 /* Check that pass-through PostScript code is a string. */
 static bool
-ps_source_ok(const gs_param_string * psource)
+ps_source_ok(const gs_memory_t *mem, const gs_param_string * psource)
 {
     if (psource->size >= 2 && psource->data[0] == '(' &&
 	psource->data[psource->size - 1] == ')'
@@ -1148,8 +1148,8 @@ ps_source_ok(const gs_param_string * psource)
 	int i;
 	lprintf("bad PS passthrough: ");
 	for (i=0; i<psource->size; i++)
-	    errprintf("%c", psource->data[i]);
-	errprintf("\n");
+	    errprintf(mem, "%c", psource->data[i]);
+	errprintf(mem, "\n");
 	return false;
     }
 }
@@ -1208,9 +1208,9 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     gs_param_string level1;
 
     if (!pdfmark_find_key("/DataSource", pairs, count, &source) ||
-	!ps_source_ok(&source) ||
+	!ps_source_ok(pdev->memory, &source) ||
 	(pdfmark_find_key("/Level1", pairs, count, &level1) &&
-	 !ps_source_ok(&level1))
+	 !ps_source_ok(pdev->memory, &level1))
 	)
 	return_error(gs_error_rangecheck);
     if (level1.data == 0 && source.size <= MAX_PS_INLINE && objname == 0) {

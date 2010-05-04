@@ -494,8 +494,8 @@ ps_impl_dnit_job(
            considered fatal but pdf runs the spooled job when the job
            is deinitialized so handle error processing here and return code is always 0. */
         if (( code < 0) && (code != e_NeedInput)) {
-            errprintf("PDF interpreter exited with exit code %d\n", exit_code);
-            errprintf("Flushing to EOJ\n");
+            errprintf(psi->plmemory, "PDF interpreter exited with exit code %d\n", exit_code);
+            errprintf(psi->plmemory, "Flushing to EOJ\n");
         }
         code = 0;
     }

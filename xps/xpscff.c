@@ -212,9 +212,9 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
             }
 
             if (b0 == (256 | 36))
-                errprintf("warning: cid cff fonts not supported yet");
+                errprintf_nomem("warning: cid cff fonts not supported yet");
             if (b0 == (256 | 37))
-                errprintf("warning: cid cff fonts not supported yet");
+                errprintf_nomem("warning: cid cff fonts not supported yet");
 
             /* Type1 stuff that need to be set for the pt1 struct */
 
