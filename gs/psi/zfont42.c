@@ -116,7 +116,7 @@ zbuildfont42(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    return define_gs_font((gs_font *)pfont);
+    return define_gs_font(i_ctx_p, (gs_font *)pfont);
 }
 
 /*

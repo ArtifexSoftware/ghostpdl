@@ -244,7 +244,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	data.FDepVector[i] = r_ptr(pfid, gs_font);
     }
     pfont->data = data;
-    code = define_gs_font((gs_font *) pfont);
+    code = define_gs_font(i_ctx_p, (gs_font *) pfont);
     if (code >= 0)
 	return code;
 fail:

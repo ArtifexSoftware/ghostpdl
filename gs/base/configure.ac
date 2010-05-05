@@ -269,6 +269,32 @@ case $with_libiconv in
     ;;
 esac
 
+dnl Check for libidn (needed for Unicode password support)
+AC_ARG_WITH(libidn,
+	    [AC_HELP_STRING([--without-libidn],
+		   	    [don't use libidn to support Unicode passwords])],,
+	    [with_libidn=maybe])
+if test x$with_libidn != xno; then
+  AC_CHECK_LIB(idn, stringprep, [with_libidn=yes], [
+    if test x$with_libidn != xmaybe; then
+      AC_MSG_ERROR([libidn not found])
+    fi
+    with_libidn=no
+  ])
+fi
+HAVE_LIBIDN=''
+UTF8DEVS=''
+if test x$with_libidn != xno; then
+  HAVE_LIBIDN=-DHAVE_LIBIDN
+  LIBS="$LIBS -lidn"
+
+  if test x$found_iconv != xno; then
+    UTF8DEVS='$(PSD)utf8.dev'
+  fi
+fi
+AC_SUBST(HAVE_LIBIDN)
+AC_SUBST(UTF8DEVS)
+
 dnl Tests for libpaper (to determine system default paper size)
 AC_ARG_WITH([libpaper],
             AC_HELP_STRING([--without-libpaper],
@@ -1191,6 +1217,9 @@ AC_SUBST(HAVE_FILE64)
 
 AC_CHECK_FUNCS([mkstemp64], [HAVE_MKSTEMP64=-DHAVE_MKSTEMP64])
 AC_SUBST(HAVE_MKSTEMP64)
+
+AC_CHECK_FUNCS([setlocale], [HAVE_SETLOCALE=-DHAVE_SETLOCALE])
+AC_SUBST(HAVE_SETLOCALE)
 
 AC_PROG_GCC_TRADITIONAL
 

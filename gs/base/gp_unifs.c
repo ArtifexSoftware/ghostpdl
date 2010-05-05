@@ -58,8 +58,11 @@ const char gp_current_directory_name[] = ".";
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 static FILE *
-gp_open_scratch_file_generic(const char *prefix, char fname[gp_file_name_sizeof],
-		     const char *mode, bool b64)
+gp_open_scratch_file_generic(const gs_memory_t *mem,
+                             const char        *prefix,
+                                   char         fname[gp_file_name_sizeof],
+                             const char        *mode,
+                                   bool         b64)
 {	/* The -8 is for XXXXXX plus a possible final / and -. */
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 8;
@@ -97,7 +100,7 @@ gp_open_scratch_file_generic(const char *prefix, char fname[gp_file_name_sizeof]
         file = mkstemp(fname);
 #endif
 	if (file < -1) {
-	    eprintf1("**** Could not open temporary file %s\n", ofname);
+            emprintf1(mem, "**** Could not open temporary file %s\n", ofname);
 	    return NULL;
 	}
 #if defined(O_LARGEFILE) && defined(__hpux)
@@ -113,17 +116,19 @@ gp_open_scratch_file_generic(const char *prefix, char fname[gp_file_name_sizeof]
     }
 #else
     mktemp(fname);
-    fp = (b64 ? gp_fopentemp : gp_fopentemp_64)(fname, mode);
+    fp = (b64 ? gp_fopentemp : gp_fopentemp_64)(mem, fname, mode);
 #endif
     if (fp == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+        emprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return fp;
 }
 FILE *
-gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+gp_open_scratch_file(const gs_memory_t *mem,
+                     const char        *prefix,
+                           char         fname[gp_file_name_sizeof],
 		     const char *mode)
 {
-    return gp_open_scratch_file_generic(prefix, fname, mode, false);
+    return gp_open_scratch_file_generic(mem, prefix, fname, mode, false);
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
@@ -184,10 +189,10 @@ wmatch(const byte * str, uint len, const byte * pstr, uint plen,
 	int i;
 	dlputs("[e]string_match(\"");
 	for (i=0; i<len; i++)
-	    errprintf("%c", str[i]);
+            errprintf_nomem("%c", str[i]);
 	dputs("\", \"");
 	for (i=0; i<plen; i++)
-	    errprintf("%c", pstr[i]);
+            errprintf_nomem("%c", pstr[i]);
 	dprintf1("\") = %s\n", (match ? "TRUE" : "false"));
     }
     return match;
@@ -493,11 +498,12 @@ FILE *gp_fopen_64(const char *filename, const char *mode)
 #endif
 }
 
-FILE *gp_open_scratch_file_64(const char *prefix,
+FILE *gp_open_scratch_file_64(const gs_memory_t *mem,
+                              const char        *prefix,
 			   char fname[gp_file_name_sizeof],
 			   const char *mode)
 {
-    return gp_open_scratch_file_generic(prefix, fname, mode, true);
+    return gp_open_scratch_file_generic(mem, prefix, fname, mode, true);
 }
 
 /* gp_open_printer_64 is defined in gp_unix.h */

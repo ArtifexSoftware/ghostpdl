@@ -257,7 +257,7 @@ s_stderr_write_process(stream_state * st, stream_cursor_read *pr,
 
     if (count == 0) 
 	return 0;
-    written = errwrite((const char *)(pr->ptr + 1), count);
+    written = errwrite(st->memory, (const char *)(pr->ptr + 1), count);
     if (written < count) 
 	return ERRC;
     pr->ptr += written;

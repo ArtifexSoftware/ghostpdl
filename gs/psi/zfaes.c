@@ -22,6 +22,7 @@
 #include "gsstruct.h"
 #include "ialloc.h"
 #include "idict.h"
+#include "idparam.h"
 #include "stream.h"
 #include "strimpl.h"
 #include "ifilter.h"
@@ -35,6 +36,7 @@ z_aes_d(i_ctx_t * i_ctx_p)
     os_ptr op = osp;		/* i_ctx_p->op_stack.stack.p defined in osstack.h */
     ref *sop = NULL;
     stream_aes_state state;
+    int use_padding;
 
     /* extract the key from the parameter dictionary */
     check_type(*op, t_dictionary);
@@ -43,6 +45,12 @@ z_aes_d(i_ctx_t * i_ctx_p)
 	return_error(e_rangecheck);
 
     s_aes_set_key(&state, sop->value.const_bytes, r_size(sop));
+
+    /* extract the padding flag, which defaults to true for compatibility */
+    if (dict_bool_param(op, "Padding", 1, &use_padding) < 0)
+	return_error(e_rangecheck);
+
+    s_aes_set_padding(&state, use_padding);
 
     /* we pass npop=0, since we've no arguments left to consume */
     /* FIXME: passing 0 instead of the usual rspace(sop) will allocate

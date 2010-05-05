@@ -249,7 +249,7 @@ static int DebugPrint(ttfFont *ttf, const char *fmt, ...)
 	count = vsprintf(buf, fmt, args);
 	/* NB: moved debug output from stdout to stderr
 	 */
-	errwrite(buf, count);
+	errwrite_nomem(buf, count);
 	va_end(args);
     }
     return 0;
@@ -268,11 +268,13 @@ static void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
 	memcpy(buf, base_font->font_name.chars, l);
 	buf[l] = 0;
 	if (glyph_index >= 0)
-	    eprintf2("Failed to interpret TT instructions for glyph index %d of font %s. "
+            emprintf2(pfont->memory,
+                      "Failed to interpret TT instructions for glyph index %d of font %s. "
 			"Continue ignoring instructions of the font.\n", 
 			glyph_index, buf);
 	else
-	    eprintf1("Failed to interpret TT instructions in font %s. "
+            emprintf1(pfont->memory,
+                      "Failed to interpret TT instructions in font %s. "
 			"Continue ignoring instructions of the font.\n", 	    
 			buf);
 	base_font->data.warning_bad_instruction = true;
@@ -292,7 +294,10 @@ static void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 	    l = min(sizeof(buf) - 1, base_font->font_name.size);
 	    memcpy(buf, base_font->font_name.chars, l);
 	    buf[l] = 0;
-	    eprintf2("%s %s requires a patented True Type interpreter.\n", txt, buf);
+            emprintf2(pfont->memory,
+                      "%s %s requires a patented True Type interpreter.\n",
+                      txt,
+                      buf);
 	    base_font->data.warning_patented = true;
 	}
     }
@@ -398,7 +403,8 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
 	return 0;
-    ttfFont__init(ttf, &dir->ttm->super, DebugRepaint, (gs_debug_c('Y') ? DebugPrint : NULL));
+    ttfFont__init(ttf, &dir->ttm->super, DebugRepaint,
+                  (gs_debug_c('Y') ? DebugPrint : NULL), mem);
     return ttf;
 }
 

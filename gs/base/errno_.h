@@ -24,7 +24,12 @@
 #include <errno.h>
 #ifndef errno			/* in case it was #defined (very implausible!) */
 extern int errno;
+#endif
 
+/* Some systems don't have EILSEQ, so (following GNU iconv) we use */
+/* ENOENT instead if necessary. */
+#ifndef EILSEQ
+#  define EILSEQ ENOENT
 #endif
 
 #endif /* errno__INCLUDED */

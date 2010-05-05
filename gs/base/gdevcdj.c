@@ -1889,6 +1889,7 @@ typedef struct {
   int   ln_idx;
   int   vskip1;
   int   vskip2;
+  const gs_memory_t *mem;
 } ep_globals;
 
 
@@ -2034,7 +2035,7 @@ ep_print_image(FILE *prn_stream, ep_globals *eg, char cmd, byte *data, int size)
     memset(eg->storage, 0, eg->storage_size_words * W);
     return 0;
   default:			/* This should not happen */
-    errprintf("ep_print_image: illegal command character `%c'.\n", cmd);
+    errprintf(eg->mem, "ep_print_image: illegal command character `%c'.\n", cmd);
     return 1;
   }
 
@@ -2072,6 +2073,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 
   memset(&eg, 0, sizeof(eg));
   eg.img_rows=BJC_HEAD_ROWS;
+  eg.mem=pdev->memory;
 
   /* Tricks and cheats ... */
   switch (ptype) {
@@ -3744,7 +3746,7 @@ bjc_fscmyk(byte** inplanes, byte* outplanes[4][4], int** errplanes,
       }
 
 #ifdef CDJ_DEBUG_FS
-      for(i = 0; i < 4; ++i) errprintf(
+      for(i = 0; i < 4; ++i) errprintf_nomem(
          "CMYK_THRESHOLD(%d)=%5d, spotsize(%d)=%5d, emin(%d)=%5d, emax(%d)=%5d\n",
          i,CMYK_THRESHOLD(i),i,SPOTSIZE(i),i,EMIN(i),i,EMAX(i));
 #endif

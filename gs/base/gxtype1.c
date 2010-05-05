@@ -309,7 +309,10 @@ gs_type1_endchar(gs_type1_state * pcis)
 	    buf0[l0] = 0;
 	    memcpy(buf1, gstr.data, l1);
 	    buf1[l1] = 0;
-	    eprintf2("The font '%s' misses the glyph '%s' . Continue skipping the glyph.", buf0, buf1);
+            emprintf2(pfont->memory,
+                      "The font '%s' misses the glyph '%s' . Continue skipping the glyph.",
+                      buf0,
+                      buf1);
 	    return 0;
 	}
 	if (code < 0)

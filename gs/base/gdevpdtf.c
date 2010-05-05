@@ -681,7 +681,9 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 	    len = min(gs_font_name_max, font->font_name.size);
 	    memcpy(name, font->font_name.chars, len);
 	    name[len] = 0;
-	    eprintf1("\nWarning: %s cannot be embedded because of licensing restrictions\n", name);
+	    emprintf1(pdev->memory,
+                      "\nWarning: %s cannot be embedded because of licensing restrictions\n",
+                      name);
 	    return FONT_EMBED_NO;
 	}
     }

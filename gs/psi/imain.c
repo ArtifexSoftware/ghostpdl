@@ -446,7 +446,9 @@ gs_main_run_file_open(gs_main_instance * minst, const char *file_name, ref * pfr
 {
     gs_main_set_lib_paths(minst);
     if (gs_main_lib_open(minst, file_name, pfref) < 0) {
-	eprintf1("Can't find initialization file %s.\n", file_name);
+	emprintf1(minst->heap,
+                  "Can't find initialization file %s.\n",
+                  file_name);
 	return_error(e_Fatal);
     }
     r_set_attrs(pfref, a_execute + a_executable);
@@ -474,7 +476,9 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     scanner_init(&state, &ifile);
     code = scan_token(i_ctx_p, &first_token, &state);
     if (code != 0 || !r_has_type(&first_token, t_integer)) {
-	eprintf1("Initialization file %s does not begin with an integer.\n", gs_init_file);
+	emprintf1(minst->heap,
+                  "Initialization file %s does not begin with an integer.\n",
+                  gs_init_file);
 	*pexit_code = 255;
 	return_error(e_Fatal);
     }
@@ -775,7 +779,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    code = interp_reclaim(&minst->i_ctx_p, avm_global);
 
 	    if (code < 0) {
-		eprintf1("ERROR %d reclaiming the memory while the interpreter finalization.\n", code);
+		emprintf1(minst->heap,
+                          "ERROR %d reclaiming the memory while the interpreter finalization.\n",
+                          code);
 		return e_Fatal;
 	    }
 	    i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
@@ -795,8 +801,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 		0 , &exit_code, &error_object);
 	    code = gs_closedevice(pdev);
 	    if (code < 0)
-		eprintf2("ERROR %d closing %s device. See gs/src/ierrors.h for code explanation.\n",
-		    code, dname);
+		emprintf2(pdev->memory,
+                          "ERROR %d closing %s device. See gs/src/ierrors.h for code explanation.\n",
+                          code,
+                          dname);
 	    rc_decrement(pdev, "gs_main_finit");		/* device might be freed */
 	    if (exit_status == 0 || exit_status == e_Quit)
 		exit_status = code;
@@ -821,7 +829,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         i_plugin_holder *h = i_ctx_p->plugin_list;
         code = alloc_restore_all(idmemory);
 	if (code < 0)
-	    eprintf1("ERROR %d while the final restore. See gs/src/ierrors.h for code explanation.\n", code);
+	    emprintf1(mem_raw,
+                      "ERROR %d while the final restore. See gs/src/ierrors.h for code explanation.\n",
+                      code);
         i_plugin_finit(mem_raw, h);
     }
 #ifndef PSI_INCLUDED

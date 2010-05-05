@@ -35,9 +35,6 @@ static int make_font(i_ctx_t *, const gs_matrix *);
 static void make_uint_array(os_ptr, const uint *, int);
 static int setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding);
 
-/* The (global) font directory */
-gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
-
 /* Mark a glyph as a PostScript name (if it isn't a CID). */
 bool
 zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
@@ -451,7 +448,9 @@ purge_if_name_removed(const gs_memory_t *mem, cached_char * cc, void *vsave)
 int 
 font_restore(const alloc_save_t * save)
 {
-    gs_font_dir *pdir = ifont_dir;
+
+    gs_memory_t *smem = gs_save_any_memory(save);
+    gs_font_dir *pdir = smem->gs_lib_ctx->font_dir;
     const gs_memory_t *mem = 0;
     int code;
 

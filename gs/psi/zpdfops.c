@@ -21,6 +21,14 @@
 #include "iutil.h"
 #include "gspath.h"
 #include "math_.h"
+#include "ialloc.h"
+#include "malloc_.h"
+#include "string_.h"
+#include "store.h"
+
+#ifdef HAVE_LIBIDN
+#  include <stringprep.h>
+#endif
 
 /* Construct a smooth path passing though a number of points  on the stack */
 /* for PDF ink annotations. The program is based on a very simple method of */
@@ -117,10 +125,79 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+#ifdef HAVE_LIBIDN
+/* Given a UTF-8 password string, convert it to the canonical form
+ * defined by SASLprep (RFC 4013).  This is a permissive implementation,
+ * suitable for verifying existing passwords but not for creating new
+ * ones -- if you want to create a new password, you'll need to add a
+ * strict mode that returns stringprep errors to the user, and uses the
+ * STRINGPREP_NO_UNASSIGNED flag to disallow unassigned characters.
+ * <string> .saslprep <string> */
+static int
+zsaslprep(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    uint input_size = r_size(op);
+    byte *buffer;
+    uint buffer_size;
+    uint output_size;
+    Stringprep_rc err;
+
+    check_read_type(*op, t_string);
+
+    /* According to http://unicode.org/faq/normalization.html, converting
+     * a UTF-8 string to normalization form KC has a worst-case expansion
+     * factor of 11, so we allocate 11 times the length of the string plus
+     * 1 for the NUL terminator.  If somehow that's still not big enough,
+     * stringprep will return STRINGPREP_TOO_SMALL_BUFFER; there's no
+     * danger of corrupting memory. */
+    buffer_size = input_size * 11 + 1;
+    buffer = ialloc_string(buffer_size, "saslprep result");
+    if (buffer == 0)
+        return_error(e_VMerror);
+
+    memcpy(buffer, op->value.bytes, input_size);
+    buffer[input_size] = '\0';
+
+    err = stringprep((char *)buffer, buffer_size, 0, stringprep_saslprep);
+    if (err != STRINGPREP_OK) {
+	ifree_string(buffer, buffer_size, "saslprep result");
+
+	/* Since we're just verifying the password to an existing
+	 * document here, we don't care about "invalid input" errors
+	 * like STRINGPREP_CONTAINS_PROHIBITED.  In these cases, we
+	 * ignore the error and return the original string unchanged --
+	 * chances are it's not the right password anyway, and if it
+	 * is we shouldn't gratuitously fail to decrypt the document.
+	 *
+	 * On the other hand, errors like STRINGPREP_NFKC_FAILED are
+	 * real errors, and should be returned to the user.
+	 *
+	 * Fortunately, the stringprep error codes are sorted to make
+	 * this easy: the errors we want to ignore are the ones with
+	 * codes less than 100. */
+	if ((int)err < 100)
+	    return 0;
+
+	return_error(e_ioerror);
+    }
+
+    output_size = strlen((char *)buffer);
+    buffer = iresize_string(buffer, buffer_size, output_size,
+	"saslprep result");	/* can't fail */
+    make_string(op, a_all | icurrent_space, output_size, buffer);
+
+    return 0;
+}
+#endif
+
 /* ------ Initialization procedure ------ */
 
 const op_def zpdfops_op_defs[] =
 {
     {"0.pdfinkpath", zpdfinkpath},
+#ifdef HAVE_LIBIDN
+    {"1.saslprep", zsaslprep},
+#endif
     op_def_end(0)
 };

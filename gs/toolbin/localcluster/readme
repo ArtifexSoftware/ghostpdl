@@ -1,16 +1,20 @@
 How to setup a new computer to run regression jobs on the Artifex Cluster:
 
-1.  Get limited access passwordless ssh to the regression server:
+1.  Setup limited access passwordless ssh to the regression server:
 
-    Move the cluster_key file to your ~/.ssh directory.
+    Copy the cluster_key file to your ~/.ssh directory (you can find this file
+    on casper in /home/regression/cluster_key).
 
-    Verify that the permission of this file is 600.
+    Change the permission of this file is 600.
 
-    Choose a name for your machine, this has to be unique within the
-    cluster (currently in use names are i7, i7a, imac, macpro, and peeves).
+    Choose a name for your cluster node.  This does not have to match
+    the hostname but does have to be unique within the cluster (check
+    the dashboard at http://ghostscript.com/regression/index.html for
+    a list of the current cluster node names).
 
-    Inform Marcos of the name so that he can add it to the list
-    of machines allowed to send commands to the server.
+    Inform Marcos of the name so that he can add it to the list of
+    machines allowed to send commands to the server (which involves
+    editing the file /home/regression/.ssh/authprogs.conf on casper).
 
     After Marcos lets you know that your machine has been added you
     should be able to to run a very limited set of commands via ssh
@@ -26,11 +30,9 @@ How to setup a new computer to run regression jobs on the Artifex Cluster:
       ssh -i ~/.ssh/cluster_key regression@casper.ghostscript.com \
         touch /home/regression/cluster/your_machine_name.test
 
-2.  Make a directory where the cluster software can live, the default
-    location is cluster, which is where tar should have installed this
-    file and the others included with it, but if you prefer this can be
-    anywhere you like.  If you've chosen a different directory move the
-    files from this directory to it and cd to it.
+2.  Make a directory where the cluster software can live, the
+    location on the other nodes is ~/cluster but it can be anywhere
+    you like.
 
 3.  Checkout the various test files and source code by executing the
     setup_cluster script.  You may already have copies of these files
@@ -41,33 +43,53 @@ How to setup a new computer to run regression jobs on the Artifex Cluster:
     vary based on what else casper is doing at the time and your
     internet connection speed.
 
-4.  Modify the clusterpull.sh script by editing the line:
+4.  Test to make sure that your system can compile Ghostscript and the
+    other languages using the same configuration that the cluster uses:
+
+    cd ghostpdl/gs
+    ./autogen.sh "CC=gcc -m64" --disable-cups --disable-fontconfig \
+      --disable-cairo --without-system-libtiff --prefix=/tmp/gs
+    make
+    make install
+    /tmp/gs/bin/gs -o test.ppm -sDEVICE=ppmraw ./examples/tiger.eps 
+    cd ../..
+
+    cd ghostpdl
+    make pcl "CC=gcc -m64" "CCLD=gcc -m64" 
+    main/obj/pcl6 -h
+    make xps "CC=gcc -m64" "CCLD=gcc -m64" 
+    xps/obj/gxps -h
+    cd ..
+
+5.  Copy the clusterpull.sh script from the
+    ghostpdl/gs/toolbin/localcluster directory and change it by editing
+    the line:
 
       set machine=REPLACE_WITH_YOUR_MACHINE_NAME
 
-5.  Add the following to your crontab, this schedules the clusterpull.sh
+6.  Add the following to your crontab, this schedules the clusterpull.sh
     script run once every minute (you'll have to appropriately change
-    the directory name):
+    user_name and possibly the directory name):
 
-    * * * * * cd /home/regression/cluster ; ./clusterpull.sh
+    * * * * * cd /home/user_name/cluster ; ./clusterpull.sh
 
-    Note that the clusterpull.sh script is fairly low impact, it sends
-    a heartbeat signal to casper via 'ssh touch' and checks to see if a
-    job is ready to run by attempting to scp a file from casper.
+    Note that the clusterpull.sh script is fairly low impact; once a
+    minute it sends a heartbeat signal to casper via 'ssh touch' and
+    checks to see if a job is ready to run by attempting to scp a file
+    from casper.
 
-6.  Viola!  Sit back, relax, and watch your cpu load climb to the roof
+7.  Viola!  Sit back, relax, and watch your cpu load climb to the roof
     the next time someone does a commit.
 
-    Note that the cluster self-balances for load, the initial assumption
-    is that the new node is of average speed (which is a 3.2 GHz i7).
-    After each cluster run is completed the number of jobs assigned to
-    each node is slowly adjusted based on the time it took to complete
-    its jobs.
+    You don't need to keep your machine up 24/7, since if a node hasn't
+    sent a heartbeat in a while (currently defined to be three minutes)
+    it is assumed that machine is down and it won't be assigned any
+    cluster jobs.
 
-    Also, if a machine hasn't sent a heartbeat in a while (currently
-    defined to be three minutes) it is assumed that machine is down
-    and it won't be assigned any jobs.  If a machine goes down during
-    a cluster run that will also be detected, all of the jobs will be
-    aborted and a new run will be started with the machines that are
-    up at that time.
+    Similarly you can shutdown/reboot your machine without conern that
+    it's currently running any cluster tasks since when a machine goes
+    down during a cluster run the jobs that it has already completed
+    will be assigned to the remaining nodes (under rare circurmstacnes
+    (i.e. if all of the other nodes are already finished when the final
+    node goes down) the cluster job will be restarted from scratch).
 

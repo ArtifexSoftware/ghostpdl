@@ -181,7 +181,9 @@ copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
 		m = sizeof(buf) - 1 - l;
 		if (!m) {
 		    sfclose(f);
-		    eprintf1("The procset %s contains a too long line.", fname);
+		    emprintf1(s->memory,
+                              "The procset %s contains a too long line.",
+                              fname);
 		    return_error(gs_error_ioerror);
 		}
 		n = sfread(buf + l, 1, m, f);
@@ -1557,7 +1559,8 @@ pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs
 static int
 pdf_put_encoded_hex_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
-    eprintf("Unimplemented function : pdf_put_encoded_hex_string\n");
+    emprintf(pdev->memory,
+             "Unimplemented function : pdf_put_encoded_hex_string\n");
     stream_write(pdev->strm, str, size);
     return_error(gs_error_unregistered);
 }

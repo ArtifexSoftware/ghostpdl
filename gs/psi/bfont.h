@@ -26,8 +26,9 @@ int add_FID(i_ctx_t *i_ctx_p, ref *pfdict, gs_font *pfont,
 
 font_proc_make_font(zdefault_make_font);
 font_proc_make_font(zbase_make_font);
+
 /* The global font directory */
-extern gs_font_dir *ifont_dir;
+#define ifont_dir (gs_lib_ctx_get_interp_instance(imemory)->font_dir)
 
 /* Structure for passing BuildChar and BuildGlyph procedures. */
 typedef struct build_proc_refs_s {
@@ -73,7 +74,7 @@ int build_gs_font(i_ctx_t *, os_ptr, gs_font **, font_type,
 int build_gs_sub_font(i_ctx_t *, const ref *, gs_font **,
 		      font_type, gs_memory_type_ptr_t,
 		      const build_proc_refs *, const ref *, ref *);
-int define_gs_font(gs_font *);
+int define_gs_font(i_ctx_t *, gs_font *);
 void get_font_name(const gs_memory_t *mem, ref *pfname, const ref *op);
 void copy_font_name(gs_font_name * pfstr, const ref * pfname);
 gs_glyph zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored);

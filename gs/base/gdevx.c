@@ -580,7 +580,7 @@ x_copy_image(gx_device_X * xdev, const byte * base, int sourcex, int raster,
 	    xdev->image.bytes_per_line = 0;
 	xdev->image.bits_per_pixel = depth;
 	if (XInitImage(&xdev->image) == 0){
-	    errprintf("XInitImage failed in x_copy_image.\n");
+	    errprintf_nomem("XInitImage failed in x_copy_image.\n");
 	    return_error(gs_error_unknownerror);
 	}
 	XPutImage(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,

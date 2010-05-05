@@ -228,7 +228,7 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
 	return code;
     /* This is a new font, fill it in. */
     charstring_font_init(pfont, pfr, pdata1);
-    return define_gs_font((gs_font *)pfont);
+    return define_gs_font(i_ctx_p, (gs_font *)pfont);
 }
 
 /* ------ Operators ------ */

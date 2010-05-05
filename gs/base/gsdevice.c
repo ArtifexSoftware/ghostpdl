@@ -937,13 +937,17 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
  	code = parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
   					 pfile, NULL, 0);
  	if (code)
-     	    eprintf1("**** Could not open the file %s .\n", parsed.fname);
+     	    emprintf1(dev->memory,
+                      "**** Could not open the file %s .\n",
+                      parsed.fname);
  	return code;
     }
-    *pfile = gp_open_printer((pfname[0] ? pfname : fname), binary);
+    *pfile = gp_open_printer(dev->memory, (pfname[0] ? pfname : fname), binary);
     if (*pfile)
   	return 0;
-    eprintf1("**** Could not open the file %s .\n", (pfname[0] ? pfname : fname));
+    emprintf1(dev->memory,
+              "**** Could not open the file %s .\n",
+              (pfname[0] ? pfname : fname));
     return_error(gs_error_invalidfileaccess);
 }
 
@@ -966,6 +970,6 @@ gx_device_close_output_file(const gx_device * dev, const char *fname,
 	if (parsed.iodev != iodev_default(dev->memory))
 	    return parsed.iodev->procs.fclose(parsed.iodev, file);
     }
-    gp_close_printer(file, (parsed.fname ? parsed.fname : fname));
+    gp_close_printer(dev->memory, file, (parsed.fname ? parsed.fname : fname));
     return 0;
 }

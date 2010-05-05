@@ -196,7 +196,9 @@ gp_enumerate_files_close(file_enum * pfen)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+gp_open_scratch_file(const gs_memory_t *mem,
+                     const char        *prefix,
+                           char         fname[gp_file_name_sizeof],
 		     const char *mode)
 {
     FILE *f;

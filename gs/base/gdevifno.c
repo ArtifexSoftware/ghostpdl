@@ -290,7 +290,7 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 
 	gsbpl = gdev_prn_raster(pdev);
 	if(gsbpl > 16384) {	/* == 8192 dots across */
-		errprintf("bitmap far too wide for inferno\n");
+		errprintf(pdev->memory, "bitmap far too wide for inferno\n");
 		return_error(gs_error_Fatal);
 	}
 
@@ -307,13 +307,13 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
 	bpl = bytesperline(r, ldepth);
 	w = initwriteimage(f, r, ldepth, bdev->memory);
 	if(w == nil) {
-		errprintf("initwriteimage failed\n");
+		errprintf(pdev->memory, "initwriteimage failed\n");
 		return_error(gs_error_Fatal);
 	}
 
 	buf = gs_alloc_bytes(bdev->memory, gsbpl, "inferno line buffer");
 	if(buf == NULL) {
-		errprintf("couldn't allocate line buffer\n");
+		errprintf(pdev->memory, "couldn't allocate line buffer\n");
 		return_error(gs_error_VMerror);
 	}
 
@@ -466,7 +466,7 @@ addbuf(WImage *w, uchar *buf, int nbuf)
 	int n;
 	if(buf == nil || w->outp+nbuf > w->eout) {
 		if(w->loutp==w->outbuf){	/* can't really happen -- we checked line length above */
-			errprintf("buffer too small for line\n");
+			errprintf_nomem("buffer too small for line\n");
 			return ERROR;
 		}
 		n=w->loutp-w->outbuf;
@@ -670,7 +670,7 @@ initwriteimage(FILE *f, Rectangle r, int ldepth, gs_memory_t *mem)
 
 	bpl = bytesperline(r, ldepth);
 	if(r.max.y <= r.min.y || r.max.x <= r.min.x || bpl <= 0) {
-		errprintf("bad rectangle, ldepth");
+		errprintf(mem, "bad rectangle, ldepth");
 		return nil;
 	}
 
@@ -710,7 +710,7 @@ writeimageblock(WImage *w, uchar *data, int ndata, gs_memory_t *mem)
 				return ERROR;
 		addbuf(w, nil, 0);
 		if(w->r.min.y != w->origr.max.y) {
-			errprintf("not enough data supplied to writeimage\n");
+			errprintf(mem, "not enough data supplied to writeimage\n");
 		}
 		gs_free_object(mem, w, "inferno image");
 		return 0;

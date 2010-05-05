@@ -319,7 +319,7 @@ win_pr2_open(gx_device * dev)
 	pd.hDevNames = NULL;
     }
     if (!(GetDeviceCaps(wdev->hdcprn, RASTERCAPS) != RC_DIBTODEV)) {
-	errprintf( "Windows printer does not have RC_DIBTODEV\n");
+	errprintf(dev->memory, "Windows printer does not have RC_DIBTODEV\n");
 	DeleteDC(wdev->hdcprn);
 	return gs_error_limitcheck;
     }
@@ -344,7 +344,8 @@ win_pr2_open(gx_device * dev)
     }
 
     if (StartDoc(wdev->hdcprn, &docinfo) <= 0) {
-	errprintf("Printer StartDoc failed (error %08x)\n", GetLastError());
+	errprintf(dev->memory,
+                  "Printer StartDoc failed (error %08x)\n", GetLastError());
 	DeleteDC(wdev->hdcprn);
 	return gs_error_limitcheck;
     }
@@ -393,7 +394,8 @@ win_pr2_open(gx_device * dev)
     /* gdev_prn_open opens a temporary file which we don't want */
     /* so we specify the name now so we can delete it later */
     wdev->fname[0] = '\0';
-    pfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
+    pfile = gp_open_scratch_file(dev->memory,
+                                 gp_scratch_file_name_prefix,
 				 wdev->fname, "wb");
     fclose(pfile);
     code = gdev_prn_open(dev);

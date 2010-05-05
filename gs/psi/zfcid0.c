@@ -505,7 +505,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphDirectory, &GlyphDirectory);
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphData, &GlyphData);
     ref_assign(&pfont_data(pfont)->u.cid0.DataSource, &DataSource);
-    code = define_gs_font((gs_font *)pfont);
+    code = define_gs_font(i_ctx_p, (gs_font *)pfont);
     if (code >= 0)
        code = gs_notify_register(&pfont->notify_list, notify_remove_font_type9, pfont);
     if (code >= 0) {

@@ -62,13 +62,6 @@ typedef struct psdf_image_params_s {
     const stream_template *filter_template;
 } psdf_image_params;
 
-#define psdf_image_param_defaults(af, res, dst, f, ft)\
-  NULL/*ACSDict*/, 0/*false*/, af, -1, NULL/*Dict*/, 1/*true*/,\
-  dst, ds_Subsample, 1/*true*/, f, res, "/JPEG2000", ft
-
-/* Declare templates for default image compression filters. */
-extern const stream_template s_CFE_template;
-
 /* Complete distiller parameters. */
 typedef struct psdf_distiller_params_s {
 
@@ -143,38 +136,21 @@ typedef struct psdf_distiller_params_s {
 #define psdf_ucrbg_names\
 	"Preserve", "Remove"
 
-#define psdf_general_param_defaults(ascii)\
-  ascii, arp_None, binding_Left, 1/*true*/,\
-  ri_Default, 1 /*true*/, 0 /*false*/,\
-  500000, 0 /*false*/, 0/*false*/, 1,\
-  0 /*false*/, 1 /*true*/,\
-	/* Color processing parameters */\
-  {0}, {0}, {0}, {0},\
-  ccs_LeaveColorUnchanged, 0/*false*/, 0/*false*/, tfi_Preserve, ucrbg_Remove
-
     /* Color sampled image parameters */
 
     psdf_image_params ColorImage;
     bool ConvertCMYKImagesToRGB;
     bool ConvertImagesToIndexed;
 
-#define psdf_color_image_param_defaults\
-  { psdf_image_param_defaults(1/*true*/, 72, 1.5, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) },\
-  0/*false*/, 1/*true*/
-
     /* Grayscale sampled image parameters */
 
     psdf_image_params GrayImage;
 
-#define psdf_gray_image_param_defaults\
-  { psdf_image_param_defaults(1/*true*/, 72, 1.5, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) }
 
     /* Monochrome sampled image parameters */
 
     psdf_image_params MonoImage;
 
-#define psdf_mono_image_param_defaults\
-  { psdf_image_param_defaults(0/*false*/, 300, 2.0, "CCITTFaxEncode", &s_CFE_template) }
 
     /* Font embedding parameters */
 
@@ -191,11 +167,94 @@ typedef struct psdf_distiller_params_s {
     int MaxSubsetPct;
     bool SubsetFonts;
 
-#define psdf_font_param_defaults\
-  {0}, {0}, cefp_Warning, 1/*true*/, 100, 1/*true*/
-
 } psdf_distiller_params;
 
+/* Declare templates for default image compression filters. */
+extern const stream_template s_CFE_template;
+extern const stream_template s_zlibE_template;
+
+/* define some macros to use in setting up the default values of the pdfwrite device */
+#define psdf_general_param_defaults(ascii)\
+    ascii,	    /* ASCIIEncodePages */ \
+    arp_None,	    /* Auto-RotatePages */ \
+    binding_Left,   /* Binding */\
+    1,		    /* CompressPages (true) */ \
+    ri_Default,	    /* rendering intent */ \
+    1,		    /* DetectBlends (true) */ \
+    0,		    /* DoThumbnails (false) */ \
+    500000,	    /* ImageMemory */ \
+    0,		    /* LockDistillerParams (false) */ \
+    0,		    /* LZWEncodePages (false) */ \
+    1,		    /* Overprintmode (OPM) */ \
+    0,		    /* PreserveOPIComments (false) */ \
+    1,		    /* UseFlateCompression (true) */ \
+	/* Color processing parameters */\
+    {0},	    /* calCMYKProfile */ \
+    {0},	    /* CalGrayProfile */ \
+    {0},	    /* calRGBProfile */ \
+    {0},	    /* sRGBProfile */ \
+    ccs_LeaveColorUnchanged, /* ColorConversionStrategy */ \
+    0,		    /* PreserveHalftoneInfo (false) */ \
+    0,		    /* PreserveOverprintSettings (false) */ \
+    tfi_Preserve,   /* TransferFunctionInfo */ \
+    ucrbg_Remove    /* UCRandBGInfo */
+
+#define psdf_color_image_param_defaults\
+  { NULL,	    /* ACSDict (JPEG) */ \
+    0,		    /* AntiAlias (false) */ \
+    0,		    /* AutoFilter (false) */ \
+    -1,		    /* Depth */ \
+    NULL,	    /* Dict (JPEG or CCITTFax) */ \
+    0,		    /* Downsample (false) */ \
+    1.5,	    /* Donwsample threshold */ \
+    ds_Subsample,   /* Downsample type */ \
+    1,		    /* Encode (true) */ \
+    0,  /* compression filter */ \
+    150,	    /* Downsample resolution */ \
+    "JPEG2000",	    /* AutoFilterStrategy */ \
+    &s_zlibE_template	/* Filter stream template */ \
+    },  0,	    /* ConvertCMYKImagesToRGB (false) */ \
+    1		    /* ConvertImagesToIndexed (true) */
+
+#define psdf_gray_image_param_defaults\
+  { NULL,	    /* ACSDict (JPEG) */ \
+    0,		    /* AntiAlias (false) */ \
+    0,		    /* AutoFilter (false) */ \
+    -1,		    /* Depth */ \
+    NULL,	    /* Dict (JPEG or CCITTFax) */ \
+    0,		    /* Downsample (false) */ \
+    1.5,	    /* Donwsample threshold */ \
+    ds_Subsample,   /* Downsample type */ \
+    1,		    /* Encode (true) */ \
+    0,  /* compression filter */ \
+    150,	    /* Downsample resolution */ \
+    "JPEG2000",	    /* AutoFilterStrategy */ \
+    &s_zlibE_template	/* Filter stream template */ \
+     }
+
+#define psdf_mono_image_param_defaults\
+  { NULL,	    /* ACSDict (JPEG) */ \
+    0,		    /* AntiAlias (false) */ \
+    0,		    /* AutoFilter (false) */ \
+    -1,		    /* Depth */ \
+    NULL,	    /* Dict (JPEG or CCITTFax) */ \
+    0,		    /* Downsample (false) */ \
+    2.0,	    /* Donwsample threshold */ \
+    ds_Subsample,   /* Downsample type */ \
+    1,		    /* Encode (true) */ \
+    "CCITTFaxEncode",  /* compression filter */ \
+    300,	    /* Downsample resolution */ \
+    "JPEG2000",	    /* AutoFilterStrategy */ \
+    &s_CFE_template	/* Filter stream template */ \
+    }
+
+#define psdf_font_param_defaults\
+    {0},	    /* AlwaysEmbed (array of names) */ \
+    {0},	    /* NeverEmbed (array of names) */ \
+    cefp_Warning,   /* CannotEmbedFontPolicy */ \
+    1,		    /* EmbedAllFonts (true) */ \
+    100,	    /* Max Subset Percent */ \
+    1		    /* Subset Fonts (true) */
 
 
 /* Define PostScript/PDF versions, corresponding roughly to Adobe versions. */

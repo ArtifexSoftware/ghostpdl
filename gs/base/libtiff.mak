@@ -170,15 +170,16 @@ $(TIFFGEN)libtiff.dev : $(TOP_MAKEFILES) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev
 
 
 # Define the shared version.
-$(TIFFGEN)libtiff_1.dev : $(TOP_MAKEFILES) $(LIBTIFF_MAK) $(ECHOGS_XE) $(JPEGGEN)jpeg.dev
+$(TIFFGEN)libtiff_1.dev : $(TOP_MAKEFILES) $(LIBTIFF_MAK) $(ECHOGS_XE) $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev
 	$(SETMOD) $(TIFFGEN)libtiff_1 -lib $(LIBTIFF_NAME)
-	$(ADDMOD) $(TIFFGEN)libtiff_1 -include $(JPEGGEN)jpeg.dev
+	$(ADDMOD) $(TIFFGEN)libtiff_1 -include $(JPEGGEN)jpegd.dev
+	$(ADDMOD) $(TIFFGEN)libtiff_1 -include $(JPEGGEN)jpege.dev
 
 # Define the non-shared version.
 $(TIFFGEN)libtiff_0.dev : $(LIBTIFF_MAK) $(ECHOGS_XE) \
     $(tiff_1) $(tiff_2) $(tiff_3) $(tiff_4) $(tiff_5) \
     $(tiff_6) $(tiff_7) $(tiff_8) $(tiff_9) $(tiff_10) \
-    $(JPEGGEN)jpeg.dev
+    $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev
 	$(SETMOD) $(TIFFGEN)libtiff_0 $(tiff_1)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_2)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_3)
@@ -189,5 +190,6 @@ $(TIFFGEN)libtiff_0.dev : $(LIBTIFF_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_8)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_9)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_10)
-	$(ADDMOD) $(TIFFGEN)libtiff_0 -include $(JPEGGEN)jpeg.dev
+	$(ADDMOD) $(TIFFGEN)libtiff_0 -include $(JPEGGEN)jpegd.dev
+	$(ADDMOD) $(TIFFGEN)libtiff_0 -include $(JPEGGEN)jpege.dev
 

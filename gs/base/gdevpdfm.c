@@ -723,7 +723,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    if (pdf_key_eq(pair, "/F")) {
 		code = sscanf((const char *)pair[1].data, "%ld", &Flags);
 		if (code != 1)
-		    eprintf("Annotation has an invalid /Flags attribute\n");
+		    emprintf(pdev->memory,
+                             "Annotation has an invalid /Flags attribute\n");
 		break;
 	    }
 	}
@@ -734,7 +735,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		 * output file will not be PDF/A compliant
 		 */
 		case 0:
-		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, reverting to normal PDF output\n");
+		    emprintf(pdev->memory,
+                             "Annotation set to non-printing,\n not permitted in PDF/A, reverting to normal PDF output\n");
 		    pdev->AbortPDFAX = true;
 		    pdev->PDFA = false;
 		    break;
@@ -742,11 +744,13 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		     * include it, but warn the user that it has been dropped.
 		     */
 		case 1:
-		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, annotation will not be present in output file\n");
+		    emprintf(pdev->memory,
+                             "Annotation set to non-printing,\n not permitted in PDF/A, annotation will not be present in output file\n");
 		    return 0;
 		    break;
 		default:
-		    eprintf("Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+		    emprintf(pdev->memory,
+                             "Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
 		    pdev->AbortPDFAX = true;
 		    pdev->PDFA = false;
 		    break;
@@ -813,7 +817,9 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
     if (pnode->action != NULL)
 	pnode->action->id = pnode->id;
     else {
-	eprintf1("pdfmark error: Outline node %ld has no action or destination.\n", pnode->id);
+	emprintf1(pdev->memory,
+                  "pdfmark error: Outline node %ld has no action or destination.\n",
+                  pnode->id);
 	code = gs_note_error(gs_error_undefined);
     }
     s = pdev->strm;
@@ -1138,7 +1144,7 @@ pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
 /* Check that pass-through PostScript code is a string. */
 static bool
-ps_source_ok(const gs_param_string * psource)
+ps_source_ok(const gs_memory_t *mem, const gs_param_string * psource)
 {
     if (psource->size >= 2 && psource->data[0] == '(' &&
 	psource->data[psource->size - 1] == ')'
@@ -1148,8 +1154,8 @@ ps_source_ok(const gs_param_string * psource)
 	int i;
 	lprintf("bad PS passthrough: ");
 	for (i=0; i<psource->size; i++)
-	    errprintf("%c", psource->data[i]);
-	errprintf("\n");
+	    errprintf(mem, "%c", psource->data[i]);
+	errprintf(mem, "\n");
 	return false;
     }
 }
@@ -1208,9 +1214,9 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     gs_param_string level1;
 
     if (!pdfmark_find_key("/DataSource", pairs, count, &source) ||
-	!ps_source_ok(&source) ||
+	!ps_source_ok(pdev->memory, &source) ||
 	(pdfmark_find_key("/Level1", pairs, count, &level1) &&
-	 !ps_source_ok(&level1))
+	 !ps_source_ok(pdev->memory, &level1))
 	)
 	return_error(gs_error_rangecheck);
     if (level1.data == 0 && source.size <= MAX_PS_INLINE && objname == 0) {

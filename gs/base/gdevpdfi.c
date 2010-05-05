@@ -258,7 +258,7 @@ make_device_color_space(gx_device_pdf *pdev,
 	       Don't emit rangecheck becuause it would fall back
 	       to a default implementation (rasterisation). 
 	     */
-	    eprintf("Unsupported ProcessColorModel");
+	    emprintf(mem, "Unsupported ProcessColorModel");
 	    return_error(gs_error_undefined);
     }
     if (cs == NULL)
@@ -684,7 +684,8 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 		 strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
 		(pdev->params.ColorConversionStrategy == ccs_Gray && 
 		 strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
-		eprintf("ColorConversionStrategy isn't compatible to ProcessColorModel.");
+		emprintf(pdev->memory, "ColorConversionStrategy isn't "
+                         "compatible to ProcessColorModel.");
 		return_error(gs_error_rangecheck);
 	    }
 	    convert_to_process_colors = true;
@@ -698,7 +699,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    case gs_color_space_index_DeviceRGB:  sname = names->DeviceRGB;  break;
 	    case gs_color_space_index_DeviceCMYK: sname = names->DeviceCMYK; break;
 	    default:
-		eprintf("Unsupported ProcessColorModel.");
+		emprintf(pdev->memory, "Unsupported ProcessColorModel.");
 		return_error(gs_error_undefined);
 	}
 	cos_c_string_value(&cs_value, sname);

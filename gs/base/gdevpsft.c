@@ -712,11 +712,14 @@ write_post(stream *s, gs_font *font, post_t *post)
     return 0;
 }
 
-static inline bool check_position(int pos1, int pos2)
+static inline bool check_position(const gs_memory_t *mem, int pos1, int pos2)
 { 
     if (pos1 == pos2)
 	return false;
-    eprintf2("Actual TT subtable offset %d differs from one in the TT header %d.\n", pos1, pos2);
+    emprintf2(mem,
+              "Actual TT subtable offset %d differs from one in the TT header %d.\n",
+              pos1,
+              pos2);
     return true;
 }
 
@@ -942,7 +945,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	     */
 	    enlarged_numGlyphs = max_glyph + 1;
 	    if (enlarged_numGlyphs > 0xFFFF) {
-		eprintf1("The number of glyphs %d exceeds capability of True Type format.\n", enlarged_numGlyphs);
+		emprintf1(pfont->memory,
+                          "The number of glyphs %d exceeds capability of True Type format.\n",
+                          enlarged_numGlyphs);
 		return_error(gs_error_unregistered);
 	    }
 	    loca_length = (enlarged_numGlyphs + 1) << 2;
@@ -1171,7 +1176,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	/* Write glyf. */
 
-	if (check_position(subtable_positions.glyf + start_position, stell(s)))
+	if (check_position(pfont->memory,
+                           subtable_positions.glyf + start_position,
+                           stell(s)))
 	    return_error(gs_error_unregistered);
 	psf_enumerate_glyphs_reset(penum);
 	for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
@@ -1203,7 +1210,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	/* Write loca. */
 
-	if (check_position(subtable_positions.loca + start_position, stell(s)))
+	if (check_position(pfont->memory,
+                           subtable_positions.loca + start_position,
+                           stell(s)))
 	    return_error(gs_error_unregistered);
 	psf_enumerate_glyphs_reset(penum);
 	glyph_prev = 0;
@@ -1234,18 +1243,24 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	/* If necessary, write cmap, name, and OS/2. */
 
 	if (!have_cmap) {
-	    if (check_position(subtable_positions.cmap + start_position, stell(s)))
+	    if (check_position(pfont->memory,
+                               subtable_positions.cmap + start_position,
+                               stell(s)))
 		return_error(gs_error_unregistered);
 	    write_cmap(s, font, TT_BIAS, 256, GS_MIN_GLYPH_INDEX + max_glyph,
 		       options, cmap_length);
 	}
 	if (!have_name) {
-	    if (check_position(subtable_positions.name + start_position, stell(s)))
+	    if (check_position(pfont->memory,
+                               subtable_positions.name + start_position,
+                               stell(s)))
 		return_error(gs_error_unregistered);
 	    write_name(s, &font_name);
 	}
 	if (!have_OS_2) {
-	    if (check_position(subtable_positions.os_2 + start_position, stell(s)))
+	    if (check_position(pfont->memory,
+                               subtable_positions.os_2 + start_position,
+                               stell(s)))
 		return_error(gs_error_unregistered);
 	    write_OS_2(s, font, TT_BIAS, 256);
 	}
@@ -1255,7 +1270,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	if (generate_mtx)
 	    for (i = 0; i < 2; ++i)
 		if (have_hvhea[i]) {
-		    if (check_position(subtable_positions.mtx[i] + start_position, stell(s)))
+		    if (check_position(pfont->memory,
+                                       subtable_positions.mtx[i] + start_position,
+                                       stell(s)))
 			return_error(gs_error_unregistered);
 		    write_mtx(s, pfont, &mtx[i], i);
 		    put_pad(s, mtx[i].length);
@@ -1264,7 +1281,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	/* If necessary, write post. */
 
 	if (!have_post) {
-	    if (check_position(subtable_positions.post + start_position, stell(s)))
+	    if (check_position(pfont->memory,
+                               subtable_positions.post + start_position,
+                               stell(s)))
 		return_error(gs_error_unregistered);
 	    if (options & WRITE_TRUETYPE_POST) {
 		code = write_post(s, font, &post);
@@ -1294,7 +1313,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 #endif
     put_u32(head + 8, HEAD_MAGIC - file_checksum); /* per spec */
 #undef HEAD_MAGIC
-    if (check_position(subtable_positions.head + start_position, stell(s)))
+    if (check_position(pfont->memory,
+                       subtable_positions.head + start_position,
+                       stell(s)))
 	return_error(gs_error_unregistered);
     stream_write(s, head, 56);
 

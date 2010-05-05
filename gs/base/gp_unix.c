@@ -197,14 +197,18 @@ gp_getenv_display(void)
 
 /* Open a connection to a printer.  See gp.h for details. */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem,
+                      char         fname[gp_file_name_sizeof],
+                      int          binary_mode)
 {
     const char *fmode = (binary_mode ? "wb" : "w");
 
     return (strlen(fname) == 0 ? 0 : fopen(fname, fmode));
 }
 FILE *
-gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer_64(const gs_memory_t *mem,
+                         char         fname[gp_file_name_sizeof],
+                         int          binary_mode)
 {
     const char *fmode = (binary_mode ? "wb" : "w");
 
@@ -213,7 +217,7 @@ gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(FILE * pfile, const char *fname)
+gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
     if (fname[0] == '|')
 	pclose(pfile);

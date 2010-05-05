@@ -93,7 +93,8 @@ int pe_open(gx_device *dev)
 	{
 		if (!sscanf(str, "%lx", &(pedev->fbaddr)))
 		{
-			eprintf("Private Eye: PEFBADDR environment string format error\n");
+			emprintf(dev->memory,
+                                 "Private Eye: PEFBADDR environment string format error\n");
 			exit(1);
 		}
 	}
@@ -102,7 +103,8 @@ int pe_open(gx_device *dev)
 	{
 		if (!sscanf(str, "%x", &(pedev->regs)))
 		{
-			eprintf("Private Eye: PEREGS environment string format error\n");
+			emprintf(dev->memory,
+                                 "Private Eye: PEREGS environment string format error\n");
 			exit(1);
 		}
 	}

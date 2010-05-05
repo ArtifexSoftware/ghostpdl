@@ -155,7 +155,7 @@
 /* Flag for displaying debug messages at run-time.  Higher
 	number = higher detail */
 #define IM_DEBUG 0
-#define DebugMsg(Level,P1,P2) if (Level<=IM_DEBUG) {errprintf(P1,P2 );}
+#define DebugMsg(Level,P1,P2) if (Level<=IM_DEBUG) {errprintf_nomem(P1,P2 );}
 
 /*-------------------------------------------*/ 
   /* Impress bitmaps are made up of 32x32 bit swatches. 

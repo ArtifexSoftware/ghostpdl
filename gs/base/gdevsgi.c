@@ -122,7 +122,8 @@ sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor *pcur)
      IMAGE *header;
 
      if (bdev->PageCount >= 1 && !bdev->file_is_new) { /* support single page only */
-          eprintf("sgi rgb format only supports one page per file.\n"
+          emprintf(bdev->memory,
+                   "sgi rgb format only supports one page per file.\n"
                   "Please use the '%%d' OutputFile option to create one file for each page.\n");
 	  return_error(gs_error_rangecheck);
      }

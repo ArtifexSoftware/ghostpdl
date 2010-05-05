@@ -314,7 +314,7 @@ static void print_flags(ms_MediaCode flags, const ms_Flag *user_flags)
   if (user_flags != NULL) {
     while (user_flags->code != ms_none) {
       if (user_flags->code & flags) {
-	errprintf("%s", user_flags->name);
+        errprintf_nomem("%s", user_flags->name);
 	flags &= ~user_flags->code;
       }
       user_flags++;
@@ -950,7 +950,7 @@ int eprn_open_device(gx_device *device)
     str.size = 0;
     if (eprn_get_string(eprn->colour_model, eprn_colour_model_list, &str) != 0)
       assert(0); /* Bug. No harm on NDEBUG because I've just set the size. */
-    errwrite((const char *)str.data, str.size * sizeof(str.data[0]));
+    errwrite(device->memory, (const char *)str.data, str.size * sizeof(str.data[0]));
     eprintf7("),\n"
       "%s  resolution (%gx%g ppi) and intensity levels (%d, %d) is\n"
       "%s  not supported by the %s.\n",
