@@ -468,10 +468,10 @@ int jas_image_strtofmt(char *s);
 char *jas_image_fmttostr(int fmt);
 
 /* Lookup image format information by the format ID. */
-jas_image_fmtinfo_t *jas_image_lookupfmtbyid(int id);
+const jas_image_fmtinfo_t *jas_image_lookupfmtbyid(int id);
 
 /* Lookup image format information by the format name. */
-jas_image_fmtinfo_t *jas_image_lookupfmtbyname(const char *name);
+const jas_image_fmtinfo_t *jas_image_lookupfmtbyname(const char *name);
 
 /* Guess the format of an image file based on its name. */
 int jas_image_fmtfromname(char *filename);

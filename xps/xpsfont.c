@@ -105,7 +105,7 @@ xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index)
     code = xps_load_sfnt_cmap(font);
     if (code < 0)
     {
-        errprintf_nomem("warning: no cmap table found in font\n");
+        errprintf(ctx->memory, "warning: no cmap table found in font\n");
     }
 
     return font;

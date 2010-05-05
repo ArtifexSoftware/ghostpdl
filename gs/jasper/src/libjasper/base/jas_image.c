@@ -673,7 +673,7 @@ char *jas_image_fmttostr(int fmt)
 
 int jas_image_getfmt(jas_stream_t *in)
 {
-	jas_image_fmtinfo_t *fmtinfo;
+	const jas_image_fmtinfo_t *fmtinfo;
 	int found;
 	int i;
 
@@ -696,7 +696,7 @@ int jas_image_fmtfromname(char *name)
 {
 	int i;
 	char *ext;
-	jas_image_fmtinfo_t *fmtinfo;
+	const jas_image_fmtinfo_t *fmtinfo;
 	/* Get the file name extension. */
 	if (!(ext = strrchr(name, '.'))) {
 		return -1;
@@ -784,10 +784,10 @@ int jas_image_addcmpt(jas_image_t *image, int cmptno,
 	return 0;
 }
 
-jas_image_fmtinfo_t *jas_image_lookupfmtbyid(int id)
+const jas_image_fmtinfo_t *jas_image_lookupfmtbyid(int id)
 {
 	int i;
-	jas_image_fmtinfo_t *fmtinfo;
+	const jas_image_fmtinfo_t *fmtinfo;
 
 	for (i = 0, fmtinfo = jas_image_fmtinfos; i < jas_image_numfmts; ++i, ++fmtinfo) {
 		if (fmtinfo->id == id) {
@@ -797,10 +797,10 @@ jas_image_fmtinfo_t *jas_image_lookupfmtbyid(int id)
 	return 0;
 }
 
-jas_image_fmtinfo_t *jas_image_lookupfmtbyname(const char *name)
+const jas_image_fmtinfo_t *jas_image_lookupfmtbyname(const char *name)
 {
 	int i;
-	jas_image_fmtinfo_t *fmtinfo;
+	const jas_image_fmtinfo_t *fmtinfo;
 
 	for (i = 0, fmtinfo = jas_image_fmtinfos; i < jas_image_numfmts; ++i, ++fmtinfo) {
 		if (!strcmp(fmtinfo->name, name)) {

@@ -712,6 +712,7 @@ struct upd_s { /* All upd-specific data */
    int                    yscan;      /* Top-Scan (page-vari) */
    int                    yprinter;   /* Actual Y-Position (page-vari) */
    int                    yscnbuf;    /* Y not yet buffered */
+   const gs_memory_t     *memory;     /* Memory pointer - for errprintf */
 };             /* All upd-specific data */
 
 
@@ -1755,13 +1756,13 @@ and in case of the array-parameters, a succesful null-read is marked by
 setting data and size to 0.
 */
 #if UPD_MESSAGES & UPD_M_SETUP
-#define UPD_PARAM_READ(Param_read,Name,Object)       \
+#define UPD_PARAM_READ(Param_read,Name,Object,Mem)   \
    code = Param_read(plist,Name,&Object);            \
    if(0 > code) {                                    \
       code = param_read_null(plist,Name);            \
       if(0 == code) memset(&Object,0,sizeof(Object));\
    }                                                 \
-   if(!code) errprintf_nomem(                        \
+   if(!code) errprintf(Mem,                          \
       "upd_put_params: retrieved parameter \"%s\"\n",\
       Name);                                         \
    if(0 > code) {                                    \
@@ -1769,7 +1770,7 @@ setting data and size to 0.
       if(error > code) error = code;                 \
    }
 #else
-#define UPD_PARAM_READ(Param_read,Name,Object)       \
+#define UPD_PARAM_READ(Param_read,Name,Object,Mem)   \
    code = Param_read(plist,Name,&Object);            \
    if(0 > code) {                                    \
       code = param_read_null(plist,Name);            \
@@ -1781,7 +1782,7 @@ setting data and size to 0.
    }
 #endif
 
-   UPD_PARAM_READ(param_read_string,upd_version,udev->upd_version)
+   UPD_PARAM_READ(param_read_string,upd_version,udev->upd_version,udev->memory)
 
 
 /**
@@ -1824,7 +1825,7 @@ out on this copies.
    for(i = 0; countof(upd_choice) > i; ++i) {
       gs_param_string value = { NULL, 0, false};
       if(!upd_choice[i][0]) continue;
-      UPD_PARAM_READ(param_read_name,upd_choice[i][0],value);
+      UPD_PARAM_READ(param_read_name,upd_choice[i][0],value,udev->memory);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_CHOICE;
          choice[i] = 0;
@@ -1847,7 +1848,7 @@ out on this copies.
       uint32_t bit  = (uint32_t) 1 << i;
       bool   flag = flags & bit ? true : false;
       if(!upd_flags[i]) continue;
-      UPD_PARAM_READ(param_read_bool,upd_flags[i],flag);
+      UPD_PARAM_READ(param_read_bool,upd_flags[i],flag,udev->memory);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_FLAGS;
          if(flag) flags |=  bit;
@@ -1859,7 +1860,7 @@ out on this copies.
    for(i = 0; countof(upd_ints) > i; ++i) {
       int value = ints[i];
       if(!upd_ints[i]) continue;
-      UPD_PARAM_READ(param_read_int,upd_ints[i],value);
+      UPD_PARAM_READ(param_read_int,upd_ints[i],value,udev->memory);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_INTS;
          ints[i] = value;
@@ -1870,7 +1871,7 @@ out on this copies.
    for(i = 0; countof(upd_int_a) > i; ++i) {
       gs_param_int_array value = int_a[i];
       if(!upd_int_a[i]) continue;
-      UPD_PARAM_READ(param_read_int_array,upd_int_a[i],value);
+      UPD_PARAM_READ(param_read_int_array,upd_int_a[i],value,udev->memory);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_INT_A;
          UPD_MM_DEL_PARAM(udev->memory, int_a[i]);
@@ -1887,7 +1888,7 @@ out on this copies.
    for(i = 0; countof(upd_strings) > i; ++i) {
       gs_param_string value = strings[i];
       if(!upd_strings[i]) continue;
-      UPD_PARAM_READ(param_read_string,upd_strings[i],value);
+      UPD_PARAM_READ(param_read_string,upd_strings[i],value,udev->memory);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_STRINGS;
          UPD_MM_DEL_PARAM(udev->memory, strings[i]);
@@ -1904,7 +1905,7 @@ out on this copies.
    for(i = 0; countof(upd_string_a) > i; ++i) {
       gs_param_string_array value = string_a[i];
       if(!upd_string_a[i]) continue;
-      UPD_PARAM_READ(param_read_string_array,upd_string_a[i],value);
+      UPD_PARAM_READ(param_read_string_array,upd_string_a[i],value,udev->memory);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_STRING_A;
          UPD_MM_DEL_APARAM(udev->memory, string_a[i]);
@@ -1921,7 +1922,7 @@ out on this copies.
    for(i = 0; countof(upd_float_a) > i; ++i) {
       gs_param_float_array value = float_a[i];
       if(!upd_float_a[i]) continue;
-      UPD_PARAM_READ(param_read_float_array,upd_float_a[i],value);
+      UPD_PARAM_READ(param_read_float_array,upd_float_a[i],value,udev->memory);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_FLOAT_A;
          UPD_MM_DEL_PARAM(udev->memory, float_a[i]);
@@ -2121,6 +2122,7 @@ transferred into the device-structure. In the case of "uniprint", this may
       upd->strings  = strings;
       upd->string_a = string_a;
       upd->float_a  = float_a;
+      upd->memory   = udev->memory;
 
       if(0 < error) error = 0;
 
@@ -7279,8 +7281,8 @@ upd_pxlfwd(upd_p upd)
          case 32: upd->pxlget = upd_pxlget32f; break;
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           errprintf_nomem("upd_pxlfwd: unsupported depth (%d)\n",
-                           upd->int_a[IA_COLOR_INFO].data[1]);
+           errprintf(upd->memory, "upd_pxlfwd: unsupported depth (%d)\n",
+                     upd->int_a[IA_COLOR_INFO].data[1]);
 #endif
            upd->pxlget = upd_pxlgetnix;
            break;
@@ -7495,8 +7497,8 @@ upd_pxlrev(upd_p upd)
             break;
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           errprintf_nomem("upd_pxlrev: unsupported depth (%d)\n",
-                           upd->int_a[IA_COLOR_INFO].data[1]);
+           errprintf(upd->memory, "upd_pxlrev: unsupported depth (%d)\n",
+                     upd->int_a[IA_COLOR_INFO].data[1]);
 #endif
            upd->pxlget = upd_pxlgetnix;
            break;
