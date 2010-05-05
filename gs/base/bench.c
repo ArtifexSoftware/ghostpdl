@@ -36,7 +36,10 @@ capture_stdio(void)
 #undef stderr
 #define stderr gs_stderr
 FILE *
-gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file(const gs_memory_t *mem,
+                     const char        *prefix,
+                     char              *fname,
+                     const char        *mode)
 {
     return NULL;
 }

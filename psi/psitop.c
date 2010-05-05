@@ -371,8 +371,10 @@ ps_impl_process(
                    returning */
                 strcpy(fmode, "w+");
                 strcat(fmode, gp_fmode_binary_suffix);
-                psi->pdf_filep = gp_open_scratch_file(gp_scratch_file_name_prefix,
-                                                      psi->pdf_file_name, fmode);
+                psi->pdf_filep = gp_open_scratch_file(psi->plmemory,
+                                                      gp_scratch_file_name_prefix,
+                                                      psi->pdf_file_name,
+                                                      fmode);
                 if ( psi->pdf_filep == NULL )
                     psi->pdf_stream = false;
                 else

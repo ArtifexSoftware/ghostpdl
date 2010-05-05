@@ -35,9 +35,9 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
     if (*fname == 0) {
 	if (fmode[0] == 'r')
 	    return_error(gs_error_invalidfileaccess);
-	*pcf =
-	    (clist_file_ptr) gp_open_scratch_file_64(gp_scratch_file_name_prefix,
-						  fname, fmode);
+	*pcf = (clist_file_ptr)gp_open_scratch_file_64(mem,
+                                                   gp_scratch_file_name_prefix,
+                                                   fname, fmode);
     } else
 	*pcf = gp_fopen(fname, fmode);
     if (*pcf == NULL) {

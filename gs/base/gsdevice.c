@@ -942,7 +942,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
                       parsed.fname);
  	return code;
     }
-    *pfile = gp_open_printer((pfname[0] ? pfname : fname), binary);
+    *pfile = gp_open_printer(dev->memory, (pfname[0] ? pfname : fname), binary);
     if (*pfile)
   	return 0;
     emprintf1(dev->memory,
@@ -970,6 +970,6 @@ gx_device_close_output_file(const gx_device * dev, const char *fname,
 	if (parsed.iodev != iodev_default(dev->memory))
 	    return parsed.iodev->procs.fclose(parsed.iodev, file);
     }
-    gp_close_printer(file, (parsed.fname ? parsed.fname : fname));
+    gp_close_printer(dev->memory, file, (parsed.fname ? parsed.fname : fname));
     return 0;
 }

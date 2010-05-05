@@ -160,7 +160,8 @@ win_prn_open(gx_device * dev)
 	DeleteDC(wdev->hdcprn);
 	return gs_error_limitcheck;
     }
-    f = gp_open_scratch_file(gp_scratch_file_name_prefix,
+    f = gp_open_scratch_file(dev->memory,
+                             gp_scratch_file_name_prefix,
 			     wdev->mfname, "wb");
     if (f == (FILE *) NULL) {
 	Escape(wdev->hdcprn, ENDDOC, 0, NULL, NULL);

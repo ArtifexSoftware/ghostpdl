@@ -38,7 +38,7 @@ pcl_symbol_set_id_code(pcl_args_t *pargs, pcl_state_t *pcs)
 
 #ifdef DEBUG
 static void
-dump_dl_symbol_set(pl_symbol_map_t *psm)
+dump_dl_symbol_set(const pl_symbol_map_t *psm)
 {
     dprintf6("header size:%d id:%d format:%s type:%d first code:%d last code:%d\n",
              pl_get_uint16(psm->header_size),

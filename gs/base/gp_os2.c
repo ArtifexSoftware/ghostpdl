@@ -290,17 +290,21 @@ gp_set_file_binary(int prnfno, int binary)
  *   "port"            open port using fopen()
  */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem,
+                      char         fname[gp_file_name_sizeof],
+                      int          binary_mode)
 {
     FILE *pfile;
 
     if ((strlen(fname) == 0) || is_os2_spool(fname)) {
 	if (isos2) {
 	    /* default or spool */
-	    if (pm_spool(NULL, fname))	/* check if spool queue valid */
+	    if (pm_spool(mem, NULL, fname))	/* check if spool queue valid */
 		return NULL;
-	    pfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
-				     pm_prntmp, (binary_mode ? "wb" : "w"));
+	    pfile = gp_open_scratch_file(mem,
+                                         gp_scratch_file_name_prefix,
+                                         pm_prntmp,
+                                         (binary_mode ? "wb" : "w"));
 	} else
 	    pfile = fopen("PRN", (binary_mode ? "wb" : "w"));
     } else if ((isos2) && (fname[0] == '|'))
@@ -319,7 +323,7 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(FILE * pfile, const char *fname)
+gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
     if (isos2 && (fname[0] == '|'))
 	pclose(pfile);
@@ -328,7 +332,7 @@ gp_close_printer(FILE * pfile, const char *fname)
 
     if ((strlen(fname) == 0) || is_os2_spool(fname)) {
 	/* spool temporary file */
-	pm_spool(pm_prntmp, fname);
+	pm_spool(mem, pm_prntmp, fname);
 	unlink(pm_prntmp);
     }
 }
@@ -353,7 +357,7 @@ gp_setmode_binary(FILE * pfile, bool binary)
 /* If queue_name supplied, return driver_name */
 /* returns 0 if OK, non-zero for error */
 int
-pm_find_queue(char *queue_name, char *driver_name)
+pm_find_queue(const gs_memory_t *mem, char *queue_name, char *driver_name)
 {
     SPLERR splerr;
     USHORT jobCount;
@@ -405,9 +409,9 @@ pm_find_queue(char *queue_name, char *driver_name)
 		    } else {
 			/* list queue details */
 			if (prq->fsType & PRQ3_TYPE_APPDEFAULT)
-			    eprintf1("  \042%s\042  (DEFAULT)\n", prq->pszName);
+			    emprintf1(mem, "  \042%s\042  (DEFAULT)\n", prq->pszName);
 			else
-			    eprintf1("  \042%s\042\n", prq->pszName);
+			    emprintf1(mem, "  \042%s\042\n", prq->pszName);
 		    }
 		    prq++;
 		}		/*endfor cReturned */
@@ -418,8 +422,9 @@ pm_find_queue(char *queue_name, char *driver_name)
     /* end if Q level given */ 
     else {
 	/* If we are here we had a bad error code. Print it and some other info. */
-	eprintf4("SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
-		splerr, cTotal, cReturned, cbNeeded);
+	emprintf4(mem,
+                  "SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
+		  splerr, cTotal, cReturned, cbNeeded);
     }
     if (splerr)
 	return splerr;
@@ -453,7 +458,7 @@ is_os2_spool(const char *queue)
 /* return 0 if successful, non-zero if error */
 /* if filename is NULL, return 0 if spool queue is valid, non-zero if error */
 int
-pm_spool(char *filename, const char *queue)
+pm_spool(const gs_memory_t *mem, char *filename, const char *queue)
 {
     HSPL hspl;
     PDEVOPENSTRUC pdata;
@@ -473,10 +478,10 @@ pm_spool(char *filename, const char *queue)
 	/* get default queue */
 	queue_name[0] = '\0';
     }
-    if (pm_find_queue(queue_name, driver_name)) {
+    if (pm_find_queue(mem, queue_name, driver_name)) {
 	/* error, list valid queue names */
-	eprintf("Invalid queue name.  Use one of:\n");
-	pm_find_queue(NULL, NULL);
+	emprintf(mem, "Invalid queue name.  Use one of:\n");
+	pm_find_queue(mem, NULL, NULL);
 	return 1;
     }
     if (!filename)
@@ -484,12 +489,12 @@ pm_spool(char *filename, const char *queue)
 
 
     if ((buffer = malloc(PRINT_BUF_SIZE)) == (char *)NULL) {
-	eprintf("Out of memory in pm_spool\n");
+	emprintf(mem, "Out of memory in pm_spool\n");
 	return 1;
     }
     if ((f = fopen(filename, "rb")) == (FILE *) NULL) {
 	free(buffer);
-	eprintf1("Can't open temporary file %s\n", filename);
+	emprintf1(mem, "Can't open temporary file %s\n", filename);
 	return 1;
     }
     /* Allocate memory for pdata */
@@ -508,7 +513,7 @@ pm_spool(char *filename, const char *queue)
 
 	hspl = SplQmOpen(pszToken, 4L, (PQMOPENDATA) pdata);
 	if (hspl == SPL_ERROR) {
-	    eprintf("SplQmOpen failed.\n");
+	    emprintf(mem, "SplQmOpen failed.\n");
 	    DosFreeMem((PVOID) pdata);
 	    free(buffer);
 	    fclose(f);
@@ -516,7 +521,7 @@ pm_spool(char *filename, const char *queue)
 	}
 	rc = SplQmStartDoc(hspl, "Ghostscript");
 	if (!rc) {
-	    eprintf("SplQmStartDoc failed.\n");
+	    emprintf(mem, "SplQmStartDoc failed.\n");
 	    DosFreeMem((PVOID) pdata);
 	    free(buffer);
 	    fclose(f);
@@ -526,19 +531,19 @@ pm_spool(char *filename, const char *queue)
 	while (rc && (count = fread(buffer, 1, PRINT_BUF_SIZE, f)) != 0) {
 	    rc = SplQmWrite(hspl, count, buffer);
 	    if (!rc)
-		eprintf("SplQmWrite failed.\n");
+		emprintf(mem, "SplQmWrite failed.\n");
 	}
 	free(buffer);
 	fclose(f);
 
 	if (!rc) {
-	    eprintf("Aborting Spooling.\n");
+	    emprintf(mem, "Aborting Spooling.\n");
 	    SplQmAbort(hspl);
 	} else {
 	    SplQmEndDoc(hspl);
 	    rc = SplQmClose(hspl);
 	    if (!rc)
-		eprintf("SplQmClose failed.\n");
+		emprintf(mem, "SplQmClose failed.\n");
 	}
     } else
 	rc = 0;			/* no memory */
@@ -578,16 +583,19 @@ FILE *gp_fopen_64(const char *filename, const char *mode)
     return fopen(filename, mode);
 }
 
-FILE *gp_open_scratch_file_64(const char *prefix,
-			   char fname[gp_file_name_sizeof],
-			   const char *mode)
+FILE *gp_open_scratch_file_64(const gs_memory_t *mem,
+                              const char        *prefix,
+                                    char         fname[gp_file_name_sizeof],
+                              const char        *mode)
 {
-    return gp_open_scratch_file(prefix, fname, mode);
+    return gp_open_scratch_file(mem, prefix, fname, mode);
 }
 
-FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
+FILE *gp_open_printer_64(const gs_memory_t *mem,
+                               char         fname[gp_file_name_sizeof],
+                               int          binary_mode)
 {
-    return gp_open_printer(fname, binary_mode);
+    return gp_open_printer(mem, fname, binary_mode);
 }
 
 int64_t gp_ftell_64(FILE *strm)

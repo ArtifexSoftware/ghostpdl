@@ -328,10 +328,11 @@ mac_std_available(register stream * s, long *pl)
 /* Return NULL if the connection could not be opened. */
 
 FILE *
-gp_open_printer (char *fname, int binary_mode)
+gp_open_printer (const gs_memory_t *mem, char *fname, int binary_mode)
 {
     if (strlen(fname) == 0)
-        return gp_open_scratch_file(gp_scratch_file_name_prefix, fname, binary_mode ? "wb" : "w");
+        return gp_open_scratch_file(mem, gp_scratch_file_name_prefix,
+                                    fname, binary_mode ? "wb" : "w");
     else
         return gp_fopen(fname, binary_mode ? "wb" : "b");
 }
@@ -339,7 +340,7 @@ gp_open_printer (char *fname, int binary_mode)
 /* Close the connection to the printer. */
 
 void
-gp_close_printer (FILE *pfile, const char *fname)
+gp_close_printer (const gs_memory_t *mem, FILE *pfile, const char *fname)
 {
     fclose(pfile);
 }
@@ -370,7 +371,10 @@ gp_setmode_binary(FILE *pfile, bool binary)
 /* Write the actual file name at fname. */
 
 FILE *
-gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const char *mode)
+gp_open_scratch_file (const gs_memory_t *mem,
+                      const char        *prefix,
+                      char               fname[gp_file_name_sizeof],
+                      const char        *mode)
 {
     char thefname[256];
     Str255 thepfname;
@@ -398,7 +402,7 @@ gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const
 		myErr = FindFolder(kOnSystemDisk,kTemporaryFolderType,kCreateFolder,
 			&foundVRefNum, &foundDirID);
 		if ( myErr != noErr ) {
-			eprintf("Can't find temp folder.\n");
+			emprintf(mem, "Can't find temp folder.\n");
 			return (NULL);
 		}
 		FSMakeFSSpec(foundVRefNum, foundDirID,thepfname, &fSpec);
@@ -412,7 +416,7 @@ gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const
 
     f = gp_fopen (thefname, mode);
     if (f == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	emprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return f;
 }
 
@@ -1024,14 +1028,17 @@ FILE *gp_fopen_64(const char *filename, const char *mode)
     return fopen(filename, mode);
 }
 
-FILE *gp_open_scratch_file_64(const char *prefix,
-			   char fname[gp_file_name_sizeof],
-			   const char *mode)
+FILE *gp_open_scratch_file_64(const gs_memory_t *mem,
+                              const char        *prefix,
+                              char               fname[gp_file_name_sizeof],
+                              const char        *mode)
 {
-    return gp_open_scratch_file(prefix, fname, mode);
+    return gp_open_scratch_file(mem, prefix, fname, mode);
 }
 
-FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
+FILE *gp_open_printer_64(const gs_memory_t *mem,
+                               char         fname[gp_file_name_sizeof],
+                               int          binary_mode)
 {
     return gp_open_printer(fname, binary_mode);
 }

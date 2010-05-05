@@ -104,7 +104,9 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
 /* Return NULL if the connection could not be opened. */
 extern void gp_set_file_binary(int, int);
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem,
+                      char         fname[gp_file_name_sizeof],
+                      int          binary_mode)
 {
     if (strlen(fname) == 0 || !strcmp(fname, "PRN")) {
 	if (binary_mode)
@@ -117,7 +119,7 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(FILE * pfile, const char *fname)
+gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
     if (pfile == stdprn)
 	fflush(pfile);

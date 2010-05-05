@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,7 +34,7 @@
  * hope for the best.  We pick up getenv at the same time.
  */
 #ifdef __PROTOTYPES__
-#  include <stdlib.h>		/* for exit and getenv */
+#  include <stdlib.h>           /* for exit and getenv */
 #else
 extern void exit(int);
 extern char *getenv(const char *);
@@ -75,7 +75,7 @@ gp_init(void)
     strncpy(pbuff, dirent->d_name, sizeof(buff) - (pbuff - buff) - 1);
     if ((handle = dlopen(buff, RTLD_NOW)) != 0) {
       if ((gs_shared_init = dlsym(handle, "gs_shared_init")) != 0) {
-	(*gs_shared_init)();
+        (*gs_shared_init)();
       } else {
       }
     }
@@ -119,7 +119,7 @@ gp_strerror(int errnum)
 /* we don't try to implemented this since it requires support */
 /* for Apple's HFS(+) filesystem */
 int
-gp_read_macresource(byte *buf, const char *filename, 
+gp_read_macresource(byte *buf, const char *filename,
                     const uint type, const ushort id)
 {
     return 0;
@@ -134,21 +134,21 @@ gp_get_realtime(long *pdt)
 {
     struct timeval tp;
 
-#if gettimeofday_no_timezone	/* older versions of SVR4 */
+#if gettimeofday_no_timezone    /* older versions of SVR4 */
     {
-	if (gettimeofday(&tp) == -1) {
-	    lprintf("Ghostscript: gettimeofday failed!\n");
-	    tp.tv_sec = tp.tv_usec = 0;
-	}
+        if (gettimeofday(&tp) == -1) {
+            lprintf("Ghostscript: gettimeofday failed!\n");
+            tp.tv_sec = tp.tv_usec = 0;
+        }
     }
 #else /* All other systems */
     {
-	struct timezone tzp;
+        struct timezone tzp;
 
-	if (gettimeofday(&tp, &tzp) == -1) {
-	    lprintf("Ghostscript: gettimeofday failed!\n");
-	    tp.tv_sec = tp.tv_usec = 0;
-	}
+        if (gettimeofday(&tp, &tzp) == -1) {
+            lprintf("Ghostscript: gettimeofday failed!\n");
+            tp.tv_sec = tp.tv_usec = 0;
+        }
     }
 #endif
 
@@ -161,7 +161,7 @@ gp_get_realtime(long *pdt)
 
 #ifdef DEBUG_CLOCK
     printf("tp.tv_sec = %d  tp.tv_usec = %d  pdt[0] = %ld  pdt[1] = %ld\n",
-	   tp.tv_sec, tp.tv_usec, pdt[0], pdt[1]);
+           tp.tv_sec, tp.tv_usec, pdt[0], pdt[1]);
 #endif
 }
 
@@ -180,7 +180,7 @@ gp_get_usertime(long *pdt)
     pdt[0] = ticks / ticks_per_sec;
     pdt[1] = (ticks % ticks_per_sec) * (1000000000 / ticks_per_sec);
 #else
-    gp_get_realtime(pdt);	/* Use an approximation on other hosts.  */
+    gp_get_realtime(pdt);       /* Use an approximation on other hosts.  */
 #endif
 }
 
@@ -197,14 +197,18 @@ gp_getenv_display(void)
 
 /* Open a connection to a printer.  See gp.h for details. */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem,
+                      char         fname[gp_file_name_sizeof],
+                      int          binary_mode)
 {
     const char *fmode = (binary_mode ? "wb" : "w");
 
     return (strlen(fname) == 0 ? 0 : fopen(fname, fmode));
 }
 FILE *
-gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer_64(const gs_memory_t *mem,
+                         char         fname[gp_file_name_sizeof],
+                         int          binary_mode)
 {
     const char *fmode = (binary_mode ? "wb" : "w");
 
@@ -213,21 +217,21 @@ gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(FILE * pfile, const char *fname)
+gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
     if (fname[0] == '|')
-	pclose(pfile);
+        pclose(pfile);
     else
-	fclose(pfile);
+        fclose(pfile);
 }
 
 /* ------ Font enumeration ------ */
- 
+
  /* This is used to query the native os for a list of font names and
   * corresponding paths. The general idea is to save the hassle of
   * building a custom fontmap file.
   */
- 
+
 
 /* Mangle the FontConfig family and style information into a
  * PostScript font name */
@@ -238,51 +242,51 @@ static void makePSFontName(char* family, int weight, int slant, char *buf, int b
     const char *slantname, *weightname;
 
     switch (slant) {
-	case FC_SLANT_ROMAN:   slantname=""; break;;
-	case FC_SLANT_OBLIQUE: slantname="Oblique"; break;;
-	case FC_SLANT_ITALIC:  slantname="Italic"; break;;
-	default:               slantname="Unknown"; break;;
+        case FC_SLANT_ROMAN:   slantname=""; break;;
+        case FC_SLANT_OBLIQUE: slantname="Oblique"; break;;
+        case FC_SLANT_ITALIC:  slantname="Italic"; break;;
+        default:               slantname="Unknown"; break;;
     }
 
     switch (weight) {
-	case FC_WEIGHT_MEDIUM:   weightname=""; break;;
-	case FC_WEIGHT_LIGHT:    weightname="Light"; break;;
-	case FC_WEIGHT_DEMIBOLD: weightname="Demi"; break;;
-	case FC_WEIGHT_BOLD:     weightname="Bold"; break;;
-	case FC_WEIGHT_BLACK:    weightname="Black"; break;;
-	default:                 weightname="Unknown"; break;;
+        case FC_WEIGHT_MEDIUM:   weightname=""; break;;
+        case FC_WEIGHT_LIGHT:    weightname="Light"; break;;
+        case FC_WEIGHT_DEMIBOLD: weightname="Demi"; break;;
+        case FC_WEIGHT_BOLD:     weightname="Bold"; break;;
+        case FC_WEIGHT_BLACK:    weightname="Black"; break;;
+        default:                 weightname="Unknown"; break;;
     }
 
     length = strlen(family);
     if (length >= bufsize)
-	length = bufsize;
+        length = bufsize;
     /* Copy the family name, stripping spaces */
     bytesCopied=0;
     for (i = 0; i < length; i++)
-	if (family[i] != ' ')
-	    buf[bytesCopied++] = family[i];
+        if (family[i] != ' ')
+            buf[bytesCopied++] = family[i];
 
     if ( ((slant != FC_SLANT_ROMAN) || (weight != FC_WEIGHT_MEDIUM)) \
-	    && bytesCopied < bufsize )
+            && bytesCopied < bufsize )
     {
-	buf[bytesCopied] = '-';
-	bytesCopied++;
-	if (weight != FC_WEIGHT_MEDIUM)
-	{
-	    length = strlen(family);
-	    if ((length + bytesCopied) >= bufsize)
-		length = bufsize - bytesCopied - 1;
-	    strncpy(buf+bytesCopied, weightname, length);
-	    bytesCopied += length;
-	}
-	if (slant != FC_SLANT_ROMAN)
-	{
-	    length = strlen(family);
-	    if ((length + bytesCopied) >= bufsize)
-		length = bufsize - bytesCopied - 1;
-	    strncpy(buf+bytesCopied, slantname, length);
-	    bytesCopied += length;
-	}
+        buf[bytesCopied] = '-';
+        bytesCopied++;
+        if (weight != FC_WEIGHT_MEDIUM)
+        {
+            length = strlen(family);
+            if ((length + bytesCopied) >= bufsize)
+                length = bufsize - bytesCopied - 1;
+            strncpy(buf+bytesCopied, weightname, length);
+            bytesCopied += length;
+        }
+        if (slant != FC_SLANT_ROMAN)
+        {
+            length = strlen(family);
+            if ((length + bytesCopied) >= bufsize)
+                length = bufsize - bytesCopied - 1;
+            strncpy(buf+bytesCopied, slantname, length);
+            bytesCopied += length;
+        }
     }
     buf[bytesCopied] = '\0';
 }
@@ -308,7 +312,7 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
 
     state = (unix_fontenum_t *)malloc(sizeof(unix_fontenum_t));
     if (state == NULL)
-	return NULL;    /* Failed to allocate state */
+        return NULL;    /* Failed to allocate state */
 
     state->index     = 0;
     state->fc        = NULL;
@@ -317,27 +321,27 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
     /* Load the fontconfig library */
     state->fc = FcInitLoadConfigAndFonts();
     if (state->fc == NULL) {
-	free(state);
-	state = NULL;
-	dlprintf("destroyed state - fontconfig init failed");
-	return NULL;  /* Failed to open fontconfig library */
+        free(state);
+        state = NULL;
+        dlprintf("destroyed state - fontconfig init failed");
+        return NULL;  /* Failed to open fontconfig library */
     }
 
     /* load the font set that we'll iterate over */
     pat = FcPatternBuild(NULL,
-	    FC_OUTLINE, FcTypeBool, 1,
-	    FC_SCALABLE, FcTypeBool, 1,
-	    NULL);
+            FC_OUTLINE, FcTypeBool, 1,
+            FC_SCALABLE, FcTypeBool, 1,
+            NULL);
     os = FcObjectSetBuild(FC_FILE, FC_OUTLINE,
-	    FC_FAMILY, FC_WEIGHT, FC_SLANT,
-	    NULL);
+            FC_FAMILY, FC_WEIGHT, FC_SLANT,
+            NULL);
     state->font_list = FcFontList(0, pat, os);
     FcPatternDestroy(pat);
     FcObjectSetDestroy(os);
     if (state->font_list == NULL) {
-	free(state);
-	state = NULL;
-	return NULL;  /* Failed to generate font list */
+        free(state);
+        state = NULL;
+        return NULL;  /* Failed to generate font list */
     }
     return (void *)state;
 #else
@@ -356,11 +360,11 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
     FcResult result;
 
     if (state == NULL) {
-	return 0;   /* gp_enumerate_fonts_init failed for some reason */
+        return 0;   /* gp_enumerate_fonts_init failed for some reason */
     }
 
     if (state->index == state->font_list->nfont) {
-	return 0; /* we've run out of fonts */
+        return 0; /* we've run out of fonts */
     }
 
     /* Bits of the following were borrowed from Red Hat's
@@ -369,39 +373,39 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 
     result = FcPatternGetString (font, FC_FAMILY, 0, &family_fc);
     if (result != FcResultMatch || family_fc == NULL) {
-	dlprintf ("DEBUG: FC_FAMILY mismatch\n");
-	return 0;
+        dlprintf ("DEBUG: FC_FAMILY mismatch\n");
+        return 0;
     }
 
     result = FcPatternGetString (font, FC_FILE, 0, &file_fc);
     if (result != FcResultMatch || file_fc == NULL) {
-	dlprintf ("DEBUG: FC_FILE mismatch\n");
-	return 0;
+        dlprintf ("DEBUG: FC_FILE mismatch\n");
+        return 0;
     }
 
     result = FcPatternGetBool (font, FC_OUTLINE, 0, &outline_fc);
     if (result != FcResultMatch) {
-	dlprintf1 ("DEBUG: FC_OUTLINE failed to match on %s\n", (char*)family_fc);
-	return 0;
+        dlprintf1 ("DEBUG: FC_OUTLINE failed to match on %s\n", (char*)family_fc);
+        return 0;
     }
 
     result = FcPatternGetInteger (font, FC_SLANT, 0, &slant_fc);
     if (result != FcResultMatch) {
-	dlprintf ("DEBUG: FC_SLANT didn't match\n");
-	return 0;
+        dlprintf ("DEBUG: FC_SLANT didn't match\n");
+        return 0;
     }
 
     result = FcPatternGetInteger (font, FC_WEIGHT, 0, &weight_fc);
     if (result != FcResultMatch) {
-	dlprintf ("DEBUG: FC_WEIGHT didn't match\n");
-	return 0;
+        dlprintf ("DEBUG: FC_WEIGHT didn't match\n");
+        return 0;
     }
 
     /* Gross hack to work around Fontconfig's inability to tell
      * us the font's PostScript name - generate it ourselves.
      * We must free the memory allocated here next time around. */
     makePSFontName((char *)family_fc, weight_fc, slant_fc,
-	(char *)&state->name, sizeof(state->name));
+        (char *)&state->name, sizeof(state->name));
     *fontname = (char *)&state->name;
 
     /* return the font path straight out of fontconfig */
@@ -419,9 +423,9 @@ void gp_enumerate_fonts_free(void *enum_state)
 #ifdef HAVE_FONTCONFIG
     unix_fontenum_t* state = (unix_fontenum_t *)enum_state;
     if (state != NULL) {
-	if (state->font_list != NULL)
-	    FcFontSetDestroy(state->font_list);
-	free(state);
+        if (state->font_list != NULL)
+            FcFontSetDestroy(state->font_list);
+        free(state);
     }
 #endif
 }

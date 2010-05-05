@@ -284,7 +284,7 @@ os2prn_open(gx_device * dev)
     }
     /* gdev_prn_open opens a temporary file which we don't want */
     /* so we specify the name now so we can delete it later */
-    pfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
+    pfile = gp_open_scratch_file(opdev->memory, gp_scratch_file_name_prefix,
 				 opdev->fname, "wb");
     fclose(pfile);
     code = gdev_prn_open(dev);

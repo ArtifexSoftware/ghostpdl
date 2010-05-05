@@ -87,7 +87,9 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
 /* Return NULL if the connection could not be opened. */
 extern void gp_set_file_binary(int, int);
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem,
+                      char         fname[gp_file_name_sizeof],
+                      int          binary_mode)
 {
     FILE *pfile;
 
@@ -121,7 +123,7 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(FILE * pfile, const char *fname)
+gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
 #ifdef stdprn
     if (pfile != stdprn)
@@ -136,7 +138,10 @@ gp_close_printer(FILE * pfile, const char *fname)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file(const gs_memory_t *mem,
+                     const char        *prefix,
+                     char              *fname,
+                     const char        *mode)
 {	      /* The -7 is for XXXXXXX */
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 7;
@@ -162,7 +167,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     mktemp(fname);
     f = gp_fopentemp(fname, mode);
     if (f == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	emprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return f;
 }
 
@@ -205,16 +210,19 @@ FILE *gp_fopen_64(const char *filename, const char *mode)
     return fopen(filename, mode);
 }
 
-FILE *gp_open_scratch_file_64(const char *prefix,
-			   char fname[gp_file_name_sizeof],
-			   const char *mode)
+FILE *gp_open_scratch_file_64(const gs_memory_t *mem,
+                              const char        *prefix,
+                              char               fname[gp_file_name_sizeof],
+                              const char        *mode)
 {
-    return gp_open_scratch_file(prefix, fname, mode);
+    return gp_open_scratch_file(mem, prefix, fname, mode);
 }
 
-FILE *gp_open_printer_64(char fname[gp_file_name_sizeof], int binary_mode)
+FILE *gp_open_printer_64(const gs_memory_t *mem,
+                               char         fname[gp_file_name_sizeof],
+                               int          binary_mode)
 {
-    return gp_open_printer(fname, binary_mode);
+    return gp_open_printer(mem, fname, binary_mode);
 }
 
 int64_t gp_ftell_64(FILE *strm)

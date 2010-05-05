@@ -699,7 +699,7 @@ ztempfile(i_ctx_t *i_ctx_p)
                          "ztempfile(buffer)");
     if (buf == 0)
         return_error(e_VMerror);
-    sfile = gp_open_scratch_file(pstr, fname, fmode);
+    sfile = gp_open_scratch_file(imemory, pstr, fname, fmode);
     if (sfile == 0) {
         gs_free_object(imemory, buf, "ztempfile(buffer)");
         return_error(e_invalidfileaccess);

@@ -259,7 +259,10 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *cursor)
 
     if (!instance->scratch_file)
     {
-        instance->scratch_file = gp_open_scratch_file("ghostxps-scratch-", instance->scratch_name, "wb");
+        instance->scratch_file = gp_open_scratch_file(ctx->memory,
+                                                      "ghostxps-scratch-",
+                                                      instance->scratch_name,
+                                                      "wb");
         if (!instance->scratch_file)
         {
             gs_catch(gs_error_invalidfileaccess, "cannot open scratch file");

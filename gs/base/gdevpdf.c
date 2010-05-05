@@ -215,9 +215,10 @@ pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 
     strcpy(fmode, "w+");
     strcat(fmode, gp_fmode_binary_suffix);
-    ptf->file =
-	gp_open_scratch_file(gp_scratch_file_name_prefix,
-			     ptf->file_name, fmode);
+    ptf->file =	gp_open_scratch_file(pdev->memory,
+                                     gp_scratch_file_name_prefix,
+                                     ptf->file_name,
+                                     fmode);
     if (ptf->file == 0)
 	return_error(gs_error_invalidfileaccess);
     return 0;

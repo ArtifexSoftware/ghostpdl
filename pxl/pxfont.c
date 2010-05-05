@@ -52,7 +52,7 @@ pxfont_init(px_state_t *pxs)
 
 /* ---------------- Operator utilities ---------------- */
 
-static pl_symbol_map_t *
+static const pl_symbol_map_t *
 pxl_find_symbol_map(uint symbol_set)
 {
     const pl_symbol_map_t **ppsm = pl_built_in_symbol_maps;

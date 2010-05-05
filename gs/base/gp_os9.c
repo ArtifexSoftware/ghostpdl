@@ -126,7 +126,9 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
 /* "|command" opens an output pipe. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
+gp_open_printer(const gs_memory_t *mem,
+                      char         fname[gp_file_name_sizeof],
+                      int          binary_mode)
 {
     return
 	(strlen(fname) == 0 ? 0 :
@@ -145,7 +147,7 @@ rbfopen(char *fname, char *perm)
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(FILE * pfile, const char *fname)
+gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
     if (fname[0] == '|')
 	pclose(pfile);
