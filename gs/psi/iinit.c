@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -83,19 +83,16 @@ const char *const gs_error_names[] =
     ERROR_NAMES
 };
 
-/* The operator tables */
-op_array_table op_array_table_global, op_array_table_local;	/* definitions of `operator' procedures */
-
 /* Enter a name and value into a dictionary. */
 static int
 i_initial_enter_name_in(i_ctx_t *i_ctx_p, ref *pdict, const char *nstr,
-			const ref * pref)
+                        const ref * pref)
 {
     int code = idict_put_string(pdict, nstr, pref);
 
     if (code < 0)
-	lprintf4("initial_enter failed (%d), entering /%s in -dict:%u/%u-\n",
-		 code, nstr, dict_length(pdict), dict_maxlength(pdict));
+        lprintf4("initial_enter failed (%d), entering /%s in -dict:%u/%u-\n",
+                 code, nstr, dict_length(pdict), dict_maxlength(pdict));
     return code;
 }
 int
@@ -111,7 +108,7 @@ i_initial_remove_name(i_ctx_t *i_ctx_p, const char *nstr)
     ref nref;
 
     if (name_ref(imemory, (const byte *)nstr, strlen(nstr), &nref, -1) >= 0)
-	idict_undef(systemdict, &nref);
+        idict_undef(systemdict, &nref);
 }
 
 /* Define the names and sizes of the initial dictionaries. */
@@ -126,19 +123,19 @@ const struct {
 #else
     /* systemdict is created and named automagically */
     {
-	"level2dict", LEVEL2DICT_SIZE, false
+        "level2dict", LEVEL2DICT_SIZE, false
     },
     {
-	"ll3dict", LL3DICT_SIZE, false
+        "ll3dict", LL3DICT_SIZE, false
     },
     {
-	"globaldict", 0, false
+        "globaldict", 0, false
     },
     {
-	"userdict", 0, true
+        "userdict", 0, true
     },
     {
-	"filterdict", FILTERDICT_SIZE, false
+        "filterdict", FILTERDICT_SIZE, false
     },
 #endif
 };
@@ -152,7 +149,7 @@ const char *const initial_dstack[] =
 #endif
 };
 
-#define MIN_DSTACK_SIZE (countof(initial_dstack) + 1)	/* +1 for systemdict */
+#define MIN_DSTACK_SIZE (countof(initial_dstack) + 1)   /* +1 for systemdict */
 
 
 /*
@@ -167,15 +164,15 @@ gs_op_language_level(void)
     int level = 1;
 
     for (tptr = op_defs_all; *tptr != 0; ++tptr) {
-	const op_def *def;
+        const op_def *def;
 
-	for (def = *tptr; def->oname != 0; ++def)
-	    if (op_def_is_begin_dict(def)) {
-		if (!strcmp(def->oname, "level2dict"))
-		    level = max(level, 2);
-		else if (!strcmp(def->oname, "ll3dict"))
-		    level = max(level, 3);
-	    }
+        for (def = *tptr; def->oname != 0; ++def)
+            if (op_def_is_begin_dict(def)) {
+                if (!strcmp(def->oname, "level2dict"))
+                    level = max(level, 2);
+                else if (!strcmp(def->oname, "ll3dict"))
+                    level = max(level, 3);
+            }
     }
     return level;
 }
@@ -193,25 +190,25 @@ make_initial_dict(i_ctx_t *i_ctx_p, const char *iname, ref idicts[])
 
     /* systemdict was created specially. */
     if (!strcmp(iname, "systemdict"))
-	return systemdict;
+        return systemdict;
     for (i = 0; i < countof(initial_dictionaries); i++) {
-	const char *dname = initial_dictionaries[i].name;
-	const int dsize = initial_dictionaries[i].size;
+        const char *dname = initial_dictionaries[i].name;
+        const int dsize = initial_dictionaries[i].size;
 
-	if (!strcmp(iname, dname)) {
-	    ref *dref = &idicts[i];
+        if (!strcmp(iname, dname)) {
+            ref *dref = &idicts[i];
 
-	    if (r_has_type(dref, t_null)) {
-		gs_ref_memory_t *mem =
-		    (initial_dictionaries[i].local ?
-		     iimemory_local : iimemory_global);
-		int code = dict_alloc(mem, dsize, dref);
+            if (r_has_type(dref, t_null)) {
+                gs_ref_memory_t *mem =
+                    (initial_dictionaries[i].local ?
+                     iimemory_local : iimemory_global);
+                int code = dict_alloc(mem, dsize, dref);
 
-		if (code < 0)
-		    return 0;	/* disaster */
-	    }
-	    return dref;
-	}
+                if (code < 0)
+                    return 0;   /* disaster */
+            }
+            return dref;
+        }
     }
 
     /*
@@ -236,119 +233,119 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
      * we do this before initializing the interpreter.
      */
     code = dict_alloc(idmem->space_global,
-		      (level >= 3 ? SYSTEMDICT_LL3_SIZE :
-		       level >= 2 ? SYSTEMDICT_LEVEL2_SIZE : SYSTEMDICT_SIZE),
-		      &system_dict);
+                      (level >= 3 ? SYSTEMDICT_LL3_SIZE :
+                       level >= 2 ? SYSTEMDICT_LEVEL2_SIZE : SYSTEMDICT_SIZE),
+                      &system_dict);
     if (code < 0)
-	return code;
+        return code;
 
     /* Initialize the interpreter. */
     code = gs_interp_init(pi_ctx_p, &system_dict, idmem);
     if (code < 0)
-	return code;
+        return code;
     i_ctx_p = *pi_ctx_p;
 
     {
 #define icount countof(initial_dictionaries)
-	ref idicts[icount];
-	int i;
-	const op_def *const *tptr;
+        ref idicts[icount];
+        int i;
+        const op_def *const *tptr;
 
-	min_dstack_size = MIN_DSTACK_SIZE;
+        min_dstack_size = MIN_DSTACK_SIZE;
 
-	refset_null(idicts, icount);
+        refset_null(idicts, icount);
 
-	/* Put systemdict on the dictionary stack. */
-	if (level >= 2) {
-	    dsp += 2;
-	    /*
-	     * For the moment, let globaldict be an alias for systemdict.
-	     */
-	    dsp[-1] = system_dict;
-	    min_dstack_size++;
-	} else {
-	    ++dsp;
-	}
-	*dsp = system_dict;
+        /* Put systemdict on the dictionary stack. */
+        if (level >= 2) {
+            dsp += 2;
+            /*
+             * For the moment, let globaldict be an alias for systemdict.
+             */
+            dsp[-1] = system_dict;
+            min_dstack_size++;
+        } else {
+            ++dsp;
+        }
+        *dsp = system_dict;
 
-	/* Create dictionaries which are to be homes for operators. */
-	for (tptr = op_defs_all; *tptr != 0; tptr++) {
-	    const op_def *def;
+        /* Create dictionaries which are to be homes for operators. */
+        for (tptr = op_defs_all; *tptr != 0; tptr++) {
+            const op_def *def;
 
-	    for (def = *tptr; def->oname != 0; def++)
-		if (op_def_is_begin_dict(def)) {
-		    if (make_initial_dict(i_ctx_p, def->oname, idicts) == 0)
-			return_error(e_VMerror);
-		}
-	}
+            for (def = *tptr; def->oname != 0; def++)
+                if (op_def_is_begin_dict(def)) {
+                    if (make_initial_dict(i_ctx_p, def->oname, idicts) == 0)
+                        return_error(e_VMerror);
+                }
+        }
 
-	/* Set up the initial dstack. */
-	for (i = 0; i < countof(initial_dstack); i++) {
-	    const char *dname = initial_dstack[i];
+        /* Set up the initial dstack. */
+        for (i = 0; i < countof(initial_dstack); i++) {
+            const char *dname = initial_dstack[i];
 
-	    ++dsp;
-	    if (!strcmp(dname, "userdict"))
-		dstack_userdict_index = dsp - dsbot;
-	    ref_assign(dsp, make_initial_dict(i_ctx_p, dname, idicts));
-	}
+            ++dsp;
+            if (!strcmp(dname, "userdict"))
+                dstack_userdict_index = dsp - dsbot;
+            ref_assign(dsp, make_initial_dict(i_ctx_p, dname, idicts));
+        }
 
-	/* Enter names of referenced initial dictionaries into systemdict. */
-	initial_enter_name("systemdict", systemdict);
-	for (i = 0; i < icount; i++) {
-	    ref *idict = &idicts[i];
+        /* Enter names of referenced initial dictionaries into systemdict. */
+        initial_enter_name("systemdict", systemdict);
+        for (i = 0; i < icount; i++) {
+            ref *idict = &idicts[i];
 
-	    if (!r_has_type(idict, t_null)) {
-		/*
-		 * Note that we enter the dictionary in systemdict
-		 * even if it is in local VM.  There is a special
-		 * provision in the garbage collector for this:
-		 * see ivmspace.h for more information.
-		 * In order to do this, we must temporarily
-		 * identify systemdict as local, so that the
-		 * store check in dict_put won't fail.
-		 */
-		uint save_space = r_space(systemdict);
+            if (!r_has_type(idict, t_null)) {
+                /*
+                 * Note that we enter the dictionary in systemdict
+                 * even if it is in local VM.  There is a special
+                 * provision in the garbage collector for this:
+                 * see ivmspace.h for more information.
+                 * In order to do this, we must temporarily
+                 * identify systemdict as local, so that the
+                 * store check in dict_put won't fail.
+                 */
+                uint save_space = r_space(systemdict);
 
-		r_set_space(systemdict, avm_local);
-		code = initial_enter_name(initial_dictionaries[i].name,
-					  idict);
-		r_set_space(systemdict, save_space);
-		if (code < 0)
-		    return code;
-	    }
-	}
+                r_set_space(systemdict, avm_local);
+                code = initial_enter_name(initial_dictionaries[i].name,
+                                          idict);
+                r_set_space(systemdict, save_space);
+                if (code < 0)
+                    return code;
+            }
+        }
 #undef icount
     }
 
     gs_interp_reset(i_ctx_p);
 
     {
-	ref vnull, vtrue, vfalse;
+        ref vnull, vtrue, vfalse;
 
-	make_null(&vnull);
-	make_true(&vtrue);
-	make_false(&vfalse);
-	if ((code = initial_enter_name("null", &vnull)) < 0 ||
-	    (code = initial_enter_name("true", &vtrue)) < 0 ||
-	    (code = initial_enter_name("false", &vfalse)) < 0
-	    )
-	    return code;
+        make_null(&vnull);
+        make_true(&vtrue);
+        make_false(&vfalse);
+        if ((code = initial_enter_name("null", &vnull)) < 0 ||
+            (code = initial_enter_name("true", &vtrue)) < 0 ||
+            (code = initial_enter_name("false", &vfalse)) < 0
+            )
+            return code;
     }
 
     /* Create the error name table */
     {
-	int n = countof(gs_error_names) - 1;
-	int i;
-	ref era;
+        int n = countof(gs_error_names) - 1;
+        int i;
+        ref era;
 
-	code = ialloc_ref_array(&era, a_readonly, n, "ErrorNames");
-	if (code < 0)
-	    return code;
-	for (i = 0; i < n; i++)
-	  if ((code = name_enter_string(imemory, (const char *)gs_error_names[i],
-					  era.value.refs + i)) < 0)
-		return code;
-	return initial_enter_name("ErrorNames", &era);
+        code = ialloc_ref_array(&era, a_readonly, n, "ErrorNames");
+        if (code < 0)
+            return code;
+        for (i = 0; i < n; i++)
+          if ((code = name_enter_string(imemory, (const char *)gs_error_names[i],
+                                          era.value.refs + i)) < 0)
+                return code;
+        return initial_enter_name("ErrorNames", &era);
     }
 }
 
@@ -364,38 +361,38 @@ zop_init(i_ctx_t *i_ctx_p)
     const op_def *def;
 
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
-	for (def = *tptr; def->oname != 0; def++)
-	    DO_NOTHING;
-	if (def->proc != 0) {
-	    code = def->proc(i_ctx_p);
-	    if (code < 0) {
-		lprintf2("op_init proc 0x%lx returned error %d!\n",
-			 (ulong)def->proc, code);
-		return code;
-	    }
-	}
+        for (def = *tptr; def->oname != 0; def++)
+            DO_NOTHING;
+        if (def->proc != 0) {
+            code = def->proc(i_ctx_p);
+            if (code < 0) {
+                lprintf2("op_init proc 0x%lx returned error %d!\n",
+                         (ulong)def->proc, code);
+                return code;
+            }
+        }
     }
 
     /* Initialize the predefined names other than operators. */
     /* Do this here in case op_init changed any of them. */
     {
-	ref vcr, vpr, vpf, vre, vrd;
+        ref vcr, vpr, vpf, vre, vrd;
 
-	make_const_string(&vcr, a_readonly | avm_foreign,
-			  strlen(gs_copyright), (const byte *)gs_copyright);
-	make_const_string(&vpr, a_readonly | avm_foreign,
-			  strlen(gs_product), (const byte *)gs_product);
-	make_const_string(&vpf, a_readonly | avm_foreign,
-			  strlen(gs_productfamily),
-			  (const byte *)gs_productfamily);
-	make_int(&vre, gs_revision);
-	make_int(&vrd, gs_revisiondate);
-	if ((code = initial_enter_name("copyright", &vcr)) < 0 ||
-	    (code = initial_enter_name("product", &vpr)) < 0 ||
-	    (code = initial_enter_name("productfamily", &vpf)) < 0 ||
-	    (code = initial_enter_name("revision", &vre)) < 0 ||
-	    (code = initial_enter_name("revisiondate", &vrd)) < 0)
-	    return code;
+        make_const_string(&vcr, a_readonly | avm_foreign,
+                          strlen(gs_copyright), (const byte *)gs_copyright);
+        make_const_string(&vpr, a_readonly | avm_foreign,
+                          strlen(gs_product), (const byte *)gs_product);
+        make_const_string(&vpf, a_readonly | avm_foreign,
+                          strlen(gs_productfamily),
+                          (const byte *)gs_productfamily);
+        make_int(&vre, gs_revision);
+        make_int(&vrd, gs_revisiondate);
+        if ((code = initial_enter_name("copyright", &vcr)) < 0 ||
+            (code = initial_enter_name("product", &vpr)) < 0 ||
+            (code = initial_enter_name("productfamily", &vpf)) < 0 ||
+            (code = initial_enter_name("revision", &vre)) < 0 ||
+            (code = initial_enter_name("revisiondate", &vrd)) < 0)
+            return code;
     }
 
     return 0;
@@ -404,23 +401,23 @@ zop_init(i_ctx_t *i_ctx_p)
 /* Create an op_array table. */
 static int
 alloc_op_array_table(i_ctx_t *i_ctx_p, uint size, uint space,
-		     op_array_table *opt)
+                     op_array_table *opt)
 {
     uint save_space = ialloc_space(idmemory);
     int code;
 
     ialloc_set_space(idmemory, space);
     code = ialloc_ref_array(&opt->table, a_readonly, size,
-			    "op_array table");
+                            "op_array table");
     ialloc_set_space(idmemory, save_space);
     if (code < 0)
-	return code;
+        return code;
     refset_null(opt->table.value.refs, size);
     opt->nx_table =
-	(ushort *) ialloc_byte_array(size, sizeof(ushort),
-				     "op_array nx_table");
+        (ushort *) ialloc_byte_array(size, sizeof(ushort),
+                                     "op_array nx_table");
     if (opt->nx_table == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     opt->count = 0;
     opt->attrs = space | a_executable;
     return 0;
@@ -436,64 +433,64 @@ op_init(i_ctx_t *i_ctx_p)
     /* Enter each operator into the appropriate dictionary. */
 
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
-	ref *pdict = systemdict;
-	const op_def *def;
-	const char *nstr;
+        ref *pdict = systemdict;
+        const op_def *def;
+        const char *nstr;
 
-	for (def = *tptr; (nstr = def->oname) != 0; def++)
-	    if (op_def_is_begin_dict(def)) {
-		ref nref;
+        for (def = *tptr; (nstr = def->oname) != 0; def++)
+            if (op_def_is_begin_dict(def)) {
+                ref nref;
 
-		code = name_ref(imemory, (const byte *)nstr, strlen(nstr), &nref, -1);
-		if (code < 0)
-		    return code;
-		if (!dict_find(systemdict, &nref, &pdict))
-		    return_error(e_Fatal);
-		if (!r_has_type(pdict, t_dictionary))
-		    return_error(e_Fatal);
-	    } else {
-		ref oper;
-		uint index_in_table = def - *tptr;
-		uint opidx = (tptr - op_defs_all) * OP_DEFS_MAX_SIZE +
-		    index_in_table;
+                code = name_ref(imemory, (const byte *)nstr, strlen(nstr), &nref, -1);
+                if (code < 0)
+                    return code;
+                if (!dict_find(systemdict, &nref, &pdict))
+                    return_error(e_Fatal);
+                if (!r_has_type(pdict, t_dictionary))
+                    return_error(e_Fatal);
+            } else {
+                ref oper;
+                uint index_in_table = def - *tptr;
+                uint opidx = (tptr - op_defs_all) * OP_DEFS_MAX_SIZE +
+                    index_in_table;
 
-		if (index_in_table >= OP_DEFS_MAX_SIZE) {
-		    lprintf1("opdef overrun! %s\n", def->oname);
-		    return_error(e_Fatal);
-		}
-		gs_interp_make_oper(&oper, def->proc, opidx);
-		/* The first character of the name is a digit */
-		/* giving the minimum acceptable number of operands. */
-		/* Check to make sure it's within bounds. */
-		if (*nstr - '0' > gs_interp_max_op_num_args)
-		    return_error(e_Fatal);
-		nstr++;
-		/*
-		 * Skip internal operators, and the second occurrence of
-		 * operators with special indices.
-		 */
-		if (*nstr != '%' && r_size(&oper) == opidx) {
-		    code =
-			i_initial_enter_name_in(i_ctx_p, pdict, nstr, &oper);
-		    if (code < 0)
-			return code;
-		}
-	    }
+                if (index_in_table >= OP_DEFS_MAX_SIZE) {
+                    lprintf1("opdef overrun! %s\n", def->oname);
+                    return_error(e_Fatal);
+                }
+                gs_interp_make_oper(&oper, def->proc, opidx);
+                /* The first character of the name is a digit */
+                /* giving the minimum acceptable number of operands. */
+                /* Check to make sure it's within bounds. */
+                if (*nstr - '0' > gs_interp_max_op_num_args)
+                    return_error(e_Fatal);
+                nstr++;
+                /*
+                 * Skip internal operators, and the second occurrence of
+                 * operators with special indices.
+                 */
+                if (*nstr != '%' && r_size(&oper) == opidx) {
+                    code =
+                        i_initial_enter_name_in(i_ctx_p, pdict, nstr, &oper);
+                    if (code < 0)
+                        return code;
+                }
+            }
     }
     /* Allocate the tables for `operator' procedures. */
     /* Make one of them local so we can have local operators. */
     if ((code = alloc_op_array_table(i_ctx_p, OP_ARRAY_TABLE_GLOBAL_SIZE,
-				     avm_global,
+                                     avm_global,
                                      &i_ctx_p->op_array_table_global) < 0))
-	return code;
+        return code;
     i_ctx_p->op_array_table_global.base_index = op_def_count;
     if ((code = alloc_op_array_table(i_ctx_p, OP_ARRAY_TABLE_LOCAL_SIZE,
-				     avm_local,
+                                     avm_local,
                                      &i_ctx_p->op_array_table_local) < 0))
-	return code;
+        return code;
     i_ctx_p->op_array_table_local.base_index =
-	i_ctx_p->op_array_table_global.base_index +
-	r_size(&i_ctx_p->op_array_table_global.table);
+        i_ctx_p->op_array_table_global.base_index +
+        r_size(&i_ctx_p->op_array_table_global.table);
 
     return 0;
 }
@@ -508,14 +505,14 @@ op_get_name_string(op_proc_t opproc)
     int code;
 
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
-	const op_def *def;
+        const op_def *def;
 
-	for (def = *tptr; def->oname != 0; def++)
-	    if (!op_def_is_begin_dict(def)) {
-		if (def->proc == opproc)
-		    return def->oname;
-	    }
+        for (def = *tptr; def->oname != 0; def++)
+            if (!op_def_is_begin_dict(def)) {
+                if (def->proc == opproc)
+                    return def->oname;
+            }
     }
     return unknown_op_name;
 }
-#endif		   
+#endif
