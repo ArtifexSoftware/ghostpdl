@@ -344,11 +344,57 @@ jas_stream_t *jas_stream_freopen(const char *path, const char *mode, FILE *fp)
 	return stream;
 }
 
+#ifdef _WIN32
+/* mkstemp for Windows */
+static int mkstemp(char *template)
+{
+	int fd = -1;
+	int xcnt;
+	char *p = template;
+
+	while (*p)
+		p++;
+	for (xcnt = 0; xcnt < 6; xcnt++) {
+		if (*--p != 'X')
+			break;
+	}
+	if (xcnt == 6) { /* We have 6 'X's */
+		char * const xpos = p; /* position to put base 64 string */
+		unsigned long x; /* A seed to provide some randomness */
+		int i;
+
+		/* Make a kind of random number from 'xpos', time, thread id and process id */
+		x = (unsigned long)xpos;
+		x ^= time(NULL);
+		x ^= _threadid;
+		x = x << 16 | x >> 16;
+		x ^= _getpid();
+		/* Try to open a temp file TMP_MAX times */
+		for (i = 0; fd < 0 && i < TMP_MAX; i++, x++) {
+			/* replace 'XXXXXX' with base 64 randum number */
+			int j;
+
+			p = xpos;
+			for (j = 5; j >= 0; j--) {
+				int d = ((j > 0) ? (x >> (6 * j)) : (x << 4)) & 0x3f;
+				*p++ = (char)(d < 26 ? 'A' + d :
+				              d < 52 ? 'a' + d - 26 :
+				              d < 62 ? '0' + d - 52 :
+				              d < 63 ? '+' : '-');
+			}
+			fd = open(template, O_CREAT | O_EXCL | O_RDWR | O_TRUNC | O_BINARY,
+			            JAS_STREAM_PERMS);
+		}
+	}
+
+	return fd;
+}
+#endif /* !_WIN32 */
+
 jas_stream_t *jas_stream_tmpfile()
 {
 	jas_stream_t *stream;
 	jas_stream_fileobj_t *obj;
-	char template[] = "jas_XXXXXX";
 
 	if (!(stream = jas_stream_create())) {
 		return 0;
@@ -368,16 +414,80 @@ jas_stream_t *jas_stream_tmpfile()
 	obj->pathname[0] = '\0';
 	stream->obj_ = obj;
 
-#ifdef HAVE_MKSTEMP
-	/* Set a file name template */
-	memcpy(obj->pathname, template, JAS_MIN(strlen(template),L_tmpnam)+1); 
-	
-	/* Try to open a temp file */
-	if ((obj->fd = mkstemp(obj->pathname)) < 0) {
+#if defined(HAVE_MKSTEMP) || defined(_WIN32)
+#ifdef _WIN32
+#define C_PATHSEP '\\'
+#define P_tmpdir _P_tmpdir
+#else /* _WIN32 */
+#define C_PATHSEP '/'
+#endif /* _WIN32 */
+	{
+		/* Set a file name template */
+		static const char template[] = "jas_XXXXXX";
+		/* Get temprorary directory */
+		const char *tempdir = NULL;
+		{
+			static const char *tmpenv[] = {
+				"TMPDIR", "TEMP", "TMP",
+			};
+			int i;
+
+			for (i = 0; tempdir == NULL && i < sizeof(tmpenv) / sizeof(tmpenv[0]); i++) {
+				tempdir = (const char *)getenv(tmpenv[i]);
+			}
+			if (tempdir == NULL ) {
+#ifdef P_tmpdir
+				tempdir = P_tmpdir;
+#else
+				tempdir = "/tmp";
+#endif
+			}
+		}
+		{
+			/* Build a temproray file name from tempdir and template */
+			static const size_t pathname_len = sizeof(obj->pathname) / sizeof(obj->pathname[0]) - 1;
+			const size_t tempdirlen = strlen(tempdir);
+			/* tmp file string length. 0 means we failed to build it */
+			size_t tlen = 0;
+
+			/* Copy tmp dir */
+			if (tempdirlen > 0 ) {
+				tlen += tempdirlen;
+				if (pathname_len >= tlen)
+					strcpy(obj->pathname, tempdir);
+				else
+					tlen = 0;
+				/* A separator after the tmp dir */
+				if (tlen > 0 && tempdir[tlen - 1] != C_PATHSEP) {
+					if (pathname_len >= tlen + 1) {
+						obj->pathname[tlen++] = C_PATHSEP;
+						obj->pathname[tlen]   = '\0';
+					} else {
+						obj->pathname[0] = '\0';
+						tlen = 0;
+					}
+				}
+			}
+			/* Concatenate template string */
+			if (tempdirlen == 0 || tlen > 0) {
+				tlen += sizeof(template) / sizeof(template[0]) - 1;
+				if (pathname_len >= tlen) {
+					strcat(obj->pathname, template);
+				} else {
+					obj->pathname[0] = '\0';
+					tlen = 0;
+				}
+			}
+			/* Try to open a temp file */
+			if (tlen > 0)
+				obj->fd = mkstemp(obj->pathname);
+		}
+	}
+	if (obj->fd < 0) {
 		jas_stream_destroy(stream);
 		return 0;
 	}
-#else
+#else /* defined(HAVE_MKSTEMP) || defined(_WIN32) */
 	/* Choose a file name. */
 	tmpnam(obj->pathname);
 
@@ -387,7 +497,7 @@ jas_stream_t *jas_stream_tmpfile()
 		jas_stream_destroy(stream);
 		return 0;
 	}
-#endif /* MKSTEMP */
+#endif /* defined(HAVE_MKSTEMP) || defined(_WIN32) */
 
 	/* Unlink the file so that it will disappear if the program
 	terminates abnormally. */
