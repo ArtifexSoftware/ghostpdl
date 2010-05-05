@@ -1196,6 +1196,16 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
         close(F2);
       }
     }
+    if ($normalRegression || $icc_workRegression) {
+      my $tempRev=$rev;
+      $tempRev="icc_work-$rev" if ($icc_workRegression);
+      `touch archive/$tempRev`;
+      `rm -fr archive/$tempRev`;
+      `mkdir archive/$tempRev`;
+      `mv $logs archive/$tempRev/.`;
+      `gzip archive/$tempRev/*log`;
+      `cp -p email.txt archive/$tempRev/.`;
+    }
     close(F);
   }
 

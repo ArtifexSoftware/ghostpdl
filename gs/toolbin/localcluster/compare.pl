@@ -79,7 +79,7 @@ while(<F>) {
   s|__|/|g;
   my @a=split '\t';
   next if (exists $skip{$a[0]});
-  $a[6]=$a[1] if ($a[1] ne "0");
+# $a[6]=$a[1] if ($a[1] ne "0");
   $current{$a[0]}=$a[6];
   $currentError{$a[0]}=0;
   if ($a[1]!=0) {
@@ -97,7 +97,7 @@ while(<F>) {
   s|__|/|g;
   my @a=split '\t';
   next if (exists $skip{$a[0]});
-  $a[6]=$a[1] if ($a[1] ne "0");
+# $a[6]=$a[1] if ($a[1] ne "0");
   $previous{$a[0]}=$a[6];
   $previousError{$a[0]}=0;
   if ($a[1]!=0) {
@@ -204,7 +204,9 @@ foreach my $t (sort keys %previous) {
         } else {
           push @repairedPrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t} $previousError{$t}";
         }
-      } else {
+      }
+    }
+##    } else {
         if ($current{$t} eq $previous{$t}) {
           #         print "$t match $previous and $current\n";
         } else {
@@ -230,8 +232,8 @@ foreach my $t (sort keys %previous) {
 	    }
           }
         }
-      }
-    }
+##    }
+##  }
   } else {
     push @filesRemoved,"$t $previousProduct{$t}";
   }
