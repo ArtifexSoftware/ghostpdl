@@ -84,6 +84,7 @@ BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
         ON_BN_CLICKED(IDC_CMYK2RGB, &CICC_CreatorDlg::OnBnClickedCmyk2rgb)
         ON_BN_CLICKED(IDC_RGB2CMYK, &CICC_CreatorDlg::OnBnClickedRgb2cmyk)
         ON_BN_CLICKED(IDC_CMYK2GRAY2, &CICC_CreatorDlg::OnBnClickedCmyk2gray2)
+        ON_BN_CLICKED(IDC_PSICC, &CICC_CreatorDlg::OnBnClickedPsicc)
 END_MESSAGE_MAP()
 
 
@@ -575,4 +576,45 @@ void CICC_CreatorDlg::OnBnClickedCmyk2gray2()
         if (ok == 0)
             this->SetDlgItemText(IDC_STATUS,_T("Link Profile Created"));
     } 
+}
+
+/* Here we go ahead and create the RGB, CMYK and Gray default profiles
+   that when used together will have behaviours very similar to the
+   standard PS defined color mappings.  These are used for the GS code
+   in the creation of soft masks in transparency. */
+
+void CICC_CreatorDlg::OnBnClickedPsicc()
+{
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+    ofn.lpstrTitle	= _T("Save PS Gray Profile");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+         ok = create_psgray_profile(szFile);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Created PS Gray Profile"));
+    } 
+    ofn.lpstrTitle	= _T("Save PS RGB Profile");
+    if (IDOK == GetSaveFileName(&ofn)) {
+         ok = create_psrgb_profile(szFile);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Created PS RGB Profile"));
+    } 
+    ofn.lpstrTitle	= _T("Save PS CMYK Profile");
+    if (IDOK == GetSaveFileName(&ofn)) {
+        ok = create_pscmyk_profile(szFile, false);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Created PS CMYK Profile"));
+    } 
+
+
 }

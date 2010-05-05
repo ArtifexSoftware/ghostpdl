@@ -29,4 +29,8 @@ int create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int n
 
 int create_devicelink_profile(TCHAR FileName[],link_t link_type);
 
+int create_psrgb_profile(TCHAR FileName[]);
+int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab);
+int create_psgray_profile(TCHAR FileName[]);
+
 #endif

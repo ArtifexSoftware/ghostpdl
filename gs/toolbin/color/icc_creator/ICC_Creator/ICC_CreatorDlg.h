@@ -62,4 +62,5 @@ public:
     afx_msg void OnBnClickedCmyk2rgb();
     afx_msg void OnBnClickedRgb2cmyk();
     afx_msg void OnBnClickedCmyk2gray2();
+    afx_msg void OnBnClickedPsicc();
 };
