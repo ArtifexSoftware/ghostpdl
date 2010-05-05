@@ -51,7 +51,7 @@ pdftoraster_=cups/pdftoraster.c
 
 $(PDFTORASTER_XE): $(pdftoraster_)
 	if [ "$(CUPSPDFTORASTER)" = "1" ]; then \
-	    $(GLCC) $(LDFLAGS) -DBINDIR='"$(bindir)"' -DGS='"$(GS)"' -o $@ $(pdftoraster_) `cups-config --image --libs`; \
+	    $(GLCC) $(LDFLAGS) -DBINDIR='"$(bindir)"' -DGS='"$(GS)"' -o $@ $(pdftoraster_) `cups-config --image --ldflags --libs`; \
 	fi
 
 install:	install-cups
