@@ -321,6 +321,14 @@ typedef struct overprint_device_s {
      */
     gx_color_index  retain_mask;
 
+    /* We hold 3 sets of device procedures here. These are initialised from
+     * the equivalently named globals when the device is created, but are
+     * then used from here as we fiddle with them. This ensures that the
+     * globals are only ever read, and as such are safe in multithreaded
+     * environments. */
+    gx_device_procs generic_overprint_procs;
+    gx_device_procs no_overprint_procs;
+    gx_device_procs sep_overprint_procs;
 } overprint_device_t;
 
 gs_private_st_suffix_add0_final( st_overprint_device_t,
@@ -352,7 +360,7 @@ static dev_proc_get_page_device(overprint_get_page_device);
 static dev_proc_create_compositor(overprint_create_compositor);
 static dev_proc_get_color_comp_index(overprint_get_color_comp_index);
 
-static gx_device_procs no_overprint_procs = {
+static const gx_device_procs no_overprint_procs = {
     overprint_open_device,              /* open_device */
     0,                                  /* get_initial_matrix */
     0,                                  /* sync_output */
@@ -450,7 +458,7 @@ static dev_proc_fill_rectangle(overprint_generic_fill_rectangle);
 static dev_proc_fill_rectangle(overprint_sep_fill_rectangle);
 /* other low-level overprint_sep_* rendering methods prototypes go here */
 
-static gx_device_procs generic_overprint_procs = {
+static const gx_device_procs generic_overprint_procs = {
     overprint_open_device,              /* open_device */
     0,                                  /* get_initial_matrix */
     0,                                  /* sync_output */
@@ -506,7 +514,7 @@ static gx_device_procs generic_overprint_procs = {
     0                                   /* decode_color */
 };
 
-static gx_device_procs sep_overprint_procs = {
+static const gx_device_procs sep_overprint_procs = {
     overprint_open_device,              /* open_device */
     0,                                  /* get_initial_matrix */
     0,                                  /* sync_output */
@@ -688,20 +696,20 @@ update_overprint_params(
         /* if fill_rectangle forwards, overprint is already off */
         if (dev_proc(opdev, fill_rectangle) != gx_forward_fill_rectangle)
             memcpy( &opdev->procs,
-                    &no_overprint_procs,
-                    sizeof(no_overprint_procs) );
+                    &opdev->no_overprint_procs,
+                    sizeof(opdev->no_overprint_procs) );
         return 0;
     }
 
     /* set the procedures according to the color model */
     if (opdev->color_info.separable_and_linear == GX_CINFO_SEP_LIN)
         memcpy( &opdev->procs,
-                &sep_overprint_procs,
-                sizeof(sep_overprint_procs) );
+                &opdev->sep_overprint_procs,
+                sizeof(opdev->sep_overprint_procs) );
     else
         memcpy( &opdev->procs,
-                &generic_overprint_procs,
-                sizeof(generic_overprint_procs) );
+                &opdev->generic_overprint_procs,
+                sizeof(opdev->generic_overprint_procs) );
 
     /* see if we need to determine the spot color components */
     if (!pparams->retain_spot_comps)
@@ -744,8 +752,8 @@ update_overprint_params(
     /* check for degenerate case */
     if (opdev->drawn_comps == ((gx_color_index)1 << ncomps) - 1) {
         memcpy( &opdev->procs,
-                &no_overprint_procs,
-                sizeof(no_overprint_procs) );
+                &opdev->no_overprint_procs,
+                sizeof(opdev->no_overprint_procs) );
         return 0;
     }
 
@@ -955,7 +963,7 @@ overprint_sep_fill_rectangle(
 }
 
 
-/* complete a porcedure set */
+/* complete a procedure set */
 static void
 fill_in_procs(gx_device_procs * pprocs)
 {
@@ -1018,24 +1026,31 @@ c_overprint_create_default_compositor(
 	return 0;
     }
 
-    /* check if the procedure arrays have been initialized */
-    if (no_overprint_procs.get_xfont_procs == 0) {
-        fill_in_procs(&no_overprint_procs);
-        fill_in_procs(&generic_overprint_procs);
-        fill_in_procs(&sep_overprint_procs);
-    }
-
     /* build the overprint device */
     opdev = gs_alloc_struct_immovable( mem,
                                        overprint_device_t,
                                        &st_overprint_device_t,
                                        "create overprint compositor" );
-    if ((*popdev = (gx_device *)opdev) == 0)
+    *popdev = (gx_device *)opdev;
+    if (opdev == NULL)
         return_error(gs_error_VMerror);
     gx_device_init( (gx_device *)opdev, 
                     (const gx_device *)&gs_overprint_device,
                     mem,
                     true );
+    memcpy(&opdev->no_overprint_procs,
+           &no_overprint_procs,
+           sizeof(no_overprint_procs));
+    memcpy(&opdev->generic_overprint_procs,
+           &generic_overprint_procs,
+           sizeof(generic_overprint_procs));
+    memcpy(&opdev->sep_overprint_procs,
+           &sep_overprint_procs,
+           sizeof(sep_overprint_procs));
+    fill_in_procs(&opdev->no_overprint_procs);
+    fill_in_procs(&opdev->generic_overprint_procs);
+    fill_in_procs(&opdev->sep_overprint_procs);
+
     gx_device_copy_params((gx_device *)opdev, tdev);
     gx_device_set_target((gx_device_forward *)opdev, tdev);
 
