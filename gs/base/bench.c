@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -9,7 +9,7 @@
    license.  Refer to licensing information at http://www.artifex.com/
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/  
+*/
 
 /* $Id$ */
 /* Simple hardware benchmarking suite (C and PostScript) */
@@ -19,14 +19,12 @@
 /* Patchup for GS externals */
 FILE *gs_stdout;
 FILE *gs_stderr;
-FILE *gs_debug_out;
 const char gp_scratch_file_name_prefix[] = "gs_";
 static void
 capture_stdio(void)
 {
     gs_stdout = stdout;
     gs_stderr = stderr;
-    gs_debug_out = stderr;
 }
 #include "gsio.h"
 #undef gs_stdout
@@ -43,16 +41,16 @@ gp_open_scratch_file(const gs_memory_t *mem,
 {
     return NULL;
 }
-void 
+void
 gp_set_printer_binary(int prnfno, int binary)
 {
 }
-void 
+void
 gs_to_exit(int n)
 {
 }
 #define eprintf_program_ident(f, pn, rn) (void)0
-void 
+void
 lprintf_file_and_line(FILE * f, const char *file, int line)
 {
     fprintf(f, "%s(%d): ", file, line);
@@ -78,7 +76,7 @@ iadd(int a, int n, char **msg)
     int b = 0, i;
 
     for (i = n / 20; --i >= 0;) {
-	do10((b += a, b += i));
+        do10((b += a, b += i));
     }
     *msg = "integer adds";
     return b;
@@ -89,7 +87,7 @@ imul(int a, int n, char **msg)
     int b = 1, i;
 
     for (i = n / 20; --i > 0;) {
-	do10((b *= a, b *= i));
+        do10((b *= a, b *= i));
     }
     *msg = "integer multiplies";
     return b;
@@ -100,8 +98,8 @@ idiv(int a, int n, char **msg)
     int b = 1, i;
 
     for (i = n / 20; --i > 0;) {
-	b += 999999;
-	do10((b /= a, b /= i));
+        b += 999999;
+        do10((b /= a, b /= i));
     }
     *msg = "integer divides";
     return b;
@@ -113,7 +111,7 @@ fadd(float a, int n, char **msg)
     int i;
 
     for (i = n / 10; --i >= 0;) {
-	do10((b += a));
+        do10((b += a));
     }
     *msg = "floating adds";
     return b;
@@ -125,7 +123,7 @@ fmul(float a, int n, char **msg)
     int i;
 
     for (i = n / 10; --i >= 0;) {
-	do10((b *= a));
+        do10((b *= a));
     }
     *msg = "floating multiplies";
     return b;
@@ -137,7 +135,7 @@ fdiv(float a, int n, char **msg)
     int i;
 
     for (i = n / 10; --i >= 0;) {
-	do10((b /= a));
+        do10((b /= a));
     }
     *msg = "floating divides";
     return b;
@@ -151,10 +149,10 @@ fconv(int a, int n, char **msg)
 
     b[0] = a;
     for (i = n / 20; --i >= 0;)
-	f[0] = b[0], f[1] = b[1], f[2] = b[2], f[3] = b[3], f[4] = b[4],
-	    f[5] = b[5], f[6] = b[6], f[7] = b[7], f[8] = b[8], f[9] = b[9],
-	    b[0] = f[1], b[1] = f[2], b[2] = f[3], b[3] = f[4], b[4] = f[5],
-	    b[5] = f[6], b[6] = f[7], b[7] = f[8], b[8] = f[9], b[9] = f[0];
+        f[0] = b[0], f[1] = b[1], f[2] = b[2], f[3] = b[3], f[4] = b[4],
+            f[5] = b[5], f[6] = b[6], f[7] = b[7], f[8] = b[8], f[9] = b[9],
+            b[0] = f[1], b[1] = f[2], b[2] = f[3], b[3] = f[4], b[4] = f[5],
+            b[5] = f[6], b[6] = f[7], b[7] = f[8], b[8] = f[9], b[9] = f[0];
     *msg = "float/int conversions";
     return b[0];
 }
@@ -165,8 +163,8 @@ mfast(int *m, int n, char **msg)
 
     m[0] = n;
     for (i = n / 20; --i >= 0;)
-	m[9] = m[8], m[8] = m[7], m[7] = m[6], m[6] = m[5], m[5] = m[4],
-	    m[4] = m[3], m[3] = m[2], m[2] = m[1], m[1] = m[0], m[0] = m[9];
+        m[9] = m[8], m[8] = m[7], m[7] = m[6], m[6] = m[5], m[5] = m[4],
+            m[4] = m[3], m[3] = m[2], m[2] = m[1], m[1] = m[0], m[0] = m[9];
     *msg = "fast memory accesses";
     return m[0];
 }
@@ -178,11 +176,11 @@ mslow(int *m, int n, char **msg)
 
     m[0] = n;
     for (i = n / 20; --i >= 0; k = (k + 397) & 0x3ffff)
-	p = m + k,
-	    p[0] = p[100], p[20] = p[120], p[40] = p[140],
-	    p[60] = p[160], p[80] = p[180],
-	    p[200] = p[300], p[220] = p[320], p[240] = p[340],
-	    p[260] = p[360], p[280] = p[380];
+        p = m + k,
+            p[0] = p[100], p[20] = p[120], p[40] = p[140],
+            p[60] = p[160], p[80] = p[180],
+            p[200] = p[300], p[220] = p[320], p[240] = p[340],
+            p[260] = p[360], p[280] = p[380];
     *msg = "slow memory accesses";
     return m[0];
 }
@@ -195,47 +193,47 @@ main(int argc, const char *argv[])
 
     capture_stdio();
     for (i = 0;; ++i) {
-	long t0[2], t1[2];
-	char *msg;
-	int n;
+        long t0[2], t1[2];
+        char *msg;
+        int n;
 
-	gp_get_usertime(t0);
-	switch (i) {
-	    case 0:
-		iadd(0, n = 10000000, &msg);
-		break;
-	    case 1:
-		imul(1, n = 1000000, &msg);
-		break;
-	    case 2:
-		idiv(1, n = 1000000, &msg);
-		break;
-	    case 3:
-		fadd(3.14, n = 10000000, &msg);
-		break;
-	    case 4:
-		fmul(1.0000001, n = 10000000, &msg);
-		break;
-	    case 5:
-		fdiv(1.0000001, n = 1000000, &msg);
-		break;
-	    case 6:
-		fconv(12345, n = 10000000, &msg);
-		break;
-	    case 7:
-		mfast(mem, n = 10000000, &msg);
-		break;
-	    case 8:
-		mslow(mem, n = 1000000, &msg);
-		break;
-	    default:
-		free(mem);
-		exit(0);
-	}
-	gp_get_usertime(t1);
-	fprintf(stdout, "Time for %9d %s = %g ms\n", n, msg,
-		(t1[0] - t0[0]) * 1000.0 + (t1[1] - t0[1]) / 1000000.0);
-	fflush(stdout);
+        gp_get_usertime(t0);
+        switch (i) {
+            case 0:
+                iadd(0, n = 10000000, &msg);
+                break;
+            case 1:
+                imul(1, n = 1000000, &msg);
+                break;
+            case 2:
+                idiv(1, n = 1000000, &msg);
+                break;
+            case 3:
+                fadd(3.14, n = 10000000, &msg);
+                break;
+            case 4:
+                fmul(1.0000001, n = 10000000, &msg);
+                break;
+            case 5:
+                fdiv(1.0000001, n = 1000000, &msg);
+                break;
+            case 6:
+                fconv(12345, n = 10000000, &msg);
+                break;
+            case 7:
+                mfast(mem, n = 10000000, &msg);
+                break;
+            case 8:
+                mslow(mem, n = 1000000, &msg);
+                break;
+            default:
+                free(mem);
+                exit(0);
+        }
+        gp_get_usertime(t1);
+        fprintf(stdout, "Time for %9d %s = %g ms\n", n, msg,
+                (t1[0] - t0[0]) * 1000.0 + (t1[1] - t0[1]) / 1000000.0);
+        fflush(stdout);
     }
 }
 
@@ -359,21 +357,21 @@ main(int argc, const char *argv[])
    Now in gs_init.ps
    TextAlphaBits defined GraphicsAlphaBits defined
    Aladdin Ghostscript 3.50 (1995-9-24)
-   (c) 1995 Aladdin Enterprises, Menlo Park, CA.  All rights reserved. This 
-   software comes with NO WARRANTY: see the file PUBLIC for details. Leaving 
+   (c) 1995 Aladdin Enterprises, Menlo Park, CA.  All rights reserved. This
+   software comes with NO WARRANTY: see the file PUBLIC for details. Leaving
    gs_init.ps
    GS>(ben1.c) run
    Time for 5000 x 20 integer adds: 171 ms
    Time for 5000 x 20 integer multiplies: 504 ms
    Time for 5000 x 20 integer divides: 334 ms
-   Time for 5000 x 20 floating adds: 148 ms 
+   Time for 5000 x 20 floating adds: 148 ms
    Time for 5000 x 20 floating multiplies: 165 ms
-   Time for 5000 x 20 floating divides: 194 ms 
+   Time for 5000 x 20 floating divides: 194 ms
    Time for 5000 x 20 float/int conversions: 121 ms
    Time for 1000 x 10000(byte) fast memory accesses: 112 ms
    Time for 10 x 500 x 2000(byte) slower memory accesses: 236 ms
-   Loading NimbusRomanNo9L-Regular font from 
-   [...]/n021003l.gsf... 1739080 414724 2564864 1251073 0 
+   Loading NimbusRomanNo9L-Regular font from
+   [...]/n021003l.gsf... 1739080 414724 2564864 1251073 0
    done. Time for 100 x 10 (A) show (cache): 144 ms
    Time for 10 x 10 (A) show (no cache): 538 ms
 
