@@ -126,7 +126,7 @@ struct FAPI_font_s {
     int		   (*get_proc) (FAPI_font *ff, fapi_font_feature var_id, int index, char *Buffer);
     unsigned short (*get_gsubr)(FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     unsigned short (*get_subr) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
-    unsigned short (*get_glyph)(FAPI_font *ff, int char_code, byte *buf, ushort buf_length);
+    int		   (*get_glyph)(FAPI_font *ff, int char_code, byte *buf, ushort buf_length);
     unsigned short (*serialize_tt_font)(FAPI_font *ff, void *buf, int buf_size);
 };
 

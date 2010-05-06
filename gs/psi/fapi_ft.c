@@ -189,7 +189,7 @@ static FT_Error
 get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
 {
     FAPI_font *ff = a_info->fapi_font;
-    ushort length = 0;
+    int length = 0;
     
     /* Tell the FAPI interface that we need to decrypt the glyph data. */
     ff->need_decrypt = true;
@@ -222,6 +222,8 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
 
        /* Get as much of the glyph data as possible into the buffer */
        length = ff->get_glyph(ff, a_index, a_info->glyph_data, (ushort)a_info->glyph_data_length);
+       if (length == -1)
+	    return FT_Err_Invalid_File_Format;
 
        /* If the buffer was too small enlarge it and try again. */
        if (length > a_info->glyph_data_length) {
@@ -237,7 +239,8 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
             }
             a_info->glyph_data_length = length;
             ff->char_data = saved_char_data;
-            ff->get_glyph(ff, a_index, a_info->glyph_data, length);
+            if ((ff->get_glyph(ff, a_index, a_info->glyph_data, length)) == -1)
+		return FT_Err_Invalid_File_Format;
         }
 
         /* Set the returned pointer and length. */
@@ -418,9 +421,12 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         a_fapi_font->char_data = saved_char_data;
         if (!a_fapi_font->is_type1)
             ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_BITMAP : FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP);
-        else
+	else {
             /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
             ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+	    if (ft_error == FT_Err_Invalid_File_Format) 
+		return index+1;
+	}
     }
 
     if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index) {

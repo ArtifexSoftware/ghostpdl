@@ -847,7 +847,42 @@ static bool get_MetricsCount(FAPI_font *ff)
 
 
 
-static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
+static int get_charstring(FAPI_font *ff, int char_code, void **proc)
+{
+    ref *CharStrings, char_name;
+    ref *pdr = (ref *)ff->client_font_data2;
+
+    if (ff->is_type1) {
+        if (ff->is_cid) 
+	    return -1;
+	if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+	    return -1;
+
+        if (ff->char_data != NULL) {
+	    /*
+	     * Can't use char_code in this case because hooked Type 1 fonts
+	     * with 'glyphshow' may render a character which has no
+	     * Encoding entry.
+	     */
+	    if (name_ref(ff->memory, ff->char_data,
+		ff->char_data_len, &char_name, -1) < 0)
+		return -1;
+	}  else { /* seac */
+	    i_ctx_t *i_ctx_p = (i_ctx_t *)ff->client_ctx_p;
+	    ref *StandardEncoding;
+
+	    if (dict_find_string(systemdict, "StandardEncoding", &StandardEncoding) <= 0 ||
+		array_get(ff->memory, StandardEncoding, char_code, &char_name) < 0)
+		if (name_ref(ff->memory, (const byte *)".notdef", 7, &char_name, -1) < 0)
+		    return -1;
+	}
+        if (dict_find(CharStrings, &char_name, (ref **)proc) <= 0) 
+	    return -1;
+    }
+    return 0;
+}
+
+static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
 {   /*
      * We assume that renderer requests glyph data with multiple
      * consecutive calls to this function.
@@ -910,7 +945,9 @@ static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort 
                     return -1;
                 }
             }
-            glyph_length = get_type1_data(ff, glyph, buf, buf_length);
+	    if (r_has_type(glyph, t_array)) 
+		return -1;
+	    glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         }
     } else { /* type 42 */
 	const byte *data_ptr;
@@ -2108,7 +2145,18 @@ retry_oversampling:
 #else
 	code = I->get_char_raster_metrics(I, &I->ff, &cr, &metrics);
 #endif
-        if (code == e_limitcheck) {
+	if (code > 0) {
+	    os_ptr op = osp;
+	    ref *proc;
+	    if (get_charstring(&I->ff, code - 1, &proc) >= 0) {
+		ref_assign(op, proc);
+		push_op_estack(zexec);	/* execute the operand */
+		return o_push_estack;
+	    } else
+		return e_invalidfont;
+	}
+
+	if (code == e_limitcheck) {
             if(log2_scale.x > 0 || log2_scale.y > 0) {
                 penum_s->fapi_log2_scale.x = log2_scale.x = penum_s->fapi_log2_scale.y = log2_scale.y = 0;
                 I->release_char_data(I);
