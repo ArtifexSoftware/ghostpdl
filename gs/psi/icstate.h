@@ -64,6 +64,10 @@ struct gs_context_state_s {
     stream *invalid_file_stream;/* An invalid file object (stable memory) */
     op_array_table op_array_table_global; /* Global operator table */
     op_array_table op_array_table_local;  /* Local operator table */
+    int (*time_slice_proc)(i_ctx_t **);   /* Time slice procedure */
+    int time_slice_ticks;                 /* Ticks before next slice */
+    int (*reschedule_proc)(i_ctx_t **);   /* Reschedule procedure */
+
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;
     exec_stack_t exec_stack;
