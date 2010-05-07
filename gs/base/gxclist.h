@@ -194,11 +194,11 @@ typedef struct gx_device_clist_common_s {
     gx_device_clist_common_members;
 } gx_device_clist_common;
 
-#define clist_band_height(cldev) ((cldev)->page_info.band_height)
-#define clist_cfname(cldev) ((cldev)->page_info.cfname)
-#define clist_cfile(cldev) ((cldev)->page_info.cfile)
-#define clist_bfname(cldev) ((cldev)->page_info.bfname)
-#define clist_bfile(cldev) ((cldev)->page_info.bfile)
+#define clist_band_height(cldev) ((cldev)->page_band_height)
+#define clist_cfname(cldev) ((cldev)->page_cfname)
+#define clist_cfile(cldev) ((cldev)->page_cfile)
+#define clist_bfname(cldev) ((cldev)->page_bfname)
+#define clist_bfile(cldev) ((cldev)->page_bfile)
 
 /* Define the length of the longest dash pattern we are willing to store. */
 /* (Strokes with longer patterns are converted to fills.) */
