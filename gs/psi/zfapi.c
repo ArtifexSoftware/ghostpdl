@@ -847,7 +847,7 @@ static bool get_MetricsCount(FAPI_font *ff)
 
 
 
-static int get_charstring(FAPI_font *ff, int char_code, void **proc)
+static int get_charstring(FAPI_font *ff, int char_code, ref **proc)
 {
     ref *CharStrings, char_name;
     ref *pdr = (ref *)ff->client_font_data2;
