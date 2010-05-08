@@ -69,8 +69,18 @@ hpgl_default_coordinate_system(
     } else {
         pcs->g.picture_frame.anchor_point.x = pcs->margins.left;
         pcs->g.picture_frame.anchor_point.y = pcs->margins.top;
-        pcs->g.plot_height -= inch2coord(1.0);
-        pcs->g.picture_frame_height -= inch2coord(1.0);
+        {
+            /* the previous setup subtracted 1" from the plot and
+               picture frame height below, presumably derived from
+               subtracting 1/2" for top and bottom margin.  A better
+               result is to use 2 * top margin.  But this needs more
+               testing against the HP printer, the new correction does
+               work properly when the default top margin changes (ie. pclxl
+               snippet mode). */
+            coord margins_extent = (2 * pcs->margins.top);
+            pcs->g.plot_height -= margins_extent;
+            pcs->g.picture_frame_height -= margins_extent;
+        }
     }
     pcs->g.plot_size_vertical_specified = false;
     pcs->g.plot_size_horizontal_specified = false;
