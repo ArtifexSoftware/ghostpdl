@@ -19,15 +19,15 @@
 #include "pcstate.h"
 #include "pcdraw.h"
 #include "pcparam.h"
-#include "pcparse.h"		/* for pcl_execute_macro */
-#include "pcfont.h"		/* for underline interface */
+#include "pcparse.h"            /* for pcl_execute_macro */
+#include "pcfont.h"             /* for underline interface */
 #include "pcpatxfm.h"
 #include "pcursor.h"
 #include "pcpage.h"
 #include "pgmand.h"
 #include "pginit.h"
 #include "plmain.h"             /* for finish page */
-#include "gsmatrix.h"		/* for gsdevice.h */
+#include "gsmatrix.h"           /* for gsdevice.h */
 #include "gsnogc.h"
 #include "gscoord.h"
 #include "gsdevice.h"
@@ -62,7 +62,7 @@ preserve_cap_and_margins(
 {
     pcur_pt->x = (double)pcs->cap.x;
     pcur_pt->y = (double)pcs->cap.y;
-    gs_point_transform(	pcur_pt->x,
+    gs_point_transform( pcur_pt->x,
                         pcur_pt->y,
                         &(pcs->xfm_state.pd2lp_mtx),
                         pcur_pt
@@ -134,7 +134,7 @@ update_xfm_state(
 
     /* preserve the current point and text rectangle in logical page space */
     if ( !reset_initial )
-	preserve_cap_and_margins(pcs, &cur_pt, &text_rect);
+        preserve_cap_and_margins(pcs, &cur_pt, &text_rect);
 
     /* get the page to device transformation */
     gs_defaultmatrix(pcs->pgs, &pg2dev);
@@ -158,17 +158,17 @@ update_xfm_state(
     pxfmst->lp2pg_mtx.tx += loff;
     pxfmst->lp2pg_mtx.ty += toff;
     if ( pcs->personality == rtl )
-	offset = 0;
+        offset = 0;
     else
-	offset = ( (pxfmst->lp_orient & 0x1) != 0 ? psize->offset_landscape
-		   : psize->offset_portrait );
-    
+        offset = ( (pxfmst->lp_orient & 0x1) != 0 ? psize->offset_landscape
+                   : psize->offset_portrait );
+
     /* we need an extra 1/10 inch on each side to support 80
        characters vs. 78 at 10 cpi.  Only apply to A4. */
     if ( ( pcs->wide_a4 ) &&
-	 (psize->width == 59520) &&
-	 (psize->height == 84168) )
-	offset -= inch2coord(1.0/10.0);
+         (psize->width == 59520) &&
+         (psize->height == 84168) )
+        offset -= inch2coord(1.0/10.0);
 
     gs_matrix_translate( &(pxfmst->lp2pg_mtx),
                          (floatp)offset,
@@ -207,35 +207,35 @@ update_xfm_state(
         pxfmst->pd_size = pxfmst->lp_size;
 
     {
-	gx_device *pdev = gs_currentdevice(pcs->pgs);
-	/* We must not set up a clipping region beyond the hardware margins of
-	   the device, but the pcl language definition requires hardware
-	   margins to be 1/6".  We set all margins to the the maximum of the
-	   PCL language defined 1/6" and the actual hardware margin.  If 1/6"
-	   is not available pcl will not work correctly all of the time. */
-	if ( pcs->personality == rtl ) {
-	    print_rect.p.x = inch2coord(pdev->HWMargins[0] / 72.0);
-	    print_rect.p.y = inch2coord(pdev->HWMargins[1]) / 72.0;
-	    print_rect.q.x = psize->width - inch2coord(pdev->HWMargins[2] / 72.0);
-	    print_rect.q.y = psize->height - inch2coord(pdev->HWMargins[3] / 72.0);
-	} else {
-	    print_rect.p.x = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[0] / 72.0));
-	    print_rect.p.y = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[1]) / 72.0);
-	    print_rect.q.x = psize->width - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[2] / 72.0));
-	    print_rect.q.y = psize->height - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[3] / 72.0));
-	}
-	pcl_transform_rect(pcs->memory, &print_rect, &dev_rect, &pg2dev);
-	pxfmst->dev_print_rect.p.x = float2fixed(round(dev_rect.p.x));
-	pxfmst->dev_print_rect.p.y = float2fixed(round(dev_rect.p.y));
-	pxfmst->dev_print_rect.q.x = float2fixed(round(dev_rect.q.x));
-	pxfmst->dev_print_rect.q.y = float2fixed(round(dev_rect.q.y));
+        gx_device *pdev = gs_currentdevice(pcs->pgs);
+        /* We must not set up a clipping region beyond the hardware margins of
+           the device, but the pcl language definition requires hardware
+           margins to be 1/6".  We set all margins to the the maximum of the
+           PCL language defined 1/6" and the actual hardware margin.  If 1/6"
+           is not available pcl will not work correctly all of the time. */
+        if ( pcs->personality == rtl ) {
+            print_rect.p.x = inch2coord(pdev->HWMargins[0] / 72.0);
+            print_rect.p.y = inch2coord(pdev->HWMargins[1]) / 72.0;
+            print_rect.q.x = psize->width - inch2coord(pdev->HWMargins[2] / 72.0);
+            print_rect.q.y = psize->height - inch2coord(pdev->HWMargins[3] / 72.0);
+        } else {
+            print_rect.p.x = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[0] / 72.0));
+            print_rect.p.y = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[1]) / 72.0);
+            print_rect.q.x = psize->width - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[2] / 72.0));
+            print_rect.q.y = psize->height - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[3] / 72.0));
+        }
+        pcl_transform_rect(pcs->memory, &print_rect, &dev_rect, &pg2dev);
+        pxfmst->dev_print_rect.p.x = float2fixed(round(dev_rect.p.x));
+        pxfmst->dev_print_rect.p.y = float2fixed(round(dev_rect.p.y));
+        pxfmst->dev_print_rect.q.x = float2fixed(round(dev_rect.q.x));
+        pxfmst->dev_print_rect.q.y = float2fixed(round(dev_rect.q.y));
     }
     pcl_invert_mtx(&(pxfmst->lp2pg_mtx), &pg2lp);
     pcl_transform_rect(pcs->memory, &print_rect, &(pxfmst->lp_print_rect), &pg2lp);
 
     /* restablish the current point and text region */
     if ( !reset_initial )
-	restore_cap_and_margins(pcs, &cur_pt, &text_rect);
+        restore_cap_and_margins(pcs, &cur_pt, &text_rect);
 
     /*
      * No need to worry about pat_orient or pat_ref_pt; these will always
@@ -271,9 +271,9 @@ reset_vertical_margins(
 {
     pcl_margins_t * pmar = &(pcs->margins);
     coord           hgt = pcs->xfm_state.pd_size.y;
-    coord           tm = (for_passthrough ? 
+    coord           tm = (for_passthrough ?
                           DFLT_TOP_MARGIN_PASSTHROUGH : DFLT_TOP_MARGIN);
-    coord           bm = (for_passthrough ? 
+    coord           bm = (for_passthrough ?
                           DFLT_BOTOM_MARGIN_PASSTHROUGH : DFLT_BOTTOM_MARGIN);
 
     pmar->top = TOP_MARGIN(hgt, tm);
@@ -338,8 +338,8 @@ new_page_size(
 
     /* NB: save off the page size for the case where set device page size
      * doesn't match the PJL page size and no escE reset occurs, and we are not coming from PXL.
-     * A direct query, reset initial erasepage or a erasepage with notmarked don't do it 
-     * would all be preferable... 
+     * A direct query, reset initial erasepage or a erasepage with notmarked don't do it
+     * would all be preferable...
      */
     old_page_size[0] = pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->width : 0;
     old_page_size[1] = pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->height : 0;
@@ -366,29 +366,29 @@ new_page_size(
     update_xfm_state(pcs, reset_initial);
     reset_margins(pcs, for_passthrough);
 
-    /* 
+    /*
      * If this is an initial reset, make sure underlining is disabled (homing
      * the cursor may cause an underline to be put out.
      */
     if (reset_initial)
         pcs->underline_enabled = false;
     else
-	pcl_home_cursor(pcs);
+        pcl_home_cursor(pcs);
 
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
     if (!reset_initial) {
-	hpgl_do_reset(pcs, pcl_reset_page_params);
-	if ( pcs->end_page == pcl_end_page_top )   /* don't erase in snippet mode */
-	    gs_erasepage(pcs->pgs);
-	pcs->page_marked = false;
+        hpgl_do_reset(pcs, pcl_reset_page_params);
+        if ( pcs->end_page == pcl_end_page_top )   /* don't erase in snippet mode */
+            gs_erasepage(pcs->pgs);
+        pcs->page_marked = false;
     }
-    else if ( pcs->end_page == pcl_end_page_top && 
-	      !(old_page_size[0] == pcs->xfm_state.paper_size->width &&
-		old_page_size[1] == pcs->xfm_state.paper_size->height)) {
-	    /* PJL paper size change without escE case. */
-	gs_erasepage(pcs->pgs);
-	pcs->page_marked = false;
+    else if ( pcs->end_page == pcl_end_page_top &&
+              !(old_page_size[0] == pcs->xfm_state.paper_size->width &&
+                old_page_size[1] == pcs->xfm_state.paper_size->height)) {
+            /* PJL paper size change without escE case. */
+        gs_erasepage(pcs->pgs);
+        pcs->page_marked = false;
     }
 }
 
@@ -461,7 +461,7 @@ pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, int tag)
 
 }
 
-    
+
 
 /* page marking routines */
 
@@ -499,13 +499,13 @@ pcl_mark_page_for_current_pos(pcl_state_t *pcs)
         page_bbox_float.p.y = fixed2float(page_bbox_fixed.p.y);
         page_bbox_float.q.x = fixed2float(page_bbox_fixed.q.x);
         page_bbox_float.q.y = fixed2float(page_bbox_fixed.q.y);
-        
+
         if ( gs_currentpoint(pcs->pgs, &current_pt) < 0 ) {
              dprintf("Not expected to fail\n" );
              return;
         }
-             
-	if ( gs_transform(pcs->pgs, current_pt.x, current_pt.y, &dev_pt) ) {
+
+        if ( gs_transform(pcs->pgs, current_pt.x, current_pt.y, &dev_pt) ) {
              dprintf("Not expected to fail\n" );
              return;
         }
@@ -516,7 +516,7 @@ pcl_mark_page_for_current_pos(pcl_state_t *pcs)
              dev_pt.x < page_bbox_float.q.x &&
              dev_pt.y < page_bbox_float.q.y )
             pcs->page_marked = true;
-        
+
     }
 }
 
@@ -529,7 +529,7 @@ pcl_page_marked(
 {
     return pcs->page_marked;
 }
-    
+
 /*
  * End a page, either unconditionally or only if there are marks on it.
  * Return 1 if the page was actually printed and erased.
@@ -539,16 +539,16 @@ pcl_end_page(
     pcl_state_t *           pcs,
     pcl_print_condition_t   condition
 )
-{	
+{
     int                     code = 0;
 
-    pcl_break_underline(pcs);	/* (could mark page) */
+    pcl_break_underline(pcs);   /* (could mark page) */
 
     /* If we are conditionally printing (normal case) check if the
        page is marked */
     if (condition != pcl_print_always) {
-	if ( !pcl_page_marked(pcs) )
-	    return 0;
+        if ( !pcl_page_marked(pcs) )
+            return 0;
     }
 
     /* If there's an overlay macro, execute it now. */
@@ -556,19 +556,19 @@ pcl_end_page(
         void *  value;
 
         if ( pl_dict_find( &pcs->macros,
-      		           id_key(pcs->overlay_macro_id),
+                           id_key(pcs->overlay_macro_id),
                            2,
-			   &value
+                           &value
                            ) ) {
-	    pcs->overlay_enabled = false;   /**** IN reset_overlay ****/
-	    code = pcl_execute_macro( (const pcl_macro_t *)value,
+            pcs->overlay_enabled = false;   /**** IN reset_overlay ****/
+            code = pcl_execute_macro( (const pcl_macro_t *)value,
                                       pcs,
-      				      pcl_copy_before_overlay,
-				      pcl_reset_overlay,
-				      pcl_copy_after_overlay
+                                      pcl_copy_before_overlay,
+                                      pcl_reset_overlay,
+                                      pcl_copy_after_overlay
                                       );
-	    pcs->overlay_enabled = true; /**** IN copy_after ****/
-	}
+            pcs->overlay_enabled = true; /**** IN copy_after ****/
+        }
     }
     /* output the page */
     code = (*pcs->end_page)(pcs, pcs->num_copies, true);
@@ -581,18 +581,18 @@ pcl_end_page(
         code = gs_erasepage(pcs->pgs);
     pcs->page_marked = false;
     /* force new logical page, allows external resolution changes.
-     * see -dFirstPage -dLastPage 
+     * see -dFirstPage -dLastPage
      * NB would be faster if we didn't do this every page.
      *
-     * NB setting a new logical page defaults settings 
+     * NB setting a new logical page defaults settings
      * that should carry over from the previous page
      * this error occurs only on documents that don't do any initilizations per page
      * hence only the viewer applications will see the speedup and the error
      */
     if (!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "viewer"), "on")) {
         new_logical_page(pcs, pcs->xfm_state.lp_orient,
-			 pcs->xfm_state.paper_size, false, false);
-    }  
+                         pcs->xfm_state.paper_size, false, false);
+    }
 
     /*
      * Advance of a page may move from a page front to a page back. This may
@@ -628,7 +628,7 @@ set_page_size(
        arguments */
     code = pcl_end_page_if_marked(pcs);
     if ( code < 0 )
-	return code;
+        return code;
     pcl_home_cursor(pcs);
 
     for (i = 0; i < countof(paper_sizes); i++) {
@@ -638,13 +638,13 @@ set_page_size(
         }
     }
     if ((psize != 0) && ((code = pcl_end_page_if_marked(pcs)) >= 0)) {
-	/* if the orientation flag is not set for this page we select
+        /* if the orientation flag is not set for this page we select
            a portrait page using the set paper size.  Otherwise select
            the paper using the current orientation. */
-	if ( pcs->orientation_set == false )
-	    new_logical_page(pcs, 0, psize, false, false);
-	else
-	    new_page_size(pcs, psize, false, false);
+        if ( pcs->orientation_set == false )
+            new_logical_page(pcs, 0, psize, false, false);
+        else
+            new_page_size(pcs, psize, false, false);
     }
     return code;
 }
@@ -666,12 +666,12 @@ set_paper_source(
        arguments */
     int code = pcl_end_page_if_marked(pcs);
     if ( code < 0 )
-	return code;
+        return code;
     pcl_home_cursor(pcs);
 
     /* Note: not all printers support all possible values. */
     if (i <= 6) {
-	code = 0;
+        code = 0;
         if (i > 0)
             code = put_param1_int(pcs, "%MediaSource", i);
         return (code < 0 ? code : 0);
@@ -729,28 +729,28 @@ set_logical_page_orientation(
 
     /* the command is ignored if it is value is out of range */
     if ( i > 3 )
-	return 0;
+        return 0;
 
     /* this command is ignored in pcl xl snippet mode.  NB we need a
        better flag for snippet mode. */
     if (pcs->end_page != pcl_end_page_top) {
         return 0;
     }
-        
+
     /* If orientation is same as before ignore the command */
     if ( i == pcs->xfm_state.lp_orient ) {
-	pcs->orientation_set = true;
-	return 0;
+        pcs->orientation_set = true;
+        return 0;
     }
 
     /* ok to execute - clear the page, set up the transformations and
        set the flag disabling the orientation command for this page. */
     code = pcl_end_page_if_marked(pcs);
     if ( code >= 0 ) {
-        pcs->hmi_cp = HMI_DEFAULT;    
+        pcs->hmi_cp = HMI_DEFAULT;
         pcs->vmi_cp = VMI_DEFAULT;
-	new_logical_page(pcs, i, pcs->xfm_state.paper_size, false, false); 
-	pcs->orientation_set = true;
+        new_logical_page(pcs, i, pcs->xfm_state.paper_size, false, false);
+        pcs->orientation_set = true;
     }
     return code;
 }
@@ -767,17 +767,17 @@ set_print_direction(
     uint            i = uint_arg(pargs);
 
     if ((i <= 270) && (i % 90 == 0)) {
-	i /= 90;
-	if (i !=  pcs->xfm_state.print_dir) {
-	    pcl_break_underline(pcs); 
-	    pcs->xfm_state.print_dir = i;
-	    update_xfm_state(pcs, 0);
-	    pcl_continue_underline(pcs); 
-	}
-	else {
-	    pcs->xfm_state.print_dir = i;
-	    update_xfm_state(pcs, 0);
-	}
+        i /= 90;
+        if (i !=  pcs->xfm_state.print_dir) {
+            pcl_break_underline(pcs);
+            pcs->xfm_state.print_dir = i;
+            update_xfm_state(pcs, 0);
+            pcl_continue_underline(pcs);
+        }
+        else {
+            pcs->xfm_state.print_dir = i;
+            update_xfm_state(pcs, 0);
+        }
     }
     return 0;
 }
@@ -823,7 +823,7 @@ set_right_margin(
     coord           rmarg = (uint_arg(pargs) + 1) * pcl_hmi(pcs);
 
     if (rmarg > pcs->xfm_state.pd_size.x)
-	rmarg = pcs->xfm_state.pd_size.x;
+        rmarg = pcs->xfm_state.pd_size.x;
     if (rmarg > pcs->margins.left) {
         pcs->margins.right = rmarg;
         if (pcs->cap.x > rmarg)
@@ -864,21 +864,21 @@ set_top_margin(
     coord           tmarg = uint_arg(pargs) * pcs->vmi_cp;
 
     if ((pcs->vmi_cp != 0) && (tmarg <= hgt)) {
-	bool was_default = (pcs->margins.top == TOP_MARGIN(hgt, DFLT_TOP_MARGIN) &&
-	                    pcs->margins.left == DFLT_LEFT_MARGIN);
+        bool was_default = (pcs->margins.top == TOP_MARGIN(hgt, DFLT_TOP_MARGIN) &&
+                            pcs->margins.left == DFLT_LEFT_MARGIN);
 
         pcs->margins.top = tmarg;
         pcs->margins.length = PAGE_LENGTH(hgt - tmarg, DFLT_BOTTOM_MARGIN);
-	
-	/* If the cursor has been moved then we have a fixed cap and the 
-	   top margin only affects the next page. If the cap is floating,
-	   unmarked and unmoved, then the cap moves to the first line of text. 
-           More restrictive than implementor's guide: 
-	   iff a default margin is changed on an unmarked unmoved page to the new margin.
-	   margin_set(A) ^L margin_set(B)  --> use (A)
-	   escE margin_set(B) --> use (B) 
-	 */
-	if (was_default && pcl_page_marked(pcs) == 0 )
+
+        /* If the cursor has been moved then we have a fixed cap and the
+           top margin only affects the next page. If the cap is floating,
+           unmarked and unmoved, then the cap moves to the first line of text.
+           More restrictive than implementor's guide:
+           iff a default margin is changed on an unmarked unmoved page to the new margin.
+           margin_set(A) ^L margin_set(B)  --> use (A)
+           escE margin_set(B) --> use (B)
+         */
+        if (was_default && pcl_page_marked(pcs) == 0 )
             return pcl_set_cap_y(pcs, 0L, false, false, true, false);
     }
     return 0;
@@ -904,7 +904,7 @@ set_text_length(
         }
     }
     if ((len >= 0) && (pcs->margins.top + len <= pcs->xfm_state.pd_size.y) )
-	pcs->margins.length = len;
+        pcs->margins.length = len;
     return 0;
 }
 
@@ -924,11 +924,11 @@ set_perforation_skip(
     bool            new_skip = uint_arg(pargs);
 
     if ((new_skip != pcs->perforation_skip) && (new_skip <= 1))
-	pcs->perforation_skip = new_skip;
+        pcs->perforation_skip = new_skip;
     return 0;
 }
 
-/* 
+/*
  * (From PCL5 Comparison Guide, p. 1-98)
  *
  * ESC & l <type> M
@@ -965,7 +965,7 @@ typedef struct pcl_logical_page_s {
     byte Width[2];
     byte Height[2];
 } pcl_logical_page_t;
-    
+
  static int
 set_logical_page(
     pcl_args_t *    pargs,
@@ -984,7 +984,7 @@ set_logical_page(
 /*
  * (From PCL5 Comparison Guide, p. 1-99)
  *
- * ESC * o <quality> Q 
+ * ESC * o <quality> Q
  *
  * Set print quality.
  */
@@ -1003,7 +1003,7 @@ pcl_print_quality(
             pcl_home_cursor(pcs);
         return (code < 0 ? code : 0);
     } else
-	return e_Range;
+        return e_Range;
 }
 
 /*
@@ -1019,14 +1019,14 @@ pcpage_do_registration(
     DEFINE_CLASS('&')
     {
         'l', 'A',
-	PCL_COMMAND( "Page Size",
+        PCL_COMMAND( "Page Size",
                      set_page_size,
                      pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'l', 'H',
-	PCL_COMMAND( "Paper Source",
+        PCL_COMMAND( "Paper Source",
                      set_paper_source,
                      pca_neg_ok | pca_big_ignore
                      )
@@ -1034,22 +1034,22 @@ pcpage_do_registration(
     {
         'l', 'U',
         PCL_COMMAND( "Left Offset Registration",
-		     set_left_offset_registration,
-		     pca_neg_ok | pca_big_ignore
+                     set_left_offset_registration,
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'l', 'Z',
         PCL_COMMAND( "Top Offset Registration",
-		     set_top_offset_registration,
-		     pca_neg_ok | pca_big_ignore
+                     set_top_offset_registration,
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'l', 'O',
         PCL_COMMAND( "Page Orientation",
                      set_logical_page_orientation,
-		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
@@ -1061,51 +1061,51 @@ pcpage_do_registration(
     },
     {
         'a', 'L',
-	PCL_COMMAND( "Left Margin",
+        PCL_COMMAND( "Left Margin",
                      set_left_margin,
-		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'a', 'M',
         PCL_COMMAND( "Right Margin",
                      set_right_margin,
-		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'l', 'E',
-	PCL_COMMAND( "Top Margin",
+        PCL_COMMAND( "Top Margin",
                      set_top_margin,
-		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'l', 'F',
-	PCL_COMMAND( "Text Length",
+        PCL_COMMAND( "Text Length",
                      set_text_length,
-		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'l', 'L',
-	PCL_COMMAND( "Perforation Skip",
+        PCL_COMMAND( "Perforation Skip",
                      set_perforation_skip,
-		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'l', 'M',
-	PCL_COMMAND( "Media Type",
+        PCL_COMMAND( "Media Type",
                      pcl_media_type,
-		     pca_neg_ok | pca_big_ignore
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     {
         'a', 'W',
-	PCL_COMMAND( "Set Logical Page",
+        PCL_COMMAND( "Set Logical Page",
                      set_logical_page,
-		     pca_bytes
+                     pca_bytes
                      )
     },
     END_CLASS
@@ -1119,7 +1119,7 @@ pcpage_do_registration(
                                'o',
                                'Q',
                                "Print Quality",
-			       pcl_print_quality,
+                               pcl_print_quality,
                                pca_neg_ok | pca_big_ignore
                                )
     return 0;
@@ -1135,15 +1135,15 @@ pcl_get_default_paper(
     pcs->wide_a4 = false;
     for (i = 0; i < countof(paper_sizes); i++)
         if (!pjl_proc_compare(pcs->pjls, psize, paper_sizes[i].pname)) {
-	    /* set wide a4, only used if the paper is a4 */
-	    if (!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "widea4"), "YES"))
-		pcs->wide_a4 = true;
-	    return &(paper_sizes[i].psize);
-	}
+            /* set wide a4, only used if the paper is a4 */
+            if (!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "widea4"), "YES"))
+                pcs->wide_a4 = true;
+            return &(paper_sizes[i].psize);
+        }
     dprintf("system does not support requested paper setting\n");
     return &(paper_sizes[1].psize);
 }
-    
+
   static void
 pcpage_do_reset(
     pcl_state_t *       pcs,
@@ -1154,30 +1154,36 @@ pcpage_do_reset(
     /* NB hack for snippet mode */
     if (pcs->end_page != pcl_end_page_top) {
         pcs->xfm_state.print_dir = 0;
-	pcs->xfm_state.left_offset_cp = 0.0;
+        pcs->xfm_state.left_offset_cp = 0.0;
         pcs->xfm_state.top_offset_cp = 0.0;
-        update_xfm_state(pcs, 0);       
+        update_xfm_state(pcs, 0);
 
-        reset_margins(pcs, !pcl_reset_printer); /* esc E in snippet mode */
+        /* if we are in snippet mode, ESC E (reset) will set the
+           default margins otherwise we should use the unusual
+           passthrough margins (1/6") see above */
+        if (type & pcl_reset_printer)
+            reset_margins(pcs, false);
+        else
+            reset_margins(pcs, true);
         return;
     }
 
     if ((type & (pcl_reset_initial | pcl_reset_printer)) != 0) {
-	pcs->orientation_set = false;
-	pcs->paper_source = 0;		/* ??? */
+        pcs->orientation_set = false;
+        pcs->paper_source = 0;          /* ??? */
         pcs->xfm_state.left_offset_cp = 0.0;
         pcs->xfm_state.top_offset_cp = 0.0;
-	pcs->perforation_skip = 1;
+        pcs->perforation_skip = 1;
         new_logical_page( pcs,
-			  !pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls,
-						 "orientation"),
-				       "portrait") ? 0 : 1,
+                          !pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls,
+                                                 "orientation"),
+                                       "portrait") ? 0 : 1,
                           pcl_get_default_paper(pcs),
                           (type & pcl_reset_initial) != 0,
                           false
                           );
     } else if ((type & pcl_reset_overlay) != 0) {
-	pcs->perforation_skip = 1;
+        pcs->perforation_skip = 1;
         update_xfm_state(pcs, 0);
         reset_margins(pcs, false);
         pcl_xfm_reset_pcl_pat_ref_pt(pcs);
