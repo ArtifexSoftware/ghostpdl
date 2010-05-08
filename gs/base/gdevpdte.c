@@ -448,7 +448,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	 * so skip the text if it is outside the clip bbox
 	 * (Note : it ever fails with type 3 fonts).
 	 */
-	gs_rect text_bbox = {0, 0, 0, 0};
+	gs_rect text_bbox = {{0, 0}, {0, 0}};
 
 	code = process_text_estimate_bbox(penum, font, (gs_const_string *)pstr, pfmat, 
 					  &text_bbox, &width_pt);
