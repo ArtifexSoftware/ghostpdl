@@ -453,6 +453,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	int px;
 	const ref *pp;
 	int at_eof_count = 0;
+        int total_used;
 
 	/*
 	 * Do a first pass through the files to ensure that at least
@@ -516,14 +517,16 @@ image_file_continue(i_ctx_t *i_ctx_p)
 
 	    code = gs_image_next_planes(penum, plane_data, used);
 	    /* Now that used has been set, update the streams. */
-	    for (pi = 0, pp = ETOP_SOURCE(esp, 0); pi < num_sources;
-		 ++pi, pp -= 2
-		 )
+	    total_used = 0;
+            for (pi = 0, pp = ETOP_SOURCE(esp, 0); pi < num_sources;
+		 ++pi, pp -= 2 ) {
 		sbufskip(pp->value.pfile, used[pi]);
+                total_used += used[pi];
+            }
 	    if (code == e_RemapColor)
 		return code;
 	}
-	if (at_eof_count >= num_sources)
+	if (at_eof_count >= num_sources || (at_eof_count && total_used == 0))
 	    code = 1;
 	if (code) {
 	    int code1;
