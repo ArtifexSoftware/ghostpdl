@@ -37,8 +37,8 @@ $local=1         if ($machine eq "local");
 $timeOut=600     if ($local);
 
 if (!$local) {
-open (LOG,">>$machine.dbg");
-print LOG "\n\n";
+  open (LOG,">>$machine.dbg");
+  print LOG "\n\n";
 }
 
 sub mylog($) {
@@ -46,11 +46,11 @@ sub mylog($) {
   chomp $d;
   my $s=shift;
   chomp $s;
-if ($local) {
-  print     "$d: $s\n";
-} else {
-  print LOG "$d: $s\n";
-}
+  if ($local) {
+    print     "$d: $s\n";
+  } else {
+    print LOG "$d: $s\n";
+  }
 }
 
 # the commands below only need to be done once
@@ -58,7 +58,6 @@ mkdir("icc_work");
 mkdir("icc_work/bin");
 mkdir("./head/");
 mkdir("./head/bin");
-
 
 my $user;
 my $revs;
@@ -99,22 +98,22 @@ sub checkPID {
 }
 
 if (!$local) {
-if (-e $runningSemaphore) {
-  my $fileTime = stat($runningSemaphore)->mtime;
-  my $t=time;
-  if ($t-$fileTime>7200) {
-    mylog "semaphore file too old, removing\n";
-    open(F,">status");
-    print F "Regression terminated due to timeout";
-    close(F);
-    unlink $runningSemaphore;
+  if (-e $runningSemaphore) {
+    my $fileTime = stat($runningSemaphore)->mtime;
+    my $t=time;
+    if ($t-$fileTime>7200) {
+      mylog "semaphore file too old, removing\n";
+      open(F,">status");
+      print F "Regression terminated due to timeout";
+      close(F);
+      unlink $runningSemaphore;
+    }
+    exit;
   }
-  exit;
-}
 
-open(F,">$runningSemaphore");
-print F "$$\n";
-close(F);
+  open(F,">$runningSemaphore");
+  print F "$$\n";
+  close(F);
 }
 
 mylog "starting run.pl:  pid=$$\n";
@@ -139,40 +138,40 @@ if (1) {
 }
 
 if (!$local) {
-if (open(F,"<$machine.start")) {
-  my $t=<F>;
-  chomp $t;
-  close(F);
-  if ($t) {
-    my @a=split '\t', $t;
-    if ($a[0] eq "svn") {
-      $revs=$a[1];
-      $products=$a[2];
-    } elsif ($a[0] eq "mupdf") {
-      $mupdf=1;
-      $products="mupdf";
-$maxCount=4;
-$maxTimeoutPercentage=5.0;
-$timeOut=600;
-    } elsif ($a[0] eq "svn-icc_work") {
-      $icc_work=$a[1];
-      $products=$a[2];
-    } elsif ($a[0] eq "user") {
-      $user=$a[1];
-      $products=$a[2];
+  if (open(F,"<$machine.start")) {
+    my $t=<F>;
+    chomp $t;
+    close(F);
+    if ($t) {
+      my @a=split '\t', $t;
+      if ($a[0] eq "svn") {
+        $revs=$a[1];
+        $products=$a[2];
+      } elsif ($a[0] eq "mupdf") {
+        $mupdf=1;
+        $products="mupdf";
+        $maxCount=4;
+        $maxTimeoutPercentage=5.0;
+        $timeOut=600;
+      } elsif ($a[0] eq "svn-icc_work") {
+        $icc_work=$a[1];
+        $products=$a[2];
+      } elsif ($a[0] eq "user") {
+        $user=$a[1];
+        $products=$a[2];
+      } else {
+        mylog "oops 3";
+        die "oops 3";  # hack
+      }
     } else {
-      mylog "oops 3";
-      die "oops 3";  # hack
+      mylog "oops 1";  # hack
+      die "oops 1";  # hack
     }
+    unlink("$machine.start");
   } else {
-    mylog "oops 1";  # hack
-    die "oops 1";  # hack
+    mylog "oops 2";  # hack
+    die "oops 2";  # hack
   }
-  unlink("$machine.start");
-} else {
-  mylog "oops 2";  # hack
-  die "oops 2";  # hack
-}
 }
 
 mylog "user products=$products user=$user\n" if ($user);
@@ -183,7 +182,6 @@ mylog "mupdf\n" if ($mupdf);
 my $host="casper.ghostscript.com";
 
 my $desiredRev;
-
 
 my $baseDirectory=`pwd`;
 chomp $baseDirectory;
@@ -278,7 +276,6 @@ if ($local) {
   }
 }
 
-
 my $poll=1;
 
 $poll=0 if ($local);
@@ -289,7 +286,6 @@ my @products=split ' ',$products;
 foreach (@products) {
   $products{$_}=1;
 }
-
 
 my $cmd;
 my $s;
@@ -350,7 +346,7 @@ sub spawn($$) {
           select(undef, undef, undef, 0.1);
           $status=waitpid($pid,WNOHANG);
           $t++;
-        } while($status>=0 && $t<abs($timeout*10));
+          } while($status>=0 && $t<abs($timeout*10));
         $done=1 if ($timeout<0);
         if ($status>=0) {
           mylog ("killing (spawn) $pid\n");
@@ -380,57 +376,56 @@ sub checkAbort {
 
 sub updateStatus($) {
   my $message=shift;
-if (!$local) {
-  `echo '$message' >$machine.status`;
-  spawn(0,"scp -q -i ~/.ssh/cluster_key $machine.status regression\@casper.ghostscript.com:/home/regression/cluster/$machine.status");
-}
+  if (!$local) {
+    `echo '$message' >$machine.status`;
+    spawn(0,"scp -q -i ~/.ssh/cluster_key $machine.status regression\@casper.ghostscript.com:/home/regression/cluster/$machine.status");
+  }
   mylog($message);
 }
 
 sub systemWithRetry($) {
   my $cmd=shift;
   my $a;
-  
-    mylog "$cmd";
-    print "$cmd\n" if ($verbose);
-      my $count=0;
-      do {
-        `$cmd`;
-        $a=$?;
-print "error with: $cmd; a=$a count=$count\n" if ($a!=0);
-        $count++;
-        sleep 10 if ($a!=0);
-      } while ($a!=0 && $count<5);
-      if ($a!=0) {
-        unlink $runningSemaphore;
-      }
+
+  mylog "$cmd";
+  print "$cmd\n" if ($verbose);
+  my $count=0;
+  do {
+    `$cmd`;
+    $a=$?;
+    print "error with: $cmd; a=$a count=$count\n" if ($a!=0);
+    $count++;
+    sleep 10 if ($a!=0);
+    } while ($a!=0 && $count<5);
+  if ($a!=0) {
+    unlink $runningSemaphore;
+  }
 }
 
 my %logged;
 sub addToLog($) {
   my $logfile=shift;
   $logged{$logfile}=1;
-      print F4 "===$logfile===\n";
-      if (open(F,"<$temp/$logfile.log")) {
-      while(<F>) {
-        print F4 $_;
-      }
-      close(F);
-      } else {
-        mylog "file $temp/$logfile.log not found";
-      }
-      if (open(F,"<$temp/$logfile.md5")) {
-        while(<F>) {
-          print F4 $_;
-        }
-        close(F);
-      }
-      if (exists $timeOuts{$logfile}) {
-        print F4 "killed: timeout\n";
-      }
-      print F4 "\n";
+  print F4 "===$logfile===\n";
+  if (open(F,"<$temp/$logfile.log")) {
+    while(<F>) {
+      print F4 $_;
+    }
+    close(F);
+  } else {
+    mylog "file $temp/$logfile.log not found";
+  }
+  if (open(F,"<$temp/$logfile.md5")) {
+    while(<F>) {
+      print F4 $_;
+    }
+    close(F);
+  }
+  if (exists $timeOuts{$logfile}) {
+    print F4 "killed: timeout\n";
+  }
+  print F4 "\n";
 }
-
 
 if (!$local) {
 ###if (!$user) {
@@ -447,63 +442,63 @@ if (!$local) {
   }
 ###}
 
-$abort=checkAbort;
-if (!$abort) {
+  $abort=checkAbort;
+  if (!$abort) {
 
-  if ($user) {
-    updateStatus("Fetching source from users/$user");
-    mkdir "users";
-    mkdir "users/$user";
-    mkdir "users/$user/ghostpdl";
-    mkdir "users/$user/ghostpdl/gs";
-    $cmd="cd users/$user          ; rsync -vlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
-    systemWithRetry($cmd);
-
-    $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
-    $gsSource=$gpdlSource."/gs";
-  } elsif ($mupdf) {
-    updateStatus('Fetching mupdf.tar.gz');
-    `touch mupdf ; rm -fr mupdf; touch mupdf.tar.gz ; rm mupdf.tar.gz`;
-    $cmd=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
-    systemWithRetry($cmd);
- 
-  } elsif ($icc_work) {
-
-    if (!-e $icc_workGsSource) {
-      `rm -fr $icc_workSource`;
-      updateStatus('Checking out icc_work');
-      $cmd="svn co --ignore-externals http://svn.ghostscript.com/ghostscript/trunk/ghostpdl $icc_workSource";
+    if ($user) {
+      updateStatus("Fetching source from users/$user");
+      mkdir "users";
+      mkdir "users/$user";
+      mkdir "users/$user/ghostpdl";
+      mkdir "users/$user/ghostpdl/gs";
+      $cmd="cd users/$user          ; rsync -vlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
       systemWithRetry($cmd);
-      $cmd="svn co http://svn.ghostscript.com/ghostscript/branches/icc_work $icc_workGsSource";
+
+      $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
+      $gsSource=$gpdlSource."/gs";
+    } elsif ($mupdf) {
+      updateStatus('Fetching mupdf.tar.gz');
+      `touch mupdf ; rm -fr mupdf; touch mupdf.tar.gz ; rm mupdf.tar.gz`;
+      $cmd=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
       systemWithRetry($cmd);
-    }
-    updateStatus('Updating icc_work');
-    $cmd="svn update -r$icc_work --ignore-externals $icc_workSource ; cd $icc_workGsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; svn update -r$icc_work";
-    systemWithRetry($cmd);
 
-    $gpdlSource=$icc_workSource;
-    $gsSource=$icc_workGsSource;
-  } else {
+    } elsif ($icc_work) {
 
-    updateStatus('Updating Ghostscript');
+      if (!-e $icc_workGsSource) {
+        `rm -fr $icc_workSource`;
+        updateStatus('Checking out icc_work');
+        $cmd="svn co --ignore-externals http://svn.ghostscript.com/ghostscript/trunk/ghostpdl $icc_workSource";
+        systemWithRetry($cmd);
+        $cmd="svn co http://svn.ghostscript.com/ghostscript/branches/icc_work $icc_workGsSource";
+        systemWithRetry($cmd);
+      }
+      updateStatus('Updating icc_work');
+      $cmd="svn update -r$icc_work --ignore-externals $icc_workSource ; cd $icc_workGsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; svn update -r$icc_work";
+      systemWithRetry($cmd);
 
-    # get update
-    if ($revs eq "head") {
-    } elsif ($revs =~ m/(\d+)/) {
+      $gpdlSource=$icc_workSource;
+      $gsSource=$icc_workGsSource;
     } else {
-      mylog "oops 4: revs=$revs";
-      die "oops 4";  # hack
+
+      updateStatus('Updating Ghostscript');
+
+      # get update
+      if ($revs eq "head") {
+      } elsif ($revs =~ m/(\d+)/) {
+      } else {
+        mylog "oops 4: revs=$revs";
+        die "oops 4";  # hack
+      }
+      $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs --ignore-externals";
+      mylog "$cmd";
+      print "$cmd\n" if ($verbose);
+      systemWithRetry($cmd);
+      $cmd="cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs";
+      systemWithRetry($cmd);
+
     }
-    $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs --ignore-externals";
-    mylog "$cmd";
-    print "$cmd\n" if ($verbose);
-    systemWithRetry($cmd);
-    $cmd="cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs";
-    systemWithRetry($cmd);
 
   }
-
-}
 }
 
 #`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
@@ -512,7 +507,6 @@ if (!$abort) {
 
 mkdir("$gsBin");
 mkdir("$gsBin/bin");
-
 
 $cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
 print "$cmd\n" if ($verbose);
@@ -546,132 +540,131 @@ if (!$abort) {
   unlink "$gpdlSource/makexps.out";
   unlink "$gpdlSource/makesvg.out";
 
-if (!$dontBuild) {
-  if (-e "./head/bin/gs") {
-    `cp -p ./head/bin/* $gsBin/bin/.`;
+  if (!$dontBuild) {
+    if (-e "./head/bin/gs") {
+      `cp -p ./head/bin/* $gsBin/bin/.`;
+    }
   }
-}
 
-if (!$dontBuild) {
-  if ($mupdf) {
-    updateStatus('Building mupdf');
-    $cmd="touch mupdf.tar ; rm mupdf.tar ; gunzip mupdf.tar.gz ; tar xf mupdf.tar";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
-    if (-e "./Jamrules") {
-      $cmd="cp -p Jamrules mupdf/.";
+  if (!$dontBuild) {
+    if ($mupdf) {
+      updateStatus('Building mupdf');
+      $cmd="touch mupdf.tar ; rm mupdf.tar ; gunzip mupdf.tar.gz ; tar xf mupdf.tar";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+      if (-e "./Jamrules") {
+        $cmd="cp -p Jamrules mupdf/.";
+        print "$cmd\n" if ($verbose);
+        `$cmd`;
+      }
+      $cmd="cd mupdf ; jam >makemupdf.out";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+
+      $cmd="touch gs/bin/mupdf ; rm gs/bin/mupdf ; cp -p mupdf/build/*/pdfdraw gs/bin/.";
       print "$cmd\n" if ($verbose);
       `$cmd`;
     }
-    $cmd="cd mupdf ; jam >makemupdf.out";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
-      
+  }
 
-    $cmd="touch gs/bin/mupdf ; rm gs/bin/mupdf ; cp -p mupdf/build/*/pdfdraw gs/bin/.";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
+  if (!$dontBuild) {
+    if ($products{'gs'}) {
+
+      updateStatus('Building Ghostscript');
+
+      # build ghostscript
+      $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; echo >>makegs.out ; nice make >>makegs.out 2>&1";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+
+      updateStatus('Installing Ghostscript');
+
+      # install ghostscript
+      $cmd="rm -fr $gsBin ; cd $gsSource ; nice make install";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+
+      if (-e "$gsBin/bin/gs") {
+        if ($icc_work) {
+          `cp -p $gsBin/bin/gs ./icc_work/bin/.`;
+        }
+        if ($revs) {
+          `cp -p $gsBin/bin/gs ./head/bin/.`;
+        }
+      } else {
+        $compileFail.="gs ";
+      }
+    }
   }
 }
 
+$abort=checkAbort;
 if (!$dontBuild) {
-  if ($products{'gs'}) {
-
-    updateStatus('Building Ghostscript');
-
-    # build ghostscript
-    $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --disable-cairo --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; echo >>makegs.out ; nice make >>makegs.out 2>&1";
+  if ($products{'pcl'} && !$abort) {
+    updateStatus('Building GhostPCL');
+    $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; echo >>makepcl.out ;  nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
-
-    updateStatus('Installing Ghostscript');
-
-    #install ghostscript
-    $cmd="rm -fr $gsBin ; cd $gsSource ; nice make install";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
-
-    if (-e "$gsBin/bin/gs") {
+    if (-e "$gpdlSource/main/obj/pcl6") {
+      $cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
       if ($icc_work) {
-        `cp -p $gsBin/bin/gs ./icc_work/bin/.`;
+        `cp -p $gsBin/bin/pcl6 ./icc_work/bin/.`;
       }
       if ($revs) {
-        `cp -p $gsBin/bin/gs ./head/bin/.`;
+        `cp -p $gsBin/bin/pcl6 ./head/bin/.`;
       }
     } else {
-      $compileFail.="gs ";
+      $compileFail.="pcl6 ";
     }
   }
-}
-} 
-
-$abort=checkAbort;
-if (!$dontBuild) {
-if ($products{'pcl'} && !$abort) {
-  updateStatus('Building GhostPCL');
-  $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; echo >>makepcl.out ;  nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
-  print "$cmd\n" if ($verbose);
-  `$cmd`;
-  if (-e "$gpdlSource/main/obj/pcl6") {
-    $cmd="cp -p $gpdlSource/main/obj/pcl6 $gsBin/bin/.";
-    print "$cmd\n" if ($verbose);
-    `$cmd`;
-    if ($icc_work) {
-      `cp -p $gsBin/bin/pcl6 ./icc_work/bin/.`;
-    }
-    if ($revs) {
-      `cp -p $gsBin/bin/pcl6 ./head/bin/.`;
-    }
-  } else {
-    $compileFail.="pcl6 ";
-  }
-}
 }
 
 $abort=checkAbort;
 if (!$dontBuild) {
-if ($products{'xps'} && !$abort) {
-  updateStatus('Building GhostXPS');
-  $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; echo >>makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
-  print "$cmd\n" if ($verbose);
-  `$cmd`;
-  if (-e "$gpdlSource/xps/obj/gxps") {
-    $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
+  if ($products{'xps'} && !$abort) {
+    updateStatus('Building GhostXPS');
+    $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; echo >>makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
-    if ($icc_work) {
-      `cp -p $gsBin/bin/gxps ./icc_work/bin/.`;
+    if (-e "$gpdlSource/xps/obj/gxps") {
+      $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+      if ($icc_work) {
+        `cp -p $gsBin/bin/gxps ./icc_work/bin/.`;
+      }
+      if ($revs) {
+        `cp -p $gsBin/bin/gxps ./head/bin/.`;
+      }
+    } else {
+      $compileFail.="gxps ";
     }
-    if ($revs) {
-      `cp -p $gsBin/bin/gxps ./head/bin/.`;
-    }
-  } else {
-    $compileFail.="gxps ";
   }
-}
 }
 
 $abort=checkAbort;
 if (!$dontBuild) {
-if ($products{'svg'} && !$abort) {
-  updateStatus('Building GhostSVG');
-  $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; echo >>makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
-  print "$cmd\n" if ($verbose);
-  `$cmd`;
-  if (-e "$gpdlSource/svg/obj/gsvg") {
-    $cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
+  if ($products{'svg'} && !$abort) {
+    updateStatus('Building GhostSVG');
+    $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; echo >>makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
-    if ($icc_work) {
-      `cp -p $gsBin/bin/gsvg ./icc_work/bin/.`;
+    if (-e "$gpdlSource/svg/obj/gsvg") {
+      $cmd="cp -p $gpdlSource/svg/obj/gsvg $gsBin/bin/.";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+      if ($icc_work) {
+        `cp -p $gsBin/bin/gsvg ./icc_work/bin/.`;
+      }
+      if ($revs) {
+        `cp -p $gsBin/bin/gsvg ./head/bin/.`;
+      }
+    } else {
+      $compileFail.="gsvg ";
     }
-    if ($revs) {
-      `cp -p $gsBin/bin/gsvg ./head/bin/.`;
-    }
-  } else {
-    $compileFail.="gsvg ";
   }
-}
 }
 
 unlink "link.icc","wts_plane_0","wts_plane_1","wts_plane_2","wts_plane_3";
@@ -690,13 +683,13 @@ if (-e '../bin/time') {
 
 if ($md5sumFail ne "") {
   updateStatus('md5sum fail');
-mylog("setting $machine.fail on casper\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+  mylog("setting $machine.fail on casper\n");
+  spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } elsif ($compileFail ne "") {
   updateStatus('Compile fail');
-mylog("setting $machine.fail on casper\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+  mylog("setting $machine.fail on casper\n");
+  spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } else {
   updateStatus('Starting jobs');
@@ -736,7 +729,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
       $handle = IO::Socket::INET->new(Proto     => "tcp",
         PeerAddr  => $host,
         PeerPort  => $port);
-    } until (($abort) || ($handle) || ($retry--<=0));
+      } until (($abort) || ($handle) || ($retry--<=0));
     if (!$handle) {
       unlink $runningSemaphore;
       updateStatus("Can not connect to $host, quitting");
@@ -751,61 +744,61 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
       close($handle) if ($handle);
     } else {
 
-    print $handle "$machine\n";
+      print $handle "$machine\n";
 
-    my $n=0;
-    my $s="";
-    eval {
-      local $SIG{ALRM} = sub { die "alarm\n" };
-      alarm 60;
-      do {
-        $n=sysread($handle,$line,4096);
-        $s.=$line;
-        #print STDOUT "$line";
-        } until (!defined($n) || $n==0);
-      alarm 0;
-      };
-    alarm 0;  # avoid race condition
-    if ($@) {
-      # die unless $@ eq "alarm\n";
-      # unlink $runningSemaphore;
-      $s="";
-      my $t=$@;
-      chomp $t;
-      updateStatus("Connection timed out, quitting: $t");
-      mylog "Connection timed out, quitting: $t";
-      @commands=();
-      $maxCount=0;
-      killAll();
-      checkAbort();
-      $poll=0;
-      $abort=1;
-      # die "timed out";  # hack
-    }
-    close $handle;
+      my $n=0;
+      my $s="";
+      eval {
+        local $SIG{ALRM} = sub { die "alarm\n" };
+        alarm 60;
+        do {
+          $n=sysread($handle,$line,4096);
+          $s.=$line;
+          # print STDOUT "$line";
+          } until (!defined($n) || $n==0);
+        alarm 0;
+        };
+      alarm 0;  # avoid race condition
+      if ($@) {
+        # die unless $@ eq "alarm\n";
+        # unlink $runningSemaphore;
+        $s="";
+        my $t=$@;
+        chomp $t;
+        updateStatus("Connection timed out, quitting: $t");
+        mylog "Connection timed out, quitting: $t";
+        @commands=();
+        $maxCount=0;
+        killAll();
+        checkAbort();
+        $poll=0;
+        $abort=1;
+        # die "timed out";  # hack
+      }
+      close $handle;
 
-    if (!defined($n)) {
-      # unlink $runningSemaphore;
-      $s="";
-      updateStatus("Connection interrupted, quitting");
-      @commands=();
-      $maxCount=0;
-      killAll();
-      checkAbort();
-      $poll=0;
-      $abort=1;
-      # die "sysread returned null";  # hack
-    }
+      if (!defined($n)) {
+        # unlink $runningSemaphore;
+        $s="";
+        updateStatus("Connection interrupted, quitting");
+        @commands=();
+        $maxCount=0;
+        killAll();
+        checkAbort();
+        $poll=0;
+        $abort=1;
+        # die "sysread returned null";  # hack
+      }
 
-    @commands = split '\n',$s;
-    $totalJobs=scalar(@commands);
-    mylog("received ".scalar(@commands)." commands\n");
-    mylog("commands[0] eq 'done'\n") if ((scalar @commands==0) || $commands[0] eq "done");
-    if ((scalar @commands==0) || $commands[0] eq "done") {
-      $poll=0;
-      @commands=();
+      @commands = split '\n',$s;
+      $totalJobs=scalar(@commands);
+      mylog("received ".scalar(@commands)." commands\n");
+      mylog("commands[0] eq 'done'\n") if ((scalar @commands==0) || $commands[0] eq "done");
+      if ((scalar @commands==0) || $commands[0] eq "done") {
+        $poll=0;
+        @commands=();
+      }
     }
-}
   }
 # mylog("end of loop: scalar(commands)=".scalar(@commands)." poll=$poll abort=$abort\n") if (scalar(@commands)==0 || $poll==0 || $abort!=0);
 
@@ -845,8 +838,8 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
 #     mylog "killed:  $pids{$pid}{'filename'}\n";  # mhw
       if ($count>=$maxTimeout) {
         $timeoutFail="too many timeouts";
-mylog("setting $machine.fail on casper\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+        mylog("setting $machine.fail on casper\n");
+        spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
         updateStatus('Timeout fail');
         @commands=();
         $maxCount=0;
@@ -865,13 +858,12 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
       } else {
         $count++;
       }
-  }
     }
+  }
 
   my $clusterRegressionRunning=0;
   $clusterRegressionRunning=1 if ($local && -e "/home/marcos/cluster/$runningSemaphore");  # hack: directory name shouldn't be hard coded
   sleep 5 if ($clusterRegressionRunning);
-
 
   if (scalar(@commands)>0 && $count<$maxCount && !$clusterRegressionRunning) {
     my $n=rand(scalar @commands);
@@ -903,12 +895,11 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
         mylog("checkAbort() done");
         $startTime=time;
 
-#my @files = <$raster/*>;
-#my $count = @files;
-my $count2=scalar (keys %timeOuts);
-unlink('raster.yes') if ($count>$maxRaster);
-mylog("timeOuts=$count2 maxTimeout=$maxTimeout");
-
+#       my @files = <$raster/*>;
+#       my $count = @files;
+        my $count2=scalar (keys %timeOuts);
+        unlink('raster.yes') if ($count>$maxRaster);
+        mylog("timeOuts=$count2 maxTimeout=$maxTimeout");
 
       }
 #     printf "\n$t1 $t2 $t3  %5d %5d  %3d",$jobs,$totalJobs, $percentage if ($debug);
@@ -927,18 +918,17 @@ mylog("timeOuts=$count2 maxTimeout=$maxTimeout");
     }
   } else {
     select(undef, undef, undef, 0.25);
-    #   print ".";
+#   print ".";
   }
-  # if (open (F,"</tmp/nightly.abort")) {
-  #    close(F);
-  #    sleep 10;
-  #   `rm /tmp/nightly.abort`;
-  #   die "\n\nnightly abort was set\n\n";
-  # }
+# if (open (F,"</tmp/nightly.abort")) {
+#    close(F);
+#    sleep 10;
+#   `rm /tmp/nightly.abort`;
+#   die "\n\nnightly abort was set\n\n";
+# }
 }
 
 if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
-
 
   print "\n" if ($debug);
   my $count;
@@ -1003,8 +993,8 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
 #       mylog "killed:  $pids{$pid}{'filename'}\n";  # mhw
         if ($count>=$maxTimeout) {
           $timeoutFail="too many timeouts";
-mylog("setting $machine.fail on casper\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+          mylog("setting $machine.fail on casper\n");
+          spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
           updateStatus('Timeout fail');
           @commands=();
           $maxCount=0;
@@ -1014,7 +1004,7 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
           $abort=1;
         }
       } else {
-#print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
+#       print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
         my $s;
         $s=waitpid($pid,WNOHANG);
         if ($s<0) {
@@ -1028,18 +1018,18 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
     }
     print "$count " if ($debug);
     select(undef, undef, undef, 1.00);
-  } while ($count>0 && !$abort);
+    } while ($count>0 && !$abort);
   print "\n" if ($debug);
 
 # if (!$abort) {
 
-mylog "done reading $temp directory";
+  mylog "done reading $temp directory";
 
-    #print Dumper(\%logfiles);
+  #print Dumper(\%logfiles);
 
-    system("date") if ($debug2);
+  system("date") if ($debug2);
 
-    if ($md5sumFail || $compileFail || $timeoutFail) {
+  if ($md5sumFail || $compileFail || $timeoutFail) {
     close(F4);
     open(F4,">$machine.log");
     if ($md5sumFail ne "") {
@@ -1081,7 +1071,7 @@ mylog "done reading $temp directory";
     if ($timeoutFail ne "") {
       print F4 "timeoutFail: $timeoutFail\n";
     }
-    } else {
+  } else {
     updateStatus('Collecting log files');
 
     my %logfiles;
@@ -1092,20 +1082,20 @@ mylog "done reading $temp directory";
     closedir DIR;
     print F4 "\n\nmissed logs:\n";
     my $lastTime=time;
-# my $tempcount=0;
+#   my $tempcount=0;
     foreach my $logfile (keys %logfiles) {
-# mylog "$tempcount log files processed" if (((++$tempcount) % 1000) == 0);
+#      mylog "$tempcount log files processed" if (((++$tempcount) % 1000) == 0);
       if ($lastTime-time>60) {
         $abort=checkAbort;
         $lastTime=time;
       }
       addToLog($logfile) if (!exists $logged{$logfile});
     }
-    }
+  }
 
-    close(F4);
+  close(F4);
 
-if (!$local) {
+  if (!$local) {
     updateStatus('Uploading log files');
     system("date") if ($debug2);
     unlink "$machine.log.gz";
@@ -1123,7 +1113,7 @@ if (!$local) {
       sleep 10;
     }
     mylog "done with uploading $machine.log.gz";
- 
+
     for (my $retry=0;  $retry<5;  $retry++) {
       mylog "about to upload $machine.out.gz";
       my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1`;
@@ -1139,9 +1129,9 @@ if (!$local) {
 
     system("date") if ($debug2);
     updateStatus('idle');
-} else {
+  } else {
     updateStatus('done');
-}
+  }
 # }
 } # if (!$abort)
 
@@ -1150,10 +1140,10 @@ if ($abort) {
 }
 
 if (!$local) {
-mylog("setting $machine.done on casper\n");
-spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
-mylog("removing $machine.abort on casper\n");
-spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
+  mylog("setting $machine.done on casper\n");
+  spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
+  mylog("removing $machine.abort on casper\n");
+  spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
 }
 
 system("date") if ($debug2);
@@ -1162,8 +1152,7 @@ system("date") if ($debug2);
 
 unlink $runningSemaphore;
 
-
 if (!$local) {
-close(LOG);
+  close(LOG);
 }
 
