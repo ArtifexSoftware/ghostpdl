@@ -241,7 +241,7 @@ void
 pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
 		     floatp y_scale)
 {
-    gs_matrix imat;
+    gs_matrix imat = {1, 0, 0, 1, 0 ,0};
 
     gs_matrix_translate(pmat, 0.0, 1.0 - y_scale, &imat);
     gs_matrix_scale(&imat, 1.0, y_scale, &imat);
