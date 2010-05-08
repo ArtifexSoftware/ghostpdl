@@ -56,6 +56,8 @@ if ($local) {
 # the commands below only need to be done once
 mkdir("icc_work");
 mkdir("icc_work/bin");
+mkdir("./head/");
+mkdir("./head/bin");
 
 
 my $user;
@@ -385,8 +387,53 @@ if (!$local) {
   mylog($message);
 }
 
+sub systemWithRetry($) {
+  my $cmd=shift;
+  my $a;
+  
+    mylog "$cmd";
+    print "$cmd\n" if ($verbose);
+      my $count=0;
+      do {
+        `$cmd`;
+        $a=$?;
+print "error with: $cmd; a=$a count=$count\n" if ($a!=0);
+        $count++;
+        sleep 10 if ($a!=0);
+      } while ($a!=0 && $count<5);
+      if ($a!=0) {
+        unlink $runningSemaphore;
+      }
+}
+
+my %logged;
+sub addToLog($) {
+  my $logfile=shift;
+  $logged{$logfile}=1;
+      print F4 "===$logfile===\n";
+      if (open(F,"<$temp/$logfile.log")) {
+      while(<F>) {
+        print F4 $_;
+      }
+      close(F);
+      } else {
+        mylog "file $temp/$logfile.log not found";
+      }
+      if (open(F,"<$temp/$logfile.md5")) {
+        while(<F>) {
+          print F4 $_;
+        }
+        close(F);
+      }
+      if (exists $timeOuts{$logfile}) {
+        print F4 "killed: timeout\n";
+      }
+      print F4 "\n";
+}
+
+
 if (!$local) {
-if (!$user) {
+###if (!$user) {
   updateStatus('Updating test files');
 
   #update the regression file source directory
@@ -394,12 +441,11 @@ if (!$user) {
 
     foreach my $testSource (sort keys %testSource) {
       $cmd="cd $testSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update";
-      print "$cmd\n" if ($verbose);
-      `$cmd`;
+      systemWithRetry($cmd);
     }
 
   }
-}
+###}
 
 $abort=checkAbort;
 if (!$abort) {
@@ -410,37 +456,31 @@ if (!$abort) {
     mkdir "users/$user";
     mkdir "users/$user/ghostpdl";
     mkdir "users/$user/ghostpdl/gs";
-# if ($product eq 'gs') {
-#   $cmd="cd users/$user/ghostpdl ; rsync -vlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl/gs .";
-# } else {
     $cmd="cd users/$user          ; rsync -vlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
-    # }
+    systemWithRetry($cmd);
 
     $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
     $gsSource=$gpdlSource."/gs";
   } elsif ($mupdf) {
     updateStatus('Fetching mupdf.tar.gz');
     `touch mupdf ; rm -fr mupdf; touch mupdf.tar.gz ; rm mupdf.tar.gz`;
-    for (my $retry=0;  $retry<5;  $retry++) {
-      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
-      last if ($?==0);
-      my $b=$?;
-      chomp $a;
-      mylog "mupdf_retry=$retry;  a=$a;  \$?=$b";
-      sleep 10;
-    }
+    $cmd=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
+    systemWithRetry($cmd);
  
   } elsif ($icc_work) {
 
     if (!-e $icc_workGsSource) {
       `rm -fr $icc_workSource`;
       updateStatus('Checking out icc_work');
-      $cmd="svn co --ignore-externals http://svn.ghostscript.com/ghostscript/trunk/ghostpdl $icc_workSource ; svn co http://svn.ghostscript.com/ghostscript/branches/icc_work $icc_workGsSource";
-      mylog "$cmd\n";
-      `$cmd`;
+      $cmd="svn co --ignore-externals http://svn.ghostscript.com/ghostscript/trunk/ghostpdl $icc_workSource";
+      systemWithRetry($cmd);
+      $cmd="svn co http://svn.ghostscript.com/ghostscript/branches/icc_work $icc_workGsSource";
+      systemWithRetry($cmd);
     }
     updateStatus('Updating icc_work');
     $cmd="svn update -r$icc_work --ignore-externals $icc_workSource ; cd $icc_workGsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; svn update -r$icc_work";
+    systemWithRetry($cmd);
+
     $gpdlSource=$icc_workSource;
     $gsSource=$icc_workGsSource;
   } else {
@@ -454,13 +494,15 @@ if (!$abort) {
       mylog "oops 4: revs=$revs";
       die "oops 4";  # hack
     }
-    $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs ; cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs";
+    $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs --ignore-externals";
+    mylog "$cmd";
+    print "$cmd\n" if ($verbose);
+    systemWithRetry($cmd);
+    $cmd="cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs";
+    systemWithRetry($cmd);
 
   }
 
-  mylog "$cmd";
-  print "$cmd\n" if ($verbose);
-  `$cmd`;
 }
 }
 
@@ -663,6 +705,8 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
 my $totalJobs=scalar(@commands);
 my $jobs=0;
 
+open(F4,">$machine.log");
+
 my $startTime=time;
 
 while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
@@ -793,6 +837,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
       kill 1, $pid;
       kill 9, $pid;
       $timeOuts{$pids{$pid}{'filename'}}=1;
+      addToLog($pids{$pid}{'filename'});
       my $count=scalar (keys %timeOuts);
       delete $pids{$pid};
 
@@ -814,8 +859,12 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
 #print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
       my $s;
       $s=waitpid($pid,WNOHANG);
-      delete $pids{$pid} if ($s<0);
-      $count++ if ($s>=0);
+      if ($s<0) {
+        addToLog($pids{$pid}{'filename'});
+        delete $pids{$pid};
+      } else {
+        $count++;
+      }
   }
     }
 
@@ -854,11 +903,11 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
         mylog("checkAbort() done");
         $startTime=time;
 
-my @files = <$raster/*>;
-my $count = @files;
+#my @files = <$raster/*>;
+#my $count = @files;
 my $count2=scalar (keys %timeOuts);
 unlink('raster.yes') if ($count>$maxRaster);
-mylog("$raster file count=$count timeOuts=$count2 maxTimeout=$maxTimeout");
+mylog("timeOuts=$count2 maxTimeout=$maxTimeout");
 
 
       }
@@ -946,6 +995,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
         kill 1, $pid;
         kill 9, $pid;
         $timeOuts{$pids{$pid}{'filename'}}=1;
+        addToLog($pids{$pid}{'filename'});
         my $count=scalar (keys %timeOuts);
         delete $pids{$pid};
 
@@ -967,8 +1017,13 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
 #print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
         my $s;
         $s=waitpid($pid,WNOHANG);
-        delete $pids{$pid} if ($s<0);
-        $count++ if ($s>=0);
+        if ($s<0) {
+          addToLog($pids{$pid}{'filename'});
+          delete $pids{$pid};
+        } else {
+          $count++;
+        }
+
       }
     }
     print "$count " if ($debug);
@@ -977,26 +1032,21 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
   print "\n" if ($debug);
 
 # if (!$abort) {
-    updateStatus('Collecting log files');
 
-    my %logfiles;
-    opendir(DIR, $temp) || die "can't opendir $temp: $!";
-    foreach (readdir(DIR)) {
-      $logfiles{$1}=1 if (m/(.+)\.log$/);
-    }
-    closedir DIR;
+mylog "done reading $temp directory";
 
     #print Dumper(\%logfiles);
 
     system("date") if ($debug2);
 
-    open(F2,">$machine.log");
-
+    if ($md5sumFail || $compileFail || $timeoutFail) {
+    close(F4);
+    open(F4,">$machine.log");
     if ($md5sumFail ne "") {
-      print F2 "md5sumFail: $md5sumFail";
+      print F4 "md5sumFail: $md5sumFail";
     }
     if ($compileFail ne "") {
-      print F2 "compileFail: $compileFail\n\n";
+      print F4 "compileFail: $compileFail\n\n";
       my $dir="";
       $dir="ghostpdl" if ($revs);
       $dir="users/$user/ghostpdl" if ($user);
@@ -1016,11 +1066,11 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
           $count=$t1-10 if ($t1-$count<10);
           $count=$t1-250 if ($t1-$count>250);
           $t1-=$count;
-          print F2 "\n$i (last $t1 lines):\n\n";
+          print F4 "\n$i (last $t1 lines):\n\n";
           if (open(F3,"<$dir/$i")) {
             while(<F3>) {
               if ($count--<0) {
-                print F2 $_;
+                print F4 $_;
               }
             }
             close(F3);
@@ -1029,34 +1079,31 @@ spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch 
       }
     }
     if ($timeoutFail ne "") {
-      print F2 "timeoutFail: $timeoutFail\n";
+      print F4 "timeoutFail: $timeoutFail\n";
     }
+    } else {
+    updateStatus('Collecting log files');
+
+    my %logfiles;
+    opendir(DIR, $temp) || die "can't opendir $temp: $!";
+    foreach (readdir(DIR)) {
+      $logfiles{$1}=1 if (m/(.+)\.log$/);
+    }
+    closedir DIR;
+    print F4 "\n\nmissed logs:\n";
     my $lastTime=time;
+# my $tempcount=0;
     foreach my $logfile (keys %logfiles) {
+# mylog "$tempcount log files processed" if (((++$tempcount) % 1000) == 0);
       if ($lastTime-time>60) {
         $abort=checkAbort;
         $lastTime=time;
       }
-
-      print F2 "===$logfile===\n";
-      open(F,"<$temp/$logfile.log") || die "file $temp/$logfile.log not found";
-      while(<F>) {
-        print F2 $_;
-      }
-      close(F);
-      if (open(F,"<$temp/$logfile.md5")) {
-        while(<F>) {
-          print F2 $_;
-        }
-        close(F);
-      }
-      if (exists $timeOuts{$logfile}) {
-        print F2 "killed: timeout\n";
-      }
-      print F2 "\n";
+      addToLog($logfile) if (!exists $logged{$logfile});
+    }
     }
 
-    close(F2);
+    close(F4);
 
 if (!$local) {
     updateStatus('Uploading log files');
