@@ -68,4 +68,6 @@ gs_object_tag_type_t gs_current_object_tag(gs_memory_t *);
 void gs_set_object_tag(gs_state * pgs, const gs_object_tag_type_t tag);
 void gs_enable_object_tagging(gs_memory_t *);
 
+int alpha_buffer_bits(gs_state * pgs);
+
 #endif /* gsutil_INCLUDED */
