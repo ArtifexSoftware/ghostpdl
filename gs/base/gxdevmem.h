@@ -286,4 +286,7 @@ bool gs_device_is_memory(const gx_device *);
 /* Test whether a device is an alpha-buffering device. */
 bool gs_device_is_abuf(const gx_device *);
 
+/* Check for getting the antialiasing bit depth */
+int alpha_buffer_bits(gs_state * pgs);
+
 #endif /* gxdevmem_INCLUDED */

@@ -18,6 +18,8 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
+#include "gzstate.h"
+#include "gxdevcli.h"
 
 /* ================ Alpha devices ================ */
 
@@ -398,3 +400,22 @@ mem_abuf_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
     pbox->q.x <<= mdev->log2_scale.x;
     pbox->q.y <<= mdev->log2_scale.y;
 }
+
+/*
+ * Determine the number of bits of alpha buffer for a stroke or fill.
+ * We should do alpha buffering iff this value is >1.
+ */
+int
+alpha_buffer_bits(gs_state * pgs)
+{
+    gx_device *dev;
+
+    dev = gs_currentdevice_inline(pgs);
+    if (gs_device_is_abuf(dev)) {
+	/* We're already writing into an alpha buffer. */
+	return 0;
+    }
+    return (*dev_proc(dev, get_alpha_bits))
+	(dev, (pgs->in_cachedevice ? go_text : go_graphics));
+}
+

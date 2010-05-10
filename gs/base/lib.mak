@@ -1006,7 +1006,7 @@ $(GLOBJ)gdevmpla.$(OBJ) : $(GLSRC)gdevmpla.c $(GXERR) $(memory__h)\
 ### Alpha-channel devices
 
 $(GLOBJ)gdevabuf.$(OBJ) : $(GLSRC)gdevabuf.c $(GXERR) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h) $(gzstate_h) $(gxdevcli_h)
 	$(GLCC) $(GLO_)gdevabuf.$(OBJ) $(C_) $(GLSRC)gdevabuf.c
 
 ### Other built-in devices

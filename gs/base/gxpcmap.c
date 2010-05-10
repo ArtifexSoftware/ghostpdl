@@ -325,6 +325,7 @@ pattern_accum_open(gx_device * dev)
     int height = pinst->size.y;
     int code = 0;
     bool mask_open = false;
+    int abits;
 
     /*
      * C's bizarre coercion rules force us to copy HWResolution in pieces
@@ -407,11 +408,24 @@ pattern_accum_open(gx_device * dev)
 				       mem, -1, target);
 		    PDSET(bits);
 #undef PDSET
-		        bits->color_info = padev->color_info;
+		    bits->color_info = padev->color_info;
 		    bits->bitmap_memory = mem;
 		    code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
 		    gx_device_set_target((gx_device_forward *)padev,
 					 (gx_device *)bits);
+                    if (pinst->saved) {
+                        abits = alpha_buffer_bits(pinst->saved);
+                        if (abits > 1) {
+                            if (bits->color_info.polarity == 
+                                GX_CINFO_POLARITY_SUBTRACTIVE) {
+	                        memset(bits->base, 0, 
+                                    bits->raster * bits->height);
+                            } else {
+	                        memset(bits->base, 255, 
+                                    bits->raster * bits->height);
+                            }
+                        }
+                    }
 		}
 	}
     }
@@ -1132,3 +1146,4 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->mask.m_tile = 0;
     return gx_pattern_load(pdc, pis, dev, select);
 }
+
