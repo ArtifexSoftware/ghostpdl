@@ -87,6 +87,26 @@ gs_fillpage(gs_state * pgs)
 	return code;
     return (*dev_proc(dev, sync_output)) (dev);
 }
+
+/*
+ * Determine the number of bits of alpha buffer for a stroke or fill.
+ * We should do alpha buffering iff this value is >1.
+ */
+static int
+alpha_buffer_bits(gs_state * pgs)
+{
+    gx_device *dev;
+
+    if (!color_is_pure(gs_currentdevicecolor_inline(pgs)))
+	return 0;
+    dev = gs_currentdevice_inline(pgs);
+    if (gs_device_is_abuf(dev)) {
+	/* We're already writing into an alpha buffer. */
+	return 0;
+    }
+    return (*dev_proc(dev, get_alpha_bits))
+	(dev, (pgs->in_cachedevice ? go_text : go_graphics));
+}
 /*
  * Set up an alpha buffer for a stroke or fill operation.  Return 0
  * if no buffer could be allocated, 1 if a buffer was installed,
@@ -267,9 +287,6 @@ static int do_fill(gs_state *pgs, int rule)
     if (code < 0)
 	return code;
     abits = alpha_buffer_bits(pgs);
-    if (!color_is_pure(gs_currentdevicecolor_inline(pgs))) {
-        abits = 0;
-    }
     if (abits > 1) {
 	acode = alpha_buffer_init(pgs, pgs->fill_adjust.x,
 				  pgs->fill_adjust.y, abits);
@@ -375,9 +392,6 @@ do_stroke(gs_state * pgs)
     if (code < 0)
 	return code;
     abits = alpha_buffer_bits(pgs);
-    if (!color_is_pure(gs_currentdevicecolor_inline(pgs))) {
-        abits = 0;
-    }
     if (abits > 1) {
 	/*
 	 * Expand the bounding box by the line width.

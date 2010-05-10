@@ -25,7 +25,6 @@
 #include "gsutil.h"		/* for prototypes */
 #include "gzstate.h"
 #include "gxdcolor.h"
-#include "gxdevmem.h"
 
 
 
@@ -312,23 +311,5 @@ gs_object_tag_type_t
 gs_current_object_tag(gs_memory_t * mem)
 {
     return mem->gs_lib_ctx->BITTAG;
-}
-
-/*
- * Determine the number of bits of alpha buffer for a stroke or fill.
- * We should do alpha buffering iff this value is >1.
- */
-int
-alpha_buffer_bits(gs_state * pgs)
-{
-    gx_device *dev;
-
-    dev = gs_currentdevice_inline(pgs);
-    if (gs_device_is_abuf(dev)) {
-	/* We're already writing into an alpha buffer. */
-	return 0;
-    }
-    return (*dev_proc(dev, get_alpha_bits))
-	(dev, (pgs->in_cachedevice ? go_text : go_graphics));
 }
 
