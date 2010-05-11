@@ -4475,6 +4475,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 	return code;
     if (r_has_type(&lookup, t_string)) {
 	int num_values = (hival.value.intval + 1) * cs_num_components(pcs_base);
+        byte *data_tmp;
 
 	check_read(lookup);
 	/*
@@ -4486,9 +4487,20 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 	if (r_size(&lookup) < num_values)
 	    return_error(e_rangecheck);
 	pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
+        if (!pcs) {
+            return_error(e_VMerror);
+        }
 	pcs->base_space = pcs_base;
 	rc_increment(pcs_base);
-	pcs->params.indexed.lookup.table.data = lookup.value.const_bytes;
+        
+        data_tmp = pcs->params.indexed.lookup.table.data = ialloc_string (lookup.tas.rsize, "setindexedspace");
+        if (!data_tmp) {
+            rc_decrement(pcs, "setindexedspace");
+            return_error(e_VMerror);
+        }
+
+        memcpy(data_tmp, lookup.value.const_bytes, lookup.tas.rsize);
+
 	pcs->params.indexed.lookup.table.size = num_values;
 	pcs->params.indexed.use_proc = 0;
 	make_null(pproc);
