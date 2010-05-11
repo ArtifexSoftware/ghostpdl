@@ -121,6 +121,8 @@ if (1) {
   mylog "about to kill any jobs that appear to be running from previous regression\n";
   my $a=`ps -ef | grep md5sum | grep temp     | grep -v grep`;
     $a.=`ps -ef | grep md5sum | grep baseline | grep -v grep`;
+    $a.=`ps -ef | grep gzip   | grep temp     | grep -v grep`;
+    $a.=`ps -ef | grep gzip   | grep baseline | grep -v grep`;
   my @a=split '\n',$a;
   foreach (@a) {
     chomp;
@@ -278,7 +280,7 @@ my $poll=1;
 
 $poll=0 if ($local);
 
-$products="gs pcl xps svg" if (length($products)==0);
+$products="gs pcl xps svg ls" if (length($products)==0);
 my %products;
 my @products=split ' ',$products;
 foreach (@products) {
@@ -540,6 +542,7 @@ if (!$abort) {
   unlink "$gpdlSource/makepcl.out";
   unlink "$gpdlSource/makexps.out";
   unlink "$gpdlSource/makesvg.out";
+  unlink "$gpdlSource/makels.out";
 
   if (!$dontBuild) {
     if (-e "./head/bin/gs") {
@@ -667,6 +670,31 @@ if (!$dontBuild) {
     }
   }
 }
+
+
+$abort=checkAbort;
+if (!$dontBuild) {
+  if ($products{'ls'} && !$abort) {
+    updateStatus('Building LanguageSwitch');
+    $cmd="cd $gpdlSource ; nice make ls-clean ; touch makels.out ; rm -f makels.out ; nice make ls-product \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makels.out 2>&1 -j 12; echo >>makels.out ; nice make ls-product \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makels.out 2>&1";
+    print "$cmd\n" if ($verbose);
+    `$cmd`;
+    if (-e "$gpdlSource/language_switch/obj/pspcl6") {
+      $cmd="cp -p $gpdlSource/language_switch/obj/pspcl6 $gsBin/bin/.";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+      if ($icc_work) {
+        `cp -p $gsBin/bin/pspcl6 ./icc_work/bin/.`;
+      }
+      if ($revs) {
+        `cp -p $gsBin/bin/pspcl6 ./head/bin/.`;
+      }
+    } else {
+      $compileFail.="pspcl6 ";
+    }
+  }
+}
+
 
 unlink "link.icc","wts_plane_0","wts_plane_1","wts_plane_2","wts_plane_3";
 $cmd="cp -p $gpdlSource/link.icc $gpdlSource/wts_plane_0 $gpdlSource/wts_plane_1 $gpdlSource/wts_plane_2 $gpdlSource/wts_plane_3 .";
@@ -1040,7 +1068,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
       $dir="ghostpdl" if ($revs);
       $dir="users/$user/ghostpdl" if ($user);
       $dir="icc_work" if ($icc_work);
-      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out') {
+      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out', 'makels.out') {
         my $count=0;
         my $start=-1;
         if (open(F3,"<$dir/$i")) {

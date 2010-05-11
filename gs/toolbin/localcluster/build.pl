@@ -14,6 +14,7 @@ my %allowedProducts=(
   'pcl' => 1,
   'xps' => 1,
   'svg' => 1,
+  'ls' => 1,
   'mupdf' => 1
 );
 
@@ -48,7 +49,7 @@ while ($t=shift) {
     $local=1;
   } else {
     $products{$t}=1;
-    die "usage: build.pl [gs] [pcl] [xps] [svg] [mupdf]" if (!exists $allowedProducts{$t});
+    die "usage: build.pl [gs] [pcl] [xps] [svg] [ls] [mupdf]" if (!exists $allowedProducts{$t});
   }
 }
 
@@ -119,6 +120,7 @@ if ($local) {
 my $pclBin=$baseDirectory."gs/bin/pcl6";
 my $xpsBin=$baseDirectory."gs/bin/gxps";
 my $svgBin=$baseDirectory."gs/bin/gsvg";
+my $lsBin=$baseDirectory."gs/bin/pspcl6";
 my $mupdfBin=$baseDirectory."gs/bin/pdfdraw";
 my $timeBin=$baseDirectory."gs/bin/time";
 
@@ -153,7 +155,10 @@ my %testSource=(
   # $svnURLPublic."tests/svg/svgw3c-1.1-full/svggen" => 'svg',
 # $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svg" => 'svg',
   # $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svgHarness" => 'svg',
-  # $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svggen" => 'svg'
+  # $svnURLPublic."tests/svg/svgw3c-1.2-tiny/svggen" => 'svg',
+
+  $svnURLPublic."tests/language_switch" => 'ls',
+  $svnURLPrivate."tests_private/language_switch" => 'ls'
   );
 
 my $cmd;
@@ -252,6 +257,29 @@ my %tests=(
     #"pdf.ppmraw.300.0",
     #"pdf.pkmraw.300.0"
     ],
+   'ls' => [
+    "pbmraw.72.0",
+    #"pbmraw.300.0",
+    #"pbmraw.300.1",
+    "pgmraw.72.0",
+    #"pgmraw.300.0",
+    #"pgmraw.300.1",
+    #"wtsimdi.72.0",
+    #"wtsimdi.300.0",
+    #"wtsimdi.300.1",
+    "ppmraw.72.0",
+    #"ppmraw.300.0",
+    #"ppmraw.300.1",
+    "bitrgb.72.0",
+    #"bitrgb.300.0",
+    #"bitrgb.300.1",
+    #"psdcmyk.72.0",
+    #"psdcmyk.300.0",
+    #"psdcmyk.300.1",
+    "pdf.ppmraw.72.0",
+    #"pdf.ppmraw.300.0",
+    #"pdf.pkmraw.300.0"
+    ],
   'mupdf' => [
 # mupdf only supports ppmraw output, so don't bother specifying anything else
     "ppmraw.72.0",
@@ -320,7 +348,7 @@ foreach my $testSource (sort keys %testSource) {
 #print Dumper(\%testfiles); exit;
 
 sub build($$$$$) {
-  my $product=shift;  # gs|pcl|xps|svg
+  my $product=shift;  # gs|pcl|xps|svg|ls
   my $inputFilename=shift;
   my $options=shift;
   my $md5sumOnly=shift;
@@ -377,6 +405,8 @@ sub build($$$$$) {
       $cmd1a.="$xpsBin";
     } elsif ($product eq 'svg') {
       $cmd1a.="$svgBin";
+    } elsif ($product eq 'ls') {
+      $cmd1a.="$lsBin";
     } else {
       die "unexpected product: $product";
     }
@@ -490,6 +520,8 @@ sub build($$$$$) {
       $cmd2a.=" $xpsBin";
     } elsif ($product eq 'svg') {
       $cmd2a.=" $svgBin";
+    } elsif ($product eq 'ls') {
+      $cmd2a.=" $lsBin";
     } elsif ($product eq 'mupdf') {
       $cmd2a.=" $mupdfBin";
     } else {
