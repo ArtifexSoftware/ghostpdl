@@ -1871,7 +1871,7 @@ static void parseArgs(int argc, char *argv[], Params *params)
     {
         syntax();
     }
-    
+
     /* Sanity check */
     if (params->output_size.xmin == 0)
         params->output_size.xmin = Default_MinX;
@@ -2041,11 +2041,12 @@ int main(int argc, char *argv[])
     image_open(&image1, params.filename1);
     image_open(&image2, params.filename2);
 
-    imagecount = 1;
+    imagecount = 0;
     while (((bmp2 = NULL,
              bmp  = image1.read(&image1,&w, &h, &s, &bpp, &cmyk )) != NULL) &&
            ((bmp2 = image2.read(&image2,&w2,&h2,&s2,&bpp2,&cmyk2)) != NULL))
     {
+        imagecount++;
         /* Check images are compatible */
         if ((w != w2) || (h != h2) || (s != s2) || (bpp != bpp2) ||
             (cmyk != cmyk2))
@@ -2218,13 +2219,13 @@ done:
     if ((bmp2 != NULL) && (bmp == NULL))
     {
         fprintf(stderr, "Failed to load image %d from '%s'\n",
-                imagecount, params.filename1);
+                imagecount+1, params.filename1);
         exit(EXIT_FAILURE);
     }
     if ((bmp != NULL) && (bmp2 == NULL))
     {
         fprintf(stderr, "Failed to load image %d from '%s'\n",
-                imagecount, params.filename2);
+                imagecount+1, params.filename2);
         exit(EXIT_FAILURE);
     }
 
