@@ -222,8 +222,10 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
 
        /* Get as much of the glyph data as possible into the buffer */
        length = ff->get_glyph(ff, a_index, a_info->glyph_data, (ushort)a_info->glyph_data_length);
-       if (length == -1)
-	    return FT_Err_Invalid_File_Format;
+       if (length == -1) {
+	   ff->char_data = saved_char_data;
+	   return FT_Err_Invalid_File_Format;
+       }
 
        /* If the buffer was too small enlarge it and try again. */
        if (length > a_info->glyph_data_length) {
