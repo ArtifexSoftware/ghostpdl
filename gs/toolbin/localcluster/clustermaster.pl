@@ -760,6 +760,7 @@ mylog "done checking jobs, product=$product\n";
       updateStatus "Update baseline started at $startText UTC";
     } else {
       updateStatus "Regression $userRegression started at $startText UTC";
+      `touch users/$userName/starttime`;
     }
 
     %doneTime=();
@@ -994,7 +995,7 @@ mylog "done checking jobs, product=$product\n";
   my $logs="";
   my $tabs="";
 
-sleep(10);
+# sleep(10);
 
   foreach (keys %machines) {
     if (-e "$_.log.gz" && -e "$_.out.gz") {
@@ -1205,6 +1206,8 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
       `mv $logs archive/$tempRev/.`;
       `gzip archive/$tempRev/*log`;
       `cp -p email.txt archive/$tempRev/.`;
+    } else {
+      `mv $logs $usersDir/$userName/.`;
     }
     close(F);
   }
@@ -1266,6 +1269,10 @@ mylog("finished cachearchive.pl");
     close(F);
   }
 
+}
+
+if ($userRegression) {
+  `touch users/$userName/stoptime`;
 }
 
 checkPID();

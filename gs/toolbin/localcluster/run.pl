@@ -12,7 +12,6 @@ my $updateTestFiles=1;
 my $dontBuild=0;
 
 my $debug=0;
-my $debug2=0;
 my $verbose=0;
 
 my $wordSize="64";
@@ -120,7 +119,8 @@ mylog "starting run.pl:  pid=$$\n";
 
 if (1) {
   mylog "about to kill any jobs that appear to be running from previous regression\n";
-  my $a=`ps -ef | grep md5sum | grep temp | grep -v grep`;
+  my $a=`ps -ef | grep md5sum | grep temp     | grep -v grep`;
+    $a.=`ps -ef | grep md5sum | grep baseline | grep -v grep`;
   my @a=split '\n',$a;
   foreach (@a) {
     chomp;
@@ -230,8 +230,6 @@ my %testSource=(
   $baseDirectory."/tests/" => '1',
   $baseDirectory."/tests_private/" => '1'
   );
-
-system("date") if ($debug2);
 
 if (0) {
   open(F,"<$machine.jobs") || die "file $machine.jobs not found";
@@ -392,8 +390,8 @@ sub systemWithRetry($) {
   my $count=0;
   do {
     `$cmd`;
-    $a=$?;
-    print "error with: $cmd; a=$a count=$count\n" if ($a!=0);
+    $a=$?/256;
+    mylog "error with: $cmd; a=$a count=$count\n" if ($a!=0);
     $count++;
     sleep 10 if ($a!=0);
     } while ($a!=0 && $count<5);
@@ -405,7 +403,7 @@ sub systemWithRetry($) {
 my %logged;
 sub addToLog($) {
   my $logfile=shift;
-  $logged{$logfile}=1;
+  my $md5sumIncluded=0;
   print F4 "===$logfile===\n";
   if (open(F,"<$temp/$logfile.log")) {
     while(<F>) {
@@ -417,9 +415,12 @@ sub addToLog($) {
   }
   if (open(F,"<$temp/$logfile.md5")) {
     while(<F>) {
-      print F4 $_;
+      chomp;
+      $md5sumIncluded=1 if (m/^([0-9a-f]{32})$/ || m/^([0-9a-f]{32})  -/ || m/^([0-9a-f]{32})  \.\/temp/ || m/^MD5 .+ = ([0-9a-f]{32})$/);
+      print F4 "$_\n";
     }
     close(F);
+    $logged{$logfile}=1 if ($md5sumIncluded);
   }
   if (exists $timeOuts{$logfile}) {
     print F4 "killed: timeout\n";
@@ -1027,8 +1028,6 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
 
   #print Dumper(\%logfiles);
 
-  system("date") if ($debug2);
-
   if ($md5sumFail || $compileFail || $timeoutFail) {
     close(F4);
     open(F4,">$machine.log");
@@ -1097,37 +1096,21 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
 
   if (!$local) {
     updateStatus('Uploading log files');
-    system("date") if ($debug2);
     unlink "$machine.log.gz";
     unlink "$machine.out.gz";
     `gzip $machine.log`;
     `gzip $machine.out`;
 
-    for (my $retry=0;  $retry<5;  $retry++) {
-      mylog "about to upload $machine.log.gz";
-      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.log.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.log.gz`;
-      last if ($?==0);
-      my $b=$?;
-      chomp $a;
-      mylog "retry=$retry;  a=$a;  \$?=$b";
-      sleep 10;
-    }
+    mylog "about to upload $machine.log.gz";
+    $cmd="scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.log.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.log.gz";
+    systemWithRetry($cmd);
     mylog "done with uploading $machine.log.gz";
 
-    for (my $retry=0;  $retry<5;  $retry++) {
-      mylog "about to upload $machine.out.gz";
-      my $a=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1`;
-      last if ($?==0);
-      my $b=$?;
-      chomp $a;
-      mylog "retry=$retry;  a=$a;  \$?=$b";
-      sleep 10;
-    }
+    mylog "about to upload $machine.out.gz";
+    $cmd="scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1";
+    systemWithRetry($cmd);
     mylog "done with uploading $machine.out.gz";
 
-#   sleep(10);  # another horrible hack, see if this fixes the occasional log file not found problem on the cluster master
-
-    system("date") if ($debug2);
     updateStatus('idle');
   } else {
     updateStatus('done');
@@ -1145,10 +1128,6 @@ if (!$local) {
   mylog("removing $machine.abort on casper\n");
   spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
 }
-
-system("date") if ($debug2);
-#`rm -fr $temp`;
-system("date") if ($debug2);
 
 unlink $runningSemaphore;
 
