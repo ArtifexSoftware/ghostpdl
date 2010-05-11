@@ -11,6 +11,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -39,6 +42,46 @@
 			Name="Release|Win32"
 			OutputDirectory="..\main\obj"
 			IntermediateDirectory="..\main\obj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\main &amp;&amp; nmake /A -f pcl6_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\main &amp;&amp; nmake /A -f pcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak clean DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO="
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="0"
 			>
 			<Tool

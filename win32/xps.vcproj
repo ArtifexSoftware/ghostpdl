@@ -11,6 +11,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -39,6 +42,46 @@
 			Name="Release|Win32"
 			OutputDirectory="..\xps\obj"
 			IntermediateDirectory="..\xps\obj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f xps_msvc.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\xps &amp;&amp; nmake /A -f xps_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f xps_msvc.mak DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak DEVSTUDIO= clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f xps_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\xps &amp;&amp; nmake /A -f xps_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f xps_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak clean DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO="
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="0"
 			>
 			<Tool
