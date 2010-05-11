@@ -27,9 +27,10 @@
  *	Usage: mkromfs [-o outputfile] [options ...] path path ...
  *
  *	    mkromfs no longer performs implicit enumeration of paths, so if a
- *	    path is a directory to be enumerated trailing '/*' must be present.
- *	    Note: one should avoid bare "/*" which may be expanded by the shell
- *	    to "/bin /boot /dev ...". e.g. use "/*.ttf" or "/*.ps" instead of "/*".
+ *	    path is a directory to be enumerated trailing '<slash><star>' must be present.
+ *	    gcc complains about comments inside comments so we use '<slash>=/' and '<star>=*' here.
+ *	    Note: one should avoid bare "<slash><star>" which may be expanded by the shell
+ *	    to "/bin /boot /dev ...". e.g. use "<slash><star>.ttf" or "<slash><star>.ps" instead of "<slash><star>".
  *
  *	    options and paths can be interspersed and are processed in order
  *      
