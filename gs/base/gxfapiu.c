@@ -16,6 +16,7 @@
 
 /* GS includes : */
 #include "gx.h"
+#include "strmio.h"
 
 /* UFST includes : */
 #undef true
@@ -28,6 +29,18 @@
 #include "gxfapiu.h"
 
 #define MAX_STATIC_FCO_COUNT 4
+
+/* Slightly nasty: UFST doesn't provide for data to be
+   passed through it, so we've got to store a reference
+   to our context here.
+   When we fix the UFST_REENTRANT option, there will be
+   provision for passing the context through the UFST.
+*/
+#if UFST_REENTRANT
+/* not currently supported */
+#else
+static gs_memory_t *gs_mem_ctx = NULL;
+#endif
 
 /* -------------------- UFST callback dispatcher ------------- */
 
@@ -80,6 +93,83 @@ LPUB8 PCLchId2ptr(FSP UW16 chId)
 LPUB8 PCLglyphID2Ptr(FSP UW16 glyphID)
 {   return m_PCLglyphID2Ptr(FSA glyphID);
 }
+/* File handling intermediates */
+
+FILE * FAPIU_fopen (char *path, char *mode)
+{
+    if (!gs_mem_ctx)
+        return NULL;
+
+    return((FILE *)sfopen(path, mode, gs_mem_ctx));
+}
+
+int FAPIU_fread (void *ptr, int size, int count, FILE *s)
+{
+    return(sfread(ptr, size, count, (stream *)(s)));
+}
+
+int FAPIU_fgetc (FILE *s)
+{
+    return(sfgetc((stream *)(s)));
+}
+
+int FAPIU_fseek (FILE *s, int offset, int whence)
+{
+    return(sfseek((stream *)(s), offset, whence));
+}
+
+int FAPIU_frewind (FILE *s)
+{
+    return(srewind((stream *)(s)));
+}
+
+int FAPIU_ftell (FILE *s)
+{
+    return(sftell((stream *)(s)));
+}
+
+int FAPIU_feof (FILE *s)
+{
+    return(sfeof((stream *)(s)));
+}
+
+int FAPIU_ferror (FILE *s)
+{
+    return(sferror((stream *)(s)));
+}
+
+int FAPIU_fclose (FILE *s)
+{
+    return(sfclose((stream *)(s)));
+}
+
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+
+void * FAPIU_open (char *path, int mode)
+{
+    if (!gs_mem_ctx)
+        return NULL;
+
+    /* FIXME: "mode" needs work */
+    return(sfopen(path, "r+", gs_mem_ctx));
+}
+
+int FAPIU_read (void *s, void *ptr, int count)
+{
+    return(sfread(ptr, 1, count, (stream *)(s)));
+}
+
+int FAPIU_lseek (void *s, int offset, int whence)
+{
+    return(sfseek((stream *)(s), offset, whence));
+}
+#endif
+
+int FAPIU_close (void *s)
+{
+    return(sfclose((stream *)(s)));
+}
+
 
 /* Set UFST callbacks. Each PDL will want it's own character build function and must set the callbacks
  * upon language entry/initialization.
@@ -109,7 +199,7 @@ void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  s
  * <0 = error.
  */
 int
-gx_UFST_init(const UB8 *ufst_root_dir)
+gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
 {
     IFCONFIG            config_block;
     int status;
@@ -141,6 +231,7 @@ gx_UFST_init(const UB8 *ufst_root_dir)
     }
 #if !UFST_REENTRANT
     ufst_initialized = TRUE;
+    gs_mem_ctx = mem;
 #endif
     return 1; /* first time, caller may have more initialization to do */
 }
@@ -151,6 +242,7 @@ gx_UFST_fini(void)
     CGIFexit(FSA0);
 #if !UFST_REENTRANT
     ufst_initialized = false;
+    gs_mem_ctx = NULL;
 #endif
     return 0;
 }

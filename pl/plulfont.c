@@ -230,7 +230,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
     pl_ufst_root_dir(ufst_root_dir, sizeof(ufst_root_dir));
 
-    status = gx_UFST_init(ufst_root_dir);
+    status = gx_UFST_init(mem, ufst_root_dir);
 
     if (!plugins_opened) {
 
