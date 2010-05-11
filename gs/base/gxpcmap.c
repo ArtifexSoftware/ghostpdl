@@ -943,32 +943,40 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
 }
 
 #if RAW_PATTERN_DUMP
-
 /* Debug dump of pattern image data. Saved in
    interleaved form with global indexing in
    file name */
-
 static void
-dump_raw_pattern(int height, int width, int n_chan,
-                byte *Buffer)
-
+dump_raw_pattern(int height, int width, int n_chan, int depth,
+                byte *Buffer, int raster)
 {
     char full_file_name[50];
     FILE *fid;
     int max_bands;
-
+    int j,k;
+    int byte_number, bit_position;
+    unsigned char current_byte;
+    unsigned char output_val;
 
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     sprintf(full_file_name,"%d)PATTERN_%dx%dx%d.raw",global_pat_index,width,height,max_bands);
     fid = fopen(full_file_name,"wb");
-
-    fwrite(Buffer , 1 , max_bands*height*width , fid );
-
+    if (depth > 1) {
+        fwrite(Buffer,1,max_bands*height*width,fid);
+    } else {
+        /* Binary image. Lets get to 8 bit for debugging */
+        for (j = 0; j < height; j++) {
+            for (k = 0; k < width; k++) {
+                byte_number = (int) ceil((( (float) k + 1.0) / 8.0)) - 1;
+                current_byte = Buffer[j*raster+byte_number];
+                bit_position = 7 - (k -  byte_number*8);
+                output_val = ((current_byte >> bit_position) & 0x1) * 255;
+                fwrite(&output_val,1,1,fid);
+            }
+        }
+    }
     fclose(fid);
-
 }
-
-
 #endif
 
 static void
@@ -985,9 +993,11 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
         /* Lets dump this for debug purposes */
 
 #if RAW_PATTERN_DUMP
-
-        dump_raw_pattern(pbm->rep_height, pbm->rep_width, mdev->color_info.num_components,
-            (unsigned char*) mdev->base);
+    dump_raw_pattern(pbm->rep_height, pbm->rep_width,
+                        mdev->color_info.num_components, 
+                        mdev->color_info.depth,
+                        (unsigned char*) mdev->base,
+                        pbm->raster);
 
         global_pat_index++;
  
