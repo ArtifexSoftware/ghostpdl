@@ -4493,7 +4493,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 	pcs->base_space = pcs_base;
 	rc_increment(pcs_base);
         
-        data_tmp = pcs->params.indexed.lookup.table.data = ialloc_string (lookup.tas.rsize, "setindexedspace");
+        data_tmp = (byte *) (pcs->params.indexed.lookup.table.data = ialloc_string (lookup.tas.rsize, "setindexedspace"));
         if (!data_tmp) {
             rc_decrement(pcs, "setindexedspace");
             return_error(e_VMerror);
