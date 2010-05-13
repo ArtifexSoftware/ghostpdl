@@ -1269,11 +1269,16 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
 		code = idict_put_string(op, "FontBBox", &arr);
 		if (code < 0)
 		    return code;
+		ref_assign_new(v->value.refs + 0, &mat[0]);
+		ref_assign_new(v->value.refs + 1, &mat[1]);
+		ref_assign_new(v->value.refs + 2, &mat[2]);
+		ref_assign_new(v->value.refs + 3, &mat[3]);
+	    } else {
+		ref_assign_old(v, v->value.refs + 0, &mat[0], "FAPI_refine_font_BBox");
+		ref_assign_old(v, v->value.refs + 1, &mat[1], "FAPI_refine_font_BBox");
+		ref_assign_old(v, v->value.refs + 2, &mat[2], "FAPI_refine_font_BBox");
+		ref_assign_old(v, v->value.refs + 3, &mat[3], "FAPI_refine_font_BBox");
 	    }
-	    ref_assign_old(v, v->value.refs + 0, &mat[0], "FAPI_refine_font_BBox");
-	    ref_assign_old(v, v->value.refs + 1, &mat[1], "FAPI_refine_font_BBox");
-	    ref_assign_old(v, v->value.refs + 2, &mat[2], "FAPI_refine_font_BBox");
-	    ref_assign_old(v, v->value.refs + 3, &mat[3], "FAPI_refine_font_BBox");
 	}
     }
 
