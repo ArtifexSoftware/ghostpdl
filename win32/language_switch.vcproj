@@ -66,11 +66,11 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
+				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
 				Output=""
-				PreprocessorDefinitions="WIN32;_DEBUG;"
+				PreprocessorDefinitions="WIN64;_DEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -86,11 +86,11 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak DEVSTUDIO= SBR=1  &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= clean"
+				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak WIN64= DEVSTUDIO= SBR=1  &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= clean"
 				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;"
+				PreprocessorDefinitions="WIN64;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""

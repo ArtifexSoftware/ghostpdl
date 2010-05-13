@@ -66,9 +66,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst SBR=1 DEVSTUDIO= ufst-debug &amp;&amp; nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst DEVSTUDIO= ufst-debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst DEVSTUDIO= ufst-debugclean &amp;&amp; nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst SBR=1 DEVSTUDIO= ufst-debug &amp;&amp; nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst DEVSTUDIO= ufst-debugbsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst DEVSTUDIO= ufst-debugclean"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst SBR=1 DEVSTUDIO= ufst-debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst DEVSTUDIO= ufst-debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst DEVSTUDIO= ufst-debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst SBR=1 DEVSTUDIO= ufst-debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst DEVSTUDIO= ufst-debugbsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst DEVSTUDIO= ufst-debugclean"
 				Output="ghostscript-ufst.exe"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath=""
@@ -86,9 +86,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst SBR=1 DEVSTUDIO= ufst &amp;&amp; nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst DEVSTUDIO= ufst-bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst DEVSTUDIO= ufst-clean &amp;&amp; nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst SBR=1 DEVSTUDIO= ufst &amp;&amp; nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst DEVSTUDIO= ufst-bsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak UFST_ROOT=C:\ufst DEVSTUDIO= ufst-clean"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst SBR=1 DEVSTUDIO= ufst &amp;&amp; nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst DEVSTUDIO= ufst-bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst DEVSTUDIO= ufst-clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst SBR=1 DEVSTUDIO= ufst &amp;&amp; nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst DEVSTUDIO= ufst-bsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= UFST_ROOT=C:\ufst DEVSTUDIO= ufst-clean"
 				Output="ghostscript-ufst.exe"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				IncludeSearchPath=""

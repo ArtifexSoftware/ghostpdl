@@ -66,9 +66,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;"
 				IncludeSearchPath=""
@@ -86,9 +86,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= clean"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
