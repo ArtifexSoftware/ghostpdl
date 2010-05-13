@@ -442,22 +442,6 @@ paint_path(px_state_t *pxs, bool reset)
                 need_restore_rop = true;
             }
             pxs->have_page = true;
-            /*
-             * The H-P printers thicken very thin strokes slightly.
-             * We do the same here.
-             */
-            { 
-                float width = gs_currentlinewidth(pgs);
-                gs_matrix mat;
-                float sx, sy;
-
-                gs_currentmatrix(pgs, &mat);
-                sx = fabs(mat.xx) + fabs(mat.xy);
-                sy = fabs(mat.yx) + fabs(mat.yy);
-                width *= min(sx, sy);
-                if ( width < 5 )
-                    gs_setfilladjust(pgs, 0.5, 0.5);
-            }
             if ( (code = px_set_paint(&pxgs->pen, pxs)) < 0 ||
                  (code = gs_stroke(pgs)) < 0
                  )
@@ -466,7 +450,6 @@ paint_path(px_state_t *pxs, bool reset)
                 gs_setrasterop(pgs, save_rop);
                 gs_settexturetransparent(pgs, save_transparent);
             }
-            gs_setfilladjust(pgs, 0.0, 0.0);
         }
  rx:	if ( save_path ) {
 	    gx_path_assign_free(ppath, save_path);   /* path without a Current point! */

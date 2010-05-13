@@ -247,8 +247,7 @@ px_initgraphics(px_state_t *pxs)
 	px_gstate_reset(pxs->pxgs);
 	gs_initgraphics(pgs);
 
-	/* PCL XL uses the center-of-pixel rule. */
-	gs_setfilladjust(pgs, 0.0, 0.0);
+	gs_setfilladjust(pgs, 0.5, 0.5);
 
 	{ gs_point inch;
 	  float dpi;
