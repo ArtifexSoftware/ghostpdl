@@ -249,7 +249,7 @@ bbox_close_device(gx_device * dev)
 	 * This device was created as a wrapper for a compositor.
 	 * Just free the devices.
 	 */
-	int code = (bdev->forward_open_close ? gs_closedevice(tdev) : 0);
+	int code = (tdev && bdev->forward_open_close ? gs_closedevice(tdev) : 0);
 
 	gs_free_object(dev->memory, dev, "bbox_close_device(composite)");
 	return code;
