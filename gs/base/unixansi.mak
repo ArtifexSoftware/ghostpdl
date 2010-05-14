@@ -133,6 +133,15 @@ PNGSRCDIR=libpng
 SHARE_LIBPNG=0
 LIBPNG_NAME=png
 
+# Define whether to use a shared version of libtiff and where
+# it is stored and what its name is.  
+
+SHARE_LIBTIFF=0
+TIFFSRCDIR=tiff
+TIFFPLATFORM=unix
+TIFFCONFIG_SUFFIX=
+LIBTIFF_NAME=tiff
+
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
@@ -332,6 +341,7 @@ DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
+DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev $(DD)pamcmyk32.dev
 
 # ---------------------------- End of options --------------------------- #
 
@@ -373,6 +383,7 @@ include $(GLSRCDIR)/jpeg.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/jbig2.mak
+include $(GLSRCDIR)/libtiff.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
