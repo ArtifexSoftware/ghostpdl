@@ -48,4 +48,8 @@
 # include <inttypes.h>
 #endif
 
+#ifdef __hpux
+#include <sys/_inttypes.h>
+#endif
+
 #endif /* _JBIG2_OS_TYPES_H */
