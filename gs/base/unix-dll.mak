@@ -77,9 +77,6 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(GS_SO_MAJOR)
 
 # Build the small Ghostscript loaders, with Gtk+ and without
-# The SOC_LOADER definition is needed if this file is not run from ./configure
-SOC_LOADER?=dxmainc.c
-
 $(GSSOC_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
 	$(GLCC) -g -o $(GSSOC_XE) $(PSSRC)dxmainc.c \
 	$(LDFLAGS) -L$(BINDIR) -l$(GS)

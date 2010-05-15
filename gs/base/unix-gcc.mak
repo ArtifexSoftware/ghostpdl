@@ -319,6 +319,7 @@ XLIBS=Xt Xext X11
 # Default is No sync primitives since some platforms don't have it (HP-UX)
 SYNC=nosync
 
+SOC_LOADER=dxmainc.c
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
