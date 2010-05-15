@@ -33,7 +33,7 @@ LIBTIFF_MAK=$(GLSRC)libtiff.mak
 
 TIFFCC=$(CC_) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_)
 
-PDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h
+TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h
 
 tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$(OBJ) $(TIFFOBJ)tif_color.$(OBJ)
 tiff_2=$(TIFFOBJ)tif_compress.$(OBJ) $(TIFFOBJ)tif_dir.$(OBJ) $(TIFFOBJ)tif_dirinfo.$(OBJ) $(TIFFOBJ)tif_dirread.$(OBJ)
@@ -49,115 +49,115 @@ tiff_10=$(TIFFOBJ)tif_zip.$(OBJ)
 $(TIFFCONFIG) : $(TIFFCONFIG).in
 	cd $(TIFFSRC) && ./configure
 
-$(TIFFOBJ)tif_aux.$(OBJ) : $(TIFFSRC)/libtiff/tif_aux.c $(PDEP)
+$(TIFFOBJ)tif_aux.$(OBJ) : $(TIFFSRC)/libtiff/tif_aux.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_aux.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_aux.c
 
-$(TIFFOBJ)tif_close.$(OBJ) : $(TIFFSRC)/libtiff/tif_close.c $(PDEP)
+$(TIFFOBJ)tif_close.$(OBJ) : $(TIFFSRC)/libtiff/tif_close.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_close.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_close.c
 
-$(TIFFOBJ)tif_codec.$(OBJ) : $(TIFFSRC)/libtiff/tif_codec.c $(PDEP)
+$(TIFFOBJ)tif_codec.$(OBJ) : $(TIFFSRC)/libtiff/tif_codec.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_codec.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_codec.c
 
-$(TIFFOBJ)tif_color.$(OBJ) : $(TIFFSRC)/libtiff/tif_color.c $(PDEP)
+$(TIFFOBJ)tif_color.$(OBJ) : $(TIFFSRC)/libtiff/tif_color.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_color.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_color.c
 
-$(TIFFOBJ)tif_compress.$(OBJ) : $(TIFFSRC)/libtiff/tif_compress.c $(PDEP)
+$(TIFFOBJ)tif_compress.$(OBJ) : $(TIFFSRC)/libtiff/tif_compress.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_compress.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_compress.c
 
-$(TIFFOBJ)tif_dir.$(OBJ) : $(TIFFSRC)/libtiff/tif_dir.c $(PDEP)
+$(TIFFOBJ)tif_dir.$(OBJ) : $(TIFFSRC)/libtiff/tif_dir.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_dir.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_dir.c
 
-$(TIFFOBJ)tif_dirinfo.$(OBJ) : $(TIFFSRC)/libtiff/tif_dirinfo.c $(PDEP)
+$(TIFFOBJ)tif_dirinfo.$(OBJ) : $(TIFFSRC)/libtiff/tif_dirinfo.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_dirinfo.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_dirinfo.c
 
-$(TIFFOBJ)tif_dirread.$(OBJ) : $(TIFFSRC)/libtiff/tif_dirread.c $(PDEP)
+$(TIFFOBJ)tif_dirread.$(OBJ) : $(TIFFSRC)/libtiff/tif_dirread.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_dirread.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_dirread.c
 
-$(TIFFOBJ)tif_dirwrite.$(OBJ) : $(TIFFSRC)/libtiff/tif_dirwrite.c $(PDEP)
+$(TIFFOBJ)tif_dirwrite.$(OBJ) : $(TIFFSRC)/libtiff/tif_dirwrite.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_dirwrite.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_dirwrite.c
 
-$(TIFFOBJ)tif_dumpmode.$(OBJ) : $(TIFFSRC)/libtiff/tif_dumpmode.c $(PDEP)
+$(TIFFOBJ)tif_dumpmode.$(OBJ) : $(TIFFSRC)/libtiff/tif_dumpmode.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_dumpmode.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_dumpmode.c
 
-$(TIFFOBJ)tif_error.$(OBJ) : $(TIFFSRC)/libtiff/tif_error.c $(PDEP)
+$(TIFFOBJ)tif_error.$(OBJ) : $(TIFFSRC)/libtiff/tif_error.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_error.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_error.c
 
-$(TIFFOBJ)tif_extension.$(OBJ) : $(TIFFSRC)/libtiff/tif_extension.c $(PDEP)
+$(TIFFOBJ)tif_extension.$(OBJ) : $(TIFFSRC)/libtiff/tif_extension.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_extension.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_extension.c
 
-$(TIFFOBJ)tif_fax3.$(OBJ) : $(TIFFSRC)/libtiff/tif_fax3.c $(PDEP)
+$(TIFFOBJ)tif_fax3.$(OBJ) : $(TIFFSRC)/libtiff/tif_fax3.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_fax3.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_fax3.c
 
-$(TIFFOBJ)tif_fax3sm.$(OBJ) : $(TIFFSRC)/libtiff/tif_fax3sm.c $(PDEP)
+$(TIFFOBJ)tif_fax3sm.$(OBJ) : $(TIFFSRC)/libtiff/tif_fax3sm.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_fax3sm.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_fax3sm.c
 
-$(TIFFOBJ)tif_flush.$(OBJ) : $(TIFFSRC)/libtiff/tif_flush.c $(PDEP)
+$(TIFFOBJ)tif_flush.$(OBJ) : $(TIFFSRC)/libtiff/tif_flush.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_flush.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_flush.c
 
-$(TIFFOBJ)tif_getimage.$(OBJ) : $(TIFFSRC)/libtiff/tif_getimage.c $(PDEP)
+$(TIFFOBJ)tif_getimage.$(OBJ) : $(TIFFSRC)/libtiff/tif_getimage.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_getimage.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_getimage.c
 
-$(TIFFOBJ)tif_jbig.$(OBJ) : $(TIFFSRC)/libtiff/tif_jbig.c $(PDEP)
+$(TIFFOBJ)tif_jbig.$(OBJ) : $(TIFFSRC)/libtiff/tif_jbig.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_jbig.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_jbig.c
 
-$(TIFFOBJ)tif_jpeg.$(OBJ) : $(TIFFSRC)/libtiff/tif_jpeg.c $(PDEP) $(JGENDIR)/jconfig.h
+$(TIFFOBJ)tif_jpeg.$(OBJ) : $(TIFFSRC)/libtiff/tif_jpeg.c $(TIFFDEP) $(JGENDIR)/jconfig.h
 	$(TIFFCC) $(TIFFO_)tif_jpeg.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_jpeg.c
 
-$(TIFFOBJ)tif_luv.$(OBJ) : $(TIFFSRC)/libtiff/tif_luv.c $(PDEP)
+$(TIFFOBJ)tif_luv.$(OBJ) : $(TIFFSRC)/libtiff/tif_luv.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_luv.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_luv.c
 
-$(TIFFOBJ)tif_lzw.$(OBJ) : $(TIFFSRC)/libtiff/tif_lzw.c $(PDEP)
+$(TIFFOBJ)tif_lzw.$(OBJ) : $(TIFFSRC)/libtiff/tif_lzw.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_lzw.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_lzw.c
 
-$(TIFFOBJ)tif_next.$(OBJ) : $(TIFFSRC)/libtiff/tif_next.c $(PDEP)
+$(TIFFOBJ)tif_next.$(OBJ) : $(TIFFSRC)/libtiff/tif_next.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_next.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_next.c
 
-$(TIFFOBJ)tif_ojpeg.$(OBJ) : $(TIFFSRC)/libtiff/tif_ojpeg.c $(PDEP)
+$(TIFFOBJ)tif_ojpeg.$(OBJ) : $(TIFFSRC)/libtiff/tif_ojpeg.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_ojpeg.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_ojpeg.c
 
-$(TIFFOBJ)tif_open.$(OBJ) : $(TIFFSRC)/libtiff/tif_open.c $(PDEP)
+$(TIFFOBJ)tif_open.$(OBJ) : $(TIFFSRC)/libtiff/tif_open.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_open.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_open.c
 
-$(TIFFOBJ)tif_packbits.$(OBJ) : $(TIFFSRC)/libtiff/tif_packbits.c $(PDEP)
+$(TIFFOBJ)tif_packbits.$(OBJ) : $(TIFFSRC)/libtiff/tif_packbits.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_packbits.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_packbits.c
 
-$(TIFFOBJ)tif_pixarlog.$(OBJ) : $(TIFFSRC)/libtiff/tif_pixarlog.c $(PDEP)
+$(TIFFOBJ)tif_pixarlog.$(OBJ) : $(TIFFSRC)/libtiff/tif_pixarlog.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_pixarlog.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_pixarlog.c
 
-$(TIFFOBJ)tif_predict.$(OBJ) : $(TIFFSRC)/libtiff/tif_predict.c $(PDEP)
+$(TIFFOBJ)tif_predict.$(OBJ) : $(TIFFSRC)/libtiff/tif_predict.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_predict.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_predict.c
 
-$(TIFFOBJ)tif_print.$(OBJ) : $(TIFFSRC)/libtiff/tif_print.c $(PDEP)
+$(TIFFOBJ)tif_print.$(OBJ) : $(TIFFSRC)/libtiff/tif_print.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_print.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_print.c
 
-$(TIFFOBJ)tif_read.$(OBJ) : $(TIFFSRC)/libtiff/tif_read.c $(PDEP)
+$(TIFFOBJ)tif_read.$(OBJ) : $(TIFFSRC)/libtiff/tif_read.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_read.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_read.c
 
-$(TIFFOBJ)tif_strip.$(OBJ) : $(TIFFSRC)/libtiff/tif_strip.c $(PDEP)
+$(TIFFOBJ)tif_strip.$(OBJ) : $(TIFFSRC)/libtiff/tif_strip.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_strip.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_strip.c
 
-$(TIFFOBJ)tif_swab.$(OBJ) : $(TIFFSRC)/libtiff/tif_swab.c $(PDEP)
+$(TIFFOBJ)tif_swab.$(OBJ) : $(TIFFSRC)/libtiff/tif_swab.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_swab.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_swab.c
 
-$(TIFFOBJ)tif_thunder.$(OBJ) : $(TIFFSRC)/libtiff/tif_thunder.c $(PDEP)
+$(TIFFOBJ)tif_thunder.$(OBJ) : $(TIFFSRC)/libtiff/tif_thunder.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_thunder.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_thunder.c
 
-$(TIFFOBJ)tif_tile.$(OBJ) : $(TIFFSRC)/libtiff/tif_tile.c $(PDEP)
+$(TIFFOBJ)tif_tile.$(OBJ) : $(TIFFSRC)/libtiff/tif_tile.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_tile.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_tile.c
 
-$(TIFFOBJ)tif_version.$(OBJ) : $(TIFFSRC)/libtiff/tif_version.c $(PDEP)
+$(TIFFOBJ)tif_version.$(OBJ) : $(TIFFSRC)/libtiff/tif_version.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_version.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_version.c
 
-$(TIFFOBJ)tif_warning.$(OBJ) : $(TIFFSRC)/libtiff/tif_warning.c $(PDEP)
+$(TIFFOBJ)tif_warning.$(OBJ) : $(TIFFSRC)/libtiff/tif_warning.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_warning.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_warning.c
 
-$(TIFFOBJ)tif_write.$(OBJ) : $(TIFFSRC)/libtiff/tif_write.c $(PDEP)
+$(TIFFOBJ)tif_write.$(OBJ) : $(TIFFSRC)/libtiff/tif_write.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_write.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_write.c
 
-$(TIFFOBJ)tif_zip.$(OBJ) : $(TIFFSRC)/libtiff/tif_zip.c $(PDEP)
+$(TIFFOBJ)tif_zip.$(OBJ) : $(TIFFSRC)/libtiff/tif_zip.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_zip.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_zip.c
 
-$(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) : $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c $(PDEP)
+$(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) : $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_$(TIFFPLATFORM).$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c
 
 
