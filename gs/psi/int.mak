@@ -1761,12 +1761,14 @@ $(PSD)cslayer.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)pdfread.dev
 # ---------------- Font API ---------------- #
 
 $(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
- $(PSD)fapiu$(UFST_BRIDGE).dev $(PSD)fapif$(FT_BRIDGE).dev
+ $(PSD)fapiu$(UFST_BRIDGE).dev $(PSD)fapif$(FT_BRIDGE).dev \
+ $(PSD)fapib$(BITSTREAM_BRIDGE).dev 
 	$(SETMOD) $(PSD)fapi $(PSOBJ)zfapi.$(OBJ)
 	$(ADDMOD) $(PSD)fapi -oper zfapi
 	$(ADDMOD) $(PSD)fapi -ps gs_fntem gs_fapi
 	$(ADDMOD) $(PSD)fapi -include $(PSD)fapiu$(UFST_BRIDGE)
 	$(ADDMOD) $(PSD)fapi -include $(PSD)fapif$(FT_BRIDGE)
+	$(ADDMOD) $(PSD)fapi -include $(PSD)fapib$(BITSTREAM_BRIDGE)
 
 $(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(string__h)\
  $(stat__h)\
@@ -1778,6 +1780,94 @@ $(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(string__h
  $(icid_h) $(igstate_h) $(icharout_h) $(ifapi_h) $(iplugin_h) \
  $(oper_h) $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)zfapi.$(OBJ) $(C_) $(PSSRC)zfapi.c
+
+# Bitstream bridge :
+
+BITSTREAM_LIB=$(BITSTREAM_ROOT)$(D)core$(D)
+BITSTREAM_INC=$(I_)"$(BITSTREAM_ROOT)$(D)core"
+
+$(PSD)fapib1.dev : $(INT_MAK) $(ECHOGS_XE) \
+ $(PSOBJ)fapibstm.$(OBJ) $(PSOBJ)t2k.$(OBJ) $(PSOBJ)t2kextra.$(OBJ) $(PSOBJ)tsimem.$(OBJ)\
+   $(PSOBJ)t2ktt.$(OBJ) $(PSOBJ)cstream.$(OBJ) $(PSOBJ)fft1hint.$(OBJ) $(PSOBJ)ghints.$(OBJ)\
+   $(PSOBJ)glyph.$(OBJ) $(PSOBJ)t1.$(OBJ) $(PSOBJ)t2kstrm.$(OBJ) $(PSOBJ)truetype.$(OBJ)\
+   $(PSOBJ)util.$(OBJ) $(PSOBJ)fnt.$(OBJ) $(PSOBJ)pclread.$(OBJ) $(PSOBJ)t2ksc.$(OBJ)\
+   $(PSOBJ)write_t1.$(OBJ) $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ)
+	$(SETMOD) $(PSD)fapib1 $(PSOBJ)fapibstm.$(OBJ) 
+	$(ADDMOD) $(PSD)fapib1 $(PSOBJ)t2k.$(OBJ) $(PSOBJ)t2kextra.$(OBJ) $(PSOBJ)fnt.$(OBJ)
+	$(ADDMOD) $(PSD)fapib1 $(PSOBJ)tsimem.$(OBJ) $(PSOBJ)t2ktt.$(OBJ) $(PSOBJ)util.$(OBJ)
+	$(ADDMOD) $(PSD)fapib1 $(PSOBJ)t2kstrm.$(OBJ) $(PSOBJ)truetype.$(OBJ) $(PSOBJ)cstream.$(OBJ)
+	$(ADDMOD) $(PSD)fapib1 $(PSOBJ)fft1hint.$(OBJ) $(PSOBJ)ghints.$(OBJ) $(PSOBJ)glyph.$(OBJ) 
+	$(ADDMOD) $(PSD)fapib1 $(PSOBJ)t1.$(OBJ) $(PSOBJ)pclread.$(OBJ) $(PSOBJ)t2ksc.$(OBJ)
+	$(ADDMOD) $(PSD)fapib1 $(PSOBJ)write_t1.$(OBJ) $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ)
+	$(ADDMOD) $(PSD)fapib1 -plugin fapibstm
+
+$(PSOBJ)fapibstm.$(OBJ) : $(PSSRC)fapibstm.c $(AK)\
+ $(memory__h) $(stdio__h) $(math__h) $(strmio_h)\
+ $(ierrors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) $(gp_h) 
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)fapibstm.$(OBJ) $(C_) $(PSSRC)fapibstm.c
+
+$(PSOBJ)t2k.$(OBJ) : "$(BITSTREAM_LIB)t2k.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)t2k.$(OBJ) $(C_) "$(BITSTREAM_LIB)t2k.c"
+
+$(PSOBJ)t2kextra.$(OBJ) : "$(BITSTREAM_LIB)t2kextra.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)t2kextra.$(OBJ) $(C_) "$(BITSTREAM_LIB)t2kextra.c"
+
+$(PSOBJ)tsimem.$(OBJ) : "$(BITSTREAM_LIB)tsimem.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)tsimem.$(OBJ) $(C_) "$(BITSTREAM_LIB)tsimem.c"
+
+$(PSOBJ)t2ktt.$(OBJ) : "$(BITSTREAM_LIB)t2ktt.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)t2ktt.$(OBJ) $(C_) "$(BITSTREAM_LIB)t2ktt.c"
+
+$(PSOBJ)cstream.$(OBJ) : "$(BITSTREAM_LIB)cstream.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)cstream.$(OBJ) $(C_) "$(BITSTREAM_LIB)cstream.c"
+
+$(PSOBJ)fft1hint.$(OBJ) : "$(BITSTREAM_LIB)fft1hint.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)fft1hint.$(OBJ) $(C_) "$(BITSTREAM_LIB)fft1hint.c"
+
+$(PSOBJ)ghints.$(OBJ) : "$(BITSTREAM_LIB)ghints.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)ghints.$(OBJ) $(C_) "$(BITSTREAM_LIB)ghints.c"
+
+$(PSOBJ)glyph.$(OBJ) : "$(BITSTREAM_LIB)glyph.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)glyph.$(OBJ) $(C_) "$(BITSTREAM_LIB)glyph.c"
+
+$(PSOBJ)t1.$(OBJ) : "$(BITSTREAM_LIB)t1.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)t1.$(OBJ) $(C_) "$(BITSTREAM_LIB)t1.c"
+
+$(PSOBJ)t2kstrm.$(OBJ) : "$(BITSTREAM_LIB)t2kstrm.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)t2kstrm.$(OBJ) $(C_) "$(BITSTREAM_LIB)t2kstrm.c"
+
+$(PSOBJ)truetype.$(OBJ) : "$(BITSTREAM_LIB)truetype.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)truetype.$(OBJ) $(C_) "$(BITSTREAM_LIB)truetype.c"
+
+$(PSOBJ)util.$(OBJ) : "$(BITSTREAM_LIB)util.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)util.$(OBJ) $(C_) "$(BITSTREAM_LIB)util.c"
+
+$(PSOBJ)fnt.$(OBJ) : "$(BITSTREAM_LIB)fnt.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)fnt.$(OBJ) $(C_) "$(BITSTREAM_LIB)fnt.c"
+
+$(PSOBJ)pclread.$(OBJ) : "$(BITSTREAM_LIB)pclread.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)pclread.$(OBJ) $(C_) "$(BITSTREAM_LIB)pclread.c"
+
+$(PSOBJ)t2ksc.$(OBJ) : "$(BITSTREAM_LIB)t2ksc.c" $(AK)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)t2ksc.$(OBJ) $(C_) "$(BITSTREAM_LIB)t2ksc.c"
+
+$(PSOBJ)write_t1.$(OBJ) : $(PSSRC)write_t1.c $(AK)\
+ $(wrfont_h) $(write_t1_h) 
+	$(PSCC) $(BITSTREAM_CFLAGS) $(PSO_)write_t1.$(OBJ) $(C_) $(PSSRC)write_t1.c
+
+$(PSOBJ)write_t2.$(OBJ) : $(PSSRC)write_t2.c $(AK)\
+ $(wrfont_h) $(write_t2_h) $(ghost_h) $(gxfont_h) $(gxfont1_h)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
+
+$(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
+ $(wrfont_h) $(stdio__h)
+	$(PSCC) $(BITSTREAM_CFLAGS) $(PSO_)wrfont.$(OBJ) $(C_) $(PSSRC)wrfont.c
+
+# stub for Bitstream bridge :
+
+$(PSD)fapib.dev : $(INT_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(PSD)fapib
+
 
 # UFST bridge :
 

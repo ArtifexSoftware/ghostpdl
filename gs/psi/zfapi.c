@@ -443,6 +443,12 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
                     return 0;
                 return r_size(Subrs);
             }
+        case FAPI_FONT_FEATURE_CharStrings_count:
+            {   ref *CharStrings;
+                if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+                    return 0;
+                return dict_length(CharStrings);
+            }
 	    /* Multiple Master specific */
         case FAPI_FONT_FEATURE_DollarBlend:
 	    {   ref *DBlend;
@@ -801,6 +807,54 @@ static ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_l
     return get_type1_data(ff, &subr, buf, buf_length);
 }
 
+static ushort FAPI_FF_get_raw_subr(FAPI_font *ff, int index, byte *buf, ushort buf_length)
+{   ref *pdr = (ref *)ff->client_font_data2;
+    ref *Private, *Subrs, subr;
+
+    if (dict_find_string(pdr, "Private", &Private) <= 0)
+        return 0;
+    if (dict_find_string(Private, "Subrs", &Subrs) <= 0)
+	return 0;
+    if (array_get(ff->memory, Subrs, index, &subr) < 0 || r_type(&subr) != t_string)
+        return 0;
+    if (buf && buf_length && buf_length >= r_size(&subr)) {
+	memcpy(buf, subr.value.const_bytes, r_size(&subr));
+    }
+    return r_size(&subr);
+}
+
+static ushort FAPI_FF_get_charstring_name(FAPI_font *ff, int index, byte *buf, ushort buf_length)
+{
+    ref *pdr = (ref *)ff->client_font_data2;
+    ref *CharStrings, eltp[2], string;
+
+    if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+	return 0;
+    if (dict_index_entry(CharStrings, index, eltp) < 0)
+	return 0;
+    name_string_ref(ff->memory, &eltp[0], &string);
+    if(r_size(&string) > buf_length)
+	return r_size(&string);
+    memcpy(buf, string.value.const_bytes, r_size(&string));
+    buf[r_size(&string)] = 0x00;
+    return r_size(&string);
+}
+
+static ushort FAPI_FF_get_charstring(FAPI_font *ff, int index, byte *buf, ushort buf_length)
+{
+    ref *pdr = (ref *)ff->client_font_data2;
+    ref *CharStrings, eltp[2];
+
+    if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+	return 0;
+    if (dict_index_entry(CharStrings, index, eltp) < 0)
+	return 0;
+    if (buf && buf_length && buf_length >= r_size(&eltp[1])) {
+	memcpy(buf, eltp[1].value.const_bytes, r_size(&eltp[1]));
+    }
+    return r_size(&eltp[1]);
+}
+
 static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
@@ -1002,8 +1056,11 @@ static const FAPI_font ff_stub = {
     FAPI_FF_get_proc,
     FAPI_FF_get_gsubr,
     FAPI_FF_get_subr,
+    FAPI_FF_get_raw_subr,
     FAPI_FF_get_glyph,
-    FAPI_FF_serialize_tt_font
+    FAPI_FF_serialize_tt_font,
+    FAPI_FF_get_charstring,
+    FAPI_FF_get_charstring_name
 };
 
 static int FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)

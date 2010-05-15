@@ -71,7 +71,7 @@ static void write_array_entry(FAPI_font* a_fapi_font,WRF_output* a_output,const 
 	write_array_entry_with_count(a_fapi_font,a_output,a_name,a_index,count,a_divisor);
 	}
 
-static void write_subrs(FAPI_font* a_fapi_font,WRF_output* a_output)
+static void write_subrs(FAPI_font* a_fapi_font,WRF_output* a_output, int raw)
 	{
 	int i;
 	int count = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_Subrs_count,0);
@@ -84,8 +84,12 @@ static void write_subrs(FAPI_font* a_fapi_font,WRF_output* a_output)
 
 	for (i = 0; i < count; i++)
 		{
-		long length = a_fapi_font->get_subr(a_fapi_font,i,0,0);
+		long length;
 		long buffer_size;
+		if (raw) 
+		    length = a_fapi_font->get_raw_subr(a_fapi_font,i,0,0);
+		else
+		    length = a_fapi_font->get_subr(a_fapi_font,i,0,0);
 		WRF_wstring(a_output,"dup ");
 		WRF_wint(a_output,i);
 		WRF_wbyte(a_output,' ');
@@ -96,8 +100,11 @@ static void write_subrs(FAPI_font* a_fapi_font,WRF_output* a_output)
 		buffer_size = a_output->m_limit - a_output->m_count;
 		if (buffer_size >= length)
 			{
-			a_fapi_font->get_subr(a_fapi_font,i,a_output->m_pos,(ushort)length);
-			WRF_wtext(a_output,a_output->m_pos,length);
+			    if (raw)
+				a_fapi_font->get_raw_subr(a_fapi_font,i,a_output->m_pos,(ushort)length);
+			    else
+				a_fapi_font->get_subr(a_fapi_font,i,a_output->m_pos,(ushort)length);
+			    WRF_wtext(a_output,a_output->m_pos,length);
 			}
 		else
 			a_output->m_count += length;
@@ -108,12 +115,52 @@ static void write_subrs(FAPI_font* a_fapi_font,WRF_output* a_output)
 	WRF_wstring(a_output,"ND\n");
 	}
 
+static void write_charstrings(FAPI_font *a_fapi_font, WRF_output *a_output)
+{
+    long length, index = 0;
+    long buffer_size;
+    int i, count = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_CharStrings_count,0);
+    char NameBuf[256];
+    if (count <= 0)
+    	return;
+
+    WRF_wstring(a_output, "2 index /CharStrings ");
+    WRF_wint(a_output,count);
+    WRF_wstring(a_output, " dict dup begin\n");
+    for (i=0;i< count;i++)
+    {
+	length = a_fapi_font->get_charstring_name(a_fapi_font,i,&NameBuf,256);
+	if (length > 0)
+	{
+	    length = a_fapi_font->get_charstring(a_fapi_font,i,0,0);
+
+	    WRF_wbyte(a_output,'/'); 
+	    WRF_wstring(a_output, &NameBuf);
+	    WRF_wbyte(a_output,' ');
+	    WRF_wint(a_output,length);
+	    WRF_wstring(a_output," RD ");
+
+	    /* Get the CharString into the buffer and encrypt it in place. */
+	    buffer_size = a_output->m_limit - a_output->m_count;
+	    if (buffer_size >= length)
+	    {
+		a_fapi_font->get_charstring(a_fapi_font,i,a_output->m_pos,(ushort)length);
+		WRF_wtext(a_output,a_output->m_pos,length);
+	    }
+	    else
+		a_output->m_count += length;
+    	    WRF_wstring(a_output," ND\n");
+	}
+    }
+    WRF_wstring(a_output, " end");
+}
+
 static int is_MM_font(FAPI_font *a_fapi_font)
 {
     return a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_DollarBlend,0);
 }
 
-static void write_private_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output)
+static void write_private_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output, int Write_CharStrings)
 	{
 	a_output->m_encrypt = true;
 
@@ -125,7 +172,10 @@ static void write_private_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output
 
 	WRF_wstring(a_output,"/MinFeature {16 16} def\n");
 	WRF_wstring(a_output,"/password 5839 def\n");
-	WRF_wstring(a_output,"/lenIV -1 def\n"); /* indicate that /subrs are not encoded. */
+	if (Write_CharStrings)
+	    write_word_entry(a_fapi_font,a_output,"lenIV",FAPI_FONT_FEATURE_lenIV,1);
+	else
+	    WRF_wstring(a_output,"/lenIV -1 def\n"); /* indicate that /subrs are not encoded. */
 	write_word_entry(a_fapi_font,a_output,"BlueFuzz",FAPI_FONT_FEATURE_BlueFuzz,16);
 
 	WRF_wstring(a_output,"/BlueScale ");
@@ -147,14 +197,19 @@ static void write_private_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output
 	    WRF_wstring(a_output,"3 index /Blend get /Private get begin\n");
 	    WRF_wstring(a_output,"|-\n");
 	}
-	write_subrs(a_fapi_font,a_output);
+	if (Write_CharStrings)
+	    write_subrs(a_fapi_font,a_output, 1);
+	else
+	    write_subrs(a_fapi_font,a_output, 0);
+	if (Write_CharStrings)
+	    write_charstrings(a_fapi_font,a_output);
 	}
 
 static void write_blend_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output)
 {
 }
 
-static void write_main_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output)
+static void write_main_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output, int Write_CharStrings)
 	{
 	int i;
 	WRF_wstring(a_output,"5 dict begin\n");
@@ -264,7 +319,7 @@ static void write_main_dictionary(FAPI_font* a_fapi_font,WRF_output* a_output)
 	    WRF_wstring(a_output,"] def\n");
 	}
 	WRF_wstring(a_output,"currentdict end\ncurrentfile eexec\n");
-	write_private_dictionary(a_fapi_font,a_output);
+	write_private_dictionary(a_fapi_font,a_output, Write_CharStrings);
 	if (is_MM_font(a_fapi_font)) {
 	    write_blend_dictionary(a_fapi_font, a_output);
 	}
@@ -287,6 +342,18 @@ long FF_serialize_type1_font(FAPI_font* a_fapi_font,unsigned char* a_buffer,long
 	/* Leading comment identifying a Type 1 font. */
 	WRF_wstring(&output,"%!PS-AdobeFont-1\n");
 
-	write_main_dictionary(a_fapi_font,&output);
+	write_main_dictionary(a_fapi_font,&output, 0);
+	return output.m_count;
+	}
+
+long FF_serialize_type1_font_complete(FAPI_font* a_fapi_font,unsigned char* a_buffer,long a_buffer_size)
+	{
+	WRF_output output;
+	WRF_init(&output,a_buffer,a_buffer_size);
+	
+	/* Leading comment identifying a Type 1 font. */
+	WRF_wstring(&output,"%!PS-AdobeFont-1\n");
+
+	write_main_dictionary(a_fapi_font,&output, 1);
 	return output.m_count;
 	}

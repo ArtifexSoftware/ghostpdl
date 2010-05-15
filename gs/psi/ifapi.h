@@ -77,6 +77,9 @@ typedef enum {
     FAPI_FONT_FEATURE_BlendDesignMapSubArrays_count,
     FAPI_FONT_FEATURE_BlendDesignMapArrayValue,
     /* End MM specifics */
+    /* CharString emission */
+    FAPI_FONT_FEATURE_CharStrings_count,
+    /* End CharString emission */
 } fapi_font_feature;
 
 typedef enum {
@@ -126,8 +129,11 @@ struct FAPI_font_s {
     int		   (*get_proc) (FAPI_font *ff, fapi_font_feature var_id, int index, char *Buffer);
     unsigned short (*get_gsubr)(FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     unsigned short (*get_subr) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
+    unsigned short (*get_raw_subr) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     int		   (*get_glyph)(FAPI_font *ff, int char_code, byte *buf, ushort buf_length);
     unsigned short (*serialize_tt_font)(FAPI_font *ff, void *buf, int buf_size);
+    unsigned short (*get_charstring) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
+    unsigned short (*get_charstring_name) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
 };
 
 typedef struct FAPI_face_s FAPI_face;

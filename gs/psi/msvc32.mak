@@ -198,6 +198,10 @@ FTSRCDIR=freetype
 FT_CFLAGS=-I$(FTSRCDIR)\include
 !endif
 
+!ifdef BITSTREAM_BRIDGE
+FT_BRIDGE=0
+!endif
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
@@ -731,6 +735,8 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 
 # FAPI compilation options :
 UFST_CFLAGS=-DMSVC
+
+BITSTREAM_CFLAGS=
 
 # ---------------------------- End of options ---------------------------- #
 
