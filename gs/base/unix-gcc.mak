@@ -233,7 +233,7 @@ GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -f
 CFLAGS_STANDARD=-O2
 CFLAGS_DEBUG=-g -O0
 CFLAGS_PROFILE=-pg -O2
-CFLAGS_SO=-fPIC -shared
+CFLAGS_SO=-fPIC
 
 # Define the other compilation flags.  Add at most one of the following:
 #	-DBSD4_2 for 4.2bsd systems.
