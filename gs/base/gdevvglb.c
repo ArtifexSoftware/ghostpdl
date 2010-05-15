@@ -149,10 +149,9 @@ vgalib_close(gx_device * dev)
 }
 
 static gx_color_index
-vgalib_map_rgb_color(gx_device * dev, gx_color_value red,
-		     gx_color_value green, gx_color_value blue)
+vgalib_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-    return pc_4bit_map_rgb_color(dev, red, green, blue);
+    return pc_4bit_map_rgb_color(dev, cv);
 }
 
 static int
