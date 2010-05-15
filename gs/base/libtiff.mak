@@ -161,7 +161,7 @@ $(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) : $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c 
 $(TIFFGEN)tif_config.h: $(TIFFCONFIG)
 	$(CP_) $(TIFFCONFIG) $(TIFFGEN)tif_config.h
 	
-$(TIFFGEN)tiffconf.h: $(TIFFCONG)
+$(TIFFGEN)tiffconf.h: $(TIFFCONF)
 	$(CP_) $(TIFFCONF) $(TIFFGEN)tiffconf.h
 	
 # Define the version of libtiff.dev that we are actually using.
