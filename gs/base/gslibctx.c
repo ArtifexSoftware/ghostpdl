@@ -19,6 +19,7 @@
 
 /* Capture stdin/out/err before gs.h redefines them. */
 #include "stdio_.h"
+#include "string_.h" /* memset */
 #include "gp.h"
 
 static void
