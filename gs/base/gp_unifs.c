@@ -116,7 +116,7 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
     }
 #else
     mktemp(fname);
-    fp = (b64 ? gp_fopentemp : gp_fopentemp_64)(mem, fname, mode);
+    fp = (b64 ? gp_fopentemp : gp_fopentemp_64)(fname, mode);
 #endif
     if (fp == NULL)
         emprintf1(mem, "**** Could not open temporary file %s\n", fname);
