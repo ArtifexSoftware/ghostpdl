@@ -818,10 +818,9 @@ executable and want to save it, move it first to another place, because
 
 <dl>
 <dt><code>make so</code>
-<dd>On some platforms (notably x86 linux, and possibly others),
+<dd>On some platforms (Linux, *BSD, Darwin/Mac OS X, SunOS),
 it is possible to build ghostscript as a shared object library.
-Currently for x86_64 linux, setting <code>CFLAGS=-fPIC</code>, e.g.
-<code>CFLAGS=-fPIC ./configure</code>, is required.
+<code>./configure --enable-dynamic</code>, is required.
 There is a corresponding "<code>make soclean</code>" for cleaning up.
 </dl>
 
@@ -1496,14 +1495,13 @@ make
 <p>or
 
 <blockquote><pre>
-./configure
+./configure --enable-dynamic
 make so
 </pre></blockquote>
 
-<p>for building ghostscript as a shared library. (on x86_64 linux, currently
-<code>CFLAGS=-fPIC ./configure</code> is required; it is hope that this can be
-simplied in the future; other platforms may require other switches, and not
-all platforms are supported)
+<p>for building ghostscript as a shared library.
+<code>./configure --enable-dynamic</code> will return an error message
+on unsupported platforms.
 
 <p>Please report any problems with this method on your system as a bug.
 
