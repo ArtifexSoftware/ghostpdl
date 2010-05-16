@@ -193,8 +193,8 @@ my $temp="./temp";
 my $temp2="./temp.tmp";
 my $raster="./temp/raster";
 my $bmpcmpOutput="./temp/bmpcmp";
-my $baselineRaster="./baselineraster";
-my $baselineRaster2="./baselineraster.tmp";
+#my $baselineRaster="./baselineraster";
+#my $baselineRaster2="./baselineraster.tmp";
 
 my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
@@ -511,9 +511,9 @@ if (!$local) {
 mkdir("$gsBin");
 mkdir("$gsBin/bin");
 
-$cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
-print "$cmd\n" if ($verbose);
-`$cmd`;
+#$cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
+#print "$cmd\n" if ($verbose);
+#`$cmd`;
 
 $cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; mkdir $raster ; mkdir $bmpcmpOutput ; touch raster.yes ; rm -fr $temp2 &";
 print "$cmd\n" if ($verbose);
@@ -592,7 +592,8 @@ if (!$abort) {
         if ($icc_work) {
           `cp -p $gsBin/bin/gs ./icc_work/bin/.`;
         }
-        if ($revs) {
+
+        if ($revs || $local) {
           `cp -p $gsBin/bin/gs ./head/bin/.`;
         }
       } else {
@@ -616,7 +617,7 @@ if (!$dontBuild) {
       if ($icc_work) {
         `cp -p $gsBin/bin/pcl6 ./icc_work/bin/.`;
       }
-      if ($revs) {
+      if ($revs || $local) {
         `cp -p $gsBin/bin/pcl6 ./head/bin/.`;
       }
     } else {
@@ -639,7 +640,7 @@ if (!$dontBuild) {
       if ($icc_work) {
         `cp -p $gsBin/bin/gxps ./icc_work/bin/.`;
       }
-      if ($revs) {
+      if ($revs || $local) {
         `cp -p $gsBin/bin/gxps ./head/bin/.`;
       }
     } else {
@@ -662,7 +663,7 @@ if (!$dontBuild) {
       if ($icc_work) {
         `cp -p $gsBin/bin/gsvg ./icc_work/bin/.`;
       }
-      if ($revs) {
+      if ($revs || $local) {
         `cp -p $gsBin/bin/gsvg ./head/bin/.`;
       }
     } else {
@@ -686,7 +687,7 @@ if (!$dontBuild) {
       if ($icc_work) {
         `cp -p $gsBin/bin/pspcl6 ./icc_work/bin/.`;
       }
-      if ($revs) {
+      if ($revs || $local) {
         `cp -p $gsBin/bin/pspcl6 ./head/bin/.`;
       }
     } else {
