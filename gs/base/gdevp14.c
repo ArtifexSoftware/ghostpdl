@@ -2218,6 +2218,12 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
         case PDF14_POP_TRANS_STATE:
             code = gx_pop_transparency_state(pis, pdev);
             break;
+        case PDF14_PUSH_SMASK_COLOR:
+            code = pdf14_increment_smask_color(pis, pdev);
+            break;
+        case PDF14_POP_SMASK_COLOR:
+            code = pdf14_decrement_smask_color(pis, pdev);
+            break;
     }
     return code;
 }
@@ -4062,7 +4068,12 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize, gx_dev
             break;
         case PDF14_POP_TRANS_STATE:
             break;
-
+        case PDF14_PUSH_SMASK_COLOR:
+            return 0;   /* We really should never be here */
+            break;
+        case PDF14_POP_SMASK_COLOR:
+            return 0;   /* We really should never be here */
+            break;
     }
 
     /* check for fit */
@@ -4200,6 +4211,12 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             break;
 	case PDF14_END_TRANS_MASK:
 	    break;
+        case PDF14_PUSH_SMASK_COLOR:
+            return 0;
+            break;
+        case PDF14_POP_SMASK_COLOR:
+            return 0;
+            break;
 	case PDF14_SET_BLEND_PARAMS:
 	    params.changed = *data++;
 	    if (params.changed & PDF14_SET_BLEND_MODE)
@@ -4378,6 +4395,12 @@ c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte, gx
             return 0;
         case PDF14_POP_TRANS_STATE:
             return 0;
+        case PDF14_PUSH_SMASK_COLOR:
+            return 0;
+            break;
+        case PDF14_POP_SMASK_COLOR:
+            return 0;
+            break;
 	case PDF14_END_TRANS_MASK: 
 	    if (*ppcte == NULL)
 		return 2;
@@ -5449,6 +5472,16 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 break;
             case PDF14_POP_TRANS_STATE:
                 break;
+            case PDF14_PUSH_SMASK_COLOR:
+                code = pdf14_increment_smask_color(pis,dev);
+                *pcdev = dev;
+                return code;  /* Note, this are NOT put in the clist */
+                break;
+            case PDF14_POP_SMASK_COLOR:
+                code = pdf14_decrement_smask_color(pis,dev);
+                *pcdev = dev;
+                return code;  /* Note, this are NOT put in the clist */
+                break;
             default:
 		break;		/* Pass remaining ops to target */
 	}
@@ -5875,8 +5908,13 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
         case PDF14_POP_TRANS_STATE:
             code = 0; /* A place for breakpoint. */
             break;
-
-	default:
+        case PDF14_PUSH_SMASK_COLOR:
+            return 0;
+            break;
+        case PDF14_POP_SMASK_COLOR:
+            return 0;
+            break;
+        default:
 	    break;		/* do nothing for remaining ops */
     }
     *pcdev = dev;
@@ -6040,6 +6078,9 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight, int
         case PDF14_POP_TRANS_STATE: return 3;
 
 	case PDF14_SET_BLEND_PARAMS: return 3;
+	case PDF14_PUSH_SMASK_COLOR: return 2; /* Pop cropping. */
+	case PDF14_POP_SMASK_COLOR: return 2;   /* Pop the cropping */ 
+
     }
     return 0;
 }
@@ -6136,12 +6177,12 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
 /* These functions keep track of when we are dealing with soft masks.
    In such a case, we set the default color profiles to ones that ensure
    proper soft mask rendering. */
-int 
-pdf14_increment_smask_color(gs_state *pgs)
+static int 
+pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
 {
-    pdf14_device * pdev = (pdf14_device *) pgs->device;
+    pdf14_device * pdev = (pdf14_device *) dev;
     pdf14_smaskcolor_t *result;
-    gsicc_smask_t *smask_profiles = pgs->icc_manager->smask_profiles;
+    gsicc_smask_t *smask_profiles = pis->icc_manager->smask_profiles;
 
     /* See if we have profiles already in place */
     if (pdev->smaskcolor != NULL) {
@@ -6159,23 +6200,23 @@ pdf14_increment_smask_color(gs_state *pgs)
             on the profiles for a well-formed PDF with clean soft mask groups.
            The only issue could be if the graphic state is popped while we
            are still within a softmask group. */
-        result->profiles->smask_gray = pgs->icc_manager->default_gray;
-        result->profiles->smask_rgb = pgs->icc_manager->default_rgb;
-        result->profiles->smask_cmyk = pgs->icc_manager->default_cmyk;
-        pgs->icc_manager->default_gray = smask_profiles->smask_gray;
-        pgs->icc_manager->default_rgb = smask_profiles->smask_rgb;
-        pgs->icc_manager->default_cmyk = smask_profiles->smask_cmyk;
+        result->profiles->smask_gray = pis->icc_manager->default_gray;
+        result->profiles->smask_rgb = pis->icc_manager->default_rgb;
+        result->profiles->smask_cmyk = pis->icc_manager->default_cmyk;
+        pis->icc_manager->default_gray = smask_profiles->smask_gray;
+        pis->icc_manager->default_rgb = smask_profiles->smask_rgb;
+        pis->icc_manager->default_cmyk = smask_profiles->smask_cmyk;
         pdev->smaskcolor->ref_count = 1;
     }
     return(0);
 }
 
-int
-pdf14_decrement_smask_color(gs_state *pgs)
+static int
+pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
 {
-    pdf14_device * pdev = (pdf14_device *) pgs->device;
+    pdf14_device * pdev = (pdf14_device *) dev;
     pdf14_smaskcolor_t *smaskcolor = pdev->smaskcolor;
-    gsicc_manager_t *icc_manager = pgs->icc_manager;    
+    gsicc_manager_t *icc_manager = pis->icc_manager;    
     
     if (smaskcolor != NULL) {
         smaskcolor->ref_count--;
@@ -6208,20 +6249,4 @@ pdf14_free_smask_color(pdf14_device * pdev)
         gs_free_object(pdev->memory, pdev->smaskcolor, "pdf14_free_smask_color");
         pdev->smaskcolor = NULL;
     }
-}
-
-void
-pdf14_end_smask_color(gs_state *pgs)
-{
-    pdf14_device * pdev = (pdf14_device *) pgs->device;
-
-    pdf14_free_smask_color(pdev); 
-}
-
-void
-pdf14_null_smaskmask_color( gx_device *dev)
-{
-    pdf14_device *pdev = (pdf14_device *)dev;
-
-    pdev->smaskcolor = NULL;
 }

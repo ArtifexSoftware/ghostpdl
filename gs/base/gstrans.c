@@ -203,11 +203,9 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
     code = send_pdf14trans(pis, dev, &pdf14dev, pparams, pgs->memory);
     /*
      * If we created a new PDF 1.4 compositor device then we need to install it
-     * into the graphics state.  Also initialize the soft mask color struct to
-     * NULL.  It is only used if softmasks are contained in the file.
+     * into the graphics state.  
      */
     if (code >= 0 && pdf14dev != dev) {
-        pdf14_null_smaskmask_color(pdf14dev);
         gx_set_device_only(pgs, pdf14dev);
     }
     return code;
@@ -530,6 +528,7 @@ gs_begin_transparency_mask(gs_state * pgs,
 			   const gs_rect * pbbox, bool mask_is_image)
 {
     gs_pdf14trans_params_t params = { 0 };
+    gs_pdf14trans_params_t params_color = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
     int i;
     gs_color_space *blend_color_space;
@@ -567,7 +566,11 @@ gs_begin_transparency_mask(gs_state * pgs,
         code = gsicc_initialize_iccsmask(icc_manager);
     }
     /* A new soft mask group,  make sure the profiles are set */
-    pdf14_increment_smask_color(pgs);
+    if_debug0('v', "[v]pushing soft mask color sending\n");
+    params_color.pdf14_op = PDF14_PUSH_SMASK_COLOR;  
+    code = gs_state_update_pdf14trans(pgs, &params_color);
+    if (code < 0) 
+        return(code);
     blend_color_space = gs_cspace_new_DeviceGray(pgs->memory);
     blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
     rc_increment(blend_color_space->cmm_icc_profile_data);
@@ -675,7 +678,9 @@ gs_end_transparency_mask(gs_state *pgs,
 			 gs_transparency_channel_selector_t csel)
 {
     gs_pdf14trans_params_t params = { 0 };
+    gs_pdf14trans_params_t params_color = { 0 };
     gs_imager_state * pis = (gs_imager_state *)pgs;
+    int code;
 
     if (check_for_nontrans_pattern(pgs,
                   (unsigned char *)"gs_end_transparency_mask")) {
@@ -697,7 +702,11 @@ gs_end_transparency_mask(gs_state *pgs,
     params.pdf14_op = PDF14_END_TRANS_MASK;  /* Other parameters not used */
     params.csel = csel;
     /* If this is the outer end then return us to our normal defaults */
-    pdf14_decrement_smask_color(pgs);
+    if_debug0('v', "[v]popping soft mask color sending\n");
+    params_color.pdf14_op = PDF14_POP_SMASK_COLOR;  
+    code = gs_state_update_pdf14trans(pgs, &params_color);
+    if (code < 0) 
+        return(code);
     return gs_state_update_pdf14trans(pgs, &params);
 }
 
@@ -757,7 +766,6 @@ get_num_pdf14_spot_colors(gs_state * pgs)
 	    return pclist_devn_params->page_spot_colors;
         }
         return (pclist_devn_params->separations.num_separations);
-
     }
     return 0;
 }
@@ -785,9 +793,5 @@ gs_pop_pdf14trans_device(gs_state * pgs)
     gs_pdf14trans_params_t params = { 0 };
 
     params.pdf14_op = PDF14_POP_DEVICE;  /* Other parameters not used */
-    /* Make sure the softmask color object is taken care of.  Assuming
-       we had matching push and pop operations on the soft mask this should
-       be OK, but check anyway */
-    pdf14_end_smask_color(pgs);
     return gs_state_update_pdf14trans(pgs, &params);
 }

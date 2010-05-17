@@ -371,7 +371,10 @@ gdev_pdf_create_compositor(gx_device *dev,
                 return 0;
             case PDF14_POP_TRANS_STATE:
                 return 0;
-
+            case PDF14_PUSH_SMASK_COLOR:
+                return 0;
+            case PDF14_POP_SMASK_COLOR:
+                return 0;
 
 	    default :
 		return_error(gs_error_unregistered); /* Must not happen. */
