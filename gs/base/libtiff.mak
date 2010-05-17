@@ -158,6 +158,12 @@ $(TIFFOBJ)tif_write.$(OBJ) : $(TIFFSRC)/libtiff/tif_write.c $(TIFFDEP)
 $(TIFFOBJ)tif_zip.$(OBJ) : $(TIFFSRC)/libtiff/tif_zip.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_zip.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_zip.c
 
+# tif_win32.c include <windows.h> and needed to be compiled with non-ansi extensions.
+# so it has a different compiler flag compared to other tif_$(TIFFPLATFORM).c .
+# We also have this target before tif_$(TIFFPLATFORM).c for this reason.
+$(TIFFOBJ)tif_win32.$(OBJ) : $(TIFFSRC)/libtiff/tif_win32.c $(TIFFDEP)
+	$(CC) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_) $(TIFFO_)tif_win32.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_win32.c
+
 $(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) : $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_$(TIFFPLATFORM).$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c
 
