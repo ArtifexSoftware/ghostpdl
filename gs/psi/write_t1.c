@@ -19,6 +19,7 @@ passed to FreeType via the FAPI FreeType bridge.
 Started by Graham Asher, 26th July 2002.
 */
 
+#include <stdio.h>
 #include "wrfont.h"
 #include "write_t1.h"
 
@@ -117,7 +118,7 @@ static void write_subrs(FAPI_font* a_fapi_font,WRF_output* a_output, int raw)
 
 static void write_charstrings(FAPI_font *a_fapi_font, WRF_output *a_output)
 {
-    long length, index = 0;
+    long length;
     long buffer_size;
     int i, count = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_CharStrings_count,0);
     char NameBuf[256];
@@ -129,13 +130,13 @@ static void write_charstrings(FAPI_font *a_fapi_font, WRF_output *a_output)
     WRF_wstring(a_output, " dict dup begin\n");
     for (i=0;i< count;i++)
     {
-	length = a_fapi_font->get_charstring_name(a_fapi_font,i,&NameBuf,256);
+	length = a_fapi_font->get_charstring_name(a_fapi_font,i,(byte *)&NameBuf,256);
 	if (length > 0)
 	{
 	    length = a_fapi_font->get_charstring(a_fapi_font,i,0,0);
 
 	    WRF_wbyte(a_output,'/'); 
-	    WRF_wstring(a_output, &NameBuf);
+	    WRF_wstring(a_output, (const char*)&NameBuf);
 	    WRF_wbyte(a_output,' ');
 	    WRF_wint(a_output,length);
 	    WRF_wstring(a_output," RD ");

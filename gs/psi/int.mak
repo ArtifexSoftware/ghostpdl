@@ -1770,6 +1770,22 @@ $(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
 	$(ADDMOD) $(PSD)fapi -include $(PSD)fapif$(FT_BRIDGE)
 	$(ADDMOD) $(PSD)fapi -include $(PSD)fapib$(BITSTREAM_BRIDGE)
 
+wrfont_h=$(stdpre_h) $(PSSRC)wrfont.h
+write_t1_h=$(ifapi_h) $(PSSRC)write_t1.h
+write_t2_h=$(ifapi_h) $(PSSRC)write_t2.h
+
+$(PSOBJ)write_t1.$(OBJ) : $(PSSRC)write_t1.c $(AK)\
+ $(wrfont_h) $(write_t1_h) 
+	$(PSCC) $(FT_CFLAGS) $(PSO_)write_t1.$(OBJ) $(C_) $(PSSRC)write_t1.c
+
+$(PSOBJ)write_t2.$(OBJ) : $(PSSRC)write_t2.c $(AK)\
+ $(wrfont_h) $(write_t2_h) $(ghost_h) $(gxfont_h) $(gxfont1_h)
+	$(PSCC) $(FT_CFLAGS) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
+
+$(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
+ $(wrfont_h) $(stdio__h)
+	$(PSCC) $(FT_CFLAGS) $(PSO_)wrfont.$(OBJ) $(C_) $(PSSRC)wrfont.c
+
 $(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(string__h)\
  $(stat__h)\
  $(gp_h) $(gscoord_h) $(gscrypt1_h) $(gsfont_h) $(gspaint_h) $(gspath_h)\
@@ -1851,18 +1867,6 @@ $(PSOBJ)pclread.$(OBJ) : "$(BITSTREAM_LIB)pclread.c" $(AK)
 $(PSOBJ)t2ksc.$(OBJ) : "$(BITSTREAM_LIB)t2ksc.c" $(AK)
 	$(PSCC) $(BITSTREAM_CFLAGS) $(BITSTREAM_INC) $(PSO_)t2ksc.$(OBJ) $(C_) "$(BITSTREAM_LIB)t2ksc.c"
 
-$(PSOBJ)write_t1.$(OBJ) : $(PSSRC)write_t1.c $(AK)\
- $(wrfont_h) $(write_t1_h) 
-	$(PSCC) $(BITSTREAM_CFLAGS) $(PSO_)write_t1.$(OBJ) $(C_) $(PSSRC)write_t1.c
-
-$(PSOBJ)write_t2.$(OBJ) : $(PSSRC)write_t2.c $(AK)\
- $(wrfont_h) $(write_t2_h) $(ghost_h) $(gxfont_h) $(gxfont1_h)
-	$(PSCC) $(BITSTREAM_CFLAGS) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
-
-$(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
- $(wrfont_h) $(stdio__h)
-	$(PSCC) $(BITSTREAM_CFLAGS) $(PSO_)wrfont.$(OBJ) $(C_) $(PSSRC)wrfont.c
-
 # stub for Bitstream bridge :
 
 $(PSD)fapib.dev : $(INT_MAK) $(ECHOGS_XE)
@@ -1909,10 +1913,6 @@ $(PSD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
 # the top-level makefile should define
 # FT_CFLAGS for the include directive and other switches
 
-wrfont_h=$(stdpre_h) $(PSSRC)wrfont.h
-write_t1_h=$(ifapi_h) $(PSSRC)write_t1.h
-write_t2_h=$(ifapi_h) $(PSSRC)write_t2.h
-
 $(PSD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)fapi_ft.$(OBJ) \
  $(PSOBJ)write_t1.$(OBJ) $(PSOBJ)write_t2.$(OBJ) $(PSOBJ)wrfont.$(OBJ) \
  $(GLD)freetype.dev
@@ -1925,18 +1925,6 @@ $(PSOBJ)fapi_ft.$(OBJ) : $(PSSRC)fapi_ft.c $(AK)\
  $(stdio__h) $(math__h) $(ifapi_h) $(gserror_h)\
  $(write_t1_h) $(write_t2_h)
 	$(PSCC) $(FT_CFLAGS) $(PSO_)fapi_ft.$(OBJ) $(C_) $(PSSRC)fapi_ft.c
-
-$(PSOBJ)write_t1.$(OBJ) : $(PSSRC)write_t1.c $(AK)\
- $(wrfont_h) $(write_t1_h) 
-	$(PSCC) $(FT_CFLAGS) $(PSO_)write_t1.$(OBJ) $(C_) $(PSSRC)write_t1.c
-
-$(PSOBJ)write_t2.$(OBJ) : $(PSSRC)write_t2.c $(AK)\
- $(wrfont_h) $(write_t2_h) $(ghost_h) $(gxfont_h) $(gxfont1_h)
-	$(PSCC) $(FT_CFLAGS) $(PSO_)write_t2.$(OBJ) $(C_) $(PSSRC)write_t2.c
-
-$(PSOBJ)wrfont.$(OBJ) : $(PSSRC)wrfont.c $(AK)\
- $(wrfont_h) $(stdio__h)
-	$(PSCC) $(FT_CFLAGS) $(PSO_)wrfont.$(OBJ) $(C_) $(PSSRC)wrfont.c
 
 # stub for FreeType bridge :
 
