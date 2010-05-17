@@ -424,6 +424,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 	    cnext;
 	    break;
 	case c2_cntrmask:
+	    vhints += ((csp - cstack) + 1) / 2;
 	    cip += (vhints + hhints + 7) / 8;
 	    cnext;
 	    break;
