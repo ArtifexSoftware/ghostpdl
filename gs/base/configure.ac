@@ -275,7 +275,10 @@ AC_ARG_WITH(libidn,
 		   	    [don't use libidn to support Unicode passwords])],,
 	    [with_libidn=maybe])
 if test x$with_libidn != xno; then
-  AC_CHECK_LIB(idn, stringprep, [with_libidn=yes], [
+  AC_CHECK_LIB(idn, stringprep, [
+    with_libidn=no
+    AC_CHECK_HEADER([stringprep.h], [with_libidn=yes])
+    ], [
     if test x$with_libidn != xmaybe; then
       AC_MSG_ERROR([libidn not found])
     fi
