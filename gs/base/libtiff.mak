@@ -46,8 +46,9 @@ tiff_8=$(TIFFOBJ)tif_strip.$(OBJ) $(TIFFOBJ)tif_swab.$(OBJ) $(TIFFOBJ)tif_thunde
 tiff_9=$(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) $(TIFFOBJ)tif_version.$(OBJ) $(TIFFOBJ)tif_warning.$(OBJ) $(TIFFOBJ)tif_write.$(OBJ)
 tiff_10=$(TIFFOBJ)tif_zip.$(OBJ)
 
-$(TIFFCONFIG) : $(TIFFCONFIG).in
+$(TIFFSRC)libtiff$(D)tif_config.unix.h : $(TIFFSRC)libtiff$(D)tif_config.h.in
 	cd $(TIFFSRC) && ./configure
+	$(CP_) $(TIFFSRC)libtiff$(D)tif_config.h $(TIFFSRC)libtiff$(D)tif_config.unix.h
 
 $(TIFFOBJ)tif_aux.$(OBJ) : $(TIFFSRC)/libtiff/tif_aux.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_aux.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_aux.c

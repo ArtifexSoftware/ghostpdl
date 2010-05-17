@@ -149,7 +149,7 @@ LIBPNG_NAME=png
 SHARE_LIBTIFF=0
 TIFFSRCDIR=tiff
 TIFFPLATFORM=unix
-TIFFCONFIG_SUFFIX=
+TIFFCONFIG_SUFFIX=.unix
 LIBTIFF_NAME=tiff
 
 # Define the directory where the zlib sources are stored.
