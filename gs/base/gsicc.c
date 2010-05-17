@@ -109,13 +109,13 @@ gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
     unsigned short des1[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short des01[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short interp_des;
-    unsigned short max_diff = max(1, 65535 * smoothness);
+    unsigned short max_diff = (unsigned short) max(1, 65535 * smoothness);
     int k;
 
     /* Get us to ushort and get mid point */
     for (k = 0; k < nsrc; k++) {
-        src0[k] = c0->paint.values[k]*65535;
-        src1[k] = c1->paint.values[k]*65535;
+        src0[k] = (unsigned short) (c0->paint.values[k]*65535);
+        src1[k] = (unsigned short) (c1->paint.values[k]*65535);
         src01[k] = ((unsigned int) src0[k] + (unsigned int) src1[k]) >> 1;
     }
     /* Transform the end points and the interpolated point */
@@ -156,15 +156,15 @@ gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * p
     unsigned short des012[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int nsrc = cs->type->num_components(cs);
     int ndes = dev->color_info.num_components;
-    unsigned short max_diff = max(1, 65535 * smoothness);
+    unsigned short max_diff = (unsigned short) max(1, 65535 * smoothness);
     unsigned int interp_des;
     int k;
 
     /* This needs to be optimized. And range corrected */
     for (k = 0; k < nsrc; k++){
-        src0[k] = c0->paint.values[k]*65535;
-        src1[k] = c1->paint.values[k]*65535;
-        src2[k] = c2->paint.values[k]*65535;
+        src0[k] = (unsigned short) (c0->paint.values[k]*65535);
+        src1[k] = (unsigned short) (c1->paint.values[k]*65535);
+        src2[k] = (unsigned short) (c2->paint.values[k]*65535);
         src01[k] = (src0[k] + src1[k]) >> 1;
         src02[k] = (src0[k] + src2[k]) >> 1;   
         src12[k] = (src1[k] + src2[k]) >> 1;
@@ -335,12 +335,12 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 
      /* This needs to be optimized */
     if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB) {
-        psrc[0] = pcc->paint.values[0]*65535.0/100.0;
-        psrc[1] = (pcc->paint.values[1]+128)/255.0*65535.0;
-        psrc[2] = (pcc->paint.values[2]+128)/255.0*65535.0;
+        psrc[0] = (unsigned short) (pcc->paint.values[0]*65535.0/100.0);
+        psrc[1] = (unsigned short) ((pcc->paint.values[1]+128)/255.0*65535.0);
+        psrc[2] = (unsigned short) ((pcc->paint.values[2]+128)/255.0*65535.0);
     } else {
         for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
-            psrc[k] = pcc->paint.values[k]*65535.0;
+            psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
         }
     }
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
@@ -408,7 +408,7 @@ gx_concretize_ICC(
     rendering_params.object_type = GS_PATH_TAG;
     rendering_params.rendering_intent = pis->renderingintent;
     for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
-        psrc[k] = pcc->paint.values[k]*65535.0;
+        psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
     }
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
     icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);

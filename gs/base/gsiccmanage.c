@@ -80,14 +80,18 @@ gs_private_st_ptrs4(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
 		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, 
                     dev, name, spotnames);
 
-gs_private_st_ptrs10(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
+gs_private_st_ptrs11(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
 		    device_profile, device_named, default_gray, default_rgb,
                     default_cmyk, proof_profile, output_link, lab_profile, 
-                    profiledir, device_n); 
+                    profiledir, device_n, smask_profiles); 
 
 gs_private_st_ptrs2(st_gsicc_devicen, gsicc_devicen_t, "gsicc_devicen",
 		gsicc_devicen_enum_ptrs, gsicc_devicen_reloc_ptrs, head, final);
+
+gs_private_st_ptrs3(st_gsicc_smask, gsicc_smask_t, "gsicc_smask",
+		gsicc_smask_enum_ptrs, gsicc_smask_reloc_ptrs, smask_gray, 
+                smask_rgb, smask_cmyk);
 
 gs_private_st_ptrs2(st_gsicc_devicen_entry, gsicc_devicen_entry_t, 
                     "gsicc_devicen_entry", gsicc_devicen_entry_enum_ptrs, 
@@ -137,6 +141,88 @@ gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname,
         icc_manager->profiledir = result;
         icc_manager->namelen = namelen;
     }
+}
+
+static cmm_profile_t*
+gsicc_set_iccsmaskprofile(const char *pname, 
+                          int namelen, gsicc_manager_t *icc_manager, 
+                          gs_memory_t *mem)
+{
+    stream *str;
+    int code;
+    cmm_profile_t *icc_profile;
+
+    str = gsicc_open_search(pname, namelen, mem, icc_manager);
+    if (str != NULL) {
+        icc_profile = gsicc_profile_new(str, mem, pname, namelen);
+        code = sfclose(str);
+        /* Get the profile handle */
+        icc_profile->profile_handle = 
+            gsicc_get_profile_handle_buffer(icc_profile->buffer,
+                                            icc_profile->buffer_size);
+        /* Compute the hash code of the profile. Everything in the 
+           ICC manager will have it's hash code precomputed */
+        gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode),
+                                        icc_profile->buffer_size);
+        icc_profile->hash_is_valid = true;
+        icc_profile->num_comps = 
+            gscms_get_channel_count(icc_profile->profile_handle);
+        icc_profile->num_comps_out = 
+            gscms_get_pcs_channel_count(icc_profile->profile_handle);
+        icc_profile->data_cs = 
+            gscms_get_profile_data_space(icc_profile->profile_handle);
+        return(icc_profile);
+    } else {
+        return(NULL);
+    }
+}
+
+gsicc_smask_t*
+gsicc_new_iccsmask(gs_memory_t *memory)
+{
+    gsicc_smask_t *result;
+
+    result = gs_alloc_struct(memory, 
+            gsicc_smask_t, &st_gsicc_smask, "gsicc_new_iccsmask");
+    return(result);
+}
+
+
+/* Allocate a new structure to hold the profiles that contains the profiles
+   used when we are in a softmask group */
+int
+gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager)
+{
+    gs_memory_t *stable_mem = icc_manager->memory->stable_memory;
+
+    /* Allocations need to be done in stable memory.  We want to maintain
+       the smask_profiles object */
+    icc_manager->smask_profiles = gsicc_new_iccsmask(stable_mem);
+    if (icc_manager->smask_profiles == NULL)
+        return gs_rethrow(-1, "insufficient memory to allocate smask profiles");   
+    /* Load the gray, rgb, and cmyk profiles */
+    if ((icc_manager->smask_profiles->smask_gray = 
+        gsicc_set_iccsmaskprofile(SMASK_GRAY_ICC, strlen(SMASK_GRAY_ICC),
+        icc_manager, stable_mem) ) == NULL) {
+        return gs_rethrow(-1, "failed to load gray smask profile");  
+    }
+    if ((icc_manager->smask_profiles->smask_rgb = 
+        gsicc_set_iccsmaskprofile(SMASK_RGB_ICC, strlen(SMASK_RGB_ICC),
+        icc_manager, stable_mem)) == NULL) {
+        return gs_rethrow(-1, "failed to load rgb smask profile");  
+    }
+    if ((icc_manager->smask_profiles->smask_cmyk = 
+        gsicc_set_iccsmaskprofile(SMASK_CMYK_ICC, strlen(SMASK_CMYK_ICC),
+        icc_manager, stable_mem)) == NULL) {
+        return gs_rethrow(-1, "failed to load cmyk smask profile");  
+    }
+    /* Set these as "default" so that pdfwrite or other high level devices
+       will know that these are manufactured profiles, and default spaces
+       should be used */
+    icc_manager->smask_profiles->smask_gray->default_match = DEFAULT_GRAY;
+    icc_manager->smask_profiles->smask_rgb->default_match = DEFAULT_RGB;
+    icc_manager->smask_profiles->smask_cmyk->default_match = DEFAULT_CMYK;
+    return(0);
 }
 
 static int
@@ -876,6 +962,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->device_profile = NULL;
    result->proof_profile = NULL;
    result->device_n = NULL;
+   result->smask_profiles = NULL;
    result->memory = memory;
    result->profiledir = NULL;
    result->namelen = 0;
@@ -912,6 +999,15 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
        }
        gs_free_object(icc_manager->memory, icc_manager->device_n, 
                       "rc_gsicc_manager_free");
+   }
+   /* The soft mask profiles */
+   if ( icc_manager->smask_profiles != NULL) {
+       rc_decrement(icc_manager->smask_profiles->smask_gray, 
+           "rc_gsicc_manager_free");
+       rc_decrement(icc_manager->smask_profiles->smask_rgb, 
+           "rc_gsicc_manager_free");
+       rc_decrement(icc_manager->smask_profiles->smask_cmyk, 
+           "rc_gsicc_manager_free");
    }
    gs_free_object(icc_manager->memory, icc_manager->profiledir, 
                   "rc_gsicc_manager_free");

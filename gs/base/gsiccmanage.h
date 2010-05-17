@@ -26,6 +26,9 @@
 #define DEFAULT_RGB_ICC   "iccprofiles/default_rgb.icc"
 #define DEFAULT_CMYK_ICC  "iccprofiles/default_cmyk.icc"
 #define LAB_ICC           "iccprofiles/lab.icc"
+#define SMASK_GRAY_ICC    "iccprofiles/ps_gray.icc"
+#define SMASK_RGB_ICC     "iccprofiles/ps_rgb.icc"
+#define SMASK_CMYK_ICC    "iccprofiles/ps_cmyk.icc"
 
 /* Key names for special common canned profiles.
    These are found in some image file formats as
@@ -63,6 +66,8 @@ gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer,
                                                int profile_size);
 void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, 
                              int namelen);
+gsicc_smask_t* gsicc_new_iccsmask(gs_memory_t *memory);
+int gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
 cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs, 

@@ -66,6 +66,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 		     gx_path * ppath, const gx_fill_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath);
 static pdf14_mask_t *pdf14_mask_element_new(gs_memory_t *memory);
+static void pdf14_free_smask_color(pdf14_device * pdev); 
 
 /*
  * We chose the blending color space based upon the process color model of the
@@ -111,6 +112,10 @@ gs_private_st_ptrs2(st_pdf14_mask, pdf14_mask_t, "pdf_mask",
 gs_private_st_ptrs1(st_pdf14_rcmask, pdf14_rcmask_t, "pdf_rcmask",
                     pdf14_rcmask_enum_ptrs, pdf14_rcmask_reloc_ptrs,
                     mask_buf);
+
+gs_private_st_ptrs1(st_pdf14_smaskcolor, pdf14_smaskcolor_t, "pdf14_smaskcolor",
+                    pdf14_smaskcolor_enum_ptrs, pdf14_smaskcolor_reloc_ptrs,
+                    profiles);
 
 
 /* ------ The device descriptors ------	*/
@@ -432,7 +437,7 @@ const pdf14_device gs_pdf14_custom_device = {
 static	
 ENUM_PTRS_WITH(pdf14_device_enum_ptrs, pdf14_device *pdev)
 {
-    index -= 4;
+    index -= 5;
     if (index < pdev->devn_params.separations.num_separations)
 	ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     index -= pdev->devn_params.separations.num_separations;
@@ -442,8 +447,9 @@ ENUM_PTRS_WITH(pdf14_device_enum_ptrs, pdf14_device *pdev)
 }
 case 0:	return ENUM_OBJ(pdev->ctx);
 case 1: return ENUM_OBJ(pdev->trans_group_parent_cmap_procs);
-case 2:	ENUM_RETURN(gx_device_enum_ptr(pdev->target));
-case 3: ENUM_RETURN(pdev->devn_params.compressed_color_list);
+case 2: return ENUM_OBJ(pdev->smaskcolor);
+case 3:	ENUM_RETURN(gx_device_enum_ptr(pdev->target));
+case 4: ENUM_RETURN(pdev->devn_params.compressed_color_list);
 ENUM_PTRS_END
 
 static	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
@@ -457,6 +463,7 @@ static	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
     }
     RELOC_PTR(pdf14_device, devn_params.compressed_color_list);
     RELOC_VAR(pdev->ctx);
+    RELOC_VAR(pdev->smaskcolor);
     RELOC_VAR(pdev->trans_group_parent_cmap_procs);
     pdev->target = gx_device_reloc_ptr(pdev->target, gcst);
 }
@@ -2781,7 +2788,6 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     byte comp_bits[] = {0,0,0,0};
     byte comp_shift[] = {0,0,0,0};
     int k;
-    gs_state *pgs;
     
     if (group_color == ICC && icc_profile == NULL) {
         return gs_rethrow(gs_error_undefinedresult, 
@@ -3216,6 +3222,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     if (buf->data == NULL)
 	return 0;
     /* NB: gx_color_index is 4 or 8 bytes */
+#if 0
     if (sizeof(color) <= sizeof(ulong))
 	if_debug8('v', "[v]pdf14_mark_fill_rectangle, (%d, %d), %d x %d color = %lx  bm %d, nc %d, overprint %d\n", 
 		    x, y, w, h, (ulong)color, blend_mode, num_chan, overprint);
@@ -3224,6 +3231,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 		    x, y, w, h, 
 		    (ulong)(color >> 8*(sizeof(color) - sizeof(ulong))), (ulong)color, 
 		    blend_mode, num_chan, overprint);
+#endif
     /*
      * Unpack the gx_color_index values.  Complement the components for subtractive
      * color spaces.
@@ -6123,4 +6131,97 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
     }
 
     return GX_DEVICE_COLOR_MAX_COMPONENTS;
+}
+
+/* These functions keep track of when we are dealing with soft masks.
+   In such a case, we set the default color profiles to ones that ensure
+   proper soft mask rendering. */
+int 
+pdf14_increment_smask_color(gs_state *pgs)
+{
+    pdf14_device * pdev = (pdf14_device *) pgs->device;
+    pdf14_smaskcolor_t *result;
+    gsicc_smask_t *smask_profiles = pgs->icc_manager->smask_profiles;
+
+    /* See if we have profiles already in place */
+    if (pdev->smaskcolor != NULL) {
+        pdev->smaskcolor->ref_count++;
+    } else {
+        /* Allocate and swap out the current profiles.  The softmask
+           profiles should already b in place */
+        result = gs_alloc_struct(pdev->memory, pdf14_smaskcolor_t, 
+                                &st_pdf14_smaskcolor, 
+                                "pdf14_increment_smask_color");
+        if (result == NULL ) return(-1);
+        result->profiles = gsicc_new_iccsmask(pdev->memory);
+        pdev->smaskcolor = result;
+        /* Theoretically there should not be any reason to change ref counts 
+            on the profiles for a well-formed PDF with clean soft mask groups.
+           The only issue could be if the graphic state is popped while we
+           are still within a softmask group. */
+        result->profiles->smask_gray = pgs->icc_manager->default_gray;
+        result->profiles->smask_rgb = pgs->icc_manager->default_rgb;
+        result->profiles->smask_cmyk = pgs->icc_manager->default_cmyk;
+        pgs->icc_manager->default_gray = smask_profiles->smask_gray;
+        pgs->icc_manager->default_rgb = smask_profiles->smask_rgb;
+        pgs->icc_manager->default_cmyk = smask_profiles->smask_cmyk;
+        pdev->smaskcolor->ref_count = 1;
+    }
+    return(0);
+}
+
+int
+pdf14_decrement_smask_color(gs_state *pgs)
+{
+    pdf14_device * pdev = (pdf14_device *) pgs->device;
+    pdf14_smaskcolor_t *smaskcolor = pdev->smaskcolor;
+    gsicc_manager_t *icc_manager = pgs->icc_manager;    
+    
+    if (smaskcolor != NULL) {
+        smaskcolor->ref_count--;
+        if (smaskcolor->ref_count == 0) {
+            /* Lets return the profiles and clean up */
+            /* Decrement handled in pdf14_free_smask_color */
+            icc_manager->default_gray = smaskcolor->profiles->smask_gray;
+            icc_manager->default_rgb = smaskcolor->profiles->smask_rgb;
+            icc_manager->default_cmyk = smaskcolor->profiles->smask_cmyk;
+            pdf14_free_smask_color(pdev); 
+        }
+    }
+    return(0);
+}
+
+static void 
+pdf14_free_smask_color(pdf14_device * pdev) 
+{
+    gsicc_smask_t *profiles;
+
+    if (pdev->smaskcolor != NULL) {
+        if ( pdev->smaskcolor->profiles != NULL) {
+            profiles = pdev->smaskcolor->profiles;
+            /* Do not decrement the softmask enties.  They will remain
+               in the icc_manager softmask member.  They were not 
+               incremented when moved here */
+            gs_free_object(pdev->memory, pdev->smaskcolor->profiles,
+                        "pdf14_free_smask_color");
+        }
+        gs_free_object(pdev->memory, pdev->smaskcolor, "pdf14_free_smask_color");
+        pdev->smaskcolor = NULL;
+    }
+}
+
+void
+pdf14_end_smask_color(gs_state *pgs)
+{
+    pdf14_device * pdev = (pdf14_device *) pgs->device;
+
+    pdf14_free_smask_color(pdev); 
+}
+
+void
+pdf14_null_smaskmask_color( gx_device *dev)
+{
+    pdf14_device *pdev = (pdf14_device *)dev;
+
+    pdev->smaskcolor = NULL;
 }

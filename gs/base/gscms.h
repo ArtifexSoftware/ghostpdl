@@ -276,6 +276,12 @@ struct gsicc_devicen_s {
     int count;
 };
 
+typedef struct gsicc_smask_s {
+    cmm_profile_t *smask_gray;
+    cmm_profile_t *smask_rgb;
+    cmm_profile_t *smask_cmyk;
+} gsicc_smask_t;
+
 /* The manager object */
 
 typedef struct gsicc_manager_s {
@@ -288,6 +294,7 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *device_profile;  /* The actual profile for the device */
     cmm_profile_t *lab_profile;     /* Colorspace type ICC profile from LAB to LAB */
     gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */ 
+    gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */
     char *profiledir;               /* Directory used in searching for ICC profiles */
     uint namelen;
     gs_memory_t *memory;            

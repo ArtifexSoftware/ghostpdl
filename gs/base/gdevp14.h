@@ -162,6 +162,11 @@ struct pdf14_buf_s {
     gs_transparency_color_t color_space;  /* Different groups can have different spaces for blending */
 };
 
+typedef struct pdf14_smaskcolor_s {
+    gsicc_smask_t *profiles;
+    int           ref_count;
+} pdf14_smaskcolor_t;
+
 struct pdf14_ctx_s {
     pdf14_buf *stack;
     pdf14_mask_t *maskbuf;
@@ -211,14 +216,15 @@ typedef struct pdf14_device_s {
     const pdf14_nonseparable_blending_procs_t * blend_procs; /* Must follow pdf14_procs */
 
     pdf14_ctx *ctx;
+    pdf14_smaskcolor_t *smaskcolor;
     float opacity;
     float shape;
     float alpha; /* alpha = opacity * shape */
     gs_blend_mode_t blend_mode;
     bool text_knockout;
-	bool overprint;
-	bool overprint_mode;
-	gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
+    bool overprint;
+    bool overprint_mode;
+    gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
     gx_device * pclist_device;
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_imager_state *,
 						     const gx_device *);
@@ -272,5 +278,11 @@ int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *tran
 
 /* Not static due to call from pattern logic */
 int pdf14_disable_device(gx_device * dev);
+
+/* Functions for dealing with soft mask color */
+int pdf14_decrement_smask_color(gs_state *pgs);
+int pdf14_increment_smask_color(gs_state *pgs);
+void pdf14_null_smaskmask_color(gx_device *dev);
+void pdf14_end_smask_color(gs_state *pgs);
 
 #endif /* gdevp14_INCLUDED */

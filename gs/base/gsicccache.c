@@ -599,7 +599,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
     gsicc_namedcolortable_t *namedcolor_table;
     int k,j;
     float lab[3];
-    unsigned char *buffptr;
+    const char *buffptr;
     int buffer_count;
     int count;
     int code;
@@ -630,7 +630,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                                                     "gsicc_transform_named_color");
                 if (namedcolor_table == NULL) return(-1);
                 /* Parse buffer and load the structure we will be searching */
-                buffptr = named_profile->buffer;
+                buffptr = (const char*) named_profile->buffer;
                 buffer_count = named_profile->buffer_size;
                 count = sscanf(buffptr,"%d",&num_entries);
                 if (num_entries < 1 || count == 0) {
@@ -693,7 +693,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                     for (j = 0; j < 3; j++) {
                         if (lab[j] > 65535) lab[j] = 65535;
                         if (lab[j] < 0) lab[j] = 0;
-                        namedcolor_data[k].lab[j] = lab[j];
+                        namedcolor_data[k].lab[j] = (unsigned short) lab[j];
                     }
                     if (code < 0) {
                         gs_free(pis->memory, namedcolor_table, 1, 
@@ -720,8 +720,8 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
             found_match = false;
             for (k = 0; k < num_entries; k++) {
                 if (name_size == namedcolor_table->named_color[k].name_size) {
-                    if( strncmp(namedcolor_table->named_color[k].colorant_name,
-                        color_name, name_size) == 0) {
+                    if( strncmp((const char *) namedcolor_table->named_color[k].colorant_name,
+                        (const char *) color_name, name_size) == 0) {
                             found_match = true;
                             break;
                     }
@@ -732,7 +732,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                 for (j = 0; j < 3; j++) {
                     temp = (float) namedcolor_table->named_color[k].lab[j] * tint_value
                             + (float) white_lab[j] * (1.0 - tint_value);
-                    psrc[j] = temp;
+                    psrc[j] = (unsigned short) temp;
                 }
                 if ( gs_output_profile != NULL ) {
                     curr_output_profile = gs_output_profile;
