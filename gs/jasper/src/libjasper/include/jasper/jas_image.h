@@ -465,7 +465,7 @@ int jas_image_addfmt(int id, char *name, char *ext, char *desc,
 int jas_image_strtofmt(char *s);
 
 /* Get the name of the image format with the specified ID. */
-char *jas_image_fmttostr(int fmt);
+const char *jas_image_fmttostr(int fmt);
 
 /* Lookup image format information by the format ID. */
 const jas_image_fmtinfo_t *jas_image_lookupfmtbyid(int id);
