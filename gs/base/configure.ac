@@ -647,12 +647,26 @@ AC_ARG_WITH([jbig2dec], AC_HELP_STRING([--without-jbig2dec],
 JBIG2DIR=src
 SHARE_JBIG2=0
 JBIG2DEVS=''
+JBIG2_AUTOCONF_CFLAGS=
 if test x$with_jbig2dec != xno; then
   AC_MSG_CHECKING([for local jbig2dec library source])
   for d in jbig2dec jbig2dec-0.2 jbig2dec-0.3; do
     test -d "$d" && JBIG2DIR=$d && break
   done
   if test "x$JBIG2DIR" != xsrc; then
+      echo "Running jbig2dec configure script..."
+      olddir=`pwd`
+      cd $JBIG2DIR && ./configure
+      status=$?
+      if test "$status" -ne 0 ; then
+        AC_MSG_ERROR([jbig2dec configure script failed], $status)
+      fi
+      if test "$status" -eq 0 ; then
+        JBIG2_AUTOCONF_CFLAGS=-DHAVE_CONFIG_H
+      fi
+      cd $olddir
+      echo
+      echo "Continuing with Ghostscript configuration..."
     AC_MSG_RESULT([$JBIG2DIR])
   else
     AC_MSG_RESULT([no])
@@ -675,6 +689,7 @@ fi
 AC_SUBST(JBIG2DIR)
 AC_SUBST(SHARE_JBIG2)
 AC_SUBST(JBIG2DEVS)
+AC_SUBST(JBIG2_AUTOCONF_CFLAGS)
 
 dnl look for the jasper JPEG 2000 library
 AC_ARG_WITH([jasper], AC_HELP_STRING([--without-jasper],

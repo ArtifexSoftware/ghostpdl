@@ -203,6 +203,7 @@ ZLIB_NAME=z
 JBIG2_LIB=jbig2dec
 SHARE_JBIG2=@SHARE_JBIG2@
 JBIG2SRCDIR=@JBIG2DIR@
+JBIG2_CFLAGS=@JBIG2_AUTOCONF_CFLAGS@
 
 # uncomment the following three lines and one of the last two to
 # compile in the Luratech ldf_jb2 codec
