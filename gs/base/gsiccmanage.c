@@ -143,6 +143,17 @@ gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname,
     }
 }
 
+static void gscms_set_icc_range(cmm_profile_t **icc_profile)
+{
+    int num_comp = (*icc_profile)->num_comps;
+    int k;
+
+    for ( k = 0; k < num_comp; k++) {
+        (*icc_profile)->Range.ranges[k].rmin = 0.0;
+        (*icc_profile)->Range.ranges[k].rmax = 1.0;
+    }
+}
+
 static cmm_profile_t*
 gsicc_set_iccsmaskprofile(const char *pname, 
                           int namelen, gsicc_manager_t *icc_manager, 
@@ -171,6 +182,7 @@ gsicc_set_iccsmaskprofile(const char *pname,
             gscms_get_pcs_channel_count(icc_profile->profile_handle);
         icc_profile->data_cs = 
             gscms_get_profile_data_space(icc_profile->profile_handle);
+        gscms_set_icc_range(&icc_profile);
         return(icc_profile);
     } else {
         return(NULL);
@@ -184,6 +196,11 @@ gsicc_new_iccsmask(gs_memory_t *memory)
 
     result = gs_alloc_struct(memory, 
             gsicc_smask_t, &st_gsicc_smask, "gsicc_new_iccsmask");
+    if (result != NULL) {
+        result->smask_gray = NULL;
+        result->smask_rgb = NULL;
+        result->smask_cmyk = NULL;
+    }
     return(result);
 }
 
