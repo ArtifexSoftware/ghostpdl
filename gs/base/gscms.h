@@ -21,6 +21,7 @@
 #include "gstypes.h"
 #include "gsutil.h"       /* Need for the object types */
 #include "gsdevice.h"     /* Need to carry pointer to clist reader */
+#include "gxsync.h"       /* for semaphore and monitors */
 #include "stdint_.h"
 
 #define ICC_MAX_CHANNELS 15
@@ -181,15 +182,14 @@ typedef struct gsicc_profile_entry_s gsicc_profile_entry_t;
 struct gsicc_profile_entry_s {
     gs_color_space *color_space;     /* The color space with the profile */
     gsicc_profile_entry_t *next;    /* next CS */
-    gsicc_profile_entry_t *prev;    /* previous CS */
+    int ref_count;
     int64_t key;                    /* Key based off dictionary location */
 };
 
 /* ProfileList. The size of the list is limited by max_memory_size.
    Profiles are added if there is sufficient memory. */
 typedef struct gsicc_profile_cache_s {
-    gsicc_profile_entry_t *first_entry;
-    gsicc_profile_entry_t *last_entry;
+    gsicc_profile_entry_t *head;
     int num_entries;
     rc_header rc;
     gs_memory_t *memory;
@@ -223,11 +223,14 @@ struct gsicc_link_s {
     void *link_handle;
     void *contextptr;
     gsicc_hashlink_t hashcode;
+    struct gsicc_link_cache_s *icc_link_cache;
     int ref_count;
-    gsicc_link_t *nextlink;
-    gsicc_link_t *prevlink;
+    gsicc_link_t *next;
+    gx_semaphore_t *wait;		/* semaphore used by waiting threads */
+    int num_waiting;
     bool includes_softproof;
     bool is_identity;  /* Used for noting that this is an identity profile */
+    bool valid;		/* true once link is completely built and usable */
 };
 
 
@@ -237,10 +240,13 @@ struct gsicc_link_s {
  */
 
 typedef struct gsicc_link_cache_s {
-    gsicc_link_t *icc_link;
+    gsicc_link_t *head;
     int num_links;
     rc_header rc;
     gs_memory_t *memory;
+    gx_monitor_t *lock;		/* handle for the monitor */
+    gx_semaphore_t *wait;	/* somebody needs a link cache slot */
+    int num_waiting;		/* number of threads waiting */
 } gsicc_link_cache_t;
 
 /* A linked list structure to keep DeviceN ICC profiles

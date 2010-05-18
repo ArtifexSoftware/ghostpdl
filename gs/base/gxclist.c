@@ -723,7 +723,10 @@ clist_finish_page(gx_device *dev, bool flush)
     /* Also free the icc_table at this time and the icc_cache */
     if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
        /* Free the icc table associated with this device.
-           May Need to do some work here for multi-threaded case. MJV to do */
+           The threads that may have pointed to this were destroyed in 
+           the above call to clist_teardown_render_threads.  Since they
+           all maintained a copy of the cache and the table there should not
+           be any issues. */
         gx_device_clist_reader * const crdev =	&((gx_device_clist *)dev)->reader;
         clist_icc_freetable(crdev->icc_table, crdev->memory);
         rc_decrement(crdev->icc_cache_cl,"clist_finish_page");

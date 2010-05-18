@@ -350,6 +350,10 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
 	if (code < 0)
 	    return code;
         code = clist_render_init(cldev);
+         /* Check for and get ICC profile table */
+        code = clist_read_icctable(crdev);
+        /* Allocate the icc cache for the clist reader */
+        crdev->icc_cache_cl = gsicc_cache_new(crdev->memory);
     }
     return code;
 }
@@ -499,12 +503,6 @@ clist_render_init(gx_device_clist *dev)
     crdev->render_threads = NULL;
 
     code = gx_clist_reader_read_band_complexity(dev);
-    if (code < 0)
-        return(code);
-     /* Check for and get ICC profile table */
-    code = clist_read_icctable(crdev);
-    /* Allocate the icc cache for the clist reader */
-    crdev->icc_cache_cl = gsicc_cache_new(crdev->memory);
     return code;
 }
 

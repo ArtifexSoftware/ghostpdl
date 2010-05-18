@@ -35,7 +35,7 @@ gsicc_link_t* gsicc_get_link_profile(gs_imager_state *pis,
                                      gsicc_rendering_param_t *rendering_params, 
                                      gs_memory_t *memory, bool include_softproof);
 void gsicc_release_link(gsicc_link_t *icclink);
-void gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash, int buff_size);
+void gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash, unsigned int buff_size);
 int gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                             gx_color_value device_values[], 
                             const gs_imager_state *pis, 

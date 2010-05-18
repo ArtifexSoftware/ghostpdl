@@ -33,12 +33,12 @@ static void rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in,
                                         client_name_t cname);
 static void gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache);
 
-gs_private_st_ptrs3(st_profile_entry, gsicc_profile_entry_t, 
+gs_private_st_ptrs2(st_profile_entry, gsicc_profile_entry_t, 
                     "gsicc_profile_entry", profile_entry_enum_ptrs, 
-                    profile_entry_reloc_ptrs, color_space, next, prev);
-gs_private_st_ptrs2(st_profile_cache, gsicc_profile_cache_t, 
+                    profile_entry_reloc_ptrs, color_space, next);
+gs_private_st_ptrs1(st_profile_cache, gsicc_profile_cache_t, 
                     "gsicc_profile_cache", profile_list_enum_ptrs, 
-                    profile_list_reloc_ptrs, first_entry, last_entry);
+                    profile_list_reloc_ptrs, head);
 
 /**
  * gsicc_cache_new: Allocate a new ICC cache manager
@@ -56,8 +56,7 @@ gsicc_profilecache_new(gs_memory_t *memory)
     if ( result == NULL )
         return(NULL);
     rc_init_free(result, memory->stable_memory, 1, rc_gsicc_profile_cache_free);
-    result->first_entry = NULL;
-    result->last_entry = NULL;
+    result->head = NULL;
     result->num_entries = 0;
     result->memory = memory;
     return(result);
@@ -67,16 +66,20 @@ static void
 rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
     gsicc_profile_cache_t *profile_cache = (gsicc_profile_cache_t * ) ptr_in;
-    gsicc_profile_entry_t *curr_entry;
+    gsicc_profile_entry_t *curr = profile_cache->head;
 
-    curr_entry = profile_cache->first_entry;
-    while (curr_entry != NULL ){
-        rc_decrement(curr_entry->color_space, "rc_gsicc_profile_cache_free");
-        gs_free_object(mem->stable_memory, curr_entry, 
+    while (curr != NULL ){
+        rc_decrement(curr->color_space, "rc_gsicc_profile_cache_free");
+        gs_free_object(mem->stable_memory, curr, 
                        "rc_gsicc_profile_cache_free");
         profile_cache->num_entries--;
-        curr_entry = curr_entry->next;
+        curr = curr->next;
     }
+#ifdef DEBUG
+    if (profile_cache->num_entries != 0)
+	eprintf1("gsicc_profile_cache_free, num_entries is %d (should be 0).\n",
+	    profile_cache->num_entries);
+#endif
     gs_free_object(mem->stable_memory, profile_cache, 
                    "rc_gsicc_profile_cache_free"); 
 }
@@ -92,25 +95,14 @@ gsicc_add_cs(gs_state * pgs, gs_color_space * colorspace, ulong dictkey)
        to be maintained across the gsave and grestore process */
     result = gs_alloc_struct(memory->stable_memory, gsicc_profile_entry_t, 
                                 &st_profile_entry, "gsicc_add_cs");
-    /* If needed, remove an entry */
+    /* If needed, remove an entry (the last one) */
     if (profile_cache->num_entries > ICC_CACHE_MAXPROFILE) {
         gsicc_remove_cs_entry(profile_cache);
     }
-    if (profile_cache->first_entry != NULL){
-        /* Add to the top of the list. 
-           That way we find the MRU enty right away.
-           Last entry stays the same. */
-        profile_cache->first_entry->prev = result;
-        result->prev = NULL;
-        result->next = profile_cache->first_entry;
-        profile_cache->first_entry = result; /* MRU */
-    } else {
-        /* First one to add */
-        result->next = NULL;
-        result->prev = NULL;
-        profile_cache->first_entry = result;
-        profile_cache->last_entry = result;
-    }
+    /* Add to the top of the list. That way we find the MRU enty right away.
+       Last entry stays the same. */
+    result->next = profile_cache->head;
+    profile_cache->head = result; /* MRU */
     result->color_space = colorspace;
     rc_increment(colorspace);
     result->key = dictkey;
@@ -120,58 +112,63 @@ gsicc_add_cs(gs_state * pgs, gs_color_space * colorspace, ulong dictkey)
 gs_color_space*
 gsicc_find_cs(ulong key_test, gs_state * pgs)
 {
-    gsicc_profile_entry_t *curr_pos1,*temp1,*temp2,*last;
     gsicc_profile_cache_t *profile_cache = pgs->icc_profile_cache;
+    gsicc_profile_entry_t *prev = NULL, *curr = profile_cache->head;
 
     /* Look through the cache for the key. If found, move to MRU */
-    curr_pos1 = profile_cache->first_entry;
-    while (curr_pos1 != NULL ){
-        if (curr_pos1->key == key_test){
-            /* First test for MRU. Also catch case of 1 entry */
-            if (curr_pos1 == profile_cache->first_entry) {
-                return(curr_pos1->color_space);
-            }
-            /* We need to move found one to the top of the list. */
-            last = profile_cache->last_entry;
-            temp1 = curr_pos1->prev;
-            temp2 = curr_pos1->next;
-            if (temp1 != NULL) {
-                temp1->next = temp2;
-            } 
-            if (temp2 != NULL) {
-                temp2->prev = temp1;
-            }
-            /* Update last entry if we grabbed the bottom one */
-            if (curr_pos1 == profile_cache->last_entry) {
-                profile_cache->last_entry = profile_cache->last_entry->prev;
-            }
-            curr_pos1->prev = NULL;
-            curr_pos1->next = profile_cache->first_entry;
-            profile_cache->first_entry->prev = curr_pos1;
-            profile_cache->first_entry = curr_pos1;
-            return(curr_pos1->color_space);
+    while (curr != NULL ){
+        if (curr->key == key_test){
+            /* If not already at head of list, move this one there */
+            if (curr != profile_cache->head) {
+		/* We need to move found one to the top of the list. */
+		prev->next = curr->next;
+		curr->next = profile_cache->head;
+		profile_cache->head = curr;
+	    }
+            return(curr->color_space);
         }
-        curr_pos1 = curr_pos1->next;
+        curr = curr->next;
     }
     return(NULL);
 }
 
 /* Remove the LRU entry, which ideally is at the bottom */
 static void
-gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache){
-
-    gsicc_profile_entry_t *last_entry = profile_cache->last_entry;
+gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
+{
     gs_memory_t *memory = profile_cache->memory;
+    gsicc_profile_entry_t *prev = NULL, *curr = profile_cache->head;
 
-    if (profile_cache->last_entry->prev != NULL) {
-        profile_cache->last_entry->prev->next = NULL;
-        profile_cache->last_entry = profile_cache->last_entry->prev;
-    } else {
-        /* No entries */
-        profile_cache->first_entry = NULL;
-        profile_cache->last_entry = NULL;
+#ifdef DEBUG
+    if (curr == NULL) {
+	eprintf(" attempt to remove from an empty profile cache.\n");
+	gs_abort();
     }
-    rc_decrement(last_entry->color_space, "gsicc_remove_cs_entry");
-    gs_free_object(memory->stable_memory, last_entry, "gsicc_remove_cs_entry");
+#endif
+    while (curr->next != NULL) {
+        prev = curr;
+	curr = curr->next;
+    }
+    if (curr->ref_count != 0) {
+#ifdef DEBUG
+	eprintf1("gsicc_remove_cs_entry cannot remove any, num_entries=%d\n",
+	    profile_cache->num_entries);
+#endif
+	return;			/* better than failing */
+    }
     profile_cache->num_entries--;
+    if (prev == NULL) {
+        /* No more entries */
+        profile_cache->head = NULL;
+#ifdef DEBUG
+    if (profile_cache->num_entries != 0) {
+	eprintf1("profile cache list empty, but list has num_entries=%d.\n",
+	    profile_cache->num_entries);
+    }
+#endif
+    } else {
+	prev->next = NULL;	/* new tail */
+    }
+    rc_decrement(curr->color_space, "gsicc_remove_cs_entry");
+    gs_free_object(memory->stable_memory, curr, "gsicc_remove_cs_entry");
 }
