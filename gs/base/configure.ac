@@ -808,13 +808,14 @@ AC_SUBST(CAIRO_CFLAGS)
 AC_SUBST(CAIRO_LIBS)
 
 dnl look for omni implementation
-AC_ARG_WITH([omni], AC_HELP_STRING([--without-omni],
-	[disable the omni driver]))
+AC_ARG_WITH([omni], AC_HELP_STRING([--with-omni],
+	[enable the omni driver]))
 dnl set safe defaults
 OMNIDEVS=''
-INCLUDEOMNI=yes
-if ( ! test -z "$CONTRIBINCLUDE" ) && ( test x$with_omni != xno ); then
-	OMNIDEVS='$(DD)omni.dev'
+INCLUDEOMNI=no
+if ( ! test -z "$CONTRIBINCLUDE" ) && ( test x$with_omni == xyes ); then
+	INCLUDEOMNI=yes
+        OMNIDEVS='$(DD)omni.dev'
 
 	if test -n "$GCC"; then
 		LIBS="$LIBS -lstdc++"
