@@ -132,7 +132,7 @@ if (!$local) {
 mylog "starting run.pl:  pid=$$\n";
 
 if (1) {
-  mylog "about to kill any jobs that appear to be running from previous regression\n";
+# mylog "about to kill any jobs that appear to be running from previous regression\n";
   my $a=`ps -ef | grep md5sum | grep temp     | grep -v grep`;
     $a.=`ps -ef | grep md5sum | grep baseline | grep -v grep`;
     $a.=`ps -ef | grep gzip   | grep temp     | grep -v grep`;
@@ -147,7 +147,7 @@ if (1) {
     $minutes+=0;                                  # convert from 01 to 1
 #   print "$b[1] $b[6] $minutes\n";
     if ($minutes>=10) {
-      mylog "killing $b[1] (running $minutes minutes): $b[7]\n";
+      mylog "leftover job $b[1] (running $minutes minutes): $b[7]\n";
       kill 9, $b[1];
     }
   }
@@ -476,7 +476,7 @@ if (!$local) {
     } elsif ($mupdf) {
       updateStatus('Fetching mupdf.tar.gz');
       `touch mupdf ; rm -fr mupdf; touch mupdf.tar.gz ; rm mupdf.tar.gz`;
-      $cmd=`scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .`;
+      $cmd="scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key regression\@casper.ghostscript.com:/home/regression/cluster/mupdf.tar.gz .";
       systemWithRetry($cmd);
 
     } elsif ($icc_work) {
@@ -507,8 +507,6 @@ if (!$local) {
         die "oops 4";  # hack
       }
       $cmd="cd $gsSource ; touch base/gscdef.c ; rm -f base/gscdef.c ; cd $gpdlSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs --ignore-externals";
-      mylog "$cmd";
-      print "$cmd\n" if ($verbose);
       systemWithRetry($cmd);
       $cmd="cd $gsSource ; export SVN_SSH=\"ssh -i \$HOME/.ssh/cluster_key\" ; svn update -r$revs";
       systemWithRetry($cmd);
@@ -557,6 +555,7 @@ if (!$abort) {
   unlink "$gpdlSource/makexps.out";
   unlink "$gpdlSource/makesvg.out";
   unlink "$gpdlSource/makels.out";
+  unlink "mupdf/makemupdf.out";
 
   if (!$dontBuild) {
     if (-e "./head/bin/gs") {
@@ -570,18 +569,20 @@ if (!$abort) {
       $cmd="touch mupdf.tar ; rm mupdf.tar ; gunzip mupdf.tar.gz ; tar xf mupdf.tar";
       print "$cmd\n" if ($verbose);
       `$cmd`;
-      if (-e "./Jamrules") {
-        $cmd="cp -p Jamrules mupdf/.";
-        print "$cmd\n" if ($verbose);
-        `$cmd`;
-      }
-      $cmd="cd mupdf ; jam >makemupdf.out";
+      $cmd="cd mupdf ; make clean ; make >makemupdf.out 2>&1 ";
       print "$cmd\n" if ($verbose);
       `$cmd`;
 
-      $cmd="touch gs/bin/mupdf ; rm gs/bin/mupdf ; cp -p mupdf/build/*/pdfdraw gs/bin/.";
+      mkdir "$gsBin";
+      mkdir "$gsBin/bin";
+      $cmd="touch $gsBin/bin/mupdf ; rm $gsBin/bin/mupdf ; cp -p mupdf/build/*/pdfdraw $gsBin/bin/.";
       print "$cmd\n" if ($verbose);
       `$cmd`;
+      if (-e "$gsBin/bin/mupdf") {
+      } else {
+        $compileFail.="mupdf ";
+      }
+
     }
   }
 
@@ -648,6 +649,8 @@ if (!$dontBuild) {
     print "$cmd\n" if ($verbose);
     `$cmd`;
     if (-e "$gpdlSource/xps/obj/gxps") {
+      mkdir "$gsBin";
+      mkdir "$gsBin/bin";
       $cmd="cp -p $gpdlSource/xps/obj/gxps $gsBin/bin/.";
       print "$cmd\n" if ($verbose);
       `$cmd`;
@@ -695,6 +698,8 @@ if (!$dontBuild) {
     print "$cmd\n" if ($verbose);
     `$cmd`;
     if (-e "$gpdlSource/language_switch/obj/pspcl6") {
+      mkdir "$gsBin";
+      mkdir "$gsBin/bin";
       $cmd="cp -p $gpdlSource/language_switch/obj/pspcl6 $gsBin/bin/.";
       print "$cmd\n" if ($verbose);
       `$cmd`;
@@ -1083,7 +1088,8 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
       $dir="ghostpdl" if ($revs);
       $dir="users/$user/ghostpdl" if ($user);
       $dir="icc_work" if ($icc_work);
-      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out', 'makels.out') {
+      $dir="mupdf" if ($mupdf);
+      foreach my $i ('gs/makegs.out','makepcl.out','makexps.out','makesvg.out', 'makels.out', 'makemupdf.out') {
         my $count=0;
         my $start=-1;
         if (open(F3,"<$dir/$i")) {

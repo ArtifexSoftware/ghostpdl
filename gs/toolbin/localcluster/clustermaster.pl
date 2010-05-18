@@ -442,15 +442,19 @@ my %tests=(
   'pcl' =>  2,
   'xps' =>  4,
   'svg' =>  8,
-  'ls'  => 16,
-  'all' => 31
+  'ls'  => 16
 );
+
+my $allTests=31;
+
+# ls is tested if any test is called for
 
 my %rules=(
   'xps' => 4,
   'svg' => 8,
   'pcl' => 2,
   'pxl' => 2,
+  'language_switch' => 16,
   'urwfonts' => 2,
   'pl' => 14,
   'main' => 2,
@@ -459,11 +463,17 @@ my %rules=(
   'gs/base' => 15,
   'gs/Resource' => 15,
   'gs/doc' => 0,
-  'gs/toolbin' => 1,
+  'gs/toolbin' => 0,
   'gs/examples' => 0,
   'gs/lib' => 0,
+  'gs/freetype' => 15,
   'language_switch' => 0,
-  'tools' => 0
+  'tools' => 0,
+  'win32' => 0,
+  'gs/contrib' => 0,
+  'psi' => 16,
+  'gs/jasper' => 15,
+  'gs/cups' =>0
 );
 
 #my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
@@ -532,11 +542,11 @@ if ($regression =~ m/svn (\d+)/) {
           $set|=$rules{$t};
         } else {
           mylog "$s ($t): missing, testing all\n";
-          $set|=$tests{'all'};
+          $set|=$allTests;
         }
       } else {
         mylog "unknown commit: testing all\n";
-        $set|=$tests{'all'};
+        $set|=$allTests;
       }
     }
   }
@@ -548,6 +558,7 @@ if ($regression =~ m/svn (\d+)/) {
   }
 
   $product =~ s/svg//;  # disable svg tests
+  $product =~ s/  / /g; # get rid of extra space left by previous line
   # $product="gs pcl xps svg ls";
 
   mylog "products: $product\n";
@@ -888,7 +899,7 @@ mylog "done checking jobs, product=$product\n";
           $s=`date +\"%H:%M:%S\"`;
           chomp $s;
           if ($normalRegression) {
-            updateStatus "Regression r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression r$rev ($product) started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($icc_workRegression) {
             updateStatus "Regression icc_work-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($mupdfRegression) {
@@ -987,7 +998,7 @@ mylog "done checking jobs, product=$product\n";
   $s=`date +\"%H:%M:%S\"`;
   chomp $s;
   if ($normalRegression) {
-    updateStatus "Regression r$rev started at $startText UTC - finished at $s";
+    updateStatus "Regression r$rev ($product) started at $startText UTC - finished at $s";
   } elsif ($icc_workRegression) {
     updateStatus "Regression icc_work-r$rev started at $startText UTC - finished at $s";
   } elsif ($mupdfRegression) {
@@ -1207,9 +1218,10 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
         close(F2);
       }
     }
-    if ($normalRegression || $icc_workRegression) {
+    if ($normalRegression || $icc_workRegression || $mupdfRegression) {
       my $tempRev=$rev;
       $tempRev="icc_work-$rev" if ($icc_workRegression);
+      $tempRev="mupdf-$rev" if ($mupdfRegression);
       `touch archive/$tempRev`;
       `rm -fr archive/$tempRev`;
       `mkdir archive/$tempRev`;
