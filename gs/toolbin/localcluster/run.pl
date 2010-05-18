@@ -35,6 +35,20 @@ $machine="local" if ($machine eq "local_no_build");
 $local=1         if ($machine eq "local");
 $timeOut=600     if ($local);
 
+if ($local) {
+if (open(F,"<weekly.cfg")) {
+  while(<F>) {
+    chomp;
+    my @a=split ' ',$_,2;
+    if ($a[0] eq "wordsize") {
+      $wordSize=$a[1];
+    }
+  }
+  close(F);
+}
+
+}
+
 if (!$local) {
   open (LOG,">>$machine.dbg");
   print LOG "\n\n";
@@ -846,6 +860,10 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
 
   foreach my $pid (keys %pids) {
     if (time-$pids{$pid}{'time'} >= $timeOut) {
+      $name{$pid}='missing' if (!exists $name{$pid});
+      mylog ("killing (timeout 1) $pid $name{$pid}\n");
+      kill 1, $pid;
+      kill 9, $pid;
       my $p=$pid;
       while (exists $children{$p}) {
 #       mylog "$p->$children{$p}\n";  # mhw
@@ -855,10 +873,6 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
         kill 1, $p;
         kill 9, $p;
       }
-      $name{$pid}='missing' if (!exists $name{$pid});
-      mylog ("killing (timeout 1) $pid $name{$pid}\n");
-      kill 1, $pid;
-      kill 9, $pid;
       $timeOuts{$pids{$pid}{'filename'}}=1;
       addToLog($pids{$pid}{'filename'});
       my $count=scalar (keys %timeOuts);
@@ -1001,6 +1015,10 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
 
     foreach my $pid (keys %pids) {
       if (time-$pids{$pid}{'time'} >= $timeOut) {
+        $name{$pid}='missing' if (!exists $name{$pid});
+        mylog ("killing (timeout 2) $pid $name{$pid}\n");
+        kill 1, $pid;
+        kill 9, $pid;
         my $p=$pid;
         while (exists $children{$p}) {
 #         mylog "$p->$children{$p}\n"; # mhw
@@ -1010,10 +1028,6 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
           kill 1, $p;
           kill 9, $p;
         }
-        $name{$pid}='missing' if (!exists $name{$pid});
-        mylog ("killing (timeout 2) $pid $name{$pid}\n");
-        kill 1, $pid;
-        kill 9, $pid;
         $timeOuts{$pids{$pid}{'filename'}}=1;
         addToLog($pids{$pid}{'filename'});
         my $count=scalar (keys %timeOuts);
