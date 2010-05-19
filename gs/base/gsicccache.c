@@ -355,25 +355,22 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_link_cache)
 
     /* Look through the cache for first zero ref count */
     /* when ref counts go to zero, the icc_link is moved to the */
-    /* end of the list, so the first we find is the 'oldest' */
-    while (curr == NULL) {
-	gx_monitor_enter(icc_link_cache->lock);
-	curr = icc_link_cache->head;
-	while (curr != NULL ) {
-	    if (curr->ref_count == 0) {
-		curr->ref_count++;		/* we will use this one */
-		gx_monitor_leave(icc_link_cache->lock);
-		break;
-	    }
-	    curr = curr->next;
-	}
-	    /* We need to wait for a link to get released and go to ref_count 0 */
-	    icc_link_cache->num_waiting++;
-	    /* we have bumped num_waiting, so we can be assured of the */
-	    /* semaphore being signalled. Then whoever gets there first wins */
+    /* end of the list, so the first we find is the 'oldest'.
+       If we get to the last entry we return NULL.  At that point
+       there are no slots available and the thread should be
+       put into a wait state.  Since most threads have at most 1 active
+       link at anyone time, this will not be an issue for a single-threaded
+       case. */
+    gx_monitor_enter(icc_link_cache->lock);
+    curr = icc_link_cache->head;
+    while (curr != NULL ) {
+        if (curr->ref_count == 0) {
+	    curr->ref_count++;		/* we will use this one */
 	    gx_monitor_leave(icc_link_cache->lock);
-	    gx_semaphore_wait(icc_link_cache->wait);
-    } 
+	    break;
+        }
+        curr = curr->next;
+    }
     return(curr);
 }
 
@@ -879,8 +876,10 @@ gsicc_release_link(gsicc_link_t *icclink)
 	}
 
 	/* now release any tasks waiting for a cache slot */
-	while (icclink->icc_link_cache->num_waiting-- > 0)
+        while (icclink->icc_link_cache->num_waiting > 0) {
 	    gx_semaphore_signal(icclink->icc_link_cache->wait);
+	    icclink->icc_link_cache->num_waiting--;
+        }
     }
     gx_monitor_leave(icc_link_cache->lock);
 }

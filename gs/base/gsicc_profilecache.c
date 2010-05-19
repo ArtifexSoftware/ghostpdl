@@ -96,7 +96,7 @@ gsicc_add_cs(gs_state * pgs, gs_color_space * colorspace, ulong dictkey)
     result = gs_alloc_struct(memory->stable_memory, gsicc_profile_entry_t, 
                                 &st_profile_entry, "gsicc_add_cs");
     /* If needed, remove an entry (the last one) */
-    if (profile_cache->num_entries > ICC_CACHE_MAXPROFILE) {
+    if (profile_cache->num_entries >= ICC_CACHE_MAXPROFILE) {
         gsicc_remove_cs_entry(profile_cache);
     }
     /* Add to the top of the list. That way we find the MRU enty right away.
@@ -127,12 +127,15 @@ gsicc_find_cs(ulong key_test, gs_state * pgs)
 	    }
             return(curr->color_space);
         }
+        prev = curr;
         curr = curr->next;
     }
     return(NULL);
 }
 
-/* Remove the LRU entry, which ideally is at the bottom */
+/* Remove the LRU entry, which ideally is at the bottom. Note that there
+   is no need to have a ref_count in this structure since the color
+   space objects that are the member variables are reference counted themselves */
 static void
 gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
 {
@@ -149,13 +152,6 @@ gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
         prev = curr;
 	curr = curr->next;
     }
-    if (curr->ref_count != 0) {
-#ifdef DEBUG
-	eprintf1("gsicc_remove_cs_entry cannot remove any, num_entries=%d\n",
-	    profile_cache->num_entries);
-#endif
-	return;			/* better than failing */
-    }
     profile_cache->num_entries--;
     if (prev == NULL) {
         /* No more entries */
@@ -169,6 +165,9 @@ gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
     } else {
 	prev->next = NULL;	/* new tail */
     }
+    /* Decremented, but someone could still be referencing this */
+    /* If found again in the source document, it will be regenerated 
+       and added back into the cache. */
     rc_decrement(curr->color_space, "gsicc_remove_cs_entry");
     gs_free_object(memory->stable_memory, curr, "gsicc_remove_cs_entry");
 }
