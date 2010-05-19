@@ -77,6 +77,7 @@ gs_type0_init_fstack(gs_text_enum_t *pte, gs_font * pfont)
   pte->fstack.items[fdepth].index = fidx;\
   if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font) {\
     pte->fstack.items[fdepth].font = pfont;\
+    pte->fstack.items[fdepth].index = 0;\
     changed = 1;\
   } else {\
   }
@@ -446,11 +447,10 @@ done:
 	       return_error(gs_error_invalidfont);
 	}
 	fidx = (uint)font_index;
+        if (!changed && pte->fstack.items[fdepth].index != fidx)
+            changed = 1;
     }
-    if ( pte->fstack.items[fdepth].index != fidx ) {
-	pte->fstack.items[fdepth].index = fidx;
-	changed = 1;
-    }
+    pte->fstack.items[fdepth].index = fidx;
 
     *pchr = chr;
     *pglyph = glyph;
