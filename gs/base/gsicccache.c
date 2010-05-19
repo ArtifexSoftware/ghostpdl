@@ -514,9 +514,11 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
             /* See if we have a clist device pointer. */
             if ( gs_input_profile->dev != NULL ) {
                 /* ICC profile should be in clist. This is
-                   the first call to it. */
+                   the first call to it.  Note that the profiles are not 
+                   really shared amongst threads like the links are.  Hence
+                   the memory is for the local thread's chunk */
                 cms_input_profile = 
-                    gsicc_get_profile_handle_clist(gs_input_profile, cache_mem);
+                    gsicc_get_profile_handle_clist(gs_input_profile, memory);
                 gs_input_profile->profile_handle = cms_input_profile;
             } else {
                 /* Cant create the link.  No profile present, 
