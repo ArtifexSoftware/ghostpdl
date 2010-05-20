@@ -276,7 +276,7 @@ my %tests=(
     #"psdcmyk.72.0",
     #"psdcmyk.300.0",
     #"psdcmyk.300.1",
-    "pdf.ppmraw.72.0",
+#   "pdf.ppmraw.72.0",
     #"pdf.ppmraw.300.0",
     #"pdf.pkmraw.300.0"
     ],
