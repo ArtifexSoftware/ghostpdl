@@ -361,12 +361,11 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_link_cache)
        put into a wait state.  Since most threads have at most 1 active
        link at anyone time, this will not be an issue for a single-threaded
        case. */
-    gx_monitor_enter(icc_link_cache->lock);
+ 
     curr = icc_link_cache->head;
     while (curr != NULL ) {
         if (curr->ref_count == 0) {
 	    curr->ref_count++;		/* we will use this one */
-	    gx_monitor_leave(icc_link_cache->lock);
 	    break;
         }
         curr = curr->next;
@@ -440,7 +439,7 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
                     gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
 {
     gsicc_hashlink_t hash;
-    gsicc_link_t *link;
+    gsicc_link_t *link, *found_link;
     gcmmhlink_t link_handle = NULL;
     void **contextptr = NULL;
     gsicc_manager_t *icc_manager = pis->icc_manager; 
@@ -455,13 +454,13 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
     gsicc_compute_linkhash(icc_manager, gs_input_profile, gs_output_profile, rendering_params, &hash);
 
     /* Check the cache for a hit.  Need to check if softproofing was used */
-    link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
+    found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
     
     /* Got a hit, return link (ref_count for the link was already bumped */
-    if (link != NULL) {
-        return(link);  /* TO FIX: We are really not going to want to have the members
+    if (found_link != NULL) 
+        return(found_link);  /* TO FIX: We are really not going to want to have the members
                           of this object visible outside gsiccmange */
-    }
+
     /* If not, then lets create a new one if there is room or return NULL */
     /* Caller will need to try later */
 
@@ -475,15 +474,20 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
 	    /* safe to unlock since above will make sure semaphore is signalled */
 	    gx_monitor_leave(icc_link_cache->lock);
 	    /* we get signalled (released from wait) when a link goes to zero ref */
-	    gx_semaphore_wait(icc_link_cache->wait);			/* Multi-threaded Breakpoint ? */
+	    gx_semaphore_wait(icc_link_cache->wait);
+
+	    /* repeat the findcachelink to see if some other thread has	*/
+	    /*already started building the link	we need			*/
+	    found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
+    
+	    /* Got a hit, return link (ref_count for the link was already bumped */
+	    if (found_link != NULL) 
+		return(found_link);  /* TO FIX: We are really not going to want to have the members
+				  of this object visible outside gsiccmange */
+
 	    gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
 	    /* we will re-test the num_links above while locked to insure */
 	    /* that some other thread didn't grab the slot and max us out */
-
-	    /*FIXME: we might want to repeat the findcachelink to see	*/
-	    /* if some other thread has already started on this link	*/
-	    /* If so, we'll need to change findcachelink so that it	*/
-	    /* doesn't request the lock.				*/
 	}
 	/* Remove the zero ref_count link profile we found.		*/
 	/* Even if we remove this link, we may still be maxed out so	*/
