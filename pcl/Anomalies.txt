@@ -504,6 +504,11 @@ end
     We don't see the filling style in real world applications and feel
     our approximation is sufficient.
 
+2011-2014:
+
+    The HP 4700 printer is using the wrong palette in these panels and
+    many font colors are not correct.
+
 2210 and 2220 (fourth page):
 
     SI, SR discrenpancy, obscure and low impact.
