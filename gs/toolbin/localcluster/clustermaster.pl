@@ -393,6 +393,7 @@ mylog "setting 'abort.job'\n";
 }
 
 if (open(F,"<$runningSemaphore")) {
+  my $pid=<F>;
   close(F);
   my $fileTime = stat($runningSemaphore)->mtime;
   my $t=time;
@@ -400,8 +401,18 @@ if (open(F,"<$runningSemaphore")) {
     mylog "semaphore file too old, removing\n";
     updateStatus "Regression terminated due to timeout";
     unlink $runningSemaphore;
+    sleep 60;
+    exit;   # we pause and then exit here since we have to wait until the current clustermaster realizes we've removed the semaphore
   }
-  exit;
+  chomp $pid;
+  my $running=`ps -p $pid`;
+  if ($running =~ m/clustermaster/) {
+    exit;
+  } else {
+    mylog "process $pid no longer running, removing semaphore\n";
+    updateStatus "Regression terminated due to missing clustermaster.pl process";
+    unlink $runningSemaphore;
+  }
 }
 
 open(F,">$runningSemaphore");
