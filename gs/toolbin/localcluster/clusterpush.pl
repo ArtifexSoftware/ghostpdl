@@ -29,7 +29,8 @@ my %products=('abort' =>1,
               'gs' =>1,
               'pcl'=>1,
               'svg'=>1,
-              'xps'=>1);
+              'xps'=>1,
+              'ls'=>1);
 
 my $res="";
 

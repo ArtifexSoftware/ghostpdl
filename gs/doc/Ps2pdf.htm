@@ -177,7 +177,7 @@ be useful:
 
 <dt><code>-r</code><em>resolution</em>
 <dd>Sets the resolution for pattern fills and for fonts that must be
-converted to bitmaps.
+converted to bitmaps. The default internal resolution for pdfwrite is 720dpi.
 
 <dt><code>-dProcessColorModel=</code><em>device_color_space</em> <dd>Sets
 the color space to be used for device-dependent colors in the
@@ -654,6 +654,10 @@ The screen and ebook ACS image parameter dictionary is
 <a name="note_11">(note 11)</a>
 The default, screen, and ebook settings never embed the 14 standard fonts
 (Courier, Helvetica, and Times families, Symbol, and ZapfDingbats).
+This behavior is intentional but can be overrided by:
+<blockquote><code>
+&lt;&lt; /NeverEmbed [ ] &gt;&gt; setdistillerparams
+</code></blockquote>
 
 <p>
 <a name="note_12">(note 12)</a>

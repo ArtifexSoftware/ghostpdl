@@ -326,7 +326,7 @@ currentdict end def
         /.notdef 0 def
         0 1 currentdict length 1 sub
         { dup 2 index exch get 
-          dup /.notdef ne {
+          dup dup /.notdef ne exch type /nulltype ne and {
             exch def
           } {
             pop pop

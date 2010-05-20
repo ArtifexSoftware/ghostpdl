@@ -43,11 +43,6 @@
  */
 static int reschedule_interval = 100;
 
-/* Scheduling hooks in interp.c */
-extern int (*gs_interp_reschedule_proc)(i_ctx_t **);
-extern int (*gs_interp_time_slice_proc)(i_ctx_t **);
-extern int gs_interp_time_slice_ticks;
-
 /* Context structure */
 typedef enum {
     cs_active,
@@ -340,9 +335,9 @@ static int
 zcontext_init(i_ctx_t *i_ctx_p)
 {
     /* Complete initialization after the interpreter is entered. */
-    gs_interp_reschedule_proc = ctx_initialize;
-    gs_interp_time_slice_proc = ctx_initialize;
-    gs_interp_time_slice_ticks = 0;
+    i_ctx_p->reschedule_proc = ctx_initialize;
+    i_ctx_p->time_slice_proc = ctx_initialize;
+    i_ctx_p->time_slice_ticks = 0;
     return 0;
 }
 /*
@@ -372,9 +367,9 @@ ctx_initialize(i_ctx_t **pi_ctx_p)
     psched->current->scheduler = psched;
     /* Hook into the interpreter. */
     *pi_ctx_p = &psched->current->state;
-    gs_interp_reschedule_proc = ctx_reschedule;
-    gs_interp_time_slice_proc = ctx_time_slice;
-    gs_interp_time_slice_ticks = reschedule_interval;
+    psched->current->state.reschedule_proc = ctx_reschedule;
+    psched->current->state.time_slice_proc = ctx_time_slice;
+    psched->current->state.time_slice_ticks = reschedule_interval;
     return 0;
 }
 

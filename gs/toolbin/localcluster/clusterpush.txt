@@ -7,15 +7,15 @@ Usage:
 
   clusterpush.pl [type [user]]
 
-type gs, pcl, and/or xps.  If you do not specify a type clusterpush.pl
-will guess what you want to do based on the current directory. You
-can specify a combination of types by enclosing them in quotes
-(e.g. clusterpush.pl "gs pcl").  You can also specify bmpcmp as the type
-to generate bitmaps that compare the results of the last clusterpush
-with the head code (see below for details).
+type gs, pcl, xps, and/or ls (standing for language switch).  If you do
+not specify a type clusterpush.pl will guess what you want to do based
+on the current directory. You can specify a combination of types by
+enclosing them in quotes (e.g. clusterpush.pl "gs pcl").  You can also
+specify bmpcmp as the type to generate bitmaps that compare the results
+of the last clusterpush with the head code (see below for details).
 
-user is one of alex, giles, henrys, ken, marcos, masaki, mvrhel, ray,
-or tor.  If you don't specify 'user' clusterpush.pl uses the value
+user is one of alex, chris, henrys, hintak, ken, marcos, masaki, mvrhel,
+ray, or tor.  If you don't specify 'user' clusterpush.pl uses the value
 of $USER.  This makes sense on Linux and Mac OS X and probably cygwin,
 but I'm not sure what happens when run under Windows.  If you prefer a
 different default username than the one listed above please let me know.
@@ -25,7 +25,7 @@ directory from where you normally run 'make').  Clusterpush prints and
 error if you try to run it from a different directory.
 
 Results will be sent via email after the run is completed, which takes
-about 25 minuts, presuing the cluster isn't busy.  Your code is compared
+about 25 minuts, presuming the cluster isn't busy.  Your code is compared
 to the most recent baseline, so for meaningful results you will want
 to sync your code with head if recent changes to head have resulted in
 regression differences.

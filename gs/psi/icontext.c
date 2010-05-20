@@ -192,6 +192,10 @@ context_state_alloc(gs_context_state_t ** ppcst,
     for (i = countof(pcst->memory.spaces_indexed); --i >= 0;)
 	if (dmem->spaces_indexed[i] != 0)
 	    ++(dmem->spaces_indexed[i]->num_contexts);
+    /* The number of interpreter "ticks" between calls on the time_slice_proc.
+     * Currently, the clock ticks before each operator, and at each
+     * procedure return. */
+    pcst->time_slice_ticks = 0x7fff;
     *ppcst = pcst;
     return 0;
   x3:/* No need to delete dictionary here, as gc will do it for us. */

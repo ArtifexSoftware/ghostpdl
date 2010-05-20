@@ -2727,7 +2727,7 @@ cups_print_pages(gx_device_printer *pdev,
 	   cups->header.cupsBitsPerPixel, cups->header.cupsWidth,
 	   cups->header.cupsBytesPerLine, srcbytes);
 
-  src = (unsigned char *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), srcbytes, 1, "cups_print_pages");
+  src = (unsigned char *)gs_malloc(pdev->memory->non_gc_memory, srcbytes, 1, "cups_print_pages");
 
   if (src == NULL)	/* can't allocate input buffer */
     return_error(gs_error_VMerror);
@@ -2738,7 +2738,7 @@ cups_print_pages(gx_device_printer *pdev,
   * Need an output buffer, too...
   */
 
-  dst = (unsigned char *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), cups->header.cupsBytesPerLine, 2,
+  dst = (unsigned char *)gs_malloc(pdev->memory->non_gc_memory, cups->header.cupsBytesPerLine, 2,
                                    "cups_print_pages");
 
   if (dst == NULL)	/* can't allocate working area */
@@ -2804,8 +2804,8 @@ cups_print_pages(gx_device_printer *pdev,
   * Free temporary storage and return...
   */
 
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)src, srcbytes, 1, "cups_print_pages");
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)dst, cups->header.cupsBytesPerLine, 1, "cups_print_pages");
+  gs_free(pdev->memory->non_gc_memory, (char *)src, srcbytes, 1, "cups_print_pages");
+  gs_free(pdev->memory->non_gc_memory, (char *)dst, cups->header.cupsBytesPerLine, 1, "cups_print_pages");
 
   if (code < 0)
     return (code);

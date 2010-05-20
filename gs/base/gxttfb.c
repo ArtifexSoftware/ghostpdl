@@ -249,7 +249,7 @@ static int DebugPrint(ttfFont *ttf, const char *fmt, ...)
 	count = vsprintf(buf, fmt, args);
 	/* NB: moved debug output from stdout to stderr
 	 */
-	errwrite_nomem(buf, count);
+	errwrite(ttf->DebugMem, buf, count);
 	va_end(args);
     }
     return 0;

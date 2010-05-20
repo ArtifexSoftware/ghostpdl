@@ -155,7 +155,7 @@ DEBUGSYM=0
 
 # We can compile for a 32-bit or 64-bit target
 # WIN32 and WIN64 are mutually exclusive.  WIN32 is the default.
-!if !defined(WIN32) && !defined(Win64)
+!if !defined(WIN32) && (!defined(Win64) || !defined(WIN64))
 WIN32=0
 !endif
 
@@ -196,6 +196,10 @@ FTSRCDIR=freetype
 !endif
 !ifndef FT_CFLAGS
 FT_CFLAGS=-I$(FTSRCDIR)\include
+!endif
+
+!ifdef BITSTREAM_BRIDGE
+FT_BRIDGE=0
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,
@@ -731,6 +735,8 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 # FAPI compilation options :
 UFST_CFLAGS=-DMSVC
 
+BITSTREAM_CFLAGS=
+
 # ---------------------------- End of options ---------------------------- #
 
 # Define the name of the makefile -- used in dependencies.
@@ -871,15 +877,22 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def 
 # ---------------------- Debug targets ---------------------- #
 # Simply set some definitions and call ourselves back         #
 
+!ifdef WIN64
+WINDEFS=WIN64=
+!else
+WINDEFS=
+!endif
+
 DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1 SBRDIR=.\debugobj
+
 debug:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS)
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS)
 
 debugclean:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) clean
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) clean
 
 debugbsc:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) bsc
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) bsc
 
 
 
@@ -900,22 +913,22 @@ ufst-lib:
 #	nmake -f makefile.artifex fco_lib.a if_lib.a psi_lib.a tt_lib.a
 
 ufst-debug: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS)
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) $(WINDEFS)
 
 ufst-debugclean: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) clean
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) $(WINDEFS) clean
 
 ufst-debugbsc: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) bsc
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) $(WINDEFS) bsc
 
 ufst: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS)
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) $(WINDEFS)
 
 ufst-clean: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) clean
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) $(WINDEFS) clean
 
 ufst-bsc: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) bsc
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) $(WINDEFS) bsc
 
 
 

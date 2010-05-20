@@ -77,7 +77,6 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(GS_SO_MAJOR)
 
 # Build the small Ghostscript loaders, with Gtk+ and without
-
 $(GSSOC_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
 	$(GLCC) -g -o $(GSSOC_XE) $(PSSRC)dxmainc.c \
 	$(LDFLAGS) -L$(BINDIR) -l$(GS)
@@ -104,8 +103,11 @@ so: SODIRS
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)
-	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
+	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) \
+                $(GLOBJDIR)/$(SOOBJRELDIR)/echogs$(XEAUX) $(GLOBJDIR)/$(SOOBJRELDIR)/genarch$(XEAUX)
+	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' \
+                prefix=$(prefix)
+	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
 
 # Debug shared object
 # Note that this is in the same directory as the normal shared

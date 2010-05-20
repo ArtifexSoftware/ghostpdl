@@ -443,6 +443,12 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
                     return 0;
                 return r_size(Subrs);
             }
+        case FAPI_FONT_FEATURE_CharStrings_count:
+            {   ref *CharStrings;
+                if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+                    return 0;
+                return dict_length(CharStrings);
+            }
 	    /* Multiple Master specific */
         case FAPI_FONT_FEATURE_DollarBlend: 
 	    {   ref *DBlend; 
@@ -801,6 +807,54 @@ static ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_l
     return get_type1_data(ff, &subr, buf, buf_length);
 }
 
+static ushort FAPI_FF_get_raw_subr(FAPI_font *ff, int index, byte *buf, ushort buf_length)
+{   ref *pdr = (ref *)ff->client_font_data2;
+    ref *Private, *Subrs, subr;
+
+    if (dict_find_string(pdr, "Private", &Private) <= 0)
+        return 0;
+    if (dict_find_string(Private, "Subrs", &Subrs) <= 0)
+	return 0;
+    if (array_get(ff->memory, Subrs, index, &subr) < 0 || r_type(&subr) != t_string)
+        return 0;
+    if (buf && buf_length && buf_length >= r_size(&subr)) {
+	memcpy(buf, subr.value.const_bytes, r_size(&subr));
+    }
+    return r_size(&subr);
+}
+
+static ushort FAPI_FF_get_charstring_name(FAPI_font *ff, int index, byte *buf, ushort buf_length)
+{
+    ref *pdr = (ref *)ff->client_font_data2;
+    ref *CharStrings, eltp[2], string;
+
+    if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+	return 0;
+    if (dict_index_entry(CharStrings, index, eltp) < 0)
+	return 0;
+    name_string_ref(ff->memory, &eltp[0], &string);
+    if(r_size(&string) > buf_length)
+	return r_size(&string);
+    memcpy(buf, string.value.const_bytes, r_size(&string));
+    buf[r_size(&string)] = 0x00;
+    return r_size(&string);
+}
+
+static ushort FAPI_FF_get_charstring(FAPI_font *ff, int index, byte *buf, ushort buf_length)
+{
+    ref *pdr = (ref *)ff->client_font_data2;
+    ref *CharStrings, eltp[2];
+
+    if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+	return 0;
+    if (dict_index_entry(CharStrings, index, eltp) < 0)
+	return 0;
+    if (buf && buf_length && buf_length >= r_size(&eltp[1])) {
+	memcpy(buf, eltp[1].value.const_bytes, r_size(&eltp[1]));
+    }
+    return r_size(&eltp[1]);
+}
+
 static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
@@ -847,7 +901,42 @@ static bool get_MetricsCount(FAPI_font *ff)
 
 
 
-static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
+static int get_charstring(FAPI_font *ff, int char_code, ref **proc)
+{
+    ref *CharStrings, char_name;
+    ref *pdr = (ref *)ff->client_font_data2;
+
+    if (ff->is_type1) {
+        if (ff->is_cid) 
+	    return -1;
+	if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+	    return -1;
+
+        if (ff->char_data != NULL) {
+	    /*
+	     * Can't use char_code in this case because hooked Type 1 fonts
+	     * with 'glyphshow' may render a character which has no
+	     * Encoding entry.
+	     */
+	    if (name_ref(ff->memory, ff->char_data,
+		ff->char_data_len, &char_name, -1) < 0)
+		return -1;
+	}  else { /* seac */
+	    i_ctx_t *i_ctx_p = (i_ctx_t *)ff->client_ctx_p;
+	    ref *StandardEncoding;
+
+	    if (dict_find_string(systemdict, "StandardEncoding", &StandardEncoding) <= 0 ||
+		array_get(ff->memory, StandardEncoding, char_code, &char_name) < 0)
+		if (name_ref(ff->memory, (const byte *)".notdef", 7, &char_name, -1) < 0)
+		    return -1;
+	}
+        if (dict_find(CharStrings, &char_name, (ref **)proc) <= 0) 
+	    return -1;
+    }
+    return 0;
+}
+
+static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
 {   /* 
      * We assume that renderer requests glyph data with multiple
      * consecutive calls to this function.
@@ -910,6 +999,8 @@ static ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort 
                     return -1;
                 }
             }
+	    if (r_has_type(glyph, t_array) || r_has_type(glyph, t_mixedarray)) 
+		return -1;
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         }
     } else { /* type 42 */
@@ -965,8 +1056,11 @@ static const FAPI_font ff_stub = {
     FAPI_FF_get_proc,
     FAPI_FF_get_gsubr,
     FAPI_FF_get_subr,
+    FAPI_FF_get_raw_subr,
     FAPI_FF_get_glyph,
-    FAPI_FF_serialize_tt_font
+    FAPI_FF_serialize_tt_font,
+    FAPI_FF_get_charstring,
+    FAPI_FF_get_charstring_name
 };
 
 static int FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
@@ -1232,12 +1326,17 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
 		code = idict_put_string(op, "FontBBox", &arr);
 		if (code < 0)
 		    return code;
-    }
+                ref_assign_new(v->value.refs + 0, &mat[0]);
+                ref_assign_new(v->value.refs + 1, &mat[1]);
+                ref_assign_new(v->value.refs + 2, &mat[2]);
+                ref_assign_new(v->value.refs + 3, &mat[3]);
+	    } else {
 	    ref_assign_old(v, v->value.refs + 0, &mat[0], "FAPI_refine_font_BBox");
 	    ref_assign_old(v, v->value.refs + 1, &mat[1], "FAPI_refine_font_BBox");
 	    ref_assign_old(v, v->value.refs + 2, &mat[2], "FAPI_refine_font_BBox");
 	    ref_assign_old(v, v->value.refs + 3, &mat[3], "FAPI_refine_font_BBox");
 	}
+    }
     }
 
     /* Assign a Decoding : */
@@ -2108,6 +2207,17 @@ retry_oversampling:
 #else
 	code = I->get_char_raster_metrics(I, &I->ff, &cr, &metrics);
 #endif
+	if (code > 0) {
+	    os_ptr op = osp;
+	    ref *proc;
+	    if (get_charstring(&I->ff, code - 1, &proc) >= 0) {
+		ref_assign(op, proc);
+		push_op_estack(zexec);	/* execute the operand */
+		return o_push_estack;
+	    } else
+		return e_invalidfont;
+	}
+
         if (code == e_limitcheck) {
             if(log2_scale.x > 0 || log2_scale.y > 0) {
                 penum_s->fapi_log2_scale.x = log2_scale.x = penum_s->fapi_log2_scale.y = log2_scale.y = 0;

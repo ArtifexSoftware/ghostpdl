@@ -1333,13 +1333,13 @@ pdf_close(gx_device * dev)
 		  pdev->next_id - pdev->FirstObjectNumber);
     fseek(tfile, 0L, SEEK_SET);
     {
-	long i;
+	long i, r;
 
 	for (i = pdev->FirstObjectNumber; i < pdev->next_id; ++i) {
 	    ulong pos;
 	    char str[21];
 
-	    (void)fread(&pos, sizeof(pos), 1, tfile);
+	    r = fread(&pos, sizeof(pos), 1, tfile);
 	    if (pos & ASIDES_BASE_POSITION)
 		pos += resource_pos - ASIDES_BASE_POSITION;
 	    pos -= pdev->OPDFRead_procset_length;

@@ -83,9 +83,6 @@ const char *const gs_error_names[] =
     ERROR_NAMES
 };
 
-/* The operator tables */
-op_array_table op_array_table_global, op_array_table_local;	/* definitions of `operator' procedures */
-
 /* Enter a name and value into a dictionary. */
 static int
 i_initial_enter_name_in(i_ctx_t *i_ctx_p, ref *pdict, const char *nstr,

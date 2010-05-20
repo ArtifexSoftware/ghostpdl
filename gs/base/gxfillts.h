@@ -72,8 +72,16 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
 #define ADJUSTED_Y_SPANS_PIXEL(y)\
   (fixed_fraction((y) + y_span_delta) < y_span_limit)
 
-    if (le.end.x <= le.start.x) {
-	if (re.end.x >= re.start.x) {	/* Top wider than bottom. */
+    if ((le.end.x == le.start.x) && (re.end.x == re.start.x)) {
+        /* Rectangle. */
+        le.start.x = fixed2int_pixround(le.start.x);
+        le.start.y = fixed2int_pixround(y - fo->adjust_below);
+        re.start.x = fixed2int_pixround(re.start.x);
+        re.start.y = fixed2int_pixround(y1 + fo->adjust_above);
+        code = LOOP_FILL_RECTANGLE_DIRECT(fo, le.start.x, le.start.y,
+                               re.start.x-le.start.x, re.start.y-le.start.y);
+    } else if ((le.end.x <= le.start.x) && (re.end.x >= re.start.x)) {
+        /* Top wider than bottom. */
 	    le.start.y = flp->start.y - fo->adjust_below;
 	    le.end.y = flp->end.y - fo->adjust_below;
 	    re.start.y = alp->start.y - fo->adjust_below;
@@ -89,11 +97,8 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
 		vd_rect(flp->x_next - fo->adjust_left, y1 - fo->adjust_below, 
 			alp->x_next + fo->adjust_right, y1, 1, VD_TRAP_COLOR);
 	    }
-	} else {	/* Slanted trapezoid. */
-	    code = fill_slant_adjust(ll, flp, alp, y, y1);
-	}
-    } else {
-	if (re.end.x <= re.start.x) {	/* Bottom wider than top. */
+    } else if ((le.end.x >= le.start.x) && (re.end.x <= re.start.x)) {
+        /* Bottom wider than top. */
 	    if (ADJUSTED_Y_SPANS_PIXEL(y)) {
 		INCR(afill);
 		xli = fixed2int_var_pixround(flp->x_current - fo->adjust_left);
@@ -113,7 +118,6 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
 	} else {	/* Slanted trapezoid. */
 	    code = fill_slant_adjust(ll, flp, alp, y, y1);
 	}
-    }
     return code;
 }
 

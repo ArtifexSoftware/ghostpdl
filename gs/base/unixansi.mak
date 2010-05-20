@@ -104,6 +104,16 @@ GS=gs
 DEBUGRELDIR=../debugobj
 PGRELDIR=../pgobj
 
+# Define whether to compile in the FreeType library, and if so, where
+# the source tree is location. Otherwise, what library name to use
+# in linking to a shared implementation.
+
+FT_BRIDGE=1
+SHARE_FT=0
+FTSRCDIR=freetype
+FT_CFLAGS=-Ifreetype/include
+FT_LIBS=
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
@@ -132,6 +142,15 @@ PNGSRCDIR=libpng
 
 SHARE_LIBPNG=0
 LIBPNG_NAME=png
+
+# Define whether to use a shared version of libtiff and where
+# it is stored and what its name is.  
+
+SHARE_LIBTIFF=0
+TIFFSRCDIR=tiff
+TIFFPLATFORM=unix
+TIFFCONFIG_SUFFIX=.unix
+LIBTIFF_NAME=tiff
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -332,6 +351,7 @@ DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
+DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev $(DD)pamcmyk32.dev
 
 # ---------------------------- End of options --------------------------- #
 
@@ -368,11 +388,13 @@ include $(GLSRCDIR)/gs.mak
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
+include $(GLSRCDIR)/freetype.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/jbig2.mak
+include $(GLSRCDIR)/libtiff.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak

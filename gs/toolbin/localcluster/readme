@@ -93,3 +93,14 @@ How to setup a new computer to run regression jobs on the Artifex Cluster:
     (i.e. if all of the other nodes are already finished when the final
     node goes down) the cluster job will be restarted from scratch).
 
+    If you want to temporarily disable your machine from participating
+    as a cluster node touch the file clusterpull.lock in the directory
+    where you installed the cluster sofware (~/cluster by default).
+    Your machine will be automatically renabled as a cluster node in
+    two hours.
+
+    You can force the removal of your machine as a node during a cluster
+    run by removing the file run.pid in the directory where you installed
+    the cluster sofware (~/cluster by default).
+
+

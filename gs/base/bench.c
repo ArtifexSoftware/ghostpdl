@@ -19,14 +19,12 @@
 /* Patchup for GS externals */
 FILE *gs_stdout;
 FILE *gs_stderr;
-FILE *gs_debug_out;
 const char gp_scratch_file_name_prefix[] = "gs_";
 static void
 capture_stdio(void)
 {
     gs_stdout = stdout;
     gs_stderr = stderr;
-    gs_debug_out = stderr;
 }
 #include "gsio.h"
 #undef gs_stdout

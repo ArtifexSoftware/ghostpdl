@@ -258,7 +258,7 @@ $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(GXERR)\
-  $(gslibctx_h) $(stdio__h)
+  $(gslibctx_h) $(stdio__h) $(string__h) $(gp_p)
 	$(GLCC) $(GLO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
 
 $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(GXERR)\
@@ -1017,7 +1017,7 @@ $(GLOBJ)gdevmpla.$(OBJ) : $(GLSRC)gdevmpla.c $(GXERR) $(memory__h)\
 ### Alpha-channel devices
 
 $(GLOBJ)gdevabuf.$(OBJ) : $(GLSRC)gdevabuf.c $(GXERR) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h) $(gzstate_h) $(gxdevcli_h)
 	$(GLCC) $(GLO_)gdevabuf.$(OBJ) $(C_) $(GLSRC)gdevabuf.c
 
 ### Other built-in devices
@@ -1981,7 +1981,7 @@ ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ) \
 $(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 	$(SETMOD) $(GLD)ttflib $(ttflib_)
 
-gxfont42_h=$(GLSRC)gxfont42.h
+# "gxfont42_h=$(GLSRC)gxfont42.h" already defined above
 gxttf_h=$(GLSRC)gxttf.h
 
 $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\

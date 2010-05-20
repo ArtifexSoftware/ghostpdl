@@ -157,6 +157,8 @@ typedef struct _opvp_brushdata {
 	opvp_byte_t data[1];
 #elif defined(__SUNPRO_C)
 	opvp_byte_t data[1];
+#elif defined(__HP_cc)
+	opvp_byte_t data[1];
 #else
 	opvp_byte_t data[];
 #endif

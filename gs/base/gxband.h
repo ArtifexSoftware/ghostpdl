@@ -29,7 +29,7 @@ typedef struct gx_band_params_s {
     long BandBufferSpace;	/* (optional) */
 } gx_band_params_t;
 
-#define BAND_PARAMS_INITIAL_VALUES 0, 0, 0
+#define BAND_PARAMS_INITIAL_VALUES 0, 0, 0, 0
 
 /*
  * Define information about the colors used on a page.

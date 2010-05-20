@@ -146,52 +146,68 @@ typedef int	jas_bool;
  * braindamage below.
  */
 # include <limits.h>
+#endif /* HAVE_STDINT_H */
 /**********/
 # if !defined(INT_FAST8_MIN)
+#ifndef __hpux
    typedef signed char int_fast8_t;
+#endif
 #  define INT_FAST8_MIN	(-127)
 #  define INT_FAST8_MAX	128
 # endif
 /**********/
 # if !defined(UINT_FAST8_MAX)
+#ifndef __hpux
    typedef unsigned char uint_fast8_t;
+#endif
 #  define UINT_FAST8_MAX	255
 # endif
 /**********/
 # if !defined(INT_FAST16_MIN)
+#ifndef __hpux
    typedef short int_fast16_t;
+#endif
 #  define INT_FAST16_MIN	SHRT_MIN
 #  define INT_FAST16_MAX	SHRT_MAX
 # endif
 /**********/
 # if !defined(UINT_FAST16_MAX)
+#ifndef __hpux
    typedef unsigned short uint_fast16_t;
+#endif
 #  define UINT_FAST16_MAX	USHRT_MAX
 # endif
 /**********/
 # if !defined(INT_FAST32_MIN)
+#ifndef __hpux
    typedef int int_fast32_t;
+#endif
 #  define INT_FAST32_MIN	INT_MIN
 #  define INT_FAST32_MAX	INT_MAX
 # endif
 /**********/
 # if !defined(UINT_FAST32_MAX)
+#ifndef __hpux
    typedef unsigned int uint_fast32_t;
+#endif
 #  define UINT_FAST32_MAX	UINT_MAX
 # endif
 /**********/
 # if !defined(INT_FAST64_MIN)
+#ifndef __hpux
    typedef longlong int_fast64_t;
+#endif
 #  define INT_FAST64_MIN	LLONG_MIN
 #  define INT_FAST64_MAX	LLONG_MAX
 # endif
 /**********/
 # if !defined(UINT_FAST64_MAX)
+#ifndef __hpux
    typedef ulonglong uint_fast64_t;
+#endif
 #  define UINT_FAST64_MAX	ULLONG_MAX
 # endif
 /**********/
-#endif /* HAVE_STDINT_H */
 
 /* The below macro is intended to be used for type casts.  By using this
   macro, type casts can be easily located in the source code with

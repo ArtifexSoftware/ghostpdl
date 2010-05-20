@@ -312,12 +312,12 @@ if (0) {
     if (open(F,"<$usersDir/$user/gs.run")) {
       close(F);
       unlink "$usersDir/$user/gs.run";
-      $product="$user gs pcl xps svg";
+      $product="$user gs pcl xps svg ls";
     }
     if (open(F,"<$usersDir/$user/ghostpdl.run")) {
       close(F);
       unlink "$usersDir/$user/ghostpdl.run";
-      $product="$user gs pcl xps svg";
+      $product="$user gs pcl xps svg ls";
     }
     if (open(F,"<$usersDir/$user/ghostpdl/cluster_command.run")) {
       $product=<F>;
@@ -431,23 +431,30 @@ my $options="";
 #xps: xps
 #svg: svg
 
-# svg: 1000
-# xps: 0100
-# pcl: 0010
-# ps : 0001
+# ls : 10000
+# svg: 01000
+# xps: 00100
+# pcl: 00010
+# ps : 00001
 
 my %tests=(
   'gs'  => 1,
   'pcl' => 2,
   'xps' => 4,
-  'svg' => 8
+  'svg' =>  8,
+  'ls'  => 16
   );
+
+my $allTests=31;
+
+# ls is tested if any test is called for
 
 my %rules=(
   'xps' => 4,
   'svg' => 8,
   'pcl' => 2,
   'pxl' => 2,
+  'language_switch' => 16,
   'urwfonts' => 2,
   'pl' => 14,
   'main' => 2,
@@ -459,8 +466,14 @@ my %rules=(
   'gs/toolbin' => 0,
   'gs/examples' => 0,
   'gs/lib' => 0,
+  'gs/freetype' => 15,
   'language_switch' => 0,
-  'tools' => 0
+  'tools' => 0,
+  'win32' => 0,
+  'gs/contrib' => 0,
+  'psi' => 16,
+  'gs/jasper' => 15,
+  'gs/cups' =>0
 );
 
 #my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
@@ -529,14 +542,15 @@ if ($regression =~ m/svn (\d+)/) {
           $set|=$rules{$t};
         } else {
           mylog "$s ($t): missing, testing all\n";
-          $set=15;
+          $set|=$allTests;
         }
       } else {
         mylog "unknown commit: testing all\n";
-        $set=15;
+        $set|=$allTests;
       }
     }
   }
+  $set|=$tests{'ls'} if ($set>0);  # we test the language_switch build if anything has changed
 
   #print "$set\n";
   foreach my $i (sort keys %tests) {
@@ -544,7 +558,8 @@ if ($regression =~ m/svn (\d+)/) {
   }
 
   $product =~ s/svg//;  # disable svg tests
-  # $product="gs pcl xps svg";
+  $product =~ s/  / /g; # get rid of extra space left by previous line
+  # $product="gs pcl xps svg ls";
 
   mylog "products: $product\n";
 
@@ -568,7 +583,7 @@ if ($regression =~ m/svn (\d+)/) {
   mylog "found icc_work regression in queue: $regression\n";
   $icc_workRegression=1;
   $rev=$1;
-  $product="gs pcl xps";
+  $product="gs pcl xps ls";
   $footer.="icc_work regression: $rev\n\nProducts tested: $product\n\n";
 } elsif ($regression=~/mupdf/) {
   mylog "found mupdf entry in queue.lst\n";
@@ -585,6 +600,9 @@ $mupdfRegression=1;
 } else {
   mylog "found unknown entry in queue.lst, removing.\n";
 }
+
+$product =~ s/\s+$//;
+$userRegression =~ s/\s+$//;
 
 if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $updateBaseline==1 || $icc_workRegression==1) {
 
@@ -694,18 +712,21 @@ if ($bmpcmp) {
         my $gs="";
         my $pcl="";
         my $xps="";
+        my $ls="";
         my $gsBin="gs/bin/gs";
         my $pclBin="gs/bin/pcl6";
         my $xpsBin="gs/bin/gxps";
+        my $lsBin="gs/bin/pspcl6";
         if (open(F2,"<jobs")) {
           while (<F2>) {
             chomp;
             $gs="gs " if (m/$gsBin/);
             $pcl="pcl " if (m/$pclBin/);
             $xps="xps " if (m/$xpsBin/);
+            $ls="ls " if (m/$lsBin/);
           }
           close(F2);
-          $product=$gs.$pcl.$xps;
+          $product=$gs.$pcl.$xps.$ls;
         }
 mylog "done checking jobs, product=$product\n";
         `touch bmpcmp.tmp ; rm -fr bmpcmp.tmp ; mv bmpcmp bmpcmp.tmp ; mkdir bmpcmp ; rm -fr bmpcmp.tmp &`;
@@ -751,7 +772,7 @@ mylog "done checking jobs, product=$product\n";
     $startText=`date +\"%D %H:%M:%S\"`;
     chomp $startText;
     if ($normalRegression) {
-      updateStatus "Regression r$rev started at $startText UTC";
+      updateStatus "Regression r$rev ($product) started at $startText UTC";
     } elsif ($icc_workRegression) {
       updateStatus "Regression icc_work-r$rev started at $startText UTC";
     } elsif ($mupdfRegression) {
@@ -760,6 +781,7 @@ mylog "done checking jobs, product=$product\n";
       updateStatus "Update baseline started at $startText UTC";
     } else {
       updateStatus "Regression $userRegression started at $startText UTC";
+      `touch users/$userName/starttime`;
     }
 
     %doneTime=();
@@ -877,7 +899,7 @@ mylog "done checking jobs, product=$product\n";
           $s=`date +\"%H:%M:%S\"`;
           chomp $s;
           if ($normalRegression) {
-            updateStatus "Regression r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
+            updateStatus "Regression r$rev ($product) started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($icc_workRegression) {
             updateStatus "Regression icc_work-r$rev started at $startText UTC - ".($totalJobs-scalar(@jobs))."/$totalJobs sent - $percentage%";
           } elsif ($mupdfRegression) {
@@ -976,7 +998,7 @@ mylog "done checking jobs, product=$product\n";
   $s=`date +\"%H:%M:%S\"`;
   chomp $s;
   if ($normalRegression) {
-    updateStatus "Regression r$rev started at $startText UTC - finished at $s";
+    updateStatus "Regression r$rev ($product) started at $startText UTC - finished at $s";
   } elsif ($icc_workRegression) {
     updateStatus "Regression icc_work-r$rev started at $startText UTC - finished at $s";
   } elsif ($mupdfRegression) {
@@ -994,7 +1016,7 @@ mylog "done checking jobs, product=$product\n";
   my $logs="";
   my $tabs="";
 
-sleep(10);
+# sleep(10);
 
   foreach (keys %machines) {
     if (-e "$_.log.gz" && -e "$_.out.gz") {
@@ -1196,6 +1218,19 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
         close(F2);
       }
     }
+    if ($normalRegression || $icc_workRegression || $mupdfRegression) {
+      my $tempRev=$rev;
+      $tempRev="icc_work-$rev" if ($icc_workRegression);
+      $tempRev="mupdf-$rev" if ($mupdfRegression);
+      `touch archive/$tempRev`;
+      `rm -fr archive/$tempRev`;
+      `mkdir archive/$tempRev`;
+      `mv $logs archive/$tempRev/.`;
+      `gzip archive/$tempRev/*log`;
+      `cp -p email.txt archive/$tempRev/.`;
+    } else {
+      `mv $logs $usersDir/$userName/.`;
+    }
     close(F);
   }
 
@@ -1256,6 +1291,10 @@ mylog("finished cachearchive.pl");
     close(F);
   }
 
+}
+
+if ($userRegression) {
+  `touch users/$userName/stoptime`;
 }
 
 checkPID();

@@ -1269,13 +1269,13 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 void
 pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 {
-    long left = count;
+    long r, left = count;
     byte buf[sbuf_size];
     
     while (left > 0) {
 	uint copy = min(left, sbuf_size);
 
-	(void)fread(buf, 1, copy, file);
+	r = fread(buf, 1, copy, file);
 	if (ss)
 	    s_arcfour_process_buffer(ss, buf, copy);
 	stream_write(s, buf, copy);
@@ -1289,7 +1289,7 @@ pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 void
 pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
 {   
-    long left = count;
+    long r, left = count;
 
     while (left > 0) {
 	byte buf[sbuf_size];
@@ -1297,7 +1297,7 @@ pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
 	long end_pos = ftell(file);
 
 	fseek(file, position + count - left, SEEK_SET);
-	(void)fread(buf, 1, copy, file);
+	r = fread(buf, 1, copy, file);
 	fseek(file, end_pos, SEEK_SET);
 	stream_write(s, buf, copy);
 	sflush(s);

@@ -2896,6 +2896,10 @@ needed to investigate particular areas. For backward compatibilty, the
   <tr><td><code>-dVJPGDEBUG</code><td><td>ViewJPEG
 </table>
 
+<p>With switching to freetype 2 as the default font renderer in April 2010, we
+added a new switch:<code>-dDisableFAPI=true</code> to revert to the older
+behavior, just in case serious regression happens that cannot be resolved in a timely manner.</p>
+
 <p><p>
 The <code>-Z</code> and <b><tt>-T</tt></b> switches apply only
 if the interpreter was <a href="Make.htm#Debugging">built for a debugging
@@ -3434,6 +3438,11 @@ device.
 <p>
 To run Ghostscript with Free Type, you first need to build Ghostscript
 with the Free Type bridge. Refer <a href="Make.htm#FT_build">How to build Ghostscript with Free Type</a>.
+
+<p>With switching to freetype 2 as the default font renderer in April 2010, we
+added a new switch:<code>-dDisableFAPI=true</code> to revert to the older
+behavior, just in case serious regression happens that cannot be resolved in a timely manner.</p>
+
 <p>
 To run Ghostscript with UFST, you first need to build Ghostscript
 with the UFST bridge. Refer <a href="Make.htm#UFST_build">How to build Ghostscript with UFST</a>.

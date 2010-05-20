@@ -176,7 +176,7 @@ static FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int
                  "Warning: UFST_SSdir is not specified, will search *.ss files in the curent directory.\n");
     }
 #endif
-    code = gx_UFST_init((const UB8 *)ufst_root_dir);
+    code = gx_UFST_init(r->client_mem.client_data, (const UB8 *)ufst_root_dir);
     if (code < 0)
 	return code;
     r->ufst_is_singleton = (code == 1);

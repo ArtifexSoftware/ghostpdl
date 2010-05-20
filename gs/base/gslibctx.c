@@ -19,6 +19,7 @@
 
 /* Capture stdin/out/err before gs.h redefines them. */
 #include "stdio_.h"
+#include "string_.h" /* memset */
 #include "gp.h"
 
 static void
@@ -61,30 +62,17 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 						"gs_lib_ctx_init");
     if( pio == 0 ) 
 	return -1;
-    pio->memory = mem;
 
+    /* Wholesale blanking is cheaper than retail, and scales better when new
+     * fields are added. */
+    memset(pio, 0, sizeof(*pio));
+    /* Now set the non zero/false/NULL things */
+    pio->memory               = mem;
     gs_lib_ctx_get_real_stdio(&pio->fstdin, &pio->fstdout, &pio->fstderr );
-
-    pio->fstdout2 = NULL;
-    pio->stdout_is_redirected = false;
-    pio->stdout_to_stderr = false;
     pio->stdin_is_interactive = true;
-    pio->stdin_fn = 0;
-    pio->stdout_fn = 0;
-    pio->stderr_fn = 0;
-    pio->poll_fn = 0;
-    pio->custom_color_callback = NULL;
-
     /* id's 1 through 4 are reserved for Device color spaces; see gscspace.h */
     pio->gs_next_id = 5;  /* this implies that each thread has its own complete state */
-
-    pio->dict_auto_expand = false;
-    pio->screen_accurate_screens = false;
-    pio->screen_use_wts = false;
-    pio->screen_min_screen_levels = 0;
     pio->BITTAG = GS_DEVICE_DOESNT_SUPPORT_TAGS;
-    pio->CPSI_mode = false;
-    pio->font_dir = NULL;
 
     gp_get_realtime(pio->real_time_0);
 

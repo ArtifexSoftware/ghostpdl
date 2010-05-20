@@ -111,11 +111,12 @@ int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 
 /* ------ Debugging ------ */
 
-/* Ghostscript writes debugging output to gs_debug_out. */
-/* We define gs_debug and gs_debug_out even if DEBUG isn't defined, */
+/* We define gs_debug even if DEBUG isn't defined, */
 /* so that we can compile individual modules with DEBUG set. */
+/* gs_debug is therefore shared between all instances in a multi-instance
+ * setup. This means that {en,dis}abling a debugging flag in one instance
+ * will affect all other instances. */
 char gs_debug[128];
-FILE *gs_debug_out;
 
 /* Test whether a given debugging option is selected. */
 /* Upper-case letters automatically include their lower-case counterpart. */
