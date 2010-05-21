@@ -839,7 +839,7 @@ $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(P
 
 !if $(MAKEDLL)
 
-$(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)dwsetup.def $(PSSRC)dwsetup_x86.manifest $(PSSRC)dwsetup_x64.manifest
+$(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)dwsetup.def $(PSSRC)dwsetup_x86.manifest $(PSSRC)dwsetup_x64.manifest $(LIBCTR)
 	echo /DEF:$(PSSRC)dwsetup.def /OUT:$(SETUP_XE) > $(PSGEN)dwsetup.rsp
 	echo $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj >> $(PSGEN)dwsetup.rsp
 	copy $(LIBCTR) $(PSGEN)dwsetup.tr
@@ -856,7 +856,7 @@ $(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)
 !endif
 !endif
 
-$(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def $(PSSRC)dwuninst_x86.manifest $(PSSRC)dwuninst_x64.manifest
+$(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def $(PSSRC)dwuninst_x86.manifest $(PSSRC)dwuninst_x64.manifest $(LIBCTR)
 	echo /DEF:$(PSSRC)dwuninst.def /OUT:$(UNINSTALL_XE) > $(PSGEN)dwuninst.rsp
 	echo $(PSOBJ)dwuninst.obj >> $(PSGEN)dwuninst.rsp
 	copy $(LIBCTR) $(PSGEN)dwuninst.tr

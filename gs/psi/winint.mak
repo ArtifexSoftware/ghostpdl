@@ -203,10 +203,10 @@ $(PSOBJ)zwinutf8.$(OBJ) : $(PSSRC)zwinutf8.c $(OP)\
 $(PSOBJ)dwsetup.res: $(PSSRC)dwsetup.rc $(PSSRC)dwsetup.h $(GLGEN)gswin.ico
 	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(PSOBJDIR) $(i_INCDIR) -r $(RO_)$(PSOBJ)dwsetup.res $(PSSRC)dwsetup.rc
 
-$(PSOBJ)dwsetup.obj: $(PSSRC)dwsetup.cpp $(PSSRC)dwsetup.h $(PSSRC)dwinst.h
+$(PSOBJ)dwsetup.obj: $(PSSRC)dwsetup.cpp $(PSSRC)dwsetup.h $(PSSRC)dwinst.h $(AK)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwsetup.obj $(C_) $(PSSRC)dwsetup.cpp
 
-$(PSOBJ)dwinst.obj: $(PSSRC)dwinst.cpp $(PSSRC)dwinst.h
+$(PSOBJ)dwinst.obj: $(PSSRC)dwinst.cpp $(PSSRC)dwinst.h $(AK)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwinst.obj $(C_) $(PSSRC)dwinst.cpp
 
 # Modules for uninstall program
@@ -214,7 +214,7 @@ $(PSOBJ)dwinst.obj: $(PSSRC)dwinst.cpp $(PSSRC)dwinst.h
 $(PSOBJ)dwuninst.res: $(PSSRC)dwuninst.rc $(PSSRC)dwuninst.h $(GLGEN)gswin.ico
 	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(PSOBJDIR) $(i_INCDIR) -r $(RO_)$(PSOBJ)dwuninst.res $(PSSRC)dwuninst.rc
 
-$(PSOBJ)dwuninst.obj: $(PSSRC)dwuninst.cpp $(PSSRC)dwuninst.h
+$(PSOBJ)dwuninst.obj: $(PSSRC)dwuninst.cpp $(PSSRC)dwuninst.h $(AK)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwuninst.obj $(C_) $(PSSRC)dwuninst.cpp
 
 
