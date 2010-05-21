@@ -299,6 +299,9 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     if (rop_source == NULL)
 	set_rop_no_source(rop_source, no_source, dev);
     bits = &ptile->tbits;
+
+    state.cdev.finalize = 0;
+
     code = tile_fill_init(&state, pdevc, dev, false);
     if (code < 0)
 	return code;
@@ -349,6 +352,8 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 				 &tbits, tile_pattern_clist);
 	}
     }
+    if(state.cdev.finalize)
+	state.cdev.finalize(&state.cdev);
     return code;
 }
 
