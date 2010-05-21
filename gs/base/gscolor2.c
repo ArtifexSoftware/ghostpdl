@@ -439,6 +439,15 @@ static const gs_color_space *
 gx_concrete_space_Indexed(const gs_color_space * pcs,
 			  const gs_imager_state * pis)
 {
+    bool is_lab = false;
+
+    if (gs_color_space_is_PSCIE(pcs->base_space)) {
+        if (pcs->base_space->icc_equivalent == NULL) {
+            gs_colorspace_set_icc_equivalent(pcs->base_space, 
+                                                &is_lab, pis->memory);
+        }
+        return (pcs->base_space->icc_equivalent);
+    } 
     return cs_concrete_space(pcs->base_space, pis);
 }
 
