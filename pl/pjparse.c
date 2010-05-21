@@ -863,8 +863,6 @@ pjl_set_init_from_defaults(pjl_parser_state_t *pst)
     memcpy(pst->font_envir, pst->font_defaults, sizeof(pjl_fontsource_table));
 }
 
-/* sets fontsource to the next priority resource containing fonts */
- void
 pjl_set_next_fontsource(pjl_parser_state_t* pst)
 {
     int current_source;
@@ -873,22 +871,27 @@ pjl_set_next_fontsource(pjl_parser_state_t* pst)
     /* find the index of the current resource then work backwards
        until we find font resources.  We assume the internal source
        will have fonts */
-    for (current_source = 0; pst->font_envir[current_source].designator[0]; current_source++ )
-	if (!pjl_compare(pst->font_envir[current_source].designator, current_font_source))
-	    break;
+    for (current_source = 0; pst->font_envir[current_source].designator[0];
+         current_source++ )
+        if (!pjl_compare(pst->font_envir[current_source].designator,
+                         current_font_source))
+            break;
 
     /* next resource is not internal 'I' */
     if ( current_source != 0 ) {
-	while( current_source > 0 ) {
-	    /* valid font number found */
-	    if ( pst->font_envir[current_source].fontnumber[0] )
-		break;
-	    current_source--;
-	}
+        while( current_source > 0 ) {
+            current_source--;    /* go to next fontsource */
+            /* check if it contains fonts, i.e. fontnumber != null */
+            if ( pst->font_envir[current_source].fontnumber[0] )
+                break;
+        }
     }
-    /* set both default and environment font source, the spec is not clear about this */
-    pjl_set(pst, (char *)"fontsource", pst->font_envir[current_source].designator, true);
-    pjl_set(pst, (char *)"fontsource", pst->font_defaults[current_source].designator, false);
+    /* set both default and environment font source, the spec is not clear
+       about this */
+    pjl_set(pst, (char *)"fontsource",
+            pst->font_envir[current_source].designator, true);
+    pjl_set(pst, (char *)"fontsource",
+            pst->font_defaults[current_source].designator, false);
 }
 
 /* get a pjl environment variable from the current environment - not
