@@ -464,6 +464,10 @@ currentdict /tt_tag_dict .undef
       /i2 exch def
       /scode startc i2 getu16a def
       /ecode endc i2 getu16a def
+      scode ecode gt {   % Bug 691326. 
+        /ecode scode def % Acrobat does this contrary to TTF spec that
+      } if               % requires such intervals to be ignored.
+
       numcodes scode firstcode sub
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
       %dup 16#e000 ge { 255 and } if
@@ -479,6 +483,8 @@ currentdict /tt_tag_dict .undef
       /i2 exch def
       /scode startc i2 getu16a def
       /ecode endc i2 getu16a def
+      scode ecode gt { /ecode scode def } if % Bug 691326. See above.
+
       numcodes scode firstcode sub
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
       %dup 16#e000 ge { 255 and } if
