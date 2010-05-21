@@ -11,8 +11,6 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
-
 /* This is the code that is used to convert the various PDF and PS CIE
    based color spaces to ICC profiles.  This enables the use of an
    external CMS that is ICC centric to be used for ALL color management.
