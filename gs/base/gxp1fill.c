@@ -353,7 +353,7 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	}
     }
     if(state.cdev.finalize)
-	state.cdev.finalize(&state.cdev);
+	state.cdev.finalize((gx_device *)&state.cdev);
     return code;
 }
 
