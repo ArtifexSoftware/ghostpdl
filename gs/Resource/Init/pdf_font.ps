@@ -1565,16 +1565,11 @@ currentdict /CMap_read_dict undef
 
 % ---------------- Other embedded fonts ---------------- %
 
-/fontloadprocs mark
-  /Type1C /readType1C cvx
-  /CIDFontType0C /readCIDFontType0C cvx
-.dicttomark readonly def
-
 % Read an embedded compressed font.
 /readType1C {		% <font-resource> <stream-dict> readType1C <font>
   1 index exch
   PDFfile fileposition 3 1 roll
-  dup true resolvestream dup readfontfilter
+  dup //true resolvestream dup readfontfilter
 		% Stack: pos resource streamdict stream filter
   3 index /FontDescriptor oget /FontName oget
   1 index 
@@ -1589,7 +1584,7 @@ currentdict /CMap_read_dict undef
 % Read an embedded CFF CIDFont.
 /readCIDFontType0C {  % <font-resource> <stream-dict> readCIDFontType0C <font>
   PDFfile fileposition 3 1 roll
-  dup true resolvestream dup readfontfilter
+  dup //true resolvestream dup readfontfilter
 		% Stack: pos resource streamdict stream filter
   3 index /FontDescriptor oget /FontName oget
   1 index 
@@ -1735,8 +1730,11 @@ currentdict /CMap_read_dict undef
   <01000401> <01000402> <01000403> <01000404> % Type 1C
   <01000C02> <01000C03>
     { exch pop
-      dup /Subtype get
-      fontloadprocs exch get exec
+      1 index /Subtype knownoget dup { pop /CIDFontType0 eq } if {
+        readCIDFontType0C
+      } {
+        readType1C
+      } ifelse
     } 6 bndef 
 
   <00010000> (true) (typ1) (ttcf)  % TrueType OpenType
