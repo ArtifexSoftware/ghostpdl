@@ -148,6 +148,45 @@ resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
       return false;
 }
 
+/* Store an int in the  buffer */
+static int 
+put_int(byte **p, int n) {
+   if (n == (byte)n) {
+       if (*p) {
+          (*p)[0] = PtCr_byte;
+          (*p)[1] = (byte)n;
+          *p += 2;
+       }
+       return 2;
+   } else {
+       if (*p) {
+          **p = PtCr_int;
+          memcpy(*p + 1, &n, sizeof(int));
+          *p += sizeof(int) + 1;
+       }
+       return (sizeof(int) + 1);
+   }
+}
+
+/* Store a float in the  buffer */
+static int 
+put_float(byte **p, float n) {
+   if (*p) {
+      **p = PtCr_float;
+      memcpy(*p + 1, &n, sizeof(float));
+      *p += sizeof(float) + 1;
+   }
+   return (sizeof(float) + 1);
+}
+
+/* Store an op code in the  buffer */
+static int 
+put_op(byte **p, byte op) {
+   if (*p)
+      *(*p)++ = op;
+   return 1;
+}
+
 /*
  * Check a calculator function for validity, optionally storing its encoded
  * representation and add the size of the encoded representation to *psize.
@@ -157,40 +196,134 @@ resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
 static int
 check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int *psize)
 {
-    uint i;
+    int code;
+    uint i, j;
     uint size = r_size(pref);
+    byte *p;
 
+    if (size == 2 && depth == 0) {
+        /* Bug 690986. Recognize and replace Corel tint transform function.
+           { tint_params CorelTintTransformFunction }
+
+           Where tint_params resolves to an arrey like:
+             [ 1.0 0.0 0.0 0.0
+               0.0 1.0 0.0 0.0
+               0.0 0.0 1.0 0.0
+               0.0 0.0 0.0 1.0
+               0.2 0.81 0.76 0.61
+            ]
+           And CorelTintTransformFunction is:
+            { /colorantSpecArray exch def
+              /nColorants colorantSpecArray length 4 idiv def
+              /inColor nColorants 1 add 1 roll nColorants array astore def
+              /outColor 4 array def
+              0 1 3 {
+                /nOutInk exch def
+                1
+                0 1 nColorants 1 sub {
+                  dup inColor exch get
+                  exch 4 mul nOutInk add colorantSpecArray exch get mul
+                  1 exch sub mul
+                } for
+                1 exch sub
+                outColor nOutInk 3 -1 roll put
+              } for
+              outColor aload pop
+            }
+        */
+	ref r_tp, r_cttf; /* original references */
+        ref n_tp, n_cttf; /* names */
+        ref *v_tp, *v_cttf; /* values */
+        int sz;
+
+        p = ops;
+        sz = *psize;
+        if(array_get(imemory, pref, 0, &r_tp) < 0)
+            goto idiom_failed;
+        if (array_get(imemory, pref, 1, &r_cttf) < 0)
+            goto idiom_failed;
+        if (r_has_type(&r_tp, t_name) && r_has_type(&r_cttf, t_name)) {
+            if ((code = name_enter_string(imemory, "tint_params", &n_tp)) < 0)
+                return code;
+            if (r_tp.value.pname == n_tp.value.pname) {
+                if ((code = name_enter_string(imemory, "CorelTintTransformFunction", &n_cttf)) < 0)
+                    return code;
+                if (r_cttf.value.pname == n_cttf.value.pname) {
+                    v_tp   = dict_find_name(&n_tp);
+                    v_cttf = dict_find_name(&n_cttf);
+                    if (v_tp && v_cttf && r_is_array(v_tp) && r_is_array(v_cttf)) {
+                        uint n_elem = r_size(v_tp);
+
+                        if ((n_elem & 3) == 0 && r_size(v_cttf) == 31) { 
+                            /* Enough testing, idiom recognition tests less. */
+                            uint n_col = n_elem/4;
+
+                            for (i = 0; i < 4; i ++) {
+                                ref v;
+                                float fv;
+                                bool first = true;
+                                
+                                for (j = 0; j < n_col; j++) {
+                                    if (array_get(imemory, v_tp, j*4 + i, &v) < 0)
+                                        goto idiom_failed;
+                                    if (r_type(&v) == t_integer)
+                                        fv = (float)v.value.intval;
+                                    else if (r_type(&v) == t_real)
+                                        fv = v.value.realval;
+                                    else
+                                        goto idiom_failed;
+
+                                    if (fv != 0.) {
+                                        if (first)
+                                            sz += put_int(&p, 1);
+                                        sz += put_int(&p, 1);
+                                        sz += put_int(&p, n_col + 1 - j + i + !first);
+                                        sz += put_op(&p, PtCr_index);
+                                        if (fv != 1.) {
+                                            sz += put_float(&p, fv);
+                                            sz += put_op(&p, PtCr_mul);
+                                        }
+                                        sz += put_op(&p, PtCr_sub);
+                                        if (first)
+                                            first = false;
+                                        else 
+                                            sz += put_op(&p, PtCr_mul);
+                                    }
+                                }
+                                if (first)
+                                    sz += put_int(&p, 0);
+                                else
+                                    sz += put_op(&p, PtCr_sub);
+                            }
+                            /* n_col+4 4 roll pop ... pop  */
+                            sz += put_int(&p, n_col + 4);
+                            sz += put_int(&p, 4);
+                            sz += put_op(&p, PtCr_roll);
+                            for (j = 0; j < n_col; j++)
+                                sz += put_op(&p, PtCr_pop);
+                            *psize = sz;
+                            return 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+  idiom_failed:;
     for (i = 0; i < size; ++i) {
 	byte no_ops[1 + max(sizeof(int), sizeof(float))];
-	byte *p = (ops ? ops + *psize : no_ops);
 	ref elt, elt2, elt3;
 	ref * delp;
-	int code;
 
+	p = (ops ? ops + *psize : no_ops);
 	array_get(imemory, pref, i, &elt);
 	switch (r_btype(&elt)) {
-	case t_integer: {
-	    int i = elt.value.intval;
-
-	    if (i == (byte)i) {
-		*p = PtCr_byte;
-		p[1] = (byte)i;
-		*psize += 2;
-	    } else {
-		*p = PtCr_int;
-		memcpy(p + 1, &i, sizeof(i));
-		*psize += 1 + sizeof(int);
-	    }
+	case t_integer:
+	    *psize += put_int(&p, elt.value.intval);
 	    break;
-	}
-	case t_real: {
-	    float f = elt.value.realval;
-
-	    *p = PtCr_float;
-	    memcpy(p + 1, &f, sizeof(f));
-	    *psize += 1 + sizeof(float);
+	case t_real:
+	    *psize += put_float(&p, elt.value.realval);
 	    break;
-	}
 	case t_boolean:
 	    *p = (elt.value.boolval ? PtCr_true : PtCr_false);
 	    ++*psize;
