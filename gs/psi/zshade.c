@@ -171,7 +171,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 	    return_error(e_typecheck);
         }
 	params.ColorSpace = pcs;
-	rc_increment(pcs);
+	rc_increment_cs(pcs);
 	if (dict_find_string(op, "Background", &pvalue) > 0) {
 	    gs_client_color *pcc =
 		ialloc_struct(gs_client_color, &st_client_color,
@@ -235,7 +235,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 fail:
     gs_free_object(imemory, params.Background, "Background");
     if (params.ColorSpace) {
-	rc_decrement_only(params.ColorSpace, "build_shading");
+	rc_decrement_only_cs(params.ColorSpace, "build_shading");
     }
     return (code < 0 ? code : gs_note_error(e_rangecheck));
 }

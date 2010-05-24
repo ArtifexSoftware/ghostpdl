@@ -11,12 +11,14 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: zcolor.h  $ */
+/* $Id$ */
 /* Definitions for setcolorspace */
 
 #ifndef zicc_INCLUDED
 #  define zicc_INCLUDED
 
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff);
-
+int seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff);
+int seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, 
+               float *matrix, int num_colorants,ulong dictkey);
 #endif /* zicc_INCLUDED */

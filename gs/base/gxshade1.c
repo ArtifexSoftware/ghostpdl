@@ -31,6 +31,7 @@
 #include "gxdevcli.h"
 #include "gxshade4.h"
 #include "vdtrace.h"
+#include "gsicccache.h"
 
 #define VD_TRACE_AXIAL_PATCH 1
 #define VD_TRACE_RADIAL_PATCH 1
@@ -114,7 +115,7 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 {
     const gs_shading_Fb_t * const psh = (const gs_shading_Fb_t *)psh0;
     gs_matrix save_ctm;
-    int xi, yi;
+    int xi, yi, code;
     float x[2], y[2];
     Fb_fill_state_t state;
 
@@ -137,6 +138,7 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     }
     if (x[0] > x[1] || y[0] > y[1]) {
 	/* The region is outside the shading area. */
+        if (state.icclink != NULL) gsicc_release_link(state.icclink);
 	return 0;
     }
     for (xi = 0; xi < 2; ++xi)
@@ -151,7 +153,9 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     state.frame.region.p.y = y[0];
     state.frame.region.q.x = x[1];
     state.frame.region.q.y = y[1];
-    return Fb_fill_region(&state, rect_clip);
+    code = Fb_fill_region(&state, rect_clip);
+    if (state.icclink != NULL) gsicc_release_link(state.icclink);
+    return code;
 }
 
 /* ---------------- Axial shading ---------------- */
@@ -216,8 +220,10 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     pfs1.Function = pfn;
     pfs1.rect = *clip_rect;
     code = init_patch_fill_state(&pfs1);
-    if (code < 0)
+    if (code < 0) {
+        if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
 	return code;
+    }
     pfs1.maybe_self_intersecting = false;
     pfs1.function_arg_shift = 1;
     /*
@@ -247,8 +253,10 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     state.length = hypot(dist.x, dist.y);	/* device space line length */
     code = A_fill_region(&state, &pfs1);
     if (psh->params.Extend[0] && t0 > t_rect.p.y) {
-	if (code < 0)
+        if (code < 0) {
+            if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
 	    return code;
+        }
 	/* Use the general algorithm, because we need the trapping. */
 	state.v0 = t_rect.p.y;
 	state.v1 = t0;
@@ -256,8 +264,10 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	code = A_fill_region(&state, &pfs1);
     }
     if (psh->params.Extend[1] && t1 < t_rect.q.y) {
-	if (code < 0)
+        if (code < 0) {
+            if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
 	    return code;
+        }
 	/* Use the general algorithm, because we need the trapping. */
 	state.v0 = t1;
 	state.v1 = t_rect.q.y;
@@ -266,6 +276,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     }
     if (term_patch_fill_state(&pfs1))
 	return_error(gs_error_unregistered); /* Must not happen. */
+    if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
     return code;
 }
 
@@ -1072,8 +1083,10 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pis);
     pfs1.Function = psh->params.Function;
     code = init_patch_fill_state(&pfs1);
-    if (code < 0)
+    if (code < 0) {
+        if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
 	return code;
+    }
     pfs1.function_arg_shift = 1;
     pfs1.rect = *clip_rect;
     pfs1.maybe_self_intersecting = false;
@@ -1128,6 +1141,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     }
     if (term_patch_fill_state(&pfs1))
 	return_error(gs_error_unregistered); /* Must not happen. */
+    if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
     return code;
 }
 

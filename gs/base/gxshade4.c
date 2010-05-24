@@ -28,6 +28,7 @@
 #include "gxshade.h"
 #include "gxshade4.h"
 #include "vdtrace.h"
+#include "gsicccache.h"
 
 #define VD_TRACE_TRIANGLE_PATCH 1
 
@@ -108,8 +109,10 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     pfs.Function = pshm->params.Function;
     pfs.rect = *rect_clip;
     code = init_patch_fill_state(&pfs);
-    if (code < 0)
+    if (code < 0) {
+        if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
 	return code;
+    }
     reserve_colors(&pfs, C, 3); /* Can't fail */
     va.c = ca = C[0];
     vb.c = cb = C[1];
@@ -153,6 +156,7 @@ v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc)) < 0)
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (!cs.is_eod(&cs))
 	return_error(gs_error_rangecheck);
+    if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
     return code;
 }
 
@@ -248,5 +252,6 @@ out:
     release_colors(&pfs, pfs.color_stack, 1);
     if (term_patch_fill_state(&pfs))
 	return_error(gs_error_unregistered); /* Must not happen. */
+    if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
     return code;
 }

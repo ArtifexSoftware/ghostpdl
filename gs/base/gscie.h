@@ -838,4 +838,15 @@ int gx_serialize_cie_common_elements(const gs_color_space * pcs, stream * s);
 
 bool gx_color_space_needs_cie_caches(const gs_color_space * pcs);
 
+/* made available for gsicc_create */
+
+float common_identity(floatp in, const gs_cie_common * pcie);
+float abc_identity(floatp in, const gs_cie_abc * pcie);
+float a_identity(floatp in, const gs_cie_a * pcie);
+void cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
+	  gs_vector3 * out);
+void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
+			      gs_matrix3 *);
+void  cie_matrix_transpose3(const gs_matrix3 *, gs_matrix3 *);
+
 #endif /* gscie_INCLUDED */

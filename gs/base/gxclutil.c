@@ -178,6 +178,59 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
     return code_b | code_c;
 }
 
+/* Write out the ICC profile table */
+
+int
+cmd_write_icctable(gx_device_clist_writer * cldev, unsigned char *pbuf, int data_size)
+{
+
+    /* Data is written out maxband + ICC_BAND_OFFSET */
+
+    int band = cldev->band_range_max + ICC_BAND_OFFSET;
+    clist_file_ptr cfile = cldev->page_cfile;
+    clist_file_ptr bfile = cldev->page_bfile;
+    cmd_block cb;
+    int code_b, code_c;
+
+    if (cfile == 0 || bfile == 0)
+        return_error(gs_error_ioerror);
+
+    /* Set up the command block information that 
+       is stored in the bfile.  Note complexity information
+       is filled in but not used. */
+
+    cb.band_complexity.nontrivial_rops = false;
+    cb.band_complexity.uses_color = false;
+    cb.band_min = band;
+    cb.band_max = band;
+    cb.pos = cldev->page_info.io_procs->ftell(cfile);
+
+    if_debug2('l', "[l]writing icc table band %d cb pos %ld\n",
+		  band, (long)cb.pos);
+
+    cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), bfile);
+
+    /* Now store the ICC table information in the cfile */
+    /* Do I need to worry about having enough room here? */
+
+    if_debug1('l', "[l]writing icc table in cfile at %ld\n",
+            (long)cldev->page_info.io_procs->ftell(cfile));
+
+    cldev->page_info.io_procs->fwrite_chars(pbuf, data_size, cfile);
+
+    process_interrupts(cldev->memory);
+    code_b = cldev->page_info.io_procs->ferror_code(bfile);
+    code_c = cldev->page_info.io_procs->ferror_code(cfile);
+
+    if (code_b < 0)
+        return_error(code_b);
+    if (code_c < 0)
+        return_error(code_c); 
+
+    return code_b | code_c;
+
+}
+
 /* Write out the buffered commands, and reset the buffer. */
 int	/* ret 0 all-ok, -ve error code, or +1 ok w/low-mem warning */
 cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)

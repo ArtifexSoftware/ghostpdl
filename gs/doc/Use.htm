@@ -93,6 +93,7 @@
 <li><a href="#Interaction_related_parameters">Interaction-related parameters</a>
 <li><a href="#Output_selection_parameters">Device and output selection parameters</a>
 <li><a href="#EPS_parameters">EPS parameters</a>
+<li><a href="#ICC_color_parameters">ICC color parameters</a>
 <li><a href="#Other_parameters">Other parameters</a>
 </ul>
 </ul>
@@ -2630,6 +2631,97 @@ This is useful for enlarging an EPS file to fit the paper size when printing.
 <dd>Prevent special processing of EPS files.  
 This is useful when EPS files have incorrect Document
 Structuring Convention comments.
+</dl>
+
+<h4><a name="ICC_color_parameters"></a>ICC color parameters</h4>
+
+<dl>
+<dt><code>-sDefaultGrayProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with 
+undefined device gray color spaces.  If this is not set,
+the profile ./iccprofiles/default_gray.icc will be used as
+the default.
+</dl>
+
+<dl>
+<dt><code>-sDefaultRGBProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with
+undefined device RGB color spaces.  If this is not set,
+the profile ./iccprofiles/default_rgb.icc will be used as
+the default.
+</dl>
+
+<dl>
+<dt><code>-sDefaultCMYKProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with
+undefined device CMYK color spaces.  If this is not set,
+the profile ./iccprofiles/default_cmyk.icc will be used as
+the default.
+</dl>
+
+<dl>
+<dt><code>-sDeviceNProfile=</code><em>filename</em>
+<dd>Associate a DeviceN color space contained in a PS or PDF
+document with an ICC profile.  Note that neither PS nor PDF provide
+in-document ICC profile definitions for DeviceN color spaces.
+With this interface it is possible to provide this definition.  
+The colorants tag order in the ICC profile defines the lay-down
+order of the inks associated with the profile.  A windows-based 
+tool for creating these source profiles is contained in
+./toolbin/color/icc_creator. 
+</dl>
+
+<dl>
+<dt><code>-sProofProfile=</code><em>filename</em>
+<dd>Define the proofing ICC profile.  This is the profile for the
+device to which we would like the output to appear to be rendered.  
+This is not fully implemented at this time.
+</dl>
+
+<dl>
+<dt><code>-sDeviceLinkProfile=</code><em>filename</em>
+<dd>Define a device link profile through which the the rendered
+buffers should be remapped.  This is not fully 
+implemented at this time and will be only available for a select
+few devices.
+</dl>
+
+<dl>
+<dt><code>-sNamedProfile=</code><em>filename</em>
+<dd>Define a structure that is to be used by the color management
+module (CMM) to provide color management of named colors.  While
+the ICC does define a named color format, this structure can in
+practice be much more general.  Many developers wish to use
+their own proprietary-based format for spot color management.
+This command option is for developer use when an implementation
+for named color management is designed for the function
+gsicc_transform_named_color located in gsicccache.c .  An example
+implementation is currently contained in the code.  For the general
+user this command option should really not be used.
+</dl>
+
+<dl>
+<dt><code>-sOutputICCProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with
+the output device.  Care should be taken to ensure that the 
+number of colorants associated with the device is the same
+as the profile.  If this is not set, an appropriate profile 
+(i.e. one with the proper number of colorants) will be
+selected from those in the directory ./iccprofiles .  Note that if the output
+device is CMYK + spot colorants, a CMYK profile can be used to
+provide color management for the CMYK colorants only.  In this case,
+spot colors will pass through unprocessed assuming the device supports those
+colorants. 
+</dl>
+
+
+
+<dl>
+<dt><code>-sICCProfilesDir=</code><em>path</em>
+<dd>Set a directory in which to search for the above profiles.  If
+this is not set, the ./iccprofiles directory is searched.  Note that if 
+the build is performed with COMPILE_INITS=1, then the profiles contained
+in ./iccprofiles will be placed in the ROM file system.
 </dl>
 
 <h4><a name="Other_parameters"></a>Other parameters</h4>

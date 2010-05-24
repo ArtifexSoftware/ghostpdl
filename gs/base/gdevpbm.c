@@ -559,6 +559,7 @@ pnm_begin_typed_image(gx_device *dev,
                       gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)dev;
+    bool has_gray_icc;
 
     /* Conservatively guesses whether this operation causes color usage 
        that might not be otherwise captured by ppm_map_color_rgb. */
@@ -569,7 +570,14 @@ pnm_begin_typed_image(gx_device *dev,
 	    const gs_pixel_image_t *pim1 = (const gs_pixel_image_t *)pim;
 
 	    if (pim1->ColorSpace) {
-		if (gs_color_space_get_index(pim1->ColorSpace) == gs_color_space_index_DeviceGray) {
+                has_gray_icc = false;
+                if (pim1->ColorSpace->cmm_icc_profile_data) {
+                    if (pim1->ColorSpace->cmm_icc_profile_data->num_comps == 1) {
+                        has_gray_icc = true;
+                    } 
+                }
+		if (gs_color_space_get_index(pim1->ColorSpace) == 
+                            gs_color_space_index_DeviceGray || has_gray_icc) {
 		    if (pim1->BitsPerComponent > 1)
 			bdev->uses_color |= 1;
 		} else 

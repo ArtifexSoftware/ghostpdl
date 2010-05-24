@@ -49,7 +49,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
 	 * logical operation.
 	 */
 	penum->slow_loop =
-	    (penum->masked && !color_is_pure(&penum->icolor1)) ||
+	    (penum->masked && !color_is_pure(penum->icolor0)) ||
 	    penum->use_rop;
 	/* We can bypass X clipping for portrait mono-component images. */
 	if (!(penum->slow_loop || penum->posture != image_portrait))
@@ -66,9 +66,9 @@ gs_image_class_3_mono(gx_image_enum * penum)
 	if (penum->use_mask_color) {
 	    gx_image_scale_mask_colors(penum, 0);
 	    if (penum->mask_color.values[0] <= 0)
-		color_set_null(&penum->icolor0);
+		color_set_null(penum->icolor0);
 	    if (penum->mask_color.values[1] >= 255)
-		color_set_null(&penum->icolor1);
+		color_set_null(penum->icolor1);
 	}
 	return &image_render_mono;
     }
@@ -137,7 +137,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     const gs_color_space *pcs = NULL;	/* only set for non-masks */
     cs_proc_remap_color((*remap_color)) = NULL;	/* ditto */
     gs_client_color cc;
-    gx_device_color *pdevc = &penum->icolor1;	/* color for masking */
+    gx_device_color *pdevc = penum->icolor1;	/* color for masking */
     bool tiles_fit;
     uint mask_base =            /* : 0 to pacify Valgrind */
         (penum->use_mask_color ? penum->mask_color.values[0] : 0);
@@ -230,7 +230,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 	     * Slow case, masked. *
 	     **********************/
 
-	    pdevc = &penum->icolor1;
+	    pdevc = penum->icolor1;
 	    code = gx_color_load(pdevc, pis, dev);
 	    if (code < 0)
 		return code;
@@ -545,16 +545,16 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 			case 0:
 			    if (masked)
 				goto mt;
-			    if (!color_is_pure(&penum->icolor0))
+			    if (!color_is_pure(penum->icolor0))
 				goto ht;
 			    code = (*fill_proc) (dev, xi, yt, wi, iht,
-						 penum->icolor0.colors.pure);
+						 penum->icolor0->colors.pure);
 			    break;
 			case 255:	/* just for speed */
-			    if (!color_is_pure(&penum->icolor1))
+			    if (!color_is_pure(penum->icolor1))
 				goto ht;
 			    code = (*fill_proc) (dev, xi, yt, wi, iht,
-						 penum->icolor1.colors.pure);
+						 penum->icolor1->colors.pure);
 			    break;
 			default:
 			  ht:	/* Use halftone if needed */

@@ -856,10 +856,11 @@ overprint_create_compositor(
     gx_device **            pcdev,
     const gs_composite_t *  pct,
     gs_imager_state *	    pis,
-    gs_memory_t *           memory )
+    gs_memory_t *           memory,
+    gx_device *             cdev)
 {
     if (pct->type != &gs_composite_overprint_type)
-        return gx_default_create_compositor(dev, pcdev, pct, pis, memory);
+        return gx_default_create_compositor(dev, pcdev, pct, pis, memory, cdev);
     else {
 	gs_overprint_params_t params = ((const gs_overprint_t *)pct)->params;
         int     code;

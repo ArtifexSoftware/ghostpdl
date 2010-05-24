@@ -748,6 +748,7 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 #define gs_private_st_ptrs6(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6)\
   gs__st_ptrs6(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6)
 
+
 	/* Structures with 7 pointers. */
 
 #define gs__st_ptrs7(scope_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7)\
@@ -759,6 +760,55 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
   gs__st_ptrs7(public_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7)
 #define gs_private_st_ptrs7(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7)\
   gs__st_ptrs7(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7)
+
+	/* Structures with 8 pointers. */
+
+#define gs__st_ptrs8(scope_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6), GC_OBJ_ELT2(stype, e7, e8)\
+  };\
+  gs__st_basic(scope_st, stname, stype, sname, penum, preloc)
+#define gs_public_st_ptrs8(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)\
+  gs__st_ptrs8(public_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)
+#define gs_private_st_ptrs8(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)\
+  gs__st_ptrs8(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8)
+
+	/* Structures with 9 pointers. */
+
+#define gs__st_ptrs9(scope_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6), GC_OBJ_ELT3(stype, e7, e8, e9)\
+  };\
+  gs__st_basic(scope_st, stname, stype, sname, penum, preloc)
+#define gs_public_st_ptrs9(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9)\
+  gs__st_ptrs9(public_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9)
+#define gs_private_st_ptrs9(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9)\
+  gs__st_ptrs9(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9)
+
+	/* Structures with 10 pointers. */
+
+#define gs__st_ptrs10(scope_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6), GC_OBJ_ELT3(stype, e7, e8, e9),\
+  GC_OBJ_ELT(stype, e10) };\
+  gs__st_basic(scope_st, stname, stype, sname, penum, preloc)
+#define gs_public_st_ptrs10(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)\
+  gs__st_ptrs10(public_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
+#define gs_private_st_ptrs10(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)\
+  gs__st_ptrs10(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
+
+	/* Structures with 11 pointers. */
+
+#define gs__st_ptrs11(scope_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6), GC_OBJ_ELT3(stype, e7, e8, e9),\
+  GC_OBJ_ELT2(stype, e10, e11) };\
+  gs__st_basic(scope_st, stname, stype, sname, penum, preloc)
+#define gs_public_st_ptrs11(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)\
+  gs__st_ptrs11(public_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
+#define gs_private_st_ptrs11(stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)\
+  gs__st_ptrs11(private_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
+
 
 	/* Structures with 1 const string and 1 pointer. */
 

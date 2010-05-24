@@ -28,7 +28,9 @@
 #include "gxdither.h"
 #include "gxcdevn.h"
 #include "string_.h"
-#include "gsnamecl.h"  /* Custom color call back define */
+#include "gsiccmanage.h"
+#include "gdevdevn.h"
+#include "gsicccache.h"
 
 /* Structure descriptor */
 public_st_device_color();
@@ -622,21 +624,6 @@ gx_remap_concrete_DGray(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			gs_color_select_t select)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    int code = pcb->client_procs->remap_DeviceGray(pcb, pconc,
-						pcs, pdc, pis, dev, select);
-
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
-
     if (pis->alpha == gx_max_color_value)
 	(*pis->cmap_procs->map_gray)
 	    (pconc[0], pdc, pis, dev, select);
@@ -656,22 +643,6 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
     /* Save original color space and color info into dev color */
     pdc->ccolor.paint.values[0] = pc->paint.values[0];
     pdc->ccolor_valid = true;
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    int code = pcb->client_procs->remap_DeviceGray(pcb, &fgray,
-						pcs, pdc, pis, dev, select);
-
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
-
     if (pis->alpha == gx_max_color_value)
 	(*pis->cmap_procs->map_gray)
 	    (fgray, pdc, pis, dev, select);
@@ -696,20 +667,6 @@ gx_remap_concrete_DRGB(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    int code = pcb->client_procs->remap_DeviceRGB(pcb, pconc,
-						pcs, pdc, pis, dev, select);
-
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
     if (pis->alpha == gx_max_color_value)
 	gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2],
 			      pdc, pis, dev, select);
@@ -732,26 +689,6 @@ gx_remap_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->ccolor.paint.values[1] = pc->paint.values[1];
     pdc->ccolor.paint.values[2] = pc->paint.values[2];
     pdc->ccolor_valid = true;
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    frac conc[3];
-	    int code;
-
-	    conc[0] = fred;
-	    conc[1] = fgreen;
-	    conc[2] = fblue;
-	    code = pcb->client_procs->remap_DeviceRGB(pcb, conc,
-						pcs, pdc, pis, dev, select);
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
     if (pis->alpha == gx_max_color_value)
 	gx_remap_concrete_rgb(fred, fgreen, fblue,
 			      pdc, pis, dev, select);
@@ -778,20 +715,6 @@ gx_remap_concrete_DCMYK(const frac * pconc, const gs_color_space * pcs,
 			gs_color_select_t select)
 {
 /****** IGNORE alpha ******/
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    int code = pcb->client_procs->remap_DeviceCMYK(pcb, pconc,
-						pcs, pdc, pis, dev, select);
-
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
     gx_remap_concrete_cmyk(pconc[0], pconc[1], pconc[2], pconc[3], pdc,
 			   pis, dev, select);
     return 0;
@@ -808,27 +731,6 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->ccolor.paint.values[2] = pc->paint.values[2];
     pdc->ccolor.paint.values[3] = pc->paint.values[3];
     pdc->ccolor_valid = true;
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) (pis->memory->gs_lib_ctx->custom_color_callback);
-
-        if (pcb != NULL) {
-	    frac conc[4];
-	    int code;
-
-	    conc[0] = gx_unit_frac(pc->paint.values[0]);
-	    conc[1] = gx_unit_frac(pc->paint.values[1]);
-	    conc[2] = gx_unit_frac(pc->paint.values[2]);
-	    conc[3] = gx_unit_frac(pc->paint.values[3]);
-	    code = pcb->client_procs->remap_DeviceCMYK(pcb, conc,
-						pcs, pdc, pis, dev, select);
-	    if (code == 0)
-		return 0;
-	}
-    }
-#endif
     gx_remap_concrete_cmyk(gx_unit_frac(pc->paint.values[0]),
 			   gx_unit_frac(pc->paint.values[1]),
 			   gx_unit_frac(pc->paint.values[2]),
@@ -1264,6 +1166,61 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
         cmap_separation_halftoned(all, pdc, pis, dev, select);
 }
 
+/* Routines for handling CM of CMYK components of a DeviceN color space */
+static bool
+devicen_has_cmyk(gx_device * dev)
+{
+    gs_devn_params *devn_params;
+
+    /* Device may not have ret_devn_params! */
+    if (dev->procs.ret_devn_params != NULL) {
+        devn_params = dev_proc(dev, ret_devn_params)(dev);
+    } else {
+        return false;
+    }
+    if (devn_params == NULL) {
+        return false;
+    }
+    return(devn_params->num_std_colorant_names == 4);
+}
+
+static int
+devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis)
+{
+    gsicc_link_t *icc_link;
+    gsicc_rendering_param_t rendering_params;
+    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int k;
+    unsigned short *psrc_temp;
+
+    /* Define the rendering intents. */
+    rendering_params.black_point_comp = BP_ON;
+    rendering_params.object_type = GS_PATH_TAG;
+    rendering_params.rendering_intent = pis->renderingintent;
+    /* Sigh, frac to full 16 bit.  Need to clean this up */
+    for (k = 0; k < 4; k++){
+        psrc[k] = frac2cv(cm_comps[k]);
+    }
+    icc_link = gsicc_get_link_profile(pis, pis->icc_manager->default_cmyk, 
+                pis->icc_manager->device_profile,
+                &rendering_params, pis->memory, false);
+    /* Transform the color */
+    if (icc_link->is_identity) {
+        psrc_temp = &(psrc[0]);
+    } else {
+        /* Transform the color */
+        psrc_temp = &(psrc_cm[0]);
+        gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+    }
+    /* This needs to be optimized */
+    for (k = 0; k < 4; k++){
+        cm_comps[k] = float2frac(((float) psrc_temp[k])/65535.0);
+    }
+    /* Release the link */
+    gsicc_release_link(icc_link);
+    return(0);
+}
 
 /* ------ DeviceN color mapping */
 
@@ -1278,12 +1235,17 @@ cmap_devicen_halftoned(const frac * pcc,
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int code;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
 	cm_comps[i] = 0;
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);
-
+    /* See comments in cmap_devicen_direct for details on below operations */
+    if (devicen_has_cmyk(dev) && 
+        pis->icc_manager->device_profile->data_cs == gsCMYK) {
+        code = devicen_icc_cmyk(cm_comps, pis);
+    } 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
@@ -1295,7 +1257,6 @@ cmap_devicen_halftoned(const frac * pcc,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
 
     /* We need to finish halftoning */
-
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pis->dev_ht,
     					&pis->screen_phase[select]) == 1)
 	gx_color_load_select(pdc, pis, dev, select);
@@ -1314,12 +1275,34 @@ cmap_devicen_direct(const frac * pcc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    int code;
 
+    /*   See the comment below */
     /* map to the color model */
     for (i=0; i < ncomps; i++)
 	cm_comps[i] = 0;
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);;
-
+    /*  Check if we have the standard colorants.  If yes, then we will apply
+       ICC color management to those colorants. To understand why, consider
+       the example where I have a Device with CMYK + O  and I have a 
+       DeviceN color in the document that is specified for any set of 
+       these colorants, and suppose that I let them pass through 
+       witout any color management.  This is probably  not the 
+       desired effect since I could have a DeviceN color fill that had 10% C, 
+       20% M 0% Y 0% K and 0% O.  I would like this to look the same 
+       as a CMYK color that will be color managed and specified with 10% C, 
+       20% M 0% Y 0% K. Hence the CMYK values should go through the same
+       color management as a stand alone CMYK value.  */
+    if (devicen_has_cmyk(dev) && 
+        pis->icc_manager->device_profile->data_cs == gsCMYK) {
+        /* We need to do a CMYK to CMYK conversion here.  This will always
+           use the default CMYK profile and the device's output profile.
+           We probably need to add some checking here
+           and possibly permute the colorants, much as is done on the input
+           side for the case when we add DeviceN icc source profiles for use
+           in PDF and PS data. */
+        code = devicen_icc_cmyk(cm_comps, pis);
+    } 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
@@ -1329,10 +1312,8 @@ cmap_devicen_direct(const frac * pcc,
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
-
     /* encode as a color index */
     color = dev_proc(dev, encode_color)(dev, cv);
-
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
         color_set_pure(pdc, color);
@@ -1689,4 +1670,78 @@ gx_unit_frac(float fvalue)
     else
         f = float2frac(fvalue);
     return f;
+}
+
+/* This is used by image color render to handle the cases where we need to
+   perform either a transfer function or halftoning on the color values
+   during an ICC color flow.  In this case, the color is already in the
+   device color space but in 16bpp color values. */
+void
+cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
+     const gs_imager_state * pis, gx_device * dev, bool has_transfer,
+     bool has_halftone, gs_color_select_t select)
+{
+    int ncomps = dev->color_info.num_components;
+    frac frac_value;
+    int i;
+    frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+    gx_color_value color_val[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    /* apply the transfer function(s) */
+    if (has_transfer) {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+            for (i = 0; i < ncomps; i++) {
+                frac_value = cv2frac(pconc[i]);
+                cv_frac[i] = gx_map_color_frac(pis,
+	    			    frac_value, effective_transfer[i]);
+            }
+        } else {
+            if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN) {
+                check_cmyk_color_model_comps(dev);
+            }
+            if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+                int k = dev->color_info.black_component;
+                for (i = 0; i < ncomps; i++) {
+                    frac_value = cv2frac(pconc[i]);
+                    if (i == k) {
+                        cv_frac[i] = frac_1 - gx_map_color_frac(pis,
+	    		    (frac)(frac_1 - frac_value), effective_transfer[i]);
+                    } else {
+                        cv_frac[i] = cv2frac(pconc[i]);  /* Ignore transfer, see PLRM3 p. 494 */
+                    }
+                }
+            } else {
+                for (i = 0; i < ncomps; i++) {
+                    frac_value = cv2frac(pconc[i]);
+                    cv_frac[i] = frac_1 - gx_map_color_frac(pis,
+	    		        (frac)(frac_1 - frac_value), effective_transfer[i]);
+                }
+            }
+        }
+    } else {
+        if (has_halftone) {
+            /* We need this to be in frac form */
+            for (i = 0; i < ncomps; i++) {
+                cv_frac[i] = cv2frac(pconc[i]);  
+            }
+        }   
+    }
+    /* Halftoning */
+    if (has_halftone) {
+        if (gx_render_device_DeviceN(&(cv_frac[0]), pdc, dev,
+	            pis->dev_ht, &pis->screen_phase[select]) == 1)
+            gx_color_load_select(pdc, pis, dev, select);
+    } else {
+        /* We have a frac value from the transfer function.  Do the encode.
+           which does not take a frac value...  */
+        for (i = 0; i < ncomps; i++) {
+            color_val[i] = frac2cv(cv_frac[i]);  
+        }
+        color = dev_proc(dev, encode_color)(dev, &(color_val[0]));
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+            color_set_pure(pdc, color);
+
+    }
 }

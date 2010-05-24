@@ -28,10 +28,8 @@
 #include "gxfrac.h"
 
 /* ---------------- General colors and color spaces ---------------- */
-
-/* setcolorspace */
 int
-gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
+gs_setcolorspace_only(gs_state * pgs, gs_color_space * pcs)
 {
     int             code = 0;
     gs_color_space  *cs_old = pgs->color[0].color_space;
@@ -41,25 +39,33 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
 	return_error(gs_error_undefined);
 
     if (pcs->id != cs_old->id) {
-        rc_increment(pcs);
+        rc_increment_cs(pcs);
         pgs->color[0].color_space = pcs;
         if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0          ||
               (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0)  ) {
             pgs->color[0].color_space = cs_old;
-            rc_decrement_only(pcs, "gs_setcolorspace");
+            rc_decrement_only_cs(pcs, "gs_setcolorspace");
         } else {
 	    cs_old->type->adjust_color_count(&cc_old, cs_old, -1);
-	    rc_decrement_only(cs_old, "gs_setcolorspace");
+	    rc_decrement_only_cs(cs_old, "gs_setcolorspace");
 	}
     }
+    return(code);
+}
 
+/* setcolorspace */
+int
+gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
+{
+    int             code = 0;
+
+    code = gs_setcolorspace_only(pgs, pcs);
     if (code >= 0) {
 	pgs->color[0].color_space->pclient_color_space_data =
 	    pcs->pclient_color_space_data;
         cs_full_init_color(pgs->color[0].ccolor, pcs);
         gx_unset_dev_color(pgs);
     }
-
     return code;
 }
 
@@ -175,11 +181,7 @@ const gs_color_space_type gs_color_space_type_Indexed = {
     gx_init_paint_1, gx_restrict_Indexed,
     gx_concrete_space_Indexed,
     gx_concretize_Indexed, NULL,
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    gx_remap_IndexedSpace,
-#else
     gx_default_remap_color,
-#endif
     gx_install_Indexed,
     gx_set_overprint_Indexed,
     gx_final_Indexed, gx_no_adjust_color_count,
@@ -368,7 +370,7 @@ gs_cspace_build_Indexed(
 	pindexed->use_proc = false;
     }
     pcspace->base_space = pbase_cspace;
-    rc_increment(pbase_cspace);
+    rc_increment_cs(pbase_cspace);
     pindexed->hival = num_entries - 1;
     pindexed->n_comps = cs_num_components(pbase_cspace);
     *ppcspace = pcspace;
@@ -437,6 +439,15 @@ static const gs_color_space *
 gx_concrete_space_Indexed(const gs_color_space * pcs,
 			  const gs_imager_state * pis)
 {
+    bool is_lab = false;
+
+    if (gs_color_space_is_PSCIE(pcs->base_space)) {
+        if (pcs->base_space->icc_equivalent == NULL) {
+            gs_colorspace_set_icc_equivalent(pcs->base_space, 
+                                                &is_lab, pis->memory);
+        }
+        return (pcs->base_space->icc_equivalent);
+    } 
     return cs_concrete_space(pcs->base_space, pis);
 }
 

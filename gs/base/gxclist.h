@@ -25,6 +25,7 @@
 #include "gxdevbuf.h"
 #include "gxistate.h"
 #include "gxrplane.h"
+#include "gscms.h"
 
 /*
  * A command list is essentially a compressed list of driver calls.
@@ -182,13 +183,67 @@ typedef struct gx_clist_state_s gx_clist_state;
 	int ymin, ymax;			/* current band, <0 when writing */\
 		/* Following are set when writing, read when reading. */\
 	gx_band_page_info_t page_info;	/* page information */\
-	int nbands			/* # of bands */
+	int nbands;			/* # of bands */\
+        clist_icctable_t *icc_table;    /* Table that keeps track of ICC profiles.\
+                                           It relates the hashcode to the cfile\ 
+                                           file location. */\
+        gsicc_link_cache_t *icc_cache_cl  /* Link cache */\
+
 
 /*
  * Chech whether a clist is used for storing a pattern command stream.
  * Useful for both reader and writer.
  */
 #define IS_CLIST_FOR_PATTERN(cdev) (cdev->procs.open_device == pattern_clist_open_device)
+
+
+/* Define a structure to hold where the ICC profiles are stored in the clist
+   Profiles are added into psuedo bands of the clist, these are bands that exist beyond 
+   the edge of the normal band list.  A profile will occupy its own band.  The structure
+   here is a table that relates the hash code of the ICC profile to the pseudoband.  
+   This table will be added at the end of the clist writing process.  */
+
+/* Used when writing out the table at the end of the clist writing.
+   Table is written to maxband + 1 */
+
+typedef struct clist_icc_serial_entry_s clist_icc_serial_entry_t;
+
+struct clist_icc_serial_entry_s {
+    
+    int64_t hashcode;              /* A hash code for the icc profile */
+    int64_t file_position;        /* File position in cfile of the profile with header */
+    int size;
+
+};
+
+typedef struct clist_icctable_entry_s clist_icctable_entry_t;
+
+struct clist_icctable_entry_s {
+
+    clist_icc_serial_entry_t serial_data;
+    clist_icctable_entry_t *next;  /* The next entry in the table */ 
+    cmm_profile_t *icc_profile;    /* The profile.  This is written out at the end of the writer phase */
+
+};
+
+#define private_st_clist_icctable_entry()\
+  gs_private_st_ptrs2(st_clist_icctable_entry,\
+		clist_icctable_entry_t, "clist_icctable_entry",\
+		clist_icctable_entry_enum_ptrs, clist_icctable_entry_reloc_ptrs, next, icc_profile)
+
+typedef struct clist_icctable_s clist_icctable_t;
+
+struct clist_icctable_s {
+    int tablesize;
+    clist_icctable_entry_t *head;
+    clist_icctable_entry_t *final;
+};
+
+#define private_st_clist_icctable()\
+  gs_private_st_ptrs2(st_clist_icctable,\
+		clist_icctable_t, "clist_icctable",\
+		clist_icctable_enum_ptrs, clist_icctable_reloc_ptrs, head, final)
+
 
 typedef struct gx_device_clist_common_s {
     gx_device_clist_common_members;
@@ -220,10 +275,13 @@ struct clist_writer_cropping_buffer_s {
 		clist_writer_cropping_buffer_enum_ptrs, clist_writer_cropping_buffer_reloc_ptrs, next)
 
 
+
+
 /* Define the state of a band list when writing. */
 typedef struct clist_color_space_s {
     byte byte1;			/* see cmd_opv_set_color_space in gxclpath.h */
     gs_id id;			/* space->id for comparisons */
+    int64_t icc_hash;           /* hash code for icc profile */
     const gs_color_space *space;
 } clist_color_space_t;
 struct gx_device_clist_writer_s {
@@ -288,8 +346,15 @@ struct gx_device_clist_writer_s {
                                            access to the graphic state information in those
                                            routines, this is the logical place to put this
                                            information */
-
+   /* clist_icctable_t *icc_table;  */          /* Table that keeps track of ICC profiles.  It 
+                                              relates the hashcode to the cfile file location.
+                                              I did not put this into gx_device_clist_common_members
+                                              since I dont see where those pointers are ever defined
+                                              for GC. */
+   /* gsicc_link_cache_t *icc_cache_cl; */  /* Had to add this into the writer device to avoid problems
+                                           with 64 bit builds.  We need to revisit this */
 };
+
 #ifndef gx_device_clist_writer_DEFINED
 #define gx_device_clist_writer_DEFINED
 typedef struct gx_device_clist_writer_s gx_device_clist_writer;
@@ -324,6 +389,7 @@ typedef struct gx_device_clist_reader_s {
     byte *main_thread_data;		/* saved data pointer of main thread */
     int curr_render_thread;		/* index into array */
     int thread_lookahead_direction;	/* +1 or -1 */
+
 } gx_device_clist_reader;
 
 union gx_device_clist_s {
@@ -440,6 +506,31 @@ int clist_data_size(const gx_device_clist *cdev, int select);
 int clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *buf, int length);
 /* Put command list data. */
 int clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *buf, int length);
+
+/* ICC table prototypes */
+
+/* Write out the table of profile entries */
+int clist_icc_writetable(gx_device_clist_writer *cldev);
+
+/* Write out the profile to the clist */
+int64_t clist_icc_addprofile(gx_device_clist_writer *cdev, cmm_profile_t *iccprofile, int *iccsize);
+
+/* Seach the table to see if we already have a profile in the cfile */
+bool clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode);
+
+/* Add another entry into the icc profile table */
+int clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode, 
+                       cmm_profile_t *icc_profile);
+
+/* Free the table and its entries */
+int clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory);
+
+/* Generic read function used with ICC and could be used with others.
+   A different of this and clist_get_data is that here we reset the
+   cfile position when we are done and this only reads from the cfile
+   not the bfile or cfile */
+
+int clist_read_chunk(gx_device_clist_reader *crdev, int64_t position, int size, unsigned char *buf);
 
 /* Exports from gxclread used by the multi-threading logic */
 

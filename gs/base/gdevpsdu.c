@@ -490,11 +490,12 @@ psdf_create_compositor(
     gx_device **            pcdev,
     const gs_composite_t *  pct,
     gs_imager_state * pis,
-    gs_memory_t *           mem )
+    gs_memory_t *           mem,
+    gx_device *             cdev)
 {
     if (gs_is_overprint_compositor(pct)) {
         *pcdev = dev;
         return 0;
     } else
-        return gx_default_create_compositor(dev, pcdev, pct, pis, mem);
+        return gx_default_create_compositor(dev, pcdev, pct, pis, mem, cdev);
 }

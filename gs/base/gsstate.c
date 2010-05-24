@@ -36,6 +36,7 @@
 #include "gsovrc.h"
 #include "gxcolor2.h"
 #include "gxpcolor.h"
+#include "gsiccmanage.h"
 
 /* Forward references */
 static gs_state *gstate_alloc(gs_memory_t *, client_name_t,
@@ -631,7 +632,8 @@ gs_state_update_overprint(gs_state * pgs, const gs_overprint_params_t * pparams)
                                                    &ovptdev,
                                                    pct,
                                                    pis,
-                                                   pgs->memory )) >= 0   ) {
+                                                   pgs->memory,
+                                                   NULL)) >= 0   ) {
         if (ovptdev != dev)
             gx_set_device_only(pgs, ovptdev);
     }
@@ -983,9 +985,9 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	GSTATE_ASSIGN_PARTS(pgs, &parts);
     }
     gs_swapcolors_quick(pgs);
-    cs_adjust_counts(pgs, 1);
+    cs_adjust_counts_icc(pgs, 1);
     gs_swapcolors_quick(pgs);
-    cs_adjust_counts(pgs, 1);
+    cs_adjust_counts_icc(pgs, 1);
     return pgs;
   fail:
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -1022,9 +1024,9 @@ gstate_free_contents(gs_state * pgs)
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
     rc_decrement(pgs->dfilter_stack, cname);
     gs_swapcolors_quick(pgs);
-    cs_adjust_counts(pgs, -1);
+    cs_adjust_counts_icc(pgs, -1);
     gs_swapcolors_quick(pgs);
-    cs_adjust_counts(pgs, -1);
+    cs_adjust_counts_icc(pgs, -1);
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
@@ -1053,9 +1055,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
      * at least 2 (pto and somewhere else) initially.
      * Handle references from contents.
      */
-    cs_adjust_counts(pto, -1);
+    cs_adjust_counts_icc(pto, -1);
     gs_swapcolors_quick(pto);
-    cs_adjust_counts(pto, -1);
+    cs_adjust_counts_icc(pto, -1);
     gs_swapcolors_quick(pto);
     gx_path_assign_preserve(pto->path, pfrom->path);
     gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
@@ -1108,9 +1110,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 	}
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
-    cs_adjust_counts(pto, 1);
+    cs_adjust_counts_icc(pto, 1);
     gs_swapcolors_quick(pto);
-    cs_adjust_counts(pto, 1);
+    cs_adjust_counts_icc(pto, 1);
     gs_swapcolors_quick(pto);
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);

@@ -29,6 +29,7 @@
 #include "gzstate.h"
 #include "stream.h"
 #include "gsnamecl.h"  /* Custom color call back define */
+#include "gsicc.h"
 
 static cs_proc_install_cspace(gx_install_DeviceGray);
 static cs_proc_install_cspace(gx_install_DeviceRGB);
@@ -94,16 +95,12 @@ gs_cspace_final(void *vptr)
     if (pcs->type->final)
 	pcs->type->final(pcs);
     if_debug2('c', "[c]cspace final %08x %d\n", pcs, pcs->id);
+    rc_decrement_only_cs(pcs->base_space, "gs_cspace_final");
     
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-	client_color_space_data_t *pclient_data = pcs->pclient_color_space_data;
-	if ( pclient_data )
-		pclient_data->client_adjust_cspace_count( pcs, -1 );
-    }
-#endif /*ENABLE_CUSTOM_COLOR_CALLBACK*/
+    /* No need to decrement the ICC profile data.  It is handled
+       by the finalize of the ICC space which is called above using
+       pcs->type->final(pcs);  */
     
-    rc_decrement_only(pcs->base_space, "gs_cspace_final");
 }
 
 static gs_color_space *
@@ -120,6 +117,8 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
     pcs->id = id;
     pcs->base_space = NULL;
     pcs->pclient_color_space_data = NULL;
+    pcs->cmm_icc_profile_data = NULL;
+    pcs->icc_equivalent = NULL;
     return pcs;
 }
 
@@ -172,33 +171,39 @@ gs_color_space_get_index(const gs_color_space * pcs)
 /* See if the space is CIE based */
 bool gs_color_space_is_CIE(const gs_color_space * pcs)
 {
-
     switch(gs_color_space_get_index(pcs)){
-
         case gs_color_space_index_CIEDEFG:
         case gs_color_space_index_CIEDEF:
         case gs_color_space_index_CIEABC:
         case gs_color_space_index_CIEA:
-        case gs_color_space_index_CIEICC:
-
+        case gs_color_space_index_ICC:
             return true;
-
         break;
-
         default:
-            
             return false;
-
     }
+}
 
+/* See if the space is Postscript CIE based */
+bool gs_color_space_is_PSCIE(const gs_color_space * pcs)
+{
+    switch(gs_color_space_get_index(pcs)){
+        case gs_color_space_index_CIEDEFG:
+        case gs_color_space_index_CIEDEF:
+        case gs_color_space_index_CIEABC:
+        case gs_color_space_index_CIEA:
+            return true;
+        break;
+        default:            
+            return false;
+}
 }
 
 /* See if the space is ICC based */
 bool gs_color_space_is_ICC(const gs_color_space * pcs)
 {
-    return(gs_color_space_get_index(pcs) == gs_color_space_index_CIEICC);
+    return(gs_color_space_get_index(pcs) == gs_color_space_index_ICC);
 }
-
 
 /* Get the number of components in a color space. */
 int
@@ -218,17 +223,11 @@ gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
 static int
 gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /*
-     * Check if we want to use the callback color processing for this
-     * color space.
-     */
-    client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-    if (pcb != NULL) 
-	pcb->client_procs->install_DeviceGray(pcb, pcs, pgs);
-#endif
+    if (pcs->cmm_icc_profile_data == NULL) {
+        pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
+        pcs->type = &gs_color_space_type_ICC;
+        rc_adjust(pgs->icc_manager->default_gray, pcs->rc.ref_count, "gx_install_DeviceGray");	
+    }
     return 0;
 }
 
@@ -258,6 +257,54 @@ gs_cspace_base_space(const gs_color_space * pcspace)
     return pcspace->base_space;
 }
 
+
+/* Abstract the reference counting for color spaces
+   so that we can also increment the ICC profile
+   if there is one associated with the color space */
+
+void rc_increment_cs(gs_color_space *pcs)
+{
+    rc_increment(pcs);
+    if (pcs) {
+        if (pcs->cmm_icc_profile_data != NULL) {
+            rc_increment(pcs->cmm_icc_profile_data);
+        }
+    }
+}
+
+void rc_decrement_cs(gs_color_space *pcs, const char *cname) {
+
+    if (pcs) {
+        if (pcs->cmm_icc_profile_data != NULL) {
+            rc_decrement(pcs->cmm_icc_profile_data, cname);
+        }
+        rc_decrement(pcs, cname);
+    }
+}
+
+void rc_decrement_only_cs(gs_color_space *pcs, const char *cname)
+{
+    if (pcs) {
+        if (pcs->cmm_icc_profile_data != NULL) {
+            rc_decrement(pcs->cmm_icc_profile_data, cname);
+        }
+        rc_decrement_only(pcs, cname);
+    }
+}
+
+void cs_adjust_counts_icc(gs_state *pgs, int delta)
+{
+    gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
+
+    if (pcs) {
+        if (pcs->cmm_icc_profile_data != NULL) {
+            rc_adjust(pcs->cmm_icc_profile_data, delta, "cs_adjust_counts_icc");	
+        }
+        cs_adjust_counts(pgs, delta);
+    }
+}
+
+
 /* ------ Other implementation procedures ------ */
 
 /* Null color space installation procedure. */
@@ -271,17 +318,11 @@ gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
 static int
 gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /*
-     * Check if we want to use the callback color processing for this
-     * color space.
-     */
-    client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-    if (pcb != NULL) 
-	pcb->client_procs->install_DeviceRGB(pcb, pcs, pgs);
-#endif
+    if (pcs->cmm_icc_profile_data == NULL) {
+        pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
+        pcs->type = &gs_color_space_type_ICC;
+        rc_adjust(pgs->icc_manager->default_rgb, pcs->rc.ref_count, "gx_install_DeviceRGB");	
+    }
     return 0;
 }
 
@@ -289,17 +330,11 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 static int
 gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /*
-     * Check if we want to use the callback color processing for this
-     * color space.
-     */
-    client_custom_color_params_t * pcb =
-	(client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-    if (pcb != NULL) 
-	pcb->client_procs->install_DeviceCMYK(pcb, pcs, pgs);
-#endif
+    if (pcs->cmm_icc_profile_data == NULL) {
+        pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;
+        pcs->type = &gs_color_space_type_ICC;
+        rc_adjust(pgs->icc_manager->default_cmyk, pcs->rc.ref_count, "gx_install_DeviceCMYK");	
+    }
     return 0;
 }
 
@@ -480,7 +515,7 @@ gx_cspace_no_linear(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device * dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, const gs_client_color *c3,
-		float smoothness)
+		float smoothness, gsicc_link_t *icclink)
 {
     return_error(gs_error_rangecheck);
 }
@@ -629,13 +664,14 @@ gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state 
     return 1;
 }
 
+
 /* Default color mapping linearity check. */
 int
 gx_cspace_is_linear_default(const gs_color_space *cs, const gs_imager_state * pis,
 		gx_device *dev, 
 		const gs_client_color *c0, const gs_client_color *c1,
 		const gs_client_color *c2, const gs_client_color *c3,
-		float smoothness)
+		float smoothness, gsicc_link_t *icclink)
 {
     /* Assuming 2 <= nc <= 4. We don't need other cases. */
     /* With nc == 4 assuming a convex plain quadrangle in the client color space. */
@@ -673,7 +709,11 @@ ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
 	return ENUM_OBJ(pcs->base_space);
     if (index == 1)
 	return ENUM_OBJ(pcs->pclient_color_space_data);
-    return ENUM_USING(*pcs->type->stype, vptr, size, index - 2);
+    if (index == 2)
+ 	return ENUM_OBJ(pcs->cmm_icc_profile_data);
+    if (index == 3)
+        return ENUM_OBJ(pcs->icc_equivalent);
+    return ENUM_USING(*pcs->type->stype, vptr, size, index - 4);
     ENUM_PTRS_END_PROC
 }
 static 
@@ -681,6 +721,9 @@ RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_VAR(pcs->base_space);
     RELOC_VAR(pcs->pclient_color_space_data);
+    RELOC_VAR(pcs->cmm_icc_profile_data);
+    RELOC_VAR(pcs->icc_equivalent);
     RELOC_USING(*pcs->type->stype, vptr, size);
 }
 RELOC_PTRS_END
+

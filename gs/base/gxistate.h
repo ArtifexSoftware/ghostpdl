@@ -30,6 +30,7 @@
 #include "gscspace.h"
 #include "gstrans.h"
 #include "gsnamecl.h"
+#include "gscms.h"
 
 /*
   Define the subset of the PostScript graphics state that the imager library
@@ -268,12 +269,15 @@ typedef struct gs_xstate_trans_flags {
 	bool have_pattern_streams;\
 	float smoothness;\
 	int renderingintent; /* See gsstate.c */\
+        gsicc_manager_t *icc_manager; /* ICC color manager, profile */\
+        gsicc_link_cache_t *icc_link_cache; /* ICC linked transforms */\
+        gsicc_profile_cache_t *icc_profile_cache;  /* ICC profiles from PS. */\
 	CUSTOM_COLOR_PTR	/* Pointer to custom color callback struct */\
 	const gx_color_map_procs *\
 	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
 	gs_color_rendering_state_common
 #define st_imager_state_num_ptrs\
-  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 3)
+  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 6)
 /* Access macros */
 #define ctm_only(pis) (*(const gs_matrix *)&(pis)->ctm)
 #define ctm_only_writable(pis) (*(gs_matrix *)&(pis)->ctm)
@@ -301,7 +305,7 @@ struct gs_imager_state_s {
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
 { 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
-  1, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
+  1, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
 
 /* The imager state structure is public only for subclassing. */

@@ -18,6 +18,9 @@
 #include "gstparam.h"
 #include "gxblend.h"
 #include "gxcolor2.h"
+#include "gsicccache.h"
+#include "gsiccmanage.h"
+
 
 typedef int art_s32;
 
@@ -34,184 +37,159 @@ extern unsigned int clist_band_count;
 /* Note, data is planar */
 
 void 
-Smask_Luminosity_Mapping(int num_rows, int num_cols, int n_chan, int row_stride, 
-                         int plane_stride, byte *dst, const byte *src, bool isadditive,
+smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride, 
+                         int plane_stride, byte *src, const byte *dst, bool isadditive,
                          bool SMask_is_CIE, gs_transparency_mask_subtype_t SMask_SubType)
 {
-
     int x,y;
     int mask_alpha_offset,mask_C_offset,mask_M_offset,mask_Y_offset,mask_K_offset;
     int mask_R_offset,mask_G_offset,mask_B_offset;
     byte *dstptr;
 
 #if RAW_DUMP
-
     dump_raw_buffer(num_rows, row_stride, n_chan,
                 plane_stride, row_stride, 
                 "Raw_Mask", src);
 
     global_index++;
-
 #endif
-
     dstptr = dst;
-
     /* If we are CIE AND subtype is Luminosity then we should just grab the Y channel */
-
     if ( SMask_is_CIE && SMask_SubType == TRANSPARENCY_MASK_Luminosity ){
-
- 
         memcpy(dst, &(src[plane_stride]), plane_stride);
         return;
-
     }
-
     /* If we are alpha type, then just grab that */ 
     /* We need to optimize this so that we are only drawing alpha in the rect fills */
-
     if ( SMask_SubType == TRANSPARENCY_MASK_Alpha ){
-
         mask_alpha_offset = (n_chan - 1) * plane_stride;
         memcpy(dst, &(src[mask_alpha_offset]), plane_stride);
         return;
-
     }
-
     /* To avoid the if statement inside this loop, 
     decide on additive or subractive now */
-
-    if (isadditive || n_chan == 2)
-    {
-
+    if (isadditive || n_chan == 2) {
         /* Now we need to split Gray from RGB */
-
-        if( n_chan == 2 )
-        {
+        if( n_chan == 2 ) {
             /* Gray Scale case */
-
            mask_alpha_offset = (n_chan - 1) * plane_stride;
            mask_R_offset = 0;
-
-            for ( y = 0; y < num_rows; y++ )
-            {
-     
+            for ( y = 0; y < num_rows; y++ ) {
                 for ( x = 0; x < num_cols; x++ ){
-
                     /* With the current design this will indicate if 
                     we ever did a fill at this pixel. if not then move on.
                     This could have some serious optimization */
-                               
 	            if (src[x + mask_alpha_offset] != 0x00) {
-
                         dstptr[x] = src[x + mask_R_offset];
-
                     } 
-
                 }
-
                dstptr += row_stride;
                mask_alpha_offset += row_stride;
                mask_R_offset += row_stride;
-
             }
-
         } else {
-
-
-
             /* RGB case */
-
            mask_R_offset = 0;
            mask_G_offset = plane_stride;
            mask_B_offset = 2 * plane_stride;
            mask_alpha_offset = (n_chan - 1) * plane_stride;
-
-            for ( y = 0; y < num_rows; y++ )
-            {
-     
+            for ( y = 0; y < num_rows; y++ ) {
                for ( x = 0; x < num_cols; x++ ){
-
                     /* With the current design this will indicate if 
                     we ever did a fill at this pixel. if not then move on */
-                               
 	            if (src[x + mask_alpha_offset] != 0x00) {
-
 	                /* Get luminosity of Device RGB value */
-
                         float temp;
-
                         temp = ( 0.30 * src[x + mask_R_offset] + 
                             0.59 * src[x + mask_G_offset] + 
                             0.11 * src[x + mask_B_offset] );
-     
                         temp = temp * (1.0 / 255.0 );  /* May need to be optimized */
 	                dstptr[x] = float_color_to_byte_color(temp);
-
                     } 
-
                 }
-
                dstptr += row_stride;
                mask_alpha_offset += row_stride;
                mask_R_offset += row_stride;
                mask_G_offset += row_stride;
                mask_B_offset += row_stride;
-
             }
-            
         }
-
     } else {
-
        /* CMYK case */
-
        mask_alpha_offset = (n_chan - 1) * plane_stride;
        mask_C_offset = 0;
        mask_M_offset = plane_stride;
        mask_Y_offset = 2 * plane_stride;
        mask_K_offset = 3 * plane_stride;
-
        for ( y = 0; y < num_rows; y++ ){
-
             for ( x = 0; x < num_cols; x++ ){
-
                 /* With the current design this will indicate if 
                 we ever did a fill at this pixel. if not then move on */
-                            
 	        if (src[x + mask_alpha_offset] != 0x00){
-
                   /* PDF spec says to use Y = 0.30 (1 - C)(1 - K) + 
                   0.59 (1 - M)(1 - K) + 0.11 (1 - Y)(1 - K) */
                     /* For device CMYK */
-
                     float temp;
-
                     temp = ( 0.30 * ( 0xff - src[x + mask_C_offset]) + 
                         0.59 * ( 0xff - src[x + mask_M_offset]) + 
                         0.11 * ( 0xff - src[x + mask_Y_offset]) ) * 
                         ( 0xff - src[x + mask_K_offset]);
-
                     temp = temp * (1.0 / 65025.0 );  /* May need to be optimized */
-
 	            dstptr[x] = float_color_to_byte_color(temp);
-
                 } 
- 
             }
-
            dstptr += row_stride;
            mask_alpha_offset += row_stride;
            mask_C_offset += row_stride;
            mask_M_offset += row_stride;
            mask_Y_offset += row_stride;
            mask_K_offset += row_stride;
-
         }
-
-
     }
+}
 
+void smask_copy(int num_rows, int num_cols, int row_stride, 
+                        byte *src, const byte *dst)
+{
+    int y;
+    byte *dstptr,*srcptr;
 
+    dstptr = dst;
+    srcptr = src;
+    for ( y = 0; y < num_rows; y++ ) {
+        memcpy(dstptr,srcptr,num_cols);
+        dstptr += row_stride;
+        srcptr += row_stride;
+    }
+}
+
+void smask_icc(int num_rows, int num_cols, int n_chan, int row_stride, 
+                 int plane_stride, byte *src, const byte *dst, 
+                 gsicc_link_t *icclink)
+{
+    gsicc_bufferdesc_t input_buff_desc;
+    gsicc_bufferdesc_t output_buff_desc;
+
+#if RAW_DUMP
+    dump_raw_buffer(num_rows, row_stride, n_chan,
+                plane_stride, row_stride, 
+                "Raw_Mask_ICC", src);
+    global_index++;
+#endif
+/* Set up the buffer descriptors. Note that pdf14 always has
+   the alpha channels at the back end (last planes).  
+   We will just handle that here and let the CMM know 
+   nothing about it */
+
+    gsicc_init_buffer(&input_buff_desc, n_chan-1, 1,
+                  false, false, true, plane_stride, row_stride,
+                  num_rows, num_cols);
+    gsicc_init_buffer(&output_buff_desc, 1, 1,
+                  false, false, true, plane_stride, 
+                  row_stride, num_rows, num_cols);
+    /* Transform the data */
+    gscms_transform_color_buffer(icclink, &input_buff_desc, 
+                        &output_buff_desc, src, dst);
 }
 
 void

@@ -19,6 +19,7 @@
 
 #include "gsccolor.h"
 #include "gsrefct.h"
+#include "gscspace.h"
 
 /* Define the names of the known blend modes. */
 typedef enum {
@@ -87,6 +88,8 @@ typedef struct gs_transparency_group_params_s {
     uint mask_id;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
+    int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
+    cmm_profile_t *iccprofile;               /* The profile  */    
 } gs_transparency_group_params_t;
 
 /* Define the parameter structure for a transparency mask. */
@@ -109,6 +112,8 @@ typedef struct gs_transparency_mask_params_s {
     int (*TransferFunction)(floatp in, float *out, void *proc_data);
     gs_function_t *TransferFunction_data;
     bool replacing;
+    int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
+    cmm_profile_t *iccprofile;               /* The profile  */    
 } gs_transparency_mask_params_t;
 
 #define MASK_TRANSFER_FUNCTION_SIZE 256
@@ -127,6 +132,8 @@ typedef struct gx_transparency_mask_params_s {
     bool replacing;
     uint mask_id;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
+    int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
+    cmm_profile_t *iccprofile;               /* The profile  */    
 } gx_transparency_mask_params_t;
 
 /*
@@ -144,7 +151,8 @@ typedef struct gx_transparency_mask_params_s {
 	     sizeof(((gs_pdf14trans_params_t *)0)->Background) + \
 	     sizeof(((gs_pdf14trans_params_t *)0)->GrayBackground))	     
 #define MAX_CLIST_TRANSPARENCY_COMPOSITOR_SIZE (MAX_CLIST_TRANSPARENCY_BUFFER_SIZE + \
-	     sizeof(((gs_pdf14trans_params_t *)0)->transfer_fn))
+	     sizeof(((gs_pdf14trans_params_t *)0)->transfer_fn)) + \
+             sizeof(int64_t) /* ICC band information */
 #define MAX_CLIST_COMPOSITOR_SIZE MAX_CLIST_TRANSPARENCY_COMPOSITOR_SIZE
 
 /* Select the opacity or shape parameters. */

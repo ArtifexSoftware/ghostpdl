@@ -238,7 +238,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	c[1] = psdf_adjust_color_index((gx_device_vector *)pdev, one);
 	pcs = gs_cspace_alloc(pdev->memory, &gs_color_space_type_Indexed);
 	if (pcs == NULL) {
-	    rc_decrement(pcs_base, "pdf_copy_mono");
+	    rc_decrement_cs(pcs_base, "pdf_copy_mono");
 	    return_error(gs_error_VMerror);
 	}
 	pcs->base_space = pcs_base;

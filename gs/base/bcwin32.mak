@@ -210,11 +210,11 @@ JPXSRCDIR=jasper
 # Alternatively, you can build a separate DLL
 # and define SHARE_JPX=1 in src/winlib.mak
 
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
 
-!ifndef ICCSRCDIR
-ICCSRCDIR=icclib
+!ifndef LCMSSRCDIR
+LCMSSRCDIR=lcms
 !endif
 
 # Define the directory where the ijs source is stored,

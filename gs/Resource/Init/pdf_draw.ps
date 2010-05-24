@@ -488,7 +488,7 @@ def
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
   exch mark exch			% bbox mark groupdict
-  dup /CS knownoget { resolvecolorspace setgcolorspace } if
+  dup /CS knownoget { resolvecolorspace dup setgcolorspace /CS exch 3 2 roll} if
   dup /I knownoget { /Isolated exch 3 2 roll } if
   dup /K knownoget { /Knockout exch 3 2 roll } if
   pop .dicttomark
@@ -555,6 +555,9 @@ def
   /DeviceCMYK { pop 4 } bdef
   /CIEBasedA //DeviceGray def
   /CIEBasedABC //DeviceRGB def
+  /CalGray { pop 1 } bdef
+  /CalRGB { pop 3 } bdef
+  /Lab { pop 3 } bdef
   /ICCBased { 1 oget /N oget } bdef
   /Separation //DeviceGray def
   /DeviceN { 1 oget length } bdef
@@ -566,58 +569,12 @@ currentdict end readonly def
   /DeviceRGB { } bdef
   /DeviceCMYK { } bdef
 
-  /CalGray {
-    1 oget 6 dict begin
-    dup /Gamma knownoget {
-      /exp load 2 packedarray cvx /DecodeA exch def
-    } if
-    dup /BlackPoint knownoget { /BlackPoint exch def } if
-    dup /WhitePoint knownoget {
-      dup /WhitePoint exch def
-      dup /MatrixA exch def
-      /RangeLMN [ 3 2 roll { 0 exch } forall ] def
-    } if
-    /PDFColorSpace exch def [ /CIEBasedA currentdict end ]
-  } bdef
-
-  /CalRGB {
-    1 oget 6 dict begin
-    dup /Gamma knownoget {
-      [ exch { /exp load 2 packedarray cvx } forall
-      ] /DecodeABC exch def
-    } if
-    dup /Matrix knownoget { /MatrixABC exch def } if
-    dup /BlackPoint knownoget { /BlackPoint exch def } if
-    dup /WhitePoint knownoget { /WhitePoint exch def } if
-    /PDFColorSpace exch def [ /CIEBasedABC currentdict end ]
-  } bdef
+  /CalGray { 1 oget [ exch /CalGray exch ] } bdef
+  /CalRGB { 1 oget [ exch /CalRGB exch ] } bdef
+  /Lab { 1 oget [ exch /Lab exch ] } bdef
 
   /CalCMYK {
     pop /DeviceCMYK		% not defined by Adobe
-  } bdef
-
-  /Lab {
-    1 oget 6 dict begin
-    dup /Range knownoget not { [-100 100 -100 100] } if
-    [0 100 null null null null] dup 2 4 -1 roll putinterval
-    /RangeABC exch def
-    /DecodeABC [{16 add 116 div} bind {500 div} bind {200 div} bind] def
-    /MatrixABC [1 1 1 1 0 0 0 0 -1] def
-    dup /BlackPoint knownoget { /BlackPoint exch def } if
-    dup /WhitePoint knownoget { /WhitePoint exch def } {
-      (   **** Warning: Lab colorspace is missing WhitePoint.\n)
-      pdfformaterror
-      /WhitePoint [0.9505 1 1.089] def
-    } ifelse
-    % scaling function g() for DecodeLMN construction
-    { dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse }
-    /DecodeLMN [
-      % Store white point implicitly inside procedures.
-      [ 3 index aload pop WhitePoint 0 get /mul .systemvar ] cvx bind
-      [ 4 index aload pop WhitePoint 1 get /mul .systemvar ] cvx bind
-      [ 5 index aload pop WhitePoint 2 get /mul .systemvar ] cvx bind
-    ] def pop
-    /PDFColorSpace exch def [ /CIEBasedABC currentdict end ]
   } bdef
 
   /ICCBased {
@@ -1020,6 +977,9 @@ end
   /DeviceCMYK { pop //01_4 } bind
   /CIEBasedA { 1 get /RangeA knownoget not { //01_1 } if } bind
   /CIEBasedABC { 1 get /RangeABC knownoget not { //01_3 } if } bind
+  /CalGray { pop //01_1 } bind
+  /CalRGB { pop //01_3 } bind
+  /Lab { 1 get /Range knownoget not { [-100 100 -100 100] } if } bind
   /ICCBased {
      1 oget dup /Range knownoget {
        exch pop
@@ -1065,9 +1025,11 @@ end
 } bind def
 
 /jp2_csp_dict <<
-  16 { /sRGB /ColorSpace findresource } bind
-  18 1 index  % YCC is convertrd to RGB
-  17 { /sGray /ColorSpace findresource } bind
+  16 { /DeviceRGB } bind
+  % 16 {/sRGBICC /ColorSpace findresource} bind
+  18 1 index  % YCC is converted to RGB
+  % 17 { /sGray /ColorSpace findresource } bind
+  17 { /DeviceGray } bind
 >> readonly def
  
 % Process jp2 blocks (aka boxes). All procedures have the signature

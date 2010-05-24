@@ -17,7 +17,6 @@
 /* $Id$ */
 /* ALPHA: Sample Device that provides WTS screening and IMDI color management */
 /* TODO: this should be configurable */
-#define LINK_ICC_NAME	"link.icc"
 
 #include "errno_.h"
 #include "string_.h"
@@ -30,9 +29,20 @@
 #include "gxwts.h"
 #include "gswts.h"
 #include "gxgetbit.h"
+#include "gscms.h"
+#include "gsicccache.h"
+#include "gsiccmanage.h"
 
-#include "icc.h"
-#include "imdi.h"
+#ifndef cmm_gcmmhlink_DEFINED
+    #define cmm_gcmmhlink_DEFINED
+    typedef void* gcmmhlink_t;
+#endif
+
+#ifndef cmm_gcmmhprofile_DEFINED
+    #define cmm_gcmmhprofile_DEFINED
+    typedef void* gcmmhprofile_t;
+#endif
+
 
 /* Memory arg is included in ghostpcl branch but not main branch. */
 #define GS_NOTE_ERROR(m, e) gs_note_error(e)
@@ -115,11 +125,9 @@ typedef struct gx_device_wtsimdi_s {
     gx_device_common;
     gx_prn_device_common;
     wts_cooked_halftone wcooked[4];
-
-    icmFile *fp;
-    icc *icco;
-    icmLuBase *luo;
-    imdi *mdo;
+    gcmmhlink_t icc_link;
+    cmm_profile_t *rgb_profile;
+    cmm_profile_t *cmyk_profile;
     cached_color *color_cache;
     cached_color current_color;
 #ifdef DEBUG
@@ -439,24 +447,6 @@ out:
     return code;
 }
 
-/* Code that follows is adapted from imdi device */
-
-static double incurve(void *ctx, int ch, double val)
-{
-    return val;
-}
-
-static double outcurve(void *ctx, int ch, double val)
-{
-    return val;
-}
-
-static void mdtable(void *ctx, double *outvals, double *invals)
-{
-    icmLuBase *luo = ctx;
-    luo->lookup(luo, outvals, invals);
-}
-
 /*
  * Open IMDI device.
  * Load ICC device link profile (to map sRGB to FOGRA CMYK).
@@ -466,79 +456,55 @@ static int
 wtsimdi_open_device(gx_device *dev)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
-    int i, code;
-
-    icColorSpaceSignature ins, outs;
-    int inn, outn;
-    icmLuAlgType alg;
-
-    icmFile *fp;
-    icc *icco;
-    icmLuBase *luo;
-    imdi *mdo;
-    char link_icc_name[256];
+    int i;
+    gsicc_rendering_param_t rendering_params;
 
     /*
      * We replace create_buf_device so we can replace copy_alpha 
      * for memory device, but not clist.
      */
+
     idev->printer_procs.buf_procs.create_buf_device = 
 	wtsimdi_create_buf_device;
-    /* Open and read profile */
 
-    sprintf(link_icc_name, "%s", LINK_ICC_NAME);
-    {
-      FILE *f;
-      if ((f=fopen(link_icc_name,"r"))) {
-        fclose(f);
-      } else {
-        sprintf(link_icc_name, "/usr/local/lib/ghostscript/%s", LINK_ICC_NAME);
-      }
-    }
+    /* Get the profile handles and create the link */
 
-    fp = new_icmFileStd_name((char *)link_icc_name, (char *)"rb");
-    if (!fp)
-	return gs_throw1(-1, "could not open file '%s'", link_icc_name);
+    /* This really would be a generic profile like sRGB */
 
-    icco = new_icc();
-    if (!icco)
-	return gs_throw(-1, "could not create ICC object");
+    idev->rgb_profile = gsicc_get_profile_handle_file(idev->color_info.icc_profile, 
+                    strlen(idev->color_info.icc_profile), dev->memory);
 
-    code = icco->read(icco, fp, 0);
-    if (code != 0)
-	return gs_throw1(-1, "could not read ICC profile: %s", icco->err);
+    if (idev->rgb_profile == NULL)
+        return gs_throw(-1, "Could not create RGB input profile for WTS device");
 
-    /* Get conversion object */
+    /* Here you should use a device  specific CMYK ICC profile */
 
-    luo = icco->get_luobj(icco, icmFwd, icPerceptual, icmSigDefaultData, icmLuOrdNorm);
-    if (!luo)
-	return gs_throw1(-1, "could not create ICC conversion object: %s", icco->err);
+    idev->cmyk_profile = gsicc_get_profile_handle_file(DEFAULT_CMYK_ICC, 
+                    strlen(DEFAULT_CMYK_ICC), dev->memory);
     
-    luo->spaces(luo, &ins, &inn, &outs, &outn, &alg, NULL, NULL, NULL);
+    if (idev->cmyk_profile == NULL)
+        return gs_throw(-1, "Could not create CMYK output profile for WTS device");
 
-#ifdef DEBUG
-    dprintf3("%s -> %s [%s]\n",
-	    icm2str(icmColorSpaceSignature, ins),
-	    icm2str(icmColorSpaceSignature, outs),
-	    icm2str(icmLuAlg, alg));
-#endif
+    if (idev->rgb_profile->num_comps != 3)
+	return gs_throw1(-1, "WTS input profile must have 3 input channels. got %d.", 
+                            idev->rgb_profile->num_comps);
+    if (idev->cmyk_profile->num_comps != 4)
+	return gs_throw1(-1, "WTS output profile must have 4 output channels. got %d.", 
+                        idev->cmyk_profile->num_comps);
 
-    if (inn != 3)
-	return gs_throw1(-1, "profile must have 3 input channels. got %d.", inn);
-    if (outn != 4)
-	return gs_throw1(-1, "profile must have 4 output channels. got %d.", outn);
+    /* Set up the rendering parameters */
 
-    /* Create IMDI optimized lookup object */
+    rendering_params.black_point_comp = true;
+    rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
+    rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
 
-    mdo = new_imdi(inn, outn, pixint8, 0, pixint8, 0,
-			 33, incurve, mdtable, outcurve, luo);
-    if (!mdo)
-	return gs_throw(-1, "new_imdi failed");
+    idev->icc_link = gscms_get_link(idev->rgb_profile, 
+                    idev->cmyk_profile, &rendering_params);
 
-    idev->fp = fp;
-    idev->icco = icco;
-    idev->luo = luo;
-    idev->mdo = mdo;
+    if (idev->icc_link == NULL)
+        return gs_throw(-1, "Could not create ICC link for WTS device");
+
+    /* Not sure this is the best way to do this with most CMMs.... */
 	/* allocate at least 1 for sytems that return NULL if requested count is 0 */
     idev->color_cache = (cached_color *)gs_malloc(idev->memory, max(COLOR_CACHE_SIZE, 1),
 				sizeof(cached_color), "wtsimdi_open_device(color_cache)");
@@ -552,8 +518,9 @@ wtsimdi_open_device(gx_device *dev)
     /* guarantee the device bands */
     ((gx_device_printer *)dev)->space_params.banding_type = BandingAlways;
     return gdev_prn_open(dev);
-}
 
+    return(-1);
+}
 
 /*
  * Close device and clean up ICC structures.
@@ -564,10 +531,10 @@ wtsimdi_close_device(gx_device *dev)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
 
-    idev->mdo->done(idev->mdo);
-    idev->luo->del(idev->luo);
-    idev->icco->del(idev->icco);
-    idev->fp->del(idev->fp);
+    gscms_release_link(idev->icc_link);
+    rc_decrement(idev->rgb_profile, "wtsimdi_close_device");
+    rc_decrement(idev->cmyk_profile, "wtsimdi_close_device");
+
     gs_free(dev->memory, idev->color_cache, COLOR_CACHE_SIZE, 
 	sizeof(cached_color), "wtsimdi_close_device(color_cache)");
     return gdev_prn_close(dev);
@@ -587,13 +554,8 @@ wtsimdi_resolve_one(gx_device_wtsimdi *idev, gx_color_index color)
 #endif
 	    idev->current_color = idev->color_cache[hash];
 	} else {
+
 	    /* cache collision or empty, fill it */
-	    int code;
-	    int r = (color >> 16) & 0xff;
-	    int g = (color >> 8) & 0xff;
-	    int b = color & 0xff;
-	    double rgb[3];
-	    double cmyk[4];
 
 #ifdef DEBUG
 	    if (idev->color_cache[hash].color_index == gx_no_color_index)
@@ -601,18 +563,13 @@ wtsimdi_resolve_one(gx_device_wtsimdi *idev, gx_color_index color)
 	    else
 		idev->color_cache_collision++;
 #endif
-	    rgb[0] = r / 255.0;
-	    rgb[1] = g / 255.0;
-	    rgb[2] = b / 255.0;
-	    code = idev->luo->lookup(idev->luo, cmyk, rgb);
-	    if (code > 1)
-		return_error(gs_error_unknownerror);
-	    idev->current_color.color_index = color;
-	    idev->current_color.cmyk[0] = cmyk[0] * 255 + 0.5;
-	    idev->current_color.cmyk[1] = cmyk[1] * 255 + 0.5;
-	    idev->current_color.cmyk[2] = cmyk[2] * 255 + 0.5;
-	    idev->current_color.cmyk[3] = cmyk[3] * 255 + 0.5;
+
+        /* Transform the color */
+        gscms_transform_color(idev->icc_link, &color,
+            &(idev->current_color.cmyk), 1, NULL);
+
 	    idev->color_cache[hash] = idev->current_color;
+
 	}
     }
 #ifdef DEBUG

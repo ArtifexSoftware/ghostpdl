@@ -367,7 +367,7 @@ begin_composite(i_ctx_t *i_ctx_p, alpha_composite_state_t * pcp)
 	return code;
     pcp->orig_dev = pcp->cdev = dev;	/* for end_composite */
     code = (*dev_proc(dev, create_compositor))
-	(dev, &pcp->cdev, pcp->pcte, (gs_imager_state *)igs, imemory);
+	(dev, &pcp->cdev, pcp->pcte, (gs_imager_state *)igs, imemory, NULL);
     if (code < 0) {
 	end_composite(i_ctx_p, pcp);
 	return code;

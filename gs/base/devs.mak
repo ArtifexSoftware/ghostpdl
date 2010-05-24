@@ -707,9 +707,9 @@ $(DD)rinkj.dev : $(DEVS_MAK) $(rinkj_) $(GLD)page.dev
 	$(SETDEV) $(DD)rinkj $(rinkj_)
 
 $(GLOBJ)gdevrinkj.$(OBJ) : $(GLSRC)gdevrinkj.c $(PDEVH) $(math__h)\
- $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)\
- $(gxdcconv_h)
-	$(GLICCCC) $(GLO_)gdevrinkj.$(OBJ) $(C_) $(GLSRC)gdevrinkj.c
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
+ $(gxdcconv_h) $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
+	$(GLCC) $(GLO_)gdevrinkj.$(OBJ) $(C_) $(GLSRC)gdevrinkj.c
 
 
 ###### ------------------- High-level file formats ------------------- ######
@@ -872,7 +872,8 @@ $(GLOBJ)gdevpdfb.$(OBJ) : $(GLSRC)gdevpdfb.c\
 $(GLOBJ)gdevpdfc.$(OBJ) : $(GLSRC)gdevpdfc.c $(GXERR) $(math__h) $(memory__h)\
  $(gdevpdfc_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gscie_h) $(gscindex_h) $(gscspace_h) $(gscdevn_h) $(gscsepr_h) $(gsicc_h)\
- $(sstring_h) $(stream_h) $(strimpl_h) $(gxcspace_h) $(gxcdevn_h)
+ $(sstring_h) $(stream_h) $(strimpl_h) $(gxcspace_h) $(gxcdevn_h) $(gscspace_h)\
+ $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gdevpdfc.$(OBJ) $(C_) $(GLSRC)gdevpdfc.c
 
 $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h) $(memory__h)\
@@ -891,7 +892,7 @@ $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
  $(memory__h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gsfunc0_h) $(gsstate_h) $(gxdcolor_h) $(gxpcolor_h) $(gxcolor2_h) $(gsptype2_h)\
  $(gxbitmap_h) $(gxdht_h) $(gxfarith_h) $(gxfmap_h) $(gxht_h) $(gxistate_h)\
- $(gzht_h)
+ $(gzht_h) $(gsiccmanage_h)
 	$(GLCC) $(GLO_)gdevpdfg.$(OBJ) $(C_) $(GLSRC)gdevpdfg.c
 
 $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c $(memory__h) $(math__h)\
@@ -938,7 +939,7 @@ $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
 
 $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c $(string__h)\
  $(gx_h) $(gserrors_h) $(gstrans_h) $(gscolor2_h) $(gzstate_h)\
- $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdfo_h)
+ $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gsccolor_h)
 	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
 
 $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
@@ -1270,9 +1271,9 @@ $(DD)xcfcmyk.dev : $(DEVS_MAK) $(xcf_) $(GLD)page.dev
 	$(SETDEV) $(DD)xcfcmyk $(xcf_)
 
 $(GLOBJ)gdevxcf.$(OBJ) : $(GLSRC)gdevxcf.c $(PDEVH) $(math__h)\
- $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)\
- $(gxdcconv_h)
-	$(GLICCCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
+ $(gxdcconv_h) $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
+	$(GLCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
 
 ### --------------------------- The PSD device ------------------------- ###
 
@@ -1285,14 +1286,15 @@ $(DD)psdcmyk.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev
 	$(SETDEV) $(DD)psdcmyk $(psd_)
 
 $(GLOBJ)gdevpsd.$(OBJ) : $(GLSRC)gdevpsd.c $(PDEVH) $(math__h)\
- $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)\
- $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h)
-	$(GLICCCC) $(GLO_)gdevpsd.$(OBJ) $(C_) $(GLSRC)gdevpsd.c
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h)\
+ $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
+	$(GLCC) $(GLO_)gdevpsd.$(OBJ) $(C_) $(GLSRC)gdevpsd.c
 
 $(GLOBJ)gsequivc.$(OBJ) : $(GLSRC)gsequivc.c $(math__h)\
  $(PDEVH) $(gsparam_h) $(gstypes_h) $(gxdconv_h) $(gdevdevn_h)\
  $(gsequivc_h) $(gzstate_h) $(gsstate_h) $(gscspace_h) $(gxcspace_h)
-	$(GLICCCC) $(GLO_)gsequivc.$(OBJ) $(C_) $(GLSRC)gsequivc.c
+	$(GLCC) $(GLO_)gsequivc.$(OBJ) $(C_) $(GLSRC)gsequivc.c
 
 ### ----------------------- The permutation device --------------------- ###
 
@@ -1302,8 +1304,8 @@ $(DD)perm.dev : $(DEVS_MAK) $(perm_) $(GLD)page.dev
 	$(SETDEV) $(DD)perm $(perm_)
 
 $(GLOBJ)gdevperm.$(OBJ) : $(GLSRC)gdevperm.c $(PDEVH) $(math__h)\
- $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)
-	$(GLICCCC) $(GLO_)gdevperm.$(OBJ) $(C_) $(GLSRC)gdevperm.c
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)
+	$(GLCC) $(GLO_)gdevperm.$(OBJ) $(C_) $(GLSRC)gdevperm.c
 
 ### ------------------------ JBIG2 testing device ---------------------- ###
 
@@ -1550,8 +1552,9 @@ $(DD)simdi.dev : $(DEVS_MAK) $(simdi_)
 wts_=$(GLOBJ)gdevwts.$(OBJ)
 
 $(GLOBJ)gdevwts.$(OBJ) : $(GLSRC)gdevwts.c $(PDEVH)\
- $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
-	$(GLICCCC) -I$(IMDISRCDIR) $(GLO_)gdevwts.$(OBJ) $(C_) $(GLSRC)gdevwts.c
+ $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)\
+ $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
+	$(GLCC) -I$(IMDISRCDIR) $(GLO_)gdevwts.$(OBJ) $(C_) $(GLSRC)gdevwts.c
 
 $(DD)wtscmyk.dev : $(DEVS_MAK) $(wts_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)wtscmyk $(wts_)
@@ -1566,8 +1569,9 @@ $(DD)wtsimdi.dev : $(DEVS_MAK) $(wts_) $(GLD)sicclib.dev $(GLD)simdi.dev $(GLD)p
 imdi_=$(GLOBJ)gdevimdi.$(OBJ)
 
 $(GLOBJ)gdevimdi.$(OBJ) : $(GLSRC)gdevimdi.c $(PDEVH) \
-    $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
-	$(GLICCCC) -I$(IMDISRCDIR) $(GLO_)gdevimdi.$(OBJ) $(C_) $(GLSRC)gdevimdi.c
+    $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)\
+    $(gscms_h) $(gsicccache_h) $(gsiccmanage_h)
+	$(GLCC) -I$(IMDISRCDIR) $(GLO_)gdevimdi.$(OBJ) $(C_) $(GLSRC)gdevimdi.c
 
 $(DD)imdi.dev : $(DEVS_MAK) $(imdi_) $(GLD)page.dev $(GLD)sicclib.dev $(GLD)simdi.dev
 	$(SETPDEV2) $(DD)imdi $(imdi_)

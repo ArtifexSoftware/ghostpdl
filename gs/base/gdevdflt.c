@@ -815,14 +815,16 @@ gx_get_largest_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 int
 gx_no_create_compositor(gx_device * dev, gx_device ** pcdev,
 			const gs_composite_t * pcte,
-			gs_imager_state * pis, gs_memory_t * memory)
+			gs_imager_state * pis, gs_memory_t * memory,
+                        gx_device *cdev)
 {
     return_error(gs_error_unknownerror);	/* not implemented */
 }
 int
 gx_default_create_compositor(gx_device * dev, gx_device ** pcdev,
 			     const gs_composite_t * pcte,
-			     gs_imager_state * pis, gs_memory_t * memory)
+			     gs_imager_state * pis, gs_memory_t * memory,
+                             gx_device *cdev)
 {
     return pcte->type->procs.create_default_compositor
 	(pcte, pcdev, dev, pis, memory);
@@ -830,7 +832,8 @@ gx_default_create_compositor(gx_device * dev, gx_device ** pcdev,
 int
 gx_null_create_compositor(gx_device * dev, gx_device ** pcdev,
 			  const gs_composite_t * pcte,
-			  gs_imager_state * pis, gs_memory_t * memory)
+			  gs_imager_state * pis, gs_memory_t * memory,
+                          gx_device *cdev)
 {
     *pcdev = dev;
     return 0;

@@ -1086,6 +1086,10 @@ end				% level2dict
     /sRGB exch /ColorSpace defineresource pop
     systemdict /CIEsRGB undef
   } if
+  systemdict /CIEsRGBICC .knownget {
+    /sRGBICC exch /ColorSpace defineresource pop
+    systemdict /CIEsRGBICC undef
+  } if
 	% ColorSpaceFamily resources
   colorspacedict { pop dup /ColorSpaceFamily defineresource pop } forall
 	% Filter resources

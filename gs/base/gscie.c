@@ -43,10 +43,6 @@ static void cie_joint_caches_complete(gx_cie_joint_caches *,
 				       const gs_cie_abc *,
 				       const gs_cie_render *);
 static void cie_cache_restrict(cie_cache_floats *, const gs_range *);
-static void cie_mult3(const gs_vector3 *, const gs_matrix3 *,
-		       gs_vector3 *);
-static void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
-			      gs_matrix3 *);
 static void cie_invert3(const gs_matrix3 *, gs_matrix3 *);
 static void cie_matrix_init(gs_matrix3 *);
 
@@ -151,7 +147,7 @@ if_debug_matrix3(const char *str, const gs_matrix3 *mat)
 
 /* Default transformation procedures. */
 
-static float
+float
 a_identity(floatp in, const gs_cie_a * pcie)
 {
     return in;
@@ -162,7 +158,7 @@ a_from_cache(floatp in, const gs_cie_a * pcie)
     return gs_cie_cached_value(in, &pcie->caches.DecodeA.floats);
 }
 
-static float
+float
 abc_identity(floatp in, const gs_cie_abc * pcie)
 {
     return in;
@@ -230,7 +226,7 @@ defg_from_cache_3(floatp in, const gs_cie_defg * pcie)
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[3].floats);
 }
 
-static float
+float
 common_identity(floatp in, const gs_cie_common * pcie)
 {
     return in;
@@ -395,22 +391,6 @@ gx_install_CIEDEFG(gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_defg *pcie = pcs->params.defg;
 
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        /*
-         * Check if we want to use the callback color processing for this
-         * color space.
-         */
-        client_custom_color_params_t * pcb =
-	    (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-        if (pcb != NULL) {
-	    if (pcb->client_procs->install_CIEBasedDEFG(pcb, pcs, pgs))
-    	        /* Exit if the client will handle the colorspace completely */
-		return 0;
-        }
-    }
-#endif
     CIE_LOAD_CACHE_BODY(pcie->caches_defg.DecodeDEFG, pcie->RangeDEFG.ranges,
 			&pcie->DecodeDEFG, DecodeDEFG_default, pcie,
 			"DecodeDEFG");
@@ -422,22 +402,6 @@ gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_def *pcie = pcs->params.def;
 
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        /*
-         * Check if we want to use the callback color processing for this
-         * color space.
-         */
-        client_custom_color_params_t * pcb =
-            (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-        if (pcb != NULL) {
-	    if (pcb->client_procs->install_CIEBasedDEF(pcb, pcs, pgs))
-    	        /* Exit if the client will handle the colorspace completely */
-		return 0;
-        }
-    }
-#endif
     CIE_LOAD_CACHE_BODY(pcie->caches_def.DecodeDEF, pcie->RangeDEF.ranges,
 			&pcie->DecodeDEF, DecodeDEF_default, pcie,
 			"DecodeDEF");
@@ -447,22 +411,6 @@ gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
 int
 gx_install_CIEABC(gs_color_space * pcs, gs_state * pgs)
 {
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        /*
-         * Check if we want to use the callback color processing for this
-         * color space.
-         */
-        client_custom_color_params_t * pcb =
-            (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-        if (pcb != NULL) {
-	    if (pcb->client_procs->install_CIEBasedABC(pcb, pcs, pgs))
-    	        /* Exit if the client will handle the colorspace completely */
-		return 0;
-        }
-    }
-#endif
     return gx_install_cie_abc(pcs->params.abc, pgs);
 }
 
@@ -473,22 +421,6 @@ gx_install_CIEA(gs_color_space * pcs, gs_state * pgs)
     gs_sample_loop_params_t lp;
     int i;
 
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-        /*
-         * Check if we want to use the callback color processing for this
-         * color space.
-         */
-        client_custom_color_params_t * pcb =
-            (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
-
-        if (pcb != NULL) {
-	    if (pcb->client_procs->install_CIEBasedA(pcb, pcs, pgs))
-    	        /* Exit if the client will handle the colorspace completely */
-		return 0;
-        }
-    }
-#endif
     gs_cie_cache_init(&pcie->caches.DecodeA.floats.params, &lp,
 		      &pcie->RangeA, "DecodeA");
     for (i = 0; i <= lp.N; ++i) {
@@ -1161,8 +1093,6 @@ cie_cs_common_abc(const gs_color_space *pcs_orig, const gs_cie_abc **ppabc)
 	    return &pcs->params.abc->common;
 	case gs_color_space_index_CIEA:
 	    return &pcs->params.a->common;
-        case gs_color_space_index_CIEICC:
-            return &pcs->params.icc.picc_info->common;
 	default:
             pcs = gs_cspace_base_space(pcs);
             break;
@@ -1488,7 +1418,7 @@ gx_cie_to_xyz_free(gs_imager_state *pis)
 
 /* Multiply a vector by a matrix. */
 /* Note that we are computing M * V where v is a column vector. */
-static void
+void
 cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
 	  gs_vector3 * out)
 {
@@ -1508,7 +1438,7 @@ cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
  * Multiply two matrices.  Note that the composition of the transformations
  * M1 followed by M2 is M2 * M1, not M1 * M2.  (See gscie.h for details.)
  */
-static void
+void
 cie_matrix_mult3(const gs_matrix3 *ma, const gs_matrix3 *mb, gs_matrix3 *mc)
 {
     gs_matrix3 mprod;
@@ -1523,6 +1453,25 @@ cie_matrix_mult3(const gs_matrix3 *ma, const gs_matrix3 *mb, gs_matrix3 *mc)
     if_debug_matrix3("             =", mp);
     if (mp != mc)
 	*mc = *mp;
+}
+
+/*
+ * Transpose a 3x3 matrix. In and out can not be the same
+ */
+void
+cie_matrix_transpose3(const gs_matrix3 *in, gs_matrix3 *out)
+{
+    out->cu.u = in->cu.u;
+    out->cu.v = in->cv.u;
+    out->cu.w = in->cw.u;
+
+    out->cv.u = in->cu.v;
+    out->cv.v = in->cv.v;
+    out->cv.w = in->cw.v;
+
+    out->cw.u = in->cu.w;
+    out->cw.v = in->cv.w;
+    out->cw.w = in->cw.w;
 }
 
 /* Invert a matrix. */
@@ -1589,8 +1538,9 @@ gx_color_space_needs_cie_caches(const gs_color_space * pcs)
     	case gs_color_space_index_CIEDEF:
     	case gs_color_space_index_CIEABC:
     	case gs_color_space_index_CIEA:
-    	case gs_color_space_index_CIEICC:
 	    return true;
+    	case gs_color_space_index_ICC:
+            return false;
 	case gs_color_space_index_DevicePixel:
     	case gs_color_space_index_DeviceN:
     	case gs_color_space_index_Separation:

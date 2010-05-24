@@ -27,6 +27,7 @@
 #include "gscspace.h"
 #include "gxarith.h"
 #include "gxclist.h"
+#include "gsiccmanage.h"
 
 #define PUSH_TS 0
 
@@ -139,7 +140,6 @@ pop_transparency_stack(gs_state *pgs, client_name_t cname)
 
     gs_free_object(pgs->memory, pts, cname);
     pgs->transparency_stack = saved;
-
 }
 
 /* This is used to keep pdf14 compositor actions from the interpreter from
@@ -205,20 +205,21 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
      * If we created a new PDF 1.4 compositor device then we need to install it
      * into the graphics state.
      */
-    if (code >= 0 && pdf14dev != dev)
+    if (code >= 0 && pdf14dev != dev) {
         gx_set_device_only(pgs, pdf14dev);
-
+    }
     return code;
 }
 
 void
 gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
 {
-    ptgp->ColorSpace = 0;	/* bogus, but can't do better */
+    ptgp->ColorSpace = NULL;	/* bogus, but can't do better */
     ptgp->Isolated = false;
     ptgp->Knockout = false;
     ptgp->image_with_SMask = false;
     ptgp->mask_id = 0;
+    ptgp->iccprofile = NULL;
 }
 
 int
@@ -246,34 +247,23 @@ gs_begin_transparency_group(gs_state *pgs,
     params.opacity = pgs->opacity;
     params.shape = pgs->shape;
     params.blend_mode = pgs->blend_mode;
-
     /* The blending procs must be based upon the current color space */
     /* Note:  This function is called during the c-list writer side. 
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader */ 
-
     /* Note that we currently will use the concrete space for any space other than a 
         device space.  However, if the device is a sep device it will blend
         in DeviceN color space as required.  */
-
     blend_color_space = gs_currentcolorspace_inline(pgs);
     if (gs_color_space_get_index(blend_color_space) > gs_color_space_index_DeviceCMYK) {
-
-       /* ICC and CIE based color space.  Problem right now is that the 
-       current code does a concretization to the color space
-       defined by the CRD.  This is not the space that we want
-       to blend in.  Instead we want all colors to be mapped TO
-       the ICC color space.  Then when the group is popped they
-       should be converted to the parent space. 
-       That I will need to fix another day with the color changes.  
-       For now we will punt and set our blending space as the 
-       concrete space for the ICC space, which is defined by
-       the output (or default) CRD. */
-
+        blend_color_space = gs_currentcolorspace_inline(pgs);
+    } else {
+       /* ICC and CIE based color space.  With upcoming code changes
+          all CIE based spaces will actually be ICC based spaces and
+          ICC spaces are already concrete. So this will return the
+          ICC color space. */
         blend_color_space = cs_concrete_space(blend_color_space, pis);
-
     }
-
     /* Note that if the /CS parameter was not present in the push 
        of the transparency group, then we must actually inherent 
        the previous group color space, or the color space of the
@@ -281,14 +271,23 @@ gs_begin_transparency_group(gs_state *pgs,
        to set it as a unknown type for clist writing, as we .  We will later 
        during clist reading 
        */
-
     if (ptgp->ColorSpace == NULL) {
-
         params.group_color = UNKNOWN;
         params.group_color_numcomps = 0;
-    
     } else {
-
+        if ( gs_color_space_is_ICC(blend_color_space) ) {
+            /* Blending space is ICC based.  If we 
+               are doing c-list rendering we will need
+               to write this color space into the clist.
+               MJV ToDo.
+               */
+            params.group_color = ICC;
+            params.group_color_numcomps = 
+                blend_color_space->cmm_icc_profile_data->num_comps;
+            /* Get the ICC profile */
+            params.iccprofile = blend_color_space->cmm_icc_profile_data;
+            params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
+        } else {
         switch (cs_num_components(blend_color_space)) {
             case 1:				
                 params.group_color = GRAY_SCALE;       
@@ -303,26 +302,20 @@ gs_begin_transparency_group(gs_state *pgs,
                 params.group_color_numcomps = 4; 
             break;
             default:
-                
                 /* We can end up here if we are in
                    a deviceN color space and 
                    we have a sep output device */
-
                 params.group_color = DEVICEN;
                 params.group_color_numcomps = cs_num_components(blend_color_space);
-
             break;
-
          }  
-
     }
-
+    }
 #ifdef DEBUG
     if (gs_debug_c('v')) {
 	static const char *const cs_names[] = {
 	    GS_COLOR_SPACE_TYPE_NAMES
 	};
-
 	dlprintf6("[v](0x%lx)begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
 		  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,params.group_color_numcomps);
 	if (ptgp->ColorSpace)
@@ -330,11 +323,11 @@ gs_begin_transparency_group(gs_state *pgs,
 		cs_names[(int)gs_color_space_get_index(ptgp->ColorSpace)]);
 	else
 	    dputs("     (no CS)");
+
 	dprintf2("  Isolated = %d  Knockout = %d\n",
 		 ptgp->Isolated, ptgp->Knockout);
     }
 #endif
-
     params.bbox = *pbbox;
     return gs_state_update_pdf14trans(pgs, &params);
 }
@@ -357,6 +350,8 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
     /* Needed so that we do proper blending */
     tgp.group_color = pparams->group_color;
     tgp.group_color_numcomps = pparams->group_color_numcomps;
+    tgp.iccprofile = pparams->iccprofile;
+    tgp.icc_hashcode = pparams->icc_hash;
 
     pis->opacity.alpha = pparams->opacity.alpha;
     pis->shape.alpha = pparams->shape.alpha;
@@ -367,9 +362,9 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 	static const char *const cs_names[] = {
 	    GS_COLOR_SPACE_TYPE_NAMES
 	};
-
 	dlprintf6("[v](0x%lx)gx_begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
-		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,pparams->group_color_numcomps);
+		  (ulong)pis, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,
+                        pparams->group_color_numcomps);
 	if (tgp.ColorSpace)
 	    dprintf1("     CS = %s",
 		cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
@@ -377,6 +372,8 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 	    dputs("     (no CS)");
 	dprintf2("  Isolated = %d  Knockout = %d\n",
 		 tgp.Isolated, tgp.Knockout);
+        if (tgp.iccprofile)
+            dprintf("     Have ICC Profile for blending\n");
     }
 #endif
     if (dev_proc(pdev, begin_transparency_group) != 0)
@@ -428,39 +425,28 @@ gs_push_transparency_state(gs_state *pgs)
        that we need to watch for end transparency 
        soft masks when we are at this graphic state
        level */
-
     /* pis->trans_flags.xstate_pending = true; */
-
     /* Actually I believe the above flag is not 
        needed.  We really should be watching for
        the softmask even at the base level.  What
        we need to watch for are q operations after
        a soft mask end has occured. */
-
     /* Check if we have a change flag set to true.
        this indicates that a softmask is present.
        We will need to send a push state to save
        the current soft mask, so that we can
        restore it later */
-
     if (pis->trans_flags.xstate_change) {
-
         if_debug0('v', "[v]gs_push_transparency_state sending\n");
         params.pdf14_op = PDF14_PUSH_TRANS_STATE;  
         code = gs_state_update_pdf14trans(pgs, &params);
         if (code < 0) 
             return(code);
-
     } else {
-
         if_debug0('v', "[v]gs_push_transparency_state NOT sending\n");
-
     }
-
-
     return(0);
 }
-
 
 int
 gs_pop_transparency_state(gs_state *pgs)
@@ -478,26 +464,18 @@ gs_pop_transparency_state(gs_state *pgs)
        need to communicate to the compositor to pop
        the softmask */
     if ( pis->trans_flags.xstate_change ) {
-    
         if_debug0('v', "[v]gs_pop_transparency_state sending\n");
         params.pdf14_op = PDF14_POP_TRANS_STATE;  
         code = gs_state_update_pdf14trans(pgs, &params);
         if ( code < 0 )
             return (code);
-
     } else {
-
         if_debug0('v', "[v]gs_pop_transparency_state NOT sending\n");
-
     }
-
     /* There is no reason to reset any of the flags since
        they will be reset by the graphic state restore */
-
     return(0);
-
 }
-
 
 int
 gx_pop_transparency_state(gs_imager_state * pis, gx_device * pdev)
@@ -541,6 +519,7 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
     ptmp->TransferFunction = mask_transfer_identity;
     ptmp->TransferFunction_data = 0;
     ptmp->replacing = false;
+    ptmp->iccprofile = NULL;
 }
 
 int
@@ -549,11 +528,13 @@ gs_begin_transparency_mask(gs_state * pgs,
 			   const gs_rect * pbbox, bool mask_is_image)
 {
     gs_pdf14trans_params_t params = { 0 };
+    gs_pdf14trans_params_t params_color = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
     int i;
-    const gs_color_space *blend_color_space;
-    gs_imager_state * pis = (gs_imager_state *)pgs;
+    gs_color_space *blend_color_space;
     int num_components;
+    gsicc_manager_t *icc_manager = pgs->icc_manager;
+    int code;
 
     if (check_for_nontrans_pattern(pgs,
                   (unsigned char *)"gs_pop_transparency_state")) {
@@ -562,7 +543,6 @@ gs_begin_transparency_mask(gs_state * pgs,
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
     params.subtype = ptmp->subtype;
-   /* params.SMask_is_CIE = gs_color_space_is_CIE(pgs->color_space); */  /* See comments in gs_begin_transparency_mask */
     params.SMask_is_CIE = false; 
     params.Background_components = ptmp->Background_components;
     memcpy(params.Background, ptmp->Background, l);
@@ -572,18 +552,34 @@ gs_begin_transparency_mask(gs_state * pgs,
 	    (ptmp->TransferFunction == mask_transfer_identity);
     params.mask_is_image = mask_is_image;
     params.replacing = ptmp->replacing;
-    /* Note that the SMask buffer may have a different 
-       numcomps than the device buffer */
-    params.group_color_numcomps = cs_num_components(gs_currentcolorspace_inline(pgs));
 
-    if_debug9('v', "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
-      subtype = %d  Background_components = %d Num_grp_clr_comp = %d  %s\n",
+    /* The eventual state that we want this smask to be moved to
+       is always gray.  This should provide us with a significant 
+       speed improvement over the old code.  This does not keep us
+       from having groups within the softmask getting blended in different
+       color spaces, it just makes the final space be gray, which is what
+       we will need to get to eventually anyway. In this way we avoid a 
+       final color conversion on a potentially large buffer. */
+    /* Also check if we have loaded in the transparency icc profiles.  If not
+       go ahead and take care of that now */
+    if (icc_manager->smask_profiles == NULL) {
+        code = gsicc_initialize_iccsmask(icc_manager);
+    }
+    /* A new soft mask group,  make sure the profiles are set */
+    if_debug0('v', "[v]pushing soft mask color sending\n");
+    params_color.pdf14_op = PDF14_PUSH_SMASK_COLOR;  
+    code = gs_state_update_pdf14trans(pgs, &params_color);
+    if (code < 0) 
+        return(code);
+    blend_color_space = gs_cspace_new_DeviceGray(pgs->memory);
+    blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
+    rc_increment(blend_color_space->cmm_icc_profile_data);
+    if_debug8('v', "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
+      subtype = %d  Background_components = %d %s\n",
 	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
 	      (int)ptmp->subtype, ptmp->Background_components,
-              params.group_color_numcomps,
 	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
-
     /* Sample the transfer function */
     for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
 	float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
@@ -592,69 +588,21 @@ gs_begin_transparency_mask(gs_state * pgs,
 	ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
 	params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
     }
-
-    /* If we have a CIE space & a luminosity subtype
-       we will need to do our concretization
-       to CIEXYZ so that we can obtain the proper 
-       luminance value.  This is what SHOULD happen
-       according to the spec.  However AR does not 
-       follow this.  It always seems to do the soft mask
-       creation in the device space.  For this reason
-       we will do that too. SMask_is_CIE is always false for now */
-
-    /* The blending procs are currently based upon the device type.
-       We need to have them based upon the current color space */
-
     /* Note:  This function is called during the c-list writer side. */ 
-
-
-    if ( params.SMask_is_CIE && params.subtype == TRANSPARENCY_MASK_Luminosity ){
-
-        /* Install Color Space to go to CIEXYZ */
-        
-        /* int ok;
-        ok = gx_cie_to_xyz_alloc2(pgs->color_space,pgs); */  /* quite compiler */
-        params.group_color_numcomps = 3;  /* CIEXYZ */
-
-        /* Mark the proper spaces so that we make
-         * the appropriate changes in the device */
-
-        params.group_color = CIE_XYZ;
-
+    if ( blend_color_space->cmm_icc_profile_data != NULL ) {
+    /* Blending space is ICC based.  If we 
+       are doing c-list rendering we will need
+       to write this color space into the clist. */
+        params.group_color = ICC;
+        params.group_color_numcomps = 
+                blend_color_space->cmm_icc_profile_data->num_comps;
+        /* Get the ICC profile */
+        params.iccprofile = blend_color_space->cmm_icc_profile_data;
+        params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
+        rc_increment(params.iccprofile);
     } else {
-
-    /* Set the group color type, which may be 
-     *  different than the device type.  Note
-        we want to check the concrete space due
-        to the fact that things are done
-        in device space always. */
-
-        blend_color_space = gs_currentcolorspace_inline(pgs);
-        if(gs_color_space_is_CIE(blend_color_space)){
-
-           /* ICC or CIE based color space.  Problem right now is that the 
-           current code does a concretization to the color space
-           defined by the CRD.  This is not the space that we want
-           to blend in.  Instead we want all colors to be mapped TO
-           the ICC color space.  Then when the group is popped they
-           should be converted to the parent space. 
-           That I will need to fix another day with the color changes.  
-           For now we will punt and set our blending space as the 
-           concrete space for the ICC space, which is defined by
-           the output (or default) CRD. */
-
-            blend_color_space = cs_concrete_space(blend_color_space, pis);
-
-        }
-
-        /* For the softmask blend color space, we will always use the above blend_color_space. 
-           Problems can occur if we go all the way back to the device color space,
-           which could be DeviceN for a sep device.  Blending to the luminosity
-           channel for this case would not be defined. */
-
         num_components = cs_num_components(blend_color_space);
         switch (any_abs(num_components)) {
-
             case 1:				
                 params.group_color = GRAY_SCALE;       
                 params.group_color_numcomps = 1;  /* Need to check */
@@ -674,11 +622,9 @@ gs_begin_transparency_mask(gs_state * pgs,
                    transform */
             return_error(gs_error_rangecheck);
             break;
-
          }    
-
     }
-
+    rc_decrement_only_cs(blend_color_space, "gs_begin_transparency_mask");
     return gs_state_update_pdf14trans(pgs, &params);
 }
 
@@ -702,6 +648,15 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     tmp.idle = pparams->idle;
     tmp.replacing = pparams->replacing;
     tmp.mask_id = pparams->mask_id;
+    
+    if (tmp.group_color == ICC ) {
+        /* Do I need to ref count here? */
+        tmp.iccprofile = pparams->iccprofile;
+        tmp.icc_hashcode = pparams->icc_hash;
+    } else {
+        tmp.iccprofile = NULL;
+        tmp.icc_hashcode = 0;
+    }
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
     if_debug9('v', "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  Background_components = %d  Num_grp_clr_comp = %d %s\n",
@@ -723,33 +678,35 @@ gs_end_transparency_mask(gs_state *pgs,
 			 gs_transparency_channel_selector_t csel)
 {
     gs_pdf14trans_params_t params = { 0 };
+    gs_pdf14trans_params_t params_color = { 0 };
     gs_imager_state * pis = (gs_imager_state *)pgs;
+    int code;
 
     if (check_for_nontrans_pattern(pgs,
                   (unsigned char *)"gs_end_transparency_mask")) {
         return(0);
     }
     /* If we have done a q then set a flag to watch for any Qs */
-
    /* if (pis->trans_flags.xstate_pending)
         pis->trans_flags.xstate_change = true; */
-
     /* This should not depend upon if we have encountered a q
        operation.  We could be setting a softmask, before 
        there is any q operation.  Unlikely but it could happen.
        Then if we encouter a q operation (and this flag
        is true) we will need to 
        push the mask graphic state (PDF14_PUSH_TRANS_STATE). */
-
     pis->trans_flags.xstate_change = true;
-
     if_debug1('v', "[v]xstate_changed set true, gstate level is %d\n", pgs->level);
-
     if_debug2('v', "[v](0x%lx)gs_end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
-
     params.pdf14_op = PDF14_END_TRANS_MASK;  /* Other parameters not used */
     params.csel = csel;
+    /* If this is the outer end then return us to our normal defaults */
+    if_debug0('v', "[v]popping soft mask color sending\n");
+    params_color.pdf14_op = PDF14_POP_SMASK_COLOR;  
+    code = gs_state_update_pdf14trans(pgs, &params_color);
+    if (code < 0) 
+        return(code);
     return gs_state_update_pdf14trans(pgs, &params);
 }
 
@@ -759,7 +716,6 @@ gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 {
     if_debug2('v', "[v](0x%lx)gx_end_transparency_mask(%d)\n", (ulong)pis,
 	      (int)pparams->csel);
-
     if (dev_proc(pdev, end_transparency_mask) != 0)
 	return (*dev_proc(pdev, end_transparency_mask)) (pdev, pis, NULL);
     else
@@ -799,7 +755,6 @@ get_num_pdf14_spot_colors(gs_state * pgs)
      * countspotcolors in lib/pdf_main.ps.
      */
     if (pclist_devn_params != NULL) {
-
         /* If the sep order names were specified, then we should only allocate
            for those.  But only the nonstandard colorants that are stored
            in num_separations.  See devn_put_params for details on this. 
@@ -807,12 +762,10 @@ get_num_pdf14_spot_colors(gs_state * pgs)
            optimization is to be able to NOT have those included in the buffer 
            allocations if we don't specify them.  It would then be possible to
            output 8 separations at a time without using compressed color. */
-
-        if (pclist_devn_params->num_separation_order_names == 0)
+        if (pclist_devn_params->num_separation_order_names == 0) {
 	    return pclist_devn_params->page_spot_colors;
-
+        }
         return (pclist_devn_params->separations.num_separations);
-
     }
     return 0;
 }

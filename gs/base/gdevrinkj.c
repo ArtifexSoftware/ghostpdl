@@ -22,13 +22,31 @@
 #include "gxlum.h"
 #include "gdevdcrd.h"
 #include "gstypes.h"
-#include "icc.h"
 #include "gxdcconv.h"
+#include "gscms.h"
+#include "gsicccache.h"
+#include "gsiccmanage.h"
+
+#ifndef cmm_gcmmhlink_DEFINED
+    #define cmm_gcmmhlink_DEFINED
+    typedef void* gcmmhlink_t;
+#endif
+
+#ifndef cmm_gcmmhprofile_DEFINED
+    #define cmm_gcmmhprofile_DEFINED
+    typedef void* gcmmhprofile_t;
+#endif
+
+
 
 #include "rinkj/rinkj-device.h"
 #include "rinkj/rinkj-byte-stream.h"
 #include "rinkj/rinkj-screen-eb.h"
 #include "rinkj/rinkj-epson870.h"
+
+#ifndef MAX_CHAN
+#   define MAX_CHAN 15
+#endif
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -40,6 +58,7 @@
 
 /* The device descriptor */
 static dev_proc_get_params(rinkj_get_params);
+static dev_proc_close_device(rinkj_close_device);
 static dev_proc_put_params(rinkj_put_params);
 static dev_proc_print_page(rinkj_print_page);
 static dev_proc_map_color_rgb(rinkj_map_color_rgb);
@@ -110,7 +129,16 @@ typedef struct rinkj_device_s {
 
     /* ICC color profile objects, for color conversion. */
     char profile_out_fn[256];
-    icmLuBase *lu_out;
+
+    /* This device can use a device link ICC profile to map
+       the colors to the appropriate color space.  Not
+       as flexible as having source and destination profiles
+       and creating the link on the fly, but I am doing
+       the minimal changes on this device to make it work
+       with the new ICC architecture.  No optimizations yet. */
+
+    gcmmhlink_t icc_link;
+    cmm_profile_t *link_profile;
 
     char setup_fn[256];
 } rinkj_device;
@@ -123,7 +151,7 @@ typedef struct rinkj_device_s {
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
 	gdev_prn_output_page,		/* output_page */\
-	gdev_prn_close,			/* close */\
+	rinkj_close_device,		/* close */\
 	NULL,				/* map_rgb_color - not used */\
 	rinkj_map_color_rgb,		/* map_color_rgb */\
 	NULL,				/* fill_rectangle */\
@@ -428,41 +456,33 @@ rinkj_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 }
 
 static int
-rinkj_open_profile(rinkj_device *rdev, char *profile_fn, icmLuBase **pluo,
-		 int *poutn)
+rinkj_open_profile(rinkj_device *rdev)
 {
-    icmFile *fp;
-    icc *icco;
-    icmLuBase *luo;
+    gsicc_rendering_param_t rendering_params;
 
-#ifdef VERBOSE
-    dlprintf1("rinkj_open_profile %s\n", profile_fn);
-#endif
-    fp = new_icmFileStd_name(profile_fn, (char *)"r");
-    if (fp == NULL)
-	return_error(gs_error_undefinedfilename);
-    icco = new_icc();
-    if (icco == NULL)
-	return_error(gs_error_VMerror);
-    if (icco->read(icco, fp, 0))
-	return_error(gs_error_rangecheck);
-    luo = icco->get_luobj(icco, icmFwd, icmDefaultIntent, icmSigDefaultData, icmLuOrdNorm);
-    if (luo == NULL)
-	return_error(gs_error_rangecheck);
-    *pluo = luo;
-    luo->spaces(luo, NULL, NULL, NULL, poutn, NULL, NULL, NULL, NULL);
-    return 0;
-}
+    if (rdev->link_profile == NULL && rdev->profile_out_fn[0]) {
 
-static int
-rinkj_open_profiles(rinkj_device *rdev)
-{
-    int code = 0;
-    if (rdev->lu_out == NULL && rdev->profile_out_fn[0]) {
-	code = rinkj_open_profile(rdev, rdev->profile_out_fn,
-				    &rdev->lu_out, NULL);
+        rdev->link_profile = gsicc_get_profile_handle_file(rdev->profile_out_fn, 
+                    strlen(rdev->profile_out_fn), rdev->memory);
+
+        if (rdev->link_profile == NULL)
+            return gs_throw(-1, "Could not create output profile for rinkj device");
+
+        /* Set up the rendering parameters */
+
+        rendering_params.black_point_comp = false;
+        rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
+        rendering_params.rendering_intent = gsPERCEPTUAL;
+
+        /* Call with a NULL destination profile since we are using a device link profile here */
+        rdev->icc_link = gscms_get_link(rdev->link_profile, 
+                        NULL, &rendering_params);
+
+        if (rdev->icc_link == NULL)
+            return gs_throw(-1, "Could not create link handle for rinkj device");
+
     }
-    return code;
+    return(0);
 }
 
 #define set_param_array(a, d, s)\
@@ -659,6 +679,7 @@ rinkj_put_params(gx_device * pdev, gs_param_list * plist)
     if (code >= 0)
 	code = rinkj_param_read_fn(plist, "ProfileOut", &po,
 				 sizeof(pdevn->profile_out_fn));
+
     if (code >= 0)
 	code = rinkj_param_read_fn(plist, "SetupFile", &sf,
 				 sizeof(pdevn->setup_fn));
@@ -739,11 +760,26 @@ rinkj_put_params(gx_device * pdev, gs_param_list * plist)
 	memcpy(pdevn->setup_fn, sf.data, sf.size);
 	pdevn->setup_fn[sf.size] = 0;
     }
-    code = rinkj_open_profiles(pdevn);
+    code = rinkj_open_profile(pdevn);
 
     return code;
 }
 
+
+/*
+ * Close device and clean up ICC structures.
+ */
+
+static int
+rinkj_close_device(gx_device *dev)
+{
+    rinkj_device * const rdev = (rinkj_device *) dev;
+
+    gscms_release_link(rdev->icc_link);
+    rc_decrement(rdev->link_profile, "rinkj_close_device");
+
+    return gdev_prn_close(dev);
+}
 
 /*
  * This routine will check to see if the color component name  match those
@@ -994,7 +1030,6 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     int n_planes_out = 4;
     int i;
     int y;
-    icmLuBase *luo = rdev->lu_out;
     int code = 0;
     rinkj_color_cache_entry *cache = NULL;
 
@@ -1005,15 +1040,18 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     for (i = 0; i < n_planes_out; i++)
 	plane_data[i] = gs_alloc_bytes(pdev->memory, xsb, "rinkj_write_image_data");
 
-    if (luo != NULL) {
+    if (rdev->icc_link != NULL) {
+ 
 	cache = (rinkj_color_cache_entry *)gs_alloc_bytes(pdev->memory, RINKJ_CCACHE_SIZE * sizeof(rinkj_color_cache_entry), "rinkj_write_image_data");
 	if (cache == NULL)
 	    return gs_note_error(gs_error_VMerror);
 
 	/* Set up cache so that none of the keys will hit. */
+
 	cache[0].key = 1;
 	for (i = 1; i < RINKJ_CCACHE_SIZE; i++)
 	    cache[i].key = 0;
+            
     }
 
     /* do CMYK -> CMYKcmk ink split by plane replication */
@@ -1032,7 +1070,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 
 	code = gdev_prn_get_bits(pdev, y, line, &row);
 
-	if (luo == NULL) {
+	if (rdev->icc_link == NULL) {
 	    int rowix = 0;
 	    for (x = 0; x < pdev->width; x++) {
 		for (i = 0; i < n_planes_in; i++)
@@ -1044,22 +1082,22 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 	    for (x = 0; x < pdev->width; x++) {
 		byte cbuf[4] = {0, 0, 0, 0};
 		bits32 color;
-		bits32 hash = rinkj_color_hash(color);
+		bits32 hash;
 		byte vbuf[4];
 
 		memcpy(cbuf, row + rowix, 3);
 		color = ((bits32 *)cbuf)[0];
+		hash = rinkj_color_hash(color);
 		
 		if (cache[hash].key != color) {
-		    double in[MAX_CHAN], out[MAX_CHAN];
 
-		    for (i = 0; i < 3; i++)
-			in[i] = cbuf[i] * (1.0 / 255);
-		    luo->lookup(luo, out, in);
-		    for (i = 0; i < 4; i++)
-			vbuf[i] = (int)(0.5 + 255 * out[i]);
+                    /* 3 channel to CMYK */
+                    gscms_transform_color(rdev->icc_link, &cbuf,
+                        &(vbuf), 1, NULL);
+
 		    cache[hash].key = color;
 		    cache[hash].value = ((bits32 *)vbuf)[0];
+
 		} else {
 		    ((bits32 *)vbuf)[0] = cache[hash].value;
 		}
@@ -1077,14 +1115,13 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 
 		if (cache[hash].key != color) {
 		    byte cbuf[4];
-		    double in[MAX_CHAN], out[MAX_CHAN];
 
 		    ((bits32 *)cbuf)[0] = color;
-		    for (i = 0; i < 4; i++)
-			in[i] = cbuf[i] * (1.0 / 255);
-		    luo->lookup(luo, out, in);
-		    for (i = 0; i < 4; i++)
-			vbuf[i] = (int)(0.5 + 255 * out[i]);
+
+                    /* 4 channel to CMYK */
+                    gscms_transform_color(rdev->icc_link, &cbuf,
+                        &(vbuf), 1, NULL);
+
 		    cache[hash].key = color;
 		    cache[hash].value = ((bits32 *)vbuf)[0];
 		} else {
@@ -1100,22 +1137,24 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 	    for (x = 0; x < pdev->width; x++) {
 		byte cbuf[4];
 		bits32 color;
-		bits32 hash = rinkj_color_hash(color);
+		bits32 hash;
 		byte vbuf[4];
 		byte spot;
 		int scolor[4] = { 0x08, 0xc0, 0x80, 0 };
 
 		memcpy(cbuf, row + rowix, 4);
 		color = ((bits32 *)cbuf)[0];
+		hash = rinkj_color_hash(color);
 		
 		if (cache[hash].key != color) {
-		    double in[MAX_CHAN], out[MAX_CHAN];
 
-		    for (i = 0; i < 4; i++)
-			in[i] = cbuf[i] * (1.0 / 255);
-		    luo->lookup(luo, out, in);
-		    for (i = 0; i < 4; i++)
-			vbuf[i] = (int)(0.5 + 255 * out[i]);
+                    /* Not sure what is going on here.  Old
+                       code was still working with 4 to 4 
+                       conversion.  Replacing with new ICC AMP call */
+
+                    gscms_transform_color(rdev->icc_link, &cbuf,
+                        &(vbuf), 1, NULL);
+
 		    cache[hash].key = color;
 		    cache[hash].value = ((bits32 *)vbuf)[0];
 		} else {

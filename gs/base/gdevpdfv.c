@@ -480,7 +480,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     }
     /* pcs_Device will leak (picked up by GC in PS) on error, but we'll
        tolerate that for now. */
-    rc_decrement(pcs_Device, "pdf_put_colored_pattern");
+    rc_decrement_cs(pcs_Device, "pdf_put_colored_pattern");
     cos_value_write(&v, pdev);
     pprints1(pdev->strm, " %s", ppscc->setcolorspace);
     return 0;

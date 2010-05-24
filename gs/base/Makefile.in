@@ -235,6 +235,10 @@ JPX_CFLAGS=-DJAS_CONFIGURE
 
 ICCSRCDIR=icclib
 
+# options for lcms color management library
+SHARE_LCMS=0
+LCMSSRCDIR=lcms
+
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
@@ -524,6 +528,7 @@ include $(GLSRCDIR)/jasper.mak
 include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/icclib.mak
+include $(GLSRCDIR)/lcms.mak
 include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak

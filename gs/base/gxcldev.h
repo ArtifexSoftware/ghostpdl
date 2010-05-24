@@ -741,5 +741,20 @@ int clist_writer_push_no_cropping(gx_device_clist_writer *cdev);
 int clist_writer_push_cropping(gx_device_clist_writer *cdev, int ry, int rheight);
 int clist_writer_pop_cropping(gx_device_clist_writer *cdev);
 int clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev);
+int clist_read_icctable(gx_device_clist_reader *crdev);
+
+/* Special write out for the serialized icc profile table */
+
+int cmd_write_icctable(gx_device_clist_writer * cldev, unsigned char *pbuf, int data_size);
+
+/* Enumeration of psuedo band offsets for extra c-list data.
+   This includes the ICC profile table and may later include
+   compressed image data */
+
+typedef enum {
+
+    ICC_BAND_OFFSET = 1
+
+} psuedoband_offset;
 
 #endif /* gxcldev_INCLUDED */

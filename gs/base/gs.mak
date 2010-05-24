@@ -66,18 +66,21 @@
 #	JBIG2SRCDIR - the name of the jbig2dec library source directory
 #	    typically 'jbig2dec' or 'jbig2dec-/version/'
 #	JPX_LIB - choice of which jpeg2k implementation to use
-#	SHARE_JPX - if set to 1, asks the linker to use an existing
-#	    complied jpeg2k library. if set to 0, asks to compile and 
+#	SHARE_JPX - If set to 1, asks the linker to use an existing
+#	    complied jpeg2k library. If set to 0, asks to compile and 
 #	    link from a local copy of the source using our custom 
 #	    makefile.
 #	JPXSRCDIR - the name of the jpeg2k library source directory
 #	    e.g. 'jasper' or 'jasper-/version/'
 #	JPX_CFLAGS - any platform-specific flags that are required
 #	    to properly compile in the jpeg2k library source
-#	ICCSRCDIR - the name of the ICC lib source dir, currently
-#	    always icclib (compiled in statically)
 #	IMDISRCDIR - the name of the IMDI lib source directory
 #	    generally 'imdi'
+#	SHARE_LCMS - If set to 1, asks the linker to use a separately
+#	    compiled lcms library. If set to 0, the build will compile
+#	    in the library source found in LCMSSRCDIR
+#	LCMSSRCDIR - the name of the lcms library source directory
+#	    e.g. 'lcms' or 'lcms-<version>'
 #	DEVICE_DEVS - the devices to include in the executable.
 #	    See devs.mak for details.
 #	DEVICE_DEVS1...DEVICE_DEVS21 - additional devices, if the definition
@@ -225,6 +228,8 @@ JPXGENDIR=$(GLGENDIR)
 JPXOBJDIR=$(GLOBJDIR)
 ICCGENDIR=$(GLGENDIR)
 ICCOBJDIR=$(GLOBJDIR)
+LCMSGENDIR=$(GLGENDIR)
+LCMSOBJDIR=$(GLOBJDIR)
 EXPATGENDIR=$(GLGENDIR)
 EXPATOBJDIR=$(GLOBJDIR)
 IJSGENDIR=$(GLGENDIR)

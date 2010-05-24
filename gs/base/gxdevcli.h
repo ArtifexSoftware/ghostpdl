@@ -35,6 +35,7 @@
 #include "gxtext.h"
 #include "gxcmap.h"
 #include "gsnamecl.h"
+#include "gp.h"
 
 /* See Drivers.htm for documentation of the driver interface. */
 
@@ -448,6 +449,7 @@ typedef struct gx_device_color_info_s {
     gx_cm_opmode_t opmode;
     gx_color_index process_comps;
     int black_component;
+    char icc_profile[gp_file_name_sizeof]; /* It set, the filename for the ICC profile */\
 } gx_device_color_info;
 
 /* NB encoding flag ignored */
@@ -1120,7 +1122,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_t_proc_create_compositor(proc, dev_t)\
   int proc(dev_t *dev,\
     gx_device **pcdev, const gs_composite_t *pcte,\
-    gs_imager_state *pis, gs_memory_t *memory)
+    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
 #define dev_proc_create_compositor(proc)\
   dev_t_proc_create_compositor(proc, gx_device)\
 

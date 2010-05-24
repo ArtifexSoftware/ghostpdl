@@ -34,6 +34,7 @@
 #include "stdint_.h"
 #include "math_.h"
 #include "vdtrace.h"
+#include "gsicccache.h"
 
 #define VD_TRACE_TENSOR_PATCH 1
 
@@ -414,12 +415,16 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
     code = mesh_init_fill_state((mesh_fill_state_t *) &state,
                          (const gs_shading_mesh_t *)psh0, rect_clip, dev, pis);
-    if (code < 0)
+    if (code < 0) {
+        if (state.icclink != NULL) gsicc_release_link(state.icclink);
         return code;
+    }
     state.Function = psh->params.Function;
     code = init_patch_fill_state(&state);
-    if(code < 0)
+    if(code < 0) {
+        if (state.icclink != NULL) gsicc_release_link(state.icclink);
         return code;
+    }
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s')) {
         vd_get_dc('s');
         vd_set_shift(0, 0);
@@ -440,6 +445,7 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
         vd_release_dc;
     if (term_patch_fill_state(&state))
         return_error(gs_error_unregistered); /* Must not happen. */
+    if (state.icclink != NULL) gsicc_release_link(state.icclink);
     return min(code, 0);
 }
 
@@ -508,8 +514,10 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
     code = mesh_init_fill_state((mesh_fill_state_t *) & state,
                          (const gs_shading_mesh_t *)psh0, rect_clip, dev, pis);
-    if (code < 0)
+    if (code < 0) {
+        if (state.icclink != NULL) gsicc_release_link(state.icclink);
         return code;
+    }
     state.Function = psh->params.Function;
     code = init_patch_fill_state(&state);
     if(code < 0)
@@ -543,6 +551,7 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
         return_error(gs_error_unregistered); /* Must not happen. */
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
         vd_release_dc;
+    if (state.icclink != NULL) gsicc_release_link(state.icclink);
     return min(code, 0);
 }
 
@@ -1507,7 +1516,7 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
         if (s > pfs->smoothness)
             return 0;
         code = cs_is_linear(cs, pfs->pis, pfs->dev,
-                &c0->cc, &c1->cc, NULL, NULL, pfs->smoothness - s);
+		&c0->cc, &c1->cc, NULL, NULL, pfs->smoothness - s, pfs->icclink);
         if (code <= 0)
             return code;
         return 1;
@@ -2081,7 +2090,8 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
             s01 = max(s0, s1);
             s012 = max(s01, s2);
             code = cs_is_linear(cs, pfs->pis, pfs->dev,
-                                &p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, pfs->smoothness - s012);
+				&p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, 
+                                pfs->smoothness - s012, pfs->icclink);
             if (code < 0)
                 return code;
             if (code == 0)
@@ -3055,6 +3065,7 @@ gx_init_patch_fill_state_for_clist(gx_device *dev, patch_fill_state_t *pfs, gs_m
     pfs->color_stack_limit = NULL; /* fixme */
     pfs->pcic = NULL; /* Will do someday. */
     pfs->trans_device = NULL;
+    pfs->icclink = NULL;
     return alloc_patch_fill_memory(pfs, memory, NULL);
 }
 

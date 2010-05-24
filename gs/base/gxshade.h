@@ -196,7 +196,8 @@ int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex,
   const gs_color_space *direct_space;\
   int num_components;		/* # of color components in direct_space */\
   float cc_max_error[GS_CLIENT_COLOR_MAX_COMPONENTS];\
-  gx_device *trans_device
+  gx_device *trans_device;\
+  gsicc_link_t *icclink 
 
 typedef struct shading_fill_state_s {
     shading_fill_state_common;

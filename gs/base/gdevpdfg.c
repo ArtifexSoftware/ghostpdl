@@ -33,6 +33,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
+#include "gsiccmanage.h"
 
 /* ---------------- Miscellaneous ---------------- */
 
@@ -303,6 +304,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
     const char *command;
     int code1 = 0;
     gs_color_space_index csi;
+    gs_color_space_index csi2;
 
     if (pdev->skip_colors)
 	return 0;
@@ -316,7 +318,11 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 
     switch (gx_hld_get_color_space_and_ccolor(pis, pdc, &pcs, &pcc)) {
 	case non_pattern_color_space:
-	    switch (gs_color_space_get_index(pcs)) {
+            csi2 = gs_color_space_get_index(pcs);
+            if (csi2 == gs_color_space_index_ICC) {
+                csi2 = gsicc_get_default_type(pcs->cmm_icc_profile_data);
+            }
+	    switch (csi2) {
 		case gs_color_space_index_DeviceGray:
 		    command = ppscc->setgray; 
 		    break;
@@ -357,14 +363,14 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 			switch(gs_color_space_get_index(pcs2)) {
 			    case gs_color_space_index_DevicePixel :
 			    case gs_color_space_index_DeviceN:
-			    case gs_color_space_index_CIEICC:
+			    case gs_color_space_index_ICC:
 				goto write_process_color;
 			    default: 
 				DO_NOTHING;
 			}
 		    }
 		    goto scn;
-		case gs_color_space_index_CIEICC:
+		case gs_color_space_index_ICC:
 		case gs_color_space_index_DevicePixel:
 		case gs_color_space_index_DeviceN:
 		    if (pdev->CompatibilityLevel <= 1.2)

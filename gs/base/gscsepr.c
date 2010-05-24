@@ -30,7 +30,7 @@
 #include "gxdevcli.h"
 #include "gsovrc.h"
 #include "stream.h"
-#include "gsnamecl.h"
+#include "gsicccache.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -106,25 +106,6 @@ static int
 gx_install_Separation(gs_color_space * pcs, gs_state * pgs)
 {
     int code;
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /*
-     * Check if we want to use the custom color callback color processing for
-     * this color space.
-     */
-    bool use_custom_color_callback =
-	    custom_color_callback_install_Separation(pcs, pgs);
-
-    if (use_custom_color_callback) {
-	/*
-	 * We are using the callback instead of the alternate tint transform
-	 * for this color space.
-	 */
-        pgs->color_space->params.separation.use_alt_cspace =
-            pgs->color_component_map.use_alt_cspace = false;
-        pgs->color_component_map.cspace_id = pcs->id;
-        return 0;
-    }
-#endif
 
     code = check_Separation_component_name(pcs, pgs);
     if (code < 0)
@@ -211,7 +192,7 @@ gs_cspace_new_Separation(
 	return_error(code);
     }
     pcs->base_space = palt_cspace;
-    rc_increment(palt_cspace);
+    rc_increment_cs(palt_cspace);
     *ppcs = pcs;
     return 0;
 }
@@ -312,12 +293,41 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 {
     int code;
     gs_client_color cc;
-    const gs_color_space *pacs = pcs->base_space;
+    gs_color_space *pacs = pcs->base_space;
+    bool is_lab;
+    int k;
     
     if (pcs->params.separation.sep_type == SEP_OTHER &&
 	pcs->params.separation.use_alt_cspace) {
         gs_device_n_map *map = pcs->params.separation.map;
+        /* First see if we have a named color object that we can use to try 
+           to map from the spot color into device values.  */
+        if (pis->icc_manager->device_named != NULL) {
+            /* There is a table present.  If we have the colorant name
+               then get the device values */
+            gx_color_value device_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
+            const gs_separation_name name = pcs->params.separation.sep_name;
+            byte *pname;
+            uint name_size;
+            gsicc_rendering_param_t rendering_params;
 
+            /* Define the rendering intents. */
+            rendering_params.black_point_comp = BP_ON;
+            rendering_params.object_type = GS_PATH_TAG;
+            rendering_params.rendering_intent = pis->renderingintent;
+
+            pcs->params.separation.get_colorname_string(pis->memory, name,
+						&pname, &name_size);
+            code = gsicc_transform_named_color(pc->paint.values[0], pname, 
+                            name_size, device_values, pis, NULL, 
+                            &rendering_params, false);
+            if (code == 0) {
+                for (k = 0; k < pis->icc_manager->device_profile->num_comps; k++){
+                    pconc[k] = float2frac(((float) device_values[k])/65535.0);
+                }
+                return(0);
+            }
+        }
 	/* Check the 1-element cache first. */
 	if (map->cache_valid && map->tint[0] == pc->paint.values[0]) {
 	    int i, num_out = gs_color_space_num_components(pacs);
@@ -331,6 +341,17 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 	     pis, pcs->params.separation.map->tint_transform_data);
         if (code < 0)
 	    return code;
+        /* First check if this was PS based. */
+        if (gs_color_space_is_PSCIE(pacs) && pacs->icc_equivalent == NULL) {
+            gs_colorspace_set_icc_equivalent(pacs, &(is_lab), pis->memory);
+            pacs = pacs->icc_equivalent;
+        }
+        if (pacs->cmm_icc_profile_data->data_cs == gsCIELAB) {
+            /* Get the data in a form that is concrete for the CMM */
+            cc.paint.values[0] /= 100.0;
+            cc.paint.values[1] = (cc.paint.values[1]+128)/255.0;
+            cc.paint.values[2] = (cc.paint.values[2]+128)/255.0;
+        } 
 	return cs_concretize_color(&cc, pacs, pconc, pis);
     }
     else {
@@ -350,15 +371,6 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
      */
     if (pcs->id != pis->color_component_map.cspace_id)
 	dprintf("gx_remap_concrete_Separation: color space id mismatch");
-#endif
-
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    {
-	int code = gx_remap_concrete_custom_color_Separation(pconc, pcs, pdc,
-						       	pis, dev, select);
-	if (code >= 0)
-	    return code;
-    }
 #endif
 
     if (pis->color_component_map.use_alt_cspace) {

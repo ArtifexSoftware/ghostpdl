@@ -22,10 +22,26 @@
 #include "gxlum.h"
 #include "gdevdcrd.h"
 #include "gstypes.h"
-#include "icc.h"
 #include "gxdcconv.h"
 #include "gdevdevn.h"
 #include "gsequivc.h"
+#include "gscms.h"
+#include "gsicccache.h"
+#include "gsiccmanage.h"
+
+#ifndef cmm_gcmmhlink_DEFINED
+    #define cmm_gcmmhlink_DEFINED
+    typedef void* gcmmhlink_t;
+#endif
+
+#ifndef cmm_gcmmhprofile_DEFINED
+    #define cmm_gcmmhprofile_DEFINED
+    typedef void* gcmmhprofile_t;
+#endif
+
+#ifndef MAX_CHAN
+#   define MAX_CHAN 15
+#endif
 
 /* Enable logic for a local ICC output profile. */
 #define ENABLE_ICC_PROFILE 0
@@ -40,6 +56,7 @@
 
 /* The device descriptor */
 static dev_proc_open_device(psd_prn_open);
+static dev_proc_close_device(psd_prn_close);
 static dev_proc_get_params(psd_get_params);
 static dev_proc_put_params(psd_put_params);
 static dev_proc_print_page(psd_print_page);
@@ -78,17 +95,26 @@ typedef struct psd_device_s {
 
     psd_color_model color_model;
 
-    /* ICC color profile objects, for color conversion. */
+    /* ICC color profile objects, for color conversion. 
+       These are all device link profiles.  At least that
+       is how it appears looking at how this code
+       was written to work with the old icclib.  Just
+       doing minimal updates here so that it works
+       with the new CMM API.  I would be interested
+       to hear how people are using this. */
+
     char profile_rgb_fn[256];
-    icmLuBase *lu_rgb;
-    int lu_rgb_outn;
+    cmm_profile_t *rgb_profile;
+    gcmmhlink_t rgb_icc_link;
 
     char profile_cmyk_fn[256];
-    icmLuBase *lu_cmyk;
-    int lu_cmyk_outn;
+    cmm_profile_t *cmyk_profile;
+    gcmmhlink_t cmyk_icc_link;
 
     char profile_out_fn[256];
-    icmLuBase *lu_out;
+    cmm_profile_t *output_profile;
+    gcmmhlink_t output_icc_link;
+
 } psd_device;
 
 /* GC procedures */
@@ -141,7 +167,7 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 	gx_default_get_initial_matrix,\
 	NULL,				/* sync_output */\
 	gdev_prn_output_page,		/* output_page */\
-	gdev_prn_close,			/* close */\
+	psd_prn_close,			/* close */\
 	NULL,				/* map_rgb_color - not used */\
 	psd_map_color_rgb,		/* map_color_rgb */\
 	NULL,				/* fill_rectangle */\
@@ -416,23 +442,29 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     psd_device *xdev = (psd_device *)dev;
     int n = xdev->devn_params.separations.num_separations;
-    icmLuBase *luo = xdev->lu_cmyk;
+
+    gcmmhlink_t link = xdev->cmyk_icc_link;
     int i;
 
-    if (luo != NULL) {
-	double in[4];
-	double tmp[MAX_CHAN];
-	int outn = xdev->lu_cmyk_outn;
+    if (link != NULL) {
 
-	in[0] = frac2float(c);
-	in[1] = frac2float(m);
-	in[2] = frac2float(y);
-	in[3] = frac2float(k);
-	luo->lookup(luo, tmp, in);
+	unsigned short in[4];
+	unsigned short tmp[MAX_CHAN];
+	int outn = xdev->cmyk_profile->num_comps_out;
+
+	in[0] = frac2ushort(c);
+	in[1] = frac2ushort(m);
+	in[2] = frac2ushort(y);
+	in[3] = frac2ushort(k);
+
+        gscms_transform_color(link, &(in[0]),
+                        &(tmp[0]), 2, NULL);
+
 	for (i = 0; i < outn; i++)
-	    out[i] = float2frac(tmp[i]);
+	    out[i] = ushort2frac(tmp[i]);
 	for (; i < n + 4; i++)
 	    out[i] = 0;
+
     } else {
 	/* If no profile given, assume CMYK */
 	out[0] = c;
@@ -456,22 +488,27 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
 {
     psd_device *xdev = (psd_device *)dev;
     int n = xdev->devn_params.separations.num_separations;
-    icmLuBase *luo = xdev->lu_rgb;
+    gcmmhlink_t link = xdev->rgb_icc_link;
     int i;
 
-    if (luo != NULL) {
-	double in[3];
-	double tmp[MAX_CHAN];
-	int outn = xdev->lu_rgb_outn;
+    if (link != NULL) {
 
-	in[0] = frac2float(r);
-	in[1] = frac2float(g);
-	in[2] = frac2float(b);
-	luo->lookup(luo, tmp, in);
+        unsigned short in[3];
+	unsigned short tmp[MAX_CHAN];
+	int outn = xdev->rgb_profile->num_comps_out;
+
+	in[0] = frac2ushort(r);
+	in[1] = frac2ushort(g);
+	in[2] = frac2ushort(b);
+
+        gscms_transform_color(link, &(in[0]),
+                        &(tmp[0]), 2, NULL);
+
 	for (i = 0; i < outn; i++)
-	    out[i] = float2frac(tmp[i]);
+	    out[i] = ushort2frac(tmp[i]);
 	for (; i < n + 4; i++)
 	    out[i] = 0;
+
     } else {
 	frac cmyk[4];
 
@@ -628,47 +665,63 @@ psd_ret_devn_params(gx_device * dev)
 
 #if ENABLE_ICC_PROFILE
 static int
-psd_open_profile(psd_device *xdev, char *profile_fn, icmLuBase **pluo,
-		 int *poutn)
+psd_open_profile(const char *profile_out_fn, cmm_profile_t *icc_profile, gcmmhlink_t icc_link, gs_memory_t *memory)
 {
-    icmFile *fp;
-    icc *icco;
-    icmLuBase *luo;
 
-    dlprintf1("psd_open_profile %s\n", profile_fn);
-    fp = new_icmFileStd_name(profile_fn, (char *)"rb");
-    if (fp == NULL)
-	return_error(gs_error_undefinedfilename);
-    icco = new_icc();
-    if (icco == NULL)
-	return_error(gs_error_VMerror);
-    if (icco->read(icco, fp, 0))
-	return_error(gs_error_rangecheck);
-    luo = icco->get_luobj(icco, icmFwd, icmDefaultIntent, icmSigDefaultData, icmLuOrdNorm);
-    if (luo == NULL)
-	return_error(gs_error_rangecheck);
-    *pluo = luo;
-    luo->spaces(luo, NULL, NULL, NULL, poutn, NULL, NULL, NULL, NULL);
-    return 0;
+    gsicc_rendering_param_t rendering_params;
+    
+    icc_profile = gsicc_get_profile_handle_file(profile_out_fn, 
+                    strlen(profile_out_fn), memory);
+
+    if (icc_profile == NULL)
+        return gs_throw(-1, "Could not create profile for psd device");
+
+    /* Set up the rendering parameters */
+
+    rendering_params.black_point_comp = false;
+    rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
+    rendering_params.rendering_intent = gsPERCEPTUAL;
+
+    /* Call with a NULL destination profile since we are using a device link profile here */
+    icc_link = gscms_get_link(icc_profile, 
+                    NULL, &rendering_params);
+
+    if (icc_link == NULL)
+        return gs_throw(-1, "Could not create link handle for psd device");
+
+    return(0);
+
+
 }
 
 static int
 psd_open_profiles(psd_device *xdev)
 {
     int code = 0;
-    if (xdev->lu_out == NULL && xdev->profile_out_fn[0]) {
-	code = psd_open_profile(xdev, xdev->profile_out_fn,
-				    &xdev->lu_out, NULL);
+
+    if (xdev->output_icc_link == NULL && xdev->profile_out_fn[0]) {
+
+        code = psd_open_profile(xdev->profile_out_fn, xdev->output_profile, 
+            xdev->output_icc_link, xdev->memory);
+
     }
-    if (code >= 0 && xdev->lu_rgb == NULL && xdev->profile_rgb_fn[0]) {
-	code = psd_open_profile(xdev, xdev->profile_rgb_fn,
-				&xdev->lu_rgb, &xdev->lu_rgb_outn);
+
+    if (code >= 0 && xdev->rgb_icc_link == NULL && xdev->profile_rgb_fn[0]) {
+
+        code = psd_open_profile(xdev->profile_rgb_fn, xdev->rgb_profile, 
+            xdev->rgb_icc_link, xdev->memory);
+
     }
-    if (code >= 0 && xdev->lu_cmyk == NULL && xdev->profile_cmyk_fn[0]) {
-	code = psd_open_profile(xdev, xdev->profile_cmyk_fn,
-				&xdev->lu_cmyk, &xdev->lu_cmyk_outn);
+
+    if (code >= 0 && xdev->cmyk_icc_link == NULL && xdev->profile_cmyk_fn[0]) {
+
+        code = psd_open_profile(xdev->profile_cmyk_fn, xdev->cmyk_profile, 
+            xdev->cmyk_icc_link, xdev->memory);
+
     }
+
     return code;
+
 }
 #endif
 
@@ -1071,32 +1124,59 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     return code;
 }
 
+
 static void
 psd_calib_row(psd_write_ctx *xc, byte **tile_data, const byte *row, 
-		int channel, icmLuBase *luo)
+		int channel, gcmmhlink_t link, int inn, int outn)
 {
     int base_bytes_pp = xc->base_bytes_pp;
     int n_extra_channels = xc->n_extra_channels;
     int channels = base_bytes_pp + n_extra_channels;
-    int inn, outn;
     int x;
-    double in[MAX_CHAN], out[MAX_CHAN];
+    unsigned char in[MAX_CHAN];
 
-    luo->spaces(luo, NULL, &inn, NULL, &outn, NULL, NULL, NULL, NULL);
-	
     for (x = 0; x < xc->width; x++) {
 	if (channel < outn) {
 	    int plane_idx;
 
 	    for (plane_idx = 0; plane_idx < inn; plane_idx++)
-		in[plane_idx] = row[x*channels+plane_idx] * (1.0 / 255);	
+		in[plane_idx] = row[x*channels+plane_idx];	
 
-	    (*tile_data)[x] = (int)(0.5 + 255 * out[channel]);
-	    luo->lookup(luo, out, in);
+            gscms_transform_color(link, &(in[0]),
+                &((*tile_data)[x]), 1, NULL);
+
 	} else {
 	    (*tile_data)[x] = 255 ^ row[x*channels+base_bytes_pp+channel];
 	}
     }
+}
+
+
+/*
+ * Close device and clean up ICC structures.
+ */
+
+static int
+psd_prn_close(gx_device *dev)
+{
+    psd_device * const xdev = (psd_device *) dev;
+
+    if (xdev->cmyk_icc_link != NULL) {
+        gscms_release_link(xdev->cmyk_icc_link);
+        rc_decrement(xdev->cmyk_profile, "psd_prn_close");
+    }
+
+    if (xdev->rgb_icc_link != NULL) {
+        gscms_release_link(xdev->rgb_icc_link);
+        rc_decrement(xdev->rgb_profile, "psd_prn_close");
+    }
+
+    if (xdev->output_icc_link != NULL) {
+        gscms_release_link(xdev->output_icc_link);
+        rc_decrement(xdev->output_profile, "psd_prn_close");
+    }
+
+    return gdev_prn_close(dev);
 }
 
 /*
@@ -1128,7 +1208,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     int base_bytes_pp = xc->base_bytes_pp;
     int chan_idx;
     psd_device *xdev = (psd_device *)pdev;
-    icmLuBase *luo = xdev->lu_out;
+    gcmmhlink_t link = xdev->output_icc_link;
     byte * row, * unpacked;
     int width = pdev->width;
     int non_encodable_count = 0;
@@ -1154,7 +1234,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 	        /* Unpack the encoded color info */
 	        non_encodable_count += devn_unpack_row((gx_device *)pdev,
 			num_comp, &(xdev->devn_params), width, row, unpacked);
-	        if (luo == NULL) {
+	        if (link == NULL) {
 		    for (i = 0; i < xc->width; ++i) {
 		        if (base_bytes_pp == 3) {
 			    /* RGB */
@@ -1165,7 +1245,9 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 		        }
 		    }
 	        } else {
-		    psd_calib_row(xc, &sep_line, unpacked, data_pos, luo);
+		    psd_calib_row(xc, &sep_line, unpacked, data_pos, 
+                        link, xdev->output_profile->num_comps,
+                        xdev->output_profile->num_comps_out);  
 	        }	
 	        psd_write(xc, sep_line, xc->width);
 	    } else {

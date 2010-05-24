@@ -630,6 +630,54 @@ currentuserparams /WaitTimeout known
 %pagestackorder
 %setpagestackorder
 
+
+% -------- ICC manager -------- %
+% All color management is going
+% through ICC flow.  We need
+% to have the default device
+% spaces gray, RGB and CMYK
+% defined by ICC profiles
+
+//systemdict /ICCProfilesDir .knownget{
+mark exch /ICCProfilesDir exch .dicttomark
+.setuserparams
+} if
+
+//systemdict /DefaultRGBProfile .knownget{
+mark exch /DefaultRGBProfile exch .dicttomark
+.setuserparams
+} if
+
+//systemdict /DefaultGrayProfile .knownget{
+mark exch /DefaultGrayProfile exch .dicttomark
+.setuserparams
+} if
+
+//systemdict /DefaultCMYKProfile .knownget{
+mark exch /DefaultCMYKProfile exch .dicttomark
+.setuserparams
+} if
+
+//systemdict /ProofProfile .knownget{
+mark exch /ProofProfile exch .dicttomark
+.setuserparams
+} if
+
+//systemdict /DeviceNProfile .knownget{
+mark exch /DeviceNProfile exch .dicttomark
+.setuserparams
+} if
+
+//systemdict /NamedProfile .knownget{
+mark exch /NamedProfile exch .dicttomark
+.setuserparams
+} if
+
+//systemdict /DeviceLinkProfile .knownget{
+mark exch /DeviceLinkProfile exch .dicttomark
+.setuserparams
+} if
+
 pop		% currentsystemparams
 
 % Flag the current dictionary so it will be swapped when we
@@ -822,6 +870,19 @@ mark
     /WhitePoint [0.9505 1.0 1.0890] readonly
   .dicttomark readonly
 ] readonly def
+
+
+% Special type to install
+% sRGB ICC profile color space
+/CIEsRGBICC [ /ICCBased
+  mark
+    /N 3 
+    /DataSource (srgb)
+    /Alternate [/DeviceRGB]
+    /Name (srgb) 
+  .dicttomark 
+] def
+
 
 % ------ Painting ------ %
 

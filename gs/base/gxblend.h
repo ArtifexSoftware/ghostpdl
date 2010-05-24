@@ -21,6 +21,11 @@
 #include "gxfrac.h"
 #include "gxdevcli.h"
 
+/* Visual  trace options : set one to 1. */
+#define VD_PAINT_MASK 0
+#define VD_PAINT_COLORS 0
+#define VD_PAINT_ALPHA 1
+
 #define RAW_DUMP 0
 
 /* #define DUMP_TO_PNG */
@@ -91,12 +96,14 @@ typedef struct {
 typedef pdf14_parent_cs_params_s pdf14_parent_cs_params_t;
 
 /* This function is used for mapping Smask CMYK or RGB data to a monochrome alpha buffer */
-
-void Smask_Luminosity_Mapping(int num_rows, int num_cols, int n_chan, int row_stride, 
-                         int plane_stride, byte *dst, const byte *src, bool isadditive,
+void smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride, 
+                         int plane_stride, byte *src, const byte *des, bool isadditive,
                             bool SMask_is_CIE, gs_transparency_mask_subtype_t SMask_SubType);
-
-
+void smask_copy(int num_rows, int num_cols, int row_stride, 
+                         byte *src, const byte *des);
+void smask_icc(int num_rows, int num_cols, int n_chan, int row_stride, 
+                         int plane_stride, byte *src, const byte *des, 
+                         gsicc_link_t *icclink);
 /**
  * art_blend_pixel: Compute PDF 1.4 blending function.
  * @dst: Where to store resulting pixel.

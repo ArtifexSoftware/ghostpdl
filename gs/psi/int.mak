@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2008 Artifex Software, Inc.
+#  Copyright (C) 2001-2009 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -33,6 +33,7 @@ PSJBIG2CC=$(CC_) $(I_)$(JB2I_) $(II)$(PSI_)$(_I) $(JB2CF_) $(PSF_)
 PSJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
 PSLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(LDF_JB2I_) $(II)$(PSI_)$(_I) $(JB2CF_) $(PSF_)
 PSLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
+PSLCMSCC=$(CC_) $(I_)$(LCMSSRCDIR)$(D)include $(II)$(PSI_)$(_I) $(PSF_)
 
 # All top-level makefiles define PSD.
 #PSD=$(PSGEN)
@@ -464,7 +465,7 @@ $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
- $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h)
+ $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h) $(gsiccmanage_h)
 	$(PSCC) $(PSO_)zdevice.$(OBJ) $(C_) $(PSSRC)zdevice.c
 
 $(PSOBJ)zdfilter.$(OBJ) : $(PSSRC)zdfilter.c $(OP) $(string__h) $(ghost_h) $(oper_h)\
@@ -1440,7 +1441,8 @@ icie_h=$(PSSRC)icie.h
 $(PSOBJ)zcie.$(OBJ) : $(PSSRC)zcie.c $(OP) $(math__h) $(memory__h)\
  $(gscolor2_h) $(gscie_h) $(gsstruct_h) $(gxcspace_h)\
  $(ialloc_h) $(icie_h) $(idict_h) $(idparam_h) $(estack_h)\
- $(isave_h) $(igstate_h) $(ivmspace_h) $(store_h)
+ $(isave_h) $(igstate_h) $(ivmspace_h) $(store_h)\
+ $(zcie_h) $(gsicc_create_h) $(gsiccmanage_h) $(gsicc_profilecache_h) 
 	$(PSCC) $(PSO_)zcie.$(OBJ) $(C_) $(PSSRC)zcie.c
 
 $(PSOBJ)zcrd.$(OBJ) : $(PSSRC)zcrd.c $(OP) $(math__h)\
@@ -1696,9 +1698,10 @@ $(PSD)icc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
 
 $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
- $(icc_h) $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
- $(icie_h) $(ialloc_h) $(zicc_h)
-	$(GLICCCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
+ $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
+ $(icie_h) $(ialloc_h) $(zicc_h) $(gsiccmanage_h) $(GX) $(gxistate_h)\
+ $(gserror_h) $(gsicc_create_h) $(gsicc_profilecache_h)
+	$(PSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
 
 # ---------------- Support for %disk IODevices ---------------- #
 

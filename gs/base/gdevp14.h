@@ -110,12 +110,15 @@ struct pdf14_parent_color_s {
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* These are needed for the shading code */
     byte comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte depth;  /* used in clist writer cmd_put_color */
+    uint max_gray;  /* Used to determine if device halftones */
+    uint max_color; /* Causes issues if these are not maintained */
     const gx_color_map_procs *(*get_cmap_procs)(const gs_imager_state *,
 						     const gx_device *);
     const gx_cm_color_map_procs *(*parent_color_mapping_procs)(const gx_device *);
     int (*parent_color_comp_index)(gx_device *, const char *, int, int); 
     const pdf14_procs_t * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
+    cmm_profile_t *icc_profile;
     pdf14_parent_color_t *previous;
  
 };
@@ -154,10 +157,15 @@ struct pdf14_buf_s {
     gs_transparency_mask_subtype_t SMask_SubType;
 
     uint mask_id;
-    pdf14_parent_color_t parent_color_info_procs;
+    pdf14_parent_color_t *parent_color_info_procs;
 
     gs_transparency_color_t color_space;  /* Different groups can have different spaces for blending */
 };
+
+typedef struct pdf14_smaskcolor_s {
+    gsicc_smask_t *profiles;
+    int           ref_count;
+} pdf14_smaskcolor_t;
 
 struct pdf14_ctx_s {
     pdf14_buf *stack;
@@ -208,6 +216,7 @@ typedef struct pdf14_device_s {
     const pdf14_nonseparable_blending_procs_t * blend_procs; /* Must follow pdf14_procs */
 
     pdf14_ctx *ctx;
+    pdf14_smaskcolor_t *smaskcolor;
     float opacity;
     float shape;
     float alpha; /* alpha = opacity * shape */
@@ -269,5 +278,9 @@ int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *tran
 
 /* Not static due to call from pattern logic */
 int pdf14_disable_device(gx_device * dev);
+
+/* Functions for dealing with soft mask color */
+static int pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev);
+static int pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev);
 
 #endif /* gdevp14_INCLUDED */

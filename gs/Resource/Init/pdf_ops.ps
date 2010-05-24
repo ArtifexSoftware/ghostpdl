@@ -202,6 +202,9 @@ nodict readonly pop
   /DeviceCMYK { pop //csdevcmyk [0 0 0 1] cvx } bind
   /CIEBasedA { 0 } bind
   /CIEBasedABC { [0 0 0] cvx } bind
+  /CalGray { pop //csdevgray 0 } bind
+  /CalRGB { pop //csdevrgb [0 0 0] cvx } bind
+  /Lab {[0 0 0] cvx } bind
   /ICCBased { [ 1 index 1 oget /N get { 0 } repeat ] cvx } bind
   /Separation { 1 } bind
   /DeviceN {	% What is the correct value??
@@ -336,6 +339,9 @@ nodict readonly pop
   /CIEBasedABC /CIEBasedA load def
   /CIEBasedDEF /CIEBasedA load def
   /CIEBasedDEFG /CIEBasedA load def
+  /CalRGB /CIEBasedA load def
+  /CalGray /CIEBasedA load def
+  /Lab /CIEBasedA load def
   /ICCBased /CIEBasedA load def
   /Separation /CIEBasedA load def
   /DeviceN /CIEBasedA load def

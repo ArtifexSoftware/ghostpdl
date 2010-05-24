@@ -34,7 +34,9 @@ typedef enum {
     PDF14_END_TRANS_MASK,
     PDF14_SET_BLEND_PARAMS,
     PDF14_PUSH_TRANS_STATE,
-    PDF14_POP_TRANS_STATE
+    PDF14_POP_TRANS_STATE,
+    PDF14_PUSH_SMASK_COLOR,
+    PDF14_POP_SMASK_COLOR
 } pdf14_compositor_operations;
 
 #define PDF14_OPCODE_NAMES \
@@ -47,7 +49,9 @@ typedef enum {
     "PDF14_END_TRANS_MASK   ",\
     "PDF14_SET_BLEND_PARAMS ",\
     "PDF14_PUSH_TRANS_STATE ",\
-    "PDF14_POP_TRANS_STATE  "\
+    "PDF14_POP_TRANS_STATE  ",\
+    "PDF14_PUSH_SMASK_COLOR ",\
+    "PDF14_POP_SMASK_COLOR  "\
 }
 
 /* Bit definitions for serializing PDF 1.4 parameters */
@@ -108,6 +112,9 @@ struct gs_pdf14trans_params_s {
     bool SMask_is_CIE;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
+    int64_t icc_hash;
+    cmm_profile_t *iccprofile;               /* The profile  */
+
 };
 
 #ifndef gs_pdf14trans_params_DEFINED

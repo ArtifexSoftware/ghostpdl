@@ -1172,7 +1172,7 @@ static const gx_device_bbox_procs_t box_procs_forward = {
 static int
 bbox_create_compositor(gx_device * dev,
 		       gx_device ** pcdev, const gs_composite_t * pcte,
-		       gs_imager_state * pis, gs_memory_t * memory)
+		       gs_imager_state * pis, gs_memory_t * memory, gx_device *cdev)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *target = bdev->target;
@@ -1194,7 +1194,7 @@ bbox_create_compositor(gx_device * dev,
 	gx_device *cdev;
 	gx_device_bbox *bbcdev;
 	int code = (*dev_proc(target, create_compositor))
-	    (target, &cdev, pcte, pis, memory);
+	    (target, &cdev, pcte, pis, memory, cdev);
 
 	/* If the target did not create a new compositor then we are done. */
 	if (code < 0 || target == cdev) {

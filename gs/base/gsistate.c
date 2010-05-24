@@ -26,6 +26,9 @@
 #include "gzht.h"
 #include "gzline.h"
 #include "gxfmap.h"
+#include "gsicccache.h"
+#include "gsiccmanage.h"
+#include "gsicc_profilecache.h"
 
 /******************************************************************************
  * See gsstate.c for a discussion of graphics/imager state memory management. *
@@ -64,7 +67,10 @@ ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     ENUM_PTR(0, gs_imager_state, client_data);
     ENUM_PTR(1, gs_imager_state, transparency_stack);
     ENUM_PTR(2, gs_imager_state, trans_device);
-#define E1(i,elt) ENUM_PTR(i+3,gs_imager_state,elt);
+    ENUM_PTR(3, gs_imager_state, icc_manager);
+    ENUM_PTR(4, gs_imager_state, icc_link_cache);
+    ENUM_PTR(5, gs_imager_state, icc_profile_cache);
+#define E1(i,elt) ENUM_PTR(i+6,gs_imager_state,elt);
     gs_cr_state_do_ptrs(E1)
 #undef E1
 ENUM_PTRS_END
@@ -74,6 +80,9 @@ static RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
     RELOC_PTR(gs_imager_state, client_data);
     RELOC_PTR(gs_imager_state, transparency_stack);
     RELOC_PTR(gs_imager_state, trans_device);
+    RELOC_PTR(gs_imager_state, icc_manager);
+    RELOC_PTR(gs_imager_state, icc_link_cache);
+    RELOC_PTR(gs_imager_state, icc_profile_cache);
 #define R1(i,elt) RELOC_PTR(gs_imager_state,elt);
     gs_cr_state_do_ptrs(R1)
 #undef R1
@@ -130,6 +139,9 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->have_pattern_streams = false;
     pis->devicergb_cs = gs_cspace_new_DeviceRGB(mem);
     pis->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
+    pis->icc_link_cache = gsicc_cache_new(pis->memory);
+    pis->icc_manager = gsicc_manager_new(pis->memory);
+    pis->icc_profile_cache = gsicc_profilecache_new(pis->memory);
     return 0;
 }
 
@@ -169,6 +181,9 @@ gs_imager_state_copied(gs_imager_state * pis)
     rc_increment(pis->cie_joint_caches_alt);
     rc_increment(pis->devicergb_cs);
     rc_increment(pis->devicecmyk_cs);
+    rc_increment(pis->icc_link_cache);
+    rc_increment(pis->icc_profile_cache);
+    rc_increment(pis->icc_manager);
 }
 
 /* Adjust reference counts before assigning one imager state to another. */
@@ -193,6 +208,9 @@ gs_imager_state_pre_assign(gs_imager_state *pto, const gs_imager_state *pfrom)
     RCCOPY(halftone);
     RCCOPY(devicergb_cs);
     RCCOPY(devicecmyk_cs);
+    RCCOPY(icc_link_cache);
+    RCCOPY(icc_profile_cache);
+    RCCOPY(icc_manager);
 #undef RCCOPY
 }
 
@@ -225,5 +243,8 @@ gs_imager_state_release(gs_imager_state * pis)
     RCDECR(halftone);
     RCDECR(devicergb_cs);
     RCDECR(devicecmyk_cs);
+    RCDECR(icc_link_cache);
+    RCDECR(icc_profile_cache);
+    RCDECR(icc_manager);
 #undef RCDECR
 }

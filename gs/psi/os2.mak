@@ -114,6 +114,10 @@ JSRCDIR=jpeg
 
 PNGSRCDIR=libpng
 
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
+LCMSSRCDIR=lcms
+
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
@@ -124,11 +128,6 @@ ZSRCDIR=zlib
 
 JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
-
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
-
-ICCSRCDIR=icclib
 
 # IJS has not been ported to OS/2. If you do the port,
 # you'll need to set these values. You'll also need to
@@ -459,7 +458,7 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 !include "$(GLSRCDIR)\zlib.mak"
 !include "$(GLSRCDIR)\libpng.mak"
 !include "$(GLSRCDIR)\jbig2.mak"
-!include "$(GLSRCDIR)\icclib.mak"
+!include "$(GLSRCDIR)\lcms.mak"
 !include "$(GLSRCDIR)\devs.mak"
 !include "$(GLSRCDIR)\pcwin.mak"
 !include "$(GLSRCDIR)\contrib.mak"

@@ -154,7 +154,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
 	if (dict_find_string(system_dict, "userparams", &puserparams) >= 0)
 	    size = dict_length(puserparams);
 	else
-	    size = 30;
+	    size = 300;
 	code = dict_alloc(pcst->memory.space_local, size, &pcst->userparams);
 	if (code < 0)
 	    goto x2;

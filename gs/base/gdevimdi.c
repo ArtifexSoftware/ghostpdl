@@ -18,7 +18,7 @@
 /* IMDI Device.
  *
  * This is an RGB contone device, that outputs the raster
- * converted to CMYK using ICCLib / IMDI
+ * converted to CMYK using CMM API
  */
 
 /* TODO: this should be configurable */
@@ -30,10 +30,19 @@
 #include "gserror.h"
 #include "gdevprn.h"
 #include "gxfrac.h"
+#include "gscms.h"
+#include "gsicccache.h"
+#include "gsiccmanage.h"
 
-#include "icc.h"
-#include "imdi.h"
+#ifndef cmm_gcmmhlink_DEFINED
+    #define cmm_gcmmhlink_DEFINED
+    typedef void* gcmmhlink_t;
+#endif
 
+#ifndef cmm_gcmmhprofile_DEFINED
+    #define cmm_gcmmhprofile_DEFINED
+    typedef void* gcmmhprofile_t;
+#endif
 /*
  * Set up the device structures and function tables.
  */
@@ -56,10 +65,9 @@ struct gx_device_imdi_s
     gx_device_common;
     gx_prn_device_common;
 
-    icmFile *fp;
-    icc *icco;
-    icmLuBase *luo;
-    imdi *mdo;
+    gcmmhlink_t icc_link;
+    cmm_profile_t *icc_link_profile;
+
 };
 
 static const gx_device_procs imdi_procs =
@@ -90,12 +98,6 @@ static double outcurve(void *ctx, int ch, double val)
     return val;
 }
 
-static void mdtable(void *ctx, double *outvals, double *invals)
-{
-    icmLuBase *luo = ctx;
-    luo->lookup(luo, outvals, invals);
-}
-
 /*
  * Open IMDI device.
  * Load ICC device link profile (to map sRGB to FOGRA CMYK).
@@ -105,64 +107,36 @@ static int
 imdi_open_device(gx_device *dev)
 {
     gx_device_imdi *idev = (gx_device_imdi*)dev;
-    int code;
-
-    icColorSpaceSignature ins, outs;
-    int inn, outn;
-    icmLuAlgType alg;
-
-    icmFile *fp;
-    icc *icco;
-    icmLuBase *luo;
-    imdi *mdo;
+    gsicc_rendering_param_t rendering_params;
 
     /* Open and read profile */
 
-    fp = new_icmFileStd_name(LINK_ICC_NAME, "rb");
-    if (!fp)
-	return gs_throw1(-1, "could not open file '%s'", LINK_ICC_NAME);
+    idev->icc_link_profile = gsicc_get_profile_handle_file(LINK_ICC_NAME, 
+                    strlen(LINK_ICC_NAME), dev->memory);
 
-    icco = new_icc();
-    if (!icco)
-	return gs_throw(-1, "could not create ICC object");
+    if (idev->icc_link_profile == NULL)
+        return gs_throw(-1, "Could not create link profile for imdi device");
 
-    code = icco->read(icco, fp, 0);
-    if (code != 0)
-	return gs_throw1(-1, "could not read ICC profile: %s", icco->err);
+    if (idev->icc_link_profile->num_comps != 3)
+	return gs_throw1(-1, "profile must have 3 input channels. got %d.", 
+                    idev->icc_link_profile->num_comps);
+    if (idev->icc_link_profile->num_comps_out != 4)
+	return gs_throw1(-1, "profile must have 4 output channels. got %d.", 
+                    idev->icc_link_profile->num_comps_out);
 
-    /* Get conversion object */
 
-    luo = icco->get_luobj(icco, icmFwd, icPerceptual, icmSigDefaultData, icmLuOrdNorm);
-    if (!luo)
-	return gs_throw1(-1, "could not create ICC conversion object: %s", icco->err);
+    rendering_params.black_point_comp = false;
+    rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
+    rendering_params.rendering_intent = gsPERCEPTUAL;
     
-    luo->spaces(luo, &ins, &inn, &outs, &outn, &alg, NULL, NULL, NULL);
+    idev->icc_link = gscms_get_link(idev->icc_link_profile, 
+                    NULL, &rendering_params);
 
-#ifdef DEBUG
-    dprintf3("%s -> %s [%s]\n",
-	    icm2str(icmColorSpaceSignature, ins),
-	    icm2str(icmColorSpaceSignature, outs),
-	    icm2str(icmLuAlg, alg));
-#endif
-
-    if (inn != 3)
-	return gs_throw1(-1, "profile must have 3 input channels. got %d.", inn);
-    if (outn != 4)
-	return gs_throw1(-1, "profile must have 4 output channels. got %d.", outn);
-
-    /* Create IMDI optimized lookup object */
-
-    mdo = new_imdi(inn, outn, pixint8, 0, pixint8, 0,
-			 33, incurve, mdtable, outcurve, luo);
-    if (!mdo)
-	return gs_throw(-1, "new_imdi failed");
-
-    idev->fp = fp;
-    idev->icco = icco;
-    idev->luo = luo;
-    idev->mdo = mdo;
+    if (!idev->icc_link)
+	return gs_throw(-1, "could not create ICC link handle");
 
     return gdev_prn_open(dev);
+
 }
 
 
@@ -175,10 +149,8 @@ imdi_close_device(gx_device *dev)
 {
     gx_device_imdi *idev = (gx_device_imdi*)dev;
 
-    idev->mdo->done(idev->mdo);
-    idev->luo->del(idev->luo);
-    idev->icco->del(idev->icco);
-    idev->fp->del(idev->fp);
+    gscms_release_link(idev->icc_link);
+    rc_decrement(idev->icc_link_profile, "imdi_close_device");
 
     return gdev_prn_close(dev);
 }
@@ -193,6 +165,9 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     gx_device_imdi *idev = (gx_device_imdi*)pdev;
 
+    gsicc_bufferdesc_t input_buff_desc;
+    gsicc_bufferdesc_t output_buff_desc;
+
     byte *srcbuffer = 0;
     byte *dstbuffer = 0;
     FILE *fp[4] = {0};
@@ -202,8 +177,6 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
     int srcplanes;
     int dstplanes;
 
-    double srcpixel[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    double dstpixel[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte *srcdata;
 
     int code = 0;
@@ -297,7 +270,10 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	    {
 		nsame ++; lsame += ex - sx;
 
-		idev->mdo->interp(idev->mdo, outp, inp, 1);
+                /* Transform the color */
+                gscms_transform_color(idev->icc_link, inp,
+                        outp, 1, NULL);
+
 		for (x = sx + 1; x < ex; x++)
 		{
 		    dstbuffer[x * 4 + 0] = dstbuffer[sx * 4 + 0];
@@ -322,7 +298,19 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 		ldiff += ex - sx;
 
-		idev->mdo->interp(idev->mdo, outp, inp, ex - sx);
+                /* This needs to be done more efficiently */
+
+                gsicc_init_buffer(&input_buff_desc, 3, 1,
+                      false, false, false, 0, (ex - sx)*3,
+                      1, ex - sx);
+
+                gsicc_init_buffer(&output_buff_desc, 4, 1,
+                      false, false, false, 0, (ex - sx)*4,
+                      1, ex - sx);
+
+                gscms_transform_color_buffer(idev->icc_link, &input_buff_desc,
+                             &output_buff_desc, inp, outp);
+
 	    }
 
 	    sx = ex;
@@ -338,7 +326,18 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	inp[0] = srcdata;
 	outp[0] = dstbuffer;
 
-	idev->mdo->interp(idev->mdo, outp, inp, pdev->width);
+        gsicc_init_buffer(&input_buff_desc, 3, 1,
+              false, false, false, 0, width*3,
+              1, width);
+
+        gsicc_init_buffer(&output_buff_desc, 4, 1,
+              false, false, false, 0, width*4,
+              1, width);
+
+        gscms_transform_color_buffer(idev->icc_link, &input_buff_desc,
+                     &output_buff_desc, inp, outp);
+
+
 
 #if 0
 	/* output planar data to auxiliary output files */
@@ -357,7 +356,10 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	    inp[0] = srcdata + x * 3;
 	    outp[0] = dstbuffer + x * 4;
 
-	    idev->mdo->interp(idev->mdo, outp, inp, 1);
+            /* Transform the color */
+            gscms_transform_color(idev->icc_link, inp,
+                    outp, 1, NULL);
+
 
 	    /* output planar data to auxiliary output files */
 	    for (k = 0; k < 4; k++)

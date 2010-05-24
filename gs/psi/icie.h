@@ -58,7 +58,7 @@ int cie_points_param(const gs_memory_t *mem,
 /* The caller has set pclt->n and pclt->m. */
 /* ptref is known to be a readable array of size at least n+1. */
 int cie_table_param(const ref * ptable, gx_color_lookup_table * pclt,
-		    gs_memory_t * mem);
+		    const gs_memory_t * mem);
 
 /* ------ Internal routines ------ */
 

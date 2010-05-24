@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id$ */
+/* $Id: write_t2.c 10782 2010-02-22 11:45:33Z chrisl $ */
 
 /*
 Functions to serialize a type 1 font so that it can then be

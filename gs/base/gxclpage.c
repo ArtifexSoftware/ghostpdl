@@ -96,6 +96,8 @@ gdev_prn_render_pages(gx_device_printer * pdev,
     pcldev->pages = ppages;
     pcldev->num_pages = count;
     pcldev->offset_map = NULL;
+    pcldev->icc_table = NULL;
+    pcldev->icc_cache_cl = NULL;
     /* Render the pages. */
     {
 	int code = (*dev_proc(pdev, output_page))

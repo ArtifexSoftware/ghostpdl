@@ -22,6 +22,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
+#include "gsccolor.h"
 
 static int
 pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams)
@@ -100,7 +101,12 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
 	if (code < 0)
 	    return code;
     }
-    if (gstate != NULL) {
+    /* Note that we should not add in the graphic state 
+       color space for the group color if there was not 
+       a group color specified.
+       In this case, the parent group is inherited from
+       the previous group or the device color space */
+    if (gstate != NULL && pparams->group_color != UNKNOWN) {
 	const gs_color_space *cs = gs_currentcolorspace_inline(gstate);
 
 	code = pdf_color_space_named(pdev, &cs_value, NULL, cs,
@@ -335,7 +341,7 @@ pdf_set_blend_params(gs_imager_state * pis, gx_device_pdf * dev,
 int 
 gdev_pdf_create_compositor(gx_device *dev,
     gx_device **pcdev, const gs_composite_t *pct,
-    gs_imager_state *pis, gs_memory_t *memory)
+    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)dev;
     
@@ -365,14 +371,17 @@ gdev_pdf_create_compositor(gx_device *dev,
                 return 0;
             case PDF14_POP_TRANS_STATE:
                 return 0;
-
+            case PDF14_PUSH_SMASK_COLOR:
+                return 0;
+            case PDF14_POP_SMASK_COLOR:
+                return 0;
 
 	    default :
 		return_error(gs_error_unregistered); /* Must not happen. */
 	}
 	return 0;
     }
-    return psdf_create_compositor(dev, pcdev, pct, pis, memory);
+    return psdf_create_compositor(dev, pcdev, pct, pis, memory, cdev);
 }
 
 /* We're not sure why the folllowing device methods are never called.

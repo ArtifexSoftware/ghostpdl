@@ -32,6 +32,8 @@
 #include "sstring.h"
 #include "gxcspace.h"
 #include "gxcdevn.h"
+#include "gscspace.h"
+#include "gsiccmanage.h"
 
 /*
  * PDF doesn't have general CIEBased color spaces.  However, it provides
@@ -527,11 +529,12 @@ pdf_find_cspace_resource(gx_device_pdf *pdev, const byte *serialized, uint seria
 int
 pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		const gs_range_t **ppranges,
-		const gs_color_space *pcs,
+		const gs_color_space *pcs_in,
 		const pdf_color_space_names_t *pcsn,
 		bool by_name, const byte *res_name, int name_length)
 {
-    gs_color_space_index csi = gs_color_space_get_index(pcs);
+    const gs_color_space *pcs;
+    gs_color_space_index csi;
     cos_array_t *pca;
     cos_dict_t *pcd;
     cos_value_t v;
@@ -542,7 +545,32 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     byte *serialized = NULL, serialized0[100];
     pdf_resource_t *pres = NULL;
     int code;
+    bool islab = false;
 
+    /* If color space is CIE based and we have compatibility then go ahead and use the ICC alternative */
+    if ((pdev->CompatibilityLevel < 1.3) || !gs_color_space_is_PSCIE(pcs_in) ) {
+        pcs = pcs_in;
+    } else {
+        if (pcs_in->icc_equivalent != NULL) {
+            pcs = pcs_in->icc_equivalent;
+        } else {
+            /* Need to create the equivalent object */
+            
+            gs_colorspace_set_icc_equivalent(pcs_in, &islab, pdev->memory);
+            pcs = pcs_in->icc_equivalent;
+        }
+    }
+    csi = gs_color_space_get_index(pcs);
+    /* Note that if csi is ICC, check to see if this was one of 
+       the default substitutes that we introduced for DeviceGray,
+       DeviceRGB or DeviceCMYK.  If it is, then just write
+       the default color.  Depending upon the flavor of PDF,
+       or other options, we may want to actually have all
+       the colors defined by ICC profiles and not do the following
+       substituion of the Device space. */
+    if (csi == gs_color_space_index_ICC) {
+        csi = gsicc_get_default_type(pcs->cmm_icc_profile_data);
+    }
     if (ppranges)
 	*ppranges = 0;		/* default */
     switch (csi) {
@@ -561,20 +589,39 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    return 0;
 	}
 	break;
-    case gs_color_space_index_CIEICC:
+    case gs_color_space_index_ICC:
         /*
 	 * Take a special early exit for unrecognized ICCBased color spaces,
 	 * or for PDF 1.2 output (ICCBased color spaces date from PDF 1.3).
 	 */
-        if (pcs->params.icc.picc_info->picc == 0 ||
+
+        if (pcs->cmm_icc_profile_data == NULL ||
 	    pdev->CompatibilityLevel < 1.3
 	    ) {
 	    if (res_name != NULL)
 		return 0; /* Ignore .includecolorspace */
+            if (pcs->base_space != NULL) {
             return pdf_color_space_named( pdev, pvalue, ppranges,
                                     pcs->base_space,
                                     pcsn, by_name, NULL, 0);
+            } else {
+                /* Base space is NULL, use appropriate device space */
+                switch( cs_num_components(pcs) )  {
+                    case 1:
+	                cos_c_string_value(pvalue, pcsn->DeviceGray);
+	                return 0;
+                    case 3:
+	                cos_c_string_value(pvalue, pcsn->DeviceRGB);
+	                return 0;
+                    case 4:
+	                cos_c_string_value(pvalue, pcsn->DeviceCMYK);
+	                return 0;
+                    default:
+                        break;
 	}
+            }
+	}
+
         break;
     default:
 	break;
@@ -644,7 +691,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     switch (csi) {
 
-    case gs_color_space_index_CIEICC:
+    case gs_color_space_index_ICC:
 	code = pdf_iccbased_color_space(pdev, pvalue, pcs, pca);
         break;
 

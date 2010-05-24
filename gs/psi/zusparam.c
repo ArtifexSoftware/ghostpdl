@@ -36,6 +36,15 @@
 #include "store.h"
 #include "gsnamecl.h"
 #include "igstate.h"
+#include "gscms.h"
+#include "gsiccmanage.h"
+#include "gsparamx.h"
+#include "gx.h"
+#include "gxistate.h"
+
+
+/* The (global) font directory */
+extern gs_font_dir *ifont_dir;	/* in zfont.c */
 
 /* Define an individual user or system parameter. */
 /* Eventually this will be made public. */
@@ -211,9 +220,12 @@ current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
     pval->size = strlen(rfs);
     pval->persistent = true;
 }
+
+
+
 static const string_param_def_t system_string_params[] =
 {
-    {"RealFormat", current_RealFormat, NULL}
+    {"RealFormat", current_RealFormat, NULL},
 };
 
 /* The system parameter set */
@@ -273,12 +285,6 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
 	    if (code < 0)
 		goto out;
     }
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    /* The custom color callback pointer */
-    code = custom_color_callback_put_params(i_ctx_p->pgs, plist);
-    if (code < 0)
-	goto out;
-#endif
 
     code = setparams(i_ctx_p, plist, &system_param_set);
   out:
@@ -447,6 +453,332 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
 
 #undef ifont_dir
 
+
+/* No default for the proofing profile.  It would
+   seem that I should be able to set the default
+   operator to NULL but this introduces issues */
+
+static void
+current_default_proof_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    /* Check if it was "NULL" */
+    if ( !gs_param_string_eq(pval,"NULL") ) {
+        pname = (char *)gs_alloc_bytes(mem, namelen,
+		   		     "set_proof_profile_icc");
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+        code = gsicc_set_profile(pis->icc_manager, (const char*) pname, namelen, PROOF_TYPE);
+        gs_free_object(mem, pname,
+                "set_proof_profile_icc");
+        if (code < 0)
+            return gs_rethrow(code, "cannot find proofing icc profile");
+        return(code);
+    }
+    return(0);
+}
+
+/* No default for the deviceN profile. */
+
+static void
+current_default_devicen_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_devicen_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code = 0;
+    char *pname, *pstr, *pstrend;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    /* Check if it was "NULL" */
+    if (!gs_param_string_eq(pval,"NULL")) {
+        /* The DeviceN name can have multiple files 
+           in it.  This way we can define all the 
+           DeviceN color spaces with ICC profiles.
+           divide using , and ; delimeters as well as 
+           remove leading and ending spaces (file names
+           can have internal spaces). */
+        pname = (char *)gs_alloc_bytes(mem, namelen,
+		   		     "set_devicen_profile_icc");
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+        pstr = strtok(pname, ",;");
+        while (pstr != NULL) {
+            namelen = strlen(pstr);
+            /* Remove leading and trailing spaces from the name */
+            while ( namelen > 0 && pstr[0] == 0x20) {
+                pstr++;
+                namelen--;
+            }
+            namelen = strlen(pstr);
+            pstrend = &(pstr[namelen-1]);
+            while ( namelen > 0 && pstrend[0] == 0x20) {
+                pstrend--;
+                namelen--;
+            }
+            code = gsicc_set_profile(pis->icc_manager, (const char*) pstr, namelen, DEVICEN_TYPE);
+            if (code < 0)
+                return gs_rethrow(code, "cannot find devicen icc profile");
+            pstr = strtok(NULL, ",;");
+        }
+        gs_free_object(mem, pname,
+        "set_devicen_profile_icc");
+        return(code);
+    }
+    return(0);
+}
+
+static void
+current_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = DEFAULT_GRAY_ICC;
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory;
+
+    pname = (char *)gs_alloc_bytes(mem, namelen,
+	   		     "set_default_gray_icc");
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+    code = gsicc_set_profile(pis->icc_manager, 
+        (const char*) pname, namelen, DEFAULT_GRAY);
+    gs_free_object(mem, pname,
+        "set_default_gray_icc");
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default gray icc profile");
+    return(code);
+}
+
+static void
+current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = DEFAULT_RGB_ICC;
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    /* Check if it was "NULL" */
+    if (!gs_param_string_eq(pval,"NULL") ) {
+        pname = (char *)gs_alloc_bytes(mem, namelen,
+		   		     "set_icc_directory");
+        if (pname == NULL)
+            return gs_rethrow(-1, "cannot allocate directory name");
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+        gsicc_set_icc_directory(pis, (const char*) pname, namelen);
+        gs_free_object(mem, pname,
+                "set_icc_directory");
+        return(0);
+    }
+    return(0);
+}
+
+static int
+set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    pname = (char *)gs_alloc_bytes(mem, namelen,
+	   		     "set_default_rgb_icc");
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+    code = gsicc_set_profile(pis->icc_manager, 
+        (const char*) pname, namelen, DEFAULT_RGB);
+    gs_free_object(mem, pname,
+        "set_default_rgb_icc");
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default rgb icc profile");
+    return(code);
+}
+
+
+static void
+current_default_link_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static void
+current_default_dir_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+
+static int
+set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char* pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    /* Check if it was "NULL" */
+    if (!gs_param_string_eq(pval,"NULL")) {
+        pname = (char *)gs_alloc_bytes(mem, namelen,
+	   		         "set_link_profile_icc");
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+        code = gsicc_set_profile(pis->icc_manager, 
+            (const char*) pname, namelen, LINKED_TYPE);
+        gs_free_object(mem, pname,
+                "set_link_profile_icc");
+        if (code < 0)
+            return gs_rethrow(code, "cannot find linked icc profile");
+        return(code);
+    }
+    return(0);
+}
+
+static void
+current_default_named_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "NULL";
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char* pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    /* Check if it was "NULL" */
+    if (!gs_param_string_eq(pval,"NULL")) {
+        pname = (char *)gs_alloc_bytes(mem, namelen,
+	   		         "set_named_profile_icc");
+        memcpy(pname,pval->data,namelen-1);
+        pname[namelen-1] = 0;
+        code = gsicc_set_profile(pis->icc_manager, 
+            (const char*) pname, namelen, NAMED_TYPE);
+        gs_free_object(mem, pname,
+                "set_named_profile_icc");
+        if (code < 0)
+            return gs_rethrow(code, "cannot find named color icc profile");
+        return(code);
+    }
+    return(0);
+}
+
+static void
+current_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = DEFAULT_CMYK_ICC;
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char* pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    pname = (char *)gs_alloc_bytes(mem, namelen,
+	   		     "set_default_cmyk_icc");
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+    code = gsicc_set_profile(pis->icc_manager, 
+        (const char*) pname, namelen, DEFAULT_CMYK);
+    gs_free_object(mem, pname,
+                "set_default_cmyk_icc");
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default cmyk icc profile");
+    return(code);
+}
+
+static void
+current_default_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = LAB_ICC;
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+static int
+set_default_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char* pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory; 
+
+    pname = (char *)gs_alloc_bytes(mem, namelen,
+	   		     "set_default_lab_icc");
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+    code = gsicc_set_profile(pis->icc_manager, 
+        (const char*) pname, namelen, LAB_TYPE);
+    gs_free_object(mem, pname,
+                "set_default_lab_icc");
+    if (code < 0)
+        return gs_rethrow(code, "cannot find default lab icc profile");
+    return(code);
+}
+
 static const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
@@ -476,6 +808,20 @@ static const long_param_def_t user_long_params[] =
      current_AlignToPixels, set_AlignToPixels},
     {"GridFitTT", 0, 3, 
      current_GridFitTT, set_GridFitTT}
+};
+
+static const string_param_def_t user_string_params[] =
+{
+    {"DefaultGrayProfile", current_default_gray_icc, set_default_gray_icc},
+    {"DefaultRGBProfile", current_default_rgb_icc, set_default_rgb_icc},
+    {"DefaultCMYKProfile", current_default_cmyk_icc, set_default_cmyk_icc},
+    {"ProofProfile", current_default_proof_icc, set_proof_profile_icc},
+    {"NamedProfile", current_default_named_icc, set_named_profile_icc},
+    {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc},
+    {"ICCProfilesDir", current_default_dir_icc, set_icc_directory}, 
+    {"LabProfile", current_default_lab_icc, set_default_lab_icc},
+    {"DeviceNProfile", current_default_devicen_icc, set_devicen_profile_icc} 
+
 };
 
 /* Boolean values */
@@ -540,7 +886,7 @@ static const param_set user_param_set =
 {
     user_long_params, countof(user_long_params),
     user_bool_params, countof(user_bool_params),
-    0, 0 
+    user_string_params, countof(user_string_params)
 };
 
 /* <dict> .setuserparams - */
@@ -613,7 +959,8 @@ const op_def zusparam_op_defs[] =
 static int
 setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 {
-    int i, code;
+    int code;
+    unsigned int i;
 
     for (i = 0; i < pset->long_count; i++) {
 	const long_param_def_t *pdef = &pset->long_defs[i];
@@ -647,7 +994,26 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 	if (code < 0)
 	    return code;
     }
-/****** WE SHOULD DO STRINGS AND STRING ARRAYS, BUT WE DON'T YET ******/
+
+    for (i = 0; i < pset->string_count; i++) {
+	const string_param_def_t *pdef = &pset->string_defs[i];
+	gs_param_string val;
+
+	if (pdef->set == NULL)
+	    continue;
+	code = param_read_string(plist, pdef->pname, &val);
+	switch (code) {
+	    default:		/* invalid */
+		return code;
+	    case 1:		/* missing */
+		break;
+	    case 0:
+		code = (*pdef->set)(i_ctx_p, &val);
+		if (code < 0)
+		    return code;
+	}
+    }
+
     return 0;
 }
 
@@ -666,7 +1032,8 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 {
     stack_param_list list;
     gs_param_list *const plist = (gs_param_list *)&list;
-    int i, code = 0;
+    int code = 0;
+    unsigned int i;
 
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
     for (i = 0; i < pset->long_count; i++) {
@@ -727,13 +1094,6 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 	if (code < 0)
 	    return code;
     }
-#if ENABLE_CUSTOM_COLOR_CALLBACK
-    if (pset == &system_param_set) {
-        /* The custom_color callback pointer */
-	if (pname_matches(CustomColorCallbackParamName, psref))
-	    code = custom_color_callback_get_params(i_ctx_p->pgs, plist);
-    }
-#endif
     return code;
 }
 

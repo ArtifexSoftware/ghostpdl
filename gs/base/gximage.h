@@ -26,6 +26,7 @@
 #include "gxiclass.h"
 #include "gxiparam.h"
 #include "gxsample.h"
+#include "gscms.h"
 
 /* Define the abstract type for the image enumerator state. */
 /*typedef struct gx_image_enum_s gx_image_enum;*/  /* in gxiclass.h */
@@ -165,6 +166,13 @@ typedef struct gx_device_clip_s gx_device_clip;
 typedef struct gx_device_rop_texture_s gx_device_rop_texture;
 #endif
 
+typedef struct gx_image_icc_setup_s {
+    bool need_decode; /* used in icc processing */
+    bool is_lab; /* used in icc processing */
+    bool must_halftone; /* used in icc processing */
+    bool has_transfer; /* used in icc processing */
+} gx_image_icc_setup_t;
+
 struct gx_image_enum_s {
     gx_image_enum_common;
     /* We really want the map structure to be long-aligned, */
@@ -268,15 +276,21 @@ struct gx_image_enum_s {
     /* Entries 0 and 255 of the following are set at initialization */
     /* for monochrome images; other entries are updated dynamically. */
     gx_image_clue clues[256];
-#define icolor0 clues[0].dev_color
-#define icolor1 clues[255].dev_color
+    gx_device_color icolor0_val; /* This is used if clues is not used */
+    gx_device_color icolor1_val;
+    gx_device_color *icolor0;
+    gx_device_color *icolor1;
+    gsicc_link_t *icc_link; /* ICC link to avoid recreation with every line */
+    gx_image_icc_setup_t icc_setup;
+    gs_range_t *cie_range;   /* Needed potentially if CS was PS CIE based */
 };
 
 /* Enumerate the pointers in an image enumerator. */
 #define gx_image_enum_do_ptrs(m)\
   m(0,pis) m(1,pcs) m(2,dev) m(3,buffer) m(4,line)\
-  m(5,clip_dev) m(6,rop_dev) m(7,scaler)
-#define gx_image_enum_num_ptrs 8
+  m(5,clip_dev) m(6,rop_dev) m(7,scaler) m(8,icc_link)\
+  m(9,cie_range)
+#define gx_image_enum_num_ptrs 10
 #define private_st_gx_image_enum() /* in gsimage.c */\
   gs_private_st_composite(st_gx_image_enum, gx_image_enum, "gx_image_enum",\
     image_enum_enum_ptrs, image_enum_reloc_ptrs)
@@ -293,7 +307,8 @@ struct gx_image_enum_s {
  */
 void gx_image_scale_mask_colors(gx_image_enum *penum,
 				int component_index);
-
+/* Used by icc processing to detect decode cases */
+bool gx_has_transfer(const gs_imager_state *pis, int num_comps);
 /*
  * Do common initialization for processing an ImageType 1 or 4 image.
  * Allocate the enumerator and fill in the following members:

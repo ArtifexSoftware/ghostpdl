@@ -51,6 +51,8 @@
 #include "gzht.h"
 #include "gxshade.h"
 #include "gxshade4.h"
+#include "gsiccmanage.h"
+#include "gsicc.h"
 
 extern_gx_device_halftone_list();
 extern_gx_image_type_table();
@@ -242,7 +244,7 @@ static int read_set_bits(command_buf_t *pcb, tile_slot *bits,
 static int read_set_misc2(command_buf_t *pcb, gs_imager_state *pis,
                            segment_notes *pnotes);
 static int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
-                                 gs_color_space **ppcs,
+                                 gs_color_space **ppcs, gx_device_clist_reader *cdev,
                                  gs_memory_t *mem);
 static int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
                              gs_color_space *pcs);
@@ -533,6 +535,8 @@ clist_playback_band(clist_playback_action playback_action,
     gx_device_clip clipper_dev;
     bool clipper_dev_open;
     patch_fill_state_t pfs;
+    int op = 0;
+
 #ifdef DEBUG
     stream_state *st = s->state; /* Save because s_close resets s->state. */
 #endif
@@ -593,8 +597,23 @@ in:				/* Initialize for a new page. */
 	(*dev_proc(target, get_clipping_box))(target, &target_box);
     imager_state = clist_imager_state_initial;
     code = gs_imager_state_initialize(&imager_state, mem);
+    /* Remove the ICC link cache and replace with the device link cache 
+       so that we share the cache across bands */
+   rc_decrement(imager_state.icc_link_cache,"clist_plaback_band");
+   imager_state.icc_link_cache = cdev->icc_cache_cl;
+   rc_increment(cdev->icc_cache_cl);
     if (code < 0)
 	goto out;
+
+    /* Initialize the ICC manger with the output device profile.
+       The default profiles must be packed in the cfile. */
+
+    if (target != 0)
+        code = gsicc_init_device_profile((const gs_state *) &imager_state, target);
+
+    if (code < 0)
+	goto out;
+
     imager_state.line_params.dash.pattern = dash_pattern;
     if (tdev != 0)
 	gx_set_cmap_procs(&imager_state, tdev);
@@ -613,7 +632,6 @@ in:				/* Initialize for a new page. */
 	goto out;
     }
     while (code >= 0) {
-	int op;
 	int compress;
 	int depth = 0x7badf00d; /* Initialize against indeterminizm. */
 	int raster = 0x7badf00d; /* Initialize against indeterminizm. */
@@ -1235,7 +1253,7 @@ set_phase:	/*
 		    case cmd_opv_set_color_space:
 			cbuf.ptr = cbp;
 			code = read_set_color_space(&cbuf, &imager_state,
-						    &pcs, mem);
+						    &pcs, cdev, mem);
 			cbp = cbuf.ptr;
 			if (code < 0) {
 			    if (code == gs_error_rangecheck)
@@ -2085,7 +2103,7 @@ idata:			data_size = 0;
 	if (code == 0)
 	    code = code1;
     }
-    rc_decrement(pcs, "clist_playback_band");
+    rc_decrement_cs(pcs, "clist_playback_band");
     gx_cpath_free(&clip_path, "clist_render_band exit");
     gx_path_free(&path, "clist_render_band exit");
     if (imager_state.pattern_cache != NULL) {
@@ -2105,8 +2123,8 @@ idata:			data_size = 0;
 	return_error(code);
     }
     /* Check whether we have more pages to process. */
-    if (playback_action != playback_action_setup && 
-	(cbp < cbuf.end || !seofp(s))
+    if ((playback_action != playback_action_setup && 
+	(cbp < cbuf.end || !seofp(s)) && (op != cmd_opv_end_page) )
 	)
 	goto in;
     if (pfs.dev != NULL)
@@ -2454,17 +2472,25 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 
 static int
 read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
-		     gs_color_space **ppcs, gs_memory_t *mem)
+		     gs_color_space **ppcs, gx_device_clist_reader *cdev,
+                     gs_memory_t *mem)
 {
     const byte *cbp = pcb->ptr;
     byte b = *cbp++;
     int index = b >> 4;
     gs_color_space *pcs;
     int code = 0;
+    int64_t hash_code;
+    cmm_profile_t *picc_profile;
 
     if_debug3('L', " %d%s%s\n", index,
 	      (b & 8 ? " (indexed)" : ""),
 	      (b & 4 ? "(proc)" : ""));
+    /* They all store a hash code even if it is NULL
+       In the ICC case it is used to look
+       up profile in clist */
+    memcpy(&hash_code, cbp, sizeof(hash_code));
+    cbp = cbp+sizeof(hash_code);
     switch (index) {
     case gs_color_space_index_DeviceGray:
         pcs = gs_cspace_new_DeviceGray(mem);
@@ -2475,6 +2501,21 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
     case gs_color_space_index_DeviceCMYK:
         pcs = gs_cspace_new_DeviceCMYK(mem);
 	break;
+    case gs_color_space_index_ICC:
+        /* build the color space object */
+        code = gs_cspace_build_ICC(&pcs, NULL, mem);
+        /* Get the profile information from the clist */
+        picc_profile = gsicc_read_serial_icc((gx_device *) cdev, hash_code);
+        if (picc_profile == NULL)
+            return gs_rethrow(-1, "Failed to find ICC profile during clist read");
+        /* Store the clist reader address in the profile
+           structure so that we can get to the buffer
+           data if we really neeed it.  Ideally, we
+           will use a cached link and only acess this once. */
+        picc_profile->dev = (gx_device*) cdev;
+        /* Assign it to the colorspace */
+        code = gsicc_set_gscs_profile(pcs, picc_profile, mem);
+        break;
     default:
 	code = gs_note_error(gs_error_rangecheck);	/* others are NYI */
 	goto out;
@@ -2490,7 +2531,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 
 	pcs_indexed = gs_cspace_alloc(mem, &gs_color_space_type_Indexed);
 	if (pcs_indexed == 0) {
-	    rc_decrement(pcs, "read_set_color_space");
+	    rc_decrement_cs(pcs, "read_set_color_space");
 	    code = gs_note_error(gs_error_VMerror);
 	    goto out;
 	}
@@ -2507,7 +2548,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 
 	    code = alloc_indexed_map(&map, num_values, mem, "indexed map");
 	    if (code < 0) {
-		rc_decrement(pcs, "read_set_color_space");
+		rc_decrement_cs(pcs, "read_set_color_space");
 		goto out;
 	    }
 	    map->proc.lookup_index = lookup_indexed_map;
@@ -2519,7 +2560,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 
 	    if (table == 0) {
 		code = gs_note_error(gs_error_VMerror);
-		rc_decrement(pcs, "read_set_color_space");
+		rc_decrement_cs(pcs, "read_set_color_space");
 		goto out;
 	    }
 	    pcs->params.indexed.lookup.table.data = table;
@@ -2531,8 +2572,9 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 	pcs->params.indexed.hival = hival;
 	pcs->params.indexed.use_proc = use_proc;
     }
+
     /* Release reference to old color space before installing new one. */
-    rc_decrement_only(*ppcs, "read_set_color_space");
+    rc_decrement_only_cs(*ppcs, "read_set_color_space");
     *ppcs = pcs;
 out:
     pcb->ptr = cbp;
@@ -2697,7 +2739,7 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state
      * Apply the compositor to the target device; note that this may
      * change the target device.
      */
-    code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pis, mem);
+    code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pis, mem, (gx_device*) cdev);
     if (code >= 0 && tdev != *ptarget) {
         rc_increment(tdev);
         *ptarget = tdev;

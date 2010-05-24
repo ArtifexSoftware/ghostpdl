@@ -51,10 +51,7 @@ cs_proc_install_cspace(gx_install_CIEA);
 extern	int	gx_cie_to_xyz_alloc(gs_imager_state **,
 				    const gs_color_space *, gs_memory_t *);
 extern	void	gx_cie_to_xyz_free(gs_imager_state *);
-
-
 extern int gx_cie_to_xyz_alloc2(gs_color_space * pcs, gs_state * pgs);
-
 
 /* Defined in gsciemap.c */
 
@@ -92,11 +89,11 @@ cs_proc_concretize_color(gx_concretize_CIEDEFG);
 cs_proc_concretize_color(gx_concretize_CIEDEF);
 cs_proc_concretize_color(gx_concretize_CIEABC);
 #if ENABLE_CUSTOM_COLOR_CALLBACK
-cs_proc_remap_color(gx_remap_CIEDEFG);
-cs_proc_remap_color(gx_remap_CIEDEF);
-cs_proc_remap_color(gx_remap_CIEA);
 cs_proc_remap_color(gx_remap_IndexedSpace);
 #endif
+cs_proc_remap_color(gx_remap_CIEDEF);
+cs_proc_remap_color(gx_remap_CIEDEFG);
+cs_proc_remap_color(gx_remap_CIEA);
 cs_proc_remap_color(gx_remap_CIEABC);
 cs_proc_concretize_color(gx_concretize_CIEA);
 
@@ -132,5 +129,17 @@ extern  void *  gx_build_cie_space( gs_color_space **           ppcspace,
  * is exported for use by gsicc.c to implement ICCBased color spaces.
  */
 cs_proc_concrete_space(gx_concrete_space_CIE);
+
+/* Special operations used in the creation of ICC color spaces from PS 
+   spaces.  These are used to map from PS color to CIEXYZ */
+int gx_psconcretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
+		      frac * pconc, const gs_imager_state * pis);
+int gx_psconcretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
+		     frac * pconc, const gs_imager_state * pis);
+int gx_psconcretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
+		     frac * pconc, const gs_imager_state * pis);
+int gx_psconcretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
+		     frac * pconc, const gs_imager_state * pis);
+bool check_range(gs_range *ranges, int num_colorants);
 
 #endif /* gxcie_INCLUDED */

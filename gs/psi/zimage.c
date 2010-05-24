@@ -55,7 +55,7 @@ data_image_params(const gs_memory_t *mem,
 		  const ref *op, gs_data_image_t *pim,
 		  image_params *pip, bool require_DataSource,
 		  int num_components, int max_bits_per_component,
-		  bool has_alpha)
+		  bool has_alpha, bool islab)
 {
     int code;
     int decode_size;
@@ -74,13 +74,37 @@ data_image_params(const gs_memory_t *mem,
 	(code = dict_int_param(op, "BitsPerComponent", 1,
 			       max_bits_per_component, -1,
 			       &pim->BitsPerComponent)) < 0 ||
-	(code = decode_size = dict_floats_param(mem, op, "Decode",
-						num_components * 2,
-						&pim->Decode[0], NULL)) < 0 ||
 	(code = dict_bool_param(op, "Interpolate", false,
 				&pim->Interpolate)) < 0
 	)
 	return code;
+
+
+    /* Decode size pulled out of here to catch case of Lab color space which
+       has a 4 entry range.  We also do NOT want to do Lab decoding IF range
+       is the common -128 127 for a and b. Otherwise we end up doing multiple
+       decode operations, since ICC flow will expect encoded data. That is resolved later.*/
+
+    if (islab) {
+        
+        code = decode_size = dict_floats_param(mem, op, "Decode", 4,
+						    &pim->Decode[2], NULL);
+        if (code < 0) return code;
+
+        pim->Decode[0] = 0;
+        pim->Decode[1] = 100.0;
+
+    } else {
+
+        code = decode_size = dict_floats_param(mem, op, "Decode",
+						    num_components * 2,
+						    &pim->Decode[0], NULL);
+        if (code < 0) return code;
+
+    }
+
+
+
     pip->pDecode = &pim->Decode[0];
     /* Extract and check the data sources. */
     if ((code = dict_find_string(op, "DataSource", &pds)) <= 0) {
@@ -120,6 +144,7 @@ pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
 		   image_params *pip, int max_bits_per_component,
 		   bool has_alpha, gs_color_space *csp)
 {
+    bool islab = false;
     int num_components =
 	gs_color_space_num_components(csp);
     int code;
@@ -127,9 +152,13 @@ pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
     if (num_components < 1)
 	return_error(e_rangecheck);	/* Pattern space not allowed */
     pim->ColorSpace = csp;
+
+    if (pim->ColorSpace->cmm_icc_profile_data != NULL)
+        islab = pim->ColorSpace->cmm_icc_profile_data->islab;
+
     code = data_image_params(imemory, op, (gs_data_image_t *) pim, pip, true,
 			     num_components, max_bits_per_component,
-			     has_alpha);
+			     has_alpha, islab);
     if (code < 0)
 	return code;
     pim->format =
@@ -214,7 +243,7 @@ zimagemask1(i_ctx_t *i_ctx_p)
     gs_image_t_init_mask_adjust(&image, false,
 				gs_incachedevice(igs) != CACHE_DEVICE_NONE);
     code = data_image_params(imemory, op, (gs_data_image_t *) & image,
-			     &ip, true, 1, 1, false);
+			     &ip, true, 1, 1, false, false);
     if (code < 0)
 	return code;
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],

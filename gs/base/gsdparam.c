@@ -71,7 +71,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     /* Standard page device parameters: */
 
     bool seprs = false;
-    gs_param_string dns, pcms;
+    gs_param_string dns, pcms, icc;
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
 
@@ -101,6 +101,9 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 	else
 	    pcms.data = 0;
     }
+
+    param_string_from_string(icc, dev->color_info.icc_profile);
+
     set_param_array(hwra, dev->HWResolution, 2);
     set_param_array(msa, dev->MediaSize, 2);
     set_param_array(ibba, dev->ImagingBBox, 4);
@@ -122,6 +125,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 	/* Standard parameters */
 
 	(code = param_write_name(plist, "OutputDevice", &dns)) < 0 ||
+        (code = param_write_name(plist,"OutputICCProfile", &icc)) < 0 ||
 #ifdef PAGESIZE_IS_MEDIASIZE
 	(code = param_write_float_array(plist, "PageSize", &msa)) < 0 ||
 #endif
@@ -434,6 +438,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int ncset = dev->NumCopies_set;
     bool ignc = dev->IgnoreNumCopies;
     bool ucc = dev->UseCIEColor;
+    gs_param_string icc_pro;
     bool locksafe = dev->LockSafetyParams;
     gs_param_float_array ibba;
     bool ibbnull = false;
@@ -620,6 +625,17 @@ nce:
 	    break;
     }
     }
+
+    if (param_read_string(plist, "OutputICCProfile", &icc_pro) != 1) {
+
+        if (icc_pro.size <= gp_file_name_sizeof) {
+            
+            /* Copy device ICC profile name in the device */
+  	    memcpy(&(dev->color_info.icc_profile[0]), icc_pro.data, icc_pro.size);        
+        } 
+
+    }
+
     if ((code = param_read_bool(plist, (param_name = "UseCIEColor"), &ucc)) < 0) {
 	ecode = code;
 	param_signal_error(plist, param_name, ecode);

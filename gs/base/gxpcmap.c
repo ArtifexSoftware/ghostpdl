@@ -270,6 +270,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	bool NumCopies_set;
 	bool IgnoreNumCopies;
 	*/
+        cwdev->icc_cache_cl = NULL;
+        cwdev->icc_table = NULL;
 	cwdev->UseCIEColor = tdev->UseCIEColor;
 	cwdev->LockSafetyParams = true;
 	/* gx_page_device_procs page_procs; */
@@ -705,6 +707,12 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	}
 	if (ctile->cdev != NULL) {
 	    dev_proc(&ctile->cdev->common, close_device)((gx_device *)&ctile->cdev->common);
+            /* Free up the icc based stuff in the clist device.  I am puzzled
+               why the other objects are not released */
+            clist_icc_freetable(ctile->cdev->common.icc_table, 
+                            ctile->cdev->common.memory);
+            rc_decrement(ctile->cdev->common.icc_cache_cl,
+                            "gx_pattern_cache_free_entry");
 	    ctile->cdev = NULL;
 	}
 
