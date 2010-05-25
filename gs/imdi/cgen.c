@@ -918,7 +918,7 @@ int gen_c_kernel(
 #endif /* VERBOSE */
 
 	/* Declare the function */
-	line(f,"void");
+	line(f,"static void");
 	line(f, "imdi_k%d(",index);
 	line(f, "imdi *s,			/* imdi context */");
 	line(f, "void **outp,		/* pointer to output pointers */");
@@ -1464,7 +1464,7 @@ int gen_c_kernel(
 		
 		/* Declare the generation structure data function */
 		cr(f);
-		line(f,"void");
+		line(f,"static void");
 		line(f, "imdi_k%d_gen(",index);
 		line(f, "genspec *g			/* structure to be initialised */");
 		line(f, ") {");
@@ -1501,7 +1501,7 @@ int gen_c_kernel(
 
 		/* Declare the generation structure data function */
 		cr(f);
-		line(f,"void");
+		line(f,"static void");
 		line(f, "imdi_k%d_tab(",index);
 		line(f, "tabspec *t			/* structure to be initialised */");
 		line(f, ") {");

@@ -77,7 +77,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k1(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -135,7 +135,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k1_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -222,7 +222,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k1_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -356,7 +356,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k2(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -422,7 +422,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k2_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -509,7 +509,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k2_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -648,7 +648,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k3(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -725,7 +725,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k3_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -812,7 +812,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k3_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -946,7 +946,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k4(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -1051,7 +1051,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k4_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -1138,7 +1138,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k4_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -1274,7 +1274,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k5(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -1393,7 +1393,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k5_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -1480,7 +1480,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k5_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -1618,7 +1618,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k6(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -1752,7 +1752,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k6_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -1839,7 +1839,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k6_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -1979,7 +1979,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k7(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -2129,7 +2129,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k7_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -2216,7 +2216,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k7_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -2348,7 +2348,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k8(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -2416,7 +2416,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k8_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -2503,7 +2503,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k8_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -2642,7 +2642,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k9(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -2720,7 +2720,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k9_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -2807,7 +2807,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k9_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -2951,7 +2951,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k10(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -3041,7 +3041,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k10_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -3128,7 +3128,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k10_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -3267,7 +3267,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k11(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -3386,7 +3386,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k11_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -3473,7 +3473,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k11_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -3614,7 +3614,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k12(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -3748,7 +3748,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k12_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -3835,7 +3835,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k12_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -3978,7 +3978,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k13(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -4128,7 +4128,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k13_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -4215,7 +4215,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k13_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -4360,7 +4360,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k14(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -4527,7 +4527,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k14_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -4614,7 +4614,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k14_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -4747,7 +4747,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k15(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -4817,7 +4817,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k15_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -4904,7 +4904,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k15_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -5044,7 +5044,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k16(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -5124,7 +5124,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k16_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -5211,7 +5211,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k16_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -5356,7 +5356,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k17(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -5448,7 +5448,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k17_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -5535,7 +5535,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k17_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -5675,7 +5675,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k18(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -5796,7 +5796,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k18_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -5883,7 +5883,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k18_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -6025,7 +6025,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k19(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -6161,7 +6161,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k19_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -6248,7 +6248,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k19_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -6392,7 +6392,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k20(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -6544,7 +6544,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k20_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -6631,7 +6631,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k20_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -6777,7 +6777,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k21(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -6946,7 +6946,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k21_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -7033,7 +7033,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k21_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -7169,7 +7169,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k22(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -7246,7 +7246,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k22_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -7333,7 +7333,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k22_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -7476,7 +7476,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k23(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -7565,7 +7565,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k23_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -7652,7 +7652,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k23_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -7800,7 +7800,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k24(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -7902,7 +7902,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k24_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -7989,7 +7989,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k24_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -8132,7 +8132,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k25(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -8264,7 +8264,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k25_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -8351,7 +8351,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k25_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -8496,7 +8496,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k26(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -8644,7 +8644,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k26_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -8731,7 +8731,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k26_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -8878,7 +8878,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k27(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -9043,7 +9043,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k27_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -9130,7 +9130,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k27_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -9279,7 +9279,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k28(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -9462,7 +9462,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k28_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -9549,7 +9549,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k28_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -9686,7 +9686,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k29(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -9765,7 +9765,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k29_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -9852,7 +9852,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k29_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -9996,7 +9996,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k30(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -10087,7 +10087,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k30_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -10174,7 +10174,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k30_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -10323,7 +10323,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k31(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -10427,7 +10427,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k31_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -10514,7 +10514,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k31_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -10658,7 +10658,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k32(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -10792,7 +10792,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k32_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -10879,7 +10879,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k32_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -11025,7 +11025,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k33(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -11175,7 +11175,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k33_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -11262,7 +11262,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k33_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -11410,7 +11410,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k34(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -11577,7 +11577,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k34_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -11664,7 +11664,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k34_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -11814,7 +11814,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k35(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -11999,7 +11999,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k35_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -12086,7 +12086,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k35_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -12226,7 +12226,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k36(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -12312,7 +12312,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k36_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -12399,7 +12399,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k36_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -12546,7 +12546,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k37(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -12646,7 +12646,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k37_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -12733,7 +12733,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k37_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -12885,7 +12885,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k38(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -12999,7 +12999,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k38_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -13086,7 +13086,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k38_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -13233,7 +13233,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k39(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -13378,7 +13378,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k39_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -13465,7 +13465,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k39_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -13614,7 +13614,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k40(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -13776,7 +13776,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k40_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -13863,7 +13863,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k40_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -14014,7 +14014,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k41(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -14194,7 +14194,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k41_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -14281,7 +14281,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k41_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -14434,7 +14434,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k42(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -14633,7 +14633,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k42_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -14720,7 +14720,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k42_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -14861,7 +14861,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k43(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -14949,7 +14949,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k43_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -15036,7 +15036,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k43_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -15184,7 +15184,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k44(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -15286,7 +15286,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k44_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -15373,7 +15373,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k44_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -15526,7 +15526,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k45(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -15642,7 +15642,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k45_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -15729,7 +15729,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k45_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -15877,7 +15877,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k46(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -16024,7 +16024,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k46_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -16111,7 +16111,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k46_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -16261,7 +16261,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k47(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -16425,7 +16425,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k47_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -16512,7 +16512,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k47_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -16664,7 +16664,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k48(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -16846,7 +16846,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k48_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -16933,7 +16933,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k48_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -17087,7 +17087,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned char *)((p) + (off) * 1))
 
-void
+static void
 imdi_k49(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -17288,7 +17288,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k49_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -17375,7 +17375,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k49_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -17502,7 +17502,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k50(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -17560,7 +17560,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k50_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -17647,7 +17647,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k50_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -17781,7 +17781,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k51(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -17847,7 +17847,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k51_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -17934,7 +17934,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k51_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -18073,7 +18073,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k52(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -18150,7 +18150,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k52_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -18237,7 +18237,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k52_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -18371,7 +18371,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k53(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -18476,7 +18476,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k53_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -18563,7 +18563,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k53_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -18699,7 +18699,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k54(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -18818,7 +18818,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k54_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -18905,7 +18905,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k54_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -19043,7 +19043,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k55(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -19177,7 +19177,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k55_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -19264,7 +19264,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k55_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -19404,7 +19404,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k56(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -19554,7 +19554,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k56_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -19641,7 +19641,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k56_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -19773,7 +19773,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k57(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -19841,7 +19841,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k57_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -19928,7 +19928,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k57_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -20067,7 +20067,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k58(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -20145,7 +20145,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k58_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -20232,7 +20232,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k58_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -20376,7 +20376,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k59(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -20466,7 +20466,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k59_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -20553,7 +20553,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k59_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -20692,7 +20692,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k60(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -20811,7 +20811,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k60_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -20898,7 +20898,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k60_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -21039,7 +21039,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k61(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -21173,7 +21173,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k61_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -21260,7 +21260,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k61_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -21403,7 +21403,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k62(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -21553,7 +21553,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k62_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -21640,7 +21640,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k62_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -21785,7 +21785,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k63(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -21952,7 +21952,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k63_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -22039,7 +22039,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k63_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -22172,7 +22172,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k64(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -22242,7 +22242,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k64_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -22329,7 +22329,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k64_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -22469,7 +22469,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k65(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -22549,7 +22549,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k65_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -22636,7 +22636,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k65_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -22781,7 +22781,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k66(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -22873,7 +22873,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k66_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -22960,7 +22960,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k66_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -23100,7 +23100,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k67(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -23221,7 +23221,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k67_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -23308,7 +23308,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k67_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -23450,7 +23450,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k68(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -23586,7 +23586,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k68_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -23673,7 +23673,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k68_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -23817,7 +23817,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k69(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -23969,7 +23969,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k69_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -24056,7 +24056,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k69_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -24202,7 +24202,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k70(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -24371,7 +24371,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k70_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -24458,7 +24458,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k70_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -24594,7 +24594,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k71(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -24671,7 +24671,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k71_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -24758,7 +24758,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k71_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -24901,7 +24901,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k72(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -24990,7 +24990,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k72_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -25077,7 +25077,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k72_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -25225,7 +25225,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k73(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -25327,7 +25327,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k73_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -25414,7 +25414,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k73_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -25557,7 +25557,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k74(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -25689,7 +25689,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k74_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -25776,7 +25776,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k74_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -25921,7 +25921,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k75(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -26069,7 +26069,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k75_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -26156,7 +26156,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k75_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -26303,7 +26303,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k76(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -26468,7 +26468,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k76_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -26555,7 +26555,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k76_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -26704,7 +26704,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k77(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -26887,7 +26887,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k77_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -26974,7 +26974,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k77_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -27111,7 +27111,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k78(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -27190,7 +27190,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k78_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -27277,7 +27277,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k78_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -27421,7 +27421,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k79(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -27512,7 +27512,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k79_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -27599,7 +27599,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k79_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -27748,7 +27748,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k80(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -27852,7 +27852,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k80_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -27939,7 +27939,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k80_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -28083,7 +28083,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k81(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -28217,7 +28217,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k81_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -28304,7 +28304,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k81_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -28450,7 +28450,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k82(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -28600,7 +28600,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k82_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -28687,7 +28687,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k82_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -28835,7 +28835,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k83(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -29002,7 +29002,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k83_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -29089,7 +29089,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k83_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -29239,7 +29239,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k84(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -29424,7 +29424,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k84_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -29511,7 +29511,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k84_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -29651,7 +29651,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k85(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -29737,7 +29737,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k85_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -29824,7 +29824,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k85_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -29971,7 +29971,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k86(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -30071,7 +30071,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k86_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -30158,7 +30158,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k86_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -30310,7 +30310,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k87(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -30424,7 +30424,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k87_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -30511,7 +30511,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k87_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -30658,7 +30658,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k88(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -30803,7 +30803,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k88_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -30890,7 +30890,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k88_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -31039,7 +31039,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k89(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -31201,7 +31201,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k89_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -31288,7 +31288,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k89_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -31439,7 +31439,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k90(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -31619,7 +31619,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k90_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -31706,7 +31706,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k90_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -31859,7 +31859,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k91(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -32058,7 +32058,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_PE
 #undef OT_E
 
-void
+static void
 imdi_k91_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -32145,7 +32145,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k91_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -32286,7 +32286,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k92(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -32374,7 +32374,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k92_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -32461,7 +32461,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k92_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -32609,7 +32609,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k93(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -32711,7 +32711,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k93_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -32798,7 +32798,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k93_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -32951,7 +32951,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k94(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -33067,7 +33067,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k94_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -33154,7 +33154,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k94_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -33302,7 +33302,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k95(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -33449,7 +33449,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k95_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -33536,7 +33536,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k95_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -33686,7 +33686,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k96(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -33850,7 +33850,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k96_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -33937,7 +33937,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k96_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -34089,7 +34089,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k97(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -34271,7 +34271,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k97_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -34358,7 +34358,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k97_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -34512,7 +34512,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k98(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -34713,7 +34713,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k98_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -34800,7 +34800,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k98_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -34923,7 +34923,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k99(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -34983,7 +34983,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k99_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -35070,7 +35070,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k99_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -35200,7 +35200,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k100(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -35280,7 +35280,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k100_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -35367,7 +35367,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k100_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -35499,7 +35499,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k101(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -35591,7 +35591,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k101_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -35678,7 +35678,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k101_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -35816,7 +35816,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k102(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -35921,7 +35921,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k102_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -36008,7 +36008,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k102_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -36148,7 +36148,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k103(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -36267,7 +36267,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k103_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -36354,7 +36354,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k103_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -36496,7 +36496,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k104(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -36630,7 +36630,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k104_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -36717,7 +36717,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k104_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -36861,7 +36861,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k105(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -37011,7 +37011,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k105_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -37098,7 +37098,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k105_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -37225,7 +37225,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k106(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -37297,7 +37297,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k106_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -37384,7 +37384,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k106_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -37518,7 +37518,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k107(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -37614,7 +37614,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k107_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -37701,7 +37701,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k107_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -37837,7 +37837,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k108(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -37947,7 +37947,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k108_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -38034,7 +38034,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k108_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -38176,7 +38176,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k109(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -38301,7 +38301,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k109_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -38388,7 +38388,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k109_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -38532,7 +38532,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k110(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -38673,7 +38673,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k110_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -38760,7 +38760,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k110_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -38906,7 +38906,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k111(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -39064,7 +39064,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k111_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -39151,7 +39151,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k111_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -39299,7 +39299,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k112(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -39475,7 +39475,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k112_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -39562,7 +39562,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k112_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -39691,7 +39691,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k113(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -39769,7 +39769,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k113_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -39856,7 +39856,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k113_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -39992,7 +39992,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k114(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -40096,7 +40096,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k114_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -40183,7 +40183,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k114_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -40321,7 +40321,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k115(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -40440,7 +40440,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k115_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -40527,7 +40527,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k115_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -40671,7 +40671,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k116(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -40806,7 +40806,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k116_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -40893,7 +40893,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k116_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -41039,7 +41039,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k117(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -41191,7 +41191,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k117_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -41278,7 +41278,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k117_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -41426,7 +41426,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k118(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -41596,7 +41596,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k118_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -41683,7 +41683,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k118_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -41833,7 +41833,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k119(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -42022,7 +42022,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k119_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -42109,7 +42109,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k119_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -42240,7 +42240,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k120(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -42324,7 +42324,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k120_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -42411,7 +42411,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k120_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -42549,7 +42549,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k121(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -42661,7 +42661,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k121_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -42748,7 +42748,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k121_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -42888,7 +42888,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k122(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -43016,7 +43016,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k122_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -43103,7 +43103,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k122_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -43249,7 +43249,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k123(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -43394,7 +43394,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k123_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -43481,7 +43481,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k123_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -43629,7 +43629,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k124(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -43792,7 +43792,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k124_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -43879,7 +43879,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k124_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -44029,7 +44029,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k125(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -44211,7 +44211,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k125_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -44298,7 +44298,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k125_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -44450,7 +44450,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k126(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -44652,7 +44652,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k126_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -44739,7 +44739,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k126_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -44872,7 +44872,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k127(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -44962,7 +44962,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k127_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -45049,7 +45049,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k127_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -45189,7 +45189,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k128(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -45309,7 +45309,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k128_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -45396,7 +45396,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k128_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -45538,7 +45538,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k129(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -45675,7 +45675,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k129_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -45762,7 +45762,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k129_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -45910,7 +45910,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k130(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -46065,7 +46065,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k130_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -46152,7 +46152,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k130_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -46302,7 +46302,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k131(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -46476,7 +46476,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k131_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -46563,7 +46563,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k131_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -46715,7 +46715,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k132(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -46909,7 +46909,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k132_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -46996,7 +46996,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k132_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -47150,7 +47150,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k133(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -47365,7 +47365,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k133_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -47452,7 +47452,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k133_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -47587,7 +47587,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k134(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -47683,7 +47683,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k134_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -47770,7 +47770,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k134_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -47912,7 +47912,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k135(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -48040,7 +48040,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k135_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -48127,7 +48127,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k135_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -48275,7 +48275,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k136(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -48421,7 +48421,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k136_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -48508,7 +48508,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k136_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -48658,7 +48658,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k137(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -48823,7 +48823,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k137_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -48910,7 +48910,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k137_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -49062,7 +49062,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k138(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -49247,7 +49247,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k138_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -49334,7 +49334,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k138_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -49488,7 +49488,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k139(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -49694,7 +49694,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k139_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -49781,7 +49781,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k139_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -49937,7 +49937,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k140(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -50165,7 +50165,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k140_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -50252,7 +50252,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k140_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -50389,7 +50389,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k141(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -50491,7 +50491,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k141_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -50578,7 +50578,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k141_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -50722,7 +50722,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k142(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -50858,7 +50858,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k142_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -50945,7 +50945,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k142_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -51091,7 +51091,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k143(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -51246,7 +51246,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k143_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -51333,7 +51333,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k143_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -51485,7 +51485,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k144(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -51660,7 +51660,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k144_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -51747,7 +51747,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k144_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -51901,7 +51901,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k145(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -52097,7 +52097,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k145_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -52184,7 +52184,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k145_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -52340,7 +52340,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k146(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -52558,7 +52558,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k146_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -52645,7 +52645,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k146_tab(
 tabspec *t			/* structure to be initialised */
 ) {
@@ -52803,7 +52803,7 @@ typedef unsigned char * pointer;
 /* Output table indexes */
 #define OT_E(p, off) *((unsigned short *)((p) + (off) * 2))
 
-void
+static void
 imdi_k147(
 imdi *s,			/* imdi context */
 void **outp,		/* pointer to output pointers */
@@ -53044,7 +53044,7 @@ unsigned int npix	/* Number of pixels to process */
 #undef IM_FE
 #undef OT_E
 
-void
+static void
 imdi_k147_gen(
 genspec *g			/* structure to be initialised */
 ) {
@@ -53131,7 +53131,7 @@ genspec *g			/* structure to be initialised */
 	memcpy(g, data, sizeof(data));	/* Initialise the structure */
 }
 
-void
+static void
 imdi_k147_tab(
 tabspec *t			/* structure to be initialised */
 ) {
