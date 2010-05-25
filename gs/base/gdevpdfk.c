@@ -205,8 +205,6 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
     int code;
     cos_stream_t * pcstrm = 0;
     cos_array_t * prngca = 0;
-    bool std_ranges = true;
-    bool scale_inputs = false;
 
     /* Range values are a bit tricky to check.
        For example, CIELAB ICC profiles have

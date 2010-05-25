@@ -556,7 +556,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
         } else {
             /* Need to create the equivalent object */
             
-            gs_colorspace_set_icc_equivalent(pcs_in, &islab, pdev->memory);
+            gs_colorspace_set_icc_equivalent((gs_color_space *)pcs_in, &islab, pdev->memory);
             pcs = pcs_in->icc_equivalent;
         }
     }
