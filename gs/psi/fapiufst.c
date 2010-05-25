@@ -166,13 +166,13 @@ static FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int
 	    sPlugIn[l] = 0;
 	    bPlugIn = true;
 	} else
-	    emprintf(r->ff->memory,
+	    emprintf(r->client_mem.client_data,
                      "Warning: Unknown UFST parameter ignored.\n");
     }
 #if !NO_SYMSET_MAPPING
     if (!bSSdir) {
 	strcpy(ufst_root_dir, ".");
-	emprintf(r->ff->memory,
+	emprintf(r->client_mem.client_data,
                  "Warning: UFST_SSdir is not specified, will search *.ss files in the curent directory.\n");
     }
 #endif
@@ -187,7 +187,7 @@ static FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int
 	    return code;
     } else {
 #ifdef FCO_RDR
-	emprintf(r->ff->memory,
+	emprintf(r->client_mem.client_data,
                  "Warning: UFST_PlugIn is not specified, some characters may be missing.\n");
 #endif
     }
@@ -206,7 +206,7 @@ static FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, i
     {
 	code = open_UFST(r, server_param, server_param_size);
 	if (code < 0) {
-	    emprintf(r->ff->memory, "Error opening the UFST font server.\n");
+	    emprintf(r->client_mem.client_data, "Error opening the UFST font server.\n");
 	    return code;
 	}
     }
