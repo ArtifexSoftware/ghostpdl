@@ -1060,7 +1060,7 @@ feedPaper( lx5000_device *lx5000dev, int newLine, int *currentLine,
   by the variable numColours, which will be 1 if the driver is being used
   in black-only mode.
  *----------------------------------------------------------------------*/
-int
+static int
 getColourBufs( lx5000_device *lx5000dev,
 	       byte **lineBufferPtr, byte *colourBufPtrs[],
 	       byte **swipeBufPtr, bool allocate )

@@ -871,7 +871,7 @@ typedef long (*funcptr)( unsigned char *, unsigned short, unsigned short, unsign
 
 funcptr UpdateScanLine[2] = { SaveScanData, UpdateScanSize };
 
-long Save6Bytes(unsigned char *out_buf, unsigned short usDy, unsigned short usRl, short sDx, unsigned short usWarp)
+static long Save6Bytes(unsigned char *out_buf, unsigned short usDy, unsigned short usRl, short sDx, unsigned short usWarp)
 {
   unsigned long ultmp_dat;
   long  lWarp, lDis;
@@ -901,7 +901,7 @@ long Save6Bytes(unsigned char *out_buf, unsigned short usDy, unsigned short usRl
   return(6);
 } /* Save6Bytes()*/
 
-long  Save4Bytes(unsigned char *out_buf, unsigned short usDy, unsigned short usRl, short sDx)
+static long  Save4Bytes(unsigned char *out_buf, unsigned short usDy, unsigned short usRl, short sDx)
 {
   unsigned short  ustmp_dat;
 
@@ -925,7 +925,7 @@ long  Save4Bytes(unsigned char *out_buf, unsigned short usDy, unsigned short usR
   return(4);
 }   /* end of Save4Bytes()*/
 
-long  Save2Bytes(unsigned char *out_buf, unsigned short usDy, unsigned short usRl, short sDx)
+static long  Save2Bytes(unsigned char *out_buf, unsigned short usDy, unsigned short usRl, short sDx)
 {
   unsigned char ubtmp_dat;
 
@@ -1016,7 +1016,7 @@ long UpdateScanSize (unsigned char *out_buf,
   return(lRet);
 } /* end of UpdateScanSize() by bglee 19981224*/
 
-long GetSimpleScan(unsigned char *out_buf,
+static long GetSimpleScan(unsigned char *out_buf,
                    unsigned char ubSizeMode, 
                    unsigned short  *us1Count, 
                    unsigned short  *usDy, 
@@ -1106,7 +1106,7 @@ long GetSimpleScan(unsigned char *out_buf,
 } /* end of GetSimpleScan() */
 
 
-long scan_map (unsigned char *in_buf, 
+static long scan_map (unsigned char *in_buf, 
                unsigned char *out_buf,
                unsigned short usWidth, 
                unsigned short usHeight, 

@@ -202,7 +202,7 @@ static const gx_device_vector_procs devcairo_vector_procs = {
 
 /* Driver procedure implementation */
 
-cairo_status_t
+static cairo_status_t
 devcairo_write_func (void                *closure,
 		     const unsigned char *data,
 		     unsigned int         length)
@@ -366,7 +366,7 @@ devcairo_open_device(gx_device *dev)
     return code;
 }
 
-int
+static int
 devcairo_check_status (gx_device_cairo *devcairo)
 {
     /* little trick to check both surface and context status */
