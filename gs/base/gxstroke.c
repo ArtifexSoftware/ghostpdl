@@ -14,6 +14,7 @@
 /* $Id$ */
 /* Path stroking procedures for Ghostscript library */
 #include "math_.h"
+#include "stdlib.h" /* abs() */
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
