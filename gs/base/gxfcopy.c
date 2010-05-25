@@ -1743,6 +1743,8 @@ copied_cid2_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
     return glyph_index;
 }
 
+extern_st(st_subst_CID_on_WMode);
+
 static int
 copy_font_cid2(gs_font *font, gs_font *copied)
 {
@@ -1773,6 +1775,16 @@ copy_font_cid2(gs_font *font, gs_font *copied)
 	
 	copied42->data.get_glyph_index = copied_cid2_get_glyph_index;
     }
+    if (copied2->subst_CID_on_WMode) {
+	gs_subst_CID_on_WMode_t *subst = NULL;
+
+	rc_alloc_struct_1(subst, gs_subst_CID_on_WMode_t, &st_subst_CID_on_WMode, 
+			    copied2->memory, return_error(gs_error_VMerror), "copy_font_cid2");
+	subst->data[0] = subst->data[1] = 0;
+	copied2->subst_CID_on_WMode = subst;
+	rc_increment(subst);
+    }
+
     return 0;
 }
 
