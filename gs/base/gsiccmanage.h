@@ -22,13 +22,13 @@
    trunk */
 #define ICCBRANCH
 /* Define the default ICC profiles in the file system */
-#define DEFAULT_GRAY_ICC  "iccprofiles/default_gray.icc"
-#define DEFAULT_RGB_ICC   "iccprofiles/default_rgb.icc"
-#define DEFAULT_CMYK_ICC  "iccprofiles/default_cmyk.icc"
-#define LAB_ICC           "iccprofiles/lab.icc"
-#define SMASK_GRAY_ICC    "iccprofiles/ps_gray.icc"
-#define SMASK_RGB_ICC     "iccprofiles/ps_rgb.icc"
-#define SMASK_CMYK_ICC    "iccprofiles/ps_cmyk.icc"
+#define DEFAULT_GRAY_ICC  "default_gray.icc"
+#define DEFAULT_RGB_ICC   "default_rgb.icc"
+#define DEFAULT_CMYK_ICC  "default_cmyk.icc"
+#define LAB_ICC           "lab.icc"
+#define SMASK_GRAY_ICC    "ps_gray.icc"
+#define SMASK_RGB_ICC     "ps_rgb.icc"
+#define SMASK_CMYK_ICC    "ps_cmyk.icc"
 
 /* Key names for special common canned profiles.
    These are found in some image file formats as
@@ -37,7 +37,7 @@
 #define GSICC_STANDARD_PROFILES_KEYS\
   "srgb", "sgray"
 #define GSICC_STANDARD_PROFILES\
-  "iccprofiles/srgb.icc", "iccprofiles/sgray.icc"
+  "srgb.icc", "sgray.icc"
 #define GSICC_NUMBER_STANDARD_PROFILES 2
 
 #include "gsicc_littlecms.h"
