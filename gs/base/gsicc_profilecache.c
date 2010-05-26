@@ -145,7 +145,7 @@ gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
 #ifdef DEBUG
     if (curr == NULL) {
 	eprintf(" attempt to remove from an empty profile cache.\n");
-	gs_abort();
+	return; /* gs_abort(); */
     }
 #endif
     while (curr->next != NULL) {
