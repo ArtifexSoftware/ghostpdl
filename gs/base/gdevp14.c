@@ -5977,14 +5977,22 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 		/*
 		 * The number of components for the PDF14 device is the sum
 		 * of the process components and the number of spot colors
-		 * for the page.
+		 * for the page.  If the color capabilities of the parent
+                 * device (which coming into this are the same as the p14dev)
+                 * are smaller than the number of page spot colors then 
+                 * use that for the number of components. Otherwise use  
+                 * the page_spot_colors.
 		 */
 		p14dev->devn_params.page_spot_colors =
 		    pclist_devn_params->page_spot_colors;
-		p14dev->color_info.num_components =
-		    p14dev->devn_params.num_std_colorant_names +
-		    p14dev->devn_params.page_spot_colors;
-		/* Transfer the data for the compressed color encoding. */
+                if (num_comp < p14dev->devn_params.page_spot_colors + 4 ) {
+		    p14dev->color_info.num_components = num_comp;
+                } else {
+		    p14dev->color_info.num_components =
+		        p14dev->devn_params.num_std_colorant_names +
+		        p14dev->devn_params.page_spot_colors;
+                }
+ 		/* Transfer the data for the compressed color encoding. */
 		/* free_compressed_color_list(p14dev->memory,
 			p14dev->devn_params.compressed_color_list); */
 		p14dev->devn_params.compressed_color_list =
