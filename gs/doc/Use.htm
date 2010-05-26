@@ -889,8 +889,6 @@ For example, when COMPILE_INITS=1 (the current default build), if the first path
 is <code>%rom%Resource/Init/</code>, then the <code>GenericResourceDir</code>
 systemparam will be set to <code>%rom%Resource/</code> by default.
 
-
-
 <p>
 If the value of the system parameter <code>GenericResourceDir</code>
 is an absolute path (the default),
@@ -2475,6 +2473,14 @@ rendering.
 <dd>Specifies a path to resource files.
 The value is platform dependent. It must end with a directory separator.
 <p>
+<b><font size="+1">
+A note for Windows users, Artifex recommends the use of the 
+forward slash delimiter due to the special interpretation of \" by
+the Microsoft C startup code.  See 
+<a href="http://msdn.microsoft.com/en-us/library/a1y7w461.aspx">Parsing C Command-Line Arguments</a>
+for more information.
+</font></b>
+<p>
 Adobe specifies <code>GenericResourceDir</code> to be an absolute path
 to a single resource directory. Ghostscript instead maintains
 multiple resource directories and uses an extended method for finding
@@ -2639,7 +2645,7 @@ Structuring Convention comments.
 <dt><code>-sDefaultGrayProfile=</code><em>filename</em>
 <dd>Set the ICC profile that will be associated with
 undefined device gray color spaces.  If this is not set,
-the profile ./iccprofiles/default_gray.icc will be used as
+the profile file name "default_gray.icc" will be used as
 the default.
 </dl>
 
@@ -2647,7 +2653,7 @@ the default.
 <dt><code>-sDefaultRGBProfile=</code><em>filename</em>
 <dd>Set the ICC profile that will be associated with
 undefined device RGB color spaces.  If this is not set,
-the profile ./iccprofiles/default_rgb.icc will be used as
+the profile file name "default_rgb.icc" will be used as
 the default.
 </dl>
 
@@ -2655,7 +2661,7 @@ the default.
 <dt><code>-sDefaultCMYKProfile=</code><em>filename</em>
 <dd>Set the ICC profile that will be associated with
 undefined device CMYK color spaces.  If this is not set,
-the profile ./iccprofiles/default_cmyk.icc will be used as
+the profile file name "default_cmyk.icc" will be used as
 the default.
 </dl>
 
@@ -2707,38 +2713,41 @@ the output device.  Care should be taken to ensure that the
 number of colorants associated with the device is the same
 as the profile.  If this is not set, an appropriate profile
 (i.e. one with the proper number of colorants) will be
-selected from those in the directory ./iccprofiles .  Note that if the output
-device is CMYK + spot colorants, a CMYK profile can be used to
-provide color management for the CMYK colorants only.  In this case,
-spot colors will pass through unprocessed assuming the device supports those
-colorants.
+selected from those in the directory specified by ICCProfilesDir (see below).
+ Note that if the output device is CMYK + spot colorants, a CMYK
+profile can be used to provide color management for the CMYK colorants only.
+In this case, spot colors will pass through unprocessed assuming the
+device supports those colorants.
 </dl>
-
-
 
 <dl>
 <dt><code>-sICCProfilesDir=</code><em>path</em>
 <dd>Set a directory in which to search for the above profiles.  
 The directory path must end with a file system delimiter.  
-A note for Windows users, Artifex recommends the use of the 
-forward slash delimiter due to the special interpretation of \" by
-the Microsoft C startup code.  See 
-<a href="http://msdn.microsoft.com/en-us/library/a1y7w461.aspx">Parsing C Command-Line Arguments</a>
-for more information.
-
+<p>
 If the user doesn't use the -sICCProfilesDir= command line option, 
 Ghostscript creates a default value for it by looking on the 
 directory paths explained in <a href="#Finding_files">How 
-Ghostscript finds files</a>.  The first path with the string 
-Resource in it is tested.  The path that is searched is the parent directory 
-for Resource, including any prefix up to the path separator 
-character preceding the string Resource, concatenated with 
-the string iccprofiles/.
+Ghostscript finds files</a>.  If the current directory is the first
+path a test is made for the iccprofiles directory. Next, the remaining
+paths with the string Resource in it are tested.  The prefix up to
+the path separator character preceding the string Resource, concatenated
+with the string iccprofiles is used and if this exists, then this
+path will be used for ICCProfilesDir.
+<p>
 Note that if the build is performed with COMPILE_INITS=1, 
 then the profiles contained in gs/iccprofiles will be placed in 
 the ROM file system.  If a directory is specified on the command 
 line using -sICCProfilesDir=, that directory is searched before 
 the iccprofiles/ directory of the ROM file system is searched.
+<p>
+<b><font size="+1">
+A note for Windows users, Artifex recommends the use of the 
+forward slash delimiter due to the special interpretation of \" by
+the Microsoft C startup code.  See 
+<a href="http://msdn.microsoft.com/en-us/library/a1y7w461.aspx">Parsing C Command-Line Arguments</a>
+for more information.
+</font></b>
 </dl>
 
 <h4><a name="Other_parameters"></a>Other parameters</h4>
