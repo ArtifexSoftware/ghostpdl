@@ -5655,6 +5655,7 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_imager_state *pis,
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     gs_imager_state new_is = *pis;
     int code;
+    gs_pattern2_instance_t *pinst = NULL;
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
@@ -5665,12 +5666,34 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_imager_state *pis,
     code = pdf14_clist_update_params(pdev, pis);
     if (code < 0)
 	return code;
+    /* If we are doing a shading stroke and we are in a tranparency
+       group of a different color space, then we need to get the
+       proper device information passed along so that we use the
+       correct color procs and colorinfo about the transparency device
+       and not the final target device */
+    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor) && pdev->trans_group_parent_cmap_procs != NULL) {
+ 	pinst =
+	    (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
+           pinst->saved->has_transparency = true;
+           /* The transparency color space operations are driven
+              by the pdf14 clist writer device.  */
+           pinst->saved->trans_device = dev;
+    }
+
     /*
      * The blend operations are not idempotent.  Force non-idempotent
      * filling and stroking operations.
      */
     new_is.log_op |= lop_pdf14;
-    return gx_forward_stroke_path(dev, &new_is, ppath, params, pdcolor, pcpath);
+    new_is.trans_device = dev;
+    new_is.has_transparency = true;
+    code = gx_forward_stroke_path(dev, &new_is, ppath, params, pdcolor, pcpath);
+    new_is.trans_device = NULL;
+    new_is.has_transparency = false;
+    if (pinst != NULL){
+        pinst->saved->trans_device = NULL;
+    }
+    return code;
 }
 
 /*

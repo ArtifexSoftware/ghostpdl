@@ -351,7 +351,8 @@ top:
 	    break;
         case gs_color_space_index_ICC:
             ranges = pcs->cmm_icc_profile_data->Range.ranges;
-	default:
+            break;
+        default:
 	    break;
 	}
     if (num_colors <= 32) {
@@ -381,21 +382,18 @@ top:
        then go ahead and do that now */
     if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
         gs_colorspace_set_icc_equivalent(pcs, &(is_lab), pis->memory);
-}
+    }
+    rendering_params.black_point_comp = BP_ON;
+    rendering_params.object_type = GS_PATH_TAG;
+    rendering_params.rendering_intent = pis->renderingintent;
     /* Grab the icc link transform that we need now */
     if (pcs->cmm_icc_profile_data != NULL) {
-        rendering_params.black_point_comp = BP_ON;
-        rendering_params.object_type = GS_PATH_TAG;
-        rendering_params.rendering_intent = pis->renderingintent;
         pfs->icclink = gsicc_get_link(pis, pcs, NULL, &rendering_params, 
                                         pis->memory, false);
     } else {
         if (pcs->icc_equivalent != NULL ) {
             /* We have a PS equivalent ICC profile.  We may need to go 
                through special range adjustments in this case */
-            rendering_params.black_point_comp = BP_ON;
-            rendering_params.object_type = GS_PATH_TAG;
-            rendering_params.rendering_intent = pis->renderingintent;
             pfs->icclink = gsicc_get_link(pis, pcs->icc_equivalent, NULL, 
                                           &rendering_params, pis->memory, false);
         } else {
