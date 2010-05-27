@@ -97,6 +97,13 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
             use_icc = true;
         }
     }
+    /* Do not allow mismatch in devices component output with the
+       profile output size.  For example sep device with CMYK profile should
+       not go through the fast method */
+    if (penum->pis->icc_manager->device_profile->num_comps 
+        != penum->dev->color_info.num_components) {
+        use_icc = false;
+    }
 /*
  * USE_CONSERVATIVE_INTERPOLATION_RULES is normally NOT defined since
  * the MITCHELL digital filter seems OK as long as we are going out to
