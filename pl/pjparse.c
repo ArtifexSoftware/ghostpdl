@@ -863,7 +863,7 @@ pjl_set_init_from_defaults(pjl_parser_state_t *pst)
     memcpy(pst->font_envir, pst->font_defaults, sizeof(pjl_fontsource_table));
 }
 
-pjl_set_next_fontsource(pjl_parser_state_t* pst)
+void pjl_set_next_fontsource(pjl_parser_state_t* pst)
 {
     int current_source;
     pjl_envvar_t *current_font_source = pjl_get_envvar(pst, "fontsource");
