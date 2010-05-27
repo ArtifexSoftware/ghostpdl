@@ -68,6 +68,10 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 static pdf14_mask_t *pdf14_mask_element_new(gs_memory_t *memory);
 static void pdf14_free_smask_color(pdf14_device * pdev); 
 
+/* Functions for dealing with soft mask color */
+static int pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev);
+static int pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev);
+
 /*
  * We chose the blending color space based upon the process color model of the
  * output device.  For gray, RGB, CMYK, or CMYK+spot devices, the choice is

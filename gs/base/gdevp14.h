@@ -279,8 +279,4 @@ int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *tran
 /* Not static due to call from pattern logic */
 int pdf14_disable_device(gx_device * dev);
 
-/* Functions for dealing with soft mask color */
-static int pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev);
-static int pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev);
-
 #endif /* gdevp14_INCLUDED */
