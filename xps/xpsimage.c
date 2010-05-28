@@ -356,17 +356,26 @@ xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t 
 
     code = xps_find_image_brush_source_part(ctx, base_uri, root, &part);
     if (code < 0)
-        return gs_rethrow(code, "cannot find image source");
+    {
+        gs_catch(code, "cannot find image source");
+        return 0;
+    }
 
     /* Hmm, we should be smarter here and only look at the image header */
 
     image = xps_alloc(ctx, sizeof(xps_image_t));
     if (!image)
-        return gs_throw(-1, "out of memory: image struct");
+    {
+        gs_catch(-1, "out of memory: image struct");
+        return 0;
+    }
 
     code = xps_decode_image(ctx, part, image);
     if (code < 0)
-        return gs_rethrow(-1, "cannot decode image resource");
+    {
+        gs_catch(-1, "cannot decode image resource");
+        return 0;
+    }
 
     has_alpha = image->alpha != NULL;
 
