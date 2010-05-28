@@ -1171,5 +1171,5 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         xps_restore_bounds(ctx, &saved_bounds_clip);
     }
 
-   return 0;
+    return 0;
 }
