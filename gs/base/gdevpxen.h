@@ -194,35 +194,38 @@ typedef enum {
 } pxeMediaSize_t;
 
 /*
- * Apply a macro (or procedure) to all known paper sizes.
- * The arguments are:
- *      media size code, resolution for width/height, width, height.
+ * Apply a macro (or procedure) to all known paper sizes.  The
+ * arguments are: media size code, pjl paper name, resolution for
+ * width/height, width, and height.  Name aliases are used for example
+ * "jis b4" is the same as "jisb4".
  */
 
 #define px_enumerate_media(m)\
-  m(eDefaultPaperSize, -1, -1, -1)\
-  m(eLetterPaper, 300, 2550, 3300)\
-  m(eLegalPaper, 300, 2550, 4200)\
-  m(eA4Paper, 300, 2480, 3507)\
-  m(eExecPaper, 300, 2175, 3150)\
-  m(eLedgerPaper, 300, 3300, 5100)\
-  m(eA3Paper, 300, 3507, 4960)\
-  m(eCOM10Envelope, 300, 1237, 2850)\
-  m(eMonarchEnvelope, 300, 1162, 2250)\
-  m(eC5Envelope, 300, 1913, 2704)\
-  m(eDLEnvelope, 300, 1299, 2598)\
-  m(eJB4Paper, 300, 3035, 4299)\
-  m(eJB5Paper, 300, 2150, 3035)\
-  m(eB5Envelope, 300, 2078, 2952)\
-  m(eB5Paper, 300, 2150, 3035)\
-  m(eJPostcard, 300, 1181, 1748)\
-  m(eJDoublePostcard, 300, 2362, 1748)\
-  m(eA5Paper,300,1748, 2480)\
-  m(eA6Paper,300, 1240, 1748)\
-  m(eJB6Paper,300, 1512, 2150)\
-  m(eJIS8K, 300, 3154, 4606)\
-  m(eJIS16K, 300, 2303, 3154)\
-  m(eJISExec, 300, 2551, 3898)
+  m(eDefaultPaperSize, "defaultpaper",  -1,   -1,   -1) \
+  m(eLetterPaper,      "letter",       300, 2550, 3300) \
+  m(eLegalPaper,       "legal",        300, 2550, 4200) \
+  m(eA4Paper,          "a4",           300, 2480, 3507) \
+  m(eExecPaper,        "executive",    300, 2175, 3150) \
+  m(eLedgerPaper,      "ledger",       300, 3300, 5100) \
+  m(eA3Paper,          "a3",           300, 3507, 4960) \
+  m(eCOM10Envelope,    "com10",        300, 1237, 2850) \
+  m(eMonarchEnvelope,  "monarch",      300, 1162, 2250) \
+  m(eC5Envelope,       "c5",           300, 1913, 2704) \
+  m(eDLEnvelope,       "dl",           300, 1299, 2598) \
+  m(eJB4Paper,         "jisb4",        300, 3035, 4299) \
+  m(eJB4Paper,         "jis b4",       300, 3035, 4299) \
+  m(eJB5Paper,         "jisb5",        300, 2150, 3035) \
+  m(eJB5Paper,         "jis b5",       300, 2150, 3035) \
+  m(eB5Envelope,       "b5",           300, 2078, 2952) \
+  m(eB5Paper,          "b5paper",      300, 2150, 3035) \
+  m(eJPostcard,        "jpost",        300, 1181, 1748) \
+  m(eJDoublePostcard,  "jpostd",       300, 2362, 1748) \
+  m(eA5Paper,          "a5",           300, 1748, 2480) \
+  m(eA6Paper,          "a6",           300, 1240, 1748) \
+  m(eJB6Paper,         "jisb6",        300, 1512, 2150) \
+  m(eJIS8K,            "jis8K",        300, 3154, 4606) \
+  m(eJIS16K,           "jis16K",       300, 2303, 3154) \
+  m(eJISExec,          "jisexec",      300, 2551, 3898)
 
 typedef enum {
     eDefaultSource = 0,

@@ -55,6 +55,7 @@ typedef struct px_state_s px_state_t;
 /* NB need a separate header file for media */
 typedef struct px_media_s {
   pxeMediaSize_t ms_enum;
+  const char *mname;
   short width, height;
   short m_left, m_top, m_right, m_bottom;
 } px_media_t;

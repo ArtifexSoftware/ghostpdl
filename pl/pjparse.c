@@ -100,6 +100,11 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
     {"", ""}
 };
 
+/* NB this must be kept synchronized with the table above and we
+   should probably have index definitions for each variable */
+#define FDEF_PAPER_INDX 8
+
+
 /* FONTS I (Internal Fonts) C, C1, C2 (Cartridge Fonts) S (Permanent
    Soft Fonts) M1, M2, M3, M4 (fonts stored in one of the printer's
    ROM SIMM slots).  Simulate cartridge, permanent soft fonts, and
@@ -193,6 +198,17 @@ static const pjl_lookup_table_t pjl_table[] = {
     { "", (pjl_token_type_t)0 /* don't care */ }
 };
 
+#include "gdevpxen.h"
+
+#define PJLMEDIA(ms, mstr, res, w, h) \
+    { mstr, w, h },
+    static const struct {
+        const char *media_name;
+        float width, height;
+    } pjl_media[] = {
+        px_enumerate_media(PJLMEDIA)
+    };
+    
 /* permenant soft font slots - bit n is the n'th font number. */
 #define MAX_PERMANENT_FONTS 256  /* multiple of 8 */
 unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
@@ -202,18 +218,60 @@ unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
 /* forward declaration */
 static int pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults);
 
+/* lookup a paper size and return the index in the media return letter
+   if no match. */
+
+/* somewhat awkward,  */
+#define LETTER_PAPER_INDEX 1
+
+static int
+pjl_get_media_index(const char *paper)
+{
+    int i;
+    for (i = 0; i < countof(pjl_media); i++)
+        if (!pjl_compare(paper, pjl_media[i].media_name))
+            return i;
+    return LETTER_PAPER_INDEX;
+}
+
+/* calculate the number of lines per page as a function of page
+   length */
+static int
+pjl_calc_formlines_new_page_size(int page_length)
+{
+
+    /* note the units are 300 dpi units as pcl traditional
+       documentation dictates.  This is not properly documented in the
+       technical reference manual but the formula appears to be:
+       formlines = ((page_length - 300 dots) / 50.0 dots) 50.0 dots
+       corresponds with the default pcl 6 lines per inch and 300 with
+       1 inch of margin - so the empirical results look plausible.
+    */
+
+    floatp formlines = (page_length - 300.0)/50.0;
+    return (int)(formlines + 0.5);
+}    
+
+
 /* handle pjl variables which affect the state of other variables - we
    don't handle all of these yet.  NB not complete. */
-
- void
+static void
 pjl_side_effects(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
 {
-    /* default formlines to 45 if the orientation is set to landscape.
-       We assume the side effect will not affect itself so we can call
-       the caller. */
-    if ( !pjl_compare(variable, "ORIENTATION") &&
-	 !pjl_compare(value, "LANDSCAPE") )
-	pjl_set(pst, (char *)"FORMLINES", (char *)"45", defaults);
+    if (!pjl_compare(variable, "PAPER") || 
+        !pjl_compare(variable, "ORIENTATION")) {
+
+        pjl_envir_var_t *table = (defaults ? pst->defaults : pst->envir);
+        int indx = pjl_get_media_index(table[FDEF_PAPER_INDX].value);
+        int page_length = (!pjl_compare(variable, "ORIENTATION") &&
+                         !pjl_compare(value, "LANDSCAPE") ?
+                         pjl_media[indx].width :
+                         pjl_media[indx].height);
+        int formlines = pjl_calc_formlines_new_page_size(page_length);
+        pjl_envir_var_t var;
+        sprintf(var.value, "%d", formlines);
+	pjl_set(pst, (char *)"FORMLINES", var.value, defaults);
+    }
     /* fill in other side effects here */
     return;
 }

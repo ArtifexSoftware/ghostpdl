@@ -129,10 +129,11 @@ px_write_select_media(stream *s, const gx_device *dev,
 		      pxeMediaSize_t *pms, byte *media_source,
 		      int page, bool Duplex, bool Tumble)
 {
-#define MSD(ms, res, w, h)\
-  { ms, (float)((w) * 1.0 / (res)), (float)((h) * 1.0 / res) },
+#define MSD(ms, mstr, res, w, h)                                 \
+    { ms, mstr, (float)((w) * 1.0 / (res)), (float)((h) * 1.0 / res) },
     static const struct {
 	pxeMediaSize_t ms;
+        const char *media_name;
 	float width, height;
     } media_sizes[] = {
 	px_enumerate_media(MSD)

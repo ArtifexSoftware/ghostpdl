@@ -55,8 +55,8 @@ px_operator_proc(pxSetPageDefaultCTM);
  */
 #define media_size_scale (72.0 / 300.0)
 #define m_default 50, 50, 50, 50
-#define m_data(ms_enum, res, width, height)\
-  {ms_enum, width * 300 / (res), height * 300 / (res), m_default},
+#define m_data(ms_enum, mstr, res, width, height)                        \
+    {ms_enum, mstr, width * 300 / (res), height * 300 / (res), m_default},
 static px_media_t known_media[] = {
   px_enumerate_media(m_data)
   /* The list ends with a comma, so add a dummy entry */
@@ -66,39 +66,10 @@ static px_media_t known_media[] = {
 #undef m_data
 #undef m_default
 
-/* table to associate paper name string with paper name enumeration.
-   Note these paper string names correspond exactly with the PJL paper
-   nomenclature. */
-static const struct {
-    const char *pname;
-    pxeMediaSize_t paper_enum;
-} pxl_paper_sizes[] = {
-    { "defaultpaper", eDefaultPaperSize },
-    { "letter", eLetterPaper },
-    { "legal", eLegalPaper },
-    { "a4", eA4Paper },
-    { "executive", eExecPaper },
-    { "ledger", eLedgerPaper },
-    { "a3", eA3Paper },        
-    { "com10", eCOM10Envelope },
-    { "monarch", eMonarchEnvelope },
-    { "c5", eC5Envelope },
-    { "dl", eDLEnvelope },
-    { "jisb4", eJB4Paper },
-    { "jis b4", eJB4Paper },
-    { "jisb5", eJB5Paper }, 
-    { "jis b5", eJB5Paper },      
-    { "b5", eB5Envelope },
-    { "b5paper", eB5Paper }, /* 3.0 not sure about pjl name */
-    { "jpost", eJPostcard },
-    { "jpostd", eJDoublePostcard },
-    { "a5", eA5Paper },        
-    { "a6", eA6Paper },
-    { "jisb6", eJB6Paper },
-    { "jis8K", eJIS8K },
-    { "jis16K", eJIS16K },
-    { "jisexec", eJISExec },
-};
+/* Define the mapping from the Measure enumeration to points. */
+static const double measure_to_points[] = pxeMeasure_to_points;
+
+/* ---------------- Internal procedures ---------------- */
 
 /* system paper size string (same as pjl paper size) to pxl enumeration type */
 static pxeMediaSize_t
@@ -106,18 +77,13 @@ px_paper_string_to_media(pjl_envvar_t *paper_str)
 {
     /* table to map pjl paper type strings to pxl enums */
     int i;
-    for (i = 0; i < countof(pxl_paper_sizes); i++) {
-	if ( !pjl_compare(paper_str, pxl_paper_sizes[i].pname) )
-	    return pxl_paper_sizes[i].paper_enum;
+    for (i = 0; i < countof(known_media); i++) {
+	if ( !pjl_compare(paper_str, known_media[i].mname) )
+	    return known_media[i].ms_enum;
     }
     /* not found return letter */
     return eLetterPaper;
 }
-
-/* Define the mapping from the Measure enumeration to points. */
-static const double measure_to_points[] = pxeMeasure_to_points;
-
-/* ---------------- Internal procedures ---------------- */
 
 
 /* return the default media set up in the XL state */
@@ -129,10 +95,10 @@ px_get_default_media(px_state_t *pxs)
 	if ( known_media[i].ms_enum == pxs->media_size )
 	    return &known_media[i];
     /* shouldn't get here but just in case we return letter. */
-    return &known_media[0];
+    return &known_media[1];
 }
 
- void
+void
 px_get_default_media_size(px_state_t *pxs, gs_point *pt)
 {
     px_media_t *media = px_get_default_media(pxs);

@@ -79,15 +79,16 @@ pjparse_h=$(PLSRC)pjparse.h
 pjtop_h=$(PLSRC)pjtop.h $(pltop_h)
 
 $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c\
-	$(ctype__h)  \
-        $(stat__h)   \
-        $(memory__h) \
-        $(scommon_h) \
-        $(gdebug_h)  \
-        $(gp_h)      \
-        $(gxiodev_h) \
-        $(pjparse_h) \
-        $(plfont_h)  \
+	$(ctype__h)   \
+        $(stat__h)    \
+        $(memory__h)  \
+        $(scommon_h)  \
+        $(gdebug_h)   \
+        $(gp_h)       \
+        $(gxiodev_h)  \
+        $(gdevpxen_h) \
+        $(pjparse_h)  \
+        $(plfont_h)   \
         $(plver_h)
 	$(PLCCC) $(PLSRC)pjparse.c $(PLO_)pjparse.$(OBJ)
 

@@ -156,7 +156,7 @@ $(PXLOBJ)pximage.$(OBJ): $(PXLSRC)pximage.c $(AK) $(std_h)\
 
 $(PXLOBJ)pxink.$(OBJ): $(PXLSRC)pxink.c $(math__h) $(stdio__h) $(memory__h)\
  $(gdebug_h) $(gscolor2_h) $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h)\
- $(gstypes_h) $(gscie_h) $(gscrd_h) $(gsstate_h)\
+ $(gspath2_h) $(gstypes_h) $(gscie_h) $(gscrd_h) $(gsstate_h)\
  $(gxarith_h) $(gxcspace_h) $(gxdevice_h) $(gxht_h) $(gxstate_h)\
  $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h) $(pldraw_h)
 	$(PXLCCC) $(PXLSRC)pxink.c $(PXLO_)pxink.$(OBJ)
