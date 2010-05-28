@@ -48,6 +48,14 @@ On pages 2 and 3, in the LJ5 printouts, the characters are not distorted
 the non-uniform UnitsPerMeasure.  This is a bug in the LJ5 firmware that has
 been corrected in the LJ 6MP.
 
+t203 - SetFont
+--------------
+
+On panel 3 the exclamation points spacing is not correct.  The artifex
+interpreter does not mix different downloaded fonts and maintain the
+same spacing as HP.  The proper behavior is undocumented and never
+used in real world examples.
+
 t305 - SetColorSpace
 --------------------
 
@@ -121,6 +129,7 @@ as follows:
 Again, if Rectangle left the path set as documented, this would draw (part
 of) the rectangle as well as the disk.
 
+
 [2] t329 - SetHalftoneMethod
 ----------------------------
 
@@ -174,4 +183,3 @@ t422.bin (Protocol 2.0 fts)
 A raster pattern of height 1 results in a 0 area pattern which
 produces an error.  The error only happens if the device resolution is
 less than 300 dpi.
-
