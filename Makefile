@@ -4,7 +4,7 @@ debug: pcl-debug xps-debug svg-debug ls-debug
 
 clean: pcl-clean xps-clean svg-clean ls-clean
 
-test: pcl-test ls-test
+test: pcl-test ls-test xps-test svg-test
 
 # only pcl has an install target at this point
 install: pcl-install
@@ -38,7 +38,6 @@ pcl-uninstall:
 pcl-test: 
 	./main/obj/pcl6 -dTextAlphaBits=4 \
 		tools/owl.pcl tools/tiger.px3 # test with PCL and PXL test files 
-
 # NB - this does not remove the fonts.  blowing away /windows/fonts
 # might be unexpected on some systems and we don't enumerate the font
 # names here so they could be removed individually.
@@ -56,6 +55,9 @@ xps:
 xps-clean:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean
 
+xps-test:
+	./xps/obj/gxps tools/tiger.xps
+
 svg-debug:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-debug
 
@@ -64,6 +66,9 @@ svg:
 
 svg-clean:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean
+
+svg-test:
+	./svg/obj/gsvg tools/tiger.svg
 
 mupdf-debug:
 	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-debug
