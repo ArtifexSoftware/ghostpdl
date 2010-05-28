@@ -435,6 +435,9 @@ xps_find_cff_index(byte *p, byte *e, int idx, byte **pp, byte **ep)
 {
     int count, offsize, sofs, eofs, last;
 
+    if (p == NULL)
+        return 0;
+
     if (p + 3 > e)
     {
         gs_throw(-1, "not enough data for index header");
