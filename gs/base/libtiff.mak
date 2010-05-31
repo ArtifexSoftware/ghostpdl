@@ -50,6 +50,10 @@ $(TIFFSRC)libtiff$(D)tif_config.unix.h : $(TIFFSRC)libtiff$(D)tif_config.h.in
 	cd $(TIFFSRC) && ./configure
 	$(CP_) $(TIFFSRC)libtiff$(D)tif_config.h $(TIFFSRC)libtiff$(D)tif_config.unix.h
 
+$(TIFFSRC)libtiff$(D)tiffconf.unix.h : $(TIFFSRC)libtiff$(D)tiffconf.h.in
+	cd $(TIFFSRC) && ./configure
+	$(CP_) $(TIFFSRC)libtiff$(D)tiffconf.h $(TIFFSRC)libtiff$(D)tiffconf.unix.h
+
 $(TIFFOBJ)tif_aux.$(OBJ) : $(TIFFSRC)/libtiff/tif_aux.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_aux.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_aux.c
 
