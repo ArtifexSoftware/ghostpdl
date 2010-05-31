@@ -415,8 +415,10 @@ DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)bmpsep1.dev $
 
 # Shared library target to build.
 # Note that the two vga devices are Linux specific, and requires svgalib
-GS_SHARED_OBJS=$(GLOBJDIR)/X11.so $(GLOBJDIR)/lvga256.so $(GLOBJDIR)/vgalib.so
-#GS_SHARED_OBJS=$(GLOBJDIR)/X11.so
+# We also don't do X modularized because modularization on Mac OS X doesn't work.
+GS_SHARED_OBJS=
+#GS_SHARED_OBJS=$(GLOBJDIR)/X11.so $(GLOBJDIR)/lvga256.so $(GLOBJDIR)/vgalib.so
+
 
 # ---------------------------- End of options --------------------------- #
 
