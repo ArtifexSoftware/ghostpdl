@@ -26,8 +26,8 @@
 #include "gsparams.h"
 #include "gxdcolor.h"
 #include "gscms.h"
-#include "gsiccmanage.h"
-#include "gsicccache.h"
+#include "gsicc_manage.h"
+#include "gsicc_cache.h"
 
 extern dev_proc_open_device(pattern_clist_open_device);
 

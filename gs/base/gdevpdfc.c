@@ -33,7 +33,7 @@
 #include "gxcspace.h"
 #include "gxcdevn.h"
 #include "gscspace.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 
 /*
  * PDF doesn't have general CIEBased color spaces.  However, it provides

@@ -19,7 +19,7 @@
 #include "gspath.h"
 #include "gscoord.h"
 #include "gsstate.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "pcommand.h"
 #include "pgmand.h"
 #include "pcstate.h"

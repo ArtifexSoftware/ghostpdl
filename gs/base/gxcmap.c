@@ -28,9 +28,9 @@
 #include "gxdither.h"
 #include "gxcdevn.h"
 #include "string_.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "gdevdevn.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 
 /* Structure descriptor */
 public_st_device_color();

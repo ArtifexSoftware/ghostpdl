@@ -38,7 +38,7 @@
 #include "pxptable.h"
 #include "pxstate.h"
 #include "pltop.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 
 /* Define the table of pointers to initialization data. */
 

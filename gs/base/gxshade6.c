@@ -34,7 +34,7 @@
 #include "stdint_.h"
 #include "math_.h"
 #include "vdtrace.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 
 #define VD_TRACE_TENSOR_PATCH 1
 

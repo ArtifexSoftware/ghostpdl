@@ -35,7 +35,7 @@
 #include "gsovrc.h"
 #include "stream.h"
 #include "gsnamecl.h"  /* Custom color call back define */
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "gsicc.h"
 
 /* ---------------- Color space ---------------- */

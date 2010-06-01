@@ -19,7 +19,7 @@
 #include "gxdevice.h"
 #include "gxcpath.h"
 #include "gximage.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 
 /* Forward declarations */
 static void update_strip(gx_image_enum *penum);

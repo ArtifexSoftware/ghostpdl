@@ -37,7 +37,7 @@
 #include "gsnamecl.h"
 #include "igstate.h"
 #include "gscms.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "gsparamx.h"
 #include "gx.h"
 #include "gxistate.h"

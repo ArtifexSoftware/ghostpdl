@@ -34,7 +34,7 @@
 #include "gxcpath.h"
 #include "gximage.h"
 #include "gsicc.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 #include "gsicc_littlecms.h"
 #include "gxcie.h"
 #include "gscie.h"

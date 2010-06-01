@@ -51,7 +51,7 @@
 #include "gzht.h"
 #include "gxshade.h"
 #include "gxshade4.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "gsicc.h"
 
 extern_gx_device_halftone_list();

@@ -63,7 +63,7 @@
 #include "gzstate.h"
 #include "gzpath.h"
 
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 
 #include "zlib.h"
 

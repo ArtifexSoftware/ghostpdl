@@ -41,8 +41,8 @@
                                 and keeping data in source color space */
 #include "gxcolor2.h"           /* define of float_color_to_byte_color */
 #include "gscspace.h"           /* Needed for checking is space is CIE */
-#include "gsicccache.h"
-#include "gsiccmanage.h"
+#include "gsicc_cache.h"
+#include "gsicc_manage.h"
 
 extern void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, bool has_transfer,

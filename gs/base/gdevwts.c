@@ -30,8 +30,8 @@
 #include "gswts.h"
 #include "gxgetbit.h"
 #include "gscms.h"
-#include "gsicccache.h"
-#include "gsiccmanage.h"
+#include "gsicc_cache.h"
+#include "gsicc_manage.h"
 
 #ifndef cmm_gcmmhlink_DEFINED
     #define cmm_gcmmhlink_DEFINED

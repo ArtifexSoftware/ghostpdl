@@ -294,7 +294,7 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *default_gray;    /* Default gray profile for device gray */
     cmm_profile_t *default_rgb;     /* Default RGB profile for device RGB */
     cmm_profile_t *default_cmyk;    /* Default CMYK profile for device CMKY */
-    cmm_profile_t *proof_profile;   /* Profiling profile */
+    cmm_profile_t *proof_profile;   /* Proofing profile */
     cmm_profile_t *output_link;     /* Output device Link profile */
     cmm_profile_t *device_profile;  /* The actual profile for the device */
     cmm_profile_t *lab_profile;     /* Colorspace type ICC profile from LAB to LAB */

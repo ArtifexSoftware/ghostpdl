@@ -26,8 +26,8 @@
 #include "gzht.h"
 #include "gzline.h"
 #include "gxfmap.h"
-#include "gsicccache.h"
-#include "gsiccmanage.h"
+#include "gsicc_cache.h"
+#include "gsicc_manage.h"
 #include "gsicc_profilecache.h"
 
 /******************************************************************************

@@ -27,7 +27,7 @@
 #include "gscspace.h"
 #include "gxarith.h"
 #include "gxclist.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 
 #define PUSH_TS 0
 

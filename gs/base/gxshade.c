@@ -27,7 +27,7 @@
 #include "gxshade.h"
 #include "gxshade4.h"
 #include "gsicc.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 
 /* Define a maximum smoothness value. */
 /* smoothness > 0.2 produces severely blocky output. */

@@ -602,7 +602,7 @@ $(GLOBJ)gxcmap.$(OBJ) : $(GLSRC)gxcmap.c $(GXERR)\
  $(gxalpha_h) $(gxcspace_h) $(gxfarith_h) $(gxfrac_h)\
  $(gxdcconv_h) $(gxdevice_h) $(gxcmap_h) $(gsnamecl_h) $(gxlum_h)\
  $(gzstate_h) $(gxdither_h) $(gxcdevn_h) $(string__h)\
- $(gsiccmanage_h) $(gdevdevn_h) $(gsicccache_h)
+ $(gsicc_manage_h) $(gdevdevn_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxcmap.$(OBJ) $(C_) $(GLSRC)gxcmap.c
 
 $(GLOBJ)gxcpath.$(OBJ) : $(GLSRC)gxcpath.c $(GXERR)\
@@ -660,7 +660,7 @@ $(GLOBJ)gswts.$(OBJ) : $(GLSRC)gswts.c $(GXERR) $(gxwts_h) $(gswts_h)\
 	$(GLCC) $(GLO_)gswts.$(OBJ) $(C_) $(GLSRC)gswts.c
 
 $(GLOBJ)gxidata.$(OBJ) : $(GLSRC)gxidata.c $(GXERR) $(memory__h)\
- $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicccache_h)
+ $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxidata.$(OBJ) $(C_) $(GLSRC)gxidata.c
 
 $(GLOBJ)gxifast.$(OBJ) : $(GLSRC)gxifast.c $(GXERR) $(memory__h) $(gpcheck_h)\
@@ -888,7 +888,7 @@ $(GLOBJ)gsiodev.$(OBJ) : $(GLSRC)gsiodev.c $(GXERR)\
 $(GLOBJ)gsistate.$(OBJ) : $(GLSRC)gsistate.c $(GXERR)\
  $(gscie_h) $(gscspace_h) $(gsstruct_h) $(gsutil_h)\
  $(gxbitmap_h) $(gxcmap_h) $(gxdht_h) $(gxistate_h) $(gzht_h) $(gzline_h)\
- $(gsicccache_h) $(gsiccmanage_h) $(gsicc_profilecache_h)
+ $(gsicc_cache_h) $(gsicc_manage_h) $(gsicc_profilecache_h)
 	$(GLCC) $(GLO_)gsistate.$(OBJ) $(C_) $(GLSRC)gsistate.c
 
 $(GLOBJ)gsline.$(OBJ) : $(GLSRC)gsline.c $(GXERR) $(math__h) $(memory__h)\
@@ -935,7 +935,7 @@ $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(GXERR) $(memory__h)\
  $(gsalpha_h) $(gscolor2_h) $(gscoord_h) $(gscie_h)\
  $(gxclipsr_h) $(gxcmap_h) $(gxdevice_h) $(gxpcache_h)\
  $(gzht_h) $(gzline_h) $(gspath_h) $(gzpath_h) $(gzcpath_h)\
- $(gsovrc_h) $(gxcolor2_h) $(gxpcolor_h) $(gsiccmanage_h)
+ $(gsovrc_h) $(gxcolor2_h) $(gxpcolor_h) $(gsicc_manage_h)
 	$(GLCC) $(GLO_)gsstate.$(OBJ) $(C_) $(GLSRC)gsstate.c
 
 $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(memory__h) $(gdebug_h)\
@@ -1714,7 +1714,7 @@ $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
 $(GLOBJ)gxclist.$(OBJ) : $(GLSRC)gxclist.c $(GXERR) $(memory__h) $(string__h)\
  $(gp_h) $(gpcheck_h) $(gsparams_h)\
  $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h) $(gxdcolor_h) $(gscms_h)\
- $(gsiccmanage_h) $(gsicccache_h)
+ $(gsicc_manage_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxclist.$(OBJ) $(C_) $(GLSRC)gxclist.c
 
 $(GLOBJ)gxclbits.$(OBJ) : $(GLSRC)gxclbits.c $(GXERR) $(memory__h) $(gpcheck_h)\
@@ -1736,7 +1736,7 @@ $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
  $(gzpath_h) $(gxcpath_h) $(gzacpath_h)\
  $(stream_h) $(strimpl_h) $(gxcomp_h)\
  $(gsserial_h) $(gxdhtserial_h) $(gzht_h)\
- $(gxshade_h) $(gxshade4_h) $(gsiccmanage_h)\
+ $(gxshade_h) $(gxshade4_h) $(gsicc_manage_h)\
  $(gsicc_h)
 	$(GLCC) $(GLO_)gxclrast.$(OBJ) $(C_) $(GLSRC)gxclrast.c
 
@@ -1746,7 +1746,7 @@ $(GLOBJ)gxclread.$(OBJ) : $(GLSRC)gxclread.c $(GXERR)\
  $(gscoord_h) $(gsdevice_h)\
  $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gxhttile_h)\
  $(gsmemory_h) \
- $(stream_h) $(strimpl_h) $(vdtrace_h) $(gsicccache_h)
+ $(stream_h) $(strimpl_h) $(vdtrace_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxclread.$(OBJ) $(C_) $(GLSRC)gxclread.c
 
 $(GLOBJ)gxclrect.$(OBJ) : $(GLSRC)gxclrect.c $(GXERR)\
@@ -2140,7 +2140,7 @@ $(GLOBJ)gxp1fill.$(OBJ) : $(GLSRC)gxp1fill.c $(GXERR) $(string__h) $(math__h)\
  $(gsrop_h) $(gsmatrix_h)\
  $(gxcolor2_h) $(gxclip2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevcli_h)\
  $(gxdevmem_h) $(gxpcolor_h) $(gxp1impl_h) $(gxcldev_h) $(gxblend_h)\
- $(gsicccache_h)
+ $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxp1fill.$(OBJ) $(C_) $(GLSRC)gxp1fill.c
 
 $(GLOBJ)gxpcmap.$(OBJ) : $(GLSRC)gxpcmap.c $(GXERR) $(math__h) $(memory__h)\
@@ -2324,7 +2324,7 @@ $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gsccolor_h) $(gspaint_h) $(gzstate_h)\
  $(gxdevice_h) $(gxcmap_h) $(gxdcconv_h) $(gxdcolor_h)\
  $(gxistate_h) $(gxdevmem_h) $(gxcpath_h) $(gximage_h)\
- $(gsicc_h) $(gsicccache_h) $(gsicc_littlecms_h) $(gxcie_h)\
+ $(gsicc_h) $(gsicc_cache_h) $(gsicc_littlecms_h) $(gxcie_h)\
  $(gscie_h)
 	$(GLCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
 
@@ -2363,8 +2363,8 @@ $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(GXERR)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h) $(siinterp_h) $(siscale_h) $(stream_h) $(vdtrace_h)\
- $(gxcindex_h) $(gxcolor2_h) $(gscspace_h) $(gsicccache_h)\
- $(gsiccmanage_h)
+ $(gxcindex_h) $(gxcolor2_h) $(gscspace_h) $(gsicc_cache_h)\
+ $(gsicc_manage_h)
 	$(GLCC) $(GLO_)gxiscale.$(OBJ) $(C_) $(GLSRC)gxiscale.c
 
 # ---------------- Display Postscript / Level 2 support ---------------- #
@@ -2452,7 +2452,7 @@ $(GLOBJ)gscie.$(OBJ) : $(GLSRC)gscie.c $(GXERR) $(math__h) $(memory__h)\
 
 $(GLOBJ)gsciemap.$(OBJ) : $(GLSRC)gsciemap.c $(GXERR) $(math__h)\
  $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) \
- $(gxistate_h) $(gscolor2_h) $(gsicc_create_h) $(gsiccmanage_h)\
+ $(gxistate_h) $(gscolor2_h) $(gsicc_create_h) $(gsicc_manage_h)\
  $(gsicc_h) $(gscspace_h)
 	$(GLCC) $(GLO_)gsciemap.$(OBJ) $(C_) $(GLSRC)gsciemap.c
 
@@ -2480,7 +2480,7 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
 
 # ---------------- ICCBased color ---------------- #
 
-gsicc_=$(GLOBJ)gsiccmanage.$(OBJ) $(GLOBJ)gsicccache.$(OBJ)\
+gsicc_=$(GLOBJ)gsicc_manage.$(OBJ) $(GLOBJ)gsicc_cache.$(OBJ)\
  $(GLOBJ)gsicc_littlecms.$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
  $(GLOBJ)gsicc_create.$(OBJ)
 
@@ -2493,29 +2493,29 @@ $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
 
 $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
- $(gzstate_h) $(gsicc_h) $(gsicccache_h) $(gsicc_littlecms_h)
+ $(gzstate_h) $(gsicc_h) $(gsicc_cache_h) $(gsicc_littlecms_h)
 	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
 
 gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h)\
  $(gsdevice_h) $(stdint_h) $(gxsync_h)
 gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)\
  $(std_h) $(gsmemory_h)
-gsiccmanage_h=$(GLSRC)gsiccmanage.h $(gsicc_littlecms_h)
-gsicccache_h=$(GLSRC)gsicccache.h $(GX)
+gsicc_manage_h=$(GLSRC)gsicc_manage.h $(gsicc_littlecms_h)
+gsicc_cache_h=$(GLSRC)gsicc_cache.h $(GX)
 gsicc_profilecache_h=$(GLSRC)gsicc_profilecache.h
 
-$(GLOBJ)gsiccmanage.$(OBJ) : $(GLSRC)gsiccmanage.c $(GX) $(stdpre_h)\
+$(GLOBJ)gsicc_manage.$(OBJ) : $(GLSRC)gsicc_manage.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
- $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)\
+ $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(gsicc_profilecache_h) $(gserrors_h) $(string__h) $(gxclist_h) $(gxcldev_h)\
  $(gzstate_h) $(gsicc_create_h)
-	$(GLCC) $(GLO_)gsiccmanage.$(OBJ) $(C_) $(GLSRC)gsiccmanage.c
+	$(GLCC) $(GLO_)gsicc_manage.$(OBJ) $(C_) $(GLSRC)gsicc_manage.c
 
-$(GLOBJ)gsicccache.$(OBJ) : $(GLSRC)gsicccache.c $(GX) $(stdpre_h)\
+$(GLOBJ)gsicc_cache.$(OBJ) : $(GLSRC)gsicc_cache.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(smd5_h)\
- $(gxistate_h) $(gscms_h) $(gsiccmanage_h) $(gsicccache_h)\
+ $(gxistate_h) $(gscms_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(gserrors_h) $(gsmalloc_h) $(string__h) $(gsicc_profilecache_h)
-	$(GLCC) $(GLO_)gsicccache.$(OBJ) $(C_) $(GLSRC)gsicccache.c
+	$(GLCC) $(GLO_)gsicc_cache.$(OBJ) $(C_) $(GLSRC)gsicc_cache.c
 	
 $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
  $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(gx_h)\
@@ -2534,7 +2534,7 @@ $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
 # remap operations. 
 $(GLOBJ)gsicc_create.$(OBJ) : $(GLSRC)gsicc_create.c $(GX) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
- $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsiccmanage_h) $(gsicccache_h)\
+ $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(math__h) $(gscolor2_h) $(gxcie_h) $(icc34_h)
 	$(GLLCMSCC) $(GLO_)gsicc_create.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
 
@@ -2550,7 +2550,7 @@ $(GLD)seprlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(seprlib_)
 $(GLOBJ)gscsepr.$(OBJ) : $(GLSRC)gscsepr.c $(GXERR) $(memory__h)\
  $(gsfunc_h) $(gsrefct_h) $(gsmatrix_h) $(gscsepr_h) $(gxcspace_h)\
  $(gxfixed_h) $(gxcolor2_h) $(gzstate_h) $(gscdevn_h) $(gxcdevn_h)\
- $(gxcmap_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h) $(gsicccache_h)
+ $(gxcmap_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gscsepr.$(OBJ) $(C_) $(GLSRC)gscsepr.c
 
 $(GLOBJ)gsnamecl.$(OBJ) : $(GLSRC)gsnamecl.c $(GXERR) $(memory__h) $(gxcspace_h)\
@@ -2616,7 +2616,7 @@ $(GLOBJ)gscdevn.$(OBJ) : $(GLSRC)gscdevn.c $(GXERR) $(memory__h) $(string__h)\
  $(gscdevn_h) $(gsfunc_h) $(gsmatrix_h) $(gsrefct_h) $(gsstruct_h)\
  $(gxcspace_h) $(gxcdevn_h) $(gxfarith_h) $(gxfrac_h) $(gsnamecl_h) $(gxcmap_h)\
  $(gxistate_h) $(gscoord_h) $(gzstate_h) $(gxdevcli_h) $(gsovrc_h) $(stream_h)\
- $(gsiccmanage_h)
+ $(gsicc_manage_h)
 	$(GLCC) $(GLO_)gscdevn.$(OBJ) $(C_) $(GLSRC)gscdevn.c
 
 $(GLOBJ)gxdevndi.$(OBJ) : $(GLSRC)gxdevndi.c $(GX)\
@@ -2661,7 +2661,7 @@ gdevp14_h=$(GLSRC)gdevp14.h $(GLSRC)gxcmap.h $(gxmatrix_h) \
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
  $(math__h) $(memory__h) $(gdevp14_h) $(gstrans_h)\
  $(gsutil_h) $(gxdevcli_h) $(gzstate_h) $(gscspace_h)\
- $(gxclist_h) $(gsiccmanage_h)
+ $(gxclist_h) $(gsicc_manage_h)
 	$(GLCC) $(GLO_)gstrans.$(OBJ) $(C_) $(GLSRC)gstrans.c
 
 $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
@@ -2671,8 +2671,8 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gximag3x.$(OBJ) $(C_) $(GLSRC)gximag3x.c
 
 $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(GX) $(memory__h)\
- $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicccache_h)\
- $(gsiccmanage_h)
+ $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicc_cache_h)\
+ $(gsicc_manage_h)
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(GX) $(memory__h)\
@@ -2686,7 +2686,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
  $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gsovrc_h) $(gxcmap_h) $(gscolor1_h)\
  $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h) $(gxdcconv_h) $(vdtrace_h)\
  $(gscolorbuffer_h) $(gsptype2_h) $(gxpcolor_h) $(gsptype1_h) $(gzcpath_h)\
- $(gxpaint_h) $(gsiccmanage_h) $(gxclist_h)
+ $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
@@ -2736,26 +2736,26 @@ $(GLOBJ)gxshade.$(OBJ) : $(GLSRC)gxshade.c $(GXERR) $(math__h)\
  $(gsrect_h)\
  $(gxcspace_h) $(gscindex_h) $(gscie_h) \
  $(gxdevcli_h) $(gxistate_h) $(gxdht_h) $(gxpaint_h) $(gxshade_h) $(gxshade4_h)\
- $(gsicc_h) $(gsicccache_h)
+ $(gsicc_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxshade.$(OBJ) $(C_) $(GLSRC)gxshade.c
 
 $(GLOBJ)gxshade1.$(OBJ) : $(GLSRC)gxshade1.c $(GXERR) $(math__h) $(memory__h)\
  $(gscoord_h) $(gsmatrix_h) $(gspath_h) $(gsptype2_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxfarith_h) $(gxfixed_h) $(gxistate_h)\
- $(gxpath_h) $(gxshade_h) $(gxshade4_h) $(gxdevcli_h) $(gsicccache_h)
+ $(gxpath_h) $(gxshade_h) $(gxshade4_h) $(gxdevcli_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxshade1.$(OBJ) $(C_) $(GLSRC)gxshade1.c
 
 $(GLOBJ)gxshade4.$(OBJ) : $(GLSRC)gxshade4.c $(GXERR)\
  $(math__h) $(memory__h)\
  $(gscoord_h) $(gsmatrix_h) $(gsptype2_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxdevcli_h) $(gxistate_h) $(gxpath_h)\
- $(gxshade_h) $(gxshade4_h) $(vdtrace_h) $(gsicccache_h)
+ $(gxshade_h) $(gxshade4_h) $(vdtrace_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxshade4.$(OBJ) $(C_) $(GLSRC)gxshade4.c
 
 $(GLOBJ)gxshade6.$(OBJ) : $(GLSRC)gxshade6.c $(GXERR) $(memory__h)\
  $(gscoord_h) $(gscicach_h) $(gsmatrix_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxistate_h) $(gxshade_h) $(gxshade4_h) $(gxdevcli_h)\
- $(gxarith_h) $(gzpath_h) $(math__h) $(vdtrace_h) $(gsicccache_h)
+ $(gxarith_h) $(gzpath_h) $(math__h) $(vdtrace_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxshade6.$(OBJ) $(C_) $(GLSRC)gxshade6.c
 
 shadelib_1=$(GLOBJ)gscolor3.$(OBJ) $(GLOBJ)gsfunc3.$(OBJ) $(GLOBJ)gsptype2.$(OBJ) $(GLOBJ)gsshade.$(OBJ)

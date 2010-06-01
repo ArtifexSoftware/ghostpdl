@@ -28,7 +28,7 @@
 #include "gxshade.h"
 #include "gxshade4.h"
 #include "vdtrace.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 
 #define VD_TRACE_TRIANGLE_PATCH 1
 

@@ -33,7 +33,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 
 /* ---------------- Miscellaneous ---------------- */
 

@@ -30,7 +30,7 @@
 #include "gxdevcli.h"
 #include "gsovrc.h"
 #include "stream.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 
 /* ---------------- Color space ---------------- */
 

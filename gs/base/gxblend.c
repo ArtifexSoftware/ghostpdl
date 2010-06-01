@@ -18,8 +18,8 @@
 #include "gstparam.h"
 #include "gxblend.h"
 #include "gxcolor2.h"
-#include "gsicccache.h"
-#include "gsiccmanage.h"
+#include "gsicc_cache.h"
+#include "gsicc_manage.h"
 
 
 typedef int art_s32;

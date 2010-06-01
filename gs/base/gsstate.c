@@ -36,7 +36,7 @@
 #include "gsovrc.h"
 #include "gxcolor2.h"
 #include "gxpcolor.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 
 /* Forward references */
 static gs_state *gstate_alloc(gs_memory_t *, client_name_t,

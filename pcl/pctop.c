@@ -37,7 +37,7 @@
 #include "pctop.h"
 #include "pccrd.h"
 #include "pcpalet.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 
 
 

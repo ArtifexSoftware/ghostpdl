@@ -25,7 +25,7 @@
 #include "gxcie.h"
 #include "gzstate.h"
 #include "gsicc.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 #include "gsicc_littlecms.h"
 #include "gxdevice.h"
 

@@ -49,8 +49,8 @@
 #include "gsptype1.h"
 #include "gzcpath.h"
 #include "gxpaint.h"
-#include "gsiccmanage.h"
-#include "gsicccache.h"
+#include "gsicc_manage.h"
+#include "gsicc_cache.h"
 #include "gxclist.h"
 
 #if RAW_DUMP

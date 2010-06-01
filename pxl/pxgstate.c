@@ -28,7 +28,7 @@
 #include "gscoord.h"
 #include "gxcspace.h"			/* must precede gscolor2.h */
 #include "gscie.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "gsimage.h"
 #include "gspath.h"
 #include "gspath2.h"

@@ -29,7 +29,7 @@
 #include "gxp1impl.h"
 #include "gxcldev.h"
 #include "gxblend.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 
 /* Define the state for tile filling. */
 typedef struct tile_fill_state_s {

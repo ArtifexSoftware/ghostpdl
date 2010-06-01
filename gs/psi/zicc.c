@@ -31,7 +31,7 @@
 #include "icie.h"
 #include "ialloc.h"
 #include "zicc.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "gx.h"
 #include "gxistate.h"
 #include "gserror.h"

@@ -24,7 +24,7 @@
 #include "gxistate.h"
 #include "gscolor2.h"
 #include "gsicc_create.h"       /* Needed for delayed creation of ICC profiles from CIE color spaces */
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "gsicc.h"
 #include "gscspace.h"
 

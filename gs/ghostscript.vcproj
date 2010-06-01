@@ -2025,6 +2025,10 @@
 							>
 						</File>
 						<File
+							RelativePath=".\base\gsicc_cache.c"
+							>
+						</File>
+						<File
 							RelativePath=".\base\gsicc_create.c"
 							>
 						</File>
@@ -2033,11 +2037,11 @@
 							>
 						</File>
 						<File
-							RelativePath=".\base\gsicc_profilecache.c"
+							RelativePath=".\base\gsicc_manage.c"
 							>
 						</File>
 						<File
-							RelativePath=".\base\gsiccmanage.c"
+							RelativePath=".\base\gsicc_profilecache.c"
 							>
 						</File>
 					</Filter>

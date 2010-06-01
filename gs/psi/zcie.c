@@ -32,7 +32,7 @@
 #include "store.h"		/* for make_null */
 #include "zcie.h"
 #include "gsicc_create.h"
-#include "gsiccmanage.h"
+#include "gsicc_manage.h"
 #include "gsicc_profilecache.h"
 
 /* Prototype */

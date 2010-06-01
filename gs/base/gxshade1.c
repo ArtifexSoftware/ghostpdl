@@ -31,7 +31,7 @@
 #include "gxdevcli.h"
 #include "gxshade4.h"
 #include "vdtrace.h"
-#include "gsicccache.h"
+#include "gsicc_cache.h"
 
 #define VD_TRACE_AXIAL_PATCH 1
 #define VD_TRACE_RADIAL_PATCH 1
