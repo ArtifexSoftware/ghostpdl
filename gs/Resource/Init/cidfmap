@@ -31,25 +31,3 @@
 %   /Ryumin-Medium << /FileType /TrueType /Path (H:/AuxFiles/Fonts/BATANG.TTC) /SubfontID 3 /CSI [(Japan1) 2] >> ;
 %
 
-/AndaleMonoWT << /FileType /TrueType /Path (c:/tests/690960/amwt_f1.ttf) /SubfontID 0 /CSI [(Identity) 1] >> ;
-
-/FreeSerif
-<<
- /FileType /TrueType
- /Path (/tests/690930/FreeSerif.TTF)
- /SubfontID 0
- /CSI [(Artifex) (Unicode) 0]
->>;
-
-/FreeSerifI
-<<
- /FileType /TrueType
- /Path (/tests/690930/FreeSerifItalic.TTF)
- /SubfontID 0
- /CSI [(Artifex) (Unicode) 0]
->>;
-
-/MS-Gothic << /SubfontID 0 /CSI [(Japan1) 3] /Path (c:/Windows/Fonts//msgothic.ttc) /FileType /TrueType >> ;
-/MS-PGothic << /SubfontID 1 /CSI [(Japan1) 3] /Path (c:/Windows/Fonts//msgothic.ttc) /FileType /TrueType >> ;
-
-/Arial << /SubfontID 0 /CSI [(Artifex) (Unicode) 0] /Path (c:/windows/fonts/arial.ttf) /FileType /TrueType >> ;
