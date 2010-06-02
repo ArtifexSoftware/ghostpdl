@@ -23,6 +23,25 @@
  *  TEMPLATE_slant_into_trapezoids - the name of the procedure to generate.
 */
 
+/*
+ * ENABLE_TRAP_AMALGAMATION - Experimental trap amalgamation code, disabled
+ * by default.
+ *
+ * Set this if you think that the potential gains from only having to send
+ * one trapezoid rather than a trapezoid+rectangle justify the costs in
+ * calculating whether this is possible.
+ *
+ * Note: Due to rounding inaccuracies while scan converting, there are
+ * cases where the rectangles can round to different pixel boundaries than
+ * the trapezoids do. This means that enabling the TRY_TO_EXTEND_TRAP
+ * define will cause rendering differences, but tests seem to indicate that
+ * this only happens in very borderline cases.
+ */
+#ifdef ENABLE_TRAP_AMALGAMATION
+#define TRY_TO_EXTEND_TRAP 1
+#else
+#define TRY_TO_EXTEND_TRAP 0
+#endif
 
 static inline int
 TEMPLATE_slant_into_trapezoids (const line_list *ll,
@@ -37,7 +56,6 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
      * algorithms, plus rectangles as a fast special case.
      */
     const fill_options * const fo = ll->fo;
-    int xli = fixed2int_var_pixround(flp->x_next - fo->adjust_left);
     gs_fixed_edge le, re;
     int code = 0;
     /*
@@ -78,46 +96,142 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
         le.start.y = fixed2int_pixround(y - fo->adjust_below);
         re.start.x = fixed2int_pixround(re.start.x);
         re.start.y = fixed2int_pixround(y1 + fo->adjust_above);
-        code = LOOP_FILL_RECTANGLE_DIRECT(fo, le.start.x, le.start.y,
+        return LOOP_FILL_RECTANGLE_DIRECT(fo, le.start.x, le.start.y,
                                re.start.x-le.start.x, re.start.y-le.start.y);
     } else if ((le.end.x <= le.start.x) && (re.end.x >= re.start.x)) {
         /* Top wider than bottom. */
         le.start.y = flp->start.y - fo->adjust_below;
-        le.end.y = flp->end.y - fo->adjust_below;
+        le.end.y   = flp->end.y - fo->adjust_below;
         re.start.y = alp->start.y - fo->adjust_below;
-        re.end.y = alp->end.y - fo->adjust_below;
-        code = loop_fill_trap_np(ll, &le, &re, y - fo->adjust_below, y1 - fo->adjust_below);
+        re.end.y   = alp->end.y - fo->adjust_below;
+
         if (ADJUSTED_Y_SPANS_PIXEL(y1)) {
-            if (code < 0)
-                return code;
+            /* Strictly speaking the area we want to fill is a rectangle sat
+             * atop a trapezoid. For some platforms, it would be cheaper to
+             * just emit a single trap if we can get away with it. */
+            int xli = fixed2int_var_pixround(flp->x_next - fo->adjust_left);
+            int xri = fixed2int_var_pixround(alp->x_next + fo->adjust_right);
+
+            if (TRY_TO_EXTEND_TRAP) {
+                int newxl, newxr;
+
+                /* Find the two X extents at the new top position */
+                newxl = le.start.x - (fixed)
+                             (((int64_t)(le.start.x-le.end.x))*
+                              ((int64_t)(y1 + fo->adjust_above-le.start.y))+
+                              (le.end.y-le.start.y-1))/(le.end.y-le.start.y);
+                newxr = re.start.x + (fixed)
+                             (((int64_t)(re.end.x-re.start.x))*
+                              ((int64_t)(y1 + fo->adjust_above-re.start.y))+
+                              (re.end.y-re.start.y-1))/(re.end.y-re.start.y);
+
+                /* If extending the trap covers the same pixels as the
+                 * rectangle would have done, then just plot it! */
+                if ((fixed2int_var_pixround(newxl) == xli) &&
+                    (fixed2int_var_pixround(newxr) == xri)) {
+                    gs_fixed_edge newle, newre;
+
+                    newle.start.x = le.start.x;
+                    newle.start.y = le.start.y;
+                    newle.end.x   = le.end.x;
+                    newle.end.y   = le.end.y;
+                    while (newle.end.y < y1 + fo->adjust_above) {
+                        newle.end.x -= le.start.x-le.end.x;
+                        newle.end.y += le.end.y-le.start.y;
+                    }
+
+                    newre.start.x = re.start.x;
+                    newre.start.y = re.start.y;
+                    newre.end.x   = re.end.x;
+                    newre.end.y   = re.end.y;
+                    while (newre.end.y < y1 + fo->adjust_above) {
+                        newre.end.x += re.end.x-re.start.x;
+                        newre.end.y += re.end.y-re.start.y;
+                    }
+
+                    return loop_fill_trap_np(ll, &newle, &newre,
+                                y - fo->adjust_below, y1 + fo->adjust_above);
+                }
+            }
+            /* Otherwise we'll emit the rectangle and then the trap */
             INCR(afill);
             code = LOOP_FILL_RECTANGLE_DIRECT(fo,
                      xli, fixed2int_pixround(y1 - fo->adjust_below),
-                     fixed2int_var_pixround(alp->x_next + fo->adjust_right) - xli, 1);
+                     xri - xli, 1);
             vd_rect(flp->x_next - fo->adjust_left, y1 - fo->adjust_below,
                     alp->x_next + fo->adjust_right, y1, 1, VD_TRAP_COLOR);
+            if (code < 0)
+                return code;
         }
+        return loop_fill_trap_np(ll, &le, &re, y - fo->adjust_below, y1 - fo->adjust_below);
     } else if ((le.end.x >= le.start.x) && (re.end.x <= re.start.x)) {
         /* Bottom wider than top. */
+        le.start.y = flp->start.y + fo->adjust_above;
+        le.end.y   = flp->end.y + fo->adjust_above;
+        re.start.y = alp->start.y + fo->adjust_above;
+        re.end.y   = alp->end.y + fo->adjust_above;
+
         if (ADJUSTED_Y_SPANS_PIXEL(y)) {
+            /* Strictly speaking the area we want to fill is a trapezoid sat
+             * atop a rectangle. For some platforms, it would be cheaper to
+             * just emit a single trap if we can get away with it. */
+            int xli = fixed2int_var_pixround(flp->x_current - fo->adjust_left);
+            int xri = fixed2int_var_pixround(alp->x_current + fo->adjust_right);
+
+            if (TRY_TO_EXTEND_TRAP) {
+                int newxl, newxr;
+
+                /* Find the two X extents at the new bottom position */
+                newxl = le.end.x - (fixed)
+                        (((int64_t)(le.end.x-le.start.x))*
+                         ((int64_t)(le.end.y-(y - fo->adjust_below)))+
+                         (le.end.y-le.start.y+1))/(le.end.y-le.start.y);
+                newxr = re.end.x + (fixed)
+                        (((int64_t)(re.start.x-re.end.x))*
+                         ((int64_t)(re.end.y-(y - fo->adjust_below)))+
+                         (re.end.y-re.start.y+1))/(re.end.y-re.start.y);
+
+                /* If extending the trap covers the same pixels as the
+                 * rectangle would have done, then just plot it! */
+                if ((fixed2int_var_pixround(newxl) == xli) &&
+                    (fixed2int_var_pixround(newxr) == xri)) {
+                    gs_fixed_edge newle, newre;
+
+                    newle.start.x = le.start.x;
+                    newle.start.y = le.start.y;
+                    newle.end.x   = le.end.x;
+                    newle.end.y   = le.end.y;
+                    while (newle.start.y > y - fo->adjust_below) {
+                        newle.start.x -= le.end.x-le.start.x;
+                        newle.start.y -= le.end.y-le.start.y;
+                    }
+
+                    newre.start.x = re.start.x;
+                    newre.start.y = re.start.y;
+                    newre.end.x   = re.end.x;
+                    newre.end.y   = re.end.y;
+                    while (newre.start.y > y - fo->adjust_below) {
+                        newre.start.x += re.start.x-re.end.x;
+                        newre.start.y -= re.end.y-re.start.y;
+                    }
+
+                    return loop_fill_trap_np(ll, &newle, &newre,
+                                y - fo->adjust_below, y1 + fo->adjust_above);
+                }
+            }
+            /* Otherwise we'll emit the rectangle and then the trap */
             INCR(afill);
-            xli = fixed2int_var_pixround(flp->x_current - fo->adjust_left);
             code = LOOP_FILL_RECTANGLE_DIRECT(fo,
                      xli, fixed2int_pixround(y - fo->adjust_below),
-                     fixed2int_var_pixround(alp->x_current + fo->adjust_right) - xli, 1);
+                     xri - xli, 1);
             vd_rect(flp->x_current - fo->adjust_left, y - fo->adjust_below,
                     alp->x_current + fo->adjust_right, y, 1, VD_TRAP_COLOR);
             if (code < 0)
                 return code;
         }
-        le.start.y = flp->start.y + fo->adjust_above;
-        le.end.y = flp->end.y + fo->adjust_above;
-        re.start.y = alp->start.y + fo->adjust_above;
-        re.end.y = alp->end.y + fo->adjust_above;
-        code = loop_fill_trap_np(ll, &le, &re, y + fo->adjust_above, y1 + fo->adjust_above);
-    } else {    /* Slanted trapezoid. */
-        code = fill_slant_adjust(ll, flp, alp, y, y1);
+        return loop_fill_trap_np(ll, &le, &re, y + fo->adjust_above, y1 + fo->adjust_above);
     }
-    return code;
+    /* Otherwise, handle it as a slanted trapezoid. */
+    return fill_slant_adjust(ll, flp, alp, y, y1);
 }
 
