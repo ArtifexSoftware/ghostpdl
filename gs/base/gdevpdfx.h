@@ -611,6 +611,15 @@ struct gx_device_pdf_s {
     int sbstack_depth;
     pdf_substream_save *sbstack;
 
+    /* Temporary workaround. The only way to get forms out of pdfwrite at present
+     * is via a transparency group or mask operation. Ordinarily we don't care
+     * much about forms, but Patterns within forms need to be scaled to the 
+     * CTM of the Pattern, not the default page co-ordinate system. We use
+     * this value to know if we are nested inside a form or not. If we are
+     * we don't undo the resolution co-ordinate transform.
+     */
+    int FormDepth;
+
     /* Accessories */
     cos_dict_t *substream_Resources;     /* Substream resources */
     gs_color_space_index pcm_color_info_index; /* Index of the ProcessColorModel space. */

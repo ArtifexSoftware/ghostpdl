@@ -934,11 +934,17 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     /*
      * In PDF, the Matrix is the transformation from the pattern space to
      * the *default* user coordinate space, not the current space.
+     * NB. For a form the default space is the parent. This means that when a
+     * form is nested inside a form, the default space is the space of the
+     * first form, and therefore we do *not* remove the resolution scaling.
      */
     gs_currentmatrix(pinst->saved, &smat);
     {
-	double xscale = 72.0 / pdev->HWResolution[0],
+	double xscale = 1.0, yscale = 1.0;
+	if (pdev->FormDepth <= 1) {
+	    xscale = 72.0 / pdev->HWResolution[0];
 	    yscale = 72.0 / pdev->HWResolution[1];
+	}
 
 	smat.xx *= xscale, smat.yx *= xscale, smat.tx *= xscale;
 	smat.xy *= yscale, smat.yy *= yscale, smat.ty *= yscale;

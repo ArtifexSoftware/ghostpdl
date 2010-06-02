@@ -208,8 +208,10 @@ pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
 		gs_no_id, &pres, false, pdev->params.CompressPages);
 	if (code < 0)
 	    return code;
+	pdev->FormDepth++;
 	return pdf_make_form_dict(pdev, pparams, pis, group_dict, (cos_dict_t *)pres->object);
     }
+    pdev->FormDepth++;
     return 0;
 }
 
@@ -218,6 +220,7 @@ pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
 {
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
 
+    pdev->FormDepth--;
     if (!is_in_page(pdev)) 
 	return 0;	/* corresponds to check in pdf_begin_transparency_group */
     if (pdev->image_with_SMask) {

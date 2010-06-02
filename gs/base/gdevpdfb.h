@@ -220,6 +220,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* sbstack_size */
  0,				/* sbstack_depth */
  0,				/* sbstack */
+ 0,				/* FormDepth */
  0,				/* substream_Resources */
  1,				/* pcm_color_info_index == DeviceRGB */
  false,				/* skip_colors */
