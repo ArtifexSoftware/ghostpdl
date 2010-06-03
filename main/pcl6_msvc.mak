@@ -365,6 +365,7 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
                   $(DD)\cielib.dev    \
                   $(DD)\htxlib.dev    \
                   $(DD)\psl3lib.dev   \
+                  $(DD)\psl2lib.dev   \
 		  $(DD)\libpng_$(SHARE_LIBPNG).dev \
                   $(DD)\seprlib.dev   \
                   $(DD)\translib.dev  \

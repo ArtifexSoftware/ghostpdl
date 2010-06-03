@@ -209,7 +209,7 @@ FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)gxfapiu$(UFST_BRIDGE).dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
 	     $(DD)gsnogc.dev $(DD)sdctd.dev $(DD)libpng_$(SHARE_LIBPNG).dev\
-	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev\
+	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev $(DD)psl2lib.dev\
 	     $(DD)cidlib.dev $(DD)psf0lib.dev $(DD)psf1lib.dev $(DD)psf2lib.dev\
 	     $(DD)lzwd.dev
 
