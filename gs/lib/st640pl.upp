@@ -1,7 +1,7 @@
 -supModel="Epson Stylus Color 640, 360x360DpI, Plain Paper"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceCMYKgenerate
 -dupRendering=/FSCMYK32
 -dupOutputFormat=/EscP2

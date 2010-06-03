@@ -8,7 +8,7 @@
 # executable name set in the makefile
 GS_EXECUTABLE=gs
 
-OPTIONS="-dSAFER"
+OPTIONS="-P- -dSAFER"
 while true
 do
 	case "$1" in

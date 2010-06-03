@@ -11,7 +11,7 @@ if test ! -x "$gs"; then
 fi
 GS_EXECUTABLE="$gs"
 
-OPTIONS="-dSAFER"
+OPTIONS="-P- -dSAFER"
 while true
 do
 	case "$1" in
@@ -42,4 +42,4 @@ fi
 
 # We have to include the options twice because -I only takes effect if it
 # appears before other options.
-exec "$GS_EXECUTABLE" $OPTIONS -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sstdout=%stderr "-sOutputFile=$outfile" $OPTIONS -c .setpdfwrite -f "$infile"
+exec "$GS_EXECUTABLE" $OPTIONS -q -P- -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sstdout=%stderr "-sOutputFile=$outfile" $OPTIONS -c .setpdfwrite -f "$infile"

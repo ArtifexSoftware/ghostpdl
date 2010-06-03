@@ -22,4 +22,4 @@ else
     exit 1
 fi
 
-exec "$GS_EXECUTABLE" -q -dNODISPLAY -- pfbtopfa.ps "$1" "$outfile"
+exec "$GS_EXECUTABLE" -q -P- -dSAFER -dNODISPLAY -- pfbtopfa.ps "$1" "$outfile"

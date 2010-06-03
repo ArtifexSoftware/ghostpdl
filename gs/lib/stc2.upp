@@ -1,7 +1,7 @@
 -supModel="Epson Stylus Color II / IIs, 360x360DpI, Plain Paper"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceCMYK
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/EscP2

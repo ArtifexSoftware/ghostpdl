@@ -10,10 +10,10 @@ set outfile=%2
 
 rem First we need to determine the bounding box. ps2epsi.ps below will pick
 rem the result up from %outfile%
-%GSC% -q -dNOPAUSE -dBATCH -dSAFER -dDELAYSAFER -sDEVICE=bbox -sOutputFile=NUL %infile% 2> %outfile%
+%GSC% -q -dNOPAUSE -dBATCH -P- -dSAFER -dDELAYSAFER -sDEVICE=bbox -sOutputFile=NUL %infile% 2> %outfile%
 
 rem Ghostscript uses %outfile% to define the output file
-%GSC% -q -dNOPAUSE -dSAFER -dDELAYSAFER -sDEVICE=bit -sOutputFile=NUL ps2epsi.ps < %infile%
+%GSC% -q -dNOPAUSE -P- -dSAFER -dDELAYSAFER -sDEVICE=bit -sOutputFile=NUL ps2epsi.ps < %infile%
 
 rem We bracket the actual file with a few commands to help encapsulation
 echo %%%%Page: 1 1 >> %outfile%
@@ -23,7 +23,7 @@ echo userdict /setpagedevice /pop load put >> %outfile%
 
 rem Append the original onto the preview header
 rem cat.ps uses the %infile% and %outfile% environment variables for the filenames
-%GSC% -q -dNOPAUSE -dBATCH -dSAFER -dDELAYSAFER -sDEVICE=bit -sOutputFile=NUL cat.ps
+%GSC% -q -dNOPAUSE -dBATCH -P- -dSAFER -dDELAYSAFER -sDEVICE=bit -sOutputFile=NUL cat.ps
 
 
 echo %%%%EndDocument >> %outfile%

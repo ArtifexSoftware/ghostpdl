@@ -1,7 +1,7 @@
 -supModel="HP Deskjet 550c, 300x300DpI, Gamma=2"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceCMYK
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/Pcl

@@ -50,7 +50,7 @@ else
 	outfile=$2
 fi
 
-"$GS_EXECUTABLE" -q -dBATCH -dNOPAUSE -dSAFER -dDELAYSAFER -sDEVICE=bbox -sOutputFile=/dev/null "${infile}" 2>${outfile}
+"$GS_EXECUTABLE" -q -dBATCH -dNOPAUSE -P- -dSAFER -dDELAYSAFER -sDEVICE=bbox -sOutputFile=/dev/null "${infile}" 2>${outfile}
 
 ls -l "${infile}" |
 awk 'F==1	{
@@ -92,7 +92,7 @@ awk 'F==1	{
 		}
 	' F=1 - F=2 "${outfile}" >>"$tmpfile"
 
-"$GS_EXECUTABLE" -q -dNOPAUSE -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null "$tmpfile" ps2epsi.ps "$tmpfile" <"${infile}" 1>&2
+"$GS_EXECUTABLE" -q -dNOPAUSE -P- -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null "$tmpfile" ps2epsi.ps "$tmpfile" <"${infile}" 1>&2
 rm -f "$tmpfile"
 rm -rf "$tmpdir"
 

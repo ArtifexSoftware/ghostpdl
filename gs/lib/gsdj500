@@ -10,4 +10,4 @@ if test ! -x "$gs"; then
 fi
 GS_EXECUTABLE="$gs"
 
-exec "$GS_EXECUTABLE" -q -sDEVICE=djet500 -r300 -dNOPAUSE -sPROGNAME=$0 -- gslp.ps --heading-center "`date`" "$@"
+exec "$GS_EXECUTABLE" -q -sDEVICE=djet500 -r300 -P- -dSAFER -dNOPAUSE -sPROGNAME=$0 -- gslp.ps --heading-center "`date`" "$@"

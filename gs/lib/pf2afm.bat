@@ -6,7 +6,7 @@ if %1/==/ goto usage
 if not %2/==/ goto usage
 call gssetgs.bat
 
-%GSC% -q -dNODISPLAY -dSAFER -dDELAYSAFER -- pf2afm.ps %1
+%GSC% -q -dNODISPLAY -P- -dSAFER -dDELAYSAFER -- pf2afm.ps %1
 goto end
 
 :usage

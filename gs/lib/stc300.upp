@@ -1,7 +1,7 @@
 -supModel="Epson Stylus Color 300, 360x360 dpi, colour, Plain Paper"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceCMYK
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/EscNozzleMap

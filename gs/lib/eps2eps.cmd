@@ -12,7 +12,7 @@ gs='@gsos2'
 
 if params='' then call usage
 
-options='-dNOPAUSE -dBATCH -dSAFER'
+options='-dNOPAUSE -dBATCH -P- -dSAFER'
 
 /* extract options from command line */
 i=1

@@ -10,4 +10,4 @@ if test ! -x "$gs"; then
 fi
 GS_EXECUTABLE="$gs"
 
-exec "$GS_EXECUTABLE" -q -dBATCH -dNODISPLAY -- bdftops.ps "$@"
+exec "$GS_EXECUTABLE" -q -P- -dSAFER -dBATCH -dNODISPLAY -- bdftops.ps "$@"

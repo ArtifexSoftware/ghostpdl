@@ -4,7 +4,7 @@
 
 if %1/==/ goto usage
 call gssetgs.bat
-echo -q -dNODISPLAY -dSAFER -dDELAYSAFER >_.at
+echo -q -dNODISPLAY -P- -dSAFER -dDELAYSAFER >_.at
 :cp
 if %2/==/ goto doit
 echo %2 >>_.at

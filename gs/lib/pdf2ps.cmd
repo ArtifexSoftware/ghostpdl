@@ -14,7 +14,7 @@ outext='.ps'
 
 if params='' then call usage
 
-options='-dNOPAUSE -dBATCH -dSAFER -sDEVICE=pswrite'
+options='-dNOPAUSE -dBATCH -P- -dSAFER -sDEVICE=pswrite'
 
 /* extract options from command line */
 i=1

@@ -13,4 +13,4 @@ if test ! -x "$gs"; then
 fi
 GS_EXECUTABLE="$gs"
 
-exec "$GS_EXECUTABLE" -q -dNODISPLAY -- pphs.ps "$@"
+exec "$GS_EXECUTABLE" -q -P- -dSAFER -dNODISPLAY -- pphs.ps "$@"

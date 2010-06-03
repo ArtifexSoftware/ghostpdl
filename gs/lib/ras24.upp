@@ -1,7 +1,7 @@
 -supModel="SUN rasterfile, 24 Bit, 7 Colors (RGB-Error-Diffusion)"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceRGB
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/SunRaster

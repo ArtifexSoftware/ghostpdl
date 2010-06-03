@@ -10,4 +10,4 @@ if test ! -x "$gs"; then
 fi
 GS_EXECUTABLE="$gs"
 
-exec "$GS_EXECUTABLE" -dNODISPLAY "$@"
+exec "$GS_EXECUTABLE" -P- -dSAFER -dNODISPLAY "$@"

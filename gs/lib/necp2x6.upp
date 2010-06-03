@@ -1,7 +1,7 @@
 -supModel="NEC Prinwriter 2X, 360x360DpI, Plain Paper"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceGray
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/Epson

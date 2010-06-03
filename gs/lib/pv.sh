@@ -46,5 +46,5 @@ fi
 trap "rm -rf $tmpfile" 0 1 2 15
 #dvips -D$RESOLUTION -p $PAGE -n 1 "$FILE" "$@" -o $tmpfile
 dvips -p $PAGE -n 1 "$FILE" "$@" -o $tmpfile
-$GS_EXECUTABLE $tmpfile
+$GS_EXECUTABLE -P- -dSAFER $tmpfile
 exit 0

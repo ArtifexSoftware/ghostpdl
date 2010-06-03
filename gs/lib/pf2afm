@@ -14,4 +14,4 @@ if test ! -x "$gs"; then
 fi
 GS_EXECUTABLE="$gs"
 
-exec "$GS_EXECUTABLE" -q -dNODISPLAY -dSAFER -dDELAYSAFER  -- pf2afm.ps "$@"
+exec "$GS_EXECUTABLE" -q -dNODISPLAY -P- -dSAFER -dDELAYSAFER  -- pf2afm.ps "$@"

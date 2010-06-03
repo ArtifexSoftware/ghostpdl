@@ -153,7 +153,7 @@ echo "\
     } { pop } ifelse
   } if
 quit"
-) | $GS_EXECUTABLE -q -dNOPAUSE -sDEVICE=${device} \
+) | $GS_EXECUTABLE -q -P- -dSAFER -dNOPAUSE -sDEVICE=${device} \
 		-dBitsPerPixel=${bpp} $colorspec \
 		-sOutputFile=\|"${gsoutput}" -
 #		-sOutputFile=${gspipe} -

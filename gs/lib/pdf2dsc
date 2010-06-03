@@ -31,5 +31,5 @@ pdffile=$1
 dscfile=$2
 : ${dscfile:=`echo $pdffile | sed 's,\.[^/.]*,,'`.dsc}
 
-exec "$GS_EXECUTABLE" -q -dNODISPLAY -dSAFER -dDELAYSAFER\
+exec "$GS_EXECUTABLE" -q -dNODISPLAY -P- -dSAFER -dDELAYSAFER\
     -sPDFname="$pdffile" -sDSCname="$dscfile" pdf2dsc.ps -c quit

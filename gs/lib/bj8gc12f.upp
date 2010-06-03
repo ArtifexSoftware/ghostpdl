@@ -1,7 +1,7 @@
 -supModel="Canon BJC 8200, (1200DpI)^2, glossy photo card, high quality"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceCMYKgenerate
 -dupRendering=/FSCMYK32
 -dupOutputFormat=/Canon

@@ -1,7 +1,7 @@
 -supModel="Epson Stylus Color 200 , 360x720DpI"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceCMYK
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/EscP2XY

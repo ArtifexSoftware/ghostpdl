@@ -2,7 +2,7 @@
 -sDEVICE=uniprint
 -sPAPERSIZE=a4
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceCMYK
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/Pcl

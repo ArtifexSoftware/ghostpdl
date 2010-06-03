@@ -11,7 +11,7 @@ if test ! -x "$gs"; then
 fi
 GS_EXECUTABLE="$gs"
 
-OPTIONS="-dSAFER -dDELAYSAFER"
+OPTIONS="-P- -dSAFER -dDELAYSAFER"
 while true
 do
 	case "$1" in

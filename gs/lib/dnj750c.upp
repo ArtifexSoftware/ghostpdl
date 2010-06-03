@@ -1,7 +1,7 @@
 -supModel="HP Designjet 750c, 300x300DpI, Gamma=2.5, CMY"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceRGB
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/Pcl

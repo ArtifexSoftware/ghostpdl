@@ -1,7 +1,7 @@
 -supModel="Epson Stylus Color 800, 1440x720DpI, Inkjet Paper"
 -sDEVICE=uniprint
 -dNOPAUSE
--dSAFER
+-P- -dSAFER
 -dupColorModel=/DeviceCMYK
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/EscP2XY

@@ -4,4 +4,4 @@
  * please contact Mark Hale (mark.hale@physics.org).
  */
 
-@gsos2 -q -dNODISPLAY -dSAFER -dDELAYSAFER -- pf2afm.ps %1
+@gsos2 -q -dNODISPLAY -P- -dSAFER -dDELAYSAFER -- pf2afm.ps %1

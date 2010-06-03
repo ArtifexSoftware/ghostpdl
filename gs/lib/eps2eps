@@ -26,4 +26,4 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
-exec "$GS_EXECUTABLE" -q -sDEVICE=epswrite -sstdout=%stderr "-sOutputFile=$2" -dNOPAUSE -dBATCH -dSAFER $OPTIONS "$1"
+exec "$GS_EXECUTABLE" -q -sDEVICE=epswrite -sstdout=%stderr "-sOutputFile=$2" -dNOPAUSE -dBATCH -P- -dSAFER $OPTIONS "$1"
