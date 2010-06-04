@@ -227,7 +227,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
     gsimage.ImageMatrix.xx = image->xres / 96.0;
     gsimage.ImageMatrix.yy = image->yres / 96.0;
 
-    gsimage.Interpolate = 0;
+    gsimage.Interpolate = 1;
 
     penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
     if (!penum)
