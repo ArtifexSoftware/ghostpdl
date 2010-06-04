@@ -109,6 +109,36 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
 }
 
 static int
+xps_image_has_alpha(xps_context_t *ctx, xps_part_t *part)
+{
+    byte *buf = (byte*)part->data;
+    int len = part->size;
+    int code;
+
+    if (len < 2)
+        code = gs_throw(-1, "unknown image file format");
+
+    if (buf[0] == 0xff && buf[1] == 0xd8) 
+        return 0; /* JPEG never has an alpha channel */
+    else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
+        code = xps_hasalpha_png(ctx->memory, buf, len);
+    else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
+        code = xps_hasalpha_hdphoto(ctx->memory, buf, len);
+    else if (memcmp(buf, "MM", 2) == 0)
+        code = xps_hasalpha_tiff(ctx->memory, buf, len);
+    else if (memcmp(buf, "II", 2) == 0)
+        code = xps_hasalpha_tiff(ctx->memory, buf, len);
+    else
+        code = gs_throw(-1, "unknown image file format");
+
+    if (code < 0 )
+        return gs_rethrow(code, "could not decode image");
+
+    return code;
+}
+
+
+static int
 xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 {
     byte *buf = (byte*)part->data;
@@ -197,7 +227,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
     gsimage.ImageMatrix.xx = image->xres / 96.0;
     gsimage.ImageMatrix.yy = image->yres / 96.0;
 
-    gsimage.Interpolate = 1;
+    gsimage.Interpolate = 0;
 
     penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
     if (!penum)
@@ -361,25 +391,12 @@ xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t 
         return 0;
     }
 
-    /* Hmm, we should be smarter here and only look at the image header */
-
-    image = xps_alloc(ctx, sizeof(xps_image_t));
-    if (!image)
-    {
-        gs_catch(-1, "out of memory: image struct");
-        return 0;
-    }
-
-    code = xps_decode_image(ctx, part, image);
-    if (code < 0)
+    has_alpha = xps_image_has_alpha(ctx, part);
+    if (has_alpha < 0)
     {
         gs_catch(-1, "cannot decode image resource");
         return 0;
     }
-
-    has_alpha = image->alpha != NULL;
-
-    xps_free_image(ctx, image);
 
     return has_alpha;
 }

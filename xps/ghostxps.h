@@ -269,6 +269,9 @@ int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image);
+int xps_hasalpha_png(gs_memory_t *mem, byte *rbuf, int rlen);
+int xps_hasalpha_tiff(gs_memory_t *mem, byte *rbuf, int rlen);
+int xps_hasalpha_hdphoto(gs_memory_t *mem, byte *buf, int len);
 
 void xps_free_image(xps_context_t *ctx, xps_image_t *image);
 

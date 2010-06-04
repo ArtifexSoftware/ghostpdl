@@ -59,6 +59,79 @@ xps_png_free(png_structp png, png_voidp ptr)
     gs_free_object(mem, ptr, "libpng");
 }
 
+/* This only determines if we have an alpha value */
+int
+xps_hasalpha_png(gs_memory_t *mem, byte *rbuf, int rlen)
+{
+    png_structp png;
+    png_infop info;
+    struct xps_png_io_s io;
+    int npasses;
+    int pass;
+    int y;
+    int has_alpha;
+
+    /*
+     * Set up PNG structs and input source
+     */
+
+    io.ptr = rbuf;
+    io.lim = rbuf + rlen;
+
+    png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
+            NULL, NULL, NULL,
+            mem, xps_png_malloc, xps_png_free);
+    if (!png)
+        return gs_throw(-1, "png_create_read_struct");
+
+    info = png_create_info_struct(png);
+    if (!info)
+        return gs_throw(-1, "png_create_info_struct");
+
+    png_set_read_fn(png, &io, xps_png_read);
+    png_set_crc_action(png, PNG_CRC_WARN_USE, PNG_CRC_WARN_USE);
+
+    /*
+     * Jump to here on errors.
+     */
+
+    if (setjmp(png_jmpbuf(png)))
+    {
+        png_destroy_read_struct(&png, &info, NULL);
+        return gs_throw(-1, "png reading failed");
+    }
+
+    /*
+     * Read PNG header
+     */
+
+    png_read_info(png, info);
+
+    switch (png_get_color_type(png, info))
+    {
+    case PNG_COLOR_TYPE_GRAY:
+    case PNG_COLOR_TYPE_RGB:
+        has_alpha = 0;
+        break;
+
+    case PNG_COLOR_TYPE_GRAY_ALPHA:
+    case PNG_COLOR_TYPE_RGB_ALPHA:
+        has_alpha = 1;
+        break;
+
+    default:
+        return gs_throw(-1, "cannot handle this png color type");
+    }
+
+    /*
+     * Clean up memory.
+     */
+
+    png_destroy_read_struct(&png, &info, NULL);
+
+    return has_alpha;
+}
+
 int
 xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
 {

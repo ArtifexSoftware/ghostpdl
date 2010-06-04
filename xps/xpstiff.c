@@ -1022,3 +1022,86 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
 
     return gs_okay;
 }
+
+int
+xps_hasalpha_tiff(gs_memory_t *mem, byte *buf, int len)
+{
+    int error;
+    xps_tiff_t tiffst;
+    xps_tiff_t *tiff = &tiffst;
+
+    unsigned version;
+    unsigned offset;
+    unsigned count;
+    unsigned i;
+    int has_alpha;
+
+    memset(tiff, 0, sizeof(xps_tiff_t));
+
+    tiff->bp = buf;
+    tiff->rp = buf;
+    tiff->ep = buf + len;
+
+    /* tag defaults, where applicable */
+    tiff->bitspersample = 1;
+    tiff->compression = 1;
+    tiff->samplesperpixel = 1;
+    tiff->resolutionunit = 2;
+    tiff->rowsperstrip = 0xFFFFFFFF;
+    tiff->fillorder = 1;
+    tiff->planar = 1;
+    tiff->subfiletype = 0;
+    tiff->predictor = 1;
+    tiff->ycbcrsubsamp[0] = 2;
+    tiff->ycbcrsubsamp[1] = 2;
+
+    /*
+     * Read IFH
+     */
+
+    /* get byte order marker */
+    tiff->order = TII;
+    tiff->order = readshort(tiff);
+    if (tiff->order != TII && tiff->order != TMM)
+        return gs_throw(-1, "not a TIFF file, wrong magic marker");
+
+    /* check version */
+    version = readshort(tiff);
+    if (version != 42)
+        return gs_throw(-1, "not a TIFF file, wrong version marker");
+
+    /* get offset of IFD */
+    offset = readlong(tiff);
+
+    /*
+     * Read IFD
+     */
+
+    tiff->rp = tiff->bp + offset;
+
+    count = readshort(tiff);
+
+    offset += 2;
+    for (i = 0; i < count; i++)
+    {
+        error = xps_read_tiff_tag(mem, tiff, offset);
+        if (error)
+            return gs_rethrow(error, "could not read TIFF header tag");
+        offset += 12;
+    }
+
+    if (tiff->extrasamples == 2 || tiff->extrasamples == 1)
+        has_alpha = 1;
+    else
+        has_alpha = 0;
+
+    /*
+     * Clean up scratch memory
+     */
+
+    if (tiff->colormap) gs_free_object(mem, tiff->colormap, "ColorMap");
+    if (tiff->stripoffsets) gs_free_object(mem, tiff->stripoffsets, "StripOffsets");
+    if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
+
+    return has_alpha;
+}
