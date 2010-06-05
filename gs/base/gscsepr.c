@@ -78,6 +78,7 @@ static const gs_color_space *
 gx_concrete_space_Separation(const gs_color_space * pcs,
 			     const gs_imager_state * pis)
 {
+    bool is_lab = false;
 #ifdef DEBUG
     /* 
      * Verify that the color space and imager state info match.
@@ -90,6 +91,14 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
      * Check if we are using the alternate color space.
      */
     if (pis->color_component_map.use_alt_cspace) {
+        /* Need to handle PS CIE space */
+        if (gs_color_space_is_PSCIE(pcs->base_space)) {
+            if (pcs->base_space->icc_equivalent == NULL) {
+                gs_colorspace_set_icc_equivalent(pcs->base_space, 
+                                                    &is_lab, pis->memory);
+            }
+            return (pcs->base_space->icc_equivalent);
+        } 
         return cs_concrete_space(pcs->base_space, pis);
     }
     /*

@@ -771,6 +771,7 @@ add_v4_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[],
         *curr_ptr ++= 0;
         *curr_ptr ++= text[k];
     }
+    memset(curr_ptr,0,tag_list[curr_tag].byte_padding);  /* padding */
 }
 
 static void
