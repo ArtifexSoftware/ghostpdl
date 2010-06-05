@@ -631,7 +631,8 @@ nce:
         if (icc_pro.size <= gp_file_name_sizeof) {
             
             /* Copy device ICC profile name in the device */
-  	    memcpy(&(dev->color_info.icc_profile[0]), icc_pro.data, icc_pro.size);        
+  	    if (&(dev->color_info.icc_profile[0]) != icc_pro.data)
+  	        memcpy(&(dev->color_info.icc_profile[0]), icc_pro.data, icc_pro.size);        
         } 
 
     }
