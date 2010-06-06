@@ -964,12 +964,13 @@ gsicc_manager_new(gs_memory_t *memory)
 {
     gsicc_manager_t *result;
 
-    /* Allocated in gc memory */
-    result = gs_alloc_struct(memory, gsicc_manager_t, &st_gsicc_manager,
+    /* Allocated in stable gc memory.  This done since the profiles
+       may be introduced late in the process. */
+    result = gs_alloc_struct(memory->stable_memory, gsicc_manager_t, &st_gsicc_manager,
 			     "gsicc_manager_new");
     if ( result == NULL )
         return(NULL);
-   rc_init_free(result, memory, 1, rc_gsicc_manager_free);
+   rc_init_free(result, memory->stable_memory, 1, rc_gsicc_manager_free);
    result->default_gray = NULL;
    result->default_rgb = NULL;
    result->default_cmyk = NULL;
@@ -980,7 +981,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->proof_profile = NULL;
    result->device_n = NULL;
    result->smask_profiles = NULL;
-   result->memory = memory;
+   result->memory = memory->stable_memory;
    result->profiledir = NULL;
    result->namelen = 0;
    return(result);
