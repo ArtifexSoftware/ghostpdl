@@ -372,7 +372,22 @@ pe_fixed2float(int32 x, int32 fbits)
     return ((floatp)x * (1.0 / pow(2, fbits)));
 }
 
-static bool pe_args(const gs_memory_t *mem, hpgl_args_t *, int32 *, int);
+typedef enum {
+    pe_okay,
+    pe_NeedData,
+    pe_SyntaxError,
+} hpgl_pe_args_ret_t;
+
+static hpgl_pe_args_ret_t pe_args(const gs_memory_t *mem, hpgl_args_t *, int);
+
+static inline void
+pe_clear_args(hpgl_args_t *pargs)
+{
+    pargs->pe_shift[0]  = pargs->pe_shift[1] = 0;
+    pargs->pe_values[0] = pargs->pe_values[1] = 0;
+    pargs->pe_indx = 0;
+}
+
 int
 hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
@@ -398,6 +413,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
         hpgl_save_pen_state(pgls, &pgls->g.pen_state, hpgl_pen_relative);
         pargs->phase |= pe_entered;
         pgls->g.fraction_bits = 0;
+        pe_clear_args(pargs);
     }
     while ( p < rlimit ) {
         byte ch = *(pargs->source.ptr = ++p);
@@ -414,11 +430,14 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
             if_debug0('I', "\n  PE SP");
             {
                 int32 pen;
-                if ( !pe_args(pgls->memory, pargs, &pen, 1) )
-                    {
+                hpgl_pe_args_ret_t ret = pe_args(pgls->memory, pargs, 1);
+                if ( ret != pe_okay ) {
+                    if ( ret == pe_NeedData )
                         pargs->source.ptr = p - 1;
-                        break;
-                    }
+                    break;
+                }
+                pen = pargs->pe_values[0];
+                pe_clear_args(pargs);
                 if ( !pgls->g.polygon_mode ) {
                     hpgl_args_t args;
                     hpgl_args_set_int(&args, pen);
@@ -436,11 +455,14 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
             if_debug0('I', "\n  PE PD");
             {
                 int32 fbits;
-                if ( !pe_args(pgls->memory, pargs, &fbits, 1) )
-                    {
-                        pargs->source.ptr = p - 1;
+                hpgl_pe_args_ret_t ret = pe_args(pgls->memory, pargs, 1);
+                if ( ret != pe_okay ) {
+                        if ( ret == pe_NeedData )
+                            pargs->source.ptr = p - 1;
                         break;
-                    }
+                }
+                fbits = pargs->pe_values[0];
+                pe_clear_args(pargs);
                 if ( fbits < -26 || fbits > 26 )
                     return e_Range;
                 pgls->g.fraction_bits = fbits;
@@ -480,8 +502,11 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
                 int32 xy[2];
                 hpgl_args_t     args;
                 int32 fbits = pgls->g.fraction_bits;
-                if ( !pe_args(pgls->memory, pargs, xy, 2) )
+                if ( pe_args(pgls->memory, pargs, 2) != pe_okay )
                     break;
+                xy[0] = pargs->pe_values[0];
+                xy[1] = pargs->pe_values[1];
+                pe_clear_args(pargs);
                 if ( pargs->phase & pe_absolute )
                     pgls->g.relative_coords = hpgl_plot_absolute;
                 else
@@ -508,23 +533,28 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
     }
     return e_NeedData;
 }
-/* Get an encoded value from the input.  Return false if we ran out of */
-/* input data.  Ignore syntax errors (!). */
-static bool
-pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pvalues, int count)
+/* Get an encoded value from the input. */
+
+static hpgl_pe_args_ret_t
+pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int count)
 {       const byte *p = pargs->source.ptr;
         const byte *rlimit = pargs->source.limit;
         int i, code;
 
-        for ( i = 0; i < count; ++i )
-          { int32 value = 0;
-            int shift = 0;
+        for ( i = pargs->pe_indx; i < count; ++i )
+          {
+
+#define VALUE (pargs->pe_values[i])
+#define SHIFT (pargs->pe_shift[i])
 
             for ( ; ; )
               { int ch;
 
-              if ( p >= rlimit )
-                return false;
+                if ( p >= rlimit ) {
+                   pargs->pe_indx = i;
+                   pargs->source.ptr = p;
+                   return pe_NeedData;
+                }
               ch = *++p;
               if ( (ch & 127) <= 32 || (ch & 127) == 127 )
                 continue;
@@ -532,8 +562,8 @@ pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pvalues, int count)
                 { ch -= 63;
                 if ( ch & ~63 )
                   goto syntax_error;
-                value += (int32)(ch & 31) << shift;
-                shift += 5;
+                VALUE += (int32)(ch & 31) << SHIFT;
+                SHIFT += 5;
                 if ( ch & 32 )
                   break;
                 }
@@ -541,22 +571,22 @@ pe_args(const gs_memory_t *mem, hpgl_args_t *pargs, int32 *pvalues, int count)
                 { ch -= 63;
                 if ( ch & ~191 )
                   goto syntax_error;
-                value += (int32)(ch & 63) << shift;
-                shift += 6;
+                VALUE += (int32)(ch & 63) << SHIFT;
+                SHIFT += 6;
                 if ( ch & 128 )
                   break;
                 }
               }
-            pvalues[i] = (value & 1 ? -(value >> 1) : value >> 1);
-            if_debug1('I', "  [%ld]", (long)pvalues[i] );
+            VALUE = (VALUE & 1 ? -(VALUE >> 1) : VALUE >> 1);
+            if_debug1('I', "  [%ld]", (long)VALUE);
           }
         pargs->source.ptr = p;
-        return true;
+        return pe_okay;
 syntax_error:
         /* Just ignore everything we've parsed up to this point. */
         pargs->source.ptr = p;
         code = gs_note_error(e_Syntax);
-        return false;
+        return pe_SyntaxError;
 }
 
 /* PR dx,dy...; */

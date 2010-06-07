@@ -16,8 +16,8 @@
 #ifndef pgmand_INCLUDED
 #define pgmand_INCLUDED
 
-#include "stdio_.h"		/* for gdebug.h */
-#include <setjmp.h>		/* must come after std.h */
+#include "stdio_.h"             /* for gdebug.h */
+#include <setjmp.h>             /* must come after std.h */
 #include "gdebug.h"
 #include "pcommand.h"
 #include "pcstate.h"
@@ -70,7 +70,7 @@ typedef hpgl_command_proc((*hpgl_command_proc_t));
 typedef struct hpgl_command_s {
   hpgl_command_proc_t proc;
   byte flags;
-#define hpgl_cdf_polygon 1	          /* execute command even in polygon mode */
+#define hpgl_cdf_polygon 1                /* execute command even in polygon mode */
 #define hpgl_cdf_lost_mode_cleared 2      /* exectute command only if lost mode cleared */
 #define hpgl_cdf_rtl 4                    /* execute only in rtl mode */
 #define hpgl_cdf_pcl 8                    /* execute only in pcl mode */
@@ -90,28 +90,31 @@ typedef struct hpgl_value_s {
 struct hpgl_args_s {
     /* Parsing state */
     stream_cursor_read source;
-    int first_letter;		/* -1 if we haven't seen the first letter of */
-				/* a command, the letter (0-25) if we have */
-    bool done;			/* true if we've seen an argument */
-				/* terminator */
+    int first_letter;           /* -1 if we haven't seen the first letter of */
+                                /* a command, the letter (0-25) if we have */
+    bool done;                  /* true if we've seen an argument */
+                                /* terminator */
     const hpgl_command_definition_t *command; /* command being executed, */
-				/* 0 if none */
-    jmp_buf exit_to_parser;	/* longjmp here if we ran out of data */
-				/* while scanning an argument, or we */
-				/* found a syntax error */
-    struct arg_ {			/* argument scanning state */
-	/* State within the current argument */
-	int have_value;		/* 0 = no value, 1 = int, 2 = real */
-	double frac_scale;		/* 10 ^ # of digits after dot */
-	int sign;			/* 0 = none, +/-1 = sign */
-	/* State of argument list collection */
-	int count;			/* # of fully scanned arguments */
-	int next;			/* # of next scanned arg to return */
-	hpgl_value_t scanned[21];	/* args already scanned */
+                                /* 0 if none */
+    jmp_buf exit_to_parser;     /* longjmp here if we ran out of data */
+                                /* while scanning an argument, or we */
+                                /* found a syntax error */
+    struct arg_ {                       /* argument scanning state */
+        /* State within the current argument */
+        int have_value;         /* 0 = no value, 1 = int, 2 = real */
+        double frac_scale;              /* 10 ^ # of digits after dot */
+        int sign;                       /* 0 = none, +/-1 = sign */
+        /* State of argument list collection */
+        int count;                      /* # of fully scanned arguments */
+        int next;                       /* # of next scanned arg to return */
+        hpgl_value_t scanned[21];       /* args already scanned */
     } arg;
     /* Command execution state */
-    int phase;			/* phase within command, see above */
+    int phase;                  /* phase within command, see above */
 
+    int32 pe_values[2];
+    int   pe_shift[2];
+    int   pe_indx;
     /*
      * We register all the HP-GL/2 commands dynamically, for maximum
      * configuration flexibility.  hpgl_command_list points to the individual
@@ -131,9 +134,9 @@ typedef struct {
   hpgl_command_definition_t defn;
 } hpgl_named_command_t;
 int hpgl_init_command_index(hpgl_parser_state_t **pgl_parser_state, gs_memory_t *mem);
-void hpgl_define_commands(const gs_memory_t *mem, 
-			  const hpgl_named_command_t *, 
-			  hpgl_parser_state_t *pgl_parser_state);
+void hpgl_define_commands(const gs_memory_t *mem,
+                          const hpgl_named_command_t *,
+                          hpgl_parser_state_t *pgl_parser_state);
 #define DEFINE_HPGL_COMMANDS(mem) \
 { const gs_memory_t *mem_ = mem; \
   static const hpgl_named_command_t defs_[] = {
@@ -154,7 +157,7 @@ void hpgl_process_init(hpgl_parser_state_t *);
 /* Process a buffer of HP-GL/2 commands. */
 /* Return 0 if more input needed, 1 if ESC seen, or an error code. */
 int hpgl_process(hpgl_parser_state_t *pst, hpgl_state_t *pgls,
-		    stream_cursor_read *pr);
+                    stream_cursor_read *pr);
 
 /* Prepare to scan the next (numeric) argument. */
 #define hpgl_arg_init(pargs)\
@@ -192,26 +195,26 @@ bool hpgl_arg_units(const gs_memory_t *mem, hpgl_args_t *pargs, hpgl_real_t *pu)
  * in general, we do support it, as long as command B doesn't do its own
  * argument parsing (e.g., PE, LB).  The framework for doing this is the
  * following:
- *	hpgl_args_t args;
- *	...
- *	hpgl_args_setup(&args);
- *	<< As many times as desired: >>
- *		hpgl_args_add_int/real(&args, value);
- *	hpgl_B(&args, pgls);
+ *      hpgl_args_t args;
+ *      ...
+ *      hpgl_args_setup(&args);
+ *      << As many times as desired: >>
+ *              hpgl_args_add_int/real(&args, value);
+ *      hpgl_B(&args, pgls);
  */
 #define args_setup_count_(pargs, numargs)\
   ((void)((pargs)->done = true, (pargs)->arg.count = (numargs),\
-	  (pargs)->arg.next = (pargs)->phase = 0))
+          (pargs)->arg.next = (pargs)->phase = 0))
 #define hpgl_args_setup(pargs)\
   args_setup_count_(pargs, 0)
 #define args_put_int_(pargs, index, iplus, ival)\
   ((void)((pargs)->arg.scanned[index].v_n.i = (ival),\
-	  (pargs)->arg.scanned[iplus].is_real = false))
+          (pargs)->arg.scanned[iplus].is_real = false))
 #define hpgl_args_add_int(pargs, ival)\
   args_put_int_(pargs, (pargs)->arg.count, (pargs)->arg.count++, ival)
 #define args_put_real_(pargs, index, iplus, rval)\
   ((void)((pargs)->arg.scanned[index].v_n.r = (rval),\
-	  (pargs)->arg.scanned[iplus].is_real = true))
+          (pargs)->arg.scanned[iplus].is_real = true))
 #define hpgl_args_add_real(pargs, rval)\
   args_put_real_(pargs, (pargs)->arg.count, (pargs)->arg.count++, rval)
 /*
