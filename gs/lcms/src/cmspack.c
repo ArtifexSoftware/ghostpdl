@@ -1488,10 +1488,14 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
 {
        _cmsFIXFN FromInput = NULL;
 
-
        // Check Named Color
-
-       if (xform) {
+        /* Disabled to avoid illegal memory access if profile was released. */
+        /* lcms appears not to check its handles of links when a profile is 
+           released to clear out xform->InputProfile.  Probably due to the
+           fact that lcms may not expect a change of the formatters after the
+           link is created.  That would imply that we would need to create
+           links based upon data types which is not so efficient.  */ 
+    /* if (xform) {
            
            if (xform ->InputProfile) {
 
@@ -1504,7 +1508,7 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
            }
                 
         }
-       }
+       } */
 
        // Unencoded modes
 
