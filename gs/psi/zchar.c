@@ -626,7 +626,8 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 		if (chr != gs_no_char &&
 		    !r_has_type(&pfdata->BuildChar, t_null) &&
 		    (glyph == gs_no_glyph ||
-		     (array_get(imemory, &pfdata->Encoding, (long)(chr & 0xff), &eref) >= 0 &&
+		     (!r_has_type(&pfdata->Encoding, t_null) &&
+		       array_get(imemory, &pfdata->Encoding, (long)(chr & 0xff), &eref) >= 0 &&
 		      (glyph_ref(imemory, glyph, &gref), obj_eq(imemory, &gref, &eref))))
 		    ) {
 		    make_int(op, chr & 0xff);
