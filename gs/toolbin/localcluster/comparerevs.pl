@@ -151,6 +151,7 @@ if ($test != 0)
 } else {
     print STDERR "Processing $sorted[0]\n";
     system("cut -f1,2,7 ".shift(@sorted)." | sort -k1b,1 > $mainfile");
+    #print STDERR "$mainfile\n";
 
     foreach my $version (@sorted) {
         print STDERR "Processing $version\n";
@@ -158,11 +159,13 @@ if ($test != 0)
         my $tempfile2 = tmpnam();
         system("cut -f1,2,7 $version | sort -k1b,1 > $tempfile1");
         system("join --nocheck-order -j1 $mainfile $tempfile1 > $tempfile2");
+        #print STDERR "$tempfile1\n";
         unlink($tempfile1);
         unlink($mainfile);
         $mainfile = $tempfile2;
     }
 }
+#print STDERR "$mainfile\n";
 
 print "<HTML><HEAD><TITLE>Test results by revision</TITLE></HEAD><BODY>\n";
 print "<H1>Files that changed between revisions $branch$rawsorted[$initial]";
@@ -195,8 +198,8 @@ while (<FH>)
     my %hashes   = ();
     my $change   = 0;
     my $acc      = "";
-    my $accnum   = 0;
     my $acccols  = 0;
+    my $accend   = "";
     my $olderr   = undef;
     my $fieldnum = 0;
     my $initial_err;
@@ -209,7 +212,8 @@ while (<FH>)
         my $err  = shift(@fields);
         my $hash = shift(@fields);
 
-        if ($err) {
+        # Ignore hash changes on timeouts
+        if ($err == 3 || $err == 4) {
             $hash = 0;
         }
         if ($fieldnum == $initial) {
@@ -220,8 +224,11 @@ while (<FH>)
             $final_hash = $hash;
         }
 
-        if ($err == 0) {
-            if (defined($oldhash) && $oldhash eq $hash && !defined($olderr)) {
+        if ($err != 3 && $err != 4) {
+            # No error, or an error that wasn't a timeout
+            # If the hash values match, and either no previous error value
+            # or a matching one, then just extend the run
+            if (defined($oldhash) && $oldhash eq $hash && (!defined($olderr) || $olderr eq $err)) {
                 $acccols++;
             } else {
                 if ($acccols != 0) {
@@ -229,7 +236,7 @@ while (<FH>)
                     if ($acccols != 1) {
                         $line .= " colspan=$acccols";
                     }
-                    $line .= ">$accnum";
+                    $line .= $accend;
                 }
                 $acccols = 1;
                 if (!defined($hashes{$hash})) {
@@ -241,7 +248,10 @@ while (<FH>)
                     $acc = "<td bgcolor=#ff8040"; # Orange
                     $dull = 0;
                 }
-                $accnum = $hashes{$hash};
+                $accend = ">".$hashes{$hash};
+                if ($err) {
+                    $accend .= "<span style=\"background-color:#ff4040\">($err)</span>";
+                }
             }
             $oldhash = $hash;
             $olderr = undef;
@@ -254,11 +264,11 @@ while (<FH>)
                     if ($acccols != 1) {
                         $line .= " colspan=$acccols";
                     }
-                    $line .= ">$accnum";
+                    $line .= $accend;
                 }
                 $acc = "<td bgcolor=#ff4040"; #Red
                 $acccols = 1;
-                $accnum = $err;
+                $accend = ">($err)";
                 $dull = 0;
             }
             $olderr = $err;
@@ -270,7 +280,7 @@ while (<FH>)
         if ($acccols != 1) {
             $line .= " colspan=$acccols";
         }
-        $line .= ">$accnum";
+        $line .= $accend;
     }
     $line .= "\n";
     if (($initial_err == 0) && ($final_err != 0)) {
