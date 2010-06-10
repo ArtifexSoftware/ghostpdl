@@ -80,8 +80,10 @@ static inline int fapi_round(double x)
 static int add_closepath(FAPI_path *I)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
-    olh->need_close = false;
-    I->gs_error =  gx_path_close_subpath_notes(olh->path, 0);
+    if (olh->need_close == true) {
+        olh->need_close = false;
+        I->gs_error =  gx_path_close_subpath_notes(olh->path, 0);
+    }
     return I->gs_error;
 }
 
