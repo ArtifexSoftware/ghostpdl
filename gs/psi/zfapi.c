@@ -954,6 +954,7 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
      */
     ref *pdr = (ref *)ff->client_font_data2;
     ushort glyph_length;
+    i_ctx_t *i_ctx_p = (i_ctx_t *)ff->client_ctx_p;
 
     if (ff->is_type1) {
         if (ff->is_cid) {
@@ -980,7 +981,6 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
 		    ff->char_data = NULL;
 		}
 	    }  else { /* seac */
-		i_ctx_t *i_ctx_p = (i_ctx_t *)ff->client_ctx_p;
 		ref *StandardEncoding;
 
 		if (dict_find_string(systemdict, "StandardEncoding", &StandardEncoding) <= 0 ||
@@ -1006,27 +1006,34 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
     } else { /* type 42 */
 	const byte *data_ptr;
 	int l = get_GlyphDirectory_data_ptr(ff->memory, pdr, char_code, &data_ptr);
+        
+        /* We should only render the TT notdef if we've been told to - logic lifted from zchar42.c */
+        if (!i_ctx_p->RenderTTNotdef && ((ff->char_data_len == 7 && strncmp((const char *)ff->char_data, ".notdef", 7) == 0)
+            || (ff->char_data_len > 9 && strncmp((const char *)ff->char_data, ".notdef~GS", 10) == 0))) {
+               glyph_length = 0;
+        }
+        else {
+	    if (l >= 0) {
+	        int MetricsCount = get_MetricsCount(ff), mc = MetricsCount << 1;
 
-	if (l >= 0) {
-	    int MetricsCount = get_MetricsCount(ff), mc = MetricsCount << 1;
+                glyph_length = max((ushort)(l - mc), 0); /* safety */
+                if (buf != 0 && glyph_length > 0)
+                    memcpy(buf, data_ptr + mc, min(glyph_length, buf_length)/* safety */);
+            } else {
+                gs_font_type42 *pfont42 = (gs_font_type42 *)ff->client_font_data;
+                ulong offset0;
+	        bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0);
 
-            glyph_length = max((ushort)(l - mc), 0); /* safety */
-            if (buf != 0 && glyph_length > 0)
-                memcpy(buf, data_ptr + mc, min(glyph_length, buf_length)/* safety */);
-        } else {
-            gs_font_type42 *pfont42 = (gs_font_type42 *)ff->client_font_data;
-            ulong offset0;
-	    bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0);
+                glyph_length = (error ? -1 : pfont42->data.len_glyphs[char_code]);
+                if (buf != 0 && !error) {
+                    sfnts_reader r;
+                    sfnts_reader_init(&r, pdr);
 
-            glyph_length = (error ? -1 : pfont42->data.len_glyphs[char_code]);
-            if (buf != 0 && !error) {
-                sfnts_reader r;
-                sfnts_reader_init(&r, pdr);
-
-                r.seek(&r, offset0);
-                r.rstring(&r, buf, min(glyph_length, buf_length)/* safety */);
-                if (r.error)
-                    glyph_length = -1;
+                    r.seek(&r, offset0);
+                    r.rstring(&r, buf, min(glyph_length, buf_length)/* safety */);
+                    if (r.error)
+                        glyph_length = -1;
+                }
             }
         }
     }
