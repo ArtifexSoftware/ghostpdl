@@ -598,7 +598,7 @@ make_rotation(FT_Matrix *a_transform, const FT_Vector *a_vector)
  * The scaling part is used for setting the pixel size for hinting.
  */
 static void
-transform_decompose(FT_Matrix *a_transform, FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
+transform_decompose(FT_Matrix *a_transform, int xres, int yres, FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
 {
     double scalex, scaley, fact = 1.0;
     FT_Matrix ftscale_mat;
@@ -623,6 +623,24 @@ transform_decompose(FT_Matrix *a_transform, FT_Fixed *a_x_scale, FT_Fixed *a_y_s
 	    scaley = scaley * fact;
 	    scalex = scalex * fact;
 	}
+        
+        /* These seemingly arbitrary numbers are derived from a) using 64ths of a unit
+           and b) the calculations done in FT_Request_Metrics() to derive the ppem.
+           This is necessary due to FT's need for them ppem to be an in larger than 1
+           - see tt_size_reset().
+           
+           The calculation has been rearranged to reduce (in particular) the number of
+           floating point divisions.
+         */
+        if ((scaley * 64 * yres) < 2268.0)
+        {
+            fact = 2400.0 / (64 * yres) / scaley;
+            
+            scaley *= fact;
+            scalex *= fact;
+        }
+        
+        
     }
     else
     {
@@ -632,6 +650,15 @@ transform_decompose(FT_Matrix *a_transform, FT_Fixed *a_x_scale, FT_Fixed *a_y_s
 	    scalex = scalex * fact;
 	    scaley = scaley * fact;
 	}
+        
+        /* see above */
+        if ((scalex * 64 * xres) < 2268.0)
+        {
+            fact = 2400.0 / (64 * xres) / scalex;
+            
+            scaley *= fact;
+            scalex *= fact;
+        }
     }
     
     ftscale_mat.xx = (FT_Fixed)(((1.0 / scalex)) * 65536.0);
@@ -804,15 +831,19 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
         /* Split the transform into scale factors and a rotation-and-shear
          * transform.
          */
-        transform_decompose(&face->ft_transform, &face->width, &face->height);
+        transform_decompose(&face->ft_transform, face->horz_res, face->vert_res, &face->width, &face->height);
 		
         ft_error = FT_Set_Char_Size(face->ft_face, face->width, face->height,
                 face->horz_res, face->vert_res);
         
         if (ft_error)
         {
-            delete_face(a_server, face);
-            a_font->server_font_data = NULL;
+            /* The code originally cleaned up the face data here, but the "top level"
+               font object still has references to the face data, and we've no way
+               to tell it it's gone. So we defer releasing the data until the garbage
+               collector collects the font object, and the font's finalize call will
+               free the data correctly for us.
+             */
             return ft_to_gs_error(ft_error);
         }
 
