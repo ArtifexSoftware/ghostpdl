@@ -192,11 +192,31 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     int raster = (pinst->size.x * depth + 7) / 8;
     int64_t size = (int64_t)raster * pinst->size.y;
     gx_device_forward *fdev;
+    int force_no_clist = 0;
+
+    /* 
+     * If the target device can accumulate a pattern stream and the language
+     * client supports high level patterns (ps and pdf only) we don't need a
+     * raster or clist representation for the pattern, but the code goes
+     * through the motions of creating the device anyway.  Later when the
+     * pattern paint procedure is called  an error is returned and whatever
+     * has been set up here is destroyed.  We try to make sure the same path
+     * is taken in the code even though the device is never used because
+     * there are pathological problems (see Bug689851.pdf) where the pattern
+     * is so large we can't even allocate the memory for the device and the
+     * dummy clist path must be used.  None of this discussion is relevant if
+     * the client language does not support high level patterns or the device
+     * cannot accumulate the pattern stream.      
+     */
+    if (pinst->saved->have_pattern_streams == 0 && (*dev_proc(pinst->saved->device, 
+	pattern_manage))((gx_device *)pinst->saved->device, 
+	0, pinst, pattern_manage__can_accum) == 1)
+	force_no_clist = 1;
 
     /* Do not allow pattern to be a clist if it uses transparency.  We
        will want to fix this at some point */
 
-    if ( size < MAX_BITMAP_PATTERN_SIZE || pinst->template.PaintType != 1 || 
+    if (force_no_clist || size < MAX_BITMAP_PATTERN_SIZE || pinst->template.PaintType != 1 || 
                         pinst->template.uses_transparency ) {
 
 	gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
@@ -1037,7 +1057,7 @@ int
 gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 		gx_device * dev, gs_color_select_t select)
 {
-    gx_device_forward *adev;
+    gx_device_forward *adev = NULL;
     gs_pattern1_instance_t *pinst =
 	(gs_pattern1_instance_t *)pdc->ccolor.pattern;
     gs_state *saved;
