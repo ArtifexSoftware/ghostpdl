@@ -710,7 +710,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
         return(str);
 
     /* If that fails, try %rom% */
-    buffer = (char *) gs_alloc_bytes(mem_gc, namelen + 
+    buffer = (char *) gs_alloc_bytes(mem_gc, 1 + namelen + 
                         strlen("%rom%iccprofiles/"),"gsicc_open_search");
     strcpy(buffer, "%rom%iccprofiles/");
     strcat(buffer, pname);
