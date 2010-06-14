@@ -508,10 +508,42 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     const cos_array_t *const pca = (const cos_array_t *)pco;
     cos_array_element_t *first = cos_array_reorder(pca, NULL);
     cos_array_element_t *pcae;
-    uint last_index = 0;
+    uint last_index = 0, Element_Count = 0;
 
     stream_puts(s, "[");
     for (pcae = first; pcae; ++last_index, pcae = pcae->next) {
+	Element_Count++;
+
+	if(pdev->PDFA && Element_Count > 8191) {
+	    switch (pdev->PDFACompatibilityPolicy) {
+	    case 0:
+		emprintf(pdev->memory,
+		    "Too many entries in array,\n max 8191 in PDF/A, reverting to normal PDF output\n");
+		pdev->AbortPDFAX = true;
+		pdev->PDFA = false;
+		break;
+	    case 1:
+		emprintf(pdev->memory,
+                     "Too many entries in array,\n max 8191 in PDF/A. Cannot simply elide dictionary, reverting to normal output\n");
+		pdev->AbortPDFAX = true;
+		pdev->PDFA = false;
+		break;
+	    case 2:
+		emprintf(pdev->memory,
+                     "Too many entries in array,\n max 8191 in PDF/A. aborting conversion\n");
+		/* Careful here, only certain errors will bubble up 
+		 * through the text processing.
+		 */
+		return gs_error_limitcheck;
+		break;
+	    default:
+		emprintf(pdev->memory,
+                     "Too many entries in array,\n max 8191 in PDF/A. Unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+		pdev->AbortPDFAX = true;
+		pdev->PDFA = false;
+		break;
+	    }
+	}
 	if (pcae != first)
 	    stream_putc(s, '\n');
 	for (; pcae->index > last_index; ++last_index)
@@ -751,6 +783,8 @@ static int
 cos_elements_write(stream *s, const cos_dict_element_t *pcde,
 		   gx_device_pdf *pdev, bool do_space, gs_id object_id)
 {
+    int Element_Count = 0;
+
     if (pcde) {
 	/* Temporarily replace the output stream in pdev. */
 	stream *save = pdev->strm;
@@ -761,6 +795,39 @@ cos_elements_write(stream *s, const cos_dict_element_t *pcde,
 				bytes_compare(pdev->NoEncrypt.data, pdev->NoEncrypt.size,
 				    pcde->key.data, pcde->key.size) 
 				? object_id : (gs_id)-1);
+
+	    Element_Count++;
+
+	    if(pdev->PDFA && Element_Count > 4095) {
+		switch (pdev->PDFACompatibilityPolicy) {
+		    case 0:
+			emprintf(pdev->memory,
+                             "Too many entries in dictionary,\n max 4095 in PDF/A, reverting to normal PDF output\n");
+			pdev->AbortPDFAX = true;
+			pdev->PDFA = false;
+			break;
+		    case 1:
+			emprintf(pdev->memory,
+                             "Too many entries in dictionary,\n max 4095 in PDF/A. Cannot simply elide dictionary, reverting to normal output\n");
+			pdev->AbortPDFAX = true;
+			pdev->PDFA = false;
+			break;
+		    case 2:
+			emprintf(pdev->memory,
+                             "Too many entries in dictionary,\n max 4095 in PDF/A. aborting conversion\n");
+			/* Careful here, only certain errors will bubble up 
+			 * through the text processing.
+			 */
+			return gs_error_limitcheck;
+			break;
+		    default:
+			emprintf(pdev->memory,
+                             "Too many entries in dictionary,\n max 4095 in PDF/A. Unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+			pdev->AbortPDFAX = true;
+			pdev->PDFA = false;
+			break;
+		}
+	    }
 
 	    pdf_write_value(pdev, pcde->key.data, pcde->key.size, object_id1);
 	    cos_value_write_spaced(&pcde->value, pdev, true, object_id1);
