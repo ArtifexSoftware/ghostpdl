@@ -230,7 +230,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
 	if (code < 0 && code != gs_error_undefined)
 	    return code;
 	if (code == gs_error_undefined) {
-	    if (pdev->PDFA) {
+	    if (pdev->PDFA || pdev->PDFX) {
 		switch (pdev->PDFACompatibilityPolicy) {
 		    case 0:
 			emprintf(pdev->memory,
