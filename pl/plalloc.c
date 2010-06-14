@@ -23,5 +23,9 @@ pl_alloc_init()
        pl_main_instance_t */
     pl_mem = (gs_memory_t *)ialloc_alloc_state(mem, 20000);
     /* if ialloc fails we return NULL here */
+#ifdef HEAP_ALLOCATOR_ONLY
+    return mem;
+#else
     return pl_mem;
+#endif
 }
