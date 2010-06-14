@@ -230,6 +230,40 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
 	if (code < 0 && code != gs_error_undefined)
 	    return code;
 	if (code == gs_error_undefined) {
+	    if (pdev->PDFA) {
+		switch (pdev->PDFACompatibilityPolicy) {
+		    case 0:
+			emprintf(pdev->memory,
+                             "Requested glyph not present in source font,\n not permitted in PDF/A, reverting to normal PDF output\n");
+			pdev->AbortPDFAX = true;
+			pdev->PDFA = false;
+			break;
+		    case 1:
+			emprintf(pdev->memory,
+                             "Requested glyph not present in source font,\n not permitted in PDF/A, glyph will not be present in output file\n\n");
+			/* Returning an error causees text processing to try and
+			 * handle the glyph by rendering to a bitmap instead of
+			 * as a glyph in a font. This will eliminate the problem
+			 * and the fiel should appear the same as the original.
+			 */
+			return gs_error_unknownerror;
+			break;
+		    case 2:
+			emprintf(pdev->memory,
+                             "Requested glyph not present in source font,\n not permitted in PDF/A, aborting conversion\n");
+			/* Careful here, only certain errors will bubble up 
+			 * through the text processing.
+			 */
+			return gs_error_invalidfont;
+			break;
+		    default:
+			emprintf(pdev->memory,
+                             "Requested glyph not present in source font,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+			pdev->AbortPDFAX = true;
+			pdev->PDFA = false;
+			break;
+		}
+	    }
 	    /* PS font has no such glyph. */
 	    if (bytes_compare(gnstr.data, gnstr.size, (const byte *)".notdef", 7)) {
 		pet->glyph = glyph;

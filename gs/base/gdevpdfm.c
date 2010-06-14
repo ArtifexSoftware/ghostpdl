@@ -748,6 +748,11 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                              "Annotation set to non-printing,\n not permitted in PDF/A, annotation will not be present in output file\n");
 		    return 0;
 		    break;
+		case 2:
+		    emprintf(pdev->memory,
+                             "Annotation set to non-printing,\n not permitted in PDF/A, aborting conversion\n");
+		    return gs_error_invalidfont;
+		    break;
 		default:
 		    emprintf(pdev->memory,
                              "Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
