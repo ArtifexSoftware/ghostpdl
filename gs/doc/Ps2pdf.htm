@@ -259,12 +259,12 @@ spaces.
 </dl>
 
 <p>
-The following option controls a conversion into PDF/X-3:
+The following option specifies a conversion into PDF/X-3:
 <p>
 
 <dl>
 <dt><code>-dPDFX=</code><em>boolean</em>
-<dd>Specifies the generated document to follow the PDF/X-3 standard.
+<dd>Specifies the generated document is to follow the PDF/X-3 standard.
 When true, a <code>DefaultRGB</code> <code>ColorSpace</code> resource 
 must be defined, and options <code>NOSUBSTDEVICECOLORS</code>, 
 <code>NOCIE</code> must not be specified.
@@ -276,16 +276,16 @@ Default value is <code>false</code>.
 When generating a PDF/X-3 document, Ghostscript performs the following 
 special actions to satisfy the PDF/X-3 standard :
 <ul>
-<li> All fonts are being embedded.
-<li> <code>DeviceRGB</code> color space is being substituted with 
-<code>DefaultRGB</code> color space,
+<li> All fonts are embedded.
+<li> <code>DeviceRGB</code> color space is substituted with 
+<code>the DefaultRGB</code> color space,
 which must be defined in the <code>ColorSpace</code> category.
 The easiest way is to provide it in the <code>DefaultRGB</code> file in the resource directory. 
-<li> <code>DeviceRGB</code> color values are being passed unchanged.
-If an user needs an untrivial color adjustment, an untrivial 
-<code>DefaultRGB</code> color space to be defined.
-<li> Transfer functions and halftone phases are being skipped.
-<li> <code>/PS pdfmark</code> interpretes the <code>DataSource</code> 
+<li> <code>DeviceRGB</code> color values are passed unchanged.
+If a user needs an non trivial color adjustment, a non trivial 
+<code>DefaultRGB</code> color space must be defined.
+<li> Transfer functions and halftone phases are skipped.
+<li> <code>/PS pdfmark</code> interprets the <code>DataSource</code> 
 stream or file.
 <li><code>TrimBox</code> and <code>BleedBox</code> entries
 are generated in page descriptions.
@@ -309,8 +309,7 @@ the target viewer handles <code>ImageMask</code> with a pattern color.
 Some old viewers, such as Ghostscript 3.30 fail with such constructs.
 Seting this option to false, one can get more compatibility,
 but the mask interpolation is lost.
-With <code>CompatibilityLevel &ge; 1.3 </code> this option is being 
-ignored.
+With <code>CompatibilityLevel &ge; 1.3 </code> this option is ignored.
 Default value is <code>false</code>.
 
 <dt><code>-dMaxClipPathSize=<em>integer</em></code>
@@ -320,7 +319,7 @@ that the target viewer can handle. This option is used only with
 <code>PatternImagemask=false</code>,
 and only when converting a mask into a clipping path.
 If the clipping path exceeds the specified size,
-the masked image and the clipping path is being decomposed into smaller images.
+the masked image and the clipping path is decomposed into smaller images.
 The value of the option counts straight path segments
 (curved segments are not used for representing a mask).
 Default value is <code>12000</code>.
@@ -329,14 +328,13 @@ Default value is <code>12000</code>.
 <dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies 
 the maximum number of bytes allowed for representing a shading as a bitmap.
 If a shading exceeds this value, the resolution of the output bitmap
-is being reduces to fit into the specified frame.
+is reduced to fit into the specified frame.
 Note that the number of bytes depends on the number of color components
 in <code>ProcessColorModel</code>, assumes 8 bits per sample,
 and doesn't account an image compression or filtering.
 Also note that reducing the resolution results unsmooth shading boundaries.
 
-With <code>CompatibilityLevel &ge; 1.3</code> this option is being 
-ignored. Default value is <code>256000</code>.
+With <code>CompatibilityLevel &ge; 1.3</code> this option is ignored. Default value is <code>256000</code>.
 For the best quality one can set the maximal integer value,
 but the output file size may dramatically increase.
 Therefore the user should choose a compromise value.
@@ -344,10 +342,9 @@ Therefore the user should choose a compromise value.
 <dt><code>-dHaveTrueTypes=<em>boolean</em></code>
 <dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies 
 whether the target viewer can handle TrueType fonts.
-If not, TrueType fonts are being converted into raster fonts
+If not, TrueType fonts are converted into raster fonts
 with resolution specified in <code>HWResolution</code>.
-With <code>CompatibilityLevel &ge; 1.3</code> this option is being 
-ignored. Default value is <code>true</code>.
+With <code>CompatibilityLevel &ge; 1.3</code> this option is ignored. Default value is <code>true</code>.
 
 </dl>
 
@@ -360,7 +357,7 @@ The following option controls a conversion into PDF 1.3:
 <dt><code>-dHaveTransparency=<em>boolean</em></code>
 <dd>With <code>CompatibilityLevel &ge; 1.4</code> it specifies 
 whether the target viewer can handle PDF 1.4 transparency objects.
-If not, transparency objects are being converted into plain images.
+If not, transparency objects are converted into plain images.
 Default value is <code>true</code>.
 
 </dl>
@@ -408,7 +405,7 @@ The following switches are used for generating metadata according to Adobe XMP s
 <dt><code>-sDocumentUUID=</code><em>string</em>
 <dd>Defines a DocumentID to be included into the document Metadata.
 If not specified, Ghostscript generates an UUID automatically.
-Otherwise the specified string is being copyed into the document without 
+Otherwise the specified string is copied into the document without 
 checking its syntax or consistence.
 <p>
 Note that Adobe XMP specification requires DocumentID must be same
@@ -425,7 +422,7 @@ Therefore it uses an MD5 hash of the document contents for generating UUIDs.
 <dt><code>-sInstanceUUID=</code><em>string</em>
 <dd>Defines a instance ID to be included into the document Metadata.
 If not specified, Ghostscript generates an UUID automatically.
-Otherwise the specified string is being copyed into the document without
+Otherwise the specified string is copied into the document without
 checking its syntax or consistence.
 <p>
 Note that Adobe XMP specification requires instance ID must be inique
@@ -445,7 +442,7 @@ UUIDs, when several invokations of Ghostscript create
 several PDF documents within same clock quantum (tick).
 Mainly reserved for very fast computers and/or multhithreading applications,
 which may appear in future. If both <code>DocumentUUID</code>
-and <code>InstanceUUID</code> are specified, <b><tt>DocumentTimeSeq</tt></b> is being ignored.
+and <code>InstanceUUID</code> are specified, <b><tt>DocumentTimeSeq</tt></b> is ignored.
 </dl>
 
 <dl>
@@ -753,17 +750,17 @@ To create a PDF/X-3 document from a Postscript or a PDF file, you should :
 <li> Provide a <code>DefaultRGB</code> resource file in the ColorSpace resource category.
      Either define it in the PDF/X definition file, or provide
      a definition of <code>gs/Resource/ColorSpace/DefaultRGB</code> .
-     Rather <code>gs/Resource/ColorSpace/DefaultRGB</code> is usually 
+     <code>gs/Resource/ColorSpace/DefaultRGB</code> is usually 
      distributed with Ghostscript, its contents is not necessarily satisfy your needs, see below.
 </ul>
 
 <p>
-As mentioned above, the PDF/X definition file provides a special information,
+As mentioned above, the PDF/X definition file provides special information,
 which the PDF/X-3 standard requires. You can find a sample file in
 <code>gs/lib/PDFX_def.ps</code>, and edit it according to your needs.
 The file follows Postscript syntax and uses the operator <code>pdfmark</code>
 to pass the special information. For your comfort 
-we marked editable lines in the sample file with the comment <code>% Customize</code>.
+we marked the lines likely to need editing in the sample file with the comment <code>% Customize</code>.
 They are explained below.
 
 <dl>
@@ -799,7 +796,7 @@ define a title with DSC comments. Otherwise remove entire line from definition f
 </dl>
 
 <p>
-Rather the PDF/X-3 standard requires colors to be adjusted at the
+The PDF/X-3 standard requires colors to be adjusted at the
 document generation time, Ghostscript <em>does not</em> perform any
 special color conversion. Either colors to be adjusted in advance,
 or a proper color conversion to be specified in <code>DefaultGray</code>,
@@ -810,10 +807,10 @@ or a proper color conversion to be specified in <code>DefaultGray</code>,
 If you want any color to be converted into CIE color,
 the <code>-dUseCIEColor</code> option to be specified
 in the command line. If it is not specified, 
-only RGB colors are being converted into CIE colors
+only RGB colors are converted into CIE colors
 with using the <code>DefaultRGB</code> color space resource,
 but <code>DeviceGray</code> and <code>DeviceCMYK</code>
-colors are being passed identically.
+colors are passed identically.
 
 <p>Please note that if a graphic object can't embed into the output format,
 Ghostscript converts it into low level objects, using a device color space
@@ -871,6 +868,8 @@ gs -dPDFX -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sDEVICE=pdfwrite -sOutp
 </code></blockquote>
 
 <p>
+Please also see the <code>PDFACompatibilityPolicy</code> control described under "Creating a PDF/A document" below. The same control is now used to specify the desired behaviour when an input file cannot be converted 'as is' into a PDF/X file.
+<p>
 <hr>
 <h2><a name="PDFA"></a>Creating a PDF/A document</h2>
 
@@ -889,12 +888,16 @@ There is one additional control for PDF/A output:
 
 <dl>
 <dt><code>PDFACompatibilityPolicy</code> <em>integer</em>
-<dd>When an operation (eg pdfmark) is encountered which cannot be emitted in a PDF/A compliant file, this policy is consulted, there are currently two possible values:
+<dd>When an operation (eg pdfmark) is encountered which cannot be emitted in a PDF/A compliant file, this policy is consulted, there are currently three possible values:
 
 <blockquote>0 - (default) Include the feature or operation in the output file, the file will not be PDF/A compliant. Because the document Catalog is emitted before this is encountered, the file will still contain PDF/A metadata but will not be compliant. A warning will be emitted in this case.
 </blockquote>
 <dd>
 <blockquote>1 - The feature or operation is ignored, the resulting PDF file will be PDF/A compliant. A warning wil be emitted for every elided feature.
+</blockquote>
+<dd>
+<blockquote>2 - Processing of the file is aborted with an error, the exact error may vary
+depending on the nature of the PDF/A incompatibility.
 </blockquote>
 </dl>
 
