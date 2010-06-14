@@ -208,7 +208,8 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
 	    if (ppat == 0)
 		return_error(gs_error_VMerror);
 	}
-	memcpy(ppat, pattern, length * sizeof(float));
+        if (ppat != pattern)
+	    memcpy(ppat, pattern, length * sizeof(float));
     }
     dash->pattern = ppat;
     dash->pattern_size = length;
