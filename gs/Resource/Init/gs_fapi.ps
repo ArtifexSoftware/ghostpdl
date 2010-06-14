@@ -290,7 +290,7 @@ bind def
 {                                                     % name <<font>>
   { (FAPIhook ) print 1 index = } //FAPI_hook_debug exec
   dup /FAPI known {
-    { //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get = } //FAPI_hook_warn exec
+    { //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get = } //FAPI_hook_debug exec
     true //.FAPIrebuildfont //ChooseDecoding exec
   } {
     dup /PathLoad known dup {
@@ -307,7 +307,7 @@ bind def
     1 index //GetFontType exec //FindInArray exec      % name <<font>> bHook
     { { (Trying to render the font ) print //PrintFontRef exec ( with FAPI...) = } //FAPI_hook_debug exec
       //.FAPIpassfont {
-        { //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get = } //FAPI_hook_warn exec
+        { //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get = } //FAPI_hook_debug exec
         false //.FAPIrebuildfont //ChooseDecoding exec
       } {
         { (Can't render ) print //PrintFontRef exec ( with FAPI, will do with native GS renderer.) = } //FAPI_hook_warn exec
