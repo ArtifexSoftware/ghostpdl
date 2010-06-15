@@ -1,0 +1,634 @@
+
+\documentclass[12pt,notitlepage]{article}
+%\usepackage{osa2}
+%\usepackage{overcite}  %% PRODUCES SUPERSCRIPT REFERENCE CITATIONS
+%\usepackage[comma,sort&compress,nonamebreak]{natbib}
+%\bibpunct{[}{]}{,}{n}{}{,}
+%\bibpunct{\textsuperscript{}}{\textsuperscript{}}{,}{s}{,}{,}
+%\citestyle{nature}
+\usepackage{epsfig,url}
+\urlstyle{same}
+
+\oddsidemargin      0in
+\evensidemargin     0in
+\setlength{\paperheight}{11in}%
+\setlength{\paperwidth}{8.5in}%
+\setlength{\textwidth}{\paperwidth}%
+% subtract for the 1" top/bottom margins
+\addtolength{\textwidth}{-2.0in}%
+\setlength{\textheight}{\paperheight}%
+\addtolength{\textheight}{-3.0in}%
+
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage[ansinew]{inputenc}
+\pagestyle{myheadings} \markboth{ Artifex Software Inc. www.artifex.com }{Artifex Software Inc. www.artifex.com}
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}{\huge \bf Ghostscript 9.0 Color Management\\} \vspace{0.5in} {\Large Michael J.
+Vrhel, Ph.D.\\} {\Large Artifex Software\\} {\Large 7 Mt. Lassen Drive, A-134\\} {\Large San Rafael, CA 94903, USA\\}
+{\Large www.artifex.com\\}
+\end{center}
+\vspace*{0.5in}
+\begin{abstract}
+This document provides information about Ghostscript 9.0's color architecture. The document is suitable for users who wish to
+obtain accurate color with their output device as well as for developers who wish to customize Ghostscript to achieve a higher
+level of control and/or interface with a different color management module.
+\end{abstract}
+\begin{center}
+\vspace*{0.25in}
+Revision 1.0
+\vspace*{0.25in}
+\begin{figure}[h]
+    \begin{center}
+\includegraphics*[width=1.5in]{figures/Ghost.eps}
+    \end{center}
+\end{figure}
+
+\end{center}
+
+\end{titlepage}
+
+\renewcommand{\baselinestretch}{1.67}\normalsize
+%\maketitle
+
+\clearpage
+
+\singlespace
+
+\section{Introduction}
+
+As of release 9.0, the color architecture of Ghostscript has been significantly updated to be primarily based upon the ICC\cite{ICC} format.  Prior to this release, Ghostscript's color architecture was based heavily upon PostScript\cite{PS} Color Management (PCM).  This is due to the fact that Ghostscript was designed prior to the ICC format and likely even before there was much thought about digital color management.  At that point in time, color management was very much an art with someone adjusting controls to achieve the proper output color.
+
+Today, almost all print color management is performed using ICC profiles as opposed to PCM.  This fact along with the desire to create a faster, more flexible design was the motivation for the color architectural changes in release 9.0.  Features of this new architecture include:
+\begin{itemize}
+\item Easy interface of different CMMs (Color Management Modules) with Ghostscript.
+\item Defining of all color spaces in terms of ICC profiles.
+\item Caching of linked transformations and internally generated profiles.
+\item Easily accessed manager for ICC profiles.
+\item Command line option for setting default profiles for Gray, RGB and CMYK source profiles.
+\item Command line option for setting device profile.
+\item Command line option for overriding input and output rendering intent.
+\item Command line option for specifying DeviceN profiles, named color structures, link profiles and proofing profiles.
+\item Command line option to override embedded profiles.
+\item Passing of object type along to CMM for creation of transforms that account for image, graphic or text.
+\item Efficient operation in multithreaded banded (c-list or display list) rendering.
+\end{itemize}
+The document is organized to first provide a higher level overview of the new ICC flow as well as how to make use of the new architecture. This is followed by details of the various functions and structures, which include the information necessary to interface other color management modules to Ghostscript as well as how to interface specialized color handling operations.
+
+\section{Overall Architecture and Typical Flow}
+
+Figure \ref{fig:ICC_ARCH} provides a graphical overview of the various components that make up the architecture.  The primary components are:
+\begin{itemize}
+\item  The ICC Manager, which maintains the various default profiles.
+\item The Link Cache, which stores recently used linked transforms.
+\item The Profile Cache, which stores internally generated ICC profiles created from PostScript CIE based color spaces and CalRGB, CalGray PDF color spaces.
+\item The profiles contained in the root folder iccprofiles, which are used as default color spaces for the output device and for undefined source colors in the document.
+\item The color management module (CMM), which is the external engine that provides and performs the transformations (e.g. littleCMS).
+\end{itemize}
+In the typical flow, when a thread is ready to transform a buffer of data, it will request a linked transform from the Link Cache. When requesting a link, it is necessary to provide information to the CMM, which consists of a source color space, a destination color space, an object state (e.g. text, graphic, or image) and a rendering type (e.g. perceptual, saturation, colorimetric).  The linked transform provides a mapping directly from the source color space to the destination color space. If a linked transform for these settings does not already exist in the Link Cache, a linked transform from the CMM will be obtained (assuming there is sufficient memory -- if there is not sufficient memory then the requesting thread will need to wait).  Depending upon the CMM, it is possible that the CMM may create a lazy linked object (i.e. create the real thing when it is asked to transform data).  At some point, a linked transform will be returned to the requesting thread.  The thread can then use this mapping to transform buffers of data through calls through an interface to the external CMM.  Once the thread has completed its use of the link transform, it will notify the Link Cache.  The Link Cache will then be able to release the link when it needs additional cache space due to other link requests.
+
+\begin{figure}
+    \begin{center}
+  %  \leavevmode \epsfysize=3.0in
+\includegraphics*[width=7.5in]{figures/Overview.eps}
+    \end{center}
+   \caption{Graphical Overview of ICC Architecture}
+    \label{fig:ICC_ARCH}
+\end{figure}
+
+\section{PDL Color Definitions and ICC Profiles}
+
+To help reduce confusion, it is worthwhile to clarify terminology. In particular, the use of the terms process color and device color need to be defined in the context of ICC profiles. Both PDF\cite{PDF} and PostScript (PS) have a distinction between process colors and device colors.  In both PDF and PS, there is
+a conversion (e.g. via UCR/BG) from device colors to process colors.  In an ICC work flow, the colors are transformed directly from an input color space (often called the source space) to an output color space (often called the destination space).  The output color space defined by the device's ICC profile is a mapping to what PDF and PS define as the process color space of the device.  In other words, the ``device color space'' as defined by the device's ICC profile IS the process color space of PDF and PS.  The ICC profile of the device is a mapping from a CIE color space to the process color space AND from the process color space to a CIE color space.
+
+To understand this better, it may help to understand the method by which a print based ICC profile is created.  To create an ICC profile for a device, a chart is printed using its process colors (e.g. CMYK).  This chart is measured using a colorimeter or a spectrophotometer.  This provides the forward mapping from process colors to CIELAB values.  The inverse mapping (from CIELAB to process colors) is obtained by inverting this table usually through a brute force search and extrapolation method.  These mappings are both packed into an ICC format, thereby defining mappings between the device ``process colors'' and the CIE color space.
+
+\section{Usage}
+
+The ICC branch introduces several new command line options that can be used for complete color management control.  To define source colors that are not already colorimetrically defined in the source document, the following command line options can be invoked:\\
+
+\textcolor{red}{-sDefaultGrayProfile = my\_gray\_profile.icc}\\
+
+\textcolor{red}{-sDefaultRGBProfile = my\_rgb\_profile.icc}\\
+
+\textcolor{red}{-sDefaultCMYKProfile = my\_cmyk\_profile.icc}\\
+
+ \noindent In this case, for example, any source gray colors will be interpreted as being defined by the ICC profile my\_gray\_profile.icc.  If these profiles are not set, default ICC profiles will be used to define undefined colors.  These default profiles are contained in the gs folder directory iccprofiles and are named default\_gray.icc, default\_rgb.icc and default\_cmyk.icc.  The profile default\_gray.icc is defined to provide output along the neutral axis with an sRGB linearization.  The profile default\_rgb.icc is the V2 sRGB ICC profile and the profile default\_cmyk.icc is a SWOP CMYK ICC profile.
+
+In addition to being able to define undefined colors, it is possible to define the ICC profile for the output device using\\
+
+\textcolor{red}{-sOutputICCProfile = my\_device\_profile.icc}\\
+
+ \noindent Care should be taken to make sure that the number of components associated with the output device is the same as the number of components for the output device ICC profile (i.e. use an RGB profile for an RGB device).  If the destination device is CMYK + SPOT colorants, then it is possible to specify either a CMYK ICC profile or an N-Color ICC profile for the device.  If a CMYK profile is specified, then only the CMYK colorants will be color managed.  If an output profile is not specified, then the default CMYK profile is used as the output profile.
+
+A directory can be defined, which will be searched to find the above defined ICC profiles.  This makes it easier for users who have their profiles contained in a single directory and do not wish to append the full path name in the above command line options.  The directory is set using\\
+
+\textcolor{red}{-sICCProfilesDir = c:/my\_icc\_profiles}\\
+
+ \noindent Note that if the build of gs or other PDL languages is performed with COMPILE\_INITS=1, then the profiles contained in gs/iccprofiles will be placed in the ROM file system. If a directory is specified on the command line using -sICCProfilesDir=, that directory is searched before the iccprofiles/ directory of the ROM file system is searched.
+
+Named color support for separation color spaces is specified through the command line option\\
+
+\textcolor{red}{-sNamedProfile = c:/my\_namedcolor\_stucture}\\
+
+ \noindent While the ICC does define a named color format, the above structure can in practice be much more general for those who have more complex handling requirements of separation color spaces. For example, some developers wish to use their own proprietary-based format for spot color management. This command option is for developer use when an implementation for named color management is designed for the function {\bf gsicc\_transform\_named\_color} located in gsicc\_cache.c . An example implementation is currently contained in the code [see comments above {\bf gsicc\_transform\_named\_color} in gsicc\_cache.c]. For the general user, this command option should really not be used.
+
+The above option deals with the handling of single spot colors.  It is possible to specify ICC profiles or other structures for managing DeviceN source colors. This is done using the command line option\\
+
+\textcolor{red}{-sDeviceNProfile = c:/my\_devicen\_profile.icc}\\
+
+ \noindent Note that neither PS nor PDF provide in-document ICC profile definitions for DeviceN color spaces. With this interface it is possible to provide this definition. The colorants tag order in the ICC profile defines the lay-down order of the inks associated with the profile. A windows-based tool for creating these source profiles is contained in gs/toolbin/color/icc\_creator.  If non-ICC based color management of DeviceN source colors is desired by a developer, it is possible to use the same methods used for the handling of individual spot colors.  In that case, a single proprietary structure could be used, which contains information about how to blend multiple colorants for accurate DeviceN color proofing.
+
+The command line option\\
+
+\textcolor{red}{-sProofProfile = my\_proof\_profile.icc}\\
+
+ \noindent enables the specification of a proofing profile, which will make the color management system link multiple profiles together to emulate the device defined by the proofing profile.  This is currently under development and should be in-place before the official release of Ghostscript 9.0
+
+The command line option\\
+
+\textcolor{red}{-sDeviceLinkProfile = my\_link\_profile.icc}\\
+
+ \noindent makes it possible to include a device link profile in the color transformations.  This is useful for devices that output raster content in a standard color space such as SWOP or Fogra CMYK, but it is desired to redirect this output to other CMYK devices.  While it is possible to handle the color transformations in other manners (e.g. using a proofing profile) the use of device link profiles is not uncommon.  The final linking profile is applied at the device level following rasterization to the destination color space as specified by the device profile.  Ghostscript's rendering of the page description language PCL, which requires rendering into sRGB buffers, will make use of this device link profile to provide final conversion from sRGB to device CMYK prior to halftoning.
+
+In some cases, it is desired to override any internal profiles that may exist within a document.  The command line option\\
+
+\textcolor{red}{-dOverrideInternalProfiles = true}\\
+
+ \noindent achieves this by replacing any document embedded ICC profiles with the Gray, RGB or CMYK default profile depending upon the channel count. Note that embedded CIELAB source profiles are obviously not overridden.
+
+The following command specifies the rendering intent to use for the specified output profile.\\
+
+\textcolor{red}{-sOutputRenderingIntent = Perceptual}\\
+
+ \noindent The default value is Perceptual.  Other valid values include Saturation, Colorimetric and AbsoluteColorimetric.
+
+Similarly, the desired rendering intents to use with Gray, RGB and CMYK input sources can be specified with the following commands.\\
+
+\textcolor{red}{-sInputGrayRenderIntent = Perceptual}\\
+
+\textcolor{red}{-sInputRGBRenderIntent = Perceptual}\\
+
+\textcolor{red}{-sInputCMYKRenderIntent = Perceptual}\\
+
+ \noindent These will override any internal specification for rendering intents.
+
+\section{Overview of objects and methods}
+
+At this point, let us go into further detail of the architecture.  Following this, we will discuss the requirements for interfacing another CMM to Ghostscript as well as where to interface in the new architecture for those who had made use of the now removed CUSTOM\_COLOR\_CALLBACK option in previous versions of Ghostscript.
+
+\subsection{ICC Manager}
+
+The ICC Manager is a reference counted member variable of Ghostscript's imager state.  Its functions are to:
+
+\begin{itemize}
+\item Store the required profile information to use for Gray, RGB, and CMYK source colors that are NOT colorimetrically defined in the source document.  These entries must always be set in the manager and are set to default values unless defined by the command line interface.
+\item Store the required profile information for the output device.
+\item Store the optional profile/structure information related to named colors and DeviceN colors.
+\item Store the proofing profile.
+\item Store the CIELAB source profile.
+\item Store the directory be used to search for ICC profiles specified for the above objects.
+\item Store settings for profile override, output rendering intent (i.e. perceptual, colorimetric, saturation or absolute colorimetric) and source color rendering intents.
+\item Store the profiles that are used for softmask rendering if soft masks are contained in the document.
+\end{itemize}
+The manager is created when the imaging state object is created for the graphics library.  It is reference counted and allocated in garbage collected (GC) memory that is not stable with graphic state restores.  The default gray, RGB and CMYK ICC color spaces as well as the device ICC color space are defined immediately during the initialization of the graphics library.  If no ICC profiles are specified externally, then the ICC profiles that are contained in the root folder iccprofiles will be used.  The ICC Manager is defined by the structure given below.\\
+
+\noindent typedef struct gsicc\_manager\_s \{
+
+\begin{tabular}{lll}
+  &       cmm\_profile\_t *device\_named;   & 	\textcolor{green}{/* The named color profile for the device */}  \\
+  &       cmm\_profile\_t *default\_gray;   & 	\textcolor{green}{/* Default gray profile for device gray */}   \\
+  &       cmm\_profile\_t *default\_rgb;    &	 \textcolor{green}{/* Default RGB profile for device RGB */}    \\
+  &       cmm\_profile\_t *default\_cmyk;   & 	\textcolor{green}{/* Default CMYK profile for device CMKY */} \\
+  &       cmm\_profile\_t *proof\_profile;  & 	\textcolor{green}{/* Proofing profile */} \\
+  &       cmm\_profile\_t *output\_link;    & 	\textcolor{green}{/* Output device Link profile */}    \\
+  &       cmm\_profile\_t *device\_profile; & 	\textcolor{green}{/* The actual profile for the device */}    \\
+  &       cmm\_profile\_t *lab\_profile;    &  \textcolor{green}{/* Colorspace type ICC profile from LAB to LAB */}   \\
+  &       gsicc\_devicen\_t *device\_n;     &  \textcolor{green}{/* A linked list of profiles used for DeviceN support */} \\
+  &       gsicc\_smask\_t *smask\_profiles; &  \textcolor{green}{/* Profiles used when we are in a softmask group */ } \\
+  &       char *profiledir;              	&	 \textcolor{green}{/* Directory used in searching for ICC profiles */}    \\
+  &       uint namelen; & \\
+  &       gs\_memory\_t *memory;    & \\
+  &       rc\_header rc; &
+\end{tabular}
+\noindent  \} gsicc\_manager\_t;\\
+
+\noindent Operators that relate to the ICC Manager are contained in the file gsicc\_manage.c/h and include the following:\\
+
+\singlespace
+\noindent int {\bf gsicc\_init\_device\_profile}(gs\_state * pgs, gx\_device * dev);\\
+
+\begin{minipage}[h]{6.0in}
+
+This initializes the device\_profile member variable based upon the properties of the device.  The device may have a profile defined in its
+dev$\rightarrow$color\_info.icc\_profile member variable.  If it does not, then a default profile will be assigned to the device.
+\end{minipage}\\
+\\
+
+\noindent int {\bf gsicc\_set\_profile}(gsicc\_manager\_t *icc\_manager, const char *pname, int namelen, \\gsicc\_profile\_t defaulttype);\\
+\\
+
+\begin{minipage}[h]{6.0in}
+This is used to set all the other profile related member variables in the ICC Manager.  The member variable to set is specified by defaulttype.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gsicc\_set\_icc\_directory}(const gs\_imager\_state *pis, const char* pname, int namelen);\\
+
+\begin{minipage}[h]{6.0in}
+This is used to set the directory for finding the ICC profiles specified by \\ gsicc\_set\_profile.
+\end{minipage}\\
+\\
+
+\noindent gsicc\_manager\_t* {\bf gsicc\_manager\_new}(gs\_memory\_t *memory);\\
+	
+\begin{minipage}[h]{6.0in}
+Creator for the ICC Manager.
+\end{minipage}\\
+\\
+
+\noindent cmm\_profile\_t* {\bf gsicc\_profile\_new}(stream *s, gs\_memory\_t *memory, const char* pname, int namelen);\\
+
+\begin{minipage}[h]{6.0in}
+Returns an ICC object given a stream pointer to the ICC content.  The variables pname and namelen provide the filename and name length of the stream if it is to be created from a file.  If the data is from the source stream, pname should be NULL and namelen should be zero.
+\end{minipage}\\
+\\
+
+\noindent int {\bf gsicc\_set\_gscs\_profile}(gs\_color\_space *pcs, cmm\_profile\_t *icc\_profile, \\gs\_memory\_t * mem);\\
+
+\begin{minipage}[h]{6.0in}
+Sets the member variable cmm\_icc\_profile\_data of the gs\_color\_space object (pointed to by pcs) to icc\_profile.
+\end{minipage}\\
+\\
+
+\noindent cmm\_profile\_t* {\bf gsicc\_get\_gscs\_profile}(gs\_color\_space *gs\_colorspace, gsicc\_manager\_t *icc\_manager);\\
+
+\begin{minipage}[h]{6.0in}
+Returns the cmm\_icc\_profile\_data member variable of the gs\_color\_space object.
+\end{minipage}\\
+\\
+
+\noindent gcmmhprofile\_t {\bf gsicc\_get\_profile\_handle\_buffer}(unsigned char *buffer, int profile\_size);\\
+
+\begin{minipage}[h]{6.0in}
+Returns the CMS handle to the ICC profile contained in the buffer.
+\end{minipage}\\
+
+\noindent int {\bf gsicc\_init\_iccmanager}(gs\_state * pgs);\\
+
+\begin{minipage}[h]{6.0in}
+Initializes the ICC Manager with all the required default profiles.
+\end{minipage}\\
+
+\noindent void  {\bf gsicc\_profile\_serialize}(gsicc\_serialized\_profile\_t *profile\_data, cmm\_profile\_t *iccprofile);\\
+
+\begin{minipage}[h]{6.0in}
+A function used to serialize the icc profile information for embedding into the c-list.
+\end{minipage}\\
+
+\noindent cmm\_profile\_t* {\bf gsicc\_get\_profile\_handle\_file}(const char* pname, int namelen, gs\_memory\_t *mem);\\
+
+\begin{minipage}[h]{6.0in}
+Given a profile file name, obtain a handle from the CMM.
+\end{minipage}\\
+
+\noindent void {\bf gsicc\_init\_profile\_info}(cmm\_profile\_t *profile);\\
+
+\begin{minipage}[h]{6.0in}
+With a profile handle already obtained from the CMM set up some of the member variables in the structure cmm\_profile\_t.
+\end{minipage}\\
+
+\noindent void {\bf gsicc\_init\_hash\_cs}(cmm\_profile\_t *picc\_profile, gs\_imager\_state *pis);\\
+
+\begin{minipage}[h]{6.0in}
+Get the hash code for a profile.
+\end{minipage}\\
+
+\noindent gcmmhprofile\_t {\bf gsicc\_get\_profile\_handle\_clist}(cmm\_profile\_t *picc\_profile, gs\_memory\_t *memory);\\
+
+\begin{minipage}[h]{6.0in}
+For a profile that is embedded inside the c-list, obtain a handle from the CMM.
+\end{minipage}\\
+
+\noindent gcmmhprofile\_t {\bf gsicc\_get\_profile\_handle\_buffer}(unsigned char *buffer, int profile\_size);\\
+
+\begin{minipage}[h]{6.0in}
+For a profile that is contained in a memory buffer, obtain a handle from the CMM.
+\end{minipage}\\
+
+\noindent gsicc\_smask\_t* {\bf gsicc\_new\_iccsmask}(gs\_memory\_t *memory);\\
+
+\begin{minipage}[h]{6.0in}
+Allocate space for the icc soft mask structure.  Only invoked when softmask groups are used in rendering.
+\end{minipage}\\
+
+\noindent int {\bf gsicc\_initialize\_iccsmask}(gsicc\_manager\_t *icc\_manager);\\
+
+\begin{minipage}[h]{6.0in}
+Initialize the icc soft mask structure.   Only invoked when softmask groups are used in rendering.
+\end{minipage}\\
+
+\noindent unsigned int {\bf gsicc\_getprofilesize}(unsigned char *buffer);\\
+
+\begin{minipage}[h]{6.0in}
+Get the size of a profile, as given by the profile information.
+\end{minipage}\\
+
+\noindent cmm\_profile\_t* {\bf gsicc\_read\_serial\_icc}(gx\_device * dev, int64\_t icc\_hashcode);\\
+
+\begin{minipage}[h]{6.0in}
+Read out the serialized icc data contained in the clist for a given hash code.
+\end{minipage}\\
+
+\noindent cmm\_profile\_t* {\bf gsicc\_finddevicen}(const gs\_color\_space *pcs, gsicc\_manager\_t *icc\_manager);\\
+
+\begin{minipage}[h]{6.0in}
+Search the DeviceN profile array for a profile that has the same colorants as the DeviceN color space in the PDF or PS document.
+\end{minipage}\\
+
+\noindent gs\_color\_space\_index {\bf gsicc\_get\_default\_type}(cmm\_profile\_t *profile\_data);\\
+
+\begin{minipage}[h]{6.0in}
+Detect profiles that were set as part of the default settings.  These are needed to differentiate between embedded document icc profiles and ones that were supplied to undefined device source colors (e.g. DeviceRGB).  During high level device writing (e.g. pdfwrite), these default profiles are usually NOT written out.
+\end{minipage}\\
+
+\noindent void {\bf gsicc\_profile\_reference}(cmm\_profile\_t *icc\_profile, int delta);\\
+
+\begin{minipage}[h]{6.0in}
+Enable other language interpreters (e.g. gxps) to adjust the reference count of a profile.
+\end{minipage}\\
+
+\noindent int {\bf gsicc\_getsrc\_channel\_count}(cmm\_profile\_t *icc\_profile);\\
+
+\begin{minipage}[h]{6.0in}
+Returns the number of device channels for a profile.
+\end{minipage}\\
+
+\singlespace
+
+\subsection{Link Cache}
+
+The Link Cache is a reference counted member variable of Ghostscript's imager state.  Its function is to maintain a cache of recently used links that had been provided by the CMM.  The Link Cache is designed with semaphore calls to allow multi-threaded c-list (display list) rendering to share a common cache.
+
+The Link Cache is allocated in stable GC memory.  Operators that relate to the Link Cache are contained in the file gsicc\_cache.c/h and include the following:\\
+
+\singlespace
+
+\noindent gsicc\_link\_cache\_t* {\bf gsicc\_cache\_new}(gs\_memory\_t *memory);\\
+
+\begin{minipage}[h]{6.0in}
+Creator for the Link Cache.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gsicc\_init\_buffer}(gsicc\_bufferdesc\_t *buffer\_desc, unsigned char num\_chan,
+                                     unsigned char bytes\_per\_chan, bool has\_alpha, bool alpha\_first,
+                                     bool is\_planar, int plane\_stride, int row\_stride, int num\_rows, int
+                                     pixels\_per\_row);\\
+
+\begin{minipage}[h]{6.0in}
+This is used to initialize a gsicc\_bufferdesc\_t object. Two of these objects are used to describe the format of the buffers that are used in transforming color data.
+\end{minipage}\\
+\\
+
+\noindent gsicc\_link\_t* {\bf gsicc\_get\_link}(gs\_imager\_state * pis, gs\_color\_space  *input\_colorspace,
+                                               gs\_color\_space *output\_colorspace,
+                                               gsicc\_rendering\_param\_t *rendering\_params, gs\_memory\_t
+                                               *memory, bool include\_softproof);\\
+
+\begin{minipage}[h]{6.0in}
+This returns the link given the input color space, the output color space, and the rendering intent.   When the requester of the link is finished using the link, it should release the link.  When a link request is made, the Link Cache will use the parameters to compute a hash code.  This hash code is used to determine if there is already a link transform that meets the needs of the request.  If there is not a link present, the Link Cache will obtain a new one from the CMM (assuming there is sufficient memory), updating the cache.\\
+
+The linked hash code is a unique code that identifies the link for an input color space, an object type, a rendering intent and an output color space.  The operation that does the merging of these four pieces of information can easily be altered to ignore object type and/or rendering intent if so desired.\\
+
+Note, that the output color space can be different than the device space.  This occurs for example, when we have a transparency blending color space that is different than the device color space.
+\end{minipage}\\
+\\
+
+\noindent gsicc\_link\_t* {\bf gsicc\_get\_link\_profile}(gs\_imager\_state *pis, cmm\_profile\_t *gs\_input\_profile, cmm\_profile\_t *gs\_output\_profile, gsicc\_rendering\_param\_t *rendering\_params, gs\_memory\_t *memory, bool include\_softproof);\\
+
+\begin{minipage}[h]{6.0in}
+This is similar to the above operation {\bf gsicc\_get\_link} but will obtain the link with profiles that are not member variables of the gs\_color\_space object.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gsicc\_get\_icc\_buff\_hash}(unsigned char *buffer, int64\_t *hash, unsigned int buff\_size);\\
+
+\begin{minipage}[h]{6.0in}
+This computes the hash code for the buffer that  contains the ICC profile.
+\end{minipage}\\
+\\
+
+\noindent int {\bf gsicc\_transform\_named\_color}(float tint\_value, byte *color\_name, uint name\_size, gx\_color\_value device\_values[], const gs\_imager\_state *pis, cmm\_profile\_t *gs\_output\_profile, gsicc\_rendering\_param\_t *rendering\_params, bool include\_softproof);\\
+
+\begin{minipage}[h]{6.0in}
+This performs a transformation on the named color given a particular tint value return device\_values. 
+\end{minipage}\\
+\\
+
+\noindent void {\bf gsicc\_release\_link}(gsicc\_link\_t *icclink);\\
+
+\begin{minipage}[h]{6.0in}
+	This is called to notify the cache that the requester for the link no longer needs it.  	
+	The link is reference counted, so that the cache knows when it is able to destroy
+	the link.  The link is released through a call to the CMM.
+\end{minipage}\\
+
+\singlespace
+
+\subsection{Interface of Ghostscript to CMM}
+
+Ghostscript interfaces to the CMM through a single file.  The file gsicc\_littlecms.c/h is a reference interface between littleCMS and Ghostscript.  If a new library is used (for example, if littleCMS is replaced with Windows ICM on a Windows platform (giving Windows color system (WCS) access on Vista or System 7)), the interface of these functions will remain the same, but internally they will need to be changed.  Specifically, the functions are as follows:\\
+
+\singlespace
+
+\noindent void {\bf gscms\_create}(void **contextptr);\\
+
+\begin{minipage}[h]{6.0in}
+	This operation performs any initializations required for the CMM.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gscms\_destroy}(void **contextptr);\\
+
+\begin{minipage}[h]{6.0in}
+	This operation performs any cleanup required for the CMM.
+\end{minipage}\\
+\\
+
+\noindent gcmmhprofile\_t {\bf gscms\_get\_profile\_handle\_mem}(unsigned char *buffer, unsigned int
+input\_size);\\
+
+\begin{minipage}[h]{6.0in}
+	This returns a profile handle for the profile contained in the specified buffer.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gscms\_release\_profile}(void *profile);\\
+
+\begin{minipage}[h]{6.0in}
+When a color space is removed or we are ending, this is used to have the CMM release a profile handle it has created.
+\end{minipage}\\
+\\
+
+\noindent int {\bf gscms\_get\_input\_channel\_count}(gcmmhprofile\_t profile);\\
+
+\begin{minipage}[h]{6.0in}
+Provides the number of colorants associated with the ICC profile.  Note that if this is a device link profile this is the number of input channels for the profile.
+\end{minipage}\\
+\\
+
+\noindent int {\bf gscms\_get\_output\_channel\_count}(gcmmhprofile\_t profile);\\
+
+\begin{minipage}[h]{6.0in}
+If this is a device link profile, then the function returns the number of output channels for the profile.  If it is a profile with a PCS, then the function should return a value of three.
+\end{minipage}\\
+\\
+
+\noindent gcmmhlink\_t {\bf gscms\_get\_link}(gcmmhprofile\_t  lcms\_srchandle, gcmmhprofile\_t
+lcms\_deshandle, gsicc\_rendering\_param\_t
+*rendering\_params);\\
+
+\begin{minipage}[h]{6.0in}
+This is the function that obtains the linkhandle from the CMM.  The call {\bf gscms\_get\_link} is usually called from the Link Cache.  In the graphics library, calls are made to obtain links using {\bf gsicc\_get\_link}, since the link may already be available.  However, it is possible to use {\bf gscms\_get\_link} to obtain linked transforms outside the graphics library.  For example, this is the case with the XPS interpreter, where minor color management needs to occur to properly handle gradient stops.
+\end{minipage}\\
+\\
+
+\noindent gcmmhlink\_t {\bf gscms\_get\_link\_proof}(gcmmhprofile\_t  lcms\_srchandle, gcmmhprofile\_t
+lcms\_deshandle, gcmmhprofile\_t lcms\_proofhandle, gsicc\_rendering\_param\_t *rendering\_params);\\
+
+\begin{minipage}[h]{6.0in}
+This function is similar to the above function but includes a proofing ICC profile.   If the proofing profile is defined, then the output should appear as if it were printed on the device defined by the proofing profile.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gscms\_release\_link}(gsicc\_link\_t *icclink);\\
+
+\begin{minipage}[h]{6.0in}
+When a link is removed from the cache or we are ending, this is used to have the CMM release the link handles it has created.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gscms\_transform\_color\_buffer}(gsicc\_link\_t *icclink, gsicc\_bufferdesc\_t
+*input\_buff\_desc,  gsicc\_bufferdesc\_t
+*output\_buff\_desc, void *inputbuffer, void *outputbuffer);\\
+
+\begin{minipage}[h]{6.0in}
+This is the function through which all color transformations will occur if they are to go through the CMM.  This function will be called in the code anytime that we are transforming color from the current graphic state color to the Output Device color space or to the Blending Color Space, or out of the Blending color space to the Color Space of the parent layer in the transparency stack.  Note that if the source hash code and the destination hash code are the same, the transformation will not occur as the source and destination color spaces are identical.  This feature can be used to enable ``device colors'' to pass unmolested through the color processing.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gscms\_transform\_color}(gsicc\_link\_t *icclink,  void *inputcolor, void
+*outputcolor, int num\_bytes, void **contextptr);\\
+
+\begin{minipage}[h]{6.0in}
+This is a special case where we desire to transform a single color.  While it would be possible to use {\bf gscms\_transform\_color\_buffer} for this operation, single color transformations are frequently required and it is possible that the CMM may have special optimized code for this operation.
+\end{minipage}\\
+\\
+
+\noindent int {\bf gscms\_transform\_named\_color}(gsicc\_link\_t *icclink,  float tint\_value, const char*\\
+    ColorName,  gx\_color\_value device\_values[] );\\
+
+\begin{minipage}[h]{6.0in}
+Get a device value for the named color.  While there exist named color ICC profiles and littleCMS supports them, the code in gsicc\_littlecms.c is not designed to use that format.   The named color object need not be an ICC named color profile but can be a proprietary type table. This is discussed further where -sNamedProfile is defined in the Usage section.
+\end{minipage}\\
+\\
+
+\noindent void {\bf gscms\_get\_name2device\_link}(gsicc\_link\_t *icclink, gcmmhprofile\_t
+lcms\_srchandle, gcmmhprofile\_t lcms\_deshandle, gcmmhprofile\_t lcms\_proofhandle,
+gsicc\_rendering\_param\_t *rendering\_params, gsicc\_manager\_t *icc\_manager);\\
+
+\begin{minipage}[h]{6.0in}
+This is the companion operator to {\bf gscms\_transform\_named\_color} in that it provides the link transform that should be used when transforming named colors when named color ICC profiles are used for named color management.  Since {\bf gscms\_transform\_named\_color} currently is set up to use a non-ICC table format, this function is not used.
+\end{minipage}\\
+
+\noindent gcmmhprofile\_t {\bf gscms\_get\_profile\_handle\_file}(const char *filename);\\
+
+\begin{minipage}[h]{6.0in}
+Obtain a profile handle given a file name.
+\end{minipage}\\
+\\
+
+\noindent char* {\bf gscms\_get\_clrtname}(gcmmhprofile\_t profile, int k);\\
+
+\begin{minipage}[h]{6.0in}
+Obtain the $k$th colorant name in a profile.  Used for DeviceN color management with ICC profiles.
+\end{minipage}\\
+
+\noindent int {\bf gscms\_get\_numberclrtnames}(gcmmhprofile\_t profile);\\
+
+\begin{minipage}[h]{6.0in}
+Return the number of colorant names that are contained within the profile.  Used for DeviceN color management with ICC profiles.
+\end{minipage}\\
+
+\noindent gsicc\_colorbuffer\_t {\bf gscms\_get\_profile\_data\_space}(gcmmhprofile\_t profile);\\
+
+\begin{minipage}[h]{6.0in}
+Get the color space type associated with the profile.
+\end{minipage}\\
+
+\singlespace
+
+\section{PDF and PS CIE color space handling}
+
+If a color space is a PDF or PostScript (PS) CIE color space type (other than ICC), these color spaces are converted to appropriate ICC objects.  The profiles are created by the functions in gsicc\_create.c.   Since this file is only needed by the PS and PDF interpreter, it is contained in the psi subdirectory of Ghostscript's folder tree and is not needed for PCL or XPS builds.  
+
+Performing this conversion, enables the ICC based CMM full control over all color management.  To avoid frequent conversions due to frequent color space changes, these color spaces are cached in the profile cache and indexed using a value related to their resource IDs.  This is the profile cache object that is indicated in Figure \ref{fig:ICC_ARCH}.  In PDF, it is possible to define CIELAB color values directly.  The ICC profile lab.icc contained in iccprofiles of Figure \ref{fig:ICC_ARCH} is used as the source ICC profile for color defined in this manner.
+
+Currently PostScript color rendering dictionaries (CRDs) are ignored if defined in the current code.  Instead, a device ICC profile should be used to define the color for the output device.  An upcoming change will be to convert CRDs to equivalent ICC profiles, which will then work with the existing workflow.
+
+Note that if littleCMS is replaced, gsicc\_create.c still requires icc34.h, since it uses the type definitions in that file in creating the ICC profiles from the PS and PDF CIE color spaces.
+
+\section{Device Interaction}
+
+From Figure \ref{fig:ICC_ARCH}, it is clear that the device can communicate to the graphics library its ICC profiles.  Depending upon the settings of the device (e.g. paper type, ink, driver settings) it may provide a different profile as well as indicate a desired rendering intent.  Unless overridden by command line arguments, this information will be used to populate the ICC manager's Device Profile. Currently, this interaction is under development and should be in place with the official release of Ghostscript 9.0.
+
+\section{DeviceN and Separation colors}
+
+DeviceN and Separation colors are handled differently depending upon the source PDL that is being processed.  In Microsoft's XPS format, all input DeviceN or Separation type colors are required to have an associated ICC profile.  If one is not provided, then per the XPS specification\cite{XPS} a SWOP CMYK profile is assumed for the first four colorants and the remaining colorants are ignored. With PDF DeviceN or Separation colors, the document defines a tint transform and an alternate color space, which could be any of the CIE (e.g. CalGray, CalRGB, Lab, ICC) or device (e.g. Gray, RGB, CMYK) color spaces.  If the input source document is PDF or PS and the output device does not understand the colorants defined in the DeviceN color space, then the colors will be transformed to the alternate color space and color managed from there.
+
+For cases when the device {\bf does} understand the spot colorants of the DeviceN color space, the preferred handling of DeviceN varies.  Many prefer to color manage the CMYK components with a defined CMYK profile, while the other spot colorants pass through unmolested. This will be the default manner by which Ghostscript will handle DeviceN input colors.  In other words, if the device profile is set to a particular CMYK profile, and the output device is a separation device, which can handle all spot colors, then the CMYK process colorants will be color managed, but the other colorants will not be managed.  If it is desired that the CMYK colorants not be altered also, it will be possible to achieve this by having the source and destination ICC profiles the same.  This will result in an identity transform, which will not be used when processing the CMYK colorants.
+
+It should be noted that an ICC profile can define color spaces with up to 15 colorants.  For a device that has 15 or fewer colorants, it is possible to provide an ICC profile for such a device.  In this case, all the colorants will be color managed through the ICC profile.  For cases beyond 15, the device will be doing direct printing of the DeviceN colors outside of the 15 colorants.
+
+\section{PCL and XPS Support}
+
+PCL\cite{PCL} makes use of the new color management architecture primarily in its output devices.  Source colors are specified to be in the sRGB color space.  If the commands in the PCL file require rendering into an RGB buffer due to blending of transparency operations, then these buffers will be converted to the appropriate CMYK color space using the CMM, when the drawing commands have completed in that region.  If the commands do not require rendering into a continuous tone RGB buffer, then the conversion from RGB to CMYK will occur prior to rendering into a halftone CMYK buffer.
+
+Full ICC support for XPS\cite{XPS} is now contained in ghostxps. This includes the handling of profiles for DeviceN color spaces, Named colors and for profiles embedded within images.
+
+\section{CUSTOM\_COLOR\_CALLBACK developers}
+
+In earlier versions of Ghostscript, there existed a compile define named CUSTOM\_COLOR\_CALLBACK, which provided developers with a method to intercept color conversions and provide customized processing in particular for Separation and DeviceN input color spaces.  Using specialized mixing models in place of the standard tint transforms, accurate proofing of the spot colorants was obtainable.  An interface for custom handling of separation colors is now performed by customization of the function gsicc\_transform\_named\_color.  An example, implementation is currently in place, which uses a look-up-table based upon the colorant name.  The look-up-table is stored in the device\_named object of the icc manager.  The structure can be stored in the location using \textcolor{red}{-sNamedProfile = c:/my\_namedcolor\_stucture}.
+
+DeviceN color handling is defined by an object stored in the device\_n entry of the icc\_manager.  Currently, the example implementation is to use an array of ICC profiles that describe the mixing of the DeviceN colors of interest.  This array of profiles is contained in the device\_n entry of the icc\_manager.  In this case, a multi-dimensional look-up-table is essentially used to map the overlayed DeviceN colors to the output device colorants.  
+
+If a mathematical mixing model is to be used for the DeviceN colors instead of an ICC-based approach, it will be necessary to store the data required for mixing either in the device\_n entry or, if the same data is used for separation colors, the data in the named\_color location can be used.  In either case, a single line change will be required in {\bf gx\_install\_DeviceN} where a call is currently made to {\bf gsicc\_finddevicen} to locate a matching DeviceN ICC profile for DeviceN color management.  In place of this call, it will be necessary to make a call to a function that will prepare an object that can map colors in this DeviceN space to the real device values.  A pointer to this object is then returned by the function.  If the colorants cannot be handled, the function should return NULL.  If the function can handle the colorants, then when the link request is made between this color space and the output device profile with the function {\bf gsicc\_get\_link} it will be necessary to detect that the source object is not a standard ICC profile but a special customized object.  This may require the addition of a special flag in the cmm\_profile\_t structure.  This flag would then be checked to determine if a call should be made to the CMM or to a custom color management function that makes use of the pointer previously obtained from {\bf gsicc\_finddevicen}. When the call is made to apply the transformation using {\bf gscms\_transform\_color\_buffer} or {\bf gscms\_transform\_color}, the appropriate operation should be applied to the incoming data in place of the standard call to the CMM.  Artifex will be able to assist those developers who need help in the transition from the previous CUSTOM\_COLOR\_CALLBACK architecture to the new design.
+
+\begin{thebibliography}{99}
+
+\bibitem{ICC} Specification ICC.1:2004-10 (Profile version 4.2.0.0) Image technology colour management - Architecture, profile format, and data structure.
+(http://www.color.org/ICC1v42\_2006-05.pdf), Oct. 2004.
+
+\bibitem{PS} PostScript® Language Reference Third Edition, Adobe Systems Incorporated, Addison-Wesley Publishing, (http://partners.adobe.com/public/developer/ps/index\_specs.html)
+Reading Massachusetts, 1999.
+
+\bibitem{PDF} PDF Reference Sixth Edition Ver. 1.7, Adobe Systems Incorporated, (http://www.adobe.com/devnet/pdf/pdf\_reference.html), November 2006.
+
+\bibitem{XPS} XML Paper Specification Ver. 1.0, Microsoft Corporation, (http://www.microsoft.com/whdc/xps/xpsspec.mspx), 2006.
+
+\bibitem{PCL} PCL5 Printer Language Technical Reference Manual, Hewlett Packard, (http://h20000.www2.hp.com/bc/docs/support/SupportManual/bpl13210/bpl13210.pdf), October 1992.
+
+\end{thebibliography}
+
+\vspace*{1.25in}
+Copyright (c) 2010, Artifex Software Inc. All rights reserved.
+
+
+\end{document}
