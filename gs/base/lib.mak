@@ -2501,7 +2501,7 @@ gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h)\
 gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)\
  $(std_h) $(gsmemory_h)
 gsicc_manage_h=$(GLSRC)gsicc_manage.h $(gsicc_littlecms_h)
-gsicc_cache_h=$(GLSRC)gsicc_cache.h $(GX)
+gsicc_cache_h=$(GLSRC)gsicc_cache.h
 gsicc_profilecache_h=$(GLSRC)gsicc_profilecache.h
 
 $(GLOBJ)gsicc_manage.$(OBJ) : $(GLSRC)gsicc_manage.c $(GX) $(stdpre_h)\

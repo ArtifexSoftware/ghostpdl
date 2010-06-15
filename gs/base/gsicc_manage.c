@@ -177,9 +177,9 @@ gsicc_set_iccsmaskprofile(const char *pname,
                                         icc_profile->buffer_size);
         icc_profile->hash_is_valid = true;
         icc_profile->num_comps = 
-            gscms_get_channel_count(icc_profile->profile_handle);
+            gscms_get_input_channel_count(icc_profile->profile_handle);
         icc_profile->num_comps_out = 
-            gscms_get_pcs_channel_count(icc_profile->profile_handle);
+            gscms_get_output_channel_count(icc_profile->profile_handle);
         icc_profile->data_cs = 
             gscms_get_profile_data_space(icc_profile->profile_handle);
         gscms_set_icc_range(&icc_profile);
@@ -593,9 +593,9 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
         icc_profile->hash_is_valid = true;
         icc_profile->default_match = defaulttype;
         icc_profile->num_comps = 
-            gscms_get_channel_count(icc_profile->profile_handle);
+            gscms_get_input_channel_count(icc_profile->profile_handle);
         icc_profile->num_comps_out = 
-            gscms_get_pcs_channel_count(icc_profile->profile_handle);
+            gscms_get_output_channel_count(icc_profile->profile_handle);
         icc_profile->data_cs = 
             gscms_get_profile_data_space(icc_profile->profile_handle);
 
@@ -662,8 +662,8 @@ gsicc_init_profile_info(cmm_profile_t *profile)
                             profile->buffer_size);
     profile->hash_is_valid = true;
     profile->default_match = DEFAULT_NONE;
-    profile->num_comps = gscms_get_channel_count(profile->profile_handle);
-    profile->num_comps_out = gscms_get_pcs_channel_count(profile->profile_handle);
+    profile->num_comps = gscms_get_input_channel_count(profile->profile_handle);
+    profile->num_comps_out = gscms_get_output_channel_count(profile->profile_handle);
     profile->data_cs = gscms_get_profile_data_space(profile->profile_handle);
 
     /* Initialize the range to default values */
@@ -806,9 +806,9 @@ gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev,
 
                 /* Get the number of channels in the output profile */
                 icc_profile->num_comps = 
-                    gscms_get_channel_count(icc_profile->profile_handle);
+                    gscms_get_input_channel_count(icc_profile->profile_handle);
                 icc_profile->num_comps_out = 
-                    gscms_get_pcs_channel_count(icc_profile->profile_handle);
+                    gscms_get_output_channel_count(icc_profile->profile_handle);
                 icc_profile->data_cs = 
                     gscms_get_profile_data_space(icc_profile->profile_handle);
             } else
@@ -1398,6 +1398,25 @@ gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
     }
 }
 
+/* Utility functions */
+
+int 
+gsicc_getsrc_channel_count(cmm_profile_t *icc_profile)
+{
+    return(gscms_get_input_channel_count(icc_profile->profile_handle));
+}
+
+/*
+ * Adjust the reference count of the profile. This is intended to support
+ * applications (such as XPS) which maintain ICC profiles outside of the
+ * graphic state. 
+ */
+void
+gsicc_profile_reference(cmm_profile_t *icc_profile, int delta)
+{
+    if (icc_profile != NULL)
+        rc_adjust(icc_profile, delta, "gsicc_profile_reference");
+}
 
 #if ICC_DUMP
 /* Debug dump of ICC buffer data */

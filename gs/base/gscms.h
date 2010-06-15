@@ -45,6 +45,22 @@ typedef struct gs_range_icc_s {
     gs_range_t ranges[ICC_MAX_CHANNELS];
 } gs_range_icc_t;  /* ICC profile input could be up to 15 bands */
 
+/* This object is used only for device post processing CM.  It and its objects
+   must be allocated in non-gc memory. */
+
+#ifndef cmm_profile_DEFINED
+typedef struct cmm_profile_s cmm_profile_t;
+#define cmm_profile_DEFINED
+#endif
+
+typedef struct gsicc_device_cm_s {
+        cmm_profile_t *gray_profile;
+        cmm_profile_t *rgb_profile;
+        cmm_profile_t *cmyk_profile;
+        cmm_profile_t *device_link_profile;
+        gs_memory_t *memory;
+} gsicc_device_cm_t;
+
 /*  The buffer description.  We handle a variety of different types */
 typedef enum {
     gsGRAY,

@@ -125,9 +125,8 @@ typedef struct gx_device_wtsimdi_s {
     gx_device_common;
     gx_prn_device_common;
     wts_cooked_halftone wcooked[4];
+    gsicc_device_cm_t *postrender_cm;
     gcmmhlink_t icc_link;
-    cmm_profile_t *rgb_profile;
-    cmm_profile_t *cmyk_profile;
     cached_color *color_cache;
     cached_color current_color;
 #ifdef DEBUG
@@ -458,6 +457,7 @@ wtsimdi_open_device(gx_device *dev)
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
     int i;
     gsicc_rendering_param_t rendering_params;
+    gsicc_device_cm_t *postrender_cm;
 
     /*
      * We replace create_buf_device so we can replace copy_alpha 
@@ -467,45 +467,46 @@ wtsimdi_open_device(gx_device *dev)
     idev->printer_procs.buf_procs.create_buf_device = 
 	wtsimdi_create_buf_device;
 
-    /* Get the profile handles and create the link */
+    idev->postrender_cm = 
+            (gsicc_device_cm_t*) gs_malloc(dev->memory->non_gc_memory,
+                                            1, sizeof(gsicc_device_cm_t),
+                                            "wtsimdi_open_device");
+    postrender_cm = idev->postrender_cm;
+    postrender_cm->memory = dev->memory->non_gc_memory;
+    if (postrender_cm == NULL)
+        return gs_throw(-1, "Could not create post render cm object for WTS device");
 
-    /* This really would be a generic profile like sRGB */
-
-    idev->rgb_profile = gsicc_get_profile_handle_file(idev->color_info.icc_profile, 
-                    strlen(idev->color_info.icc_profile), dev->memory);
-
-    if (idev->rgb_profile == NULL)
+    /* Get the profile handles and create the link.  We probably want
+       to make this settable rather than using the defaults but that will come */
+    postrender_cm->rgb_profile = gsicc_get_profile_handle_file(DEFAULT_RGB_ICC,
+                    strlen(DEFAULT_RGB_ICC)+1, postrender_cm->memory);
+    if (postrender_cm->rgb_profile == NULL)
         return gs_throw(-1, "Could not create RGB input profile for WTS device");
 
-    /* Here you should use a device  specific CMYK ICC profile */
-
-    idev->cmyk_profile = gsicc_get_profile_handle_file(DEFAULT_CMYK_ICC, 
-                    strlen(DEFAULT_CMYK_ICC), dev->memory);
-    
-    if (idev->cmyk_profile == NULL)
+    postrender_cm->cmyk_profile = gsicc_get_profile_handle_file(DEFAULT_CMYK_ICC, 
+                    strlen(DEFAULT_CMYK_ICC)+1, postrender_cm->memory);
+    if (postrender_cm->cmyk_profile == NULL)
         return gs_throw(-1, "Could not create CMYK output profile for WTS device");
 
-    if (idev->rgb_profile->num_comps != 3)
+    if (postrender_cm->rgb_profile->num_comps != 3)
 	return gs_throw1(-1, "WTS input profile must have 3 input channels. got %d.", 
-                            idev->rgb_profile->num_comps);
-    if (idev->cmyk_profile->num_comps != 4)
+                            postrender_cm->rgb_profile->num_comps);
+    if (postrender_cm->cmyk_profile->num_comps != 4)
 	return gs_throw1(-1, "WTS output profile must have 4 output channels. got %d.", 
-                        idev->cmyk_profile->num_comps);
+                        postrender_cm->cmyk_profile->num_comps);
 
     /* Set up the rendering parameters */
-
     rendering_params.black_point_comp = true;
     rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
     rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
 
-    idev->icc_link = gscms_get_link(idev->rgb_profile, 
-                    idev->cmyk_profile, &rendering_params);
-
+    idev->icc_link = gscms_get_link(postrender_cm->rgb_profile->profile_handle, 
+                    postrender_cm->cmyk_profile->profile_handle, &rendering_params);
     if (idev->icc_link == NULL)
-        return gs_throw(-1, "Could not create ICC link for WTS device");
+        return gs_throw(-1, "Could not create ICC link for WTS device"); 
 
-    /* Not sure this is the best way to do this with most CMMs.... */
-	/* allocate at least 1 for sytems that return NULL if requested count is 0 */
+    /* Not sure this is the best way to do this with most CMMs. Since CMM has a cache usually */
+    /* Allocate at least 1 for sytems that return NULL if requested count is 0 */
     idev->color_cache = (cached_color *)gs_malloc(idev->memory, max(COLOR_CACHE_SIZE, 1),
 				sizeof(cached_color), "wtsimdi_open_device(color_cache)");
     if (idev->color_cache == NULL) {
@@ -530,11 +531,14 @@ static int
 wtsimdi_close_device(gx_device *dev)
 {
     gx_device_wtsimdi *idev = (gx_device_wtsimdi*)dev;
+    gsicc_device_cm_t *postrender_cm = idev->postrender_cm;
 
     gscms_release_link(idev->icc_link);
-    rc_decrement(idev->rgb_profile, "wtsimdi_close_device");
-    rc_decrement(idev->cmyk_profile, "wtsimdi_close_device");
+    rc_decrement(postrender_cm->rgb_profile, "wtsimdi_close_device");
+    rc_decrement(postrender_cm->cmyk_profile, "wtsimdi_close_device");
 
+    gs_free(postrender_cm->memory, postrender_cm, 1, sizeof(gsicc_device_cm_t), 
+             "wtsimidi_close");
     gs_free(dev->memory, idev->color_cache, COLOR_CACHE_SIZE, 
 	sizeof(cached_color), "wtsimdi_close_device(color_cache)");
     return gdev_prn_close(dev);

@@ -16,7 +16,10 @@
 #ifndef gsicccache_INCLUDED
 #  define gsicccache_INCLUDED
 
-#include "gx.h"
+#ifndef gs_imager_state_DEFINED
+#  define gs_imager_state_DEFINED
+typedef struct gs_imager_state_s gs_imager_state;
+#endif
 
 gsicc_link_cache_t* gsicc_cache_new(gs_memory_t *memory);
 void
