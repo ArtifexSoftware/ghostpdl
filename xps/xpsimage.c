@@ -33,7 +33,8 @@ xps_isolate_alpha_channel_8(xps_context_t *ctx, xps_image_t *image)
 
     if ((image->colorspace != XPS_GRAY_A) &&
             (image->colorspace != XPS_RGB_A) &&
-            (image->colorspace != XPS_CMYK_A))
+            (image->colorspace != XPS_CMYK_A) &&
+            (image->colorspace != XPS_ICC_A))
         return 0;
 
     image->alpha = xps_alloc(ctx, image->width * image->height);
@@ -59,6 +60,8 @@ xps_isolate_alpha_channel_8(xps_context_t *ctx, xps_image_t *image)
         image->colorspace = XPS_RGB;
     if (image->colorspace == XPS_CMYK_A)
         image->colorspace = XPS_CMYK;
+    if (image->colorspace == XPS_ICC_A)
+        image->colorspace = XPS_ICC;
 
     image->comps --;
     image->stride = image->width * image->comps;
@@ -75,7 +78,8 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
 
     if ((image->colorspace != XPS_GRAY_A) &&
             (image->colorspace != XPS_RGB_A) &&
-            (image->colorspace != XPS_CMYK_A))
+            (image->colorspace != XPS_CMYK_A) &&
+            (image->colorspace != XPS_ICC_A))
         return 0;
 
     image->alpha = xps_alloc(ctx, image->width * image->height * 2);
@@ -101,6 +105,8 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
         image->colorspace = XPS_RGB;
     if (image->colorspace == XPS_CMYK_A)
         image->colorspace = XPS_CMYK;
+    if (image->colorspace == XPS_ICC_A)
+        image->colorspace = XPS_ICC;
 
     image->comps --;
     image->stride = image->width * image->comps * 2;
@@ -137,13 +143,18 @@ xps_image_has_alpha(xps_context_t *ctx, xps_part_t *part)
     return code;
 }
 
-
 static int
-xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
+xps_decode_image(xps_context_t *ctx, char *profilename, int profile_comp, 
+                 xps_part_t *imagepart, xps_image_t *image)
 {
-    byte *buf = (byte*)part->data;
-    int len = part->size;
+    byte *buf = (byte*)imagepart->data;
+    int len = imagepart->size;
     int error;
+    int iccinfo = image->colorspace; /* So that we know if external profile was valid */
+    unsigned char *embedded_profile;
+    int profile_size;
+    cmm_profile_t *iccprofile;
+    bool has_alpha;
 
     if (len < 2)
         error = gs_throw(-1, "unknown image file format");
@@ -153,24 +164,107 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
     image->alpha = NULL;
 
     if (buf[0] == 0xff && buf[1] == 0xd8)
-        error = xps_decode_jpeg(ctx->memory, buf, len, image);
+        error = xps_decode_jpeg(ctx->memory, buf, len, image, 
+                                &embedded_profile, &profile_size);
     else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
-        error = xps_decode_png(ctx->memory, buf, len, image);
+        error = xps_decode_png(ctx->memory, buf, len, image, 
+                               &embedded_profile, &profile_size);
     else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
-        error = xps_decode_hdphoto(ctx->memory, buf, len, image);
+        error = xps_decode_hdphoto(ctx->memory, buf, len, image, 
+                                   &embedded_profile, &profile_size);
     else if (memcmp(buf, "MM", 2) == 0)
-        error = xps_decode_tiff(ctx->memory, buf, len, image);
+        error = xps_decode_tiff(ctx->memory, buf, len, image, 
+                                &embedded_profile, &profile_size);
     else if (memcmp(buf, "II", 2) == 0)
-        error = xps_decode_tiff(ctx->memory, buf, len, image);
+        error = xps_decode_tiff(ctx->memory, buf, len, image, 
+                                &embedded_profile, &profile_size);
     else
         error = gs_throw(-1, "unknown image file format");
 
     if (error)
         return gs_rethrow(error, "could not decode image");
 
-    if (image->colorspace == XPS_GRAY_A ||
-        image->colorspace == XPS_RGB_A ||
-        image->colorspace == XPS_CMYK_A)
+    has_alpha = (image->colorspace == XPS_GRAY_A ||
+                image->colorspace == XPS_RGB_A ||
+                image->colorspace == XPS_CMYK_A);
+
+    /* Make sure profile matches data type */
+    if (iccinfo == XPS_ICC) 
+    {
+        if (profile_comp == image->comps) 
+        {
+            /* Profile is OK for this image.  Change color space type. */
+            if (has_alpha)
+            {
+                image->colorspace = XPS_ICC_A;
+            }           
+            else
+            {
+                image->colorspace = XPS_ICC;
+            }
+        }
+    }
+
+    /* See if we need to use the embedded profile.  Only used if we
+       have one and a valid external profile was not specified */
+    image->embeddedprofile = false;
+    if (image->colorspace != XPS_ICC_A && image->colorspace != XPS_ICC && 
+        embedded_profile != NULL)
+    {
+        /* See if we can set up to use the embedded profile.  Note 
+           these profiles are NOT added to the xps color cache.  
+           As such, they must be destroyed when the image brush ends. 
+           Hence we need to make a note that we are using an embedded
+           profile. */
+        
+        /* Create the profile */
+        iccprofile = gsicc_profile_new(NULL, ctx->memory, NULL, 0);
+        /* Set buffer */
+        iccprofile->buffer = embedded_profile;
+        iccprofile->buffer_size = profile_size;
+        /* Parse */
+        gsicc_init_profile_info(iccprofile);
+
+        /* Free up the buffer */
+        gs_free_object(ctx->memory, embedded_profile, "Embedded Profile");
+        iccprofile->buffer = NULL;
+        iccprofile->buffer_size = 0;
+
+        if (iccprofile->profile_handle == NULL)
+        {
+            /* Problem with profile.  Just ignore it */
+            gsicc_profile_reference(iccprofile, -1);
+        }
+        else
+        {
+            /* Check the profile is OK for channel data count.
+               Need to be careful here since alpha is put into 
+               comps */
+            if ((image->comps - has_alpha) == gsicc_getsrc_channel_count(iccprofile))
+            {
+                /* Use the embedded profile */
+                image->embeddedprofile = true;
+                ctx->icc->cmm_icc_profile_data = iccprofile;
+                if (has_alpha) 
+                {
+                    image->colorspace = XPS_ICC_A;
+                }
+                else
+                {
+                    image->colorspace = XPS_ICC;
+                }
+            }
+            else 
+            {
+                /* Problem with profile.  Just ignore it */
+                gsicc_profile_reference(iccprofile, -1);
+            }
+
+        }
+    }
+
+    /* XPS_ICC_A potentially not set when has_alpha evaluated */
+    if (has_alpha || image->colorspace == XPS_ICC_A )
     {
         if (image->bits < 8)
             dprintf1("cannot isolate alpha channel in %d bpc images\n", image->bits);
@@ -209,6 +303,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
         case XPS_GRAY: colorspace = ctx->gray; break;
         case XPS_RGB: colorspace = ctx->srgb; break;
         case XPS_CMYK: colorspace = ctx->cmyk; break;
+        case XPS_ICC: colorspace = ctx->icc; break;
         default:
             return gs_throw(-1, "cannot draw images with interleaved alpha");
         }
@@ -290,14 +385,14 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
 }
 
 static int
-xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t *root, xps_part_t **partp)
+xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t *root, 
+                                 xps_part_t **imagepartp, char **profile_name)
 {
-    xps_part_t *part;
+    xps_part_t *imagepart, *iccpart;
     char *image_source_att;
     char buf[1024];
     char partname[1024];
     char *image_name;
-    char *profile_name;
     char *p;
 
     image_source_att = xps_att(root, "ImageSource");
@@ -308,7 +403,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
     if (strstr(image_source_att, "{ColorConvertedBitmap") == image_source_att)
     {
         image_name = NULL;
-        profile_name = NULL;
+        *profile_name = NULL;
 
         strcpy(buf, image_source_att);
         p = strchr(buf, ' ');
@@ -319,7 +414,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
             if (p)
             {
                 *p = 0;
-                profile_name = p + 1;
+                *profile_name = p + 1;
                 p = strchr(p + 1, '}');
                 if (p)
                     *p = 0;
@@ -329,33 +424,33 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
     else
     {
         image_name = image_source_att;
-        profile_name = NULL;
+        *profile_name = NULL;
     }
 
     if (!image_name)
         return gs_throw1(-1, "cannot parse image resource name '%s'", image_source_att);
 
-    if (profile_name)
-        dprintf2("warning: ignoring color profile '%s' associated with image '%s'\n",
-                profile_name, image_name);
-
     xps_absolute_path(partname, base_uri, image_name, sizeof partname);
-    part = xps_read_part(ctx, partname);
-    if (!part)
+    imagepart = xps_read_part(ctx, partname);
+    if (!imagepart)
         return gs_throw1(-1, "cannot find image resource part '%s'", partname);
 
-    *partp = part;
+    *imagepartp = imagepart;
+
     return 0;
 }
 
 int
 xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
-    xps_part_t *part;
+    xps_part_t *imagepart;
     xps_image_t *image;
     int code;
+    char *profilename;
+    gs_color_space *colorspace;
+    int profile_comp = 0;
 
-    code = xps_find_image_brush_source_part(ctx, base_uri, root, &part);
+    code = xps_find_image_brush_source_part(ctx, base_uri, root, &imagepart, &profilename);
     if (code < 0)
         return gs_rethrow(code, "cannot find image source");
 
@@ -363,15 +458,43 @@ xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
     if (!image)
         return gs_throw(-1, "out of memory: image struct");
 
-    code = xps_decode_image(ctx, part, image);
+    /* If we have an ICC profile, go ahead and set the color space now.
+       Make sure the profile is valid etc.  If we find one in the image
+       then we will use that if one is not externally defined.  If it is
+       we get back our ICC color space object.  However, we also need
+       to see if the profile count matches the number of channels in the image.
+       If it does not, then we do not use the profile.  Also we may need
+       to use the embedded profile */
+
+    image->colorspace = XPS_NOTICC;
+    if (profilename != NULL) 
+    {
+        colorspace = NULL;
+        xps_set_icc(ctx, base_uri, profilename, &colorspace);
+        if (colorspace != NULL) 
+        {
+            /* Now, see what the channel count is */
+            profile_comp = 
+                gsicc_getsrc_channel_count(colorspace->cmm_icc_profile_data);
+            image->colorspace = XPS_ICC;
+        }
+    }
+
+    code = xps_decode_image(ctx, profilename, profile_comp, imagepart, image);
     if (code < 0)
         return gs_rethrow(-1, "cannot decode image resource");
 
     xps_parse_tiling_brush(ctx, base_uri, dict, root, xps_paint_image_brush, image);
 
+    /* If we used an embedded profile. then release as these are not cached */
+    if (image->embeddedprofile)
+    {
+        gsicc_profile_reference(ctx->icc->cmm_icc_profile_data, -1);
+    }
+
     xps_free_image(ctx, image);
 
-    xps_free_part(ctx, part);
+    xps_free_part(ctx, imagepart);
 
     return 0;
 }
@@ -379,24 +502,26 @@ xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
 int
 xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
 {
-    xps_part_t *part;
-    xps_image_t *image;
+    xps_part_t *imagepart, *iccpart;
     int code;
     int has_alpha;
+    char *profilename;
 
-    code = xps_find_image_brush_source_part(ctx, base_uri, root, &part);
+    code = xps_find_image_brush_source_part(ctx, base_uri, root, &imagepart, &profilename);
     if (code < 0)
     {
         gs_catch(code, "cannot find image source");
         return 0;
     }
 
-    has_alpha = xps_image_has_alpha(ctx, part);
+    has_alpha = xps_image_has_alpha(ctx, imagepart);
     if (has_alpha < 0)
     {
         gs_catch(-1, "cannot decode image resource");
         return 0;
     }
+
+    xps_free_part(ctx, imagepart);
 
     return has_alpha;
 }

@@ -64,6 +64,8 @@
 #include "gzpath.h"
 
 #include "gsicc_manage.h"
+#include "gscms.h"
+#include "gsicc_cache.h"
 
 #include "zlib.h"
 
@@ -196,6 +198,7 @@ struct xps_context_s
     gs_color_space *srgb;
     gs_color_space *scrgb;
     gs_color_space *cmyk;
+    gs_color_space *icc;
 
     char *directory;
     FILE *file;
@@ -249,7 +252,8 @@ xps_part_t *xps_read_part(xps_context_t *ctx, char *partname);
 
 /* type for the information derived directly from the raster file format */
 
-enum { XPS_GRAY, XPS_GRAY_A, XPS_RGB, XPS_RGB_A, XPS_CMYK, XPS_CMYK_A };
+enum { XPS_GRAY, XPS_GRAY_A, XPS_RGB, XPS_RGB_A, XPS_CMYK, XPS_CMYK_A, 
+       XPS_ICC, XPS_ICC_A, XPS_NOTICC };
 
 struct xps_image_s
 {
@@ -263,12 +267,18 @@ struct xps_image_s
     int yres;
     byte *samples;
     byte *alpha; /* isolated alpha plane */
+    bool embeddedprofile;
 };
 
-int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
-int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
-int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image);
-int xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image);
+/* Probably need to clean this up to make different proc types */
+int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image, 
+                    unsigned char **profile, int *profile_size);
+int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
+                   unsigned char **profile, int *profile_size);
+int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
+                    unsigned char **profile, int *profile_size);
+int xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
+                       unsigned char **profile, int *profile_size);
 int xps_hasalpha_png(gs_memory_t *mem, byte *rbuf, int rlen);
 int xps_hasalpha_tiff(gs_memory_t *mem, byte *rbuf, int rlen);
 int xps_hasalpha_hdphoto(gs_memory_t *mem, byte *buf, int len);
@@ -333,6 +343,7 @@ void xps_debug_path(xps_context_t *ctx);
 int xps_parse_color(xps_context_t *ctx, char *base_uri, char *hexstring, gs_color_space **csp, float *samples);
 int xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
 int xps_parse_icc_profile(xps_context_t *ctx, gs_color_space **csp, byte *data, int length, int ncomp);
+int xps_set_icc(xps_context_t *ctx, char *base_uri, char *profile, gs_color_space **csp);
 
 /*
  * XML document model

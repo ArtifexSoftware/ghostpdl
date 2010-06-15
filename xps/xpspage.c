@@ -221,6 +221,14 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
             return gs_rethrow(code, "cannot install transparency device");
     }
 
+    /* Initialize the default profiles in the ctx to what is in the manager */
+    ctx->gray->cmm_icc_profile_data = ctx->pgs->icc_manager->default_gray;
+    ctx->srgb->cmm_icc_profile_data = ctx->pgs->icc_manager->default_rgb;
+    /* scrgb really needs to be a bit different. Unless we are handling nonlinearity
+       before conversion from float .  ToDo. */
+    ctx->scrgb->cmm_icc_profile_data = ctx->pgs->icc_manager->default_rgb;
+    ctx->cmyk->cmm_icc_profile_data = ctx->pgs->icc_manager->default_cmyk;
+
     /* Draw contents */
 
     for (node = xps_down(root); node; node = xps_next(node))

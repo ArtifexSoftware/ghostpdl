@@ -32,7 +32,11 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
     int count = 0;
     gs_color_space *colorspace;
     float sample[32], f;
+    unsigned short sample_in[8], sample_out[8]; /* XPS allows up to 8 bands */
     int i, done;
+    gsicc_link_t *icclink = NULL;
+    gsicc_rendering_param_t rendering_params;
+    int num_colors;
 
     while (node && count < maxcount)
     {
@@ -46,17 +50,49 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
 
                 xps_parse_color(ctx, base_uri, color, &colorspace, sample);
 
-                /* TODO: Convert colors to sRGB using icc_work branch */
+                /* Set the rendering parameters */
+                rendering_params.black_point_comp = BP_ON;
+                rendering_params.object_type = GS_PATH_TAG;
+                rendering_params.rendering_intent = gsPERCEPTUAL;
 
-                colors[count * 4 + 0] = sample[0];
-                colors[count * 4 + 1] = sample[1];
-                colors[count * 4 + 2] = sample[2];
-                colors[count * 4 + 3] = sample[3];
+                /* Get link to map from source to sRGB */
+                icclink = gsicc_get_link((gs_imager_state*) ctx->pgs, colorspace, 
+                                            ctx->srgb, &rendering_params, 
+                                            ctx->memory, false);
+
+                if (icclink != NULL && !icclink->is_identity) 
+                {
+                    /* Transform the color */
+                    num_colors = gsicc_getsrc_channel_count(colorspace->cmm_icc_profile_data);
+                    for (i = 0; i < num_colors; i++)
+                    {
+                        sample_in[i] = sample[i+1]*65535;
+                    }
+                    gscms_transform_color(icclink, sample_in, sample_out, 2, NULL);
+
+                    colors[count * 4 + 0] = sample[0]; /* Alpha */
+                    colors[count * 4 + 1] = (float) sample_out[0] / 65535.0; /* sRGB */
+                    colors[count * 4 + 2] = (float) sample_out[1] / 65535.0;
+                    colors[count * 4 + 3] = (float) sample_out[2] / 65535.0;
+
+                } 
+                else 
+                {
+                    colors[count * 4 + 0] = sample[0];
+                    colors[count * 4 + 1] = sample[1];
+                    colors[count * 4 + 2] = sample[2];
+                    colors[count * 4 + 3] = sample[3];
+                }
+
                 count ++;
             }
         }
 
+        if (icclink != NULL) 
+            gsicc_release_link(icclink);
+        icclink = NULL;
         node = xps_next(node);
+
     }
 
     if (count == maxcount)

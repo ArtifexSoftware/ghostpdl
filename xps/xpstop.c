@@ -90,6 +90,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     xps_interp_instance_t *instance;
     xps_context_t *ctx;
     gs_state *pgs;
+    int code;
 
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
             sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
@@ -122,11 +123,15 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->zip_count = 0;
     ctx->zip_table = NULL;
 
-    /* TODO: load some builtin ICC profiles here */
-    ctx->gray = gs_cspace_new_DeviceGray(ctx->memory); /* profile for gray images */
-    ctx->cmyk = gs_cspace_new_DeviceCMYK(ctx->memory); /* profile for cmyk images */
+    /* Gray, RGB and CMYK profiles set when color spaces installed in graphics lib */
+    ctx->gray = gs_cspace_new_DeviceGray(ctx->memory); 
+    ctx->cmyk = gs_cspace_new_DeviceCMYK(ctx->memory); 
     ctx->srgb = gs_cspace_new_DeviceRGB(ctx->memory);
-    ctx->scrgb = gs_cspace_new_DeviceRGB(ctx->memory);
+    ctx->scrgb = gs_cspace_new_DeviceRGB(ctx->memory); /* This needs a different profile */
+    code = gs_cspace_build_ICC(&(ctx->icc), NULL, ctx->memory); /* For profile color spaces */
+    if (code < 0) 
+        return gs_error_VMerror;
+
 
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;

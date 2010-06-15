@@ -133,7 +133,8 @@ xps_hasalpha_png(gs_memory_t *mem, byte *rbuf, int rlen)
 }
 
 int
-xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
+xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image, 
+               unsigned char **profile, int *profile_size)
 {
     png_structp png;
     png_infop info;
@@ -148,6 +149,8 @@ xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
 
     io.ptr = rbuf;
     io.lim = rbuf + rlen;
+
+    *profile = NULL;
 
     png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
             NULL, NULL, NULL,
@@ -204,6 +207,18 @@ xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image)
     image->height = png_get_image_height(png, info);
     image->comps = png_get_channels(png, info);
     image->bits = png_get_bit_depth(png, info);
+
+    /* See if we have an icc profile */
+    if (info->iccp_profile != NULL)
+    {
+        *profile = (unsigned char*) gs_alloc_bytes(mem, info->iccp_proflen, "PNG ICC Profile");
+        if (*profile != NULL)
+        {   
+            /* If we can't create it, just ignore */
+            memcpy(*profile, info->iccp_profile, info->iccp_proflen);
+            *profile_size = info->iccp_proflen;
+        }
+    }
 
     switch (png_get_color_type(png, info))
     {

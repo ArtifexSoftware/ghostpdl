@@ -60,16 +60,15 @@ static int count_commas(char *s)
     }
     return n;
 }
-
+ 
 int
 xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space **csp, float *samples)
 {
-    xps_part_t *part;
-    char *profile, *p;
+    char *p;
     int i, n;
-
-    char partname[1024];
     char buf[1024];
+    int code;
+    char *profile;
 
     samples[0] = 1.0;
     samples[1] = 0.0;
@@ -145,40 +144,71 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string, gs_color_space
         }
 
         /* Default fallbacks if the ICC stuff fails */
-
         if (n == 2) /* alpha + tint */
             *csp = ctx->gray;
 
-        if (n == 5) /* alpha + CMYK */
+        if (n >= 5) /* alpha + CMYK */
             *csp = ctx->cmyk;
 
-#if 0 /* disable ICC profiles until gsicc_manager is available */
-        /* Find ICC colorspace part */
-        xps_absolute_path(partname, base_uri, profile, sizeof partname);
-
-        colorspace = xps_hash_lookup(ctx->colorspace_table, partname);
-        if (!colorspace)
-        {
-            part = xps_read_part(ctx, partname);
-            if (!part)
-                return gs_throw1(-1, "cannot find icc profile part '%s'", partname);
-            code = xps_parse_icc_profile(ctx, &colorspace, part, n - 1);
-            if (code < 0)
-                return gs_rethrow1(code, "cannot parse icc profile part '%s'", partname);
-            xps_hash_insert(ctx->colorspace_table, xps_strdup(ctx, partname), colorspace);
-            xps_free_part(ctx, part);
-        }
-
-        *csp = colorspace;
-#endif
-
-        return 0;
+        code = xps_set_icc(ctx, base_uri, profile, csp);
+        return code;
     }
 
     else
     {
         return gs_throw1(-1, "cannot parse color (%s)", string);
     }
+}
+
+int
+xps_set_icc(xps_context_t *ctx, char *base_uri, char *profile, gs_color_space **csp)
+{
+    cmm_profile_t *iccprofile;
+    xps_part_t *part;
+    char partname[1024];
+
+    /* Find ICC colorspace part */
+    xps_absolute_path(partname, base_uri, profile, sizeof partname);
+
+    /* See if we cached the profile */        
+    iccprofile = (cmm_profile_t*) xps_hash_lookup(ctx->colorspace_table, partname);
+    if (!iccprofile)
+    {
+        part = xps_read_part(ctx, partname);
+        /* Problem finding profile.  Don't fail, just use default */
+        if (!part)
+            return 0;
+
+        /* Create the profile */
+        iccprofile = gsicc_profile_new(NULL, ctx->memory, NULL, 0);
+        /* Set buffer */
+        iccprofile->buffer = part->data;
+        iccprofile->buffer_size = part->size;
+        /* Parse */
+        gsicc_init_profile_info(iccprofile);
+        /* Problem with profile.  Don't fail, just use the default */
+        if (iccprofile->profile_handle == NULL)
+        {
+            gsicc_profile_reference(iccprofile, -1);
+            return 0;
+        }
+
+        /* Done with the buffer */
+        xps_free_part(ctx, part); 
+        iccprofile->buffer = NULL;
+        iccprofile->buffer_size = 0;
+
+        /* Add profile to xps color cache.  It appears never to remove
+           these except at the end of processing */
+        xps_hash_insert(ctx, ctx->colorspace_table, xps_strdup(ctx, partname), 
+                            (void*) iccprofile);
+    } 
+
+    /* Associate icc color space with the profile */
+    ctx->icc->cmm_icc_profile_data = iccprofile;
+    *csp = ctx->icc; 
+
+    return 0;
 }
 
 int

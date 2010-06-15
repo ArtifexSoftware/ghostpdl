@@ -76,6 +76,9 @@ struct xps_tiff_s
 
     byte *jpegtables;       /* point into "file" buffer */
     unsigned jpegtableslen;
+
+    byte *iccprofile;
+    int profile_size;
 };
 
 enum
@@ -115,6 +118,7 @@ enum
 #define ExtraSamples                            338
 #define JPEGTables                              347
 #define YCbCrSubSampling                        520
+#define ICCProfile                              34675
 
 static const byte bitrev[256] =
 {
@@ -644,11 +648,20 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
     case 3:
         image->xres = tiff->xresolution * 2.54 + 0.5;
         image->yres = tiff->yresolution * 2.54 + 0.5;
+
         break;
     default:
         image->xres = 96;
         image->yres = 96;
         break;
+    }
+
+    /* Note xres and yres could be 0 even if unit was set.  If so
+       default to 96dpi */
+    if (image->xres == 0 || image->yres == 0)
+    {
+        image->xres = 96;
+        image->yres = 96;
     }
 
     image->samples = gs_alloc_bytes(mem, image->stride * image->height, "samples");
@@ -769,6 +782,20 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
 }
 
 static void
+xps_read_tiff_bytes(unsigned char *p, xps_tiff_t *tiff, unsigned ofs, unsigned n)
+{
+    tiff->rp = tiff->bp + ofs;
+    if (tiff->rp > tiff->ep)
+        tiff->rp = tiff->bp;
+
+    while (n--)
+    {
+        *p++ = readbyte(tiff);    
+    }
+}
+
+
+static void
 xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned ofs, unsigned n)
 {
     tiff->rp = tiff->bp + ofs;
@@ -869,6 +896,15 @@ xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
     case ExtraSamples:
         xps_read_tiff_tag_value(&tiff->extrasamples, tiff, type, value, 1);
         break;
+    case ICCProfile:
+        tiff->iccprofile = (unsigned char*) gs_alloc_bytes(mem, count , "TIFF ICC Profile");
+        if (!tiff->iccprofile)
+            return gs_throw(-1, "could not allocate embedded icc profile");
+        /* ICC profile data type is set to UNDEFINED. TBYTE reading not correct
+           in xps_read_tiff_tag_value */
+        xps_read_tiff_bytes((unsigned*) tiff->iccprofile, tiff, value, count);
+        tiff->profile_size = count;
+        break;
 
     case JPEGTables:
         tiff->jpegtables = tiff->bp + value;
@@ -925,7 +961,8 @@ xps_swap_byte_order(byte *buf, int n)
 }
 
 int
-xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
+xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image, 
+                unsigned char **profile, int *profile_size)
 {
     int error;
     xps_tiff_t tiffst;
@@ -937,6 +974,7 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
     unsigned i;
 
     memset(tiff, 0, sizeof(xps_tiff_t));
+    *profile = NULL;
 
     tiff->bp = buf;
     tiff->rp = buf;
@@ -1010,6 +1048,9 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image)
     if (tiff->colormap) gs_free_object(mem, tiff->colormap, "ColorMap");
     if (tiff->stripoffsets) gs_free_object(mem, tiff->stripoffsets, "StripOffsets");
     if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
+
+    *profile = tiff->iccprofile;
+    *profile_size = tiff->profile_size;
 
     /*
      * Byte swap 16-bit images to big endian if necessary.
