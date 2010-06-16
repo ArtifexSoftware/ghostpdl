@@ -627,9 +627,9 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
     if ( char_data == 0 ) { 
         char_data = gs_alloc_bytes(pcs->memory, font_data_size,
                                    "pcl_character_data");
-        memset(char_data, 0, font_data_size);
         if ( char_data == 0 )
             return_error(e_Memory);
+        memset(char_data, 0, font_data_size);
         /* if count > font_data_size extra data is ignored */
         memcpy(char_data, data, min(count, font_data_size) );
         /* NB we only handle continuation for uncompressed bitmap characters */
