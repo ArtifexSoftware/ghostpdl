@@ -1411,6 +1411,16 @@ gx_cie_to_xyz_free(gs_imager_state *pis)
 
     gs_free_object(mem, pis->cie_joint_caches,
 		   "gx_cie_to_xyz_free(joint caches)");
+    /* Free up the ICC objects if created */
+    if (pis->icc_link_cache != NULL) {
+        rc_decrement(pis->icc_link_cache,"gx_cie_to_xyz_free");
+    }
+    if (pis->icc_manager != NULL) {
+        rc_decrement(pis->icc_manager,"gx_cie_to_xyz_free");
+    }
+    if (pis->icc_profile_cache != NULL) {
+        rc_decrement(pis->icc_profile_cache,"gx_cie_to_xyz_free");
+    }
     gs_free_object(mem, pis, "gx_cie_to_xyz_free(imager state)");
 }
 
