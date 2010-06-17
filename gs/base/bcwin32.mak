@@ -424,7 +424,7 @@ UFST_CFLAGS=-DMSVC
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(PSSRCDIR)\bcwin32.mak
+MAKEFILE=$(GLSRCDIR)\bcwin32.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(PSSRCDIR)\winint.mak
 
 # Define the current directory prefix and shell invocations.
