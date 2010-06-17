@@ -145,7 +145,6 @@ void gs_addmess_update(void);
 BOOL init();
 BOOL install_all();
 BOOL install_prog();
-BOOL make_filelist(int argc, char *argv[]);
 int get_font_path(char *path, unsigned int pathlen);
 BOOL write_cidfmap(const char *gspath, const char *cidpath);
 BOOL GetProgramFiles(LPTSTR path);
@@ -469,8 +468,10 @@ init()
 	}
 
 	if (argc > 2) {
-		// Probably creating filelist.txt
-		return make_filelist(argc, argv);
+		MessageBox(HWND_DESKTOP,
+			"make_filelist functionality split out and no longer in setupgs",
+			g_szAppName, MB_OK);
+		return FALSE;
 	}
 
 
@@ -965,196 +966,6 @@ BOOL write_cidfmap(const char *gspath, const char *cidpath)
     return TRUE;
 }
 
-
-//////////////////////////////////////////////////////////////////////
-// Create file list
-//////////////////////////////////////////////////////////////////////
-
-FILE *fList;
-
-typedef int (*PFN_dodir)(const char *name);
-
-/* Called once for each directory */
-int
-dodir(const char *filename)
-{
-    return 0;
-}
-
-/* Called once for each file */
-int
-dofile(const char *filename)
-{
-    if (fList != (FILE *)NULL) {
-		fputs(filename, fList);
-		fputs("\n", fList);
-    }
-	
-    return 0;
-}
-
-
-/* Walk through directory 'path', calling dodir() for given directory
- * and dofile() for each file.
- * If recurse=1, recurse into subdirectories, calling dodir() for
- * each directory.
- */
-int 
-dirwalk(char *path, int recurse, PFN_dodir dodir, PFN_dodir dofile)
-{    
-	WIN32_FIND_DATA find_data;
-	HANDLE find_handle;
-	char pattern[MAXSTR];	/* orig pattern + modified pattern */
-	char base[MAXSTR];
-	char name[MAXSTR];
-	BOOL bMore = TRUE;
-	char *p;
-	
-	
-	if (path) {
-		strcpy(pattern, path);
-		if (strlen(pattern) != 0)  {
-			p = pattern + strlen(pattern) -1;
-			if (*p == '\\')
-				*p = '\0';		// truncate trailing backslash
-		}
-		
-		strcpy(base, pattern);
-		if (strchr(base, '*') != NULL) {
-			// wildcard already included
-			// truncate it from the base path
-			if ( (p = strrchr(base, '\\')) != NULL )
-				*(++p) = '\0';
-		}
-		else if (isalpha(pattern[0]) && 
-			pattern[1]==':' && pattern[2]=='\0')  {
-			strcat(pattern, "\\*");		// search entire disk
-			strcat(base, "\\");
-		}
-		else {
-			// wildcard NOT included
-			// check to see if path is a directory
-			find_handle = FindFirstFile(pattern, &find_data);
-			if (find_handle != INVALID_HANDLE_VALUE) {
-				FindClose(find_handle);
-				if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-					strcat(pattern, "\\*");		// yes, search files 
-					strcat(base, "\\");
-				}
-				else {
-					dofile(path);				// no, return just this file
-					return 0;
-				}
-			}
-			else
-				return 1;	// path invalid
-		}
-	}
-	else {
-		base[0] = '\0';
-		strcpy(pattern, "*");
-	}
-	
-	find_handle = FindFirstFile(pattern,  &find_data);
-	if (find_handle == INVALID_HANDLE_VALUE)
-		return 1;
-	
-	while (bMore) {
-		strcpy(name, base);
-		strcat(name, find_data.cFileName);
-		if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-			if ( strcmp(find_data.cFileName, ".") && 
-				strcmp(find_data.cFileName, "..") ) {
-				dodir(name);
-				if (recurse)
-					dirwalk(name, recurse, dodir, dofile);
-			}
-		}
-		else {
-			dofile(name);
-		}
-		bMore = FindNextFile(find_handle, &find_data);
-	}
-	FindClose(find_handle);
-	
-	return 0;
-}
-
-
-
-// This is used when creating a file list.
-
-BOOL make_filelist(int argc, char *argv[])
-{
-    char *title = NULL;
-    char *dir = NULL;
-    char *list = NULL;
-    int i;
-    g_bBatch = TRUE;	// Don't run message loop
-	
-    for (i=1; i<argc; i++) {
-		if (strcmp(argv[i], "-title") == 0) {
-			i++;
-			title = argv[i];
-		}
-		else if (strcmp(argv[i], "-dir") == 0) {
-			i++;
-			dir = argv[i];
-		}
-		else if (strcmp(argv[i], "-list") == 0) {
-			i++;
-			list = argv[i];
-		}
-		else {
-		    if ((title == NULL) || (strlen(title) == 0) ||
-			(dir == NULL) || (strlen(dir) == 0) ||
-			(list == NULL) || (strlen(list) == 0)) {
-			message_box("Usage: setupgs -title \042GPL Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
-			return FALSE;
-		    }
-		    if (fList == (FILE *)NULL) {
-			    if ( (fList = fopen(list, "w")) == (FILE *)NULL ) {
-					message_box("Can't write list file\n");
-					return FALSE;
-			    }
-			    fputs(title, fList);
-			    fputs("\n", fList);
-			    fputs(dir, fList);
-			    fputs("\n", fList);
-		    }
-		    if (argv[i][0] == '@') {
-			// Use @filename with list of files/directories
-			// to avoid DOS command line limit
-			FILE *f;
-			char buf[MAXSTR];
-			int j;
-			if ( (f = fopen(&(argv[i][1]), "r")) != (FILE *)NULL) {
-			    while (fgets(buf, sizeof(buf), f)) {
-				// remove trailing newline and spaces
-				while ( ((j = strlen(buf)-1) >= 0) &&
-				    ((buf[j] == '\n') || (buf[j] == ' ')) )
-				    buf[j] = '\0';
-			        dirwalk(buf, TRUE, &dodir, &dofile);
-			    }
-			    fclose(f);
-			}
-			else {
-				wsprintf(buf, "Can't open @ file \042%s\042",
-				    &argv[i][1]);
-				message_box(buf);
-			}
-		    }
-		    else
-		        dirwalk(argv[i], TRUE, &dodir, &dofile);
-		}
-    }
-	
-    if (fList != (FILE *)NULL) {
-        fclose(fList);
-	fList = NULL;
-    }
-    return TRUE;
-}
 
 //////////////////////////////////////////////////////////////////////
 

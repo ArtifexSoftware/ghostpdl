@@ -874,6 +874,9 @@ $(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def 
 
 !endif
 
+$(MAKE_FILELIST_XE): $(PSSRC)mkfilelt.cpp
+	$(CCAUX) /Fe$(MAKE_FILELIST_XE) $(PSSRC)mkfilelt.cpp
+
 # ---------------------- Debug targets ---------------------- #
 # Simply set some definitions and call ourselves back         #
 

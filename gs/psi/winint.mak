@@ -60,6 +60,9 @@ UNINSTALL_XE_NAME=uninstgs.exe
 !ifndef UNINSTALL_XE
 UNINSTALL_XE=$(BINDIR)\$(UNINSTALL_XE_NAME)
 !endif
+!ifndef MAKE_FILELIST_XE
+MAKE_FILELIST_XE=$(BINDIR)\make_filelist.exe
+!endif
 
 # Define the RCOMP switch for including INCDIR.
 !if "$(INCDIR)"==""
@@ -250,9 +253,9 @@ ZIPTARGET=gs$(GS_VERSION)w64
 !else
 ZIPTARGET=gs$(GS_VERSION)w32
 !endif
-zip: $(SETUP_XE) $(UNINSTALL_XE)
+zip: $(SETUP_XE) $(UNINSTALL_XE) $(MAKE_FILELIST_XE)
 	cd ..
-	copy gs$(GS_DOT_VERSION)\$(SETUP_XE) make_filelist.exe
+	copy gs$(GS_DOT_VERSION)\$(MAKE_FILELIST_XE) make_filelist.exe
 	copy gs$(GS_DOT_VERSION)\$(SETUP_XE) .
 	copy gs$(GS_DOT_VERSION)\$(UNINSTALL_XE) .
 	echo $(ZIPPROGFILE1) >  $(ZIPTEMPFILE)
