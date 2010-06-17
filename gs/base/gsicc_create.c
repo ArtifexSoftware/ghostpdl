@@ -1563,6 +1563,9 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     /* Set the hash code  */
     gsicc_get_icc_buff_hash(buffer, &(result->hashcode), result->buffer_size);
     result->hash_is_valid = true;
+    /* Free up the tag list */
+    gs_free_object(memory, tag_list, "gsicc_create_from_cal");
+
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if (num_colors == 3)
