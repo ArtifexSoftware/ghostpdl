@@ -218,7 +218,7 @@ plalloc_h=$(PLSRC)plalloc.h
 $(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) \
   $(malloc__h) $(memory__h) $(gdebug_h)\
   $(gsmalloc_h) $(gsmemret_h) $(gsstype_h)\
-  $(plalloc_h)
+  $(gsmchunk_h) $(plalloc_h)
 	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
 
 # ufst font loading module.
@@ -284,7 +284,7 @@ $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
 
 $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
  $(gdebug_h) $(gscdefs_h) $(gsio_h) $(gstypes_h) $(gserrors_h) \
- $(gsmemory_h) $(plalloc_h) $(gsmalloc_h) $(gsstruct_h) $(gxalloc_h)\
+ $(gsmemory_h) $(plalloc_h) $(gsmalloc_h) $(gsmchunk.h) $(gsstruct_h) $(gxalloc_h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\
  $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h) $(plplatf_h)\
  $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)

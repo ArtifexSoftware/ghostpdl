@@ -22,6 +22,7 @@
 #include "gsmemory.h"
 #include "plalloc.h"
 #include "gsmalloc.h"
+#include "gsmchunk.h"
 #include "gsstruct.h"
 #include "gxalloc.h"
 #include "gsalloc.h"
@@ -29,7 +30,6 @@
 #include "gp.h"
 #include "gsdevice.h"
 #include "gxdevice.h"
-#include "gsnogc.h"
 #include "gsparam.h"
 #include "gslib.h"
 #include "pjtop.h"
@@ -206,22 +206,6 @@ close_job(pl_main_universe_t *universe, pl_main_instance_t *pti)
     return pl_dnit_job(universe->curr_instance);
 }
 
-static void
-pl_reclaim(pl_main_instance_t *pti)
-    /* NB - gs_nogc_reclaim does a bit more than expected.  It has the
-       side effect of resetting the string memory procedures in the
-       memory "procs" table and other setup business prerequisite to
-       the nogc.dev allocator functioning properly.  It also
-       reclaims/consolidates memory. */
-{
-#ifndef HEAP_ALLOCATOR_ONLY
-    vm_spaces *spaces = &pti->spaces;
-    gs_nogc_reclaim(spaces, true);
-#endif
-}
-
-
-
 /* ----------- Command-line driver for pl_interp's  ------ */
 /*
  * Here is the real main program.
@@ -245,6 +229,7 @@ pl_main(
     gs_c_param_list         params;
 
     mem = pl_alloc_init();
+
     pl_platform_init(mem->gs_lib_ctx->fstdout);
 
 
@@ -506,10 +491,11 @@ pl_main(
     if ( gs_debug_c('A') )
         dprintf("Final time" );
     pl_platform_dnit(0);
-    pl_reclaim(&inst);
 #ifdef DEBUG
+#ifndef HEAP_ALLOCATOR_ONLY
     if (inst.leak_check)
-        debug_dump_allocator((gs_ref_memory_t *)mem);
+        gs_memory_chunk_dump_memory(mem);
+#endif
 #endif
     return 0;
 }
@@ -781,7 +767,6 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
             (gs_ref_memory_t *)mem;
     }
 
-    pl_reclaim(pti);
     pti->error_report = -1;
     pti->pause = true;
     pti->print_page_count = false;
@@ -993,16 +978,15 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
             break;
         case 'K':               /* max memory in K */
             {
-#ifdef OLD_ALLOCATOR
                 int maxk;
-                gs_malloc_memory_t *rawheap = gs_malloc_wrapped_contents(pmi->memory);
+                gs_malloc_memory_t *rawheap =
+                    (gs_malloc_memory_t *)gs_memory_chunk_target(pmi->memory)->non_gc_memory;
 
                 if ( sscanf(arg, "%d", &maxk) != 1 ) {
                     dprintf("-K must be followed by a number\n");
                     return -1;
                 }
                 rawheap->limit = (long)maxk << 10;
-#endif
             }
             break;
         case 'l':
@@ -1253,7 +1237,6 @@ pl_post_finish_page(pl_interp_instance_t *interp, void *closure)
           }
         else if ( gs_debug_c(':') )
           pl_print_usage(pti, " done :");
-        pl_reclaim(pti);
         return 0;
 }
 
