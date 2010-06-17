@@ -903,7 +903,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     if (profile->rc.ref_count <= 1 ) {
         /* Clear out the buffer if it is full */
         if(profile->buffer != NULL) {
-            gs_free_object(mem, profile->buffer, cname);
+            gs_free_object(mem, profile->buffer, "rc_free_icc_profile");
             profile->buffer = NULL;
         }
 
@@ -915,7 +915,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 
         /* Release the name if it has been set */
         if(profile->name != NULL) {
-            gs_free_object(mem,profile->name,cname);
+            gs_free_object(mem,profile->name,"rc_free_icc_profile");
             profile->name = NULL;
             profile->name_length = 0;
         }
@@ -936,7 +936,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             /* Free the main object */
             gs_free_object(mem, profile->spotnames, "rc_free_icc_profile");
         }
-	gs_free_object(mem, profile, cname);
+	gs_free_object(mem, profile, "rc_free_icc_profile");
     }
 }
 
@@ -951,7 +951,7 @@ gsicc_init_iccmanager(gs_state * pgs)
     for (k = 0; k < 4; k++) {
         pname = default_profile_params[k].path;
         namelen = strlen(pname);
-        code = gsicc_set_profile(iccmanager, pname, namelen,
+        code = gsicc_set_profile(iccmanager, pname, namelen+1,
             default_profile_params[k].default_type);
         if (code < 0)
             return gs_rethrow(code, "cannot find default icc profile");
