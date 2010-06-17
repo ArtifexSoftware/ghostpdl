@@ -82,8 +82,6 @@ struct gs_show_enum_s {
     int ftx, fty;		/* transformed font translation */
     /* Following are updated dynamically */
     gs_glyph (*encode_char)(gs_font *, gs_char, gs_glyph_space_t);  /* copied from font */
-    gs_log2_scale_point fapi_log2_scale; /* scaling factors for oversampling with FAPI, -1 = not valid */
-    gs_point fapi_glyph_shift;          /* glyph shift for FAPI-handled font */
     gx_device_memory *dev_cache;	/* cache device */
     gx_device_memory *dev_cache2;	/* underlying alpha memory device, */
 				/* if dev_cache is an alpha buffer */

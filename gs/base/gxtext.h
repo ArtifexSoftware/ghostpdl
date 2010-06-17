@@ -109,6 +109,9 @@ rc_free_proc(rc_free_text_enum);
     ulong text_enum_id; /* debug purpose only - not used by algorythm. */\
     /* The following is controlled by a device. */\
     bool device_disabled_grid_fitting;\
+    /* Following two members moved from the show enumerator */\
+    gs_log2_scale_point fapi_log2_scale; /* scaling factors for oversampling with FAPI, -1 = not valid */\
+    gs_point fapi_glyph_shift;          /* glyph shift for FAPI-handled font */\
     /* The following are used to return information to the client. */\
     gs_text_returned_t returned
 /* The typedef is in gstext.h. */
