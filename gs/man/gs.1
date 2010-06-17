@@ -208,6 +208,13 @@ whereas \fB\-sname=35\fR is equivalent to
 .br
 	/name (35) def
 .TP
+.B \-P-
+Makes Ghostscript not look first in the current directory for library files
+(unless, of course, the first explicitly supplied directory is "." in \fB-I\fR).
+Look first in the current directory for library files (\fB-P\fR) is currently
+the default. See also the \fBINITIALIZATION FILES\fR section below, and bundled 
+\fBUse.htm\fR for detailed discussion on search paths and how Ghostcript find files.
+.TP
 .B \-q
 Quiet startup: suppress normal startup messages, and also do the
 equivalent of \fB\-dQUIET\fR.
