@@ -1738,6 +1738,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
 /* Shared code between all the PS types whereby we mash together all the
    components into a single CLUT.  Not preferable in general but necessary
    when the PS components do not map easily into the ICC forms */
+static void
 gsicc_create_mashed_clut(gsicc_lutatob *icc_luta2bparts, 
                          icHeader *header, gx_color_lookup_table *Table,
                          const gs_color_space *pcs, gs_range *ranges, 
