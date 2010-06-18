@@ -1579,6 +1579,8 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
 static void
 gsicc_create_free_luta2bpart(gs_memory_t *memory, gsicc_lutatob *icc_luta2bparts)
 {
+    /* Note that white_point, black_point and matrix are not allocated but
+       are on the local stack */
     gs_free_object(memory, icc_luta2bparts->a_curves, 
                     "gsicc_create_free_luta2bpart");
     gs_free_object(memory, icc_luta2bparts->b_curves, 
@@ -1604,6 +1606,11 @@ gsicc_create_init_luta2bpart(gsicc_lutatob *icc_luta2bparts)
     icc_luta2bparts->clut = NULL;
     icc_luta2bparts->m_curves = NULL;
     icc_luta2bparts->cam = NULL;
+    icc_luta2bparts->matrix = NULL;
+    icc_luta2bparts->white_point = NULL;
+    icc_luta2bparts->black_point = NULL;
+    icc_luta2bparts->num_in = 0;
+    icc_luta2bparts->num_out = 0;
 }
 
 static void
@@ -2130,7 +2137,6 @@ gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts,
     int k;
     bool input_range_ok;
 
-    gsicc_create_init_luta2bpart(icc_luta2bparts);
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
     gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
     setheader_common(header);
@@ -2224,13 +2230,14 @@ gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     int code;
 
     /* Fill in the uncommon stuff */
+    gsicc_create_init_luta2bpart(&icc_luta2bparts);
     header->colorSpace = icSig4colorData;
     icc_luta2bparts.num_in = 4;
 
     /* The a curves stored as def procs */
     if (has_defg_procs) {
         icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
-            4*CURVE_SIZE*sizeof(float),"gsicc_create_fromdef");
+            4*CURVE_SIZE*sizeof(float),"gsicc_create_fromdefg");
         curr_pos = icc_luta2bparts.a_curves;
         memcpy(curr_pos,&(pcie->caches_defg.DecodeDEFG->floats.values[0]),
                 CURVE_SIZE*sizeof(float));
@@ -2283,6 +2290,8 @@ gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in,
                          (def_caches)[1].floats.params.is_identity && 
                          (def_caches)[2].floats.params.is_identity));
     int code;
+    
+    gsicc_create_init_luta2bpart(&icc_luta2bparts);
 
     header->colorSpace = icSig3colorData;
     icc_luta2bparts.num_in = 3;
