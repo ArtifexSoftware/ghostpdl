@@ -282,26 +282,27 @@
     { % stack: <length> <working_str> <loc> <string>
       % Now that we have line, get obj num, ref num, and 'obj'.  Verify that each
       % of these is correct type.
-      /integertype typed_token {	% get obj number
-        /integertype typed_token {	% get ref number
-          /nametype typed_token {	% get 'obj' text
+      (obj) search {
+        exch pop exch pop
+        /integertype typed_token {	% get obj number
+          /integertype typed_token {	% get ref number
 	    pop				% pop remaining string
-	    /obj eq {			% verify name is 'obj'
-	      % make sure we have room in the arrays.  We work in increments
-	      % of 20 each time we increase the size.
-	      1 index 20 add 20 idiv 20 mul
-	      growPDFobjects
-	      % save xref parameters into ObjectStream, Objects and Generations
-	      1 index 0			% rearrange parms for setxrefentry
-	      4 index PDFoffset sub 3 index
-	      //true setxrefentry	% save parameters
-	      pop pop pop pop		% clear parameters
-	    } if			% check if name is 'obj'
-          } if				% check if we got 'obj" string
-          pop				% remove ref number
-        } if				% check if we got ref number
-        pop				% remove obj number
-      } if				% check if we got object number
+	    % make sure we have room in the arrays.  We work in increments
+	    % of 20 each time we increase the size.
+	    1 index 20 add 20 idiv 20 mul
+	    growPDFobjects
+	    % save xref parameters into ObjectStream, Objects and Generations
+	    1 index 0			% rearrange parms for setxrefentry
+	    4 index PDFoffset sub 3 index
+	    //true setxrefentry	% save parameters
+	    pop pop pop pop		% clear parameters
+            pop				% remove ref number
+          } if				% check if we got ref number
+          pop				% remove obj number
+        } if				% check if we got object number
+      } {
+        pop
+      } ifelse
     } if				% check if got a string from readline
     pop					% remove location
     % Check if we are approaching the end of the file.  We do not want to
