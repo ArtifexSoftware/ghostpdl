@@ -152,6 +152,12 @@ JSRCDIR=jpeg
 PNGSRCDIR=libpng
 !endif
 
+!ifndef TIFFSRCDIR
+TIFFSRCDIR=tiff$(D)
+TIFFCONFIG_SUFFIX=.vc
+TIFFPLATFORM=win32
+!endif
+
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
@@ -572,6 +578,10 @@ $(GENDEV_XE): $(GLSRCDIR)\gendev.c $(GENDEV_DEPS)
 $(GENHT_XE): $(PSSRCDIR)\genht.c $(GENHT_DEPS)
 	$(CCAUX) $(GENHT_CFLAGS) $(PSSRCDIR)\genht.c $(CCAUX_TAIL)
 
+MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(winplat_) $(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ)
+$(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS)
+	$(COMPAUX) -I$(GLSRCDIR) -I$(INCDIR) -L$(LIBDIR)  -I$(GLOBJ) -I$(ZSRCDIR) @$(GLGENDIR)\ccf32.tr -e$(MKROMFS_XE) $(GLSRC)mkromfs.c $(MKROMFS_OBJS) $(CCAUX_TAIL)
+
 # ----------------------------- Main program ------------------------------ #
 
 LIBCTR=$(PSGEN)libc32.tr
@@ -638,6 +648,11 @@ $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ)\
 	echo $(LIBDIR)\c0d32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
+# Probably no need to build the def - hence commented out for the time being.
+$(BINDIR)\$(GSDLL).lib : $(GSDLL_DLL) $(PSSRCDIR)\gsdll32.def
+	#impdef $(PSSRCDIR)\gsdll32.def $(GSDLL_DLL)
+	implib $(BINDIR)\$(GSDLL).lib $(PSSRCDIR)\gsdll32.def
+
 !else
 # The big graphical EXE
 $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
@@ -662,6 +677,9 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 
 
 # ---------------------- Setup and uninstall programs ---------------------- #
+
+$(MAKE_FILELIST_XE): $(PSSRC)mkfilelt.cpp
+	$(COMPAUX) -I$(GLSRCDIR) -I$(INCDIR) -L$(LIBDIR) -L$(LIBDIR)\PSDK -W -O -e$(MAKE_FILELIST_XE) $(PSSRC)mkfilelt.cpp $(CCAUX_TAIL)
 
 !if $(MAKEDLL)
 
