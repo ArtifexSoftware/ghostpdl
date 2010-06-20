@@ -1657,7 +1657,8 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     init_tag(tag_list, &last_tag, icSigChromaticAdaptationTag, 9*4); /* chad tag */
 
     /* Get the tag size of the A2B0 with the lutAtoBType */
-    tag_size = getsize_lutAtoBtype(lutatobparts);
+    /* Compensate for init_tag() adding DATATYPE_SIZE */
+    tag_size = getsize_lutAtoBtype(lutatobparts) - DATATYPE_SIZE;
     init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
     /* Add all the tag sizes to get the new profile size */
     for(k = 0; k < num_tags; k++) {
