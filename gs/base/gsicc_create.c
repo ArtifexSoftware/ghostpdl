@@ -550,31 +550,17 @@ ulong swapbytes32(ulong input)
 static void
 write_bigendian_4bytes(unsigned char *curr_ptr,ulong input)
 {
-#if !arch_is_big_endian
-   *curr_ptr ++= ((0x000000ff) & (input >> 24));
-   *curr_ptr ++= ((0x000000ff) & (input >> 16));
-   *curr_ptr ++= ((0x000000ff) & (input >> 8));
-   *curr_ptr ++= ((0x000000ff) & (input));
-#else   
-   *curr_ptr ++= ((0x000000ff) & (input));
-   *curr_ptr ++= ((0x000000ff) & (input >> 8));
-   *curr_ptr ++= ((0x000000ff) & (input >> 16));
-   *curr_ptr ++= ((0x000000ff) & (input >> 24));
-#endif
-
-
+   *curr_ptr++ = (0xff & (input >> 24));
+   *curr_ptr++ = (0xff & (input >> 16));
+   *curr_ptr++ = (0xff & (input >> 8));
+   *curr_ptr++ = (0xff & input);
 }
 
 static void
 write_bigendian_2bytes(unsigned char *curr_ptr,ushort input)
 {
-#if !arch_is_big_endian
-   *curr_ptr ++= ((0x000ff) & (input >> 8));
-   *curr_ptr ++= ((0x000ff) & (input));
-#else   
-   *curr_ptr ++= ((0x000000ff) & (input));
-   *curr_ptr ++= ((0x000000ff) & (input >> 8));
-#endif
+   *curr_ptr++ = (0xff & (input >> 8));
+   *curr_ptr++ = (0xff & input);
 }
 
 static void
