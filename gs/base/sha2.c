@@ -136,8 +136,8 @@ typedef u_int64_t sha2_word64;	/* Exactly 8 bytes */
 
 #endif /* SHA2_USE_INTTYPES_H */
 
-/* 'Softies have their own 64-bit siffix */
-#if defined(_MSC_VER)
+/* Microsoft/Borland/Intel have their own 64-bit siffix */
+#if defined(_MSC_VER) || defined( __BORLANDC__)
 #  define ULL(x) x##ui64
 #else
 #  define ULL(x) x##ULL
