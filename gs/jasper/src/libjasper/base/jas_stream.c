@@ -417,7 +417,11 @@ jas_stream_t *jas_stream_tmpfile()
 #if defined(HAVE_MKSTEMP) || defined(_WIN32)
 #ifdef _WIN32
 #define C_PATHSEP '\\'
+#ifndef __BORLANDC__
+/* borland defines P_tmpdir but not _P_tmpdir;
+   MSVC does the opposite */
 #define P_tmpdir _P_tmpdir
+#endif
 #else /* _WIN32 */
 #define C_PATHSEP '/'
 #endif /* _WIN32 */
