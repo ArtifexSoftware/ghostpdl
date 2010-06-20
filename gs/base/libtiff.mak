@@ -168,9 +168,14 @@ $(TIFFOBJ)tif_zip.$(OBJ) : $(TIFFSRC)/libtiff/tif_zip.c $(TIFFDEP)
 $(TIFFOBJ)tif_win32.$(OBJ) : $(TIFFSRC)/libtiff/tif_win32.c $(TIFFDEP)
 	$(CC) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_) $(TIFFO_)tif_win32.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_win32.c
 
-$(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) : $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c $(TIFFDEP)
-	$(TIFFCC) $(TIFFO_)tif_$(TIFFPLATFORM).$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c
+## Generic target:
+## we may need to add targets for openvms, mac classics, os2, etc later. For the time
+## being only win32 and unix (including mac os x) are supported.
+#$(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) : $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c $(TIFFDEP)
+#	$(TIFFCC) $(TIFFO_)tif_$(TIFFPLATFORM).$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c
 
+$(TIFFOBJ)tif_unix.$(OBJ) : $(TIFFSRC)/libtiff/tif_unix.c $(TIFFDEP)
+	$(TIFFCC) $(TIFFO_)tif_unix.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_unix.c
 
 $(TIFFGEN)tif_config.h: $(TIFFCONFIG)
 	$(CP_) $(TIFFCONFIG) $(TIFFGEN)tif_config.h
