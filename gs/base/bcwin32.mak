@@ -542,6 +542,11 @@ CCAUX=$(COMPAUX) -I$(GLSRCDIR) -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O
 CCAUX_TAIL=
 
 $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
+	-mkdir $(PSOBJDIR)
+	-mkdir $(PSGENDIR)
+	-mkdir $(GLOBJDIR)
+	-mkdir $(GLGENDIR)
+	-mkdir $(BINDIR)
 	echo -a1 -d -r -w-par -w-stu -G -N -X -I$(INCDIR) > $(GLGENDIR)\ccf32.tr
 	echo $(CCFLAGS0) -DCHECK_INTERRUPTS >> $(GLGENDIR)\ccf32.tr
 
