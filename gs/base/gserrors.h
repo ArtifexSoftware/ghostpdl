@@ -42,4 +42,7 @@
 
 #define gs_error_Fatal (-100)
 
+/* Need the remap color error for high level pattern support */
+#define gs_error_Remap_Color (-107)
+
 #endif /* gserrors_INCLUDED */
