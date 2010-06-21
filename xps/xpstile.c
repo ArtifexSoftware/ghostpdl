@@ -114,6 +114,91 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
     return 0;
 }
 
+int xps_high_level_pattern(xps_context_t *ctx)
+{
+    gs_matrix m;
+    gs_rect bbox;
+    gs_fixed_rect clip_box;
+    gx_color_tile *ctile;
+    int code;
+    gx_device_color *pdc = gs_currentdevicecolor_inline(ctx->pgs);
+    const gs_client_pattern *ppat = gs_getpattern(&pdc->ccolor);
+    struct tile_closure_s *c = ppat->client_data;
+    gs_pattern1_instance_t *pinst =
+        (gs_pattern1_instance_t *)gs_currentcolor(ctx->pgs)->pattern;
+
+    code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)ctx->pgs, 
+        pinst, ctx->pgs->device->color_info.depth);
+    if (code < 0)
+        return code;
+
+    code = gs_gsave(ctx->pgs);
+    if (code < 0)
+        return code;
+
+    dev_proc(ctx->pgs->device, get_initial_matrix)(ctx->pgs->device, &m);
+    gs_setmatrix(ctx->pgs, &m);
+    code = gs_bbox_transform(&ppat->BBox, &ctm_only(ctx->pgs), &bbox);
+    if (code < 0) {
+        gs_grestore(ctx->pgs);
+            return code;
+    }
+    clip_box.p.x = float2fixed(bbox.p.x);
+    clip_box.p.y = float2fixed(bbox.p.y);
+    clip_box.q.x = float2fixed(bbox.q.x);
+    clip_box.q.y = float2fixed(bbox.q.y);
+    code = gx_clip_to_rectangle(ctx->pgs, &clip_box);
+    if (code < 0) {
+        gs_grestore(ctx->pgs);
+        return code;
+    }
+    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, pinst->id, pinst, 
+        pattern_manage__start_accum);
+    if (code < 0) {
+        gs_grestore(ctx->pgs);
+        return code;
+    }
+
+    xps_paint_tiling_brush(&pdc->ccolor, ctx->pgs); 
+
+    code = gs_grestore(ctx->pgs);
+    if (code < 0) 
+        return code;
+
+    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, gx_no_bitmap_id, NULL, 
+        pattern_manage__finish_accum);
+
+    return code;
+}
+
+static int xps_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
+{
+    const gs_client_pattern *ppat = gs_getpattern(pcc);
+    struct tile_closure_s *c = ppat->client_data;
+    xps_context_t *ctx = c->ctx;
+    int code;
+
+    /* pgs->device is the newly created pattern accumulator, but we want to test the device
+     * that is 'behind' that, the actual output device, so we use the one from
+     * the saved XPS graphics state.
+     */
+    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, ppat->uid.id, ppat, 
+                                pattern_manage__can_accum);
+
+    if (code == 1) {
+        /* Device handles high-level patterns, so return 'remap'.
+         * This closes the internal accumulator device, as we no longer need
+         * it, and the error trickles back up to the PDL client. The client
+         * must then take action to start the device's accumulator, draw the
+         * pattern, close the device's accumulator and generate a cache entry.
+         */
+        return_error(gs_error_Remap_Color);
+    } else {
+        xps_paint_tiling_brush(pcc, pgs);
+        return 0;
+    }
+}
+
 int
 xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root,
         int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user)
@@ -225,7 +310,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         uid_set_UniqueID(&gspat.uid, gs_next_ids(ctx->memory, 1));
         gspat.PaintType = 1;
         gspat.TilingType = 1;
-        gspat.PaintProc = xps_paint_tiling_brush;
+        gspat.PaintProc = xps_remap_pattern;
         gspat.client_data = &closure;
 
         gspat.XStep = viewbox.q.x - viewbox.p.x;

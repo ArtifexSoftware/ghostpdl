@@ -54,6 +54,7 @@
 
 #include "gxfont.h"
 #include "gxchar.h"
+#include "gxcolor2.h" /* Required for definition of gs_pattern1_instance_t */
 #include "gxtype1.h"
 #include "gxfont1.h"
 #include "gxfont42.h"

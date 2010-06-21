@@ -118,6 +118,10 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->instance = instance;
     ctx->memory = pmem;
     ctx->pgs = pgs;
+    /* Declare PDL client support for high level patterns, for the benefit
+     * of pdfwrite and other high-level devices
+     */
+    ctx->pgs->have_pattern_streams = true; 
     ctx->fontdir = NULL;
     ctx->file = NULL;
     ctx->zip_count = 0;
