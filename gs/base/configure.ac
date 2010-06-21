@@ -149,6 +149,20 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h fcntl.h limits.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h syslog.h unistd.h])
 
+dnl --------------------------------------------------
+dnl Check for *BSD and apply BSD Make workaround
+dnl - BSD Make treats obj special and cd into it first.
+dnl --------------------------------------------------
+
+OBJDIR_BSDMAKE_WORKAROUND=./obj
+
+case `uname` in
+	*BSD)
+	OBJDIR_BSDMAKEWORKAOROUND="./notobj"
+	;;
+esac
+AC_SUBST(OBJDIR_BSDMAKE_WORKAROUND)
+
 # for gdev3b1.c (AT&T terminal interface)
 AC_CHECK_HEADER([sys/window.h])
 
