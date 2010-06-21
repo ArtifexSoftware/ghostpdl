@@ -1013,7 +1013,8 @@ echo !include "base\bcwin32.mak" &gt;makefile
 </code></blockquote>
 
 <p>
-To run the <code>make</code> program, give the commmand
+To run the <code>make</code> program, give the commmand (after issuing e.g.
+<code>set PATH=C:\Borland\BCC55\Bin;&percnt;PATH&percnt;</code> to set the appropriate <code>PATH</code>):
 
 <blockquote><code>
 make
@@ -1093,12 +1094,22 @@ restart the make process. All targets are built succesfully if this step is igno
 don't know if the targets are correct although they seem to run OK.</strong></tt></li>
 <li>To prevent the compiler terminating because too
 many warning messages have been generated, copy the file&nbsp;<tt><strong>bcc32.cfg</strong></tt> to
-the <tt><strong>bin</strong></tt> directory of the compiler suite using the following command: e.g.</li>
+the <tt><strong>bin</strong></tt> directory of the compiler suite using the following command: e.g.
 
 <blockquote><code>
 copy base\bcc32.cfg C:\Borland\BCC55\Bin\bcc32.cfg
 </code></blockquote>
-
+</li>
+<li>The free version of Borland C++Builder 5 does not ship with the Borland assembler
+<code>tasm32</code>. You may need to edit <code>lcms/include/lcms.h</code> to switch
+off the <code>USE_ASSEMBLER</code> default and use <code>USE_FLOAT</code> or
+<code>USE_C</code> instead.
+</li>
+<li>Borland <code>make</code> has a lower limit to the number of dependencies than other
+<code>make</code>(e.g. dependencies of <code>gdevp14</code> near line 2690 of
+<code>base/lib.mak</code> after the icc merge). One workaround, when using a
+clean/fresh source directory, is simply deleting dependencies on header files
+which are present and not likely to change.
 </ul>
 
 <h3><a name="Microsoft_build"></a>Microsoft Environment</h3>
