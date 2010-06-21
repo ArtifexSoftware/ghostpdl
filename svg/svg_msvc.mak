@@ -146,7 +146,8 @@ PDL_INCLUDE_FLAGS=/DSVG_INCLUDED
 
 # Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
 !ifndef COMPILE_INITS
-COMPILE_INITS=0
+# SVG only needs the ICC profiles from the %rom% file system.
+COMPILE_INITS=1
 !endif
 
 # configuration assumptions

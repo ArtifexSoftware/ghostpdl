@@ -94,6 +94,7 @@ svg_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 	    sizeof(svg_context_t), "svg_imp_allocate_interp_instance");
 
     pgs = gs_state_alloc(pmem);
+    gsicc_init_iccmanager(pgs);
 
     memset(ctx, 0, sizeof(svg_context_t));
 
@@ -182,6 +183,10 @@ svg_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     dputs("-- svg_imp_set_device --\n");
 
     gs_opendevice(pdevice);
+
+    code = gsicc_init_device_profile(ctx->pgs, pdevice);
+    if (code < 0)
+        return code;
 
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)

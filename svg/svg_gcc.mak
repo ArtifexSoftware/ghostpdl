@@ -75,6 +75,9 @@ TOP_OBJ?=$(SVG_TOP_OBJ)
 
 PDL_INCLUDE_FLAGS?=-DSVG_INCLUDED
 
+# SVG only needs the ICC profiles from the %rom% file system.
+COMPILE_INITS?=1
+
 include $(MAINSRCDIR)/pcl6_gcc.mak
 
 # Subsystems
