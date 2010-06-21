@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+1;2401;0c<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>How to install Ghostscript</title>
@@ -216,6 +216,13 @@ in the self-extracting archive) supports a primitive form of
 unattended installation: if it is invoked with exactly one argument,
 that one argument is treated as the target installation directory for
 unattended silent batch installation.
+
+<p>The NSIS-based installer (see also <a href="Release.htm">Release.htm</a>
+supports a few standard NSIS options: <code>/NCRC</code> disables the CRC check,
+<code>/S</code> runs the installer or uninstaller silently, <code>/D</code>
+sets the default installation directory (It must be the last parameter
+used in the command line and must not contain any quotes, even if the path
+contains spaces. Only absolute paths are supported.)
 
 <p>
 After installing Ghostscript, it is strongly recommended that you 

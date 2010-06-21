@@ -676,6 +676,13 @@ archive <code>gsNNNw32.exe</code> and an ordinary zip file
 If you do not have WinZip Self-Extractor, you can use
 <code>nmake zip</code> to make <b><tt>gsNNNw32.zip</tt></b> only. 
 
+<p>Starting with Ghostscript 9.x (Summer 2010), <code>nmake nsis</code> (msvc)
+or <code>make nsis</code> (Borland) builds an nsis-based installer
+<code>gsNNNw32.exe</code>. This requires
+<a href="http://nsis.sourceforge.net/">Nullsoft Scriptable Install System</a>.
+You may need to update the path <code>MAKENSIS_XE</code> in
+<code><a href="../psi/winint.mak">winint.mak</a></code>.
+
 <h3><a name="Finishing_up"></a>Finishing up</h3>
 
 <p>

@@ -40,6 +40,15 @@ WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
 !endif
 !endif
 
+# Define the location of the NSIS makensis installer utility
+!ifndef MAKENSIS_XE
+!ifdef WIN64
+MAKENSIS_XE="C:\Program Files (x86)\NSIS\makensis.exe"
+!else
+MAKENSIS_XE="C:\Program Files\NSIS\makensis.exe"
+!endif
+!endif
+
 # Define the name and location of the zip archive maker.
 !ifndef ZIP_XE
 ZIP_XE="zip.exe" -X
@@ -316,6 +325,10 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 #	-del $(PSOBJ)about.txt
 #	-del $(PSOBJ)dialog.txt
 
+nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib
+	copy $(PSSRC)nsisinst.nsi nsisinst.nsi
+	$(MAKENSIS_XE) nsisinst.nsi
+	-del nsisinst.nsi
 
 # -------------------- Distribution source archive ------------------- #
 # This creates a zip file containing the files needed to build 
