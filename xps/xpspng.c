@@ -78,12 +78,16 @@ xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen)
     png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
             NULL, NULL, NULL,
             mem, xps_png_malloc, xps_png_free);
-    if (!png)
-        return gs_throw(-1, "png_create_read_struct");
+    if (!png) {
+        gs_warn("png_create_read_struct");
+        return 0;
+    }
 
     info = png_create_info_struct(png);
-    if (!info)
-        return gs_throw(-1, "png_create_info_struct");
+    if (!info) {
+        gs_warn("png_create_info_struct");
+        return 0;
+    }
 
     png_set_read_fn(png, &io, xps_png_read);
     png_set_crc_action(png, PNG_CRC_WARN_USE, PNG_CRC_WARN_USE);
@@ -95,7 +99,8 @@ xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen)
     if (setjmp(png_jmpbuf(png)))
     {
         png_destroy_read_struct(&png, &info, NULL);
-        return gs_throw(-1, "png reading failed");
+        gs_warn("png reading failed");
+        return 0;
     }
 
     /*
@@ -106,6 +111,7 @@ xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen)
 
     switch (png_get_color_type(png, info))
     {
+    case PNG_COLOR_TYPE_PALETTE:
     case PNG_COLOR_TYPE_GRAY:
     case PNG_COLOR_TYPE_RGB:
         has_alpha = 0;
@@ -117,7 +123,9 @@ xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen)
         break;
 
     default:
-        return gs_throw(-1, "cannot handle this png color type");
+        gs_warn("cannot handle this png color type");
+        has_alpha = 0;
+        break;
     }
 
     /*
