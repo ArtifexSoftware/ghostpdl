@@ -656,8 +656,7 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
         break;
     }
 
-    /* Note xres and yres could be 0 even if unit was set.  If so
-       default to 96dpi */
+    /* Note xres and yres could be 0 even if unit was set. If so default to 96dpi */
     if (image->xres == 0 || image->yres == 0)
     {
         image->xres = 96;
@@ -899,8 +898,8 @@ xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
         tiff->iccprofile = (unsigned char*) gs_alloc_bytes(mem, count , "TIFF ICC Profile");
         if (!tiff->iccprofile)
             return gs_throw(-1, "could not allocate embedded icc profile");
-        /* ICC profile data type is set to UNDEFINED. TBYTE reading not correct
-           in xps_read_tiff_tag_value */
+        /* ICC profile data type is set to UNDEFINED.
+         * TBYTE reading not correct in xps_read_tiff_tag_value */
         xps_read_tiff_bytes((unsigned char *) tiff->iccprofile, tiff, value, count);
         tiff->profile_size = count;
         break;
@@ -938,9 +937,7 @@ xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
         return gs_throw(-1, "tiled tiffs not supported");
 
     default:
-        /*
-           printf("unknown tag: %d t=%d n=%d\n", tag, type, count);
-         */
+        /* printf("unknown tag: %d t=%d n=%d\n", tag, type, count); */
         break;
     }
 

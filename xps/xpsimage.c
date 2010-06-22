@@ -162,14 +162,14 @@ xps_decode_image(xps_context_t *ctx, char *profilename, int profile_comp,
     else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
     {
         error = xps_decode_png(ctx->memory, buf, len, image,
-                               &embedded_profile, &profile_size);
+            &embedded_profile, &profile_size);
         if (error)
             return gs_rethrow(error, "could not decode image");
     }
     else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
     {
         error = xps_decode_hdphoto(ctx->memory, buf, len, image,
-                                   &embedded_profile, &profile_size);
+            &embedded_profile, &profile_size);
         if (error)
             return gs_rethrow(error, "could not decode image");
     }
@@ -192,7 +192,7 @@ xps_decode_image(xps_context_t *ctx, char *profilename, int profile_comp,
     {
         if (profile_comp == image->comps)
         {
-            /* Profile is OK for this image.  Change color space type. */
+            /* Profile is OK for this image. Change color space type. */
             if (has_alpha)
             {
                 image->colorspace = XPS_ICC_A;
@@ -204,17 +204,17 @@ xps_decode_image(xps_context_t *ctx, char *profilename, int profile_comp,
         }
     }
 
-    /* See if we need to use the embedded profile.  Only used if we
-       have one and a valid external profile was not specified */
+    /* See if we need to use the embedded profile.
+     * Only used if we have one and a valid external profile was not specified */
     image->embeddedprofile = false;
-    if (image->colorspace != XPS_ICC_A && image->colorspace != XPS_ICC &&
-        embedded_profile != NULL)
+    if (image->colorspace != XPS_ICC_A && image->colorspace != XPS_ICC && embedded_profile != NULL)
     {
-        /* See if we can set up to use the embedded profile.  Note
-           these profiles are NOT added to the xps color cache.
-           As such, they must be destroyed when the image brush ends.
-           Hence we need to make a note that we are using an embedded
-           profile. */
+        /* See if we can set up to use the embedded profile. Note
+        these profiles are NOT added to the xps color cache.
+        As such, they must be destroyed when the image brush ends.
+        Hence we need to make a note that we are using an embedded
+        profile.
+        */
 
         /* Create the profile */
         iccprofile = gsicc_profile_new(NULL, ctx->memory, NULL, 0);
@@ -231,14 +231,13 @@ xps_decode_image(xps_context_t *ctx, char *profilename, int profile_comp,
 
         if (iccprofile->profile_handle == NULL)
         {
-            /* Problem with profile.  Just ignore it */
+            /* Problem with profile. Just ignore it */
             gsicc_profile_reference(iccprofile, -1);
         }
         else
         {
             /* Check the profile is OK for channel data count.
-               Need to be careful here since alpha is put into
-               comps */
+             * Need to be careful here since alpha is put into comps */
             if ((image->comps - has_alpha) == gsicc_getsrc_channel_count(iccprofile))
             {
                 /* Use the embedded profile */
@@ -255,7 +254,7 @@ xps_decode_image(xps_context_t *ctx, char *profilename, int profile_comp,
             }
             else
             {
-                /* Problem with profile.  Just ignore it */
+                /* Problem with profile. Just ignore it */
                 gsicc_profile_reference(iccprofile, -1);
             }
 

@@ -588,10 +588,9 @@ static void
 xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
 {
     /* ArcSegment pretty much follows the SVG algorithm for converting an
-       arc in endpoint representation to an arc in centerpoint
-       representation.  Once in centerpoint it can be given to the
-       graphics library in the form of a postscript arc.
-     */
+     * arc in endpoint representation to an arc in centerpoint
+     * representation. Once in centerpoint it can be given to the
+     * graphics library in the form of a postscript arc. */
 
     float rotation_angle;
     int is_large_arc, is_clockwise;

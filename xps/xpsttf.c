@@ -115,8 +115,8 @@ xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 static gs_char
 xps_true_callback_decode_glyph(gs_font *pfont, gs_glyph glyph)
 {
-    /* We should do a reverse cmap lookup here to match PS/PDF. */
-    /* However, a complete rearchitecture of our text and font processing
+    /* We should do a reverse cmap lookup here to match PS/PDF.
+     * However, a complete rearchitecture of our text and font processing
      * would be necessary to match XPS unicode mapping with the
      * cluster maps. Alas, we cheat similarly to PCL. */
     return xps_last_char;
@@ -157,7 +157,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     if (table_offset < 0)
         return gs_throw(-1, "no post table");
 
-       /* this shoudn't happen but... */
+    /* this shoudn't happen but... */
     if ( table_length == 0 )
         return gs_throw(-1, "zero-size post table");
 
@@ -217,7 +217,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
         glyph_name_index -= 258;
 
         /* The string we want is the index'th pascal string,
-           so we "hop" to each length byte "index" times. */
+         * so we "hop" to each length byte "index" times. */
         while (glyph_name_index > 0)
         {
             pascal_stringp += ((int)(*pascal_stringp)+1);
@@ -235,8 +235,8 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
             return gs_throw(-1, "data out of range");
 
         /* sigh - we have to allocate a copy of the data - by the
-           time a high level device makes use of it the font data
-           may be freed.  This is a necessary leak. */
+         * time a high level device makes use of it the font data
+         * may be freed. This is a necessary leak. */
         mydata = gs_alloc_bytes(pfont->memory, pstr->size + 1, "glyph to name");
         if ( mydata == 0 )
             return -1;
@@ -244,7 +244,6 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
         pstr->data = mydata;
 
         mydata[pstr->size] = 0;
-        // dprintf2("glyph name (tbl) %d = %s\n", glyph, pstr->data);
 
         return 0;
     }

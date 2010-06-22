@@ -121,7 +121,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     /* Declare PDL client support for high level patterns, for the benefit
      * of pdfwrite and other high-level devices
      */
-    ctx->pgs->have_pattern_streams = true; 
+    ctx->pgs->have_pattern_streams = true;
     ctx->fontdir = NULL;
     ctx->file = NULL;
     ctx->zip_count = 0;
@@ -203,7 +203,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     if (code < 0)
         goto cleanup_setdevice;
 
-    gs_setaccuratecurves(ctx->pgs, true);  /* NB not sure */
+    gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);
 
     /* gsave and grestore (among other places) assume that */
@@ -270,9 +270,7 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *cursor)
     if (!instance->scratch_file)
     {
         instance->scratch_file = gp_open_scratch_file(ctx->memory,
-                                                      "ghostxps-scratch-",
-                                                      instance->scratch_name,
-                                                      "wb");
+            "ghostxps-scratch-", instance->scratch_name, "wb");
         if (!instance->scratch_file)
         {
             gs_catch(gs_error_invalidfileaccess, "cannot open scratch file");
@@ -409,11 +407,11 @@ xps_imp_remove_device(pl_interp_instance_t *pinstance)
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
 
-    int code = 0;       /* first error status encountered */
+    int code = 0; /* first error status encountered */
     int error;
 
-    /* return to original gstate  */
-    gs_grestore_only(ctx->pgs);        /* destroys gs_save stack */
+    /* return to original gstate */
+    gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
 
     /* Deselect device */
     /* NB */

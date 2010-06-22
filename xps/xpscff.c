@@ -770,7 +770,7 @@ xps_post_callback_build_char(gs_show_enum *penum, gs_state *pgs,
     w2[0] = 0;
     w2[1] = 1;
 
-    pbbox =  &pt1->FontBBox;
+    pbbox = &pt1->FontBBox;
     w2[2] = pbbox->p.x * 0.001;
     w2[3] = pbbox->p.y * 0.001;
     w2[4] = pbbox->q.x * 0.001;

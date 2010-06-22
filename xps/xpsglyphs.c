@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* XPS interpreter -  */
+/* XPS interpreter - text drawing support */
 
 #include "ghostxps.h"
 
@@ -213,8 +213,8 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
  GlyphIndices   = GlyphMapping ( ";" GlyphMapping )
  GlyphMapping   = ( [ClusterMapping] GlyphIndex ) [GlyphMetrics]
  ClusterMapping = "(" ClusterCodeUnitCount [":" ClusterGlyphCount] ")"
- ClusterCodeUnitCount = * DIGIT
- ClusterGlyphCount    = * DIGIT
+ ClusterCodeUnitCount   = * DIGIT
+ ClusterGlyphCount      = * DIGIT
  GlyphIndex     = * DIGIT
  GlyphMetrics   = "," AdvanceWidth ["," uOffset ["," vOffset]]
  AdvanceWidth   = ["+"] RealNum
@@ -603,8 +603,7 @@ xps_parse_glyphs(xps_context_t *ctx,
 
     gs_setcharmatrix(ctx->pgs, &matrix);
 
-    gs_matrix_multiply(&matrix, &font->font->orig_FontMatrix,
-                       &font->font->FontMatrix);
+    gs_matrix_multiply(&matrix, &font->font->orig_FontMatrix, &font->font->FontMatrix);
 
     code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
     if (code)

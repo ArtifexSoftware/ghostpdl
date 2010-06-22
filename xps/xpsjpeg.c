@@ -30,7 +30,7 @@ xps_report_error(stream_state * st, const char *str)
 }
 
 int
-xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image, 
+xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
                 unsigned char **profile, int *profile_size)
 {
     jpeg_decompress_data jddp;
@@ -68,8 +68,9 @@ xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
     wp.ptr = 0;
     wp.limit = 0;
 
-    /* Set up to save the ICC marker APP2.  According to the spec
-       we should be getting APP1 APP2 and APP13.  Library gets APP0 and APP14 */
+    /* Set up to save the ICC marker APP2.
+     * According to the spec we should be getting APP1 APP2 and APP13.
+     * Library gets APP0 and APP14. */
     jpeg_save_markers(&(jddp.dinfo), 0xe2, 0xFFFF);
 
     code = s_DCTD_template.process((stream_state*)&state, &rp, &wp, true);
@@ -78,15 +79,15 @@ xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
 
     /* Check if we had an ICC profile */
     curr_marker = jddp.dinfo.marker_list;
-    while (curr_marker != NULL) 
+    while (curr_marker != NULL)
     {
         if (curr_marker->marker == 0xe2)
         {
-            /* Found ICC profile. Create a buffer and copy over now. Strip
-               JPEG APP2 14 byte header */
+            /* Found ICC profile. Create a buffer and copy over now.
+             * Strip JPEG APP2 14 byte header */
             *profile = (unsigned char*) gs_alloc_bytes(mem, curr_marker->data_length - 14, "JPEG ICC Profile");
             if (*profile != NULL)
-            {   
+            {
                 /* If we can't create it, just ignore */
                 memcpy(*profile, &(curr_marker->data[14]), (curr_marker->data_length) - 14);
                 *profile_size = curr_marker->data_length - 14;

@@ -123,7 +123,8 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
     return 0;
 }
 
-int xps_high_level_pattern(xps_context_t *ctx)
+int
+xps_high_level_pattern(xps_context_t *ctx)
 {
     gs_matrix m;
     gs_rect bbox;
@@ -136,7 +137,7 @@ int xps_high_level_pattern(xps_context_t *ctx)
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(ctx->pgs)->pattern;
 
-    code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)ctx->pgs, 
+    code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)ctx->pgs,
         pinst, ctx->pgs->device->color_info.depth);
     if (code < 0)
         return code;
@@ -161,26 +162,27 @@ int xps_high_level_pattern(xps_context_t *ctx)
         gs_grestore(ctx->pgs);
         return code;
     }
-    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, pinst->id, pinst, 
+    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, pinst->id, pinst,
         pattern_manage__start_accum);
     if (code < 0) {
         gs_grestore(ctx->pgs);
         return code;
     }
 
-    xps_paint_tiling_brush(&pdc->ccolor, ctx->pgs); 
+    xps_paint_tiling_brush(&pdc->ccolor, ctx->pgs);
 
     code = gs_grestore(ctx->pgs);
-    if (code < 0) 
+    if (code < 0)
         return code;
 
-    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, gx_no_bitmap_id, NULL, 
+    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, gx_no_bitmap_id, NULL,
         pattern_manage__finish_accum);
 
     return code;
 }
 
-static int xps_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
+static int
+xps_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
 {
     const gs_client_pattern *ppat = gs_getpattern(pcc);
     struct tile_closure_s *c = ppat->client_data;
@@ -191,7 +193,7 @@ static int xps_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
      * that is 'behind' that, the actual output device, so we use the one from
      * the saved XPS graphics state.
      */
-    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, ppat->uid.id, ppat, 
+    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, ppat->uid.id, ppat,
                                 pattern_manage__can_accum);
 
     if (code == 1) {
@@ -210,7 +212,7 @@ static int xps_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
 
 int
 xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root,
-        int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user)
+    int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user)
 {
     xps_item_t *node;
     int code;
