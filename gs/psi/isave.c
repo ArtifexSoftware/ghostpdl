@@ -156,22 +156,6 @@ print_save(const char *str, uint spacen, const alloc_save_t *sav)
 /* A link to igcref.c . */
 ptr_proc_reloc(igc_reloc_ref_ptr_nocheck, ref_packed);
 
-/*
- * Structure for saved change chain for save/restore.  Because of the
- * garbage collector, we need to distinguish the cases where the change
- * is in a static object, a dynamic ref, or a dynamic struct.
- */
-typedef struct alloc_change_s alloc_change_t;
-struct alloc_change_s {
-    alloc_change_t *next;
-    ref_packed *where;
-    ref contents;
-#define AC_OFFSET_STATIC (-2)	/* static object */
-#define AC_OFFSET_REF (-1)	/* dynamic ref */
-#define AC_OFFSET_ALLOCATED (-3) /* a newly allocated ref array */
-    short offset;		/* if >= 0, offset within struct */
-};
-
 static 
 CLEAR_MARKS_PROC(change_clear_marks)
 {
@@ -519,7 +503,7 @@ alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
 
 /* Allocate a structure for recording an allocation event. */
 int
-alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, ref_packed ***ppr)
+alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, alloc_change_t **pcp)
 {
     register alloc_change_t *cp;
 
@@ -533,8 +517,7 @@ alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, ref_packed **
     cp->where = 0;
     cp->offset = AC_OFFSET_ALLOCATED;
     make_null(&cp->contents);
-    mem->changes = cp;
-    *ppr = &cp->where;
+    *pcp = cp;
     return 1;
 }
 

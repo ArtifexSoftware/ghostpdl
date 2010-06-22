@@ -18,6 +18,22 @@
 #  define idosave_INCLUDED
 
 /*
+ * Structure for saved change chain for save/restore.  Because of the
+ * garbage collector, we need to distinguish the cases where the change
+ * is in a static object, a dynamic ref, or a dynamic struct.
+ */
+typedef struct alloc_change_s alloc_change_t;
+struct alloc_change_s {
+    alloc_change_t *next;
+    ref_packed *where;
+    ref contents;
+#define AC_OFFSET_STATIC (-2)	/* static object */
+#define AC_OFFSET_REF (-1)	/* dynamic ref */
+#define AC_OFFSET_ALLOCATED (-3) /* a newly allocated ref array */
+    short offset;		/* if >= 0, offset within struct */
+};
+
+/*
  * Save a change that must be undone by restore.  We have to pass the
  * pointer to the containing object to alloc_save_change for two reasons:
  *
@@ -29,6 +45,7 @@
  * relocate the pointer to it from the change record during garbage
  * collection.
  */
+
 int alloc_save_change(gs_dual_memory_t *dmem, const ref *pcont,
 		      ref_packed *ptr, client_name_t cname);
 int alloc_save_change_in(gs_ref_memory_t *mem, const ref *pcont,
@@ -36,6 +53,6 @@ int alloc_save_change_in(gs_ref_memory_t *mem, const ref *pcont,
 /* Remove an AC_OFFSET_ALLOCATED element. */
 void alloc_save_remove(gs_ref_memory_t *mem, ref_packed *obj, client_name_t cname);
 /* Allocate a structure for recording an allocation event. */
-int alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, ref_packed ***ppr);
+int alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, alloc_change_t **pcp);
 
 #endif /* idosave_INCLUDED */
