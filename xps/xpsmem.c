@@ -110,7 +110,7 @@ xps_strlcat(char *dst, const char *src, size_t siz)
 
 #define SEP(x)  ((x)=='/' || (x) == 0)
 
-char *
+static char *
 xps_clean_path(char *name)
 {
     char *p, *q, *dotdot;

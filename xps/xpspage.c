@@ -21,6 +21,7 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
     xps_resource_t *new_dict = NULL;
     xps_item_t *node;
     char *opacity_mask_uri;
+    int code;
 
     char *transform_att;
     char *clip_att;
@@ -45,11 +46,10 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
         if (!strcmp(xps_tag(node), "Canvas.Resources") && xps_down(node))
         {
             new_dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
-            if (new_dict)
-            {
-                new_dict->parent = dict;
-                dict = new_dict;
-            }
+            if (!new_dict)
+                return gs_rethrow(-1, "cannot load Canvas.Resources");
+            new_dict->parent = dict;
+            dict = new_dict;
         }
 
         if (!strcmp(xps_tag(node), "Canvas.RenderTransform"))
@@ -83,11 +83,15 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
         xps_clip(ctx, &saved_bounds);
     }
 
-    xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    if (code)
+        return gs_rethrow(code, "cannot create transparency group");
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-        xps_parse_element(ctx, base_uri, dict, node);
+        code = xps_parse_element(ctx, base_uri, dict, node);
+        if (code)
+            return gs_rethrow(code, "cannot parse child of Canvas");
     }
 
     if (clip_att || clip_tag)
@@ -234,8 +238,14 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     for (node = xps_down(root); node; node = xps_next(node))
     {
         if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))
+        {
             dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
-        xps_parse_element(ctx, base_uri, dict, node);
+            if (!dict)
+                return gs_rethrow(-1, "cannot load FixedPage.Resources");
+        }
+        code = xps_parse_element(ctx, base_uri, dict, node);
+        if (code)
+            return gs_rethrow(code, "cannot parse child of FixedPage");
     }
 
     if (ctx->use_transparency && has_transparency)

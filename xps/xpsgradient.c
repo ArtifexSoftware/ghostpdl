@@ -56,11 +56,11 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                 rendering_params.rendering_intent = gsPERCEPTUAL;
 
                 /* Get link to map from source to sRGB */
-                icclink = gsicc_get_link((gs_imager_state*) ctx->pgs, colorspace, 
-                                            ctx->srgb, &rendering_params, 
+                icclink = gsicc_get_link((gs_imager_state*) ctx->pgs, colorspace,
+                                            ctx->srgb, &rendering_params,
                                             ctx->memory, false);
 
-                if (icclink != NULL && !icclink->is_identity) 
+                if (icclink != NULL && !icclink->is_identity)
                 {
                     /* Transform the color */
                     num_colors = gsicc_getsrc_channel_count(colorspace->cmm_icc_profile_data);
@@ -75,8 +75,8 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                     colors[count * 4 + 2] = (float) sample_out[1] / 65535.0;
                     colors[count * 4 + 3] = (float) sample_out[2] / 65535.0;
 
-                } 
-                else 
+                }
+                else
                 {
                     colors[count * 4 + 0] = sample[0];
                     colors[count * 4 + 1] = sample[1];
@@ -88,7 +88,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
             }
         }
 
-        if (icclink != NULL) 
+        if (icclink != NULL)
             gsicc_release_link(icclink);
         icclink = NULL;
         node = xps_next(node);
@@ -96,7 +96,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
     }
 
     if (count == maxcount)
-        dputs("gradient brush exceeded maximum number of gradient stops\n");
+        gs_warn("gradient brush exceeded maximum number of gradient stops\n");
 
     /* Sort the gradient stops by offset */
     done = 0;
@@ -128,7 +128,7 @@ xps_gradient_has_transparent_colors(float *offsets, float *colors, int count)
 {
     int i;
     for (i = 0; i < count; i++)
-        if (colors[i * 4 + 0] < 0.999)
+        if (colors[i * 4 + 0] < 1)
             return 1;
     return 0;
 }
@@ -546,6 +546,8 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
              */
 
             reverse = xps_reverse_function(ctx, func, fary, vary);
+            if (!reverse)
+                return gs_rethrow(-1, "could not create the reversed function");
             code = xps_draw_one_radial_gradient(ctx, reverse, 1, x1, y1, r1, x0, y0, r0);
             if (code < 0)
                 return gs_rethrow(code, "could not draw radial gradient");
@@ -714,6 +716,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
     int stop_count;
     gs_matrix transform;
     int spread_method;
+    int code;
 
     gs_rect saved_bounds;
     gs_rect bbox;
@@ -784,11 +787,15 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
 
     xps_bounds_in_user_space(ctx, &bbox);
 
-    xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
+    code = xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
+    if (code)
+        return gs_rethrow(code, "cannot create transparency group");
 
     if (ctx->opacity_only)
     {
-        draw(ctx, root, spread_method, opacity_func);
+        code = draw(ctx, root, spread_method, opacity_func);
+        if (code)
+            return gs_rethrow(code, "cannot draw gradient opacity");
     }
     else
     {
@@ -799,17 +806,23 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
 
             gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
             gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
-            draw(ctx, root, spread_method, opacity_func);
+            code = draw(ctx, root, spread_method, opacity_func);
+            if (code)
+                return gs_rethrow(code, "cannot draw gradient opacity");
             gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
 
             gs_trans_group_params_init(&tgp);
             gs_begin_transparency_group(ctx->pgs, &tgp, &bbox);
-            draw(ctx, root, spread_method, color_func);
+            code = draw(ctx, root, spread_method, color_func);
+            if (code)
+                return gs_rethrow(code, "cannot draw gradient color");
             gs_end_transparency_group(ctx->pgs);
         }
         else
         {
-            draw(ctx, root, spread_method, color_func);
+            code = draw(ctx, root, spread_method, color_func);
+            if (code)
+                return gs_rethrow(code, "cannot draw gradient color");
         }
     }
 

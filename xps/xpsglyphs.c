@@ -36,7 +36,8 @@ static inline int unhex(int i)
     return tolower(i) - 'a' + 10;
 }
 
-void xps_debug_path(xps_context_t *ctx)
+void
+xps_debug_path(xps_context_t *ctx)
 {
     segment *seg;
     curve_segment *cseg;
@@ -78,7 +79,7 @@ void xps_debug_path(xps_context_t *ctx)
  * Some fonts in XPS are obfuscated by XOR:ing the first 32 bytes of the
  * data with the GUID in the fontname.
  */
-static int
+static void
 xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
 {
     byte buf[33];
@@ -98,7 +99,10 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
     buf[i] = 0;
 
     if (i != 32)
-        return gs_throw(-1, "cannot extract GUID from part name");
+    {
+        gs_warn("cannot extract GUID from obfuscated font part name");
+        return;
+    }
 
     for (i = 0; i < 16; i++)
         key[i] = unhex(buf[i*2+0]) * 16 + unhex(buf[i*2+1]);
@@ -108,11 +112,9 @@ xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
         part->data[i] ^= key[15-i];
         part->data[i+16] ^= key[15-i];
     }
-
-    return 0;
 }
 
-static int
+static void
 xps_select_best_font_encoding(xps_font_t *font)
 {
     static struct { int pid, eid; } xps_cmap_list[] =
@@ -140,12 +142,12 @@ xps_select_best_font_encoding(xps_font_t *font)
             if (pid == xps_cmap_list[k].pid && eid == xps_cmap_list[k].eid)
             {
                 xps_select_font_encoding(font, i);
-                return 0;
+                return;
             }
         }
     }
 
-    return gs_throw(-1, "could not find a suitable cmap");
+    gs_warn("could not find a suitable cmap");
 }
 
 /*
@@ -164,33 +166,6 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
     int i;
 
     // dprintf1("flushing text buffer (%d glyphs)\n", buf->count);
-
-#if 0 /* one glyph at a time */
-
-    for (i = 0; i < buf->count; i++)
-    {
-        gs_moveto(ctx->pgs, buf->x[i], buf->y[i]);
-
-        params.operation = TEXT_FROM_SINGLE_GLYPH;
-        if (is_charpath)
-            params.operation |= TEXT_DO_FALSE_CHARPATH;
-        else
-            params.operation |= TEXT_DO_DRAW;
-        params.data.d_glyph = buf->g[i];
-        params.size = 1;
-
-        code = gs_text_begin(ctx->pgs, &params, ctx->memory, &textenum);
-        if (code != 0)
-            return gs_throw1(-1, "cannot gs_text_begin() (%d)", code);
-
-        code = gs_text_process(textenum);
-        if (code != 0)
-            return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
-
-        gs_text_release(textenum, "gslt font render");
-    }
-
-#else
 
     gs_moveto(ctx->pgs, x, y);
 
@@ -224,8 +199,6 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
 
     if (code != 0)
         return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
-
-#endif
 
     buf->count = 0;
 
@@ -264,7 +237,7 @@ xps_parse_digits(char *s, int *digit)
     return s;
 }
 
-static int is_real_num_char(int c)
+static inline int is_real_num_char(int c)
 {
     return (c >= '0' && c <= '9') || c == 'e' || c == 'E' || c == '+' || c == '-' || c == '.';
 }
@@ -314,14 +287,15 @@ xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
     return s;
 }
 
+/*
+ * Parse unicode and indices strings and encode glyphs.
+ * Calculate metrics for positioning.
+ */
 static int
 xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
         float originx, float originy, int is_sideways, int bidi_level,
         char *indices, char *unicode, int is_charpath)
 {
-    // parse unicode and indices strings and encode glyphs
-    // and calculate metrics for positioning
-
     xps_text_buffer_t buf;
     xps_glyph_metrics_t mtx;
     float x = originx;
@@ -329,9 +303,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     char *us = unicode;
     char *is = indices;
     int un = 0;
-
-    // dprintf1("string (%s)\n", us);
-    // dprintf1("indices %.50s\n", is);
+    int code;
 
     buf.count = 0;
 
@@ -418,7 +390,11 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
             v_offset = v_offset * 0.01 * size;
 
             if (buf.count == XPS_TEXT_BUFFER_SIZE)
-                xps_flush_text_buffer(ctx, font, &buf, is_charpath);
+            {
+                code = xps_flush_text_buffer(ctx, font, &buf, is_charpath);
+                if (code)
+                    return gs_rethrow(code, "cannot flush buffered text");
+            }
 
             if (is_sideways)
             {
@@ -439,7 +415,9 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 
     if (buf.count > 0)
     {
-        xps_flush_text_buffer(ctx, font, &buf, is_charpath);
+        code = xps_flush_text_buffer(ctx, font, &buf, is_charpath);
+        if (code)
+            return gs_rethrow(code, "cannot flush buffered text");
     }
 
     return 0;
@@ -450,6 +428,7 @@ xps_parse_glyphs(xps_context_t *ctx,
         char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
+    int code;
 
     char *fill_uri;
     char *opacity_mask_uri;
@@ -627,7 +606,9 @@ xps_parse_glyphs(xps_context_t *ctx,
     gs_matrix_multiply(&matrix, &font->font->orig_FontMatrix,
                        &font->font->FontMatrix);
 
-    xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    if (code)
+        return gs_rethrow(code, "cannot create transparency group");
 
     /*
      * If it's a solid color brush fill/stroke do a simple fill
@@ -648,10 +629,12 @@ xps_parse_glyphs(xps_context_t *ctx,
         if (fill_opacity_att)
             samples[0] = atof(fill_opacity_att);
         xps_set_color(ctx, colorspace, samples);
-        xps_parse_glyphs_imp(ctx, font, font_size,
+        code = xps_parse_glyphs_imp(ctx, font, font_size,
                 atof(origin_x_att), atof(origin_y_att),
                 is_sideways, bidi_level,
                 indices_att, unicode_att, 0);
+        if (code)
+            return gs_rethrow(code, "cannot parse glyphs data");
     }
 
     /*
@@ -661,10 +644,14 @@ xps_parse_glyphs(xps_context_t *ctx,
     if (fill_tag)
     {
         ctx->fill_rule = 1; /* always use non-zero winding rule for char paths */
-        xps_parse_glyphs_imp(ctx, font, font_size,
+        code = xps_parse_glyphs_imp(ctx, font, font_size,
                 atof(origin_x_att), atof(origin_y_att),
                 is_sideways, bidi_level, indices_att, unicode_att, 1);
-        xps_parse_brush(ctx, fill_uri, dict, fill_tag);
+        if (code)
+            return gs_rethrow(code, "cannot parse glyphs data");
+        code = xps_parse_brush(ctx, fill_uri, dict, fill_tag);
+        if (code)
+            return gs_rethrow(code, "cannot parse fill brush");
     }
 
     xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);

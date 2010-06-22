@@ -56,15 +56,15 @@ xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
 
     saved_bounds = ctx->bounds;
 
-    // dprintf4("tiled bounds [%g %g %g %g]\n", saved_bounds.p.x, saved_bounds.p.y, saved_bounds.q.x, saved_bounds.q.y);
-
     ctx->bounds = c->viewbox; // transform?
 
     code = c->func(c->ctx, c->base_uri, c->dict, c->tag, c->user);
+    if (code < 0)
+        return gs_rethrow(code, "cannot draw clipped tile");
 
     ctx->bounds = saved_bounds;
 
-    return code;
+    return 0;
 }
 
 static int
@@ -74,12 +74,15 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
     struct tile_closure_s *c = ppat->client_data;
     xps_context_t *ctx = c->ctx;
     gs_state *saved_pgs;
+    int code;
 
     saved_pgs = ctx->pgs;
     ctx->pgs = pgs;
 
     gs_gsave(ctx->pgs);
-    xps_paint_tiling_brush_clipped(c);
+    code = xps_paint_tiling_brush_clipped(c);
+    if (code)
+        return gs_rethrow(code, "cannot draw tile");
     gs_grestore(ctx->pgs);
 
     if (c->tile_mode == TILE_FLIP_X || c->tile_mode == TILE_FLIP_X_Y)
@@ -88,6 +91,8 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_translate(ctx->pgs, c->viewbox.q.x * 2, 0.0);
         gs_scale(ctx->pgs, -1.0, 1.0);
         xps_paint_tiling_brush_clipped(c);
+        if (code)
+            return gs_rethrow(code, "cannot draw tile flipped x");
         gs_grestore(ctx->pgs);
     }
 
@@ -97,6 +102,8 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_translate(ctx->pgs, 0.0, c->viewbox.q.y * 2);
         gs_scale(ctx->pgs, 1.0, -1.0);
         xps_paint_tiling_brush_clipped(c);
+        if (code)
+            return gs_rethrow(code, "cannot draw tile flipped y");
         gs_grestore(ctx->pgs);
     }
 
@@ -106,6 +113,8 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_translate(ctx->pgs, c->viewbox.q.x * 2, c->viewbox.q.y * 2);
         gs_scale(ctx->pgs, -1.0, -1.0);
         xps_paint_tiling_brush_clipped(c);
+        if (code)
+            return gs_rethrow(code, "cannot draw tile flipped x and y");
         gs_grestore(ctx->pgs);
     }
 
@@ -204,6 +213,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user)
 {
     xps_item_t *node;
+    int code;
 
     char *opacity_att;
     char *transform_att;
@@ -281,7 +291,9 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
     gs_gsave(ctx->pgs);
 
-    xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
+    code = xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
+    if (code)
+        return gs_rethrow(code, "cannot create transparency group");
 
     /* TODO(tor): check viewport and tiling to see if we can set it to TILE_NONE */
 
@@ -345,8 +357,8 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
         /* gs_makepattern increments the pattern count stored in the color
          * structure. We will discard the color struct (its on the stack)
-     * so we need to decrement the reference before we throw away
-     * the structure.
+         * so we need to decrement the reference before we throw away
+         * the structure.
          */
         gs_pattern_reference(&gscolor, -1);
     }
@@ -370,7 +382,9 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_clip(ctx->pgs);
         gs_newpath(ctx->pgs);
 
-        func(ctx, base_uri, dict, root, user);
+        code = func(ctx, base_uri, dict, root, user);
+        if (code < 0)
+            return gs_rethrow(code, "cannot draw tile");
 
         xps_restore_bounds(ctx, &saved_bounds);
     }

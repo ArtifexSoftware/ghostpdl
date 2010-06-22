@@ -65,7 +65,7 @@ xps_debug_fixdocseq(xps_context_t *ctx)
     }
 }
 
-static int
+static void
 xps_add_fixed_document(xps_context_t *ctx, char *name)
 {
     xps_document_t *fixdoc;
@@ -73,21 +73,12 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
     /* Check for duplicates first */
     for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
         if (!strcmp(fixdoc->name, name))
-            return 0;
+            return;
 
     if_debug1('|', "doc: adding fixdoc %s\n", name);
 
     fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
-    if (!fixdoc)
-        return -1;
-
     fixdoc->name = xps_strdup(ctx, name);
-    if (!fixdoc->name)
-    {
-        xps_free(ctx, fixdoc);
-        return -1;
-    }
-
     fixdoc->next = NULL;
 
     if (!ctx->first_fixdoc)
@@ -100,8 +91,6 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
         ctx->last_fixdoc->next = fixdoc;
         ctx->last_fixdoc = fixdoc;
     }
-
-    return 0;
 }
 
 void
@@ -119,7 +108,7 @@ xps_free_fixed_documents(xps_context_t *ctx)
     ctx->last_fixdoc = NULL;
 }
 
-static int
+static void
 xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 {
     xps_page_t *page;
@@ -127,21 +116,12 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
     /* Check for duplicates first */
     for (page = ctx->first_page; page; page = page->next)
         if (!strcmp(page->name, name))
-            return 0;
+            return;
 
     if_debug1('|', "doc: adding page %s\n", name);
 
     page = xps_alloc(ctx, sizeof(xps_page_t));
-    if (!page)
-        return -1;
-
     page->name = xps_strdup(ctx, name);
-    if (!page->name)
-    {
-        xps_free(ctx, page);
-        return -1;
-    }
-
     page->width = width;
     page->height = height;
     page->next = NULL;
@@ -156,8 +136,6 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
         ctx->last_page->next = page;
         ctx->last_page = page;
     }
-
-    return 0;
 }
 
 void
@@ -256,6 +234,7 @@ int
 xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
 {
     XML_Parser xp;
+    int code;
     char buf[1024];
     char *s;
 
@@ -278,18 +257,21 @@ xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
 
     xp = XML_ParserCreate(NULL);
     if (!xp)
-        return -1;
+        return gs_throw(-1, "cannot create XML parser");
 
     XML_SetUserData(xp, ctx);
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
     XML_SetStartElementHandler(xp, (XML_StartElementHandler)xps_parse_metadata_imp);
 
-    (void) XML_Parse(xp, (char*)part->data, part->size, 1);
+    code = XML_Parse(xp, (char*)part->data, part->size, 1);
 
     XML_ParserFree(xp);
 
     ctx->base_uri = NULL;
     ctx->part_uri = NULL;
+
+    if (code == 0)
+        return gs_throw1(-1, "cannot parse XML in part: %s", part->name);
 
     return 0;
 }

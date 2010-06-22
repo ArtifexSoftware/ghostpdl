@@ -214,7 +214,7 @@ on_text(void *zp, char *buf, int len)
 static xps_item_t *
 xps_process_compatibility(xps_context_t *ctx, xps_item_t *root)
 {
-    dprintf("warning: XPS document uses markup compatibility tags\n");
+    gs_warn("XPS document uses markup compatibility tags");
     return root;
 }
 

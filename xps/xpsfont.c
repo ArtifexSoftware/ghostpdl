@@ -15,6 +15,8 @@
 
 #include "ghostxps.h"
 
+static void xps_load_sfnt_cmap(xps_font_t *font);
+
 /*
  * Big-endian memory accessor functions
  */
@@ -37,18 +39,6 @@ static inline int u24(byte *p)
 static inline int u32(byte *p)
 {
     return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
-}
-
-int xps_init_font_cache(xps_context_t *ctx)
-{
-    ctx->fontdir = gs_font_dir_alloc(ctx->memory);
-    if (!ctx->fontdir)
-        return gs_throw(-1, "cannot gs_font_dir_alloc()");
-
-    gs_setaligntopixels(ctx->fontdir, 1); /* no subpixels */
-    gs_setgridfittt(ctx->fontdir, 1); /* see gx_ttf_outline in gxttfn.c for values */
-
-    return gs_okay;
 }
 
 xps_font_t *
@@ -102,11 +92,7 @@ xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index)
         return NULL;
     }
 
-    code = xps_load_sfnt_cmap(font);
-    if (code < 0)
-    {
-        errprintf(ctx->memory, "warning: no cmap table found in font\n");
-    }
+    xps_load_sfnt_cmap(font);
 
     return font;
 }
@@ -141,7 +127,10 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
     {
         int nfonts = u32(font->data + 8);
         if (font->subfontid < 0 || font->subfontid >= nfonts)
-            return gs_throw(-1, "Invalid subfont ID");
+        {
+            gs_warn("Invalid subfont ID");
+            return -1;
+        }
         offset = u32(font->data + 12 + font->subfontid * 4);
     }
     else
@@ -170,7 +159,8 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
 /*
  * Get the windows truetype font file name - position 4 in the name table.
  */
-int xps_load_sfnt_name(xps_font_t *font, char *namep)
+void
+xps_load_sfnt_name(xps_font_t *font, char *namep)
 {
     byte *namedata;
     int offset, length;
@@ -180,10 +170,11 @@ int xps_load_sfnt_name(xps_font_t *font, char *namep)
     strcpy(namep, "Unknown");
 
     offset = xps_find_sfnt_table(font, "name", &length);
-    if (offset < 0)
-        return -1;
-    if (length < 6)
-        return -1;
+    if (offset < 0 || length < 6)
+    {
+        gs_warn("cannot find name table");
+        return;
+    }
 
     namedata = font->data + offset;
 
@@ -212,15 +203,13 @@ int xps_load_sfnt_name(xps_font_t *font, char *namep)
             }
         }
     }
-
-    return 0;
 }
 
 /*
  * Locate the 'cmap' table and count the number of subtables.
  */
 
-int
+static void
 xps_load_sfnt_cmap(xps_font_t *font)
 {
     byte *cmapdata;
@@ -228,25 +217,24 @@ xps_load_sfnt_cmap(xps_font_t *font)
     int nsubtables;
 
     offset = xps_find_sfnt_table(font, "cmap", &length);
-    if (offset < 0)
-        return -1;
-
-    if (length < 4)
-        return -1;
+    if (offset < 0 || length < 4)
+    {
+        gs_warn("cannot find cmap table");
+        return;
+    }
 
     cmapdata = font->data + offset;
 
     nsubtables = u16(cmapdata + 2);
-    if (nsubtables < 0)
-        return -1;
-    if (length < 4 + nsubtables * 8)
-        return -1;
+    if (nsubtables < 0 || length < 4 + nsubtables * 8)
+    {
+        gs_warn("cannot find cmap sub-tables");
+        return;
+    }
 
     font->cmaptable = offset;
     font->cmapsubcount = nsubtables;
     font->cmapsubtable = 0;
-
-    return 0;
 }
 
 /*
@@ -263,37 +251,35 @@ xps_count_font_encodings(xps_font_t *font)
  * Extract PlatformID and EncodingID for a cmap subtable.
  */
 
-int
+void
 xps_identify_font_encoding(xps_font_t *font, int idx, int *pid, int *eid)
 {
     byte *cmapdata, *entry;
     if (idx < 0 || idx >= font->cmapsubcount)
-        return -1;
+        return;
     cmapdata = font->data + font->cmaptable;
     entry = cmapdata + 4 + idx * 8;
     *pid = u16(entry + 0);
     *eid = u16(entry + 2);
-    return 0;
 }
 
 /*
  * Select a cmap subtable for use with encoding functions.
  */
 
-int
+void
 xps_select_font_encoding(xps_font_t *font, int idx)
 {
     byte *cmapdata, *entry;
     int pid, eid;
     if (idx < 0 || idx >= font->cmapsubcount)
-        return -1;
+        return;
     cmapdata = font->data + font->cmaptable;
     entry = cmapdata + 4 + idx * 8;
     pid = u16(entry + 0);
     eid = u16(entry + 2);
     font->cmapsubtable = font->cmaptable + u32(entry + 4);
     font->usepua = (pid == 3 && eid == 0);
-    return 0;
 }
 
 /*
@@ -302,7 +288,7 @@ xps_select_font_encoding(xps_font_t *font, int idx)
  */
 
 static int
-xps_encode_font_char_int(xps_font_t *font, int code)
+xps_encode_font_char_imp(xps_font_t *font, int code)
 {
     byte *table;
 
@@ -397,7 +383,7 @@ xps_encode_font_char_int(xps_font_t *font, int code)
     case 2: /* High-byte mapping through table. */
     case 8: /* Mixed 16-bit and 32-bit coverage (like 2) */
     default:
-        errprintf_nomem("error: unknown cmap format: %d\n", u16(table));
+        gs_warn1("unknown cmap format: %d\n", u16(table));
         return 0;
     }
 
@@ -407,9 +393,9 @@ xps_encode_font_char_int(xps_font_t *font, int code)
 int
 xps_encode_font_char(xps_font_t *font, int code)
 {
-    int gid = xps_encode_font_char_int(font, code);
+    int gid = xps_encode_font_char_imp(font, code);
     if (gid == 0 && font->usepua)
-        gid = xps_encode_font_char_int(font, 0xF000 | code);
+        gid = xps_encode_font_char_imp(font, 0xF000 | code);
     return gid;
 }
 
@@ -419,7 +405,8 @@ xps_encode_font_char(xps_font_t *font, int code)
  * use so the native ghostscript functions are not adequate.
  */
 
-int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_metrics_t *mtx)
+void
+xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_metrics_t *mtx)
 {
 
     int head, format, loca, glyf;
@@ -441,11 +428,11 @@ int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_gl
      */
 
     ofs = xps_find_sfnt_table(font, "hhea", &len);
-    if (ofs < 0)
-        return gs_throw(-1, "cannot find hhea table");
-
-    if (len < 2 * 18)
-        return gs_throw(-1, "hhea table is too short");
+    if (ofs < 0 || len < 2 * 18)
+    {
+        gs_warn("hhea table is too short");
+        return;
+    }
 
     vorg = s16(font->data + ofs + 4); /* ascender is default vorg */
     desc = s16(font->data + ofs + 6); /* descender */
@@ -455,7 +442,10 @@ int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_gl
 
     ofs = xps_find_sfnt_table(font, "hmtx", &len);
     if (ofs < 0)
-        return gs_throw(-1, "cannot find hmtx table");
+    {
+        gs_warn("cannot find hmtx table");
+        return;
+    }
 
     idx = gid;
     if (idx > n - 1)
@@ -484,16 +474,16 @@ int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_gl
     }
 
     ofs = xps_find_sfnt_table(font, "vhea", &len);
-    if (ofs > 0)
+    if (ofs > 0 && len >= 2 * 18)
     {
-        if (len < 2 * 18)
-            return gs_throw(-1, "vhea table is too short");
-
         n = u16(font->data + ofs + 17 * 2);
 
         ofs = xps_find_sfnt_table(font, "vmtx", &len);
         if (ofs < 0)
-            return gs_throw(-1, "cannot find vmtx table");
+        {
+            gs_warn("cannot find vmtx table");
+            return;
+        }
 
         idx = gid;
         if (idx > n - 1)
@@ -540,6 +530,4 @@ int xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_gl
     mtx->hadv = hadv / (float) scale;
     mtx->vadv = vadv / (float) scale;
     mtx->vorg = vorg / (float) scale;
-
-    return 0;
 }

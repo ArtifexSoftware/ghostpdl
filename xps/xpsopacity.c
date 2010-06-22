@@ -24,6 +24,7 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
     gs_rect bbox;
     float opacity;
     int save;
+    int code;
 
     if (!opacity_att && !opacity_mask_tag)
         return 0;
@@ -49,15 +50,13 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_lineto(ctx->pgs, bbox.q.x, bbox.p.y);
         gs_closepath(ctx->pgs);
 
-        // gs_setopacityalpha(ctx->pgs, 0.5);
-        // gs_setrgbcolor(ctx->pgs, 1, 1, 1);
-        // gs_fill(ctx->pgs);
-
         /* opacity-only mode: use alpha value as gray color to create luminosity mask */
         save = ctx->opacity_only;
         ctx->opacity_only = 1;
 
-        xps_parse_brush(ctx, base_uri, dict, opacity_mask_tag);
+        code = xps_parse_brush(ctx, base_uri, dict, opacity_mask_tag);
+        if (code)
+            return gs_rethrow(code, "cannot parse opacity mask brush");
 
         gs_grestore(ctx->pgs);
 
@@ -73,14 +72,11 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
     return 0;
 }
 
-int
+void
 xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         char *opacity_att, xps_item_t *opacity_mask_tag)
 {
     if (!opacity_att && !opacity_mask_tag)
-        return 0;
-
+        return;
     gs_end_transparency_group(ctx->pgs);
-
-    return 0;
 }

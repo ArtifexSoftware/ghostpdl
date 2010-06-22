@@ -18,7 +18,7 @@
 /* HD-Photo decoder should go here. */
 
 int
-xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image, 
+xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
                    unsigned char **profile, int *profile_size)
 {
     *profile = NULL;
@@ -26,8 +26,7 @@ xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
 }
 
 int
-xps_hasalpha_hdphoto(gs_memory_t *mem, byte *buf, int len)
+xps_hdphoto_has_alpha(gs_memory_t *mem, byte *buf, int len)
 {
-    return gs_throw(-1, "HD-Photo codec is not available");
+    return 0;
 }
-

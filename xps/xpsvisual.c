@@ -34,6 +34,7 @@ int
 xps_parse_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
     xps_item_t *node;
+    int code;
 
     char *visual_uri;
     char *visual_att;
@@ -52,7 +53,9 @@ xps_parse_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
     if (visual_tag)
     {
-        xps_parse_tiling_brush(ctx, visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
+        code = xps_parse_tiling_brush(ctx, visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
+        if (code)
+            return gs_rethrow(code, "cannot parse tiling brush");
     }
 
     return 0;

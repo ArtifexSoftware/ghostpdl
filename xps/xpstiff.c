@@ -790,10 +790,9 @@ xps_read_tiff_bytes(unsigned char *p, xps_tiff_t *tiff, unsigned ofs, unsigned n
 
     while (n--)
     {
-        *p++ = readbyte(tiff);    
+        *p++ = readbyte(tiff);
     }
 }
-
 
 static void
 xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned ofs, unsigned n)
@@ -902,7 +901,7 @@ xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
             return gs_throw(-1, "could not allocate embedded icc profile");
         /* ICC profile data type is set to UNDEFINED. TBYTE reading not correct
            in xps_read_tiff_tag_value */
-        xps_read_tiff_bytes((unsigned*) tiff->iccprofile, tiff, value, count);
+        xps_read_tiff_bytes((unsigned char *) tiff->iccprofile, tiff, value, count);
         tiff->profile_size = count;
         break;
 
@@ -960,21 +959,16 @@ xps_swap_byte_order(byte *buf, int n)
     }
 }
 
-int
-xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image, 
-                unsigned char **profile, int *profile_size)
+static int
+xps_decode_tiff_header(gs_memory_t *mem, xps_tiff_t *tiff, byte *buf, int len)
 {
-    int error;
-    xps_tiff_t tiffst;
-    xps_tiff_t *tiff = &tiffst;
-
     unsigned version;
     unsigned offset;
     unsigned count;
     unsigned i;
+    int error;
 
     memset(tiff, 0, sizeof(xps_tiff_t));
-    *profile = NULL;
 
     tiff->bp = buf;
     tiff->rp = buf;
@@ -1028,7 +1022,22 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
         offset += 12;
     }
 
-    // (void) xps_debug_tiff(mem, tiff);
+    return gs_okay;
+}
+
+int
+xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
+                unsigned char **profile, int *profile_size)
+{
+    int error;
+    xps_tiff_t tiffst;
+    xps_tiff_t *tiff = &tiffst;
+
+    *profile = NULL;
+
+    error = xps_decode_tiff_header(mem, tiff, buf, len);
+    if (error)
+        return gs_rethrow(error, "cannot decode tiff header");
 
     /*
      * Decode the image strips
@@ -1042,17 +1051,6 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
         return gs_rethrow(error, "could not decode image data");
 
     /*
-     * Clean up scratch memory
-     */
-
-    if (tiff->colormap) gs_free_object(mem, tiff->colormap, "ColorMap");
-    if (tiff->stripoffsets) gs_free_object(mem, tiff->stripoffsets, "StripOffsets");
-    if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
-
-    *profile = tiff->iccprofile;
-    *profile_size = tiff->profile_size;
-
-    /*
      * Byte swap 16-bit images to big endian if necessary.
      */
     if (image->bits == 16)
@@ -1061,80 +1059,11 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
             xps_swap_byte_order(image->samples, image->width * image->height * image->comps);
     }
 
-    return gs_okay;
-}
-
-int
-xps_hasalpha_tiff(gs_memory_t *mem, byte *buf, int len)
-{
-    int error;
-    xps_tiff_t tiffst;
-    xps_tiff_t *tiff = &tiffst;
-
-    unsigned version;
-    unsigned offset;
-    unsigned count;
-    unsigned i;
-    int has_alpha;
-
-    memset(tiff, 0, sizeof(xps_tiff_t));
-
-    tiff->bp = buf;
-    tiff->rp = buf;
-    tiff->ep = buf + len;
-
-    /* tag defaults, where applicable */
-    tiff->bitspersample = 1;
-    tiff->compression = 1;
-    tiff->samplesperpixel = 1;
-    tiff->resolutionunit = 2;
-    tiff->rowsperstrip = 0xFFFFFFFF;
-    tiff->fillorder = 1;
-    tiff->planar = 1;
-    tiff->subfiletype = 0;
-    tiff->predictor = 1;
-    tiff->ycbcrsubsamp[0] = 2;
-    tiff->ycbcrsubsamp[1] = 2;
-
     /*
-     * Read IFH
+     * Save ICC profile data
      */
-
-    /* get byte order marker */
-    tiff->order = TII;
-    tiff->order = readshort(tiff);
-    if (tiff->order != TII && tiff->order != TMM)
-        return gs_throw(-1, "not a TIFF file, wrong magic marker");
-
-    /* check version */
-    version = readshort(tiff);
-    if (version != 42)
-        return gs_throw(-1, "not a TIFF file, wrong version marker");
-
-    /* get offset of IFD */
-    offset = readlong(tiff);
-
-    /*
-     * Read IFD
-     */
-
-    tiff->rp = tiff->bp + offset;
-
-    count = readshort(tiff);
-
-    offset += 2;
-    for (i = 0; i < count; i++)
-    {
-        error = xps_read_tiff_tag(mem, tiff, offset);
-        if (error)
-            return gs_rethrow(error, "could not read TIFF header tag");
-        offset += 12;
-    }
-
-    if (tiff->extrasamples == 2 || tiff->extrasamples == 1)
-        has_alpha = 1;
-    else
-        has_alpha = 0;
+    *profile = tiff->iccprofile;
+    *profile_size = tiff->profile_size;
 
     /*
      * Clean up scratch memory
@@ -1144,5 +1073,26 @@ xps_hasalpha_tiff(gs_memory_t *mem, byte *buf, int len)
     if (tiff->stripoffsets) gs_free_object(mem, tiff->stripoffsets, "StripOffsets");
     if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
 
-    return has_alpha;
+    return gs_okay;
+}
+
+int
+xps_tiff_has_alpha(gs_memory_t *mem, byte *buf, int len)
+{
+    int error;
+    xps_tiff_t tiffst;
+    xps_tiff_t *tiff = &tiffst;
+
+    error = xps_decode_tiff_header(mem, tiff, buf, len);
+    if (error)
+    {
+        gs_catch(error, "cannot decode tiff header");
+        return 0;
+    }
+
+    if (tiff->colormap) gs_free_object(mem, tiff->colormap, "ColorMap");
+    if (tiff->stripoffsets) gs_free_object(mem, tiff->stripoffsets, "StripOffsets");
+    if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
+
+    return tiff->extrasamples == 2 || tiff->extrasamples == 1;
 }

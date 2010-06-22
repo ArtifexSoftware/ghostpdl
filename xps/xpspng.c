@@ -61,14 +61,11 @@ xps_png_free(png_structp png, png_voidp ptr)
 
 /* This only determines if we have an alpha value */
 int
-xps_hasalpha_png(gs_memory_t *mem, byte *rbuf, int rlen)
+xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen)
 {
     png_structp png;
     png_infop info;
     struct xps_png_io_s io;
-    int npasses;
-    int pass;
-    int y;
     int has_alpha;
 
     /*
@@ -133,8 +130,8 @@ xps_hasalpha_png(gs_memory_t *mem, byte *rbuf, int rlen)
 }
 
 int
-xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image, 
-               unsigned char **profile, int *profile_size)
+xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
+    unsigned char **profile, int *profile_size)
 {
     png_structp png;
     png_infop info;
@@ -211,9 +208,9 @@ xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
     /* See if we have an icc profile */
     if (info->iccp_profile != NULL)
     {
-        *profile = (unsigned char*) gs_alloc_bytes(mem, info->iccp_proflen, "PNG ICC Profile");
+        *profile = gs_alloc_bytes(mem, info->iccp_proflen, "PNG ICC Profile");
         if (*profile != NULL)
-        {   
+        {
             /* If we can't create it, just ignore */
             memcpy(*profile, info->iccp_profile, info->iccp_proflen);
             *profile_size = info->iccp_proflen;

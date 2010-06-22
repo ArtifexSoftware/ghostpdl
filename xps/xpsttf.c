@@ -316,11 +316,12 @@ xps_true_callback_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
  * (type42 in postscript terminology) font.
  */
 
-int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
+int
+xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 {
     font->font = (void*) gs_alloc_struct(ctx->memory, gs_font_type42, &st_gs_font_type42, "xps_font type42");
     if (!font->font)
-        return gs_throw(-1, "out of memory");
+        return gs_throw(gs_error_VMerror, "out of memory");
 
     /* no shortage of things to initialize */
     {
