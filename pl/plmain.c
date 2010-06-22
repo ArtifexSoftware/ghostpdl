@@ -979,9 +979,13 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
         case 'K':               /* max memory in K */
             {
                 int maxk;
+#ifdef HEAP_ALLOCATOR_ONLY
+                gs_malloc_memory_t *rawheap =
+                    (gs_malloc_memory_t *)gs_malloc_wrapped_contents(pmi->memory);
+#else                    
                 gs_malloc_memory_t *rawheap =
                     (gs_malloc_memory_t *)gs_memory_chunk_target(pmi->memory)->non_gc_memory;
-
+#endif
                 if ( sscanf(arg, "%d", &maxk) != 1 ) {
                     dprintf("-K must be followed by a number\n");
                     return -1;
