@@ -794,11 +794,17 @@ setglobal
         pop
       } ifelse
     } if
+    dup /CharStrings get /.notdef known not {
+      dup /CharStrings get
+        /.notdef <9E35CED7FFD3622F09> put
+        (   **** Warning: Type 1 font has no /.notdef entry in /CharString dictionary.\n)
+        pdfformaterror
+    } if
     .completefont
   } bdef
 
   /undef_proc_warning {
-    /Repaired true store	% flag that we have warnings
+    /Repaired //true store	% flag that we have warnings
     UndefProcList exch 2 copy .knownget { 1 add } { 1 } ifelse put
   } bdef
 
@@ -834,12 +840,11 @@ setglobal
   >> readonly def
 
   /readonly { % bug 689617
-    dup type //readonly-op-dict exch known {
-    readonly
-  } {
-    (   **** Warning: Type 1 font applies operator readonly to a wrong type.\n)
-    pdfformaterror
-  } ifelse } .bind def
+    dup type //readonly-op-dict exch known not {
+      (   **** Warning: Type 1 font applies operator readonly to a wrong type.\n)
+      pdfformaterror
+    } if
+  } bdef
 
   /prev_get /get load def
 
