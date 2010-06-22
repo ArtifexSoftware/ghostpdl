@@ -327,4 +327,7 @@ void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int 
 void tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
                         gx_pattern_trans_t *fill_trans_buffer);
 
+/* File a colored pattern with white */
+int gx_erase_colored_pattern(gs_state *pgs);
+
 #endif /* gxpcolor_INCLUDED */

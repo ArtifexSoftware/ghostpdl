@@ -242,7 +242,11 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 	    if_debug0('v', "   pushing the pdf14 compositor device into this graphics state\n");
 	    if ((code = gs_push_pdf14trans_device(pgs)) < 0)
 		return code;
-	}
+	} else { /* not transparent */
+            if (pinst->template.PaintType == 1)
+                if ((code = gx_erase_colored_pattern(pgs)) < 0)
+                    return code;
+        }
     } else {
 	gs_matrix m;
 	gs_rect bbox;

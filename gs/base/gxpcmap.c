@@ -21,6 +21,7 @@
 #include "gsutil.h"		/* for gs_next_ids */
 #include "gxfixed.h"
 #include "gxmatrix.h"
+#include "gspath2.h"
 #include "gxcspace.h"		/* for gscolor2.h */
 #include "gxcolor2.h"
 #include "gxdcolor.h"
@@ -347,7 +348,6 @@ pattern_accum_open(gx_device * dev)
     int height = pinst->size.y;
     int code = 0;
     bool mask_open = false;
-    int abits;
 
     /*
      * C's bizarre coercion rules force us to copy HWResolution in pieces
@@ -435,19 +435,6 @@ pattern_accum_open(gx_device * dev)
 		    code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
 		    gx_device_set_target((gx_device_forward *)padev,
 					 (gx_device *)bits);
-                    if (pinst->saved) {
-                        abits = alpha_buffer_bits(pinst->saved);
-                        if (abits > 1) {
-                            if (bits->color_info.polarity == 
-                                GX_CINFO_POLARITY_SUBTRACTIVE) {
-	                        memset(bits->base, 0, 
-                                    bits->raster * bits->height);
-                            } else {
-	                        memset(bits->base, 255, 
-                                    bits->raster * bits->height);
-                            }
-                        }
-                    }
 		}
 	}
     }
@@ -1051,6 +1038,38 @@ gx_pattern_cache_winnow(gx_pattern_cache * pcache,
     }
 }
 
+/* blank the pattern accumulator device assumed to be in the graphics
+   state */
+int
+gx_erase_colored_pattern(gs_state *pgs)
+{
+    int code;
+    gx_device_pattern_accum *pdev = (gx_device_pattern_accum *)gs_currentdevice(pgs);
+
+    if ((code = gs_gsave(pgs)) < 0)
+	return code;
+    if ((code = gs_setgray(pgs, 1.0)) >= 0) {
+        gs_rect rect;
+        gx_device_memory *mask;
+        pgs->log_op = lop_default;
+        rect.p.x = 0.0;
+        rect.p.y = 0.0;
+        rect.q.x = (double)pdev->width;
+        rect.q.y = (double)pdev->height;
+
+        /* we don't want the fill rectangle device call to use the
+           mask */
+        mask = pdev->mask;
+        pdev->mask = NULL;
+	code = gs_rectfill(pgs, &rect, 1);
+        /* restore the mask */
+        pdev->mask = mask;
+        if (code < 0)
+            return code;
+    }
+    return gs_grestore(pgs);
+}
+
 /* Reload a (non-null) Pattern color into the cache. */
 /* *pdc is already set, except for colors.pattern.p_tile and mask.m_tile. */
 int
@@ -1095,7 +1114,19 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 	if_debug0('v', "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
 	if ((code = gs_push_pdf14trans_device(saved)) < 0)
 	    return code;
+    } else {
+        /* For colored patterns we clear the pattern device's
+           background.  This is necessary for the anti aliasing code
+           and (unfortunately) it masks a difficult to fix UMR
+           affecting pcl patterns, see bug #690487.  Note we have to
+           make a similar change in zpcolor.c where much of this
+           pattern code is duplicated to support high level stream
+           patterns. */
+        if (pinst->template.PaintType == 1)
+            if ((gx_erase_colored_pattern(saved)) < 0)
+                return code;
     }
+
     code = (*pinst->template.PaintProc)(&pdc->ccolor, saved);
     if (code < 0) {
 	dev_proc(adev, close_device)((gx_device *)adev);
