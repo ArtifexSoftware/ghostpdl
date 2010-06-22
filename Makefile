@@ -47,7 +47,7 @@ pcl-clean:
 	rm -f fonts
 
 xps-debug:
-	$(MAKE) -C xps -f xps_gcc.mak pdl-debug
+	$(MAKE) -C xps -f xps_gcc.mak pdl-debug GENDIR="./debugobj"
 
 xps: 
 	$(MAKE) -C xps -f xps_gcc.mak pdl-product # build XPS
@@ -59,7 +59,7 @@ xps-test:
 	./xps/obj/gxps tools/tiger.xps
 
 svg-debug:
-	$(MAKE) -C svg -f svg_gcc.mak pdl-debug
+	$(MAKE) -C svg -f svg_gcc.mak pdl-debug GENDIR="./debugobj"
 
 svg: 
 	$(MAKE) -C svg -f svg_gcc.mak pdl-product # build SVG
@@ -71,7 +71,7 @@ svg-test:
 	./svg/obj/gsvg tools/tiger.svg
 
 mupdf-debug:
-	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-debug
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-debug GENDIR="./debugobj"
 
 mupdf:
 	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-product
@@ -94,7 +94,7 @@ ls-product:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product # build PS/PCL/XL. 
 
 ls-debug: 
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug GENDIR="./debugobj"
 
 ls-fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
