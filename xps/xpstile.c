@@ -169,7 +169,11 @@ xps_high_level_pattern(xps_context_t *ctx)
         return code;
     }
 
-    xps_paint_tiling_brush(&pdc->ccolor, ctx->pgs);
+    code = xps_paint_tiling_brush(&pdc->ccolor, ctx->pgs);
+    if (code) {
+        gs_grestore(ctx->pgs);
+        return gs_rethrow(code, "high level pattern brush function failed");
+    }
 
     code = gs_grestore(ctx->pgs);
     if (code < 0)
@@ -203,9 +207,11 @@ xps_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
          * must then take action to start the device's accumulator, draw the
          * pattern, close the device's accumulator and generate a cache entry.
          */
-        return_error(gs_error_Remap_Color);
+        return gs_error_Remap_Color;
     } else {
-        xps_paint_tiling_brush(pcc, pgs);
+        code = xps_paint_tiling_brush(pcc, pgs);
+        if (code)
+            return gs_rethrow(code, "remap pattern brush function failed");
         return 0;
     }
 }

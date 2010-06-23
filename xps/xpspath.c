@@ -1128,7 +1128,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
         code = xps_parse_brush(ctx, fill_uri, dict, fill_tag);
         if (code < 0)
-            gs_rethrow(code, "cannot parse fill brush");
+            return gs_rethrow(code, "cannot parse fill brush");
     }
 
     if (stroke_att)
@@ -1158,7 +1158,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
         code = xps_parse_brush(ctx, stroke_uri, dict, stroke_tag);
         if (code < 0)
-            gs_rethrow(code, "cannot parse stroke brush");
+            return gs_rethrow(code, "cannot parse stroke brush");
     }
 
     if (opacity_att || opacity_mask_tag)
