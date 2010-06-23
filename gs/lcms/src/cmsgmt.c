@@ -1122,8 +1122,13 @@ void _cmsComputePrelinearizationTablesFromXFORM(cmsHTRANSFORM h[], int nTransfor
                 for (j=1; j < nTransforms; j++)
                         cmsDoTransform(h[j], Out, Out, 1);
 
-                for (t=0; t < Grid -> InputChan; t++)
-                        Trans[t] ->GammaTable[i] = Out[t];
+                if (Grid -> InputChan == Grid -> OutputChan) {
+                    for (t=0; t < Grid -> InputChan; t++)
+                            Trans[t] ->GammaTable[i] = Out[t];
+                } else {
+                    for (t=0; t < Grid -> InputChan; t++)
+                            Trans[t] ->GammaTable[i] = Out[0];
+                }
 
     }
     
