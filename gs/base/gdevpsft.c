@@ -793,6 +793,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     int start_position = stell(s);
     int enlarged_numGlyphs = 0;
     int code;
+    int TTCFontOffset = 0;
 
     memset(&subtable_positions, 0, sizeof(subtable_positions));
     have_hvhea[0] = have_hvhea[1] = 0;
@@ -808,7 +809,18 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
      * table directory.
      */
 
+#define W(a,b,c,d)\
+  ( ((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
+
     READ_SFNTS(pfont, 0, 12, OffsetTable);
+    if (u32(OffsetTable) == W('t','t','c','f')) {
+	int version = u32(&OffsetTable[4]);
+	int num_fonts = u32(&OffsetTable[8]);
+
+	READ_SFNTS(pfont, 12, 4, OffsetTable);
+	TTCFontOffset = u32(OffsetTable);
+	READ_SFNTS(pfont, TTCFontOffset, 12, OffsetTable);
+    }
     numTables_stored = U16(OffsetTable + 4);
     for (i = numTables = 0; i < numTables_stored; ++i) {
 	byte tab[16];
@@ -818,14 +830,11 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	if (numTables == MAX_NUM_TT_TABLES)
 	    return_error(gs_error_limitcheck);
-	READ_SFNTS(pfont, 12 + i * 16, 16, tab);
+	READ_SFNTS(pfont, TTCFontOffset + 12 + i * 16, 16, tab);
 	start = u32(tab + 8);
 	length = u32(tab + 12);
 	/* Copy the table data now (a rudiment of old code). */
 	memcpy(&tables[numTables * 16], tab, 16);
-
-#define W(a,b,c,d)\
-  ( ((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
 
 	switch (u32(tab)) {
 	case W('h','e','a','d'):
