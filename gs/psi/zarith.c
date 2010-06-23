@@ -29,7 +29,6 @@
 /* Define max and min values for what will fit in value.intval. */
 #define MIN_INTVAL 0x80000000
 #define MAX_INTVAL 0x7fffffff
-#define MAX_HALF_INTVAL 0x7fff
 
 /* <num1> <num2> add <sum> */
 /* We make this into a separate procedure because */
@@ -153,25 +152,13 @@ zmul(i_ctx_t *i_ctx_p)
 	    op[-1].value.realval *= (double)op->value.intval;
 	    break;
 	case t_integer: {
-	    int int1 = op[-1].value.intval;
-	    int int2 = op->value.intval;
-	    uint abs1 = (uint)(int1 >= 0 ? int1 : -int1);
-	    uint abs2 = (uint)(int2 >= 0 ? int2 : -int2);
-	    float fprod;
-
-	    if ((abs1 > MAX_HALF_INTVAL || abs2 > MAX_HALF_INTVAL) &&
-		/* At least one of the operands is very large. */
-		/* Check for integer overflow. */
-		abs1 != 0 &&
-		abs2 > MAX_INTVAL / abs1 &&
-		/* Check for the boundary case */
-		(fprod = (float)int1 * int2,
-		 (int1 * int2 != MIN_INTVAL ||
-		  fprod != (float)MIN_INTVAL))
-		)
-		make_real(op - 1, fprod);
-	    else
-		op[-1].value.intval = int1 * int2;
+	    double ab = (double)op[-1].value.intval * op->value.intval;
+            if (ab > 2147483647.)       /* (double)0x7fffffff */
+                make_real(op - 1, ab);
+            else if (ab < -2147483648.) /* (double)(int)0x80000000 */
+                make_real(op - 1, ab);
+            else
+                op[-1].value.intval = (int)ab;
 	}
 	}
     }
