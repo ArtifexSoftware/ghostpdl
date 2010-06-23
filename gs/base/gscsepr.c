@@ -351,8 +351,12 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
         if (code < 0)
 	    return code;
         /* First check if this was PS based. */
-        if (gs_color_space_is_PSCIE(pacs) && pacs->icc_equivalent == NULL) {
-            gs_colorspace_set_icc_equivalent(pacs, &(is_lab), pis->memory);
+        if (gs_color_space_is_PSCIE(pacs)) {
+            /* If we have not yet create the profile do that now */
+            if (pacs->icc_equivalent == NULL) {
+                gs_colorspace_set_icc_equivalent(pacs, &(is_lab), pis->memory);
+            }
+            /* Use the ICC equivalent color space */
             pacs = pacs->icc_equivalent;
         }
         if (pacs->cmm_icc_profile_data->data_cs == gsCIELAB) {
