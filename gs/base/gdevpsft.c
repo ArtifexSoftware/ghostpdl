@@ -814,9 +814,6 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
     READ_SFNTS(pfont, 0, 12, OffsetTable);
     if (u32(OffsetTable) == W('t','t','c','f')) {
-	int version = u32(&OffsetTable[4]);
-	int num_fonts = u32(&OffsetTable[8]);
-
 	READ_SFNTS(pfont, 12, 4, OffsetTable);
 	TTCFontOffset = u32(OffsetTable);
 	READ_SFNTS(pfont, TTCFontOffset, 12, OffsetTable);
