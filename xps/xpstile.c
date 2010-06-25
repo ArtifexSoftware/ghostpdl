@@ -129,11 +129,9 @@ xps_high_level_pattern(xps_context_t *ctx)
     gs_matrix m;
     gs_rect bbox;
     gs_fixed_rect clip_box;
-    gx_color_tile *ctile;
     int code;
     gx_device_color *pdc = gs_currentdevicecolor_inline(ctx->pgs);
     const gs_client_pattern *ppat = gs_getpattern(&pdc->ccolor);
-    struct tile_closure_s *c = ppat->client_data;
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(ctx->pgs)->pattern;
 

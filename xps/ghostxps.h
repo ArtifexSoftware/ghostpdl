@@ -187,38 +187,31 @@ typedef struct xps_image_s xps_image_t;
 
 /* type for the information derived directly from the raster file format */
 
-enum {
-    XPS_GRAY, XPS_GRAY_A, XPS_RGB, XPS_RGB_A, XPS_CMYK, XPS_CMYK_A,
-    XPS_ICC, XPS_ICC_A, XPS_NOTICC
-};
-
 struct xps_image_s
 {
     int width;
     int height;
     int stride;
-    int colorspace;
+    gs_color_space *colorspace;
     int comps;
+    int hasalpha; /* chunky alpha */
     int bits;
     int xres;
     int yres;
     byte *samples;
     byte *alpha; /* isolated alpha plane */
-    bool embeddedprofile;
+    byte *profile;
+    int profilesize;
 };
 
-int xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
-                    unsigned char **profile, int *profile_size);
-int xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
-                   unsigned char **profile, int *profile_size);
-int xps_decode_tiff(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
-                    unsigned char **profile, int *profile_size);
-int xps_decode_hdphoto(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
-                       unsigned char **profile, int *profile_size);
+int xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image);
+int xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image);
+int xps_decode_tiff(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image);
+int xps_decode_hdphoto(xps_context_t *ctx, byte *buf, int len, xps_image_t *image);
 
-int xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen);
-int xps_tiff_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen);
-int xps_hdphoto_has_alpha(gs_memory_t *mem, byte *buf, int len);
+int xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen);
+int xps_tiff_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen);
+int xps_hdphoto_has_alpha(xps_context_t *ctx, byte *buf, int len);
 
 void xps_free_image(xps_context_t *ctx, xps_image_t *image);
 
@@ -275,9 +268,9 @@ void xps_debug_path(xps_context_t *ctx);
  * Colorspaces and colors.
  */
 
+gs_color_space *xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profile);
 void xps_parse_color(xps_context_t *ctx, char *base_uri, char *hexstring, gs_color_space **csp, float *samples);
 void xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
-void xps_set_icc(xps_context_t *ctx, char *base_uri, char *profile, gs_color_space **csp);
 
 /*
  * XML document model
@@ -379,7 +372,6 @@ struct xps_context_s
     gs_color_space *srgb;
     gs_color_space *scrgb;
     gs_color_space *cmyk;
-    gs_color_space *icc;
 
     char *directory;
     FILE *file;

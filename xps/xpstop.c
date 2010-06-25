@@ -132,9 +132,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->cmyk = gs_cspace_new_DeviceCMYK(ctx->memory);
     ctx->srgb = gs_cspace_new_DeviceRGB(ctx->memory);
     ctx->scrgb = gs_cspace_new_DeviceRGB(ctx->memory); /* This needs a different profile */
-    code = gs_cspace_build_ICC(&(ctx->icc), NULL, ctx->memory); /* For profile color spaces */
-    if (code < 0)
-        return gs_error_VMerror;
 
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;

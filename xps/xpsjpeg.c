@@ -30,8 +30,7 @@ xps_report_error(stream_state * st, const char *str)
 }
 
 int
-xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
-                unsigned char **profile, int *profile_size)
+xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 {
     jpeg_decompress_data jddp;
     stream_DCT_state state;
@@ -42,18 +41,16 @@ xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
     byte *wbuf;
     jpeg_saved_marker_ptr curr_marker;
 
-    *profile = NULL;
-
-    s_init_state((stream_state*)&state, &s_DCTD_template, mem);
+    s_init_state((stream_state*)&state, &s_DCTD_template, ctx->memory);
     state.report_error = xps_report_error;
 
     s_DCTD_template.set_defaults((stream_state*)&state);
 
-    state.jpeg_memory = mem;
+    state.jpeg_memory = ctx->memory;
     state.data.decompress = &jddp;
 
     jddp.template = s_DCTD_template;
-    jddp.memory = mem;
+    jddp.memory = ctx->memory;
     jddp.scanline_buffer = NULL;
 
     if ((code = gs_jpeg_create_decompress(&state)) < 0)
@@ -85,12 +82,12 @@ xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
         {
             /* Found ICC profile. Create a buffer and copy over now.
              * Strip JPEG APP2 14 byte header */
-            *profile = (unsigned char*) gs_alloc_bytes(mem, curr_marker->data_length - 14, "JPEG ICC Profile");
-            if (*profile != NULL)
+            image->profilesize = curr_marker->data_length - 14;
+            image->profile = xps_alloc(ctx, image->profilesize);
+            if (image->profile)
             {
                 /* If we can't create it, just ignore */
-                memcpy(*profile, &(curr_marker->data[14]), (curr_marker->data_length) - 14);
-                *profile_size = curr_marker->data_length - 14;
+                memcpy(image->profile, &(curr_marker->data[14]), image->profilesize);
             }
             break;
         }
@@ -104,11 +101,11 @@ xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
     image->stride = image->width * image->comps;
 
     if (image->comps == 1)
-        image->colorspace = XPS_GRAY;
+        image->colorspace = ctx->gray;
     if (image->comps == 3)
-        image->colorspace = XPS_RGB;
+        image->colorspace = ctx->srgb;
     if (image->comps == 4)
-        image->colorspace = XPS_CMYK;
+        image->colorspace = ctx->cmyk;
 
     if (jddp.dinfo.density_unit == 1)
     {
@@ -127,7 +124,7 @@ xps_decode_jpeg(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
     }
 
     wlen = image->stride * image->height;
-    wbuf = gs_alloc_bytes(mem, wlen, "decodejpeg");
+    wbuf = xps_alloc(ctx, wlen);
     if (!wbuf)
         return gs_throw1(-1, "out of memory allocating samples: %d", wlen);
 

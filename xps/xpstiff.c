@@ -77,8 +77,8 @@ struct xps_tiff_s
     byte *jpegtables;       /* point into "file" buffer */
     unsigned jpegtableslen;
 
-    byte *iccprofile;
-    int profile_size;
+    byte *profile;
+    int profilesize;
 };
 
 enum
@@ -194,21 +194,21 @@ readlong(xps_tiff_t *tiff)
 }
 
 static int
-xps_decode_tiff_uncompressed(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_uncompressed(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     memcpy(wp, rp, wl - wp);
     return gs_okay;
 }
 
 static int
-xps_decode_tiff_packbits(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_packbits(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_RLD_state state;
     stream_cursor_read scr;
     stream_cursor_write scw;
     int code;
 
-    s_init_state((stream_state*)&state, &s_RLD_template, mem);
+    s_init_state((stream_state*)&state, &s_RLD_template, ctx->memory);
     state.report_error = xps_report_error;
 
     s_RLD_template.set_defaults((stream_state*)&state);
@@ -227,14 +227,14 @@ xps_decode_tiff_packbits(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl,
 }
 
 static int
-xps_decode_tiff_lzw(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_lzw(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_LZW_state state;
     stream_cursor_read scr;
     stream_cursor_write scw;
     int code;
 
-    s_init_state((stream_state*)&state, &s_LZWD_template, mem);
+    s_init_state((stream_state*)&state, &s_LZWD_template, ctx->memory);
     state.report_error = xps_report_error;
 
     s_LZWD_template.set_defaults((stream_state*)&state);
@@ -273,14 +273,14 @@ xps_decode_tiff_lzw(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte
 }
 
 static int
-xps_decode_tiff_flate(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_flate(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_zlib_state state;
     stream_cursor_read scr;
     stream_cursor_write scw;
     int code;
 
-    s_init_state((stream_state*)&state, &s_zlibD_template, mem);
+    s_init_state((stream_state*)&state, &s_zlibD_template, ctx->memory);
     state.report_error = xps_report_error;
 
     s_zlibD_template.set_defaults((stream_state*)&state);
@@ -304,14 +304,14 @@ xps_decode_tiff_flate(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, by
 }
 
 static int
-xps_decode_tiff_fax(gs_memory_t *mem, xps_tiff_t *tiff, int comp, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_fax(xps_context_t *ctx, xps_tiff_t *tiff, int comp, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_CFD_state state;
     stream_cursor_read scr;
     stream_cursor_write scw;
     int code;
 
-    s_init_state((stream_state*)&state, &s_CFD_template, mem);
+    s_init_state((stream_state*)&state, &s_CFD_template, ctx->memory);
     state.report_error = xps_report_error;
 
     s_CFD_template.set_defaults((stream_state*)&state);
@@ -355,7 +355,7 @@ xps_decode_tiff_fax(gs_memory_t *mem, xps_tiff_t *tiff, int comp, byte *rp, byte
  */
 
 static int
-xps_decode_tiff_jpeg(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_jpeg(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
     stream_DCT_state state; /* used by gs_jpeg_* wrappers */
     jpeg_decompress_data jddp;
@@ -368,15 +368,15 @@ xps_decode_tiff_jpeg(gs_memory_t *mem, xps_tiff_t *tiff, byte *rp, byte *rl, byt
      * Set up the JPEG and DCT filter voodoo.
      */
 
-    s_init_state((stream_state*)&state, &s_DCTD_template, mem);
+    s_init_state((stream_state*)&state, &s_DCTD_template, ctx->memory);
     state.report_error = xps_report_error;
     s_DCTD_template.set_defaults((stream_state*)&state);
 
-    state.jpeg_memory = mem;
+    state.jpeg_memory = ctx->memory;
     state.data.decompress = &jddp;
 
     jddp.template = s_DCTD_template;
-    jddp.memory = mem;
+    jddp.memory = ctx->memory;
     jddp.scanline_buffer = NULL;
 
     if ((code = gs_jpeg_create_decompress(&state)) < 0)
@@ -524,7 +524,7 @@ xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
 }
 
 static int
-xps_expand_colormap(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
+xps_expand_colormap(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 {
     int maxval = 1 << image->bits;
     byte *samples;
@@ -544,7 +544,7 @@ xps_expand_colormap(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
 
     stride = image->width * (image->comps + 2);
 
-    samples = gs_alloc_bytes(mem, stride * image->height, "samples");
+    samples = xps_alloc(ctx, stride * image->height);
     if (!samples)
         return gs_throw(-1, "out of memory: samples");
 
@@ -574,8 +574,6 @@ xps_expand_colormap(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
         }
     }
 
-    gs_free_object(mem, image->samples, "samples");
-
     image->bits = 8;
     image->stride = stride;
     image->samples = samples;
@@ -584,7 +582,7 @@ xps_expand_colormap(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
 }
 
 static int
-xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
+xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 {
     int error;
 
@@ -617,23 +615,23 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
     switch (tiff->photometric)
     {
     case 0: /* WhiteIsZero -- inverted */
-        image->colorspace = XPS_GRAY;
+        image->colorspace = ctx->gray;
         break;
     case 1: /* BlackIsZero */
-        image->colorspace = XPS_GRAY;
+        image->colorspace = ctx->gray;
         break;
     case 2: /* RGB */
-        image->colorspace = XPS_RGB;
+        image->colorspace = ctx->srgb;
         break;
     case 3: /* RGBPal */
-        image->colorspace = XPS_RGB;
+        image->colorspace = ctx->srgb;
         break;
     case 5: /* CMYK */
-        image->colorspace = XPS_CMYK;
+        image->colorspace = ctx->cmyk;
         break;
     case 6: /* YCbCr */
         /* it's probably a jpeg ... we let jpeg convert to rgb */
-        image->colorspace = XPS_RGB;
+        image->colorspace = ctx->srgb;
         break;
     default:
         return gs_throw1(-1, "unknown photometric: %d", tiff->photometric);
@@ -663,7 +661,7 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
         image->yres = 96;
     }
 
-    image->samples = gs_alloc_bytes(mem, image->stride * image->height, "samples");
+    image->samples = xps_alloc(ctx, image->stride * image->height);
     if (!image->samples)
         return gs_throw(-1, "could not allocate image samples");
 
@@ -693,31 +691,31 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
         switch (tiff->compression)
         {
         case 1:
-            error = xps_decode_tiff_uncompressed(mem, tiff, rp, rp + rlen, wp, wp + wlen);
+            error = xps_decode_tiff_uncompressed(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 2:
-            error = xps_decode_tiff_fax(mem, tiff, 2, rp, rp + rlen, wp, wp + wlen);
+            error = xps_decode_tiff_fax(ctx, tiff, 2, rp, rp + rlen, wp, wp + wlen);
             break;
         case 3:
-            error = xps_decode_tiff_fax(mem, tiff, 3, rp, rp + rlen, wp, wp + wlen);
+            error = xps_decode_tiff_fax(ctx, tiff, 3, rp, rp + rlen, wp, wp + wlen);
             break;
         case 4:
-            error = xps_decode_tiff_fax(mem, tiff, 4, rp, rp + rlen, wp, wp + wlen);
+            error = xps_decode_tiff_fax(ctx, tiff, 4, rp, rp + rlen, wp, wp + wlen);
             break;
         case 5:
-            error = xps_decode_tiff_lzw(mem, tiff, rp, rp + rlen, wp, wp + wlen);
+            error = xps_decode_tiff_lzw(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 6:
             error = gs_throw(-1, "deprecated JPEG in TIFF compression not supported");
             break;
         case 7:
-            error = xps_decode_tiff_jpeg(mem, tiff, rp, rp + rlen, wp, wp + wlen);
+            error = xps_decode_tiff_jpeg(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 8:
-            error = xps_decode_tiff_flate(mem, tiff, rp, rp + rlen, wp, wp + wlen);
+            error = xps_decode_tiff_flate(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 32773:
-            error = xps_decode_tiff_packbits(mem, tiff, rp, rp + rlen, wp, wp + wlen);
+            error = xps_decode_tiff_packbits(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         default:
             error = gs_throw1(-1, "unknown TIFF compression: %d", tiff->compression);
@@ -749,7 +747,7 @@ xps_decode_tiff_strips(gs_memory_t *mem, xps_tiff_t *tiff, xps_image_t *image)
     /* RGBPal */
     if (tiff->photometric == 3 && tiff->colormap)
     {
-        error = xps_expand_colormap(mem, tiff, image);
+        error = xps_expand_colormap(ctx, tiff, image);
         if (error)
             return gs_rethrow(error, "could not expand colormap");
     }
@@ -818,7 +816,7 @@ xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned o
 }
 
 static int
-xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
+xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
 {
     unsigned tag;
     unsigned type;
@@ -895,13 +893,13 @@ xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
         xps_read_tiff_tag_value(&tiff->extrasamples, tiff, type, value, 1);
         break;
     case ICCProfile:
-        tiff->iccprofile = (unsigned char*) gs_alloc_bytes(mem, count , "TIFF ICC Profile");
-        if (!tiff->iccprofile)
+        tiff->profile = xps_alloc(ctx, count);
+        if (!tiff->profile)
             return gs_throw(-1, "could not allocate embedded icc profile");
         /* ICC profile data type is set to UNDEFINED.
          * TBYTE reading not correct in xps_read_tiff_tag_value */
-        xps_read_tiff_bytes((unsigned char *) tiff->iccprofile, tiff, value, count);
-        tiff->profile_size = count;
+        xps_read_tiff_bytes(tiff->profile, tiff, value, count);
+        tiff->profilesize = count;
         break;
 
     case JPEGTables:
@@ -910,21 +908,21 @@ xps_read_tiff_tag(gs_memory_t *mem, xps_tiff_t *tiff, unsigned offset)
         break;
 
     case StripOffsets:
-        tiff->stripoffsets = (unsigned*) gs_alloc_bytes(mem, count * sizeof(unsigned), "StripOffsets");
+        tiff->stripoffsets = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->stripoffsets)
             return gs_throw(-1, "could not allocate strip offsets");
         xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
         break;
 
     case StripByteCounts:
-        tiff->stripbytecounts = (unsigned*) gs_alloc_bytes(mem, count * sizeof(unsigned), "StripByteCounts");
+        tiff->stripbytecounts = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->stripbytecounts)
             return gs_throw(-1, "could not allocate strip byte counts");
         xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
         break;
 
     case ColorMap:
-        tiff->colormap = (unsigned*) gs_alloc_bytes(mem, count * sizeof(unsigned), "ColorMap");
+        tiff->colormap = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->colormap)
             return gs_throw(-1, "could not allocate color map");
         xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
@@ -957,7 +955,7 @@ xps_swap_byte_order(byte *buf, int n)
 }
 
 static int
-xps_decode_tiff_header(gs_memory_t *mem, xps_tiff_t *tiff, byte *buf, int len)
+xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
 {
     unsigned version;
     unsigned offset;
@@ -1013,7 +1011,7 @@ xps_decode_tiff_header(gs_memory_t *mem, xps_tiff_t *tiff, byte *buf, int len)
     offset += 2;
     for (i = 0; i < count; i++)
     {
-        error = xps_read_tiff_tag(mem, tiff, offset);
+        error = xps_read_tiff_tag(ctx, tiff, offset);
         if (error)
             return gs_rethrow(error, "could not read TIFF header tag");
         offset += 12;
@@ -1023,18 +1021,18 @@ xps_decode_tiff_header(gs_memory_t *mem, xps_tiff_t *tiff, byte *buf, int len)
 }
 
 int
-xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
-                unsigned char **profile, int *profile_size)
+xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
 {
     int error;
     xps_tiff_t tiffst;
     xps_tiff_t *tiff = &tiffst;
 
-    *profile = NULL;
-
-    error = xps_decode_tiff_header(mem, tiff, buf, len);
+    error = xps_decode_tiff_header(ctx, tiff, buf, len);
     if (error)
         return gs_rethrow(error, "cannot decode tiff header");
+
+    if (tiff->extrasamples == 2 || tiff->extrasamples == 1)
+        image->hasalpha = 1;
 
     /*
      * Decode the image strips
@@ -1043,7 +1041,7 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
     if (tiff->rowsperstrip > tiff->imagelength)
         tiff->rowsperstrip = tiff->imagelength;
 
-    error = xps_decode_tiff_strips(mem, tiff, image);
+    error = xps_decode_tiff_strips(ctx, tiff, image);
     if (error)
         return gs_rethrow(error, "could not decode image data");
 
@@ -1059,37 +1057,38 @@ xps_decode_tiff(gs_memory_t *mem, byte *buf, int len, xps_image_t *image,
     /*
      * Save ICC profile data
      */
-    *profile = tiff->iccprofile;
-    *profile_size = tiff->profile_size;
+    image->profile = tiff->profile;
+    image->profilesize = tiff->profilesize;
 
     /*
      * Clean up scratch memory
      */
 
-    if (tiff->colormap) gs_free_object(mem, tiff->colormap, "ColorMap");
-    if (tiff->stripoffsets) gs_free_object(mem, tiff->stripoffsets, "StripOffsets");
-    if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
+    if (tiff->colormap) xps_free(ctx, tiff->colormap);
+    if (tiff->stripoffsets) xps_free(ctx, tiff->stripoffsets);
+    if (tiff->stripbytecounts) xps_free(ctx, tiff->stripbytecounts);
 
     return gs_okay;
 }
 
 int
-xps_tiff_has_alpha(gs_memory_t *mem, byte *buf, int len)
+xps_tiff_has_alpha(xps_context_t *ctx, byte *buf, int len)
 {
     int error;
     xps_tiff_t tiffst;
     xps_tiff_t *tiff = &tiffst;
 
-    error = xps_decode_tiff_header(mem, tiff, buf, len);
+    error = xps_decode_tiff_header(ctx, tiff, buf, len);
     if (error)
     {
         gs_catch(error, "cannot decode tiff header");
         return 0;
     }
 
-    if (tiff->colormap) gs_free_object(mem, tiff->colormap, "ColorMap");
-    if (tiff->stripoffsets) gs_free_object(mem, tiff->stripoffsets, "StripOffsets");
-    if (tiff->stripbytecounts) gs_free_object(mem, tiff->stripbytecounts, "StripByteCounts");
+    if (tiff->profile) xps_free(ctx, tiff->profile);
+    if (tiff->colormap) xps_free(ctx, tiff->colormap);
+    if (tiff->stripoffsets) xps_free(ctx, tiff->stripoffsets);
+    if (tiff->stripbytecounts) xps_free(ctx, tiff->stripbytecounts);
 
     return tiff->extrasamples == 2 || tiff->extrasamples == 1;
 }

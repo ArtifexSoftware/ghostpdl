@@ -61,7 +61,7 @@ xps_png_free(png_structp png, png_voidp ptr)
 
 /* This only determines if we have an alpha value */
 int
-xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen)
+xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
 {
     png_structp png;
     png_infop info;
@@ -77,7 +77,7 @@ xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen)
 
     png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
             NULL, NULL, NULL,
-            mem, xps_png_malloc, xps_png_free);
+            ctx->memory, xps_png_malloc, xps_png_free);
     if (!png) {
         gs_warn("png_create_read_struct");
         return 0;
@@ -138,8 +138,7 @@ xps_png_has_alpha(gs_memory_t *mem, byte *rbuf, int rlen)
 }
 
 int
-xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
-    unsigned char **profile, int *profile_size)
+xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 {
     png_structp png;
     png_infop info;
@@ -155,11 +154,9 @@ xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
     io.ptr = rbuf;
     io.lim = rbuf + rlen;
 
-    *profile = NULL;
-
     png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
             NULL, NULL, NULL,
-            mem, xps_png_malloc, xps_png_free);
+            ctx->memory, xps_png_malloc, xps_png_free);
     if (!png)
         return gs_throw(-1, "png_create_read_struct");
 
@@ -216,31 +213,35 @@ xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
     /* See if we have an icc profile */
     if (info->iccp_profile != NULL)
     {
-        *profile = gs_alloc_bytes(mem, info->iccp_proflen, "PNG ICC Profile");
-        if (*profile != NULL)
+        image->profilesize = info->iccp_proflen;
+        image->profile = xps_alloc(ctx, info->iccp_proflen);
+        if (image->profile)
         {
             /* If we can't create it, just ignore */
-            memcpy(*profile, info->iccp_profile, info->iccp_proflen);
-            *profile_size = info->iccp_proflen;
+            memcpy(image->profile, info->iccp_profile, info->iccp_proflen);
         }
     }
 
     switch (png_get_color_type(png, info))
     {
     case PNG_COLOR_TYPE_GRAY:
-        image->colorspace = XPS_GRAY;
+        image->colorspace = ctx->gray;
+        image->hasalpha = 0;
         break;
 
     case PNG_COLOR_TYPE_RGB:
-        image->colorspace = XPS_RGB;
+        image->colorspace = ctx->srgb;
+        image->hasalpha = 0;
         break;
 
     case PNG_COLOR_TYPE_GRAY_ALPHA:
-        image->colorspace = XPS_GRAY_A;
+        image->colorspace = ctx->gray;
+        image->hasalpha = 1;
         break;
 
     case PNG_COLOR_TYPE_RGB_ALPHA:
-        image->colorspace = XPS_RGB_A;
+        image->colorspace = ctx->srgb;
+        image->hasalpha = 1;
         break;
 
     default:
@@ -272,7 +273,7 @@ xps_decode_png(gs_memory_t *mem, byte *rbuf, int rlen, xps_image_t *image,
 
     image->stride = (image->width * image->comps * image->bits + 7) / 8;
 
-    image->samples = gs_alloc_bytes(mem, image->stride * image->height, "decodepng");
+    image->samples = xps_alloc(ctx, image->stride * image->height);
 
     for (pass = 0; pass < npasses; pass++)
     {
