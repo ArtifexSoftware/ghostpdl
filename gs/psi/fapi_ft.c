@@ -361,6 +361,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 	FAPI_metrics *a_metrics, FT_Glyph *a_glyph, bool a_bitmap)
 {
     FT_Error ft_error = 0;
+    FT_Error ft_error_fb = 1;
     FF_face *face = (FF_face*)a_fapi_font->server_font_data;
     FT_Face ft_face = face->ft_face;
     int index = a_char_ref->char_code;
@@ -370,6 +371,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
      * after the first call to FT_Load_Glyph.
      */
     const void *saved_char_data = a_fapi_font->char_data;
+    const int saved_char_data_len = a_fapi_font->char_data_len;
 
     if (!a_char_ref->is_glyph_index)
     {
@@ -435,10 +437,22 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         a_fapi_font->char_data = saved_char_data;
         ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
     }
+
+    /* If FT gives us an error, try to fall back to the notdef - if that doesn't work, we'll throw an error over to Ghostscript */
+    if (ft_error) {
+        a_fapi_font->char_data = (void *)".notdef";
+        a_fapi_font->char_data_len = 7;
+        
+        ft_error_fb = FT_Load_Glyph(ft_face, 0, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+        
+        a_fapi_font->char_data = saved_char_data;
+        a_fapi_font->char_data_len = saved_char_data_len;
+    }
+
     /* Previously we interpreted the glyph unscaled, and derived the metrics from that. Now we only interpret it
      * once, and work out the metrics from the scaled/hinted outline.
      */
-    if (!ft_error && a_metrics)
+    if ((!ft_error || !ft_error_fb) && a_metrics)
     {
         FT_Long hx;
         FT_Long hy;
@@ -478,48 +492,64 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         a_metrics->em_y = ft_face->units_per_EM;
     }
 
-    if (!ft_error && a_glyph)
+    if ((!ft_error || !ft_error_fb) && a_glyph)
         ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
 
     if (ft_error == FT_Err_Too_Many_Hints) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
             emprintf1(a_fapi_font->memory,
-                      "TrueType glyph %d uses more instructions than the declared maximum in the font. Continuing, ignoring broken glyph\n",
+                      "TrueType glyph %d uses more instructions than the declared maximum in the font.",
                       a_char_ref->char_code);
+            
+            if (!ft_error_fb) {
+                emprintf(a_fapi_font->memory, " Continuing, falling back to notdef\n\n");
+            }
         }
 #endif
-	ft_error = 0;
+        if (!ft_error_fb) ft_error = 0;
     }
     if (ft_error == FT_Err_Invalid_Argument) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
 	    emprintf1(a_fapi_font->memory,
-                      "TrueType parsing error in glyph %d in the font. Continuing, ignoring broken glyph\n",
+                      "TrueType parsing error in glyph %d in the font.",
                       a_char_ref->char_code);
+            
+            if (!ft_error_fb) {
+                emprintf(a_fapi_font->memory, " Continuing, falling back to notdef\n\n");
+            }
         }
 #endif
-	ft_error = 0;
+        if (!ft_error_fb) ft_error = 0;
     }
     if (ft_error == FT_Err_Too_Many_Function_Defs) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
 	    emprintf1(a_fapi_font->memory,
-                      "TrueType instruction error in glyph %d in the font. Continuing, ignoring broken glyph\n",
+                      "TrueType instruction error in glyph %d in the font.",
                       a_char_ref->char_code);
+            
+            if (!ft_error_fb) {
+                emprintf(a_fapi_font->memory, " Continuing, falling back to notdef\n\n");
+            }
         }
 #endif
-	ft_error = 0;
+        if (!ft_error_fb) ft_error = 0;
     }
     if (ft_error == FT_Err_Invalid_Glyph_Index) {
 #ifdef DEBUG
 	if (gs_debug_c('1')) {
 	    emprintf1(a_fapi_font->memory,
-                      "FreeType is unable to find the glyph %d in the font. Continuing, ignoring missing glyph\n",
+                      "FreeType is unable to find the glyph %d in the font.",
                       a_char_ref->char_code);
+            
+            if (!ft_error_fb) {
+                emprintf(a_fapi_font->memory, " Continuing, falling back to notdef\n\n");
+            }
         }
 #endif
-	ft_error = 0;
+        if (!ft_error_fb) ft_error = 0;
     }
     return ft_to_gs_error(ft_error);
 } 
