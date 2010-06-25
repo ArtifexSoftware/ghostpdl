@@ -311,7 +311,7 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
             return gs_rethrow(code, "cannot draw color channel image");
         gs_end_transparency_group(ctx->pgs);
 
-        code = gs_gsave(ctx->pgs);
+        code = gs_grestore(ctx->pgs);
         if (code < 0)
             return gs_rethrow(code, "cannot grestore after transparency group");
     }
