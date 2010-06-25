@@ -766,13 +766,13 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     /* Premultiplied transparency */
     if (tiff->extrasamples == 1)
     {
-        image->colorspace ++;
+        image->hasalpha = 1;
     }
 
     /* Non-pre-multiplied transparency */
     if (tiff->extrasamples == 2)
     {
-        image->colorspace ++;
+        image->hasalpha = 1;
     }
 
     return gs_okay;
@@ -1030,9 +1030,6 @@ xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
     error = xps_decode_tiff_header(ctx, tiff, buf, len);
     if (error)
         return gs_rethrow(error, "cannot decode tiff header");
-
-    if (tiff->extrasamples == 2 || tiff->extrasamples == 1)
-        image->hasalpha = 1;
 
     /*
      * Decode the image strips
