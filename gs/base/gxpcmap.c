@@ -1067,7 +1067,8 @@ gx_erase_colored_pattern(gs_state *pgs)
         if (code < 0)
             return code;
     }
-    return gs_grestore(pgs);
+    /* we don't need wraparound here */
+    return gs_grestore_only(pgs);
 }
 
 /* Reload a (non-null) Pattern color into the cache. */
