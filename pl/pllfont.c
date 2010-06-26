@@ -52,18 +52,18 @@ is_ttfile(stream *ttfile)
     byte buffer[4]; /* version number buffer */
     bool is_tt;     /* true if a tt file */
     if ( (pos = sftell( ttfile )) < 0 )
-	return false;
+        return false;
     /* seek to beginning */
     if ( sfseek( ttfile, 0L, SEEK_SET ) )
-	return false;
+        return false;
     /* read 4 byte version number */
     is_tt = false;
     if ( ( sfread( &buffer, 1, 4, ttfile ) == 4 ) &&
-	 ( pl_get_uint32( buffer ) == 0x10000 ) )
-	    is_tt = true;
+         ( pl_get_uint32( buffer ) == 0x10000 ) )
+            is_tt = true;
     /* restore the file position */
     if ( sfseek( ttfile, pos, SEEK_SET ) < 0 )
-	return false;
+        return false;
     return is_tt;
 }
 
@@ -73,7 +73,7 @@ is_ttfile(stream *ttfile)
 #define WINDOWSNAME 4
 #define PSNAME 6
 
-static 
+static
 int get_name_from_tt_file(stream *tt_file, gs_memory_t *mem, char *pfontfilename, int nameoffset)
 {
     /* check if an open file a ttfile saving and restoring the file position */
@@ -83,74 +83,74 @@ int get_name_from_tt_file(stream *tt_file, gs_memory_t *mem, char *pfontfilename
     byte *ptt_font_data;
 
     if ( (pos = sftell( tt_file )) < 0 )
-	return -1;
+        return -1;
     /* seek to end and get the file length and allocate a buffer
        for the entire file */
     if ( sfseek( tt_file, 0L, SEEK_END ) )
-	return -1;
+        return -1;
     len = sftell( tt_file );
 
     /* allocate a buffer for the entire file */
     ptt_font_data = gs_alloc_bytes( mem, len, "get_name_from_tt_file" );
     if ( ptt_font_data == NULL )
-	return_error(gs_error_VMerror );
+        return_error(gs_error_VMerror );
 
     /* seek back to the beginning of the file and read the data
        into the buffer */
     if ( ( sfseek( tt_file, 0L, SEEK_SET ) == 0 ) &&
-	 ( sfread( ptt_font_data, 1, len, tt_file ) == len ) )
-	; /* ok */
+         ( sfread( ptt_font_data, 1, len, tt_file ) == len ) )
+        ; /* ok */
     else {
-	gs_free_object( mem, ptt_font_data, "get_name_from_tt_file" );
-	return -1;
+        gs_free_object( mem, ptt_font_data, "get_name_from_tt_file" );
+        return -1;
     }
 
     {
-	/* find the "name" table */
-	byte *pnum_tables_data = ptt_font_data + 4;
-	byte *ptable_directory_data = ptt_font_data + 12;
-	int table;
-	for ( table = 0; table < pl_get_uint16( pnum_tables_data ); table++ )
-	    if ( !memcmp( ptable_directory_data + (table * 16), "name", 4 ) ) {
-		unsigned int offset = 
-		    pl_get_uint32( ptable_directory_data + (table * 16) + 8 );
-		byte *name_table = ptt_font_data + offset;
-		/* the offset to the string pool */
-		unsigned short storageOffset = pl_get_uint16( name_table + 4 );
-		byte *name_recs = name_table + 6;
-		{
-		    /* 4th entry in the name table - the complete name */
-		    unsigned short length = 
+        /* find the "name" table */
+        byte *pnum_tables_data = ptt_font_data + 4;
+        byte *ptable_directory_data = ptt_font_data + 12;
+        int table;
+        for ( table = 0; table < pl_get_uint16( pnum_tables_data ); table++ )
+            if ( !memcmp( ptable_directory_data + (table * 16), "name", 4 ) ) {
+                unsigned int offset =
+                    pl_get_uint32( ptable_directory_data + (table * 16) + 8 );
+                byte *name_table = ptt_font_data + offset;
+                /* the offset to the string pool */
+                unsigned short storageOffset = pl_get_uint16( name_table + 4 );
+                byte *name_recs = name_table + 6;
+                {
+                    /* 4th entry in the name table - the complete name */
+                    unsigned short length =
                         pl_get_uint16( name_recs + (12 * nameoffset) + 8 );
-		    unsigned short offset = 
+                    unsigned short offset =
                         pl_get_uint16( name_recs + (12 * nameoffset) + 10 );
-		    int k;
-		    for ( k = 0; k < length; k++ ) {
-			/* hack around unicode if necessary */
-			int c = name_table[storageOffset + offset + k];
-			if ( isprint( c ) )
-			    *ptr++ = (char)c;
-		    }
-		}
-		break;
-	    }
+                    int k;
+                    for ( k = 0; k < length; k++ ) {
+                        /* hack around unicode if necessary */
+                        int c = name_table[storageOffset + offset + k];
+                        if ( isprint( c ) )
+                            *ptr++ = (char)c;
+                    }
+                }
+                break;
+            }
     }
     /* free up the data and restore the file position */
     gs_free_object( mem, ptt_font_data, "get_name_from_tt_file" );
     if ( sfseek( tt_file, pos, SEEK_SET ) < 0 )
-	return -1;
+        return -1;
     /* null terminate the fontname string and return success.  Note
        the string can be 0 length if no fontname was found. */
     *ptr = '\0';
 
     /* trim trailing white space */
     {
-	int i = strlen(pfontfilename);
-	while (--i >= 0) {
-	    if (!isspace(pfontfilename[i]))
-		break;
-	}
-	pfontfilename[++i] = '\0';
+        int i = strlen(pfontfilename);
+        while (--i >= 0) {
+            if (!isspace(pfontfilename[i]))
+                break;
+        }
+        pfontfilename[++i] = '\0';
     }
 
     return 0;
@@ -161,15 +161,15 @@ static void
 check_resident_fonts(pl_dict_t *pfontdict, gs_memory_t *mem)
 {
     int i;
-    for (i = 0; 
+    for (i = 0;
          strlen(resident_table[i].full_font_name) != 0;
          i ++)
         if (!pl_lookup_font_by_pjl_number(pfontdict, i)) {
             int j;
             dprintf2("%s (entry %d) not found\n", resident_table[i].full_font_name, i);
             dprintf("pxl unicode name:");
-            for (j = 0; 
-                 j < sizeof(resident_table[i].unicode_fontname); 
+            for (j = 0;
+                 j < sizeof(resident_table[i].unicode_fontname);
                  j++)
                 dprintf1("'%c'", resident_table[i].unicode_fontname[j]);
             dprintf("\n");
@@ -182,7 +182,7 @@ check_resident_fonts(pl_dict_t *pfontdict, gs_memory_t *mem)
 pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                        pl_dict_t *pfontdict, gs_font_dir *pdir,
                        int storage, bool use_unicode_names_for_keys)
-{	
+{
     const font_resident_t *residentp;
     /* get rid of this should be keyed by pjl font number */
     byte key[3];
@@ -193,12 +193,12 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
     const char pattern[] = "*";
 
     if (pathname == NULL) {
-	/* no font pathname */
-	return 0;
+        /* no font pathname */
+        return 0;
     }
     /* don't load fonts more than once */
     if (pl_dict_length(pfontdict, true) > 0) {
-	return 1;
+        return 1;
     }
 
     /* Enumerate through the files in the path */
@@ -220,18 +220,18 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
             append_separator = true;
 
         /* concatenate path and pattern */
-        if ((strlen(pattern) + 
+        if ((strlen(pattern) +
              strlen(tmp_pathp) + 1 ) +
             (append_separator ? separator_length : 0) > sizeof( tmp_path_copy ) ) {
             dprintf1("path name %s too long\n", tmp_pathp );
             continue;
         }
 
-        strcpy(tmp_path_copy, tmp_pathp);
+        memmove(tmp_path_copy, tmp_pathp, strlen(tmp_pathp) + 1);
 
         if (append_separator == true)
             strcat(tmp_path_copy, gp_file_name_directory_separator());
-                
+
         /* NOTE the gp code code takes care of converting * to *.* */
         strcat(tmp_path_copy, pattern);
 
@@ -239,7 +239,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
         fe = gs_enumerate_files_init(tmp_path_copy,
                                      strlen( tmp_path_copy ), mem);
 
-	    /* loop through the files */
+            /* loop through the files */
         while ((code = gs_enumerate_files_next(fe,
                                                tmp_path_copy,
                                                sizeof(tmp_path_copy))) >= 0) {
@@ -264,7 +264,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                     dprintf1("%s not a TrueType file\n", tmp_path_copy);
                 }
 #endif
-		    continue;
+                    continue;
             }
 
             code = get_name_from_tt_file( in, mem, buffer, PSNAME);
@@ -278,10 +278,10 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                 continue;
             }
 
-		/* lookup the font file name in the resident table */
+                /* lookup the font file name in the resident table */
                 found = false;
-		for (residentp = resident_table; strlen(residentp->full_font_name); ++residentp) {
-		    if (strcmp(buffer, residentp->full_font_name) != 0)
+                for (residentp = resident_table; strlen(residentp->full_font_name); ++residentp) {
+                    if (strcmp(buffer, residentp->full_font_name) != 0)
                         continue;
                     /* load the font file into memory.  NOTE: this closes the file - argh... */
                     if ( pl_load_tt_font(in, pdir, mem,
@@ -321,8 +321,8 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                     found = true;
                 }
 
-		/* nothing found */
-		if (!found) {
+                /* nothing found */
+                if (!found) {
                    #ifdef DEBUG
                    if (gs_debug_c('=')) {
                        dprintf2("TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);

@@ -87,7 +87,7 @@ checkGrayLevel(const px_value_t *pv)
 
 static int
 checkPageAngle(const px_value_t *pv)
-{       
+{
     /* XL 1.0 generates an error for non-orthogonal page angles */
     return 0;
 }
@@ -125,7 +125,7 @@ checkUnitsPerMeasure(const px_value_t *pv)
 #undef ok_iff
 
 const px_attr_value_type_t px_attr_value_types[] = {
-/* 0 */    none,                    
+/* 0 */    none,
 /* 1 */    none,
 /* 2 */    en(pxeColorDepth_next),       /* PaletteDepth = 2 */
 /* 3 */    en(pxeColorSpace_next),              /* ColorSpace */
@@ -266,7 +266,7 @@ const px_attr_value_type_t px_attr_value_types[] = {
 /* 138 */  none,
 /* 139 */  arr(ub|us),          /* StreamName = 139 */
 /* 140 */  sc(ul),              /* StreamDataLength */
-/* 141 */  none,
+/* 141 */  arr(ub|us),          /* PCLSelectFont */
 /* 142 */  none,
 /* 143 */  en(pxeErrorReport_next),             /* ErrorReport = 143 */
 /* 144 */  none,
@@ -335,7 +335,7 @@ const char *px_attribute_names[] = {
   "NullPen", "PaletteData", 0, "PatternSelectID", "GrayLevel",
 /*10*/
   0, "RGBColor", "PatternOrigin", "NewDestinationSize", "PrimaryArray",
-  "PrimaryDepth", 0, 
+  "PrimaryDepth", 0,
   "ColorimetricColorSpace", "XYChromaticities", "WhiteReferencePoint", "CRGBMinMax", "GammaGain",
 /*22*/
   0, 0, 0, 0,
@@ -458,7 +458,7 @@ const char *px_operator_names[0x80] = {
   0, 0, 0, "BeginFontHeader",
 /*5x*/
   "ReadFontHeader", "EndFontHeader", "BeginChar", "ReadChar",
-  "EndChar", "RemoveFont", 
+  "EndChar", "RemoveFont",
   "SetCharAttributes",
   "SetDefaultGS", "SetColorTreatment",
   0, 0, "BeginStream",
