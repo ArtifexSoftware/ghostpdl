@@ -75,7 +75,7 @@ pcmtx3_h    = $(PCLSRC)pcmtx3.h   \
               $(gscie_h)
 
 pcommand_h  = $(PCLSRC)pcommand.h \
-              $(memory__h)         \
+              $(memory__h)        \
               $(gx_h)             \
               $(gserrors_h)
 
@@ -177,7 +177,7 @@ pcht_h      = $(PCLSRC)pcht.h     \
               $(pclookup_h)       \
               $(pcdither_h)
 
-pcindxed_h = $(PCLSRC)pcindxed.h\
+pcindxed_h = $(PCLSRC)pcindxed.h  \
               $(gx_h)             \
               $(gsstruct_h)       \
               $(gsrefct_h)        \
@@ -282,6 +282,7 @@ $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c   \
                           $(gsmatrix_h)         \
                           $(gxstate_h)          \
                           $(gsdevice_h)         \
+                          $(pcindxed_h)         \
                           $(pcommand_h)         \
                           $(pcparse_h)          \
                           $(pcstate_h)          \
@@ -399,7 +400,7 @@ $(PCLOBJ)rtlbase.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbase_) $(PCLOBJ)pcl5base.dev
 
 # Chapter 2, 3, 4, 5
 $(PCLOBJ)pcbiptrn.$(OBJ): $(PCLSRC)pcbiptrn.c   \
-			  $(math__h)          \
+			  $(math__h)            \
 			  $(string__h)          \
 			  $(gstypes_h)		\
 			  $(gsmatrix_h)         \
@@ -407,9 +408,9 @@ $(PCLOBJ)pcbiptrn.$(OBJ): $(PCLSRC)pcbiptrn.c   \
 			  $(gsstate_h)		\
 			  $(gscoord_h)          \
                           $(pcpatrn_h)          \
-			  $(pcstate_h)		\
                           $(pcuptrn_h)          \
-                          $(pcbiptrn_h)
+                          $(pcbiptrn_h)         \
+			  $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcbiptrn.c $(PCLO_)pcbiptrn.$(OBJ)
 
 $(PCLOBJ)pccid.$(OBJ): $(PCLSRC)pccid.c     \
@@ -419,7 +420,8 @@ $(PCLOBJ)pccid.$(OBJ): $(PCLSRC)pccid.c     \
                        $(pcommand_h)        \
                        $(pcstate_h)         \
                        $(pcpalet_h)         \
-                       $(pccid_h)
+                       $(pccid_h)           \
+                       $(plsrgb_h)
 	$(PCLCCC) $(PCLSRC)pccid.c $(PCLO_)pccid.$(OBJ)
 
 $(PCLOBJ)pccolor.$(OBJ): $(PCLSRC)pccolor.c \
@@ -485,11 +487,12 @@ $(PCLOBJ)pcht.$(OBJ): $(PCLSRC)pcht.c   \
                       $(gsparam_h)      \
                       $(gxdevice_h)     \
                       $(pcommand_h)     \
-                      $(pcpalet_h)      \
                       $(pcstate_h)      \
                       $(pcdither_h)     \
                       $(pcht_h)         \
-                      $(pcindxed_h)
+                      $(pcpalet_h)      \
+                      $(pcindxed_h)     \
+                      $(plht_h)
 	$(PCLCCC) $(PCLSRC)pcht.c $(PCLO_)pcht.$(OBJ)
 
 $(PCLOBJ)pcident.$(OBJ): $(PCLSRC)pcident.c \
@@ -500,9 +503,9 @@ $(PCLOBJ)pcident.$(OBJ): $(PCLSRC)pcident.c \
 	$(PCLCCC) $(PCLSRC)pcident.c $(PCLO_)pcident.$(OBJ)
 
 $(PCLOBJ)pcindxed.$(OBJ): $(PCLSRC)pcindxed.c \
-                           $(gx_h)              \
                            $(math__h)           \
                            $(string__h)         \
+                           $(gx_h)              \
                            $(pcmtx3_h)          \
                            $(pccid_h)           \
                            $(pccsbase_h)        \
@@ -515,25 +518,28 @@ $(PCLOBJ)pclookup.$(OBJ): $(PCLSRC)pclookup.c   \
 	$(PCLCCC) $(PCLSRC)pclookup.c $(PCLO_)pclookup.$(OBJ)
 
 $(PCLOBJ)pcmtx3.$(OBJ): $(PCLSRC)pcmtx3.c   \
-                        $(gx_h)             \
 			$(string__h)        \
                         $(math__h)          \
+                        $(gx_h)             \
                         $(gstypes_h)        \
                         $(pcommand_h)       \
                         $(pcmtx3_h)
 	$(PCLCCC) $(PCLSRC)pcmtx3.c $(PCLO_)pcmtx3.$(OBJ)
 
 $(PCLOBJ)pcpalet.$(OBJ): $(PCLSRC)pcpalet.c \
-                         $(gsparam_h)       \
-                         $(gsdevice_h)      \
                          $(gx_h)            \
-                         $(gxcmap_h)        \
                          $(pldict_h)        \
                          $(pcdraw_h)        \
                          $(pcpage_h)        \
                          $(pcursor_h)       \
                          $(pcpalet_h)       \
-                         $(pcfrgrnd_h)
+                         $(pcfrgrnd_h)      \
+                         $(pccrd_h)         \
+                         $(gsparam_h)       \
+                         $(gsdevice_h)      \
+                         $(gxcmap_h)        \
+                         $(gxdcconv_h)      \
+                         $(gzstate_h)
 	$(PCLCCC) $(PCLSRC)pcpalet.c $(PCLO_)pcpalet.$(OBJ)
 
 $(PCLOBJ)pcpatrn.$(OBJ): $(PCLSRC)pcpatrn.c \
@@ -654,7 +660,9 @@ $(PCLOBJ)pcfsel.$(OBJ): $(PCLSRC)pcfsel.c   \
                         $(pcstate_h)        \
                         $(pcfont_h)         \
                         $(pcfsel_h)         \
-                        $(pcsymbol_h)
+                        $(pcsymbol_h)       \
+                        $(plvalue_h)        \
+                        $(plftable_h)
 	$(PCLCCC) $(PCLSRC)pcfsel.c $(PCLO_)pcfsel.$(OBJ)
 
 $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
@@ -670,6 +678,8 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
 			$(pldebug_h)		    \
                         $(gdebug_h)                 \
                         $(gsmatrix_h)               \
+                        $(gsrop_h)                  \
+                        $(gspaint_h)                \
                         $(gsstate_h)                \
                         $(gxalloc_h)                \
                         $(gxdevice_h)               \
@@ -677,7 +687,9 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(pjparse_h)                \
                         $(pltop_h)                  \
                         $(pctop_h)                  \
-                        $(gsicc_manage_h)			\
+                        $(pccrd_h)                  \
+                        $(pcpalet_h)                \
+                        $(gsicc_manage_h)           \
                         $(PCLGEN)pconf.h
 	$(CP_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
 	$(PCLCCC) $(PCLSRC)pctop.c $(PCLO_)pctop.$(OBJ)
@@ -752,9 +764,9 @@ $(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c   \
                         $(gx_h)             \
                         $(gsccode_h)        \
                         $(gsmatrix_h)       \
-                        $(gxfcache_h)       \
                         $(gxfixed_h)        \
                         $(gxchar_h)         \
+                        $(gxfcache_h)       \
                         $(gxfont_h)         \
                         $(gxfont42_h)       \
                         $(pcommand_h)       \
@@ -809,10 +821,11 @@ $(PCLOBJ)pcsfont.$(OBJ): $(PCLSRC)pcsfont.c \
                          $(gdebug_h)        \
                          $(pcommand_h)      \
                          $(pcfont_h)        \
+                         $(pcursor_h)       \
                          $(pcpage_h)        \
-                         $(pcparse_h)       \
                          $(pcstate_h)       \
                          $(pcfsel_h)        \
+                         $(pcparse_h)       \
                          $(pjparse_h)       \
                          $(pldict_h)        \
                          $(plvalue_h)       \
@@ -829,9 +842,9 @@ $(PCLOBJ)pcsfont.$(OBJ): $(PCLSRC)pcsfont.c \
 $(PCLOBJ)pcmacros.$(OBJ): $(PCLSRC)pcmacros.c   \
                           $(stdio__h)           \
                           $(pcommand_h)         \
+                          $(pgmand_h)           \
                           $(pcstate_h)          \
-                          $(pcparse_h)          \
-                          $(pgmand_h)
+                          $(pcparse_h)
 	$(PCLCCC) $(PCLSRC)pcmacros.c $(PCLO_)pcmacros.$(OBJ)
 
 # Chapter 14
@@ -957,7 +970,8 @@ $(PCLOBJ)pcl5c.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5C_OPS) \
 
 pgfdata_h   = $(PCLSRC)pgfdata.h
 
-pgfont_h    = $(PCLSRC)pgfont.h
+pgfont_h    = $(PCLSRC)pgfont.h \
+              $(pgmand_h)
 
 pggeom_h    = $(PCLSRC)pggeom.h   \
               $(math__h)          \
@@ -986,9 +1000,9 @@ $(PCLOBJ)pgdraw.$(OBJ): $(PCLSRC)pgdraw.c \
                         $(pggeom_h)       \
                         $(pgmisc_h)       \
                         $(pcdraw_h)       \
-                        $(pcpage_h)       \
                         $(pcpalet_h)      \
-                        $(pcpatrn_h)
+                        $(pcpatrn_h)      \
+                        $(pcpage_h)
 	$(PCLCCC) $(PCLSRC)pgdraw.c $(PCLO_)pgdraw.$(OBJ)
 
 $(PCLOBJ)pggeom.$(OBJ): $(PCLSRC)pggeom.c \
@@ -1010,6 +1024,7 @@ $(PCLOBJ)pginit.$(OBJ): $(PCLSRC)pginit.c \
                         $(gsmatrix_h)     \
                         $(gsmemory_h)     \
                         $(gsstate_h)      \
+                        $(pgfont_h)       \
                         $(pgmand_h)       \
                         $(pginit_h)       \
                         $(pgdraw_h)       \
@@ -1062,6 +1077,7 @@ $(PCLOBJ)pgconfig.$(OBJ): $(PCLSRC)pgconfig.c \
                           $(gsstate_h)        \
                           $(gscoord_h)        \
                           $(pgmand_h)         \
+                          $(pcparse_h)        \
                           $(pgdraw_h)         \
                           $(pginit_h)         \
                           $(pggeom_h)         \
@@ -1069,8 +1085,7 @@ $(PCLOBJ)pgconfig.$(OBJ): $(PCLSRC)pgconfig.c \
                           $(pcursor_h)        \
                           $(pcpage_h)         \
                           $(pcpalet_h)        \
-                          $(pcdraw_h)         \
-                          $(pcparse_h)
+                          $(pcdraw_h)
 	$(PCLCCC) $(PCLSRC)pgconfig.c $(PCLO_)pgconfig.$(OBJ)
 
 # Chapter 20
@@ -1096,8 +1111,8 @@ $(PCLOBJ)pgpoly.$(OBJ): $(PCLSRC)pgpoly.c \
                         $(pggeom_h)       \
                         $(pgmisc_h)       \
                         $(pcpatrn_h)      \
-			$(gscoord_h)      \
-                        $(gspath_h)
+                        $(gspath_h)       \
+			$(gscoord_h)
 	$(PCLCCC) $(PCLSRC)pgpoly.c $(PCLO_)pgpoly.$(OBJ)
 
 # Chapter 22
@@ -1140,6 +1155,7 @@ $(PCLOBJ)pglabel.$(OBJ): $(PCLSRC)pglabel.c  \
                          $(ctype__h)         \
                          $(stdio__h)         \
                          $(gdebug_h)         \
+                         $(pcparse_h)        \
                          $(plvalue_h)        \
                          $(pgmand_h)         \
                          $(pginit_h)         \
@@ -1151,7 +1167,6 @@ $(PCLOBJ)pglabel.$(OBJ): $(PCLSRC)pglabel.c  \
                          $(pcfsel_h)         \
                          $(pcsymbol_h)       \
                          $(pcpalet_h)        \
-                         $(pcparse_h)        \
                          $(pcdraw_h)         \
                          $(gscoord_h)        \
                          $(gsline_h)         \

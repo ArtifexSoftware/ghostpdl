@@ -107,9 +107,10 @@ $(PXLOBJ)pxptable.$(OBJ): $(PXLSRC)pxptable.c $(AK) $(std_h)\
 	$(PXLCCC) $(PXLSRC)pxptable.c $(PXLO_)pxptable.$(OBJ)
 
 $(PXLOBJ)pxpthr.$(OBJ): $(PXLSRC)pxpthr.c $(AK) \
+ $(gsstate_h) $(gscoord_h) $(gspath_h) $(gstypes_h) $(gsdevice_h)\
  $(pcommand_h) $(pgmand_h) $(pcstate_h) $(pcparse_h) $(pctop_h)\
  $(pcpage_h) $(pxstate_h) $(pxoper_h) $(stdio__h) $(pxpthr_h)\
- $(gsicc_manage_h)
+ $(pxparse_h) $(pxgstate_h) $(pcdraw_h) $(gsicc_manage_h)
 	$(PXLCCC) $(PXLSRC)pxpthr.c $(PXLO_)pxpthr.$(OBJ)
 
 $(PXLOBJ)pxvalue.$(OBJ): $(PXLSRC)pxvalue.c $(AK) $(std_h) $(gsmemory_h) $(pxvalue_h)
@@ -141,8 +142,8 @@ $(PXLOBJ)pxfont.$(OBJ): $(PXLSRC)pxfont.c $(AK) $(math__h) $(stdio__h) $(string_
 $(PXLOBJ)pxgstate.$(OBJ): $(PXLSRC)pxgstate.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h) $(gspath2_h) $(gsrop_h)\
  $(gsstate_h) $(gsstruct_h)  $(gdebug_h) $(gscie_h) $(gscolor2_h) $(gstypes_h)\
- $(gxcspace_h) $(gxpath_h) $(gzstate_h)\
- $(pxoper_h) $(pxptable_h) $(pxstate_h)  $(plsrgb_h)
+ $(gsicc_manage_h) $(gxcspace_h) $(gxpath_h) $(gzstate_h)\
+ $(pxoper_h) $(pxptable_h) $(pxstate_h)  $(pxparse_h) $(plsrgb_h)
 	$(PXLCCC) $(PXLSRC)pxgstate.c $(PXLO_)pxgstate.$(OBJ)
 
 $(PXLOBJ)pximage.$(OBJ): $(PXLSRC)pximage.c $(AK) $(std_h)\
@@ -158,7 +159,7 @@ $(PXLOBJ)pxink.$(OBJ): $(PXLSRC)pxink.c $(math__h) $(stdio__h) $(memory__h)\
  $(gdebug_h) $(gscolor2_h) $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h)\
  $(gspath2_h) $(gstypes_h) $(gscie_h) $(gscrd_h) $(gsstate_h)\
  $(gxarith_h) $(gxcspace_h) $(gxdevice_h) $(gxht_h) $(gxstate_h)\
- $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h) $(pldraw_h)
+ $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h) $(pldraw_h) $(plsrgb_h)
 	$(PXLCCC) $(PXLSRC)pxink.c $(PXLO_)pxink.$(OBJ)
 
 $(PXLOBJ)pxpaint.$(OBJ): $(PXLSRC)pxpaint.c $(AK) $(math__h) $(stdio__h)\
@@ -168,15 +169,16 @@ $(PXLOBJ)pxpaint.$(OBJ): $(PXLSRC)pxpaint.c $(AK) $(math__h) $(stdio__h)\
 	$(PXLCCC) $(PXLSRC)pxpaint.c $(PXLO_)pxpaint.$(OBJ)
 
 $(PXLOBJ)pxsessio.$(OBJ): $(PXLSRC)pxsessio.c $(AK) $(math__h) $(stdio__h)\
- $(string__h) $(pxoper_h) $(pxstate_h) $(pxfont_h) \
+ $(string__h) $(plsrgb_h) $(pxoper_h) $(pxstate_h) $(pxfont_h) \
  $(pjparse_h) $(gschar_h) $(gscoord_h) $(gserrors_h) $(gspaint_h) $(gsparam_h)\
- $(gsstate_h) $(gxfixed_h) $(gxpath_h) $(gxfcache_h)\
- $(gxdevice_h) $(pjtop_h) $(pllfont_h) $(pxptable_h) 
+ $(gsstate_h) $(gxfixed_h) $(gxpath_h) $(gxpcolor_h) $(gxfcache_h)\
+ $(gxdevice_h) $(gxstate_h) $(gxdcolor_h) $(pjtop_h) $(pllfont_h) $(pxptable_h)\
+ $(pxpthr_h)
 	$(PXLCCC) $(PXLSRC)pxsessio.c $(PXLO_)pxsessio.$(OBJ)
 
 $(PXLOBJ)pxstream.$(OBJ): $(PXLSRC)pxstream.c $(AK) $(memory__h)\
  $(gsmemory_h) $(scommon_h)\
- $(pxoper_h) $(pxparse_h) $(pxstate_h)
+ $(pxoper_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)
 	$(PXLCCC) $(PXLSRC)pxstream.c $(PXLO_)pxstream.$(OBJ)
 
 # We have to break up pxl_ops because of the MS-DOS command line

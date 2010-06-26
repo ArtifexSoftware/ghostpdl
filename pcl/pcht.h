@@ -22,7 +22,6 @@
 #include "gsht1.h"
 #include "gshtx.h"
 #include "pcident.h"
-#include "pcstate.h"
 #include "pcommand.h"
 #include "pclookup.h"
 #include "pcdither.h"

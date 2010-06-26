@@ -19,7 +19,6 @@
 #include "gx.h"
 #include "gsstruct.h"
 #include "gsrefct.h"
-#include "pcstate.h"
 #include "pcommand.h"
 
 /*
