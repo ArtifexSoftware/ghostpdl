@@ -1124,7 +1124,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
            pattern code is duplicated to support high level stream
            patterns. */
         if (pinst->template.PaintType == 1)
-            if ((gx_erase_colored_pattern(saved)) < 0)
+            if ((code = gx_erase_colored_pattern(saved)) < 0)
                 return code;
     }
 
