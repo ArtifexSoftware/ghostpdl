@@ -238,8 +238,8 @@ include $(COMMONDIR)/ugcc_top.mak
 # Subsystems
 
 include $(PLSRCDIR)/pl.mak
-include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
+include $(PXLSRCDIR)/pxl.mak
 
 # Main program.
 

@@ -23,6 +23,7 @@
 #include "pcommand.h"
 #include "pgmand.h"
 #include "pcstate.h"
+#include "pcfont.h"
 #include "pcparse.h"
 #include "pctop.h"
 #include "pcpage.h"
@@ -345,11 +346,7 @@ int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
     uint len = pstr->value.array.size;
     px_gstate_t *pxgs = pxs->pxgs;
     pcl_font_selection_t *pfp;
-    float ppi;
-    float scale;
-    /* NB move these to a header file */
-    extern void set_symbol_map(px_state_t *pxs, bool wide16);
-    extern bool pcl_downloaded_and_bound(pl_font_t *plfont);
+
     if ( !global_pcs )
         pxPassthrough_init(pxs);
 
@@ -373,25 +370,33 @@ int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
     if (code < 0)
         return code;
     pfp = &global_pcs->font_selection[global_pcs->font_selected];
-    ppi = (pfp->font->scaling_technology == plfst_Intellifont) ? 72.307 : 72.0;
-    if (pfp->font->params.proportional_spacing)
-    {
-        scale = (pfp->params.height_4ths * 0.25) * pxs->units_per_measure.x / ppi;
-    }
-    else
-    {
-        scale = 1200.0 / (pfp->params.pitch.per_inch_x100 / 100.0) * (72.0 / ppi);
 
-        /* hack for a scalable lineprinter font.  If a real
-           lineprinter bitmap font is available it will be handled
-           by the bitmap scaling case above */
-        if (pfp->font->params.typeface_family == 0) {
-            scale = 850.0;
-        }
-    }
-    pxgs->char_size = scale;
+    {
+#define CP_PER_INCH         (7200.0)
+#define CP_PER_MM           (7200.0/25.4)
+#define CP_PER_10ths_of_MM  (CP_PER_MM/10.0)
 
+        static const floatp centipoints_per_measure[4] = {
+            CP_PER_INCH,          /* eInch */
+            CP_PER_MM,            /* eMillimeter */
+            CP_PER_10ths_of_MM,   /* eTenthsOfAMillimeter */
+            1                     /* pxeMeasure_next, won't reach */
+        };
+
+        gs_point sz;
+        pcl_font_scale(global_pcs, &sz);
+        pxgs->char_size = sz.x /
+            centipoints_per_measure[pxs->measure] *
+            pxs->units_per_measure.x;
+    }
     pxgs->symbol_set = pfp->params.symbol_set;
+
+    if (pcl_downloaded_and_bound(global_pcs->font)) {
+        pxgs->symbol_map = 0;
+    } else {
+        set_symbol_map(pxs, global_pcs->font->font_type == plft_16bit);
+    }
+
     {
         pl_font_t *plf = global_pcs->font;
 
@@ -408,11 +413,6 @@ int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
             plf->storage = 0;
 
         pxgs->base_font = (px_font_t *)plf;
-    }
-    if (pcl_downloaded_and_bound(global_pcs->font)) {
-        pxgs->symbol_map = 0;
-    } else {
-        set_symbol_map(pxs, global_pcs->font->font_type == plft_16bit);
     }
     pxgs->char_matrix_set = false;
     return 0;

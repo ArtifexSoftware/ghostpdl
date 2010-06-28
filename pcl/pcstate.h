@@ -373,4 +373,9 @@ int pcl_load_built_in_fonts(pcl_state_t *pcs, const char *pathname);
 int pcl_implicit_gl2_finish(pcl_state_t *pcs);
 int pcl_do_printer_reset(pcl_state_t *pcs);
 int pcl_end_page_top(pcl_state_t *pcs, int num_copies, int flush);
+
+/* exported from pcl to support PCL XL pass through mode */
+bool pcl_downloaded_and_bound(pl_font_t *plfont);
+void pcl_font_scale(pcl_state_t *, gs_point *psz);
+
 #endif 						/* pcstate_INCLUDED */

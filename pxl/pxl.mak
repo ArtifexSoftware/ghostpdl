@@ -110,7 +110,7 @@ $(PXLOBJ)pxpthr.$(OBJ): $(PXLSRC)pxpthr.c $(AK) \
  $(gsstate_h) $(gscoord_h) $(gspath_h) $(gstypes_h) $(gsdevice_h)\
  $(pcommand_h) $(pgmand_h) $(pcstate_h) $(pcparse_h) $(pctop_h)\
  $(pcpage_h) $(pxstate_h) $(pxoper_h) $(stdio__h) $(pxpthr_h)\
- $(pxparse_h) $(pxgstate_h) $(pcdraw_h) $(gsicc_manage_h)
+ $(pxparse_h) $(pxgstate_h) $(pcdraw_h) $(pcfont_h) $(gsicc_manage_h)
 	$(PXLCCC) $(PXLSRC)pxpthr.c $(PXLO_)pxpthr.$(OBJ)
 
 $(PXLOBJ)pxvalue.$(OBJ): $(PXLSRC)pxvalue.c $(AK) $(std_h) $(gsmemory_h) $(pxvalue_h)

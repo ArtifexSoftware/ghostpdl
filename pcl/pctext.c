@@ -708,6 +708,47 @@ pcl_show_chars_slow(
     return code;
 }
 
+void
+pcl_font_scale(pcl_state_t *pcs, gs_point *pscale)
+{
+    /* set up the font transformation */
+    if (pcs->font->scaling_technology == plfst_bitmap) {
+        pscale->x = pcl_coord_scale / pcs->font->resolution.x;
+        pscale->y = pcl_coord_scale / pcs->font->resolution.y;
+    } else {
+        /*
+         * Outline fonts are 1-point; the font height is given in
+         * (quarter-)points.  However, if the font is fixed-width,
+         * it must be scaled by pitch, not by height, relative to
+         * the nominal pitch of the outline.
+         */
+        pcl_font_selection_t *  pfp = &pcs->font_selection[pcs->font_selected];
+        /* AGFA madness - 72.307 points per inch for intellifonts */
+        floatp ppi = (pfp->font->scaling_technology == plfst_Intellifont) ? 72.307 : 72.0;
+        if (pfp->font->params.proportional_spacing) {
+            pscale->x = pscale->y = pfp->params.height_4ths
+                * 0.25 * 7200.0 / ppi;
+        } else {
+            pscale->x = pscale->y = pl_fp_pitch_cp(&pfp->params)
+                                 * (1000.0 / pl_fp_pitch_cp(&pfp->font->params))
+                                 * (7200.0 / (100.0 * ppi));
+
+            /* hack for a scalable lineprinter font.  If a real
+               lineprinter bitmap font is available it will be handled
+               by the bitmap scaling case above */
+            if (pfp->font->params.typeface_family == 0) {
+                pscale->x = pscale->y = 850.0;
+            }
+
+        }
+        /*
+         * Scalable fonts use an upright coordinate system,
+         * the opposite from the usual PCL system.
+         */
+        pscale->y = -pscale->y;
+    }
+}
+
 /*
  * Set up to handle a string of text.
  *
@@ -726,7 +767,6 @@ pcl_text(
     gs_state *      pgs = pcs->pgs;
     gs_matrix       user_ctm;
     gs_point        scale;
-    int             scale_sign;
     int             code;
 
     /* rtl files can have text in them - we don't print any characters
@@ -749,48 +789,11 @@ pcl_text(
         return code;
     set_gs_font(pcs);
 
-    /* set up the font transformation */
-    if (pcs->font->scaling_technology == plfst_bitmap) {
-        scale.x = pcl_coord_scale / pcs->font->resolution.x;
-        scale.y = pcl_coord_scale / pcs->font->resolution.y;
+    gs_currentmatrix(pgs, &user_ctm);
 
-        /*
-         * Bitmap fonts use an inverted coordinate system,
-         * the same as the usual PCL system.
-         */
-        scale_sign = 1;
-    } else {
-        /*
-         * Outline fonts are 1-point; the font height is given in
-         * (quarter-)points.  However, if the font is fixed-width,
-         * it must be scaled by pitch, not by height, relative to
-         * the nominal pitch of the outline.
-         */
-        pcl_font_selection_t *  pfp = &pcs->font_selection[pcs->font_selected];
-        /* AGFA madness - 72.307 points per inch for intellifonts */
-        floatp ppi = (pfp->font->scaling_technology == plfst_Intellifont) ? 72.307 : 72.0;
-        if (pfp->font->params.proportional_spacing) {
-            scale.x = scale.y = pfp->params.height_4ths
-                                 * 0.25 * 7200.0 / ppi;
-        } else {
-            scale.x = scale.y = pl_fp_pitch_cp(&pfp->params)
-                                 * (1000.0 / pl_fp_pitch_cp(&pfp->font->params))
-                                 * (7200.0 / (100.0 * ppi));
+    (void)pcl_font_scale(pcs, &scale);
 
-            /* hack for a scalable lineprinter font.  If a real
-               lineprinter bitmap font is available it will be handled
-               by the bitmap scaling case above */
-            if (pfp->font->params.typeface_family == 0) {
-                scale.x = scale.y = 850.0;
-            }
-
-        }
-        /*
-         * Scalable fonts use an upright coordinate system,
-         * the opposite from the usual PCL system.
-         */
-        scale_sign = -1;
-    }
+    gs_scale(pgs, scale.x, scale.y);
 
     /*
      * If floating underline is on, since we're about to print a real
@@ -801,23 +804,11 @@ pcl_text(
      * works.
      */
     if (pcs->underline_enabled && pcs->underline_floating) {
-        float   yu = scale.y / 5.0;
+        float   yu = fabs(scale.y) / 5.0;
 
         if (yu > pcs->underline_position)
             pcs->underline_position = yu;
     }
-
-    /*
-     * XXX I'm using the more general, slower approach rather than
-     * just multiplying/dividing by scale factors, in order to keep it
-     * correct through orientation changes.  Various parts of this should
-     * be cleaned up when performance time rolls around.
-     */
-    gs_currentmatrix(pgs, &user_ctm);
-
-    /* possibly invert text because HP coordinate system is inverted */
-    scale.y *= scale_sign;
-    gs_scale(pgs, scale.x, scale.y);
 
     /* it is not clear if vertical substitutes are allowed in mode -1 */
     if (pcs->text_path != 0)
