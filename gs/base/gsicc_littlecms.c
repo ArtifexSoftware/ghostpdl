@@ -12,11 +12,18 @@
 */
 
 /* gsicc interface to littleCMS */
+
+#ifndef LCMS_USER_ALLOC
+#define LCMS_USER_ALLOC 1
+#endif
+
 #include "gsicc_littlecms.h"
 #include "gserror.h"
 #include "lcms.h"
+#include "gslibctx.h"
 
 #define DUMP_CMS_BUFFER 0
+#define DEBUG_LCMS_MEM 0
 #define LCMS_BYTES_MASK 0x7
 
 static int
@@ -121,7 +128,7 @@ gscms_transform_color_buffer(gsicc_link_t *icclink,
     int planar,numbytes,big_endian,hasalpha,k;
     unsigned char *inputpos, *outputpos;
     int numchannels;
-#if DUMP_BUFFER
+#if DUMP_CMS_BUFFER
     FILE *fid_in, *fid_out;
 #endif
     /* Although little CMS does  make assumptions about data types in its 
@@ -441,3 +448,51 @@ gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle
     if(lcms_proofhandle) cmsCloseProfile(lcms_proofhandle);
     return;
 }
+
+/* Interface of littlecms memory alloc calls hooked into gs allocator. 
+   For this to be used lcms is built with LCMS_USER_ALLOC.  See lcms.mak */
+#if DEBUG_LCMS_MEM
+void* _cmsMalloc(unsigned int size)
+{
+    void *ptr;
+    
+    ptr = gs_alloc_bytes(gs_lib_ctx_get_non_gc_memory_t(), size, "lcms");
+    gs_warn2("lcms malloc (%d) at 0x%x",size,ptr);
+    return ptr;
+}
+
+void* _cmsCalloc(unsigned int nelts, unsigned int size)
+{
+    void *ptr;
+    
+    ptr = gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+    gs_warn2("lcms calloc (%d) at 0x%x",nelts*size,ptr);
+    return ptr;
+}
+
+void _cmsFree(void *ptr)
+{
+    if (ptr != NULL) { 
+        gs_warn1("lcms free at 0x%x",ptr);
+        gs_free_object(gs_lib_ctx_get_non_gc_memory_t(), ptr, "lcms"); 
+    }
+}
+
+#else
+
+void* _cmsMalloc(unsigned int size)
+{
+    return gs_alloc_bytes(gs_lib_ctx_get_non_gc_memory_t(), size, "lcms");
+}
+
+void* _cmsCalloc(unsigned int nelts, unsigned int size)
+{
+    return gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+}
+
+void _cmsFree(void *ptr)
+{
+    if (ptr != NULL)
+        gs_free_object(gs_lib_ctx_get_non_gc_memory_t(), ptr, "lcms"); 
+}
+#endif

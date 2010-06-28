@@ -1438,6 +1438,14 @@ LCMS_INLINE void _cmsFree(void *Ptr)
     if (Ptr) free(Ptr);    
 }
 
+#else
+
+/* Prototypes */
+
+void* _cmsMalloc(unsigned int size);
+void* _cmsCalloc(unsigned int nelts, unsigned int size);
+void _cmsFree(void *ptr);
+
 #endif
 
 // ------------------------------------------------------------------------------------------- end of inline functions

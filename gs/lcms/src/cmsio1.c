@@ -2627,14 +2627,14 @@ LCMSBOOL LCMSEXPORT cmsCloseProfile(cmsHPROFILE hProfile)
        for (i=0; i < Icc -> TagCount; i++) {
 
                   if (Icc -> TagPtrs[i])
-                            free(Icc -> TagPtrs[i]);       
+                            _cmsFree(Icc -> TagPtrs[i]);       
        }
 
        if (Icc -> stream != NULL) {     // Was a memory (i.e. not serialized) profile?
                  Icc -> Close(Icc);     // No, close the stream      
        }       
             
-       free(Icc);   // Free placeholder memory
+       _cmsFree(Icc);   // Free placeholder memory
 
        return rc;
 }
@@ -2656,7 +2656,7 @@ LCMSBOOL SaveWordsTable(int nEntries, LPWORD Tab, LPLCMSICCPROFILE Icc)
    CopyMemory(PtrW, Tab, nTabSize);
    AdjustEndianessArray16(PtrW, nEntries);
    rc = Icc ->Write(Icc, nTabSize, PtrW);
-   free(PtrW);
+   _cmsFree(PtrW);
    
    return rc;
 }
@@ -3433,7 +3433,7 @@ LCMSBOOL SaveTags(LPLCMSICCPROFILE Icc, LPLCMSICCPROFILE FileOrig)
                     if (!Icc ->Write(Icc, TagSize, Mem)) return FALSE;
 
                     Icc -> TagSizes[i] = (Icc ->UsedSpace - Begin);
-                    free(Mem);
+                    _cmsFree(Mem);
            }
 
               continue;

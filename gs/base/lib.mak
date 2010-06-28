@@ -2524,7 +2524,7 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 	
 $(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
- $(gsicc_littlecms_h) $(lcms_h) $(gserror_h)
+ $(gsicc_littlecms_h) $(lcms_h) $(gserror_h) $(gslibctx_h)
 	$(GLLCMSCC) $(GLO_)gsicc_littlecms.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
 	
 # Note that gsicc_create requires compile with lcms to obtain icc34.h 

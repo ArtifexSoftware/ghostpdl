@@ -102,17 +102,17 @@ void LCMSEXPORT cmsFreeLUT(LPLUT Lut)
 
        if (!Lut) return;
 
-       if (Lut -> T) free(Lut -> T);
+       if (Lut -> T) _cmsFree(Lut -> T);
 
        for (i=0; i < Lut -> OutputChan; i++)
        {
-              if (Lut -> L2[i]) free(Lut -> L2[i]);
+              if (Lut -> L2[i]) _cmsFree(Lut -> L2[i]);
        }
 
        for (i=0; i < Lut -> InputChan; i++)
        {
 
-              if (Lut -> L1[i]) free(Lut -> L1[i]);
+              if (Lut -> L1[i]) _cmsFree(Lut -> L1[i]);
        }
 
 
@@ -120,7 +120,7 @@ void LCMSEXPORT cmsFreeLUT(LPLUT Lut)
 
             for (i=0; i < Lut -> InputChan; i++) {
 
-              if (Lut -> L3[i]) free(Lut -> L3[i]);
+              if (Lut -> L3[i]) _cmsFree(Lut -> L3[i]);
             }
        }
 
@@ -128,14 +128,14 @@ void LCMSEXPORT cmsFreeLUT(LPLUT Lut)
 
             for (i=0; i < Lut -> OutputChan; i++) {
 
-              if (Lut -> L4[i]) free(Lut -> L4[i]);
+              if (Lut -> L4[i]) _cmsFree(Lut -> L4[i]);
             }
        }
 
        if (Lut ->CLut16params.p8)
-           free(Lut ->CLut16params.p8);
+           _cmsFree(Lut ->CLut16params.p8);
 
-       free(Lut);
+       _cmsFree(Lut);
 }
 
 
