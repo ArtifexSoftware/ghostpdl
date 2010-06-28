@@ -26,9 +26,12 @@
 #define DEBUG_LCMS_MEM 0
 #define LCMS_BYTES_MASK 0x7
 
+/* Only provide warning about issues in lcms if debug build */
 static int
 gscms_error(int error_code, const char *error_text){
+#ifdef DEBUG
     gs_warn1("cmm error : %s",error_text);
+#endif
     return(1);
 }
 
