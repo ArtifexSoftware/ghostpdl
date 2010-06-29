@@ -372,6 +372,27 @@ SHARE_FT=0
 FTSRCDIR=
 FT_CFLAGS=
 FT_LIBS=
+
+dnl UFST detection
+AC_ARG_WITH([ufst], AC_HELP_STRING([--with-ufst=UFST_ROOT_DIR],
+                                   [Use UFST (implies disable freetype)]),
+            [], [with_ufst=no])
+INSERT_UFST_BRIDGE_EQUAL_ONE=
+UFST_ROOT=
+UFST_CFLAGS=
+UFST_LIB_EXT=
+if test -d $with_ufst; then
+INSERT_UFST_BRIDGE_EQUAL_ONE="UFST_BRIDGE=1"
+UFST_ROOT=$with_ufst
+UFST_CFLAGS=-DGCCx86
+UFST_LIB_EXT=.a
+enable_freetype=no
+fi
+AC_SUBST(INSERT_UFST_BRIDGE_EQUAL_ONE)
+AC_SUBST(UFST_ROOT)
+AC_SUBST(UFST_CFLAGS)
+AC_SUBST(UFST_LIB_EXT)
+
 if test x"$enable_freetype" != xno; then
   AC_MSG_CHECKING([for local freetype library source])
   dnl We prefer freetype2 over freetype, so it is easy to override

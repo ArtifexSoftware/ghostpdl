@@ -160,6 +160,14 @@ FTSRCDIR=@FTSRCDIR@
 FT_CFLAGS=@FT_CFLAGS@
 FT_LIBS=@FT_LIBS@
 
+# Define whether to compile in UFST. Note that freetype will/must be disabled.
+# FAPI/UFST depends on UFST_BRIDGE being undefined - hence the construct below.
+# (i.e. use "UFST_BRIDGE=1" or *not to define UFST_BRIDGE to anything*)
+@INSERT_UFST_BRIDGE_EQUAL_ONE@
+UFST_ROOT=@UFST_ROOT@
+UFST_CFLAGS=@UFST_CFLAGS@
+UFST_LIB_EXT=@UFST_LIB_EXT@
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.

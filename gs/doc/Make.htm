@@ -2777,6 +2777,13 @@ To build Ghostscript with UFST, specify additional options for "make":
 <tt>UFST_BRIDGE=1 UFST_ROOT=../ufst UFST_CFLAGS=-DGCCx86 UFST_LIB_EXT=.a</tt>
 </blockquote>
 
+<p>Starting with Ghostscript 9.x (Summer 2010), the above options are conveniently
+inserted in the <code>Makefile</code> with
+(this also automatically disable the freetype bridge):
+<blockquote>
+<tt>./configure --with-ufst=../ufst</tt>
+</blockquote>
+
 <p>For Windows/MSVC you need only specify UFST_ROOT.
 msvc32.mak sets the other options automatically.
 
