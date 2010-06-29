@@ -409,12 +409,12 @@ main (int argc, char **argv)
 	      fn = find_param (pl, "OutputFD");
 	      if (fn != NULL)
 		{
-		  f = fdopen (atoi (fn), "w");
+		  f = fdopen (atoi (fn), "wb");
 		}
 	    }
 	  else
 	    {
-	      f = fopen (fn, "w");
+	      f = fopen (fn, "wb");
 	    }
 	  if (f == NULL)
 	    {
