@@ -415,6 +415,7 @@ include $(GLSRCDIR)/unixinst.mak
 # the (presumedly modified) version in the top level directory
 distclean : clean config-clean
 	-$(RM) Makefile
+	@-rmdir $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
 
 maintainer-clean : distclean
 	# nothing special to do

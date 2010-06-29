@@ -556,6 +556,7 @@ distclean : clean config-clean soclean pgclean debugclean
 	-$(RM_) -r autom4te.cache
 	-$(RM_) config.log config.status
 	-$(RM_) Makefile
+	@-rmdir $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
 
 maintainer-clean : distclean
 	-$(RM_) configure.ac

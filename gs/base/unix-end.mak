@@ -41,6 +41,7 @@ pg: PGDIRS
 
 pgclean: PGDIRS
 	$(MAKE) $(PGDEFS) clean
+	@-rmdir $(BINDIR)/$(PGRELDIR) $(GLGENDIR)/$(PGRELDIR) $(GLOBJDIR)/$(PGRELDIR) $(PSGENDIR)/$(PGRELDIR) $(PSOBJDIR)/$(PGRELDIR)
 
 # Define a rule for building debugging configurations.
 DEBUGDIRS: STDDIRS
@@ -60,6 +61,7 @@ debug: DEBUGDIRS
 
 debugclean: DEBUGDIRS
 	$(MAKE) $(DEBUGDEFS) clean
+	@-rmdir $(BINDIR)/$(DEBUGRELDIR) $(GLGENDIR)/$(DEBUGRELDIR) $(GLOBJDIR)/$(DEBUGRELDIR) $(PSGENDIR)/$(DEBUGRELDIR) $(PSOBJDIR)/$(DEBUGRELDIR)
 
 # Emacs tags maintenance.
 
