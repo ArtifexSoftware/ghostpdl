@@ -246,6 +246,7 @@ ICCSRCDIR=icclib
 # options for lcms color management library
 SHARE_LCMS=0
 LCMSSRCDIR=lcms
+LCMSPLATFORM=unix
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.

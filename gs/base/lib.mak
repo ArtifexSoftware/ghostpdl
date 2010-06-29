@@ -37,6 +37,8 @@ GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
 # msvc builds, and lcms configures itself to depend on msvc extensions
 # (inline asm, including windows.h) when compiled under msvc.
 GLLCMSCC=$(CC) $(GCFLAGS) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
+# Alternative GLLCMSCC_ for everything except windows:
+GLLCMSCC_=$(GLCC) $(GCFLAGS) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
 lcms_h=$(LCMSSRCDIR)$(D)include$(D)lcms.h
 icc34_h=$(LCMSSRCDIR)$(D)include$(D)icc34.h
 
@@ -2481,8 +2483,8 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
 # ---------------- ICCBased color ---------------- #
 
 gsicc_=$(GLOBJ)gsicc_manage.$(OBJ) $(GLOBJ)gsicc_cache.$(OBJ)\
- $(GLOBJ)gsicc_littlecms.$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
- $(GLOBJ)gsicc_create.$(OBJ)
+ $(GLOBJ)gsicc_littlecms_$(LCMSPLATFORM).$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
+ $(GLOBJ)gsicc_create_$(LCMSPLATFORM).$(OBJ)
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
@@ -2523,20 +2525,30 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
  $(gserrors_h)
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 	
-$(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
+$(GLOBJ)gsicc_littlecms_win32.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
  $(gsicc_littlecms_h) $(lcms_h) $(gserror_h) $(gslibctx_h)
-	$(GLLCMSCC) $(GLO_)gsicc_littlecms.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
+	$(GLLCMSCC) $(GLO_)gsicc_littlecms_win32.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
 	
 # Note that gsicc_create requires compile with lcms to obtain icc34.h 
 # header file that is used for creating ICC structures from PS objects.
 # This is needed even if PDF/PS interpreter is built with a different CMS.
 # This object is here instead of in psi since it is used lazily by the
 # remap operations. 
-$(GLOBJ)gsicc_create.$(OBJ) : $(GLSRC)gsicc_create.c $(GX) $(string__h)\
+$(GLOBJ)gsicc_create_win32.$(OBJ) : $(GLSRC)gsicc_create.c $(GX) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
  $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(math__h) $(gscolor2_h) $(gxcie_h) $(icc34_h)
-	$(GLLCMSCC) $(GLO_)gsicc_create.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
+	$(GLLCMSCC) $(GLO_)gsicc_create_win32.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
+
+$(GLOBJ)gsicc_littlecms_unix.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
+ $(gsicc_littlecms_h) $(lcms_h) $(gserror_h)
+	$(GLLCMSCC_) $(GLO_)gsicc_littlecms_unix.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
+
+$(GLOBJ)gsicc_create_unix.$(OBJ) : $(GLSRC)gsicc_create.c $(GX) $(string__h)\
+ $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
+ $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
+ $(math__h) $(gscolor2_h) $(gxcie_h) $(icc34_h)
+	$(GLLCMSCC_) $(GLO_)gsicc_create_unix.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
 
 
 #include "icc34.h"   /* Note this header is needed even if lcms is not compiled as default CMS */

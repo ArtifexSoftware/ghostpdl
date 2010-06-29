@@ -81,6 +81,7 @@ JBIG2SRCDIR=jbig2dec
 
 !ifndef LCMSSRCDIR
 LCMSSRCDIR=lcms
+LCMSPLATFORM=win32
 !endif
 
 # Define the directory where the ijs source is stored,

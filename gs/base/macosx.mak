@@ -173,6 +173,7 @@ JBIG2SRCDIR=jbig2dec
 # See lcms.mak for more information
 
 LCMSSRCDIR=lcms
+LCMSPLATFORM=unix
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
