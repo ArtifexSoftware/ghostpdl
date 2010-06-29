@@ -3,7 +3,7 @@ all:	bin/pscolor.exe
 
 
 bin/pscolor.exe: test.c lex.yy.c
-	cl -D_Windows -Isrc -Febin/pscolor.exe test.c lex.yy.c bin/gsdll32.lib
+	cl -D_Windows -DYY_NO_UNISTD_H -I..\..\obj -I..\..\base -I..\..\psi -Febin/pscolor.exe test.c lex.yy.c ../../bin/gsdll32.lib
 
 test:	bin/pscolor.exe
 	./bin/pscolor.exe <input.ps

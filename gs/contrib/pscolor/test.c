@@ -11,9 +11,20 @@
 #endif
 
 #include <stdio.h>
-#include "errors.h"
-#include "iapi.h"
+#include <malloc.h>
+
+#include "stdpre.h"
+#include "iapi.h"    /* Ghostscript interpreter public interface */
 #include "gdevdsp.h"
+#include "string_.h"
+#include "ierrors.h"
+#include "gscdefs.h"
+#include "gstypes.h"
+#include "iref.h"
+#include "iminst.h"
+#include "imain.h"
+
+#include "gsdll.h"   /* old DLL public interface */
 
 unsigned char *myimage;
 int breite,hoehe,seite=0,myraster;
@@ -28,11 +39,9 @@ int yylex(char *buf,int *mylen);
 static int GSDLLCALL
 gsdll_stdin(void *instance, char *buf, int len)
 {
-    int ch,c;
+    int c;
     int count = 0;
-	size_t back;
     char *init=buf;
-    char *t;
     int eof;
     int hlen=len;
     eof=yylex(buf,&hlen);
@@ -215,7 +224,7 @@ static int display_sync(void *handle, void *device)
 /* If you want to pause on showpage, then don't return immediately */
 static int display_page(void *handle, void *device, int copies, int flush)
 {
-	int i,t,color=0,c;
+	int i,t,color=0;
 #ifdef DISPLAY_DEBUG
     char buf[256];
     sprintf(buf, "display_page(0x%x, 0x%x, copies=%d flush=%d)\n", 
@@ -234,10 +243,10 @@ static int display_page(void *handle, void *device, int copies, int flush)
 	}
 out:
 	if(color){
-	fprintf(stderr,"[%d]Farbbild\n",seite);
+	fprintf(stderr,"[%d]Color\n",seite);
 	choose=color_fd;
 	} else {
-	fprintf(stderr,"[%d]Monochrombild\n",seite);
+	fprintf(stderr,"[%d]Grey\n",seite);
 	choose=black_fd;
 	}
 /*
@@ -278,14 +287,13 @@ display_callback display = {
     NULL	/* memfree */
 };
 
-gs_main_instance *minst;
+static gs_main_instance *minst;
 const char start_string[] = "systemdict /start get exec\n";
 
 
 int main(int argc, char *argv[])
 {
     int code;
-    int exit_code;
     const char * gsargv[12];
     char arg[64];
     int gsargc;

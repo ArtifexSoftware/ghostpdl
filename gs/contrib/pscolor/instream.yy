@@ -4,6 +4,9 @@
   Scanner zum Einlesen von DSC Postscript Dateien
   von Carsten Hammer Hammer.Carsten@oce.de
  */
+#include <stdio.h>
+#include <malloc.h>
+#include <string.h>
 #define YY_DECL int yylex(char *buf,int *len)
 %}
 %x PAGES
