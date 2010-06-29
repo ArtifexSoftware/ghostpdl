@@ -1184,43 +1184,54 @@ DYNAMIC_LDFLAGS=""
 DYNAMIC_LIBS=""
 INSTALL_SHARED=""
 
+case `uname` in
+	Linux*|GNU*)
+	DYNAMIC_CFLAGS="-fPIC"
+	DYNAMIC_LDFLAGS="-fPIC -shared"
+	DYNAMIC_LIBS="-rdynamic -ldl"
+	;;
+	*BSD)
+	DYNAMIC_CFLAGS="-fPIC"
+	DYNAMIC_LDFLAGS="-fPIC -shared"
+	DYNAMIC_LIBS=""
+	;;
+	Darwin*)
+	DYNAMIC_LDFLAGS="-dynamiclib"
+	DYNAMIC_LIBS=""
+	;;
+	SunOS)
+	DYNAMIC_CFLAGS="-KPIC"
+	DYNAMIC_LDFLAGS="-G"
+	DYNAMIC_LIBS=""
+	;;
+esac
+
 AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
     [Enable dynamically loaded drivers]),
 [	case `uname` in
 		Linux*|GNU*)
 		INSTALL_SHARED="install-shared"
-		DYNAMIC_CFLAGS="-fPIC"
 		if test "x$X_DEVS" != x; then
 			DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
 		else
 			DYNAMIC_DEVS=""
 		fi
 		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		DYNAMIC_LDFLAGS="-fPIC -shared"
-		DYNAMIC_LIBS="-rdynamic -ldl"
 		X_DEVS=""
 		;;
 		*BSD)
-		DYNAMIC_CFLAGS="-fPIC"
 		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
 		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		DYNAMIC_LDFLAGS="-fPIC -shared"
-		DYNAMIC_LIBS=""
 		X_DEVS=""
 		;;
 		Darwin*)
 		INSTALL_SHARED="install-shared"
 		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		DYNAMIC_LDFLAGS="-dynamiclib"
-		DYNAMIC_LIBS=""
 		X_DEVS=""
 		;;
 		SunOS)
-		DYNAMIC_CFLAGS="-KPIC"
 		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
 		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		DYNAMIC_LDFLAGS="-G"
-		DYNAMIC_LIBS=""
 		X_DEVS=""
 		;;
 		*)
