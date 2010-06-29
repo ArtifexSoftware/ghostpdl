@@ -547,17 +547,29 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
 
             reverse = xps_reverse_function(ctx, func, fary, vary);
             if (!reverse)
+            {
+                gs_grestore(ctx->pgs);
                 return gs_rethrow(-1, "could not create the reversed function");
+            }
+
             code = xps_draw_one_radial_gradient(ctx, reverse, 1, x1, y1, r1, x0, y0, r0);
             if (code < 0)
+            {
+                xps_free(ctx, reverse);
+                gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "could not draw radial gradient");
+            }
+
             xps_free(ctx, reverse);
         }
         else
         {
             code = xps_draw_one_radial_gradient(ctx, func, 1, x0, y0, r0, x1, y1, r1);
             if (code < 0)
+            {
+                gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "could not draw radial gradient");
+            }
         }
     }
     else
@@ -574,7 +586,10 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
             else
                 code = xps_draw_one_radial_gradient(ctx, func, 0, x0, y0, r0, x1, y1, r1);
             if (code < 0)
+            {
+                gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "could not draw axial gradient");
+            }
 
             /* Check if circle encompassed the entire bounding box (break loop if we do) */
 
@@ -782,20 +797,25 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
     xps_clip(ctx, &saved_bounds);
 
     gs_gsave(ctx->pgs);
-
     gs_concat(ctx->pgs, &transform);
 
     xps_bounds_in_user_space(ctx, &bbox);
 
     code = xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
     if (code)
+    {
+        gs_grestore(ctx->pgs);
         return gs_rethrow(code, "cannot create transparency group");
+    }
 
     if (ctx->opacity_only)
     {
         code = draw(ctx, root, spread_method, opacity_func);
         if (code)
+        {
+            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot draw gradient opacity");
+        }
     }
     else
     {
@@ -808,21 +828,32 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
             gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
             code = draw(ctx, root, spread_method, opacity_func);
             if (code)
+            {
+                gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
+                gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "cannot draw gradient opacity");
+            }
             gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
 
             gs_trans_group_params_init(&tgp);
             gs_begin_transparency_group(ctx->pgs, &tgp, &bbox);
             code = draw(ctx, root, spread_method, color_func);
             if (code)
+            {
+                gs_end_transparency_group(ctx->pgs);
+                gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "cannot draw gradient color");
+            }
             gs_end_transparency_group(ctx->pgs);
         }
         else
         {
             code = draw(ctx, root, spread_method, color_func);
             if (code)
+            {
+                gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "cannot draw gradient color");
+            }
         }
     }
 
