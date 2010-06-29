@@ -1,14 +1,20 @@
 cmake_minimum_required(VERSION 2.4.3)
+set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
+
 if(UNIX AND NOT DEFINED CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of
-   build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug
-   Release RelWithDebInfo MinSizeRel.")
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING 
+      "Choose the type of build, options are:
+         None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used)
+         Debug
+         Release
+         RelWithDebInfo
+         MinSizeRel.")
 endif()
 
-project(PNG C)
+project(libpng C)
 enable_testing()
 
-# Copyright (C) 2007 Glenn Randers-Pehrson
+# Copyright (C) 2007-2010 Glenn Randers-Pehrson
 
 # This code is released under the libpng license.
 # For conditions of distribution and use, see the disclaimer
@@ -16,11 +22,9 @@ enable_testing()
 
 set(PNGLIB_MAJOR 1)
 set(PNGLIB_MINOR 2)
-set(PNGLIB_RELEASE 42)
+set(PNGLIB_RELEASE 44)
 set(PNGLIB_NAME libpng${PNGLIB_MAJOR}${PNGLIB_MINOR})
 set(PNGLIB_VERSION ${PNGLIB_MAJOR}.${PNGLIB_MINOR}.${PNGLIB_RELEASE})
-
-set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
 # needed packages
 find_package(ZLIB REQUIRED)
@@ -54,9 +58,9 @@ endif()
 
 if(MINGW)
   option(PNG_TESTS  "Build pngtest" NO)
-else(MINGW)
+else()
   option(PNG_TESTS  "Build pngtest" YES)
-endif(MINGW)
+endif()
 
 option(PNG_NO_CONSOLE_IO "FIXME" YES)
 option(PNG_NO_STDIO      "FIXME" YES)
@@ -70,7 +74,8 @@ set(png_asm_tmp "OFF")
 if(NOT WIN32)
  find_program(uname_executable NAMES uname PATHS /bin /usr/bin /usr/local/bin)
  if(uname_executable)
-   EXEC_PROGRAM(${uname_executable} ARGS --machine OUTPUT_VARIABLE uname_output)
+    exec_program(${uname_executable}
+                 ARGS --machine OUTPUT_VARIABLE uname_output)
    if("uname_output" MATCHES "^.*i[1-9]86.*$")
       set(png_asm_tmp "ON")
    else("uname_output" MATCHES "^.*i[1-9]86.*$")
@@ -79,7 +84,7 @@ if(NOT WIN32)
  endif(uname_executable)
 else()
  # this env var is normally only set on win64
- SET(TEXT "ProgramFiles(x86)")
+  set(TEXT "ProgramFiles(x86)")
  if("$ENV{${TEXT}}" STREQUAL "")
   set(png_asm_tmp "ON")
  endif("$ENV{${TEXT}}" STREQUAL "")
@@ -119,6 +124,10 @@ set(pngtest_sources
 
 add_definitions(-DPNG_CONFIGURE_LIBPNG)
 
+if(_AIX)
+  add_definitions(-D_ALL_SOURCE)
+endif(_AIX)
+
 if(MSVC)
   add_definitions(-DPNG_NO_MODULEDEF -D_CRT_SECURE_NO_DEPRECATE)
 endif(MSVC)
@@ -152,7 +161,7 @@ if(NOT M_LIBRARY AND NOT WIN32)
 endif()
 
 # NOW BUILD OUR TARGET
-include_directories(${PNG_SOURCE_DIR} ${ZLIB_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${ZLIB_INCLUDE_DIR})
 
 if(PNG_SHARED)
  add_library(${PNG_LIB_NAME} SHARED ${libpng_sources})
@@ -179,10 +188,10 @@ if(PNG_SHARED AND WIN32)
 endif()
 
 if(PNG_TESTS AND PNG_SHARED)
-# does not work with msvc due to png_lib_ver issue
+  # does not work with msvc due to png_lib_ver issue
  add_executable(pngtest ${pngtest_sources})
  target_link_libraries(pngtest ${PNG_LIB_NAME})
- add_test(pngtest pngtest ${PNG_SOURCE_DIR}/pngtest.png)
+  add_test(pngtest pngtest ${CMAKE_CURRENT_SOURCE_DIR}/pngtest.png)
 endif()
 
 
@@ -193,19 +202,19 @@ set(exec_prefix ${CMAKE_INSTALL_PREFIX})
 set(libdir      ${CMAKE_INSTALL_PREFIX}/lib)
 set(includedir  ${CMAKE_INSTALL_PREFIX}/include)
 
-configure_file(${PNG_SOURCE_DIR}/scripts/libpng.pc.in
-  ${PNG_BINARY_DIR}/libpng.pc)
-configure_file(${PNG_SOURCE_DIR}/scripts/libpng-config.in
-  ${PNG_BINARY_DIR}/libpng-config)
-configure_file(${PNG_SOURCE_DIR}/scripts/libpng.pc.in
-  ${PNG_BINARY_DIR}/${PNGLIB_NAME}.pc)
-configure_file(${PNG_SOURCE_DIR}/scripts/libpng-config.in
-  ${PNG_BINARY_DIR}/${PNGLIB_NAME}-config)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng.pc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libpng.pc)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng-config.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libpng-config)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng.pc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}.pc)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/scripts/libpng-config.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}-config)
 
 # SET UP LINKS
 if(PNG_SHARED)
   set_target_properties(${PNG_LIB_NAME} PROPERTIES
-#    VERSION 0.${PNGLIB_RELEASE}.1.2.42
+#   VERSION 0.${PNGLIB_RELEASE}.1.2.44
      VERSION 0.${PNGLIB_RELEASE}.0
      SOVERSION 0
      CLEAN_DIRECT_OUTPUT 1)
@@ -239,16 +248,23 @@ if(NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL )
     install(FILES png.h pngconf.h         DESTINATION include/${PNGLIB_NAME})
 endif()
 if(NOT SKIP_INSTALL_EXECUTABLES AND NOT SKIP_INSTALL_ALL )
-    install(PROGRAMS ${PNG_BINARY_DIR}/libpng-config      DESTINATION bin)
-    install(PROGRAMS ${PNG_BINARY_DIR}/${PNGLIB_NAME}-config DESTINATION bin)
+  install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/libpng-config DESTINATION bin)
+  install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}-config
+          DESTINATION bin)
 endif()
 if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL )
+  # Install man pages
     install(FILES libpng.3 libpngpf.3             DESTINATION man/man3)
     install(FILES png.5                           DESTINATION man/man5)
-    install(FILES ${PNG_BINARY_DIR}/libpng.pc     DESTINATION lib/pkgconfig)
-    install(FILES ${PNG_BINARY_DIR}/libpng-config      DESTINATION bin)
-    install(FILES ${PNG_BINARY_DIR}/${PNGLIB_NAME}.pc  DESTINATION lib/pkgconfig)
-    install(FILES ${PNG_BINARY_DIR}/${PNGLIB_NAME}-config DESTINATION bin)
+  # Install pkg-config files
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libpng.pc
+          DESTINATION lib/pkgconfig)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libpng-config
+          DESTINATION bin)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}.pc
+          DESTINATION lib/pkgconfig)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PNGLIB_NAME}-config
+          DESTINATION bin)
 endif()
 
 # what's with libpng.txt and all the extra files?
