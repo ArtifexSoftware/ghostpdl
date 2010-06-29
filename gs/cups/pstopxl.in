@@ -51,9 +51,9 @@ ps_code=
 ppd_opts=
 
 resolution=
-eval "$(printf "%s" "$5" | sed -nre 's/.*(^|\s)Resolution=([0-9.]+(x[0-9.]+)?).*/resolution="${resolution:-\2}"/p')"
+eval "$(printf "%s" "$5" | sed @SED_EXTENDED_REGEX_OPT@ 's/.*(^|\s)Resolution=([0-9.]+(x[0-9.]+)?).*/resolution="${resolution:-\2}"/p')"
 if test -e "$PPD"; then
-  eval "$(sed -nre 's/^\*DefaultResolution:\s+([0-9.]+(x[0-9.]+)?).*/resolution="${resolution:-\1}"/p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's/^\*DefaultResolution:\s+([0-9.]+(x[0-9.]+)?).*/resolution="${resolution:-\1}"/p' "$PPD")"
 fi
 echo "DEBUG: Resolution: $resolution" >&2
 if test -n "$resolution"; then
@@ -61,15 +61,15 @@ if test -n "$resolution"; then
 fi
 
 pagesize=
-eval "$(printf "%s" "$5" | sed -nre 's/.*(^|\s)(media|PageSize)=(\S+).*/pagesize="${pagesize:-\3}"/p')"
+eval "$(printf "%s" "$5" | sed @SED_EXTENDED_REGEX_OPT@ 's/.*(^|\s)(media|PageSize)=(\S+).*/pagesize="${pagesize:-\3}"/p')"
 if test -e "$PPD"; then
-  eval "$(sed -nre 's/^\*DefaultPageSize:\s+(\S+).*/pagesize="${pagesize:-\1}"/p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's/^\*DefaultPageSize:\s+(\S+).*/pagesize="${pagesize:-\1}"/p' "$PPD")"
 fi
 echo "DEBUG: Page size: $pagesize" >&2
 width=
 height=
 if test -n "$pagesize" && test -e "$PPD"; then
-  eval "$(sed -nre 's|^\*PaperDimension\s+'"$pagesize"'/[^:]+:\s+"(\S+)\s+(\S+)".*|width="\1"; height="\2"|p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's|^\*PaperDimension\s+'"$pagesize"'/[^:]+:\s+"(\S+)\s+(\S+)".*|width="\1"; height="\2"|p' "$PPD")"
 fi
 echo "DEBUG: Width: $width, height: $height" >&2
 if test -n "$width"; then
@@ -84,7 +84,7 @@ bl_y=
 tr_x=
 tr_y=
 if test -n "$pagesize" && test -e "$PPD"; then
-  eval "$(sed -nre 's|^\*ImageableArea\s+'"$pagesize"'/[^:]+:\s+"(\S+)\s+(\S+)\s+(\S+)\s+(\S+)".*|bl_x="\1"; bl_y="\2"; tr_x="\3"; tr_y="\4"|p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's|^\*ImageableArea\s+'"$pagesize"'/[^:]+:\s+"(\S+)\s+(\S+)\s+(\S+)\s+(\S+)".*|bl_x="\1"; bl_y="\2"; tr_x="\3"; tr_y="\4"|p' "$PPD")"
 fi
 echo "DEBUG: Absolute margins: $bl_x, $bl_y, $tr_x, $tr_y" >&2
 margin_l=
@@ -106,14 +106,14 @@ if test -n "$margin_l" && test -n "$margin_b" && \
 fi
 
 inputslot=
-eval "$(printf "%s" "$5" | sed -nre 's/.*(^|\s)(InputSlot)=(\S+).*/inputslot="${inputslot:-\3}"/p')"
+eval "$(printf "%s" "$5" | sed @SED_EXTENDED_REGEX_OPT@ 's/.*(^|\s)(InputSlot)=(\S+).*/inputslot="${inputslot:-\3}"/p')"
 if test -e "$PPD"; then
-  eval "$(sed -nre 's/^\*DefaultInputSlot:\s+(\S+).*/inputslot="${inputslot:-\1}"/p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's/^\*DefaultInputSlot:\s+(\S+).*/inputslot="${inputslot:-\1}"/p' "$PPD")"
 fi
 echo "DEBUG: InputSlot: $inputslot" >&2
 inputslot_val=
 if test -n "$inputslot" && test -e "$PPD"; then
-  eval "$(sed -nre 's|^\*InputSlot\s+'"$inputslot"'/[^:]+:\s+"\s*<\s*<\s*/MediaPosition\s*([0-9]+)\s*>\s*>\s*setpagedevice\s*".*|inputslot_val="\1"|p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's|^\*InputSlot\s+'"$inputslot"'/[^:]+:\s+"\s*<\s*<\s*/MediaPosition\s*([0-9]+)\s*>\s*>\s*setpagedevice\s*".*|inputslot_val="\1"|p' "$PPD")"
 fi
 echo "DEBUG: Value for MediaPosition: $inputslot_val" >&2
 if test -n "$inputslot_val"; then
@@ -121,14 +121,14 @@ if test -n "$inputslot_val"; then
 fi
 
 colormodel=
-eval "$(printf "%s" "$5" | sed -nre 's/.*(^|\s)(ColorModel)=(\S+).*/colormodel="${colormodel:-\3}"/p')"
+eval "$(printf "%s" "$5" | sed @SED_EXTENDED_REGEX_OPT@ 's/.*(^|\s)(ColorModel)=(\S+).*/colormodel="${colormodel:-\3}"/p')"
 if test -e "$PPD"; then
-  eval "$(sed -nre 's/^\*DefaultColorModel:\s+(\S+).*/colormodel="${colormodel:-\1}"/p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's/^\*DefaultColorModel:\s+(\S+).*/colormodel="${colormodel:-\1}"/p' "$PPD")"
 fi
 echo "DEBUG: ColorModel: $colormodel" >&2
 colormodel_val=
 if test -n "$colormodel" && test -e "$PPD"; then
-  eval "$(sed -nre 's|^\*ColorModel\s+'"$colormodel"'/[^:]+:\s+"\s*<\s*<\s*/BitsPerPixel\s*([0-9]*)\s*>\s*>\s*setpagedevice\s*".*|colormodel_val="\1"|p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's|^\*ColorModel\s+'"$colormodel"'/[^:]+:\s+"\s*<\s*<\s*/BitsPerPixel\s*([0-9]*)\s*>\s*>\s*setpagedevice\s*".*|colormodel_val="\1"|p' "$PPD")"
 fi
 echo "DEBUG: Value for BitsPerPixel: $colormodel_val" >&2
 if test -n "$colormodel_val"; then
@@ -136,15 +136,15 @@ if test -n "$colormodel_val"; then
 fi
 
 duplex=
-eval "$(printf "%s" "$5" | sed -nre 's/.*(^|\s)(Duplex)=(\S+).*/duplex="${duplex:-\3}"/p')"
+eval "$(printf "%s" "$5" | sed @SED_EXTENDED_REGEX_OPT@ 's/.*(^|\s)(Duplex)=(\S+).*/duplex="${duplex:-\3}"/p')"
 if test -e "$PPD"; then
-  eval "$(sed -nre 's/^\*DefaultDuplex:\s+(\S+).*/duplex="${duplex:-\1}"/p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's/^\*DefaultDuplex:\s+(\S+).*/duplex="${duplex:-\1}"/p' "$PPD")"
 fi
 echo "DEBUG: Duplex: $duplex" >&2
 duplex_val=
 tumble_val=
 if test -n "$duplex" && test -e "$PPD"; then
-  eval "$(sed -nre 's|^\*Duplex\s+'"$duplex"'/[^:]+:\s+"\s*<\s*<\s*/Duplex\s*(\S*)\s*(/Tumble\s*(\S*)\s*)?>\s*>\s*setpagedevice\s*".*|duplex_val="\1"; tumble_val="\3"|p' "$PPD")"
+  eval "$(sed @SED_EXTENDED_REGEX_OPT@ 's|^\*Duplex\s+'"$duplex"'/[^:]+:\s+"\s*<\s*<\s*/Duplex\s*(\S*)\s*(/Tumble\s*(\S*)\s*)?>\s*>\s*setpagedevice\s*".*|duplex_val="\1"; tumble_val="\3"|p' "$PPD")"
 fi
 echo "DEBUG: Value for Duplex: $duplex_val; Value for Tumble: $tumble_val" >&2
 if test -n "$duplex_val"; then

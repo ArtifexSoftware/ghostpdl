@@ -74,6 +74,17 @@ AC_PROG_CC
 AC_PROG_CPP
 CFLAGS=$save_cflags
 
+AC_PROG_SED
+dnl See if it is GNU sed or else.
+dnl - need more work to tell SED features.
+SED_EXTENDED_REGEX_OPT=-nre
+sed_variant=`sed --version`
+sed_variant=`echo $sed_variant|sed -e 's/ .*//'`
+if test "$sed_variant" != GNU ; then
+SED_EXTENDED_REGEX_OPT=-nEe
+fi
+AC_SUBST(SED_EXTENDED_REGEX_OPT)
+
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
 
