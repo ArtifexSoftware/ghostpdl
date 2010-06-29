@@ -181,7 +181,8 @@ pxPassthrough_setpagestate(px_state_t *pxs)
         /* set the page size and orientation.  Really just sets
            the page tranformation does not feed a page (see noop
            above) */
-        pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, 2 /* letter NB FIXME */);
+        pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation,
+                                             &pxs->media_dims);
 
         if (gs_debug_c('i'))
             dprintf2("passthrough: snippet mode changing orientation from %d to %d\n",
@@ -194,7 +195,7 @@ pxPassthrough_setpagestate(px_state_t *pxs)
         /* clean the pcl page if it was marked by a previous snippet
            and set to full page mode. */
         global_pcs->page_marked = 0;
-        pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, 2 /* letter NB FIXME */);
+        pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, &pxs->media_dims);
         if (gs_debug_c('i'))
             dprintf("passthrough: full page mode\n");
     }

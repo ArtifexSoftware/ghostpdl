@@ -443,20 +443,28 @@ new_logical_page(
 }
 
 int
-pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, int tag)
+pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, gs_point *pdims)
 {
     int i;
-     pcl_paper_size_t *psize;
+    pcl_paper_size_t *psize;
+    /* points to centipoints */
+    coord cp_width  = (coord)(pdims->x * 100 + 0.5);
+    coord cp_height = (coord)(pdims->y * 100 + 0.5);
+    bool found = false;
 
     for (i = 0; i < countof(paper_sizes); i++) {
-        if (tag == paper_sizes[i].tag) {
-            psize = &(paper_sizes[i].psize);
+        psize = &(paper_sizes[i].psize);
+        if (psize->width == cp_width && psize->height == cp_height) {
+            found = true;
             break;
         }
     }
-    if (psize == 0)
+
+    if (!found)
         return -1;
+
     new_logical_page(pcs, orient, psize, false, true);
+
     return 0;
 
 }
