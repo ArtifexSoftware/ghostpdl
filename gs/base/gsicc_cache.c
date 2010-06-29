@@ -47,9 +47,6 @@
 
 static gsicc_link_t * gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode);
 
-static void gsicc_set_icc_link_data(gsicc_link_t *icc_link, void *link_handle, void *contextptr, 
-               gsicc_hashlink_t hashcode);
-
 static void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
 
 static void gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *profile, int64_t *hash);
