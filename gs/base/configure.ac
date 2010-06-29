@@ -520,7 +520,7 @@ if test -f libpng/pngread.c; then
 	PNGDEVS="$PNGDEVS_ALL"
 else
 	AC_MSG_RESULT([no])
-	AC_CHECK_LIB(png, png_check_sig, [
+	AC_CHECK_LIB(png, png_create_write_struct, [
 	  AC_CHECK_HEADERS(png.h, [
 		SHARE_LIBPNG=1
 		PNGDEVS="$PNGDEVS_ALL"
