@@ -605,7 +605,7 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
     if (xdev->cman.std_cmap.map) {
 	const XStandardColormap *cmap = xdev->cman.std_cmap.map;
 
-	if (gx_device_has_color(xdev)) {
+	if (xdev->color_info.num_components > 1) {
 	    uint cr, cg, cb;	/* rgb cube indices */
 	    X_color_value cvr, cvg, cvb;	/* color value on cube */
 
@@ -659,7 +659,7 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 
 	/* If there is no standard colormap, check the dither cube/ramp */
     if (xdev->cman.dither_ramp) {
-	if (gx_device_has_color(xdev)) {
+	if (xdev->color_info.num_components > 1) {
 	    uint cr, cg, cb;	/* rgb cube indices */
 	    X_color_value cvr, cvg, cvb;	/* color value on cube */
 	    int dither_rgb = xdev->color_info.dither_colors;
@@ -839,7 +839,7 @@ gdev_x_map_color_rgb(gx_device * dev, gx_color_index color,
      * are likely to be small enough to index color_to_rgb.
      */
     if (xdev->cman.dither_ramp) {
-	if (gx_device_has_color(xdev)) {
+	if (xdev->color_info.num_components > 1) {
 	    int size = xdev->color_info.dither_colors;
 	    int size3 = size * size * size;
 	    int i;
