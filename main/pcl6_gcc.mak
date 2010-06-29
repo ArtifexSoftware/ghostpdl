@@ -48,6 +48,7 @@ LCMSSRCDIR?=../gs/lcms
 SHARE_LCMS?=0
 
 IMDISRCDIR?=../gs/imdi
+LCMSPLATFORM?=unix
 
 # PCL_INCLUDED means pcl + pcl xl
 PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED
