@@ -48,6 +48,13 @@ PSLIBDIR=..\gs\lib
 ICCSRCDIR=..\gs\icclib
 !endif
 
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
+!ifndef LCMSSRCDIR
+LCMSSRCDIR=..\gs\lcms
+LCMSPLATFORM=win32
+!endif
+
 !ifndef FTSRCDIR
 FTSRCDIR=..\gs\freetype
 !endif

@@ -64,6 +64,7 @@ IMDISRCDIR=..\gs\imdi
 
 !ifndef LCMSSRCDIR
 LCMSSRCDIR=..\gs\lcms
+LCMSPLATFORM=win32
 !endif
 
 !ifndef COMPILE_INITS
