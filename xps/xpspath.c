@@ -1101,10 +1101,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
         code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
         if (code)
-        {
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot create transparency group");
-        }
     }
 
     if (fill_att)
@@ -1131,11 +1128,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
         code = xps_parse_brush(ctx, fill_uri, dict, fill_tag);
         if (code < 0)
-        {
-            xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse fill brush");
-        }
     }
 
     if (stroke_att)
@@ -1165,17 +1158,15 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
         code = xps_parse_brush(ctx, stroke_uri, dict, stroke_tag);
         if (code < 0)
-        {
-            xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse stroke brush");
-        }
     }
 
     if (opacity_att || opacity_mask_tag)
+    {
         xps_restore_bounds(ctx, &saved_bounds_opacity);
 
-    xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+        xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    }
 
     gs_grestore(ctx->pgs);
 

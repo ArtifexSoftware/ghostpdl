@@ -177,7 +177,6 @@ JPXSRCDIR=jasper
 
 !ifndef LCMSSRCDIR
 LCMSSRCDIR=lcms
-LCMSPLATFORM=win32
 !endif
 
 # Define the directory where the imdi library source is stored.

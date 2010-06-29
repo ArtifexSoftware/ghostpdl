@@ -179,7 +179,6 @@ ICCSRCDIR=icclib
 
 SHARE_LCMS=0
 LCMSSRCDIR=lcms
-LCMSPLATFORM=unix
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.

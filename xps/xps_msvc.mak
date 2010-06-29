@@ -60,7 +60,6 @@ ICCSRCDIR=..\gs\icclib
 # See lcms.mak for more information
 !ifndef LCMSSRCDIR
 LCMSSRCDIR=..\gs\lcms
-LCMSPLATFORM=win32
 !endif
 
 !ifndef PNGSRCDIR

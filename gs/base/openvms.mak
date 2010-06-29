@@ -134,7 +134,6 @@ JPXSRCDIR=jasper
 # See lcms.mak for more information
 
 LCMSSRCDIR=[.lcms]
-LCMSPLATFORM=unix
 
 # IJS has not been ported to OpenVMS. If you do the port,
 # you'll need to set these values. You'll also need to

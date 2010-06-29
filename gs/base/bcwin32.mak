@@ -221,7 +221,6 @@ JPXSRCDIR=jasper
 
 !ifndef LCMSSRCDIR
 LCMSSRCDIR=lcms
-LCMSPLATFORM=win32
 !endif
 
 # Define the directory where the ijs source is stored,

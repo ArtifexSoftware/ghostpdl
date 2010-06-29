@@ -82,7 +82,7 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
     gs_gsave(ctx->pgs);
     code = xps_paint_tiling_brush_clipped(c);
     if (code)
-        goto cleanup;
+        return gs_rethrow(code, "cannot draw tile");
     gs_grestore(ctx->pgs);
 
     if (c->tile_mode == TILE_FLIP_X || c->tile_mode == TILE_FLIP_X_Y)
@@ -92,7 +92,7 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_scale(ctx->pgs, -1.0, 1.0);
         xps_paint_tiling_brush_clipped(c);
         if (code)
-            goto cleanup;
+            return gs_rethrow(code, "cannot draw tile flipped x");
         gs_grestore(ctx->pgs);
     }
 
@@ -103,7 +103,7 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_scale(ctx->pgs, 1.0, -1.0);
         xps_paint_tiling_brush_clipped(c);
         if (code)
-            goto cleanup;
+            return gs_rethrow(code, "cannot draw tile flipped y");
         gs_grestore(ctx->pgs);
     }
 
@@ -114,18 +114,13 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_scale(ctx->pgs, -1.0, -1.0);
         xps_paint_tiling_brush_clipped(c);
         if (code)
-            goto cleanup;
+            return gs_rethrow(code, "cannot draw tile flipped x and y");
         gs_grestore(ctx->pgs);
     }
 
     ctx->pgs = saved_pgs;
 
     return 0;
-
-cleanup:
-    gs_grestore(ctx->pgs);
-    ctx->pgs = saved_pgs;
-    return gs_rethrow(code, "cannot draw tile");
 }
 
 int
@@ -154,7 +149,7 @@ xps_high_level_pattern(xps_context_t *ctx)
     code = gs_bbox_transform(&ppat->BBox, &ctm_only(ctx->pgs), &bbox);
     if (code < 0) {
         gs_grestore(ctx->pgs);
-        return code;
+            return code;
     }
     clip_box.p.x = float2fixed(bbox.p.x);
     clip_box.p.y = float2fixed(bbox.p.y);
@@ -304,10 +299,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
     code = xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
     if (code)
-    {
-        gs_grestore(ctx->pgs);
         return gs_rethrow(code, "cannot create transparency group");
-    }
 
     /* TODO(tor): check viewport and tiling to see if we can set it to TILE_NONE */
 
@@ -398,11 +390,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
         code = func(ctx, base_uri, dict, root, user);
         if (code < 0)
-        {
-            xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot draw tile");
-        }
 
         xps_restore_bounds(ctx, &saved_bounds);
     }

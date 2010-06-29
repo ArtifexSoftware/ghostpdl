@@ -85,20 +85,13 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
 
     code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
     if (code)
-    {
-        gs_grestore(ctx->pgs);
         return gs_rethrow(code, "cannot create transparency group");
-    }
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
         code = xps_parse_element(ctx, base_uri, dict, node);
         if (code)
-        {
-            xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse child of Canvas");
-        }
     }
 
     if (clip_att || clip_tag)
@@ -111,7 +104,9 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
     gs_grestore(ctx->pgs);
 
     if (new_dict)
+    {
         xps_free_resource_dictionary(ctx, new_dict);
+    }
 
     return 0;
 }
@@ -227,10 +222,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     {
         code = gs_push_pdf14trans_device(ctx->pgs);
         if (code < 0)
-        {
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot install transparency device");
-        }
     }
 
     /* Initialize the default profiles in the ctx to what is in the manager */
@@ -249,39 +241,25 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         {
             dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
             if (!dict)
-            {
-                gs_pop_pdf14trans_device(ctx->pgs);
-                gs_grestore(ctx->pgs);
                 return gs_rethrow(-1, "cannot load FixedPage.Resources");
-            }
         }
         code = xps_parse_element(ctx, base_uri, dict, node);
         if (code)
-        {
-            gs_pop_pdf14trans_device(ctx->pgs);
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse child of FixedPage");
-        }
     }
 
     if (ctx->use_transparency && has_transparency)
     {
         code = gs_pop_pdf14trans_device(ctx->pgs);
         if (code < 0)
-        {
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot uninstall transparency device");
-        }
     }
 
     /* Flush page */
     {
         code = xps_show_page(ctx, 1, true); /* copies, flush */
         if (code < 0)
-        {
-            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot flush page");
-        }
     }
 
     /* restore the original device, discarding the pdf14 compositor */
