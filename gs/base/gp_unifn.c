@@ -26,8 +26,8 @@ const char gp_file_name_list_separator = ':';
 const char gp_fmode_binary_suffix[] = "";
 
 /* Define the file modes for binary reading or writing. */
-const char gp_fmode_rb[] = "r";
-const char gp_fmode_wb[] = "w";
+const char gp_fmode_rb[] = "rb";
+const char gp_fmode_wb[] = "wb";
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
