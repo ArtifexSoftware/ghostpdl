@@ -51,14 +51,29 @@ GS_SONAME_MAJOR=$(GS_SONAME).$(GS_VERSION_MAJOR)
 GS_SONAME_MAJOR_MINOR=$(GS_SONAME).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)
 LDFLAGS_SO=-shared -Wl,-soname=$(GS_SONAME_MAJOR)
 
-# MacOS X
+## BSD Make does not support conditionals (ifeq/ifneq/ifdef/ifndef),
+## otherwise we could uncommenting these lines.
+
+#ifeq ("$(TARGET)","darwin")
+## MacOS X
 #GS_SOEXT=dylib
 #GS_SONAME=$(GS_SONAME_BASE).$(GS_SOEXT)
 #GS_SONAME_MAJOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_SOEXT)
 #GS_SONAME_MAJOR_MINOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR).$(GS_SOEXT)
-#LDFLAGS_SO=-dynamiclib -flat_namespace
-#LDFLAGS_SO=-dynamiclib -install_name $(GS_SONAME_MAJOR_MINOR)
+##LDFLAGS_SO=-dynamiclib -flat_namespace
+##LDFLAGS_SO=-dynamiclib -install_name $(GS_SONAME_MAJOR_MINOR)
 #LDFLAGS_SO=-dynamiclib -install_name $(FRAMEWORK_NAME)
+#endif
+
+#ifeq ("$(TARGET)",mingw")
+## Mingw
+#GS_SONAME_BASE=gs
+#GS_SOEXT=dll
+#GS_SONAME=$(GS_SONAME_BASE).$(GS_SOEXT)
+#GS_SONAME_MAJOR=$(GS_SONAME_BASE)-$(GS_VERSION_MAJOR).$(GS_SOEXT)
+#GS_SONAME_MAJOR_MINOR=$(GS_SONAME_BASE)-$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR).$(GS_SOEXT)
+#LDFLAGS_SO=-shared -Wl,-soname=$(GS_SONAME_MAJOR_MINOR)
+#endif
 
 GS_SO=$(BINDIR)/$(GS_SONAME)
 GS_SO_MAJOR=$(BINDIR)/$(GS_SONAME_MAJOR) 
