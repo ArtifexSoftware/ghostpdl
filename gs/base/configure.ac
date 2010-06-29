@@ -345,7 +345,7 @@ HAVE_FONTCONFIG=""
 FONTCONFIG_CFLAGS=""
 FONTCONFIG_LIBS=""
 AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
-    [Don't use fontconfig to list system fonts]))
+    [Don't use fontconfig to list system fonts (also implies disable cairo)]))
 if test "$enable_fontconfig" != "no"; then
 	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
 	# autoconf macro and b) requires pkg-config on the system, which is
@@ -850,6 +850,11 @@ AC_ARG_ENABLE([cairo], AC_HELP_STRING([--disable-cairo],
 CAIRO_DEVS=""
 CAIRO_CFLAGS=""
 CAIRO_LIBS=""
+# Disable cairo if fontconfig is disabled, since cairo depends on fontconfig
+if test "$enable_fontconfig" != "yes"; then
+enable_cairo=no
+fi
+
 if test "x$enable_cairo" != xno; then
   AC_PATH_PROG(PKGCONFIG, pkg-config)
   if test "x$PKGCONFIG" != x; then
