@@ -19,7 +19,9 @@
 
 
 #ifdef __WINDOWS__
+#ifndef _Windows
 # define _Windows
+#endif
 #endif
 
 #ifdef _Windows
