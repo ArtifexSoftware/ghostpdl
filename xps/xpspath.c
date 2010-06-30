@@ -15,153 +15,13 @@
 
 #include "ghostxps.h"
 
-static void
-xps_grow_rect(gs_rect *rect, float x, float y)
-{
-    if (x < rect->p.x) rect->p.x = x;
-    if (y < rect->p.y) rect->p.y = y;
-    if (x > rect->q.x) rect->q.x = x;
-    if (y > rect->q.y) rect->q.y = y;
-}
-
 void
-xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user)
+xps_clip(xps_context_t *ctx)
 {
-    gs_matrix ctm;
-    gs_matrix inv;
-    gs_point a, b, c, d;
-    gs_rect bbox;
-
-    gs_currentmatrix(ctx->pgs, &ctm);
-    gs_matrix_invert(&ctm, &inv);
-
-    bbox = ctx->bounds;
-    gs_point_transform(bbox.p.x, bbox.p.y, &inv, &a);
-    gs_point_transform(bbox.p.x, bbox.q.y, &inv, &b);
-    gs_point_transform(bbox.q.x, bbox.q.y, &inv, &c);
-    gs_point_transform(bbox.q.x, bbox.p.y, &inv, &d);
-
-    user->p.x = MIN(MIN(a.x, b.x), MIN(c.x, d.x));
-    user->p.y = MIN(MIN(a.y, b.y), MIN(c.y, d.y));
-    user->q.x = MAX(MAX(a.x, b.x), MAX(c.x, d.x));
-    user->q.y = MAX(MAX(a.y, b.y), MAX(c.y, d.y));
-}
-
-void
-xps_update_bounds(xps_context_t *ctx, gs_rect *save)
-{
-    segment *seg;
-    curve_segment *cseg;
-    gs_rect rc;
-
-    save->p.x = ctx->bounds.p.x;
-    save->p.y = ctx->bounds.p.y;
-    save->q.x = ctx->bounds.q.x;
-    save->q.y = ctx->bounds.q.y;
-
-    /* get bounds of current path (that is about to be clipped) */
-    /* the coordinates of the path segments are already in device space (yay!) */
-    if (!ctx->pgs->path)
-        return;
-
-    seg = (segment*)ctx->pgs->path->first_subpath;
-    if (seg)
-    {
-        rc.p.x = rc.q.x = fixed2float(seg->pt.x);
-        rc.p.y = rc.q.y = fixed2float(seg->pt.y);
-    }
-    else
-    {
-        rc.p.x = rc.q.x = 0.0;
-        rc.p.y = rc.q.y = 0.0;
-    }
-
-    while (seg)
-    {
-        switch (seg->type)
-        {
-        case s_start:
-            xps_grow_rect(&rc, fixed2float(seg->pt.x), fixed2float(seg->pt.y));
-            break;
-        case s_line:
-            xps_grow_rect(&rc, fixed2float(seg->pt.x), fixed2float(seg->pt.y));
-            break;
-        case s_line_close:
-            break;
-        case s_curve:
-            cseg = (curve_segment*)seg;
-            xps_grow_rect(&rc, fixed2float(cseg->p1.x), fixed2float(cseg->p1.y));
-            xps_grow_rect(&rc, fixed2float(cseg->p2.x), fixed2float(cseg->p2.y));
-            xps_grow_rect(&rc, fixed2float(seg->pt.x), fixed2float(seg->pt.y));
-            break;
-        }
-        seg = seg->next;
-    }
-
-    /* intersect with old bounds, and fix degenerate case */
-
-    rect_intersect(ctx->bounds, rc);
-
-    if (ctx->bounds.q.x < ctx->bounds.p.x)
-        ctx->bounds.q.x = ctx->bounds.p.x;
-    if (ctx->bounds.q.y < ctx->bounds.p.y)
-        ctx->bounds.q.y = ctx->bounds.p.y;
-}
-
-void
-xps_restore_bounds(xps_context_t *ctx, gs_rect *save)
-{
-    ctx->bounds.p.x = save->p.x;
-    ctx->bounds.p.y = save->p.y;
-    ctx->bounds.q.x = save->q.x;
-    ctx->bounds.q.y = save->q.y;
-}
-
-#if 0
-static void
-xps_debug_bounds(xps_context_t *ctx)
-{
-    gs_matrix mat;
-
-    gs_gsave(ctx->pgs);
-
-    dprintf6("bounds: debug [%g %g %g %g] w=%g h=%g\n",
-            ctx->bounds.p.x, ctx->bounds.p.y,
-            ctx->bounds.q.x, ctx->bounds.q.y,
-            ctx->bounds.q.x - ctx->bounds.p.x,
-            ctx->bounds.q.y - ctx->bounds.p.y);
-
-    gs_make_identity(&mat);
-    gs_setmatrix(ctx->pgs, &mat);
-
-    gs_setgray(ctx->pgs, 0.3);
-    gs_moveto(ctx->pgs, ctx->bounds.p.x, ctx->bounds.p.y);
-    gs_lineto(ctx->pgs, ctx->bounds.q.x, ctx->bounds.q.y);
-    gs_moveto(ctx->pgs, ctx->bounds.q.x, ctx->bounds.p.y);
-    gs_lineto(ctx->pgs, ctx->bounds.p.x, ctx->bounds.q.y);
-
-    gs_moveto(ctx->pgs, ctx->bounds.p.x, ctx->bounds.p.y);
-    gs_lineto(ctx->pgs, ctx->bounds.p.x, ctx->bounds.q.y);
-    gs_lineto(ctx->pgs, ctx->bounds.q.x, ctx->bounds.q.y);
-    gs_lineto(ctx->pgs, ctx->bounds.q.x, ctx->bounds.p.y);
-    gs_closepath(ctx->pgs);
-
-    gs_stroke(ctx->pgs);
-
-    gs_grestore(ctx->pgs);
-}
-#endif
-
-void
-xps_clip(xps_context_t *ctx, gs_rect *saved_bounds)
-{
-    xps_update_bounds(ctx, saved_bounds);
-
     if (ctx->fill_rule == 0)
         gs_eoclip(ctx->pgs);
     else
         gs_clip(ctx->pgs);
-
     gs_newpath(ctx->pgs);
 }
 
@@ -173,12 +33,12 @@ xps_fill(xps_context_t *ctx)
     else if (ctx->fill_rule == 0) {
         if (gs_eofill(ctx->pgs) == gs_error_Remap_Color)
             xps_high_level_pattern(ctx);
-            gs_eofill(ctx->pgs);
+        gs_eofill(ctx->pgs);
     }
     else {
         if (gs_fill(ctx->pgs) == gs_error_Remap_Color)
             xps_high_level_pattern(ctx);
-            gs_fill(ctx->pgs);
+        gs_fill(ctx->pgs);
     }
 }
 
@@ -940,9 +800,6 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     float samples[32];
     gs_color_space *colorspace;
 
-    gs_rect saved_bounds_clip;
-    gs_rect saved_bounds_opacity;
-
     gs_gsave(ctx->pgs);
 
     ctx->fill_rule = 0;
@@ -1085,10 +942,10 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
             xps_parse_abbreviated_geometry(ctx, clip_att);
         if (clip_tag)
             xps_parse_path_geometry(ctx, dict, clip_tag, 0);
-
-        xps_clip(ctx, &saved_bounds_clip);
+        xps_clip(ctx);
     }
 
+#if 0 // XXX
     if (opacity_att || opacity_mask_tag)
     {
         /* clip the bounds with the actual path */
@@ -1098,13 +955,14 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
             xps_parse_path_geometry(ctx, dict, data_tag, 0);
         xps_update_bounds(ctx, &saved_bounds_opacity);
         gs_newpath(ctx->pgs);
+    }
+#endif
 
-        code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-        if (code)
-        {
-            gs_grestore(ctx->pgs);
-            return gs_rethrow(code, "cannot create transparency group");
-        }
+    code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    if (code)
+    {
+        gs_grestore(ctx->pgs);
+        return gs_rethrow(code, "cannot create transparency group");
     }
 
     if (fill_att)
@@ -1172,17 +1030,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         }
     }
 
-    if (opacity_att || opacity_mask_tag)
-        xps_restore_bounds(ctx, &saved_bounds_opacity);
-
     xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-
     gs_grestore(ctx->pgs);
-
-    if (clip_att || clip_tag)
-    {
-        xps_restore_bounds(ctx, &saved_bounds_clip);
-    }
-
     return 0;
 }

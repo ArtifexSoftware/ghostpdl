@@ -733,7 +733,6 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
     int spread_method;
     int code;
 
-    gs_rect saved_bounds;
     gs_rect bbox;
 
     gs_function_t *color_func;
@@ -794,7 +793,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
 
     has_opacity = xps_gradient_has_transparent_colors(stop_offsets, stop_colors, stop_count);
 
-    xps_clip(ctx, &saved_bounds);
+    xps_clip(ctx);
 
     gs_gsave(ctx->pgs);
     gs_concat(ctx->pgs, &transform);
@@ -860,8 +859,6 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
     xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
 
     gs_grestore(ctx->pgs);
-
-    xps_restore_bounds(ctx, &saved_bounds);
 
     xps_free_gradient_stop_function(ctx, opacity_func);
     xps_free_gradient_stop_function(ctx, color_func);

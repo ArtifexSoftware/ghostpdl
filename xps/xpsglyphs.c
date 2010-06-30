@@ -468,8 +468,6 @@ xps_parse_glyphs(xps_context_t *ctx,
     int is_sideways = 0;
     int bidi_level = 0;
 
-    gs_rect saved_bounds;
-
     /*
      * Extract attributes and extended attributes.
      */
@@ -590,8 +588,7 @@ xps_parse_glyphs(xps_context_t *ctx,
             xps_parse_abbreviated_geometry(ctx, clip_att);
         if (clip_tag)
             xps_parse_path_geometry(ctx, dict, clip_tag, 0);
-
-        xps_clip(ctx, &saved_bounds);
+        xps_clip(ctx);
     }
 
     font_size = atof(font_size_att);
@@ -672,11 +669,6 @@ xps_parse_glyphs(xps_context_t *ctx,
     xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
-
-    if (clip_att || clip_tag)
-    {
-        xps_restore_bounds(ctx, &saved_bounds);
-    }
 
     return 0;
 }

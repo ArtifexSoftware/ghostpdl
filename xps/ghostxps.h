@@ -63,6 +63,7 @@
 
 #include "gzstate.h"
 #include "gzpath.h"
+#include "gzcpath.h"
 
 #include "gsicc_manage.h"
 #include "gscms.h"
@@ -337,9 +338,7 @@ void xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, c
 int xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 int xps_parse_element(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 
-void xps_update_bounds(xps_context_t *ctx, gs_rect *save);
-void xps_restore_bounds(xps_context_t *ctx, gs_rect *save);
-void xps_clip(xps_context_t *ctx, gs_rect *saved_bounds);
+void xps_clip(xps_context_t *ctx);
 void xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
 
@@ -406,13 +405,6 @@ struct xps_context_s
      * 1=nonzero, 0=evenodd
      */
     int fill_rule;
-
-    /* We often need the bounding box for the current
-     * area of the page affected by drawing operations.
-     * We keep these bounds updated every time we
-     * clip. The coordinates are in device space.
-     */
-    gs_rect bounds;
 };
 
 int xps_process_file(xps_context_t *ctx, char *filename);

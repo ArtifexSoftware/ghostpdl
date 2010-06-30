@@ -15,6 +15,24 @@
 
 #include "ghostxps.h"
 
+void
+xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *ubox)
+{
+    gx_clip_path *clip_path;
+    gs_rect dbox;
+    int code;
+
+    code = gx_effective_clip_path(ctx->pgs, &clip_path);
+    if (code < 0)
+        gs_warn("gx_effective_clip_path failed");
+
+    dbox.p.x = fixed2float(clip_path->outer_box.p.x);
+    dbox.p.y = fixed2float(clip_path->outer_box.p.y);
+    dbox.q.x = fixed2float(clip_path->outer_box.q.x);
+    dbox.q.y = fixed2float(clip_path->outer_box.q.y);
+    gs_bbox_transform_inverse(&dbox, &ctm_only(ctx->pgs), ubox);
+}
+
 int
 xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         char *opacity_att, xps_item_t *opacity_mask_tag)

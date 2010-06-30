@@ -38,7 +38,6 @@ static int
 xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
 {
     xps_context_t *ctx = c->ctx;
-    gs_rect saved_bounds;
     int code;
 
     gs_moveto(ctx->pgs, c->viewbox.p.x, c->viewbox.p.y);
@@ -49,20 +48,9 @@ xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
     gs_clip(ctx->pgs);
     gs_newpath(ctx->pgs);
 
-    /* tile paint functions use a different device
-     * with a different coord space, so we have to
-     * tweak the bounds.
-     */
-
-    saved_bounds = ctx->bounds;
-
-    ctx->bounds = c->viewbox; // transform?
-
     code = c->func(c->ctx, c->base_uri, c->dict, c->tag, c->user);
     if (code < 0)
         return gs_rethrow(code, "cannot draw clipped tile");
-
-    ctx->bounds = saved_bounds;
 
     return 0;
 }
@@ -378,9 +366,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
     }
     else
     {
-        gs_rect saved_bounds;
-
-        xps_clip(ctx, &saved_bounds);
+        xps_clip(ctx);
 
         gs_concat(ctx->pgs, &transform);
 
@@ -403,8 +389,6 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
             gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot draw tile");
         }
-
-        xps_restore_bounds(ctx, &saved_bounds);
     }
 
     xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);

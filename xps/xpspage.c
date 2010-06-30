@@ -32,8 +32,6 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
     xps_item_t *clip_tag = NULL;
     xps_item_t *opacity_mask_tag = NULL;
 
-    gs_rect saved_bounds;
-
     gs_matrix transform;
 
     transform_att = xps_att(root, "RenderTransform");
@@ -80,7 +78,7 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
             xps_parse_abbreviated_geometry(ctx, clip_att);
         if (clip_tag)
             xps_parse_path_geometry(ctx, dict, clip_tag, 0);
-        xps_clip(ctx, &saved_bounds);
+        xps_clip(ctx);
     }
 
     code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
@@ -101,11 +99,6 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
         }
     }
 
-    if (clip_att || clip_tag)
-    {
-        xps_restore_bounds(ctx, &saved_bounds);
-    }
-
     xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
     gs_grestore(ctx->pgs);
@@ -123,12 +116,10 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     xps_resource_t *dict;
     char *width_att;
     char *height_att;
-    int code;
-    gs_matrix ctm;
-    gs_rect rc;
     int has_transparency;
     char base_uri[1024];
     char *s;
+    int code;
 
     if_debug1('|', "doc: parsing page %s\n", part->name);
 
@@ -197,14 +188,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         code = gs_erasepage(pgs);
         if (code < 0)
             return gs_rethrow(code, "cannot clear page");
-
-        /* set initial bounds to cover the page */
-        gs_currentmatrix(pgs, &ctm);
-        gs_point_transform(0.0, 0.0, &ctm, &rc.p);
-        gs_point_transform(atoi(width_att), atoi(height_att), &ctm, &rc.q);
-        if (rc.p.x > rc.q.x) { float t = rc.p.x; rc.p.x = rc.q.x; rc.q.x = t; }
-        if (rc.p.y > rc.q.y) { float t = rc.p.y; rc.p.y = rc.q.y; rc.q.y = t; }
-        ctx->bounds = rc;
     }
 
     /* Pre-parse looking for transparency */
