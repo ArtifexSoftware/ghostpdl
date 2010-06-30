@@ -858,7 +858,8 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     result = (cmm_profile_t*) gs_alloc_struct(memory, cmm_profile_t, 
                                 &st_gsicc_profile, "gsicc_profile_new");
     if (result == NULL) 
-        return result; 
+        return result;
+    memset(result,0,sizeof(gsicc_serialized_profile_t));
     if (namelen > 0) {
         nameptr = (char*) gs_alloc_bytes(memory, namelen,
 	   		     "gsicc_profile_new");
@@ -884,9 +885,6 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     }
     rc_init_free(result, memory, 1, rc_free_icc_profile);
     result->profile_handle = NULL;
-    result->hash_is_valid = false;
-    result->islab = false;
-    result->default_match = DEFAULT_NONE;
     result->spotnames = NULL;
     result->dev = NULL;
     return(result);
