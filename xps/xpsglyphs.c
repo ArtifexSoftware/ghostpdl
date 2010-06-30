@@ -607,7 +607,10 @@ xps_parse_glyphs(xps_context_t *ctx,
 
     code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
     if (code)
+    {
+        gs_grestore(ctx->pgs);
         return gs_rethrow(code, "cannot create transparency group");
+    }
 
     /*
      * If it's a solid color brush fill/stroke do a simple fill
@@ -633,7 +636,11 @@ xps_parse_glyphs(xps_context_t *ctx,
                 is_sideways, bidi_level,
                 indices_att, unicode_att, 0);
         if (code)
+        {
+            xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse glyphs data");
+        }
     }
 
     /*
@@ -647,10 +654,19 @@ xps_parse_glyphs(xps_context_t *ctx,
                 atof(origin_x_att), atof(origin_y_att),
                 is_sideways, bidi_level, indices_att, unicode_att, 1);
         if (code)
+        {
+            xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse glyphs data");
+        }
+
         code = xps_parse_brush(ctx, fill_uri, dict, fill_tag);
         if (code)
+        {
+            xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse fill brush");
+        }
     }
 
     xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);

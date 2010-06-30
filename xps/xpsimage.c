@@ -300,7 +300,11 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
         gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
         code = xps_paint_image_brush_imp(ctx, image, 1);
         if (code < 0)
+        {
+            gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
+            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot draw alpha channel image");
+        }
         gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
 
         gs_setcolorspace(ctx->pgs, image->colorspace);
@@ -308,7 +312,11 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
         gs_begin_transparency_group(ctx->pgs, &tgp, &bbox);
         code = xps_paint_image_brush_imp(ctx, image, 0);
         if (code < 0)
+        {
+            gs_end_transparency_group(ctx->pgs);
+            gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot draw color channel image");
+        }
         gs_end_transparency_group(ctx->pgs);
 
         code = gs_grestore(ctx->pgs);

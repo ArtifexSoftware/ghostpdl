@@ -56,17 +56,19 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
         code = xps_parse_brush(ctx, base_uri, dict, opacity_mask_tag);
         if (code)
+        {
+            gs_grestore(ctx->pgs);
+            gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
+            ctx->opacity_only = save;
             return gs_rethrow(code, "cannot parse opacity mask brush");
+        }
 
         gs_grestore(ctx->pgs);
-
-        ctx->opacity_only = save;
-
         gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
+        ctx->opacity_only = save;
     }
 
     gs_trans_group_params_init(&tgp);
-
     gs_begin_transparency_group(ctx->pgs, &tgp, &bbox);
 
     return 0;
