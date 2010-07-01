@@ -230,6 +230,7 @@ gs_begin_transparency_group(gs_state *pgs,
     gs_pdf14trans_params_t params = { 0 };
     const gs_color_space *blend_color_space;
     gs_imager_state * pis = (gs_imager_state *)pgs;
+    cmm_profile_t *profile;
 
     if (check_for_nontrans_pattern(pgs,
                   (unsigned char *)"gs_begin_transparency_group")) {
@@ -247,39 +248,44 @@ gs_begin_transparency_group(gs_state *pgs,
     params.opacity = pgs->opacity;
     params.shape = pgs->shape;
     params.blend_mode = pgs->blend_mode;
-    /* The blending procs must be based upon the current color space */
-    /* Note:  This function is called during the c-list writer side. 
+    /* This function is called during the c-list writer side. 
        Store some information so that we know what the color space is
-       so that we can adjust according later during the clist reader */ 
-    /* Note that we currently will use the concrete space for any space other than a 
-        device space.  However, if the device is a sep device it will blend
-        in DeviceN color space as required.  */
+       so that we can adjust according later during the clist reader. 
+       We currently will use the concrete space for any space other than a 
+       device space.  However, if the device is a sep device it will blend
+       in DeviceN color space as required.  */
     blend_color_space = gs_currentcolorspace_inline(pgs);
     if (gs_color_space_get_index(blend_color_space) > gs_color_space_index_DeviceCMYK) {
+        /* ICC and PS CIE based case.  Note that unidirectional PS CIE color
+           spaces should not be allowed but end up occuring when processing
+           PDF files with -dUseCIEColor.  We will end up using the appropriate
+           ICC default color space in these cases. */
         blend_color_space = gs_currentcolorspace_inline(pgs);
     } else {
-       /* ICC and CIE based color space.  With upcoming code changes
-          all CIE based spaces will actually be ICC based spaces and
-          ICC spaces are already concrete. So this will return the
-          ICC color space. */
         blend_color_space = cs_concrete_space(blend_color_space, pis);
     }
-    /* Note that if the /CS parameter was not present in the push 
+    /* Note that if the /CS parameter was NOT present in the push 
        of the transparency group, then we must actually inherent 
        the previous group color space, or the color space of the
-       target device (process color model).  Note here we just want
-       to set it as a unknown type for clist writing, as we .  We will later 
-       during clist reading 
+       target device (process color model).  Here we just want
+       to set it as a unknown type for clist writing, as we will take care
+       of using the parent group color space later during clist reading. 
        */
     if (ptgp->ColorSpace == NULL) {
         params.group_color = UNKNOWN;
         params.group_color_numcomps = 0;
     } else {
+        /* The /CS parameter was present.  Use what was set.  Currently
+           all our Device spaces are actually ICC based.  The other options
+           are if -dUseCIEColor is set, in which case it could be
+           coming in as a PS CIE color space, which should not be allowed
+           but should default to one of the default ICC color spaces.  Note
+           that CalRGB and CalGray, which are valid bidirectional color spaces
+           are converted to ICC profiles during installation. PS CIE building 
+           to ICC is delayed. */
         if ( gs_color_space_is_ICC(blend_color_space) ) {
-            /* Blending space is ICC based.  If we 
-               are doing c-list rendering we will need
-               to write this color space into the clist.
-               MJV ToDo.
+            /* Blending space is ICC based.  If we are doing c-list rendering 
+               we will need to write this color space into the clist.
                */
             params.group_color = ICC;
             params.group_color_numcomps = 
@@ -288,28 +294,33 @@ gs_begin_transparency_group(gs_state *pgs,
             params.iccprofile = blend_color_space->cmm_icc_profile_data;
             params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
         } else {
-        switch (cs_num_components(blend_color_space)) {
-            case 1:				
-                params.group_color = GRAY_SCALE;       
-                params.group_color_numcomps = 1;  /* Need to check */
+            /* Color space was NOT ICC based.  PS CIE space and DeviceN are the only
+               other option.  Use the ICC default based upon the component count. */
+            switch (cs_num_components(blend_color_space)) {
+                case 1:
+                    profile =  pgs->icc_manager->default_gray;
+                    break;
+                case 3:				
+                    profile =  pgs->icc_manager->default_rgb;
+                    break;
+                case 4:				
+                    profile =  pgs->icc_manager->default_cmyk;
                 break;
-            case 3:				
-                params.group_color = DEVICE_RGB;       
-                params.group_color_numcomps = 3; 
+                default:
+                    /* We can end up here if we are in a deviceN color space and 
+                       we have a sep output device */
+                    profile = NULL;
+                    params.group_color = DEVICEN;
+                    params.group_color_numcomps = cs_num_components(blend_color_space);
                 break;
-            case 4:				
-                params.group_color = DEVICE_CMYK;       
-                params.group_color_numcomps = 4; 
-            break;
-            default:
-                /* We can end up here if we are in
-                   a deviceN color space and 
-                   we have a sep output device */
-                params.group_color = DEVICEN;
-                params.group_color_numcomps = cs_num_components(blend_color_space);
-            break;
-         }  
-    }
+            }
+            if (profile != NULL) {
+                params.group_color = ICC;
+                params.group_color_numcomps = profile->num_comps;
+                params.iccprofile = profile;
+                params.icc_hash = profile->hashcode;
+            }
+        }
     }
 #ifdef DEBUG
     if (gs_debug_c('v')) {
