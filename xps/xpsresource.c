@@ -66,8 +66,8 @@ xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict,
     }
 }
 
-xps_resource_t *
-xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *source_att)
+static int
+xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *base_uri, char *source_att)
 {
     char part_name[1024];
     char part_uri[1024];
@@ -75,30 +75,28 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
     xps_part_t *part;
     xps_item_t *xml;
     char *s;
+    int code;
 
     /* External resource dictionaries MUST NOT reference other resource dictionaries */
     xps_absolute_path(part_name, base_uri, source_att, sizeof part_name);
     part = xps_read_part(ctx, part_name);
     if (!part)
     {
-        gs_throw1(-1, "cannot find remote resource part '%s'", part_name);
-        return NULL;
+        return gs_throw1(-1, "cannot find remote resource part '%s'", part_name);
     }
 
     xml = xps_parse_xml(ctx, part->data, part->size);
     if (!xml)
     {
         xps_free_part(ctx, part);
-        gs_rethrow(-1, "cannot parse xml");
-        return NULL;
+        return gs_rethrow(-1, "cannot parse xml");
     }
 
     if (strcmp(xps_tag(xml), "ResourceDictionary"))
     {
         xps_free_item(ctx, xml);
         xps_free_part(ctx, part);
-        gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(xml));
-        return NULL;
+        return gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(xml));
     }
 
     xps_strlcpy(part_uri, part_name, sizeof part_uri);
@@ -106,38 +104,39 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *s
     if (s)
         s[1] = 0;
 
-    dict = xps_parse_resource_dictionary(ctx, part_uri, xml);
-    if (!dict)
+    code = xps_parse_resource_dictionary(ctx, &dict, part_uri, xml);
+    if (code)
     {
         xps_free_item(ctx, xml);
         xps_free_part(ctx, part);
-        gs_rethrow1(-1, "cannot parse remote resource dictionary: %s", part_uri);
-        return NULL;
+        return gs_rethrow1(code, "cannot parse remote resource dictionary: %s", part_uri);
     }
 
     dict->base_xml = xml; /* pass on ownership */
 
     xps_free_part(ctx, part);
 
-    return dict;
+    *dictp = dict;
+    return gs_okay;
 }
 
-xps_resource_t *
-xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *root)
+int
+xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *base_uri, xps_item_t *root)
 {
     xps_resource_t *head;
     xps_resource_t *entry;
     xps_item_t *node;
     char *source;
     char *key;
+    int code;
 
     source = xps_att(root, "Source");
     if (source)
     {
-        head = xps_parse_remote_resource_dictionary(ctx, base_uri, source);
-        if (!head)
-            gs_rethrow(-1, "cannot parse remote resource dictionary");
-        return head;
+        code = xps_parse_remote_resource_dictionary(ctx, dictp, base_uri, source);
+        if (code)
+            return gs_rethrow(code, "cannot parse remote resource dictionary");
+        return gs_okay;
     }
 
     head = NULL;
@@ -150,10 +149,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *ro
         {
             entry = xps_alloc(ctx, sizeof(xps_resource_t));
             if (!entry)
-            {
-                gs_throw(-1, "cannot allocate resource entry");
-                return head;
-            }
+                return gs_throw(-1, "cannot allocate resource entry");
             entry->name = key;
             entry->base_uri = NULL;
             entry->base_xml = NULL;
@@ -170,7 +166,8 @@ xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *ro
         xps_strlcpy(head->base_uri, base_uri, sizeof head->base_uri);
     }
 
-    return head;
+    *dictp = head;
+    return gs_okay;
 }
 
 void

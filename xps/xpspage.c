@@ -43,9 +43,9 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
     {
         if (!strcmp(xps_tag(node), "Canvas.Resources") && xps_down(node))
         {
-            new_dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
-            if (!new_dict)
-                return gs_rethrow(-1, "cannot load Canvas.Resources");
+            code = xps_parse_resource_dictionary(ctx, &new_dict, base_uri, xps_down(node));
+            if (code)
+                return gs_rethrow(code, "cannot load Canvas.Resources");
             new_dict->parent = dict;
             dict = new_dict;
         }
@@ -230,12 +230,12 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     {
         if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))
         {
-            dict = xps_parse_resource_dictionary(ctx, base_uri, xps_down(node));
-            if (!dict)
+            code = xps_parse_resource_dictionary(ctx, &dict, base_uri, xps_down(node));
+            if (code)
             {
                 gs_pop_pdf14trans_device(ctx->pgs);
                 gs_grestore(ctx->pgs);
-                return gs_rethrow(-1, "cannot load FixedPage.Resources");
+                return gs_rethrow(code, "cannot load FixedPage.Resources");
             }
         }
         code = xps_parse_element(ctx, base_uri, dict, node);

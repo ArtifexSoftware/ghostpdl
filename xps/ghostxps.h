@@ -303,8 +303,7 @@ struct xps_resource_s
     xps_resource_t *parent; /* up to the previous dict in the stack */
 };
 
-xps_resource_t *xps_parse_remote_resource_dictionary(xps_context_t *ctx, char *base_uri, char *name);
-xps_resource_t *xps_parse_resource_dictionary(xps_context_t *ctx, char *base_uri, xps_item_t *root);
+int xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *base_uri, xps_item_t *root);
 void xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
 void xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char **attp, xps_item_t **tagp, char **urip);
 
