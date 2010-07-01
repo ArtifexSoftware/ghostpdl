@@ -1028,7 +1028,7 @@ $(GLOBJ)gdevabuf.$(OBJ) : $(GLSRC)gdevabuf.c $(GXERR) $(memory__h)\
 # the bbox device on the list of devices.
 
 $(GLD)bboxutil.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevbbox.$(OBJ)
-	$(ADDMOD) $(GLD)bboxutil $(GLOBJ)gdevbbox.$(OBJ)
+	$(SETMOD) $(GLD)bboxutil $(GLOBJ)gdevbbox.$(OBJ)
 
 $(GLD)bbox.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevbbox.$(OBJ)
 	$(SETDEV2) $(GLD)bbox $(GLOBJ)gdevbbox.$(OBJ)
