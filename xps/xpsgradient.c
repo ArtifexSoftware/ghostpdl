@@ -25,19 +25,46 @@ enum { SPREAD_PAD, SPREAD_REPEAT, SPREAD_REFLECT };
  * return the number of stops parsed.
  */
 
+struct stop
+{
+    float offset;
+    float color[4];
+};
+
+static int cmp_stop(const void *a, const void *b)
+{
+    const struct stop *astop = a;
+    const struct stop *bstop = b;
+    float diff = astop->offset - bstop->offset;
+    if (diff < 0)
+        return -1;
+    if (diff > 0)
+        return 1;
+    return 0;
+}
+
+static inline float lerp(float a, float b, float x)
+{
+    return a + (b - a) * x;
+}
+
 static int
 xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
-        float *offsets, float *colors, int maxcount)
+    struct stop *stops, int maxcount)
 {
-    int count = 0;
-    gs_color_space *colorspace;
-    float sample[32], f;
     unsigned short sample_in[8], sample_out[8]; /* XPS allows up to 8 bands */
-    int i, done;
-    gsicc_link_t *icclink = NULL;
     gsicc_rendering_param_t rendering_params;
-    int num_colors;
+    gsicc_link_t *icclink;
+    gs_color_space *colorspace;
+    float sample[8];
+    int before, after;
+    int count;
+    int i, k;
 
+    /* We may have to insert 2 extra stops when postprocessing */
+    maxcount -= 2;
+
+    count = 0;
     while (node && count < maxcount)
     {
         if (!strcmp(xps_tag(node), "GradientStop"))
@@ -46,7 +73,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
             char *color = xps_att(node, "Color");
             if (offset && color)
             {
-                offsets[count] = atof(offset);
+                stops[count].offset = atof(offset);
 
                 xps_parse_color(ctx, base_uri, color, &colorspace, sample);
 
@@ -63,25 +90,24 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                 if (icclink != NULL && !icclink->is_identity)
                 {
                     /* Transform the color */
-                    num_colors = gsicc_getsrc_channel_count(colorspace->cmm_icc_profile_data);
+                    int num_colors = gsicc_getsrc_channel_count(colorspace->cmm_icc_profile_data);
                     for (i = 0; i < num_colors; i++)
                     {
                         sample_in[i] = sample[i+1]*65535;
                     }
                     gscms_transform_color(icclink, sample_in, sample_out, 2, NULL);
 
-                    colors[count * 4 + 0] = sample[0]; /* Alpha */
-                    colors[count * 4 + 1] = (float) sample_out[0] / 65535.0; /* sRGB */
-                    colors[count * 4 + 2] = (float) sample_out[1] / 65535.0;
-                    colors[count * 4 + 3] = (float) sample_out[2] / 65535.0;
-
+                    stops[count].color[0] = sample[0]; /* Alpha */
+                    stops[count].color[1] = (float) sample_out[0] / 65535.0; /* sRGB */
+                    stops[count].color[2] = (float) sample_out[1] / 65535.0;
+                    stops[count].color[3] = (float) sample_out[2] / 65535.0;
                 }
                 else
                 {
-                    colors[count * 4 + 0] = sample[0];
-                    colors[count * 4 + 1] = sample[1];
-                    colors[count * 4 + 2] = sample[2];
-                    colors[count * 4 + 3] = sample[3];
+                    stops[count].color[0] = sample[0];
+                    stops[count].color[1] = sample[1];
+                    stops[count].color[2] = sample[2];
+                    stops[count].color[3] = sample[3];
                 }
 
                 count ++;
@@ -95,40 +121,107 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
 
     }
 
-    if (count == maxcount)
-        gs_warn("gradient brush exceeded maximum number of gradient stops\n");
-
-    /* Sort the gradient stops by offset */
-    done = 0;
-    while (!done)
+    if (count == 0)
     {
-        done = 1;
-        for (i = 1; i < count; i++)
+        gs_warn("gradient brush has no gradient stops");
+        stops[0].offset = 0;
+        stops[0].color[0] = 1;
+        stops[0].color[1] = 0;
+        stops[0].color[2] = 0;
+        stops[0].color[3] = 0;
+        stops[1].offset = 1;
+        stops[1].color[0] = 1;
+        stops[1].color[1] = 1;
+        stops[1].color[2] = 1;
+        stops[1].color[3] = 1;
+        return 2;
+    }
+
+    if (count == maxcount)
+        gs_warn("gradient brush exceeded maximum number of gradient stops");
+
+    /* Postprocess to make sure the range of offsets is 0.0 to 1.0 */
+
+    qsort(stops, count, sizeof(struct stop), cmp_stop);
+
+    before = -1;
+    after = -1;
+
+    for (i = 0; i < count; i++)
+    {
+        if (stops[i].offset < 0)
+            before = i;
+        if (stops[i].offset > 1)
         {
-            if (offsets[i - 1] > offsets[i])
-            {
-                f = offsets[i - 1];
-                offsets[i - 1] = offsets[i];
-                offsets[i] = f;
-
-                memcpy(sample, colors + (i - 1) * 4, sizeof(float) * 4);
-                memcpy(colors + (i - 1) * 4, colors + i * 4, sizeof(float) * 4);
-                memcpy(colors + i * 4, sample, sizeof(float) * 4);
-
-                done = 0;
-            }
+            after = i;
+            break;
         }
+    }
+
+    /* Remove all stops < 0 except the largest one */
+    if (before > 0)
+    {
+        memmove(stops, stops + before, (count - before) * sizeof(struct stop));
+        count -= before;
+    }
+
+    /* Remove all stops > 1 except the smallest one */
+    if (after >= 0)
+        count = after + 1;
+
+    /* Expand single stop to 0 .. 1 */
+    if (count == 1)
+    {
+        stops[1] = stops[0];
+        stops[0].offset = 0;
+        stops[1].offset = 1;
+        return 2;
+    }
+
+    /* First stop < 0 -- interpolate value to 0 */
+    if (stops[0].offset < 0)
+    {
+        float d = -stops[0].offset / (stops[1].offset - stops[0].offset);
+        stops[0].offset = 0;
+        for (k = 0; k < 4; k++)
+            stops[0].color[k] = lerp(stops[0].color[k], stops[1].color[k], d);
+    }
+
+    /* Last stop > 1 -- interpolate value to 1 */
+    if (stops[count-1].offset > 1)
+    {
+        float d = (1 - stops[count-2].offset) / (stops[count-1].offset - stops[count-2].offset);
+        stops[count-1].offset = 1;
+        for (k = 0; k < 4; k++)
+            stops[count-1].color[k] = lerp(stops[count-2].color[k], stops[count-1].color[k], d);
+    }
+
+    /* First stop > 0 -- insert a duplicate at 0 */
+    if (stops[0].offset > 0)
+    {
+        memmove(stops + 1, stops, count * sizeof(struct stop));
+        stops[0] = stops[1];
+        stops[0].offset = 0;
+        count++;
+    }
+
+    /* Last stop < 1 -- insert a duplicate at 1 */
+    if (stops[count-1].offset < 1)
+    {
+        stops[count] = stops[count-1];
+        stops[count].offset = 1;
+        count++;
     }
 
     return count;
 }
 
 static int
-xps_gradient_has_transparent_colors(float *offsets, float *colors, int count)
+xps_gradient_has_transparent_colors(struct stop *stops, int count)
 {
     int i;
     for (i = 0; i < count; i++)
-        if (colors[i * 4 + 0] < 1)
+        if (stops[i].color[0] < 1)
             return 1;
     return 0;
 }
@@ -143,8 +236,7 @@ xps_gradient_has_transparent_colors(float *offsets, float *colors, int count)
  */
 
 static gs_function_t *
-xps_create_gradient_stop_function(xps_context_t *ctx,
-        float *offsets, float *colors, int count, int opacity_only)
+xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int count, int opacity_only)
 {
     gs_function_1ItSg_params_t sparams;
     gs_function_ElIn_params_t lparams;
@@ -211,23 +303,23 @@ xps_create_gradient_stop_function(xps_context_t *ctx,
 
         if (opacity_only)
         {
-            c0[0] = colors[(i + 0) * 4 + 0];
-            c0[1] = colors[(i + 0) * 4 + 0];
-            c0[2] = colors[(i + 0) * 4 + 0];
+            c0[0] = stops[i].color[0];
+            c0[1] = stops[i].color[0];
+            c0[2] = stops[i].color[0];
 
-            c1[0] = colors[(i + 1) * 4 + 0];
-            c1[1] = colors[(i + 1) * 4 + 0];
-            c1[2] = colors[(i + 1) * 4 + 0];
+            c1[0] = stops[i+1].color[0];
+            c1[1] = stops[i+1].color[0];
+            c1[2] = stops[i+1].color[0];
         }
         else
         {
-            c0[0] = colors[(i + 0) * 4 + 1];
-            c0[1] = colors[(i + 0) * 4 + 2];
-            c0[2] = colors[(i + 0) * 4 + 3];
+            c0[0] = stops[i].color[1];
+            c0[1] = stops[i].color[2];
+            c0[2] = stops[i].color[3];
 
-            c1[0] = colors[(i + 1) * 4 + 1];
-            c1[1] = colors[(i + 1) * 4 + 2];
-            c1[2] = colors[(i + 1) * 4 + 3];
+            c1[0] = stops[i+1].color[1];
+            c1[1] = stops[i+1].color[2];
+            c1[2] = stops[i+1].color[3];
         }
 
         lparams.N = 1;
@@ -242,7 +334,7 @@ xps_create_gradient_stop_function(xps_context_t *ctx,
         functions[i] = lfunc;
 
         if (i > 0)
-            bounds[i - 1] = offsets[(i + 0) + 0];
+            bounds[i - 1] = stops[i].offset;
 
         encode[i * 2 + 0] = 0.0;
         encode[i * 2 + 1] = 1.0;
@@ -726,8 +818,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
     xps_item_t *transform_tag = NULL;
     xps_item_t *stop_tag = NULL;
 
-    float stop_offsets[MAX_STOPS];
-    float stop_colors[MAX_STOPS * 4];
+    struct stop stop_list[MAX_STOPS];
     int stop_count;
     gs_matrix transform;
     int spread_method;
@@ -779,19 +870,19 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
     if (!stop_tag)
         return gs_throw(-1, "missing gradient stops tag");
 
-    stop_count = xps_parse_gradient_stops(ctx, base_uri, stop_tag, stop_offsets, stop_colors, MAX_STOPS);
+    stop_count = xps_parse_gradient_stops(ctx, base_uri, stop_tag, stop_list, MAX_STOPS);
     if (stop_count == 0)
         return gs_throw(-1, "no gradient stops found");
 
-    color_func = xps_create_gradient_stop_function(ctx, stop_offsets, stop_colors, stop_count, 0);
+    color_func = xps_create_gradient_stop_function(ctx, stop_list, stop_count, 0);
     if (!color_func)
         return gs_rethrow(-1, "could not create color gradient function");
 
-    opacity_func = xps_create_gradient_stop_function(ctx, stop_offsets, stop_colors, stop_count, 1);
+    opacity_func = xps_create_gradient_stop_function(ctx, stop_list, stop_count, 1);
     if (!opacity_func)
         return gs_rethrow(-1, "could not create opacity gradient function");
 
-    has_opacity = xps_gradient_has_transparent_colors(stop_offsets, stop_colors, stop_count);
+    has_opacity = xps_gradient_has_transparent_colors(stop_list, stop_count);
 
     xps_clip(ctx);
 
