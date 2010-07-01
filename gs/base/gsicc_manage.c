@@ -585,7 +585,9 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
         icc_profile->profile_handle = 
             gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                             icc_profile->buffer_size);
-
+        if (icc_profile->profile_handle == NULL) {
+            return gs_rethrow1(-1, "allocation of profile %s handle failed", pname);
+        }
         /* Compute the hash code of the profile. Everything in the ICC manager will have 
            it's hash code precomputed */
         gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode),
