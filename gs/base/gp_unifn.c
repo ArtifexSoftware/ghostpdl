@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,24 +26,24 @@ const char gp_file_name_list_separator = ':';
 const char gp_fmode_binary_suffix[] = "";
 
 /* Define the file modes for binary reading or writing. */
-const char gp_fmode_rb[] = "rb";
-const char gp_fmode_wb[] = "wb";
+const char gp_fmode_rb[] = "r";
+const char gp_fmode_wb[] = "w";
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
 uint gp_file_name_root(const char *fname, uint len)
 {   if (len > 0 && fname[0] == '/')
-	return 1;
+        return 1;
     return 0;
 }
 
 uint gs_file_name_check_separator(const char *fname, int len, const char *item)
 {   if (len > 0) {
-	if (fname[0] == '/')
-	    return 1;
+        if (fname[0] == '/')
+            return 1;
     } else if (len < 0) {
-	if (fname[-1] == '/')
-	    return 1;
+        if (fname[-1] == '/')
+            return 1;
     }
     return 0;
 }
@@ -81,9 +81,9 @@ bool gp_file_name_is_empty_item_meanful(void)
 }
 
 gp_file_name_combine_result
-gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
-		    bool no_sibling, char *buffer, uint *blen)
+gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen,
+                    bool no_sibling, char *buffer, uint *blen)
 {
-    return gp_file_name_combine_generic(prefix, plen, 
-	    fname, flen, no_sibling, buffer, blen);
+    return gp_file_name_combine_generic(prefix, plen,
+            fname, flen, no_sibling, buffer, blen);
 }
