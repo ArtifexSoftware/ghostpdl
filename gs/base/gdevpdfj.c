@@ -605,7 +605,7 @@ pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force
     l0 = cos_stream_length(s[0]);
     l1 = cos_stream_length(s[1]);
 
-    if (force && l0 <= l1)
+    if (force && l0 <= l1 || l1 == -1)
 	k0 = 1; /* Use Flate if it is not longer. */
     else {
 	k0 = s_compr_chooser__get_choice(
@@ -650,10 +650,10 @@ pdf_choose_compression(pdf_image_writer * piw, bool end_binary)
 
     	status = s_close_filters(&piw->binary[0].strm, piw->binary[0].target);
 	if (status < 0)
-	    return status;
+	    return gs_error_ioerror;
 	status = s_close_filters(&piw->binary[1].strm, piw->binary[1].target);
-	if (status < 0)
-	    return status;
+	if (status < 0) 
+	    s[1]->length = -1;
     }
     pdf_choose_compression_cos(piw, s, end_binary);
     return 0;
