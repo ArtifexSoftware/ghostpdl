@@ -851,7 +851,7 @@ CAIRO_DEVS=""
 CAIRO_CFLAGS=""
 CAIRO_LIBS=""
 # Disable cairo if fontconfig is disabled, since cairo depends on fontconfig
-if test "$enable_fontconfig" != "yes"; then
+if test -z "$HAVE_FONTCONFIG"; then
 enable_cairo=no
 fi
 
