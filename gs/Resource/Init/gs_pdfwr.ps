@@ -539,7 +539,7 @@ bind def
   3 -1 roll .parse_dsc_comments	% <dsc dict> <dict> <type>
   1 index //.pdf_hook_DSC_Creator exec
   dup /NOP ne 2 index length 1 gt or {	% Skip unparsed comments
-    PDFWRDEBUG { (**** DSC comment: ) print dup == 1 index === flush } if
+    PDFWRDEBUG { (**** DSC comment: ) print dup //== exec 1 index === flush } if
     exch mark 4 1 roll {
 		% mark <key1> <value1> ... <dsc dict> <type> <key> <value>
       3 index 2 index known {	% Skip the DSC_struct entry

@@ -1107,7 +1107,7 @@ end
     } ifelse                             % f (TBox) LBox-8..16  
 
     PDFDEBUG {
-      2 copy 2 packedarray ==            % f (TBox) LBox-8..16
+      2 copy 2 packedarray //== exec            % f (TBox) LBox-8..16
     } if
    
     //jp2_tag_dict 3 -1 roll .knownget {
@@ -2057,11 +2057,11 @@ currentdict /drawannottypes undef
 } bdef
 
 /Ch {
-  (Ch is not yet implemened) ==
+  (Ch is not yet implemened) //== exec
 } bdef
 
 /Sig {
-  (Sig is not yet implemened ) ==
+  (Sig is not yet implemened ) //== exec
 } bdef
 
 currentdict end def

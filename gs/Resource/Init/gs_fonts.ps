@@ -135,7 +135,7 @@ userdict /Fontmap .FontDirectory maxlength dict put
          dup 4 index exch 2 mul 1 add get 2 index 3 1 roll put
        } for
        exch {
-         DEBUG { (\nAdding alias for: ) print 1 index ==only ( as: ) print dup == flush } if
+         DEBUG { (\nAdding alias for: ) print 1 index ==only ( as: ) print dup //== exec flush } if
            cvn exch cvn .definefontmap	% recurse with an alias
        } {
          pop pop	% discard the name

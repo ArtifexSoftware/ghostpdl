@@ -211,7 +211,7 @@ currentdict /runpdfstring .undef
      /RENDERTTNOTDEF get >> setuserparams	% Should we render TT /.notdef
   1 exch
     { dup /Page# exch store
-      QUIET not { (Page ) print dup == flush } if
+      QUIET not { (Page ) print dup //== exec flush } if
       pdfgetpage pdfshowpage
     } for
   << /PDFScanRules //null >> setuserparams	% restore scanning rules for PS

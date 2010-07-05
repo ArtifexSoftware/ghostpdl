@@ -171,11 +171,11 @@ currentdict /tt_tag_dict .undef
 
     % check /.notdef to avoid overwriting
     2 index 1 index get dup /.notdef eq {
-      TTFDEBUG { (insert /) =only 2 index =only ( @ ) =only 1 index == } if
+      TTFDEBUG { (insert /) =only 2 index =only ( @ ) =only 1 index //== exec } if
       pop
       exch 2 index 3 1 roll put
     } {
-      TTFDEBUG { (cannot insert /) =only 2 index =only ( @ ) =only 1 index =only ( used for ) =only dup == } if
+      TTFDEBUG { (cannot insert /) =only 2 index =only ( @ ) =only 1 index =only ( used for ) =only dup //== exec } if
       pop
       pop pop
     } ifelse
@@ -314,7 +314,7 @@ currentdict /tt_tag_dict .undef
   } if
   pop pop
   TTFDEBUG {
-    dup { ( = ) print 1 index == } { ( not found) = } ifelse
+    dup { ( = ) print 1 index //== exec } { ( not found) = } ifelse
   } if
 } bind def
 
@@ -666,7 +666,7 @@ currentdict /tt_tag_dict .undef
           .latin1isodict postnames {
             dup /.notdef ne {
               2 copy known {
-                TTFDEBUG { (ignore post table that redefines ISOLatin1Encoding glyph name ) print dup == flush } if
+                TTFDEBUG { (ignore post table that redefines ISOLatin1Encoding glyph name ) print dup //== exec flush } if
                 /.broken_post //true def
                 pop exit
               } if
@@ -1088,7 +1088,7 @@ mark
       TTFDEBUG { (post: unknown format ) print post 0 getu32 = flush } if [ ]
     } ifelse
   } ifelse
-  TTFDEBUG { (post=) print dup == } if
+  TTFDEBUG { (post=) print dup //== exec } if
   def
 } bind def
 
@@ -1126,8 +1126,8 @@ mark
   /XUID [orgXUID 42 curxuid]
   TTFDEBUG {
     tabs { .printtab } forall
-    [ sfnts { length } forall ] ==
-    count ttkeycount sub array astore dup { == } forall aload pop
+    [ sfnts { length } forall ] //== exec
+    count ttkeycount sub array astore dup { //== exec } forall aload pop
   } if
   /sfnts sfnts
 } bind def
@@ -1513,7 +1513,7 @@ mark
 		% If there is no .notdef entry, map it to glyph 0.
   dup /.notdef known not { dup /.notdef 0 put } if
   TTFDEBUG { 
-    (CharStrings:)= dup { exch =string cvs print ( ) print == } forall
+    (CharStrings:)= dup { exch =string cvs print ( ) print //== exec } forall
   } if
   //postalias {
     % process pairs of names. If both names are known, do nothing. Otherwise
@@ -1525,7 +1525,7 @@ mark
       % Stack: CharStrings(dict) /name1 /name2 name1_known(bool)
       { exch } if		% /name1 known -- we need it on top 
       % Stack: CharStrings(dict) /alias_name /known_name
-      TTFDEBUG { (setting alias: ) print 1 index ==only ( to be the same as glyph: ) print dup == } if
+      TTFDEBUG { (setting alias: ) print 1 index ==only ( to be the same as glyph: ) print dup //== exec } if
       2 index exch get 2 index 3 1 roll put
     } ifelse  
   } forall
@@ -1860,7 +1860,7 @@ currentdict /postalias undef
           TTFDEBUG { (check glypname /) print dup =only flush } if
           2 index 1 index .knownget {                              % <<AGL>> <<pbe>> <glyphname> <AGLcode>
             2 index 3 1 roll                                       % <<AGL>> <<pbe>> <<pbe>> <glyphname> <AGLcode>
-            TTFDEBUG { ( redefine codepoint by AdobeGlyphList, ) print dup == flush } if
+            TTFDEBUG { ( redefine codepoint by AdobeGlyphList, ) print dup //== exec flush } if
             put                                                    % <<AGL>> <<pbe>>
           } {                                                      % <<AGL>> <<pbe>> <glyphname>
             TTFDEBUG { ( unknown glyphname, leave as it is ) = flush } if
@@ -1868,7 +1868,7 @@ currentdict /postalias undef
           } ifelse
         } forall
         exch pop                                                   % <<pbe>>
-        TTFDEBUG { dup (<<\n) print { exch (    ) print =only (\t) print == } forall (>>\n) print flush } if
+        TTFDEBUG { dup (<<\n) print { exch (    ) print =only (\t) print //== exec } forall (>>\n) print flush } if
         .pdfmapchars
         /Encoding prebuilt_encoding
       } {
@@ -1905,7 +1905,7 @@ currentdict /postalias undef
 
 % <file> <is_symbolic> <Encoding|null> .loadpdfttfont <type42font>
 /.loadpdfttfont {
-  TTFDEBUG { (.loadpdfttfont Encoding=) print dup == } if
+  TTFDEBUG { (.loadpdfttfont Encoding=) print dup //== exec } if
   /prebuilt_encoding gput     % for .pdfcharkeys
   /is_symbolic gput
   //false 0 .loadttfonttables

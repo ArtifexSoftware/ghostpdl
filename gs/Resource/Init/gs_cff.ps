@@ -211,7 +211,7 @@ mark
     pop ()
   } {
     string f exch readstring pop dup length advance
-    CFFDEBUG { (  ) print dup == } if
+    CFFDEBUG { (  ) print dup //== exec } if
   } ifelse
 } bind def
 /card8		% - card8 <card8>
@@ -634,7 +634,7 @@ dup							% Format 2
   CFFDEBUG {
     charset length =only ( charset ) print
     CharStringArray length =only ( CharStringArray) =
-    charset == flush
+    charset //== exec flush
   } if
   0 1 CharStrings maxlength 1 sub {
     dup CharStringArray exch get
@@ -652,7 +652,7 @@ dup							% Format 2
   CFFDEBUG {
     charset length =only ( charset ) print
     CharStringArray length =only ( CharStringArray) =
-    charset == flush
+    charset //== exec flush
   } if
   0 1 GlyphDirectory maxlength 1 sub {
     dup CharStringArray exch get
@@ -783,7 +783,7 @@ dup							% Format 2
         % We process these in order so we can advance if needed.
 	% The CFF file may not be positionable.
   {		% outer loop since offsets may be updated when processing
-    CFFDEBUG { (offsets: ) print [ offsets { pop } forall ] == } if
+    CFFDEBUG { (offsets: ) print [ offsets { pop } forall ] //== exec } if
     [ offsets { pop } forall ] { lt } .sort	% process in order of appearance
     { 
       CFFDEBUG { (queued offset: ) print dup =print flush (, current pos=) print pos = } if
@@ -795,7 +795,7 @@ dup							% Format 2
         dup pos ne { dup pos sub nextstring pop } if	% negative advance will cause error
       } ifelse
       offsets exch 2 copy get 3 1 roll undef
-      CFFDEBUG { (exec queued: ) print dup == } if
+      CFFDEBUG { (exec queued: ) print dup //== exec } if
       exec
     } forall
     offsets length 0 eq { exit } if
@@ -824,7 +824,7 @@ dup							% Format 2
     CFFDEBUG { dup =only ( ) print flush } if
     dup names exch get
     forceresname { pop resname } if
-    CFFDEBUG { dup == flush } if
+    CFFDEBUG { dup //== exec flush } if
     exch fonts exch get
     dup /CIDFontType known {
 		% This is a CIDFont.

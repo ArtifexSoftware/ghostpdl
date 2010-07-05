@@ -444,7 +444,7 @@ currentdict /token_nofail_dict .undef
 	pop false			% The object is not resolved
       } {				% The object is in GlobalObjects
 		% Update Objects from GlobalObjects
-	PDFDEBUG { (%Global=>local: ) print dup == } if
+	PDFDEBUG { (%Global=>local: ) print dup //== exec } if
 	GlobalObjects 1 index get dup Objects 4 1 roll lput true
       } ifelse
     } {				% Else object is executable but not integer
@@ -566,7 +566,7 @@ currentdict /token_nofail_dict .undef
 		% The only global objects we bother to save are
 		% (resource) dictionaries.
     1 index dup gcheck exch type /dicttype eq and {
-      PDFDEBUG { (%Local=>global: ) print dup == } if
+      PDFDEBUG { (%Local=>global: ) print dup //== exec } if
       GlobalObjects 1 index 3 index put
       IsGlobal 1 index 1 put
     } if
@@ -758,7 +758,7 @@ currentdict /no_debug_dict undef
 /resolveR {		% <object#> <generation#> resolveR <object>
   PDFDEBUG {
     PDFSTEPcount 1 le {
-      (%Resolving: ) print 2 copy 2 array astore ==
+      (%Resolving: ) print 2 copy 2 array astore //== exec
     } if
   } if
   1 index resolved? {		% If object has already been resolved ...
@@ -851,7 +851,7 @@ currentdict /no_debug_dict undef
       dup /FilePosition PDFfile fileposition put
       PDFDEBUG {
         PDFSTEPcount 1 le {
-          (%FilePosition: ) print dup /FilePosition get ==
+          (%FilePosition: ) print dup /FilePosition get //== exec
         } if
       } if
     } if

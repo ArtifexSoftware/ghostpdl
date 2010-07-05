@@ -262,7 +262,7 @@ currentpacking false setpacking
 
     /ResourceStatus   % <Name> ResourceStatus <status> <size> true
                       % <Name> ResourceStatus false
-    { RESMPDEBUG { (resmp ResourceStatus beg ) print dup == } if
+    { RESMPDEBUG { (resmp ResourceStatus beg ) print dup //== exec } if
       dup ResourceStatus exec {            % /Name status size
         1 index 2 lt {
           % In VM - return with it.

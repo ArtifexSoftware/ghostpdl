@@ -194,7 +194,7 @@ currentdict end def
              pop pop
            } if
            /Encoding  counttomark 2 add -1 roll
-        >> % dup { exch == = } forall
+        >> % dup { exch //== exec = } forall
       } ifelse
     } {
       pop

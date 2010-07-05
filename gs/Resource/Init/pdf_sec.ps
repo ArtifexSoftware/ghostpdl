@@ -532,7 +532,7 @@ def
    } ifelse
     { .pdftoken not { (%%EOF) cvn cvx } if
       dup xcheck
-       { PDFDEBUG { dup == flush } if
+       { PDFDEBUG { dup //== exec flush } if
 	 3 -1 roll pop
 	 2 copy .knownget
 	  { exch pop exch pop exec
@@ -568,7 +568,7 @@ def
             dup /R oget 4 lt		% only >=4 has selectable
              {				% R < 4 --> arc4 strings
 	       pop 1 index arc4decode	% Decrypt string
-	       PDFDEBUG { (%Decrypted: ) print dup == flush } if
+	       PDFDEBUG { (%Decrypted: ) print dup //== exec flush } if
              } {			% Else R >= 4
 	       /StrF knownoget		% Get StrF (if present)
 	        {			% If StrF is present ...
@@ -587,7 +587,7 @@ def
 		       }
 		       { 1 index arc4decode }
 		     ifelse		% If StrF != StdCF
-		     PDFDEBUG { (%Decrypted: ) print dup == flush } if
+		     PDFDEBUG { (%Decrypted: ) print dup //== exec flush } if
 		   }
 		   { pop }
 		  ifelse		% If StrF != identity

@@ -138,7 +138,7 @@ currentdict /known_symbolic_fonts undef
     dup /FontInfo .knownget { 
       /GlyphNames2Unicode .knownget { 
         (Has GlyphNames2Unicode) =
-        pop % { exch == ==} forall 
+        pop % { exch //== exec //== exec} forall 
       } if 
     } if
   } if
@@ -412,7 +412,7 @@ currentdict end readonly def
   1 get % code maps
   { 
     PDFDEBUG {
-      dup ==
+      dup //== exec
     } if
     dup length 1 sub 0 exch 5 exch {           % e [] i
       2 copy get                               % e [] i (prefix)
@@ -427,8 +427,8 @@ currentdict end readonly def
         ( offset=) print 4 index =string cvs print
         ( key_size=) print 3 index =string cvs print
         ( value_size=) print 2 index =
-        ( keys=)   print 1 index ==
-        ( values=) print dup ==
+        ( keys=)   print 1 index //== exec
+        ( values=) print dup //== exec
       } if
       1 index length 0 eq {
         % A single pair.
@@ -440,7 +440,7 @@ currentdict end readonly def
         } if                                   % e [] i (values) cid|name
         exch 
         PDFDEBUG {
-          ( defined single: ) print 1 index =string cvs print ( ) print dup ==
+          ( defined single: ) print 1 index =string cvs print ( ) print dup //== exec
         } if
         false copy&def                         % e [] i
         pop                                    % e []
@@ -466,7 +466,7 @@ currentdict end readonly def
             } if                               % e [] i offset key_size value_size (keys) (values) (value) cid|name
             1 index                            % e [] i offset key_size value_size (keys) (values) (value) cid|name (value)
             PDFDEBUG {
-              ( defined from range: ) print 1 index =string cvs print ( ) print dup ==
+              ( defined from range: ) print 1 index =string cvs print ( ) print dup //== exec
             } if
             true copy&def                      % e [] i offset key_size value_size (keys) (values) (value)
             % Assuming the lowest byte of 'value' changes, others don't.

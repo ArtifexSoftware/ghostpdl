@@ -128,8 +128,8 @@
     3 { =
       .TempMaps exch get
       0 1 2 index length 1 sub {
-        dup == (\t) print
-        1 index exch get ==
+        dup //== exec (\t) print
+        1 index exch get //== exec
       } for
       pop
     } repeat
@@ -149,7 +149,7 @@
 
   CMAPDEBUG {
     (*** Content of .CodeMapData ***) =
-    0 .CodeMapData { exch dup == 1 add exch (\t) print == } forall
+    0 .CodeMapData { exch dup //== exec 1 add exch (\t) print //== exec } forall
     pop
   } if
 
@@ -369,7 +369,7 @@
     ( param:) print 3 index =only
     ( key:) print 2 index =only
     ( hex_cid:) print 1 index =only
-    ( font_idx:) print 0 index == flush
+    ( font_idx:) print 0 index //== exec flush
     } if
   } repeat
   counttomark 2 add -1 roll .appendmap
