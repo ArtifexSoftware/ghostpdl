@@ -605,8 +605,8 @@ pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force
     l0 = cos_stream_length(s[0]);
     l1 = cos_stream_length(s[1]);
 
-    if (force && l0 <= l1 || l1 == -1)
-	k0 = 1; /* Use Flate if it is not longer. */
+    if ((force && l0 <= l1) || l1 == -1)
+	k0 = 1; /* Use Flate if it is not longer. Or if the DCT failed */
     else {
 	k0 = s_compr_chooser__get_choice(
 	    (stream_compr_chooser_state *)piw->binary[2].strm->state, force);
