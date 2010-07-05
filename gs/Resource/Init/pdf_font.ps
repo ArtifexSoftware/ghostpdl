@@ -1019,7 +1019,15 @@ currentdict /eexec_pdf_param_dict .undef
   PDFfile fileposition 3 1 roll
   //true resolvestream readfontfilter
 		% Stack: filepos fontres stream
-  1 index /Subtype get /CIDFontType2 eq {
+  1 index /CIDSystemInfo oknown {
+    1 index /Subtype knownoget {
+      /CIDFontType2 ne {
+        (   **** Warning: Subtype of a TT CID font is not /CIDFontType2\n) pdfformaterror
+      } if
+    } {
+      (   **** Warning: Subtype of a TT CID font is missing.\n) pdfformaterror
+    } ifelse
+
     1 index /BaseFont get                 % Use the BaseFont name for the font. Otherwise we
                                           % would use the name table, or a manufactured name.
     .loadttcidfont
