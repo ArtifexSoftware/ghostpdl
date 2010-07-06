@@ -798,9 +798,15 @@ clist_end_page(gx_device_clist_writer * cldev)
 	cldev->page_info.io_procs->set_memory_warning(cldev->page_cfile, 0);
 
 #ifdef DEBUG
-    if (gs_debug_c('l') | gs_debug_c(':'))
-	dlprintf2("[:]clist_end_page at cfile=%ld, bfile=%ld\n",
-		  (long)cb.pos, (long)cldev->page_bfile_end_pos);
+    if (gs_debug_c('l') | gs_debug_c(':')) {
+	if (cb.pos <= 0xFFFFFFFF)
+	    dlprintf2("[:]clist_end_page at cfile=%lu, bfile=%lu\n",
+		  (unsigned long)cb.pos, (unsigned long)cldev->page_bfile_end_pos);
+	else
+	    dlprintf3("[:]clist_end_page at cfile=%lu%0lu, bfile=%lu\n",
+		(unsigned long) (cb.pos >> 32), (unsigned long) (cb.pos & 0xFFFFFFFF),
+		(unsigned long)cldev->page_bfile_end_pos);
+    }
 #endif
     return 0;
 }
