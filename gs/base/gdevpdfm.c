@@ -125,7 +125,7 @@ pdfmark_page_number(gx_device_pdf * pdev, const gs_param_string * pnstr)
 static int
 pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
 		  const char *Page_key, const char *View_key,
-		  const gs_param_string * pairs, uint count)
+		  const gs_param_string * pairs, uint count, uint RequirePage)
 {
     gs_param_string page_string, view_string;
     int present =
@@ -135,7 +135,7 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
     gs_param_string action;
     int len;
 
-    if (present)
+    if (present || RequirePage)
 	page = pdfmark_page_number(pdev, &page_string);
     if (view_string.size == 0)
 	param_string_from_string(view_string, "[/XYZ null null null]");
@@ -485,7 +485,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    /* Make a destination even if this is for an outline. */
 	    if (Dest.data == 0) {
 		code = pdfmark_make_dest(dest, params->pdev, "/Page", "/View",
-					 pairs, count);
+					 pairs, count, 0);
 		if (code < 0)
 		    return code;
 		param_string_from_string(Dest, dest);
@@ -1111,7 +1111,7 @@ pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
     if (!pdfmark_find_key("/Dest", pairs, count, &key) ||
 	(present =
-	 pdfmark_make_dest(dest, pdev, "/Page", "/View", pairs, count)) < 0
+	 pdfmark_make_dest(dest, pdev, "/Page", "/View", pairs, count, 1)) < 0
 	)
 	return_error(gs_error_rangecheck);
     cos_string_value(&value, (byte *)dest, strlen(dest));
@@ -1534,7 +1534,7 @@ pdfmark_DOCVIEW(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
     if (count & 1)
 	return_error(gs_error_rangecheck);
-    if (pdfmark_make_dest(dest, pdev, "/Page", "/View", pairs, count)) {
+    if (pdfmark_make_dest(dest, pdev, "/Page", "/View", pairs, count, 0)) {
 	int i;
 
 	code = cos_dict_put_c_key_string(pdev->Catalog, "/OpenAction",
