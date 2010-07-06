@@ -650,7 +650,7 @@ pdf_choose_compression(pdf_image_writer * piw, bool end_binary)
 
     	status = s_close_filters(&piw->binary[0].strm, piw->binary[0].target);
 	if (status < 0)
-	    return gs_error_ioerror;
+	    return_error(gs_error_ioerror);
 	status = s_close_filters(&piw->binary[1].strm, piw->binary[1].target);
 	if (status < 0) 
 	    s[1]->length = -1;
