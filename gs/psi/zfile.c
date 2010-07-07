@@ -985,7 +985,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 {   /* i_ctx_p is NULL running arg (@) files.
      * lib_path and mem are never NULL
      */
-    bool starting_arg_file;
+    bool starting_arg_file = (i_ctx_p == NULL) ? true : i_ctx_p->starting_arg_file;
     bool search_with_no_combine = false;
     bool search_with_combine = false;
     char fmode[4] = { 'r', 0, 0, 0 };           /* room for binary suffix */
@@ -996,21 +996,6 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
     /* when starting arg files (@ files) iodev_default is not yet set */
     if (iodev == 0)
         iodev = (gx_io_device *)gx_io_device_table[0];
-
-    if (i_ctx_p == NULL) {
-#ifndef _WIN32
-      /* S_IWGRP, S_IWOTH not on windows, getcwd() also in a different dirent.h header */
-	struct stat st;
-	char pwd[2048];
-	if (getcwd(pwd, sizeof(pwd)) == NULL)
-	    return_error(e_rangecheck);
-	if ((stat(pwd, &st) < 0) || (st.st_mode & (S_IWGRP|S_IWOTH)))
-	    starting_arg_file = false;
-	else
-#endif
-	    starting_arg_file = true;
-    } else
-       starting_arg_file = i_ctx_p->starting_arg_file;
 
     strcat(fmode, gp_fmode_binary_suffix);
     if (gp_file_name_is_absolute(fname, flen)) {

@@ -49,13 +49,10 @@ GS_LIB_DEFAULT=$(GSROOTDIR)/Resource/Init;$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
-# and confusion problems, but users insist on it.
-# NOTE: this also affects searching for files named on the command line:
-# see the "File searching" section of Use.htm for full details.
-# Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
+# and confusion problems,  but may be convenient sometimes.
 
 !ifndef SEARCH_HERE_FIRST
-SEARCH_HERE_FIRST=1
+SEARCH_HERE_FIRST=0
 !endif
 
 # Define the name of the interpreter initialization file.

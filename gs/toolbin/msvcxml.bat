@@ -1428,7 +1428,7 @@ echo   ^<UserMacro Name="GS_DOCDIR" Value="$(GSROOTDIR)/doc" /^>
 echo   ^<UserMacro Name="GS_INIT" Value="gs_init.ps" /^>
 echo   ^<UserMacro Name="GS_LIB_DEFAULT" Value="$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource/Font;$(AROOTDIR)/fonts" /^>
 echo   ^<UserMacro Name="GS_REVISION" Value="$(GS_VERSION)" /^>
-echo   ^<UserMacro Name="SEARCH_HERE_FIRST" Value="1" /^>
+echo   ^<UserMacro Name="SEARCH_HERE_FIRST" Value="0" /^>
 echo ^</VisualStudioPropertySheet^>
 goto end
 

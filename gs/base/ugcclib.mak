@@ -30,7 +30,7 @@ gsdir = /usr/local/share/ghostscript
 gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
 GS_DOCDIR=$(gsdatadir)/doc
 GS_LIB_DEFAULT=$(gsdatadir)/Resource/Init:$(gsdatadir)/lib:$(gsdatadir)/Resource/Font
-SEARCH_HERE_FIRST=1
+SEARCH_HERE_FIRST=0
 GS_INIT=gs_init.ps
 
 #GENOPT=-DDEBUG
