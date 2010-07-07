@@ -1,5 +1,16 @@
 How to setup a new computer to run regression jobs on the Artifex Cluster:
 
+0.  Make sure you have the correct packages installed to be able to
+    compile Ghostscript, GhostPDL, and GhostXPS.  For a standard 
+    Ubuntu 10.04 installation you need the following additional packages:
+
+      subversion
+      autoconf
+      g++
+      libx11-dev
+      libxt-dev
+      libxext-dev
+
 1.  Setup limited access passwordless ssh to the regression server:
 
     Copy the cluster_key file to your ~/.ssh directory (you can find this file

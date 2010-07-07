@@ -106,7 +106,7 @@ $directory="gs" if ($directory eq "" && $product && $product eq "abort");
 
 die "can't figure out if this is a ghostscript or ghostpdl directory" if ($directory eq "");
 
-$product='gs pcl xps' if (!$product);
+$product='gs pcl xps ls' if (!$product);
 print "$user $directory $product\n" if ($verbose);
 
 
