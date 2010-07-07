@@ -411,8 +411,11 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 	ulong band_data_size;
 
 	if (gdev_mem_data_size(&bdev, band_width, band_height, &band_data_size) < 0 ||
-	    band_data_size >= band_space)
+	    band_data_size >= band_space) {
+	    if (pbdev->finalize) 
+		pbdev->finalize(pbdev);
 	    return_error(gs_error_rangecheck);
+	}
 	bits_size = min(band_space - band_data_size, data_size >> 1);
     } else {
 	/*
@@ -423,19 +426,32 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 	bits_size = min(bits_size, data_size >> 1);
 	band_height = gdev_mem_max_height(&bdev, band_width,
 			  band_space - bits_size, page_uses_transparency);
-	if (band_height == 0)
+	if (band_height == 0) {
+	    if (pbdev->finalize) 
+		pbdev->finalize(pbdev);
 	    return_error(gs_error_rangecheck);
+	}
     }
     cdev->ins_count = 0;
     code = clist_init_tile_cache(dev, data, bits_size);
-    if (code < 0)
+    if (code < 0) {
+	if (pbdev->finalize) 
+	    pbdev->finalize(pbdev);
 	return code;
+    }
     cdev->page_tile_cache_size = bits_size;
     data += bits_size;
     size -= bits_size;
     code = clist_init_bands(dev, &bdev, size, band_width, band_height);
-    if (code < 0)
+    if (code < 0) {
+	if (pbdev->finalize) 
+	    pbdev->finalize(pbdev);
 	return code;
+    }
+
+    if (pbdev->finalize) 
+	pbdev->finalize(pbdev);
+
     return clist_init_states(dev, data, data_size - bits_size);
 }
 /*
