@@ -21,27 +21,9 @@
  *
  *  FILL_DIRECT - See LOOP_FILL_RECTANGLE_DIRECT.
  *  TEMPLATE_slant_into_trapezoids - the name of the procedure to generate.
-*/
-
-/*
- * ENABLE_TRAP_AMALGAMATION - Experimental trap amalgamation code, disabled
- * by default.
- *
- * Set this if you think that the potential gains from only having to send
- * one trapezoid rather than a trapezoid+rectangle justify the costs in
- * calculating whether this is possible.
- *
- * Note: Due to rounding inaccuracies while scan converting, there are
- * cases where the rectangles can round to different pixel boundaries than
- * the trapezoids do. This means that enabling the TRY_TO_EXTEND_TRAP
- * define will cause rendering differences, but tests seem to indicate that
- * this only happens in very borderline cases.
+ *  TRY_TO_EXTEND_TRAP - whether we do some extra maths to see if we can
+ *  extend a trapezoid to reduce the total number produced.
  */
-#ifdef ENABLE_TRAP_AMALGAMATION
-#define TRY_TO_EXTEND_TRAP 1
-#else
-#define TRY_TO_EXTEND_TRAP 0
-#endif
 
 static inline int
 TEMPLATE_slant_into_trapezoids (const line_list *ll,

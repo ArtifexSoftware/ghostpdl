@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -13,19 +13,19 @@
 
 /* $Id$ */
 /* A topological spot decomposition algorithm with dropout prevention. */
-/* 
-   This is a dramaticly reorganized and improved revision of the 
-   filling algorithm, iwhich was nitially coded by Henry Stiles. 
-   The main improvements are: 
-	1. A dropout prevention for character fill.
-	2. The spot topology analysys support
-	   for True Type grid fitting.
-	3. Fixed the contiguty of a spot covering 
-	   for shading fills with no dropouts.
+/*
+   This is a dramaticly reorganized and improved revision of the
+   filling algorithm, which was initially coded by Henry Stiles.
+   The main improvements are:
+        1. A dropout prevention for character fill.
+        2. The spot topology analysis support
+           for True Type grid fitting.
+        3. Fixed the contiguity of a spot covering
+           for shading fills with no dropouts.
 */
-/* See PSEUDO_RASTERISATION and "pseudo_rasterization".
-   about the dropout previntion logics. */
-/* See is_spotan about the spot topology analyzis support. */
+/* See PSEUDO_RASTERIZATION and "pseudo_rasterization".
+   about the dropout prevention logics. */
+/* See is_spotan about the spot topology analysis support. */
 /* Also defining lower-level path filling procedures */
 
 #include "gx.h"
@@ -38,7 +38,7 @@
 #include "gxdcolor.h"
 #include "gxhttile.h"
 #include "gxistate.h"
-#include "gxpaint.h"		/* for prototypes */
+#include "gxpaint.h"            /* for prototypes */
 #include "gxfdrop.h"
 #include "gxfill.h"
 #include "gxpath.h"
@@ -56,6 +56,28 @@
 #include "gxfillsl.h" - Do not remove this comment. "gxfillsl.h" is included below.
 #include "gxfillts.h" - Do not remove this comment. "gxfillts.h" is included below.
 */
+
+/* #define ENABLE_TRAP_AMALGAMATION */
+
+/*
+ * ENABLE_TRAP_AMALGAMATION - Experimental trap amalgamation code, disabled
+ * by default.
+ *
+ * Set this if you think that the potential gains from only having to send
+ * one trapezoid rather than 3 trapezoids justifies the costs in
+ * calculating whether this is possible.
+ *
+ * Note: Due to rounding inaccuracies while scan converting, there are
+ * cases where the rectangles can round to different pixel boundaries than
+ * the trapezoids do. This means that enabling the TRY_TO_EXTEND_TRAP
+ * define will cause rendering differences, but tests seem to indicate that
+ * this only happens in very borderline cases.
+ */
+#ifdef ENABLE_TRAP_AMALGAMATION
+#define TRY_TO_EXTEND_TRAP 1
+#else
+#define TRY_TO_EXTEND_TRAP 0
+#endif
 
 #ifdef DEBUG
 /* Define the statistics structure instance. */
@@ -90,15 +112,15 @@ x_order(const active_line *lp1, const active_line *lp2)
 
     INCR(order);
     if (lp1->x_current < lp2->x_current)
-	return -1;
+        return -1;
     else if (lp1->x_current > lp2->x_current)
-	return 1;
+        return 1;
     /*
      * We need to compare the slopes of the lines.  Start by
      * checking one fast case, where the slopes have opposite signs.
      */
     if ((s1 = lp1->start.x < lp1->end.x) != (lp2->start.x < lp2->end.x))
-	return (s1 ? 1 : -1);
+        return (s1 ? 1 : -1);
     /*
      * We really do have to compare the slopes.  Fortunately, this isn't
      * needed very often.  We want the sign of the comparison
@@ -112,13 +134,13 @@ x_order(const active_line *lp1, const active_line *lp2)
      */
     INCR(slow_order);
     {
-	fixed dx1 = lp1->end.x - lp1->start.x,
-	    dy1 = lp1->end.y - lp1->start.y;
-	fixed dx2 = lp2->end.x - lp2->start.x,
-	    dy2 = lp2->end.y - lp2->start.y;
-	double diff = (double)dx1 * dy2 - (double)dx2 * dy1;
+        fixed dx1 = lp1->end.x - lp1->start.x,
+            dy1 = lp1->end.y - lp1->start.y;
+        fixed dx2 = lp2->end.x - lp2->start.x,
+            dy2 = lp2->end.y - lp2->start.y;
+        double diff = (double)dx1 * dy2 - (double)dx2 * dy1;
 
-	return (diff < 0 ? -1 : diff > 0 ? 1 : 0);
+        return (diff < 0 ? -1 : diff > 0 ? 1 : 0);
     }
 }
 
@@ -135,14 +157,14 @@ static void
 print_active_line(const char *label, const active_line * alp)
 {
     dlprintf5("[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
-	      label, (ulong) alp, alp->direction,
-	      fixed2float(alp->x_current), fixed2float(alp->x_next));
+              label, (ulong) alp, alp->direction,
+              fixed2float(alp->x_current), fixed2float(alp->x_next));
     dlprintf5("    start=(%f,%f) pt_end=0x%lx(%f,%f)\n",
-	      fixed2float(alp->start.x), fixed2float(alp->start.y),
-	      (ulong) alp->pseg,
-	      fixed2float(alp->end.x), fixed2float(alp->end.y));
+              fixed2float(alp->start.x), fixed2float(alp->start.y),
+              (ulong) alp->pseg,
+              fixed2float(alp->end.x), fixed2float(alp->end.y));
     dlprintf2("    prev=0x%lx next=0x%lx\n",
-	      (ulong) alp->prev, (ulong) alp->next);
+              (ulong) alp->prev, (ulong) alp->next);
 }
 static void
 print_line_list(const active_line * flp)
@@ -150,21 +172,21 @@ print_line_list(const active_line * flp)
     const active_line *lp;
 
     for (lp = flp; lp != 0; lp = lp->next) {
-	fixed xc = lp->x_current, xn = lp->x_next;
+        fixed xc = lp->x_current, xn = lp->x_next;
 
-	dlprintf3("[f]0x%lx(%d): x_current/next=%g",
-		  (ulong) lp, lp->direction,
-		  fixed2float(xc));
-	if (xn != xc)
-	    dprintf1("/%g", fixed2float(xn));
-	dputc('\n');
+        dlprintf3("[f]0x%lx(%d): x_current/next=%g",
+                  (ulong) lp, lp->direction,
+                  fixed2float(xc));
+        if (xn != xc)
+            dprintf1("/%g", fixed2float(xn));
+        dputc('\n');
     }
 }
 static inline void
 print_al(const char *label, const active_line * alp)
 {
     if (gs_debug_c('F'))
-	print_active_line(label, alp);
+        print_active_line(label, alp);
 }
 #else
 #define print_al(label,alp) DO_NOTHING
@@ -184,8 +206,8 @@ is_spotan_device(gx_device * dev)
 /* Forward declarations */
 static void free_line_list(line_list *);
 static int add_y_list(gx_path *, line_list *);
-static int add_y_line_aux(const segment * prev_lp, const segment * lp, 
-	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll);
+static int add_y_line_aux(const segment * prev_lp, const segment * lp,
+            const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll);
 static void insert_x_new(active_line *, line_list *);
 static int  end_x_line(active_line *, const line_list *, bool);
 static int step_al(active_line *alp, bool move_iterator);
@@ -242,17 +264,17 @@ unclose_path(gx_path * ppath, int count)
     subpath *psub;
 
     for (psub = ppath->first_subpath; count != 0;
-	 psub = (subpath *) psub->last->next
-	)
-	if (psub->last == (segment *) & psub->closer) {
-	    segment *prev = psub->closer.prev, *next = psub->closer.next;
+         psub = (subpath *) psub->last->next
+        )
+        if (psub->last == (segment *) & psub->closer) {
+            segment *prev = psub->closer.prev, *next = psub->closer.next;
 
-	    prev->next = next;
-	    if (next)
-		next->prev = prev;
-	    psub->last = prev;
-	    count--;
-	}
+            prev->next = next;
+            if (next)
+                next->prev = prev;
+            psub->last = prev;
+            count--;
+        }
 }
 
 /*
@@ -260,8 +282,8 @@ unclose_path(gx_path * ppath, int count)
  */
 static int
 gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
-		     gx_path * ppath, const gx_fill_params * params,
-		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+                     gx_path * ppath, const gx_fill_params * params,
+                 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     gs_fixed_point adjust;
     gs_logical_operation_t lop = pis->log_op;
@@ -292,68 +314,68 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      */
     gx_path_bbox(ppath, &ibox);
 #   define SMALL_CHARACTER 500
-    pseudo_rasterization = (is_character && 
-			    !is_spotan_device(dev) &&
-			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
-			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
+    pseudo_rasterization = (is_character &&
+                            !is_spotan_device(dev) &&
+                            ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
+                            ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
     if (is_character)
-	adjust.x = adjust.y = 0;
+        adjust.x = adjust.y = 0;
     else
-	adjust = params->adjust;
+        adjust = params->adjust;
     lst.contour_count = 0;
     lst.windings = NULL;
     lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
     lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     if (vd_enabled) {
-	fixed x0 = int2fixed(fixed2int(ibox.p.x - adjust.x - fixed_epsilon));
-	fixed x1 = int2fixed(fixed2int(ibox.q.x + adjust.x + fixed_scale - fixed_epsilon));
-	fixed y0 = int2fixed(fixed2int(ibox.p.y - adjust.y - fixed_epsilon));
-	fixed y1 = int2fixed(fixed2int(ibox.q.y + adjust.y + fixed_scale - fixed_epsilon)), k;
+        fixed x0 = int2fixed(fixed2int(ibox.p.x - adjust.x - fixed_epsilon));
+        fixed x1 = int2fixed(fixed2int(ibox.q.x + adjust.x + fixed_scale - fixed_epsilon));
+        fixed y0 = int2fixed(fixed2int(ibox.p.y - adjust.y - fixed_epsilon));
+        fixed y1 = int2fixed(fixed2int(ibox.q.y + adjust.y + fixed_scale - fixed_epsilon)), k;
 
-	for (k = x0; k <= x1; k += fixed_scale)
-	    vd_bar(k, y0, k, y1, 1, RGB(128, 128, 128));
-	for (k = y0; k <= y1; k += fixed_scale)
-	    vd_bar(x0, k, x1, k, 1, RGB(128, 128, 128));
+        for (k = x0; k <= x1; k += fixed_scale)
+            vd_bar(k, y0, k, y1, 1, RGB(128, 128, 128));
+        for (k = y0; k <= y1; k += fixed_scale)
+            vd_bar(x0, k, x1, k, 1, RGB(128, 128, 128));
     }
     /* Check the bounding boxes. */
     if_debug6('f', "[f]adjust=%g,%g bbox=(%g,%g),(%g,%g)\n",
-	      fixed2float(adjust.x), fixed2float(adjust.y),
-	      fixed2float(ibox.p.x), fixed2float(ibox.p.y),
-	      fixed2float(ibox.q.x), fixed2float(ibox.q.y));
+              fixed2float(adjust.x), fixed2float(adjust.y),
+              fixed2float(ibox.p.x), fixed2float(ibox.p.y),
+              fixed2float(ibox.q.x), fixed2float(ibox.q.y));
     if (pcpath)
-	gx_cpath_inner_box(pcpath, &bbox);
+        gx_cpath_inner_box(pcpath, &bbox);
     else
-	(*dev_proc(dev, get_clipping_box)) (dev, &bbox);
+        (*dev_proc(dev, get_clipping_box)) (dev, &bbox);
     if (!rect_within(ibox, bbox)) {
-	/*
-	 * Intersect the path box and the clip bounding box.
-	 * If the intersection is empty, this fill is a no-op.
-	 */
-	if (pcpath)
-	    gx_cpath_outer_box(pcpath, &bbox);
-	if_debug4('f', "   outer_box=(%g,%g),(%g,%g)\n",
-		  fixed2float(bbox.p.x), fixed2float(bbox.p.y),
-		  fixed2float(bbox.q.x), fixed2float(bbox.q.y));
-	rect_intersect(ibox, bbox);
-	if (ibox.p.x - adjust.x >= ibox.q.x + adjust.x ||
-	    ibox.p.y - adjust.y >= ibox.q.y + adjust.y
-	    ) { 		/* Intersection of boxes is empty! */
-	    return 0;
-	}
-	/*
-	 * The path is neither entirely inside the inner clip box
-	 * nor entirely outside the outer clip box.
-	 * If we had to flatten the path, this is where we would
-	 * recompute its bbox and make the tests again,
-	 * but we don't bother right now.
-	 *
-	 * If there is a clipping path, set up a clipping device.
-	 */
-	if (pcpath) {
-	    dev = (gx_device *) & cdev;
-	    gx_make_clip_device_on_stack(&cdev, pcpath, save_dev);
-	    cdev.max_fill_band = save_dev->max_fill_band;
-	}
+        /*
+         * Intersect the path box and the clip bounding box.
+         * If the intersection is empty, this fill is a no-op.
+         */
+        if (pcpath)
+            gx_cpath_outer_box(pcpath, &bbox);
+        if_debug4('f', "   outer_box=(%g,%g),(%g,%g)\n",
+                  fixed2float(bbox.p.x), fixed2float(bbox.p.y),
+                  fixed2float(bbox.q.x), fixed2float(bbox.q.y));
+        rect_intersect(ibox, bbox);
+        if (ibox.p.x - adjust.x >= ibox.q.x + adjust.x ||
+            ibox.p.y - adjust.y >= ibox.q.y + adjust.y
+            ) {                 /* Intersection of boxes is empty! */
+            return 0;
+        }
+        /*
+         * The path is neither entirely inside the inner clip box
+         * nor entirely outside the outer clip box.
+         * If we had to flatten the path, this is where we would
+         * recompute its bbox and make the tests again,
+         * but we don't bother right now.
+         *
+         * If there is a clipping path, set up a clipping device.
+         */
+        if (pcpath) {
+            dev = (gx_device *) & cdev;
+            gx_make_clip_device_on_stack(&cdev, pcpath, save_dev);
+            cdev.max_fill_band = save_dev->max_fill_band;
+        }
     }
     /*
      * Compute the proper adjustment values.
@@ -367,15 +389,15 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * they fell exactly on pixel boundaries.)
      */
     if (adjust.x == fixed_half)
-	fo.adjust_left = fixed_half - fixed_epsilon,
-	    fo.adjust_right = fixed_half /* + fixed_epsilon */ ;	/* see above */
+        fo.adjust_left = fixed_half - fixed_epsilon,
+            fo.adjust_right = fixed_half /* + fixed_epsilon */ ;        /* see above */
     else
-	fo.adjust_left = fo.adjust_right = adjust.x;
+        fo.adjust_left = fo.adjust_right = adjust.x;
     if (adjust.y == fixed_half)
-	fo.adjust_below = fixed_half - fixed_epsilon,
-	    fo.adjust_above = fixed_half /* + fixed_epsilon */ ;	/* see above */
+        fo.adjust_below = fixed_half - fixed_epsilon,
+            fo.adjust_above = fixed_half /* + fixed_epsilon */ ;        /* see above */
     else
-	fo.adjust_below = fo.adjust_above = adjust.y;
+        fo.adjust_below = fo.adjust_above = adjust.y;
     /* Initialize the active line list. */
     init_line_list(&lst, ppath->memory);
     sbox.p.x = ibox.p.x - adjust.x;
@@ -400,12 +422,12 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * We have a choice of two different filling algorithms:
      * scan-line-based and trapezoid-based.  They compare as follows:
      *
-     *	    Scan    Trap
-     *	    ----    ----
-     *	     skip   +draw   0-height horizontal lines
-     *	     slow   +fast   rectangles
-     *	    +fast    slow   curves
-     *	    +yes     no     write pixels at most once when adjust != 0
+     *      Scan    Trap
+     *      ----    ----
+     *       skip   +draw   0-height horizontal lines
+     *       slow   +fast   rectangles
+     *      +fast    slow   curves
+     *      +yes     no     write pixels at most once when adjust != 0
      *
      * Normally we use the scan line algorithm for characters, where curve
      * speed is important, and for non-idempotent RasterOps, where double
@@ -413,111 +435,111 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * However, we always use the trapezoid algorithm for rectangles.
      */
     fill_by_trapezoids =
-	(pseudo_rasterization || !gx_path_has_curves(ppath) || 
-	 params->flatness >= 1.0 || fo.is_spotan);
+        (pseudo_rasterization || !gx_path_has_curves(ppath) ||
+         params->flatness >= 1.0 || fo.is_spotan);
     if (fill_by_trapezoids && !fo.is_spotan && !lop_is_idempotent(lop)) {
-	gs_fixed_rect rbox;
+        gs_fixed_rect rbox;
 
-	if (gx_path_is_rectangular(ppath, &rbox)) {
-	    int x0 = fixed2int_pixround(rbox.p.x - fo.adjust_left);
-	    int y0 = fixed2int_pixround(rbox.p.y - fo.adjust_below);
-	    int x1 = fixed2int_pixround(rbox.q.x + fo.adjust_right);
-	    int y1 = fixed2int_pixround(rbox.q.y + fo.adjust_above);
+        if (gx_path_is_rectangular(ppath, &rbox)) {
+            int x0 = fixed2int_pixround(rbox.p.x - fo.adjust_left);
+            int y0 = fixed2int_pixround(rbox.p.y - fo.adjust_below);
+            int x1 = fixed2int_pixround(rbox.q.x + fo.adjust_right);
+            int y1 = fixed2int_pixround(rbox.q.y + fo.adjust_above);
 
-	    return gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
-						pdevc, dev, lop);
-	}
-	if (fo.adjust_left | fo.adjust_right | fo.adjust_below | fo.adjust_above)
-	    fill_by_trapezoids = false; /* avoid double writing pixels */
+            return gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
+                                                pdevc, dev, lop);
+        }
+        if (fo.adjust_left | fo.adjust_right | fo.adjust_below | fo.adjust_above)
+            fill_by_trapezoids = false; /* avoid double writing pixels */
     }
     gx_path_init_local(&ffpath, ppath->memory);
-    if (!big_path && !gx_path_has_curves(ppath))	/* don't need to flatten */
-	pfpath = ppath;
+    if (!big_path && !gx_path_has_curves(ppath))        /* don't need to flatten */
+        pfpath = ppath;
     else if (is_spotan_device(dev))
-	pfpath = ppath;
+        pfpath = ppath;
     else if (!big_path && gx_path__check_curves(ppath, pco_small_curves, fo.fixed_flat))
-	pfpath = ppath;
+        pfpath = ppath;
     else {
-	code = gx_path_copy_reducing(ppath, &ffpath, fo.fixed_flat, NULL, 
-			    pco_small_curves);
-	if (code < 0)
-	    return code;
-	pfpath = &ffpath;
-	if (big_path) {
-	    code = gx_path_merge_contacting_contours(pfpath);
-	    if (code < 0)
-		return code;
-	}
+        code = gx_path_copy_reducing(ppath, &ffpath, fo.fixed_flat, NULL,
+                            pco_small_curves);
+        if (code < 0)
+            return code;
+        pfpath = &ffpath;
+        if (big_path) {
+            code = gx_path_merge_contacting_contours(pfpath);
+            if (code < 0)
+                return code;
+        }
     }
     fo.fill_by_trapezoids = fill_by_trapezoids;
     if ((code = add_y_list(pfpath, &lst)) < 0)
-	goto nope;
+        goto nope;
     {
-	FILL_LOOP_PROC((*fill_loop));
+        FILL_LOOP_PROC((*fill_loop));
 
-	/* Some short-sighted compilers won't allow a conditional here.... */
-	if (fill_by_trapezoids)
-	    fill_loop = spot_into_trapezoids;
-	else
-	    fill_loop = spot_into_scan_lines;
-	if (lst.bbox_width > MAX_LOCAL_SECTION && fo.pseudo_rasterization) {
-	    /*
-	     * Note that execution pass here only for character size
-	     * grater that MAX_LOCAL_SECTION and lesser than 
-	     * SMALL_CHARACTER. Therefore with !arch_small_memory
-	     * the dynamic allocation only happens for characters 
-	     * wider than 100 pixels.
-	     */
-	    lst.margin_set0.sect = (section *)gs_alloc_struct_array(pdev->memory, lst.bbox_width * 2, 
-						   section, &st_section, "gx_general_fill_path");
-	    if (lst.margin_set0.sect == 0)
-		return_error(gs_error_VMerror);
-	    lst.margin_set1.sect = lst.margin_set0.sect + lst.bbox_width;
-	}
-	if (fo.pseudo_rasterization) {
-	    init_section(lst.margin_set0.sect, 0, lst.bbox_width);
-	    init_section(lst.margin_set1.sect, 0, lst.bbox_width);
-	}
-	if (gs_currentcpsimode(pis->memory) && is_character) {
-	    if (lst.contour_count > countof(lst.local_windings)) {
-		lst.windings = (int *)gs_alloc_byte_array(pdev->memory, lst.contour_count, 
-				sizeof(int), "gx_general_fill_path");
-	    } else
-		lst.windings = lst.local_windings;
-	    memset(lst.windings, 0, sizeof(lst.windings[0]) * lst.contour_count);
-	}
-	code = (*fill_loop)
-	    (&lst, (max_fill_band == 0 ? NO_BAND_MASK : int2fixed(-max_fill_band)));
-	if (lst.margin_set0.sect != lst.local_section0 && 
-	    lst.margin_set0.sect != lst.local_section1)
-	    gs_free_object(pdev->memory, min(lst.margin_set0.sect, lst.margin_set1.sect), "gx_general_fill_path");
-	if (lst.windings != NULL && lst.windings != lst.local_windings)
-	    gs_free_object(pdev->memory, lst.windings, "gx_general_fill_path");
+        /* Some short-sighted compilers won't allow a conditional here.... */
+        if (fill_by_trapezoids)
+            fill_loop = spot_into_trapezoids;
+        else
+            fill_loop = spot_into_scan_lines;
+        if (lst.bbox_width > MAX_LOCAL_SECTION && fo.pseudo_rasterization) {
+            /*
+             * Note that execution pass here only for character size
+             * grater that MAX_LOCAL_SECTION and lesser than
+             * SMALL_CHARACTER. Therefore with !arch_small_memory
+             * the dynamic allocation only happens for characters
+             * wider than 100 pixels.
+             */
+            lst.margin_set0.sect = (section *)gs_alloc_struct_array(pdev->memory, lst.bbox_width * 2,
+                                                   section, &st_section, "gx_general_fill_path");
+            if (lst.margin_set0.sect == 0)
+                return_error(gs_error_VMerror);
+            lst.margin_set1.sect = lst.margin_set0.sect + lst.bbox_width;
+        }
+        if (fo.pseudo_rasterization) {
+            init_section(lst.margin_set0.sect, 0, lst.bbox_width);
+            init_section(lst.margin_set1.sect, 0, lst.bbox_width);
+        }
+        if (gs_currentcpsimode(pis->memory) && is_character) {
+            if (lst.contour_count > countof(lst.local_windings)) {
+                lst.windings = (int *)gs_alloc_byte_array(pdev->memory, lst.contour_count,
+                                sizeof(int), "gx_general_fill_path");
+            } else
+                lst.windings = lst.local_windings;
+            memset(lst.windings, 0, sizeof(lst.windings[0]) * lst.contour_count);
+        }
+        code = (*fill_loop)
+            (&lst, (max_fill_band == 0 ? NO_BAND_MASK : int2fixed(-max_fill_band)));
+        if (lst.margin_set0.sect != lst.local_section0 &&
+            lst.margin_set0.sect != lst.local_section1)
+            gs_free_object(pdev->memory, min(lst.margin_set0.sect, lst.margin_set1.sect), "gx_general_fill_path");
+        if (lst.windings != NULL && lst.windings != lst.local_windings)
+            gs_free_object(pdev->memory, lst.windings, "gx_general_fill_path");
     }
   nope:if (lst.close_count != 0)
-	unclose_path(pfpath, lst.close_count);
+        unclose_path(pfpath, lst.close_count);
     free_line_list(&lst);
-    if (pfpath != ppath)	/* had to flatten */
-	gx_path_free(pfpath, "gx_general_fill_path");
+    if (pfpath != ppath)        /* had to flatten */
+        gx_path_free(pfpath, "gx_general_fill_path");
 #ifdef DEBUG
     if (gs_debug_c('f')) {
-	dlputs("[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");
-	dlprintf5(" %5ld %5ld %5ld %5ld %5ld",
-		  stats_fill.fill, stats_fill.fill_alloc,
-		  stats_fill.y_up, stats_fill.y_down,
-		  stats_fill.horiz);
-	dlprintf4(" %5ld %5ld %5ld %5ld",
-		  stats_fill.x_step, stats_fill.slow_x,
-		  stats_fill.iter, stats_fill.find_y);
-	dlprintf3(" %5ld %5ld %5ld\n",
-		  stats_fill.band, stats_fill.band_step,
-		  stats_fill.band_fill);
-	dlputs("[f]    afill slant shall sfill mqcrs order slowo\n");
-	dlprintf7("       %5ld %5ld %5ld %5ld %5ld %5ld %5ld\n",
-		  stats_fill.afill, stats_fill.slant,
-		  stats_fill.slant_shallow, stats_fill.sfill,
-		  stats_fill.mq_cross, stats_fill.order,
-		  stats_fill.slow_order);
+        dlputs("[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");
+        dlprintf5(" %5ld %5ld %5ld %5ld %5ld",
+                  stats_fill.fill, stats_fill.fill_alloc,
+                  stats_fill.y_up, stats_fill.y_down,
+                  stats_fill.horiz);
+        dlprintf4(" %5ld %5ld %5ld %5ld",
+                  stats_fill.x_step, stats_fill.slow_x,
+                  stats_fill.iter, stats_fill.find_y);
+        dlprintf3(" %5ld %5ld %5ld\n",
+                  stats_fill.band, stats_fill.band_step,
+                  stats_fill.band_fill);
+        dlputs("[f]    afill slant shall sfill mqcrs order slowo\n");
+        dlprintf7("       %5ld %5ld %5ld %5ld %5ld %5ld %5ld\n",
+                  stats_fill.afill, stats_fill.slant,
+                  stats_fill.slant_shallow, stats_fill.sfill,
+                  stats_fill.mq_cross, stats_fill.order,
+                  stats_fill.slow_order);
     }
 #endif
     return code;
@@ -525,13 +547,13 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 
 static int
 pass_shading_area_through_clip_path_device(gx_device * pdev, const gs_imager_state * pis,
-		     gx_path * ppath, const gx_fill_params * params,
-		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+                     gx_path * ppath, const gx_fill_params * params,
+                 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     if (pdevc == NULL) {
-	gx_device_clip *cdev = (gx_device_clip *)pdev;
+        gx_device_clip *cdev = (gx_device_clip *)pdev;
 
-	return dev_proc(cdev->target, fill_path)(cdev->target, pis, ppath, params, pdevc, pcpath);
+        return dev_proc(cdev->target, fill_path)(cdev->target, pis, ppath, params, pdevc, pcpath);
     }
     /* We know that tha clip path device implements fill_path with default proc. */
     return gx_default_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
@@ -543,109 +565,109 @@ pass_shading_area_through_clip_path_device(gx_device * pdev, const gs_imager_sta
  */
 int
 gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
-		     gx_path * ppath, const gx_fill_params * params,
-		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+                     gx_path * ppath, const gx_fill_params * params,
+                 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     int code = 0;
 
-    if (gx_dc_is_pattern2_color(pdevc) 
-	|| pdevc->type == &gx_dc_type_data_ht_colored
-	|| (gx_dc_is_pattern1_color(pdevc) && gx_pattern_tile_is_clist(pdevc->colors.pattern.p_tile))
-	) {
-	/*  Optimization for shading and halftone fill :
-	    The general filling algorithm subdivides the fill region into 
-	    trapezoid or rectangle subregions and then paints each subregion 
-	    with given color. If the color is complex, it also needs to be subdivided
-	    into constant color rectangles. In the worst case it gives
-	    a multiple of numbers of rectangles, which may be too slow.
-	    A faster processing may be obtained with installing a clipper
-	    device with the filling path, and then render the complex color 
-	    through it. The speeding up happens due to the clipper device
-	    is optimised for fast scans through neighbour clipping rectangles.
-	*/
-	/*  We need a single clipping path here, because shadings and
-	    halftones don't take 2 paths. Compute the clipping path intersection.
-	*/
-	gx_clip_path cpath_intersection, cpath_with_shading_bbox;
-	const gx_clip_path *pcpath1, *pcpath2;
-	gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
+    if (gx_dc_is_pattern2_color(pdevc)
+        || pdevc->type == &gx_dc_type_data_ht_colored
+        || (gx_dc_is_pattern1_color(pdevc) && gx_pattern_tile_is_clist(pdevc->colors.pattern.p_tile))
+        ) {
+        /*  Optimization for shading and halftone fill :
+            The general filling algorithm subdivides the fill region into
+            trapezoid or rectangle subregions and then paints each subregion
+            with given color. If the color is complex, it also needs to be subdivided
+            into constant color rectangles. In the worst case it gives
+            a multiple of numbers of rectangles, which may be too slow.
+            A faster processing may be obtained with installing a clipper
+            device with the filling path, and then render the complex color
+            through it. The speeding up happens due to the clipper device
+            is optimised for fast scans through neighbour clipping rectangles.
+        */
+        /*  We need a single clipping path here, because shadings and
+            halftones don't take 2 paths. Compute the clipping path intersection.
+        */
+        gx_clip_path cpath_intersection, cpath_with_shading_bbox;
+        const gx_clip_path *pcpath1, *pcpath2;
+        gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
 
-	if (ppath != NULL) {
-	    code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
-	    if (code < 0)
-		return code;
-	    if (pcpath == NULL) {
-		gs_fixed_rect clip_box1;
+        if (ppath != NULL) {
+            code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+            if (code < 0)
+                return code;
+            if (pcpath == NULL) {
+                gs_fixed_rect clip_box1;
 
-		(*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box1);
-		code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box1);
-	    }
-	    if (code >= 0)
-		code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule, 
-			pis_noconst, params);
-	    pcpath1 = &cpath_intersection;
-	} else
-	    pcpath1 = pcpath;
-	pcpath2 = pcpath1;
-	if (code >= 0)
-	    code = gx_dc_pattern2_clip_with_bbox(pdevc, pdev, &cpath_with_shading_bbox, &pcpath1);
-	/* Do fill : */
-	if (code >= 0) {
-	    gs_fixed_rect clip_box;
-	    gs_int_rect cb;
-	    const gx_rop_source_t *rs = NULL;
-	    gx_device *dev;
-	    gx_device_clip cdev;
+                (*dev_proc(pdev, get_clipping_box)) (pdev, &clip_box1);
+                code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box1);
+            }
+            if (code >= 0)
+                code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule,
+                        pis_noconst, params);
+            pcpath1 = &cpath_intersection;
+        } else
+            pcpath1 = pcpath;
+        pcpath2 = pcpath1;
+        if (code >= 0)
+            code = gx_dc_pattern2_clip_with_bbox(pdevc, pdev, &cpath_with_shading_bbox, &pcpath1);
+        /* Do fill : */
+        if (code >= 0) {
+            gs_fixed_rect clip_box;
+            gs_int_rect cb;
+            const gx_rop_source_t *rs = NULL;
+            gx_device *dev;
+            gx_device_clip cdev;
 
-	    gx_cpath_outer_box(pcpath1, &clip_box);
-	    cb.p.x = fixed2int_pixround(clip_box.p.x);
-	    cb.p.y = fixed2int_pixround(clip_box.p.y);
-	    cb.q.x = fixed2int_pixround(clip_box.q.x);
-	    cb.q.y = fixed2int_pixround(clip_box.q.y);
-	    if (gx_dc_is_pattern2_color(pdevc) && 
-		    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__handles_clip_path) > 0) {
-		/* A special interaction with clist writer device : 
-		   pass the intersected clipping path. It uses an unusual call to
-		   fill_path with NULL device color. */
-		code = (*dev_proc(pdev, fill_path))(pdev, pis, ppath, params, NULL, pcpath1);
-		dev = pdev;
-	    } else {
-		gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
-		dev = (gx_device *)&cdev;
-		if ((*dev_proc(pdev, pattern_manage))(pdev, 
-			gs_no_id, NULL, pattern_manage__shading_area) > 0)
-		    set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
-		code = 0;
-	    }
-	    if (code >= 0)
-		code = pdevc->type->fill_rectangle(pdevc,
-			cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
-			dev, pis->log_op, rs);
-	}
-	if (ppath != NULL)
-	    gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
-	if (pcpath1 != pcpath2)
-	    gx_cpath_free(&cpath_with_shading_bbox, "shading_fill_cpath_intersection");
+            gx_cpath_outer_box(pcpath1, &clip_box);
+            cb.p.x = fixed2int_pixround(clip_box.p.x);
+            cb.p.y = fixed2int_pixround(clip_box.p.y);
+            cb.q.x = fixed2int_pixround(clip_box.q.x);
+            cb.q.y = fixed2int_pixround(clip_box.q.y);
+            if (gx_dc_is_pattern2_color(pdevc) &&
+                    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__handles_clip_path) > 0) {
+                /* A special interaction with clist writer device :
+                   pass the intersected clipping path. It uses an unusual call to
+                   fill_path with NULL device color. */
+                code = (*dev_proc(pdev, fill_path))(pdev, pis, ppath, params, NULL, pcpath1);
+                dev = pdev;
+            } else {
+                gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
+                dev = (gx_device *)&cdev;
+                if ((*dev_proc(pdev, pattern_manage))(pdev,
+                        gs_no_id, NULL, pattern_manage__shading_area) > 0)
+                    set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
+                code = 0;
+            }
+            if (code >= 0)
+                code = pdevc->type->fill_rectangle(pdevc,
+                        cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
+                        dev, pis->log_op, rs);
+        }
+        if (ppath != NULL)
+            gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
+        if (pcpath1 != pcpath2)
+            gx_cpath_free(&cpath_with_shading_bbox, "shading_fill_cpath_intersection");
     } else {
-	bool got_dc = false;
+        bool got_dc = false;
         vd_save;
-	if (vd_allowed('F') || vd_allowed('f')) {
-	    if (!vd_enabled) {
-		vd_get_dc( (params->adjust.x > 0 || params->adjust.y > 0)  ? 'F' : 'f');
-		got_dc = vd_enabled;
-	    }
-	    if (vd_enabled) {
-		vd_set_shift(0, 100);
-		vd_set_scale(VD_SCALE);
-		vd_set_origin(0, 0);
-		vd_erase(RGB(192, 192, 192));
-	    }
-	} else
-	    vd_disable;
-	code = gx_general_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
-	if (got_dc)
-	    vd_release_dc;
-	vd_restore;
+        if (vd_allowed('F') || vd_allowed('f')) {
+            if (!vd_enabled) {
+                vd_get_dc( (params->adjust.x > 0 || params->adjust.y > 0)  ? 'F' : 'f');
+                got_dc = vd_enabled;
+            }
+            if (vd_enabled) {
+                vd_set_shift(0, 100);
+                vd_set_scale(VD_SCALE);
+                vd_set_origin(0, 0);
+                vd_erase(RGB(192, 192, 192));
+            }
+        } else
+            vd_disable;
+        code = gx_general_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
+        if (got_dc)
+            vd_release_dc;
+        vd_restore;
     }
     return code;
 }
@@ -659,10 +681,10 @@ free_line_list(line_list *ll)
     active_line *alp;
 
     while ((alp = ll->active_area) != 0) {
-	active_line *next = alp->alloc_next;
+        active_line *next = alp->alloc_next;
 
-	gs_free_object(mem, alp, "active line");
-	ll->active_area = next;
+        gs_free_object(mem, alp, "active line");
+        ll->active_area = next;
     }
     free_all_margins(ll);
 }
@@ -672,16 +694,16 @@ make_al(line_list *ll)
 {
     active_line *alp = ll->next_active;
 
-    if (alp == ll->limit) {	/* Allocate separately */
-	alp = gs_alloc_struct(ll->memory, active_line,
-			      &st_active_line, "active line");
-	if (alp == 0)
-	    return NULL;
-	alp->alloc_next = ll->active_area;
-	ll->active_area = alp;
-	INCR(fill_alloc);
+    if (alp == ll->limit) {     /* Allocate separately */
+        alp = gs_alloc_struct(ll->memory, active_line,
+                              &st_active_line, "active line");
+        if (alp == 0)
+            return NULL;
+        alp->alloc_next = ll->active_area;
+        ll->active_area = alp;
+        INCR(fill_alloc);
     } else
-	ll->next_active++;
+        ll->next_active++;
     alp->contour_count = ll->contour_count;
     return alp;
 }
@@ -696,32 +718,32 @@ insert_y_line(line_list *ll, active_line *alp)
 
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 0, RGB(255, 0, 0));
     if (yp == 0) {
-	alp->next = alp->prev = 0;
-	ll->y_list = alp;
-    } else if (y_start >= yp->start.y) {	/* Insert the new line after y_line */
-	while (INCR_EXPR(y_up),
-	       ((nyp = yp->next) != NULL &&
-		y_start > nyp->start.y)
-	    )
-	    yp = nyp;
-	alp->next = nyp;
-	alp->prev = yp;
-	yp->next = alp;
-	if (nyp)
-	    nyp->prev = alp;
-    } else {		/* Insert the new line before y_line */
-	while (INCR_EXPR(y_down),
-	       ((nyp = yp->prev) != NULL &&
-		y_start < nyp->start.y)
-	    )
-	    yp = nyp;
-	alp->prev = nyp;
-	alp->next = yp;
-	yp->prev = alp;
-	if (nyp)
-	    nyp->next = alp;
-	else
-	    ll->y_list = alp;
+        alp->next = alp->prev = 0;
+        ll->y_list = alp;
+    } else if (y_start >= yp->start.y) {        /* Insert the new line after y_line */
+        while (INCR_EXPR(y_up),
+               ((nyp = yp->next) != NULL &&
+                y_start > nyp->start.y)
+            )
+            yp = nyp;
+        alp->next = nyp;
+        alp->prev = yp;
+        yp->next = alp;
+        if (nyp)
+            nyp->prev = alp;
+    } else {            /* Insert the new line before y_line */
+        while (INCR_EXPR(y_down),
+               ((nyp = yp->prev) != NULL &&
+                y_start < nyp->start.y)
+            )
+            yp = nyp;
+        alp->prev = nyp;
+        alp->next = yp;
+        yp->prev = alp;
+        if (nyp)
+            nyp->next = alp;
+        else
+            ll->y_list = alp;
     }
     ll->y_line = alp;
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(0, 255, 0));
@@ -743,41 +765,41 @@ static inline int
 compute_dir(const fill_options *fo, fixed y0, fixed y1)
 {
     if (max(y0, y1) < fo->ymin)
-	return 2;
+        return 2;
     if (min(y0, y1) > fo->ymax)
-	return 2;
-    return (y0 < y1 ? DIR_UP : 
-	    y0 > y1 ? DIR_DOWN : DIR_HORIZONTAL);
+        return 2;
+    return (y0 < y1 ? DIR_UP :
+            y0 > y1 ? DIR_DOWN : DIR_HORIZONTAL);
 }
 
 static inline int
-add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir, 
+add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir,
     gx_flattened_iterator *fi, bool more1, bool step_back, bool monotonic_x)
 {
     active_line *alp = make_al(ll);
     int code;
 
     if (alp == NULL)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     alp->pseg = (dir == DIR_UP ? s1 : s0);
     alp->direction = dir;
     alp->fi = *fi;
     alp->more_flattened = more1;
     if (dir != DIR_UP && more1)
-	gx_flattened_iterator__switch_to_backscan(&alp->fi, more1);
+        gx_flattened_iterator__switch_to_backscan(&alp->fi, more1);
     if (step_back) {
-	do {
-	    code = gx_flattened_iterator__prev(&alp->fi);
-	    if (code < 0)
-		return code;
-	    alp->more_flattened = code;
-	    if (compute_dir(ll->fo, alp->fi.ly0, alp->fi.ly1) != 2)
-		break;
-	} while (alp->more_flattened);
+        do {
+            code = gx_flattened_iterator__prev(&alp->fi);
+            if (code < 0)
+                return code;
+            alp->more_flattened = code;
+            if (compute_dir(ll->fo, alp->fi.ly0, alp->fi.ly1) != 2)
+                break;
+        } while (alp->more_flattened);
     }
     code = step_al(alp, false);
     if (code < 0)
-	return code;
+        return code;
     alp->monotonic_y = false;
     alp->monotonic_x = monotonic_x;
     insert_y_line(ll, alp);
@@ -794,19 +816,19 @@ static inline int
 start_al_pair(line_list *ll, contour_cursor *q, contour_cursor *p)
 {
     int code;
-    
+
     if (q->monotonic_y)
-	code = add_y_line(q->prev, q->pseg, DIR_DOWN, ll);
-    else 
-	code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    !q->first_flattened, false, q->monotonic_x);
-    if (code < 0) 
-	return code;
-    if (p->monotonic_y)
-	code = add_y_line(p->prev, p->pseg, DIR_UP, ll);
+        code = add_y_line(q->prev, q->pseg, DIR_DOWN, ll);
     else
-	code = add_y_curve_part(ll, p->prev, p->pseg, DIR_UP, p->fi, 
-			    p->more_flattened, false, p->monotonic_x);
+        code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi,
+                            !q->first_flattened, false, q->monotonic_x);
+    if (code < 0)
+        return code;
+    if (p->monotonic_y)
+        code = add_y_line(p->prev, p->pseg, DIR_UP, ll);
+    else
+        code = add_y_curve_part(ll, p->prev, p->pseg, DIR_UP, p->fi,
+                            p->more_flattened, false, p->monotonic_x);
     return code;
 }
 
@@ -819,41 +841,41 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 
     /* q stands at the first segment, which isn't last. */
     do {
-	code = gx_flattened_iterator__next(q->fi);
-	if (code < 0)
-	    return code;
-	q->more_flattened = code;
-	dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
-	if (q->fi->ly0 > fo->ymax && ll->y_break > q->fi->y0)
-	    ll->y_break = q->fi->ly0;
-	if (q->fi->ly1 > fo->ymax && ll->y_break > q->fi->ly1)
-	    ll->y_break = q->fi->ly1;
-	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->ly0 >= fo->ymin) {
-	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    true, true, q->monotonic_x);
-	    if (code < 0) 
-		return code; 
-	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
-			    q->more_flattened, false, q->monotonic_x);
-	    if (code < 0) 
-		return code; 
-	} else if (q->fi->ly0 < fo->ymin && q->fi->ly1 >= fo->ymin) {
-	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
-			    q->more_flattened, false, q->monotonic_x);
-	    if (code < 0) 
-		return code; 
-	} else if (q->fi->ly0 >= fo->ymin && q->fi->ly1 < fo->ymin) {
-	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    true, false, q->monotonic_x);
-	    if (code < 0) 
-		return code; 
-	}
-	q->first_flattened = false;
+        code = gx_flattened_iterator__next(q->fi);
+        if (code < 0)
+            return code;
+        q->more_flattened = code;
+        dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
+        if (q->fi->ly0 > fo->ymax && ll->y_break > q->fi->y0)
+            ll->y_break = q->fi->ly0;
+        if (q->fi->ly1 > fo->ymax && ll->y_break > q->fi->ly1)
+            ll->y_break = q->fi->ly1;
+        if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->ly0 >= fo->ymin) {
+            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi,
+                            true, true, q->monotonic_x);
+            if (code < 0)
+                return code;
+            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi,
+                            q->more_flattened, false, q->monotonic_x);
+            if (code < 0)
+                return code;
+        } else if (q->fi->ly0 < fo->ymin && q->fi->ly1 >= fo->ymin) {
+            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi,
+                            q->more_flattened, false, q->monotonic_x);
+            if (code < 0)
+                return code;
+        } else if (q->fi->ly0 >= fo->ymin && q->fi->ly1 < fo->ymin) {
+            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi,
+                            true, false, q->monotonic_x);
+            if (code < 0)
+                return code;
+        }
+        q->first_flattened = false;
         q->dir = dir;
-	ll->main_dir = (dir == DIR_DOWN ? DIR_DOWN : 
-			dir == DIR_UP ? DIR_UP : ll->main_dir);
-	if (!q->more_flattened)
-	    break;
+        ll->main_dir = (dir == DIR_DOWN ? DIR_DOWN :
+                        dir == DIR_UP ? DIR_UP : ll->main_dir);
+        if (!q->more_flattened)
+            break;
     } while(q->more_flattened);
     /* q stands at the last segment. */
     return 0;
@@ -862,36 +884,36 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 }
 
 static inline int
-init_contour_cursor(line_list *ll, contour_cursor *q) 
+init_contour_cursor(line_list *ll, contour_cursor *q)
 {
     const fill_options * const fo = ll->fo;
 
     if (q->pseg->type == s_curve) {
-	curve_segment *s = (curve_segment *)q->pseg;
-	fixed ymin = min(min(q->prev->pt.y, s->p1.y), min(s->p2.y, s->pt.y));
-	fixed ymax = max(max(q->prev->pt.y, s->p1.y), max(s->p2.y, s->pt.y));
-	bool in_band = ymin <= fo->ymax && ymax >= fo->ymin;
-	q->crossing = ymin < fo->ymin && ymax >= fo->ymin;
-	q->monotonic_y = !in_band ||
-	    (!q->crossing &&
-	    ((q->prev->pt.y <= s->p1.y && s->p1.y <= s->p2.y && s->p2.y <= s->pt.y) ||
-	     (q->prev->pt.y >= s->p1.y && s->p1.y >= s->p2.y && s->p2.y >= s->pt.y)));
-	q->monotonic_x = 
-	    ((q->prev->pt.x <= s->p1.x && s->p1.x <= s->p2.x && s->p2.x <= s->pt.x) ||
-	     (q->prev->pt.x >= s->p1.x && s->p1.x >= s->p2.x && s->p2.x >= s->pt.x));
-    } else 
-	q->monotonic_y = true;
+        curve_segment *s = (curve_segment *)q->pseg;
+        fixed ymin = min(min(q->prev->pt.y, s->p1.y), min(s->p2.y, s->pt.y));
+        fixed ymax = max(max(q->prev->pt.y, s->p1.y), max(s->p2.y, s->pt.y));
+        bool in_band = ymin <= fo->ymax && ymax >= fo->ymin;
+        q->crossing = ymin < fo->ymin && ymax >= fo->ymin;
+        q->monotonic_y = !in_band ||
+            (!q->crossing &&
+            ((q->prev->pt.y <= s->p1.y && s->p1.y <= s->p2.y && s->p2.y <= s->pt.y) ||
+             (q->prev->pt.y >= s->p1.y && s->p1.y >= s->p2.y && s->p2.y >= s->pt.y)));
+        q->monotonic_x =
+            ((q->prev->pt.x <= s->p1.x && s->p1.x <= s->p2.x && s->p2.x <= s->pt.x) ||
+             (q->prev->pt.x >= s->p1.x && s->p1.x >= s->p2.x && s->p2.x >= s->pt.x));
+    } else
+        q->monotonic_y = true;
     if (!q->monotonic_y) {
-	curve_segment *s = (curve_segment *)q->pseg;
-	int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, fo->fixed_flat);
+        curve_segment *s = (curve_segment *)q->pseg;
+        int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, fo->fixed_flat);
 
-	if (!gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k))
-	    return_error(gs_error_rangecheck);
+        if (!gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k))
+            return_error(gs_error_rangecheck);
     } else {
-	q->dir = compute_dir(fo, q->prev->pt.y, q->pseg->pt.y);
-	gx_flattened_iterator__init_line(q->fi, 
-	    q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y); /* fake for curves. */
-	vd_bar(q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y, 1, RGB(0, 0, 255));
+        q->dir = compute_dir(fo, q->prev->pt.y, q->pseg->pt.y);
+        gx_flattened_iterator__init_line(q->fi,
+            q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y); /* fake for curves. */
+        vd_bar(q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y, 1, RGB(0, 0, 255));
     }
     q->first_flattened = true;
     return 0;
@@ -914,122 +936,122 @@ scan_contour(line_list *ll, contour_cursor *q)
     save_q.dir = 2;
     ll->main_dir = DIR_HORIZONTAL;
     for (; ; q->pseg = q->prev, q->prev = q->prev->prev) {
-	code = init_contour_cursor(ll, q);
-	if (code < 0)
-	    return code;
-	for (;;) {
-	    code = gx_flattened_iterator__next(q->fi);
-	    if (code < 0)
-		return code;
-	    if (!code)
-		break;
-	    q->first_flattened = false;
-	    q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
-	    ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
-			    q->dir == DIR_UP ? DIR_UP : ll->main_dir);
-	}
-	q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
-	q->more_flattened = false;
-	ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
-			q->dir == DIR_UP ? DIR_UP : ll->main_dir);
-	if (ll->main_dir != DIR_HORIZONTAL) {
-	    only_horizontal = false;
-	    break;
-	}
-	if (!saved && q->dir != 2) {
-	    save_q = *q;
-	    save_fi = *q->fi;
-	    saved = true;
-	}
-	if (q->prev == q->pfirst)
-	    break;
+        code = init_contour_cursor(ll, q);
+        if (code < 0)
+            return code;
+        for (;;) {
+            code = gx_flattened_iterator__next(q->fi);
+            if (code < 0)
+                return code;
+            if (!code)
+                break;
+            q->first_flattened = false;
+            q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
+            ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN :
+                            q->dir == DIR_UP ? DIR_UP : ll->main_dir);
+        }
+        q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
+        q->more_flattened = false;
+        ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN :
+                        q->dir == DIR_UP ? DIR_UP : ll->main_dir);
+        if (ll->main_dir != DIR_HORIZONTAL) {
+            only_horizontal = false;
+            break;
+        }
+        if (!saved && q->dir != 2) {
+            save_q = *q;
+            save_fi = *q->fi;
+            saved = true;
+        }
+        if (q->prev == q->pfirst)
+            break;
     }
     if (saved) {
-	*q = save_q;
-	*q->fi = save_fi;
+        *q = save_q;
+        *q->fi = save_fi;
     }
     for (pseg = q->pfirst; pseg != q->plast; pseg = pseg->next) {
-	p.prev = pseg;
-	p.pseg = pseg->next;
-	if (!fo->pseudo_rasterization || only_horizontal
-		|| p.prev->pt.x != p.pseg->pt.x || p.prev->pt.y != p.pseg->pt.y 
-		|| p.pseg->type == s_curve) {
-	    code = init_contour_cursor(ll, &p);
-	    if (code < 0)
-		return code;
-	    do {
-		code = gx_flattened_iterator__next(p.fi);
-		if (code < 0)
-		    return code;
-		p.more_flattened = code;
-		p.dir = compute_dir(fo, p.fi->ly0, p.fi->ly1);
-	    } while (p.more_flattened && p.dir == 2);
-	    if (p.fi->ly0 > fo->ymax && ll->y_break > p.fi->ly0)
-		ll->y_break = p.fi->ly0;
-	    if (p.fi->ly1 > fo->ymax && ll->y_break > p.fi->ly1)
-		ll->y_break = p.fi->ly1;
-	    if (p.monotonic_y && p.dir == DIR_HORIZONTAL && 
-		    !fo->pseudo_rasterization && 
+        p.prev = pseg;
+        p.pseg = pseg->next;
+        if (!fo->pseudo_rasterization || only_horizontal
+                || p.prev->pt.x != p.pseg->pt.x || p.prev->pt.y != p.pseg->pt.y
+                || p.pseg->type == s_curve) {
+            code = init_contour_cursor(ll, &p);
+            if (code < 0)
+                return code;
+            do {
+                code = gx_flattened_iterator__next(p.fi);
+                if (code < 0)
+                    return code;
+                p.more_flattened = code;
+                p.dir = compute_dir(fo, p.fi->ly0, p.fi->ly1);
+            } while (p.more_flattened && p.dir == 2);
+            if (p.fi->ly0 > fo->ymax && ll->y_break > p.fi->ly0)
+                ll->y_break = p.fi->ly0;
+            if (p.fi->ly1 > fo->ymax && ll->y_break > p.fi->ly1)
+                ll->y_break = p.fi->ly1;
+            if (p.monotonic_y && p.dir == DIR_HORIZONTAL &&
+                    !fo->pseudo_rasterization &&
 #ifdef FILL_ZERO_WIDTH
-		    (fo->adjust_below | fo->adjust_above) != 0) {
+                    (fo->adjust_below | fo->adjust_above) != 0) {
 #else
-		    fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
-		    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above)) {
+                    fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
+                    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above)) {
 #endif
-		/* Add it here to avoid double processing in process_h_segments. */
-		code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
-		if (code < 0)
-		    return code;
-	    }
-	    if (p.monotonic_y && p.dir == DIR_HORIZONTAL && 
-		    fo->pseudo_rasterization && only_horizontal) {
-		/* Add it here to avoid double processing in process_h_segments. */
-		code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
-		if (code < 0)
-		    return code;
-	    } 
-	    if (p.fi->ly0 >= fo->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
-		code = start_al_pair(ll, q, &p);
-		if (code < 0)
-		    return code;
-	    }
-	    if (p.fi->ly0 < fo->ymin && p.fi->ly1 >= fo->ymin) {
-		if (p.monotonic_y)
-		    code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
-		else
-		    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_UP, p.fi, 
-					p.more_flattened, false, p.monotonic_x);
-		if (code < 0)
-		    return code;
-	    }	    
-	    if (p.fi->ly0 >= fo->ymin && p.fi->ly1 < fo->ymin) {
-		if (p.monotonic_y)
-		    code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
-		else
-		    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_DOWN, p.fi, 
-					!p.first_flattened, false, p.monotonic_x);
-		if (code < 0)
-		    return code;
-	    }	    
-	    ll->main_dir = (p.dir == DIR_DOWN ? DIR_DOWN : 
-			    p.dir == DIR_UP ? DIR_UP : ll->main_dir);
-	    if (!p.monotonic_y && p.more_flattened) {
-		code = start_al_pair_from_min(ll, &p);
-		if (code < 0)
-		    return code;
-	    }
-	    if (p.dir == DIR_DOWN || p.dir == DIR_HORIZONTAL) {
-		gx_flattened_iterator *fi1 = q->fi;
-		q->prev = p.prev;
-		q->pseg = p.pseg;
-		q->monotonic_y = p.monotonic_y;
-		q->more_flattened = p.more_flattened;
-		q->first_flattened = p.first_flattened;
-		q->fi = p.fi;
-		q->dir = p.dir;
-		p.fi = fi1;
-	    } 
-	}
+                /* Add it here to avoid double processing in process_h_segments. */
+                code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
+                if (code < 0)
+                    return code;
+            }
+            if (p.monotonic_y && p.dir == DIR_HORIZONTAL &&
+                    fo->pseudo_rasterization && only_horizontal) {
+                /* Add it here to avoid double processing in process_h_segments. */
+                code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
+                if (code < 0)
+                    return code;
+            }
+            if (p.fi->ly0 >= fo->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
+                code = start_al_pair(ll, q, &p);
+                if (code < 0)
+                    return code;
+            }
+            if (p.fi->ly0 < fo->ymin && p.fi->ly1 >= fo->ymin) {
+                if (p.monotonic_y)
+                    code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
+                else
+                    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_UP, p.fi,
+                                        p.more_flattened, false, p.monotonic_x);
+                if (code < 0)
+                    return code;
+            }
+            if (p.fi->ly0 >= fo->ymin && p.fi->ly1 < fo->ymin) {
+                if (p.monotonic_y)
+                    code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
+                else
+                    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_DOWN, p.fi,
+                                        !p.first_flattened, false, p.monotonic_x);
+                if (code < 0)
+                    return code;
+            }
+            ll->main_dir = (p.dir == DIR_DOWN ? DIR_DOWN :
+                            p.dir == DIR_UP ? DIR_UP : ll->main_dir);
+            if (!p.monotonic_y && p.more_flattened) {
+                code = start_al_pair_from_min(ll, &p);
+                if (code < 0)
+                    return code;
+            }
+            if (p.dir == DIR_DOWN || p.dir == DIR_HORIZONTAL) {
+                gx_flattened_iterator *fi1 = q->fi;
+                q->prev = p.prev;
+                q->pseg = p.pseg;
+                q->monotonic_y = p.monotonic_y;
+                q->more_flattened = p.more_flattened;
+                q->first_flattened = p.first_flattened;
+                q->fi = p.fi;
+                q->dir = p.dir;
+                p.fi = fi1;
+            }
+        }
     }
     q->fi = NULL; /* safety. */
     return 0;
@@ -1054,41 +1076,41 @@ add_y_list(gx_path * ppath, line_list *ll)
     ll->y_break = max_fixed;
 
     for (;psub; psub = (subpath *)psub->last->next) {
-	/* We know that pseg points to a subpath head (s_start). */
-	segment *pfirst = (segment *)psub;
-	segment *plast = psub->last, *prev;
+        /* We know that pseg points to a subpath head (s_start). */
+        segment *pfirst = (segment *)psub;
+        segment *plast = psub->last, *prev;
 
-	q.fi = &fi;
-	if (plast->type != s_line_close) {
-	    /* Create a fake s_line_close */
-	    line_close_segment *lp = &psub->closer;
-	    segment *next = plast->next;
+        q.fi = &fi;
+        if (plast->type != s_line_close) {
+            /* Create a fake s_line_close */
+            line_close_segment *lp = &psub->closer;
+            segment *next = plast->next;
 
-	    lp->next = next;
-	    lp->prev = plast;
-	    plast->next = (segment *) lp;
-	    if (next)
-		next->prev = (segment *) lp;
-	    lp->type = s_line_close;
-	    lp->pt = psub->pt;
-	    lp->sub = psub;
-	    psub->last = plast = (segment *) lp;
-	    ll->close_count++;
-	}
-	prev = plast->prev;
-	if (ll->fo->pseudo_rasterization && prev != pfirst &&
-		prev->pt.x == plast->pt.x && prev->pt.y == plast->pt.y) {
-	    plast = prev;
-	    prev = prev->prev;
-	}
-	q.prev = prev;
-	q.pseg = plast;
-	q.pfirst = pfirst;
-	q.plast = plast;
-	code = scan_contour(ll, &q);
-	if (code < 0)
-	    return code;
-	ll->contour_count++;
+            lp->next = next;
+            lp->prev = plast;
+            plast->next = (segment *) lp;
+            if (next)
+                next->prev = (segment *) lp;
+            lp->type = s_line_close;
+            lp->pt = psub->pt;
+            lp->sub = psub;
+            psub->last = plast = (segment *) lp;
+            ll->close_count++;
+        }
+        prev = plast->prev;
+        if (ll->fo->pseudo_rasterization && prev != pfirst &&
+                prev->pt.x == plast->pt.x && prev->pt.y == plast->pt.y) {
+            plast = prev;
+            prev = prev->prev;
+        }
+        q.prev = prev;
+        q.pseg = plast;
+        q.pfirst = pfirst;
+        q.plast = plast;
+        code = scan_contour(ll, &q);
+        if (code < 0)
+            return code;
+        ll->contour_count++;
     }
     return close_count;
 }
@@ -1100,18 +1122,18 @@ step_al(active_line *alp, bool move_iterator)
     bool forth = (alp->direction == DIR_UP || !alp->fi.curve);
 
     if (move_iterator) {
-	int code;
+        int code;
 
-	if (forth)
-	    code = gx_flattened_iterator__next(&alp->fi);
-	else
-	    code = gx_flattened_iterator__prev(&alp->fi);
-	if (code < 0)
-	    return code;
-	alp->more_flattened = code;
+        if (forth)
+            code = gx_flattened_iterator__next(&alp->fi);
+        else
+            code = gx_flattened_iterator__prev(&alp->fi);
+        if (code < 0)
+            return code;
+        alp->more_flattened = code;
     } else
-	vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
-    /* Note that we can get alp->fi.ly0 == alp->fi.ly1 
+        vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
+    /* Note that we can get alp->fi.ly0 == alp->fi.ly1
        if the curve tangent is horizontal. */
     alp->start.x = (forth ? alp->fi.lx0 : alp->fi.lx1);
     alp->start.y = (forth ? alp->fi.ly0 : alp->fi.ly1);
@@ -1134,52 +1156,52 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
     int code;
 
     if (curve) {
-	if (alp->direction == DIR_UP) {
-	    const curve_segment *cs = (const curve_segment *)s1;
-	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, cs, ll->fo->fixed_flat);
+        if (alp->direction == DIR_UP) {
+            const curve_segment *cs = (const curve_segment *)s1;
+            int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, cs, ll->fo->fixed_flat);
 
-	    gx_flattened_iterator__init(&alp->fi, 
-		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k);
-	    code = step_al(alp, true);
-	    if (code < 0)
-		return code;
-	    if (!ll->fo->fill_by_trapezoids) {
-		alp->monotonic_y = (s0->pt.y <= cs->p1.y && cs->p1.y <= cs->p2.y && cs->p2.y <= cs->pt.y);
-		alp->monotonic_x = (s0->pt.x <= cs->p1.x && cs->p1.x <= cs->p2.x && cs->p2.x <= cs->pt.x) ||
-				   (s0->pt.x >= cs->p1.x && cs->p1.x >= cs->p2.x && cs->p2.x >= cs->pt.x);
-	    }
-	} else {
-	    const curve_segment *cs = (const curve_segment *)s0;
-	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, cs, ll->fo->fixed_flat);
-	    bool more;
+            gx_flattened_iterator__init(&alp->fi,
+                s0->pt.x, s0->pt.y, (const curve_segment *)s1, k);
+            code = step_al(alp, true);
+            if (code < 0)
+                return code;
+            if (!ll->fo->fill_by_trapezoids) {
+                alp->monotonic_y = (s0->pt.y <= cs->p1.y && cs->p1.y <= cs->p2.y && cs->p2.y <= cs->pt.y);
+                alp->monotonic_x = (s0->pt.x <= cs->p1.x && cs->p1.x <= cs->p2.x && cs->p2.x <= cs->pt.x) ||
+                                   (s0->pt.x >= cs->p1.x && cs->p1.x >= cs->p2.x && cs->p2.x >= cs->pt.x);
+            }
+        } else {
+            const curve_segment *cs = (const curve_segment *)s0;
+            int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, cs, ll->fo->fixed_flat);
+            bool more;
 
-	    gx_flattened_iterator__init(&alp->fi, 
-		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k);
-	    alp->more_flattened = false;
-	    do {
-		code = gx_flattened_iterator__next(&alp->fi);
-		if (code < 0)
-		    return code;
-		more = code;
-		alp->more_flattened |= more;
-	    } while(more);
-	    gx_flattened_iterator__switch_to_backscan(&alp->fi, alp->more_flattened);
-	    code = step_al(alp, false);
-	    if (code < 0)
-		return code;
-	    if (!ll->fo->fill_by_trapezoids) {
-		alp->monotonic_y = (s0->pt.y >= cs->p1.y && cs->p1.y >= cs->p2.y && cs->p2.y >= cs->pt.y);
-		alp->monotonic_x = (s0->pt.x <= cs->p1.x && cs->p1.x <= cs->p2.x && cs->p2.x <= cs->pt.x) ||
-				   (s0->pt.x >= cs->p1.x && cs->p1.x >= cs->p2.x && cs->p2.x >= cs->pt.x);
-	    }
-	}
+            gx_flattened_iterator__init(&alp->fi,
+                s1->pt.x, s1->pt.y, (const curve_segment *)s0, k);
+            alp->more_flattened = false;
+            do {
+                code = gx_flattened_iterator__next(&alp->fi);
+                if (code < 0)
+                    return code;
+                more = code;
+                alp->more_flattened |= more;
+            } while(more);
+            gx_flattened_iterator__switch_to_backscan(&alp->fi, alp->more_flattened);
+            code = step_al(alp, false);
+            if (code < 0)
+                return code;
+            if (!ll->fo->fill_by_trapezoids) {
+                alp->monotonic_y = (s0->pt.y >= cs->p1.y && cs->p1.y >= cs->p2.y && cs->p2.y >= cs->pt.y);
+                alp->monotonic_x = (s0->pt.x <= cs->p1.x && cs->p1.x <= cs->p2.x && cs->p2.x <= cs->pt.x) ||
+                                   (s0->pt.x >= cs->p1.x && cs->p1.x >= cs->p2.x && cs->p2.x >= cs->pt.x);
+            }
+        }
     } else {
-	gx_flattened_iterator__init_line(&alp->fi, 
-		s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y);
-	code = step_al(alp, true);
-	if (code < 0)
-	    return code;
-	alp->monotonic_x = alp->monotonic_y = true;
+        gx_flattened_iterator__init_line(&alp->fi,
+                s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y);
+        code = step_al(alp, true);
+        if (code < 0)
+            return code;
+        alp->monotonic_x = alp->monotonic_y = true;
     }
     alp->pseg = s1;
     return 0;
@@ -1189,34 +1211,34 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
  * appropriate.
  */
 static int
-add_y_line_aux(const segment * prev_lp, const segment * lp, 
-	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll)
+add_y_line_aux(const segment * prev_lp, const segment * lp,
+            const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll)
 {
-    int code; 
+    int code;
 
     active_line *alp = make_al(ll);
     if (alp == NULL)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     alp->more_flattened = false;
     switch ((alp->direction = dir)) {
-	case DIR_UP:
-	    code = init_al(alp, prev_lp, lp, ll);
-	    if (code < 0)
-		return code;
-	    break;
-	case DIR_DOWN:
-	    code = init_al(alp, lp, prev_lp, ll);
-	    if (code < 0)
-		return code;
-	    break;
-	case DIR_HORIZONTAL:
-	    alp->start = *prev;
-	    alp->end = *curr;
-	    /* Don't need to set dx or y_fast_max */
-	    alp->pseg = prev_lp;	/* may not need this either */
-	    break;
-	default:		/* can't happen */
-	    return_error(gs_error_unregistered);
+        case DIR_UP:
+            code = init_al(alp, prev_lp, lp, ll);
+            if (code < 0)
+                return code;
+            break;
+        case DIR_DOWN:
+            code = init_al(alp, lp, prev_lp, ll);
+            if (code < 0)
+                return code;
+            break;
+        case DIR_HORIZONTAL:
+            alp->start = *prev;
+            alp->end = *curr;
+            /* Don't need to set dx or y_fast_max */
+            alp->pseg = prev_lp;        /* may not need this either */
+            break;
+        default:                /* can't happen */
+            return_error(gs_error_unregistered);
     }
     insert_y_line(ll, alp);
     return 0;
@@ -1234,17 +1256,17 @@ insert_x_new(active_line * alp, line_list *ll)
 
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 128, 0));
     alp->x_current = alp->start.x;
-    alp->x_next = alp->start.x; /*	If the spot starts with a horizontal segment,
-				    we need resort_x_line to work properly
-				    in the very beginning. */
+    alp->x_next = alp->start.x; /*      If the spot starts with a horizontal segment,
+                                    we need resort_x_line to work properly
+                                    in the very beginning. */
     while (INCR_EXPR(x_step),
-	   (next = prev->next) != 0 && x_order(next, alp) < 0
-	)
-	prev = next;
+           (next = prev->next) != 0 && x_order(next, alp) < 0
+        )
+        prev = next;
     alp->next = next;
     alp->prev = prev;
     if (next != 0)
-	next->prev = alp;
+        next->prev = alp;
     prev->next = alp;
 }
 
@@ -1259,11 +1281,11 @@ insert_h_new(active_line * alp, line_list *ll)
     alp->next = ll->h_list0;
     alp->prev = 0;
     if (ll->h_list0 != 0)
-	ll->h_list0->prev = alp;
+        ll->h_list0->prev = alp;
     ll->h_list0 = alp;
     /*
      * h list keeps horizontal lines for a given y.
-     * There are 2 lists, corresponding to upper and lower ends 
+     * There are 2 lists, corresponding to upper and lower ends
      * of the Y-interval, which spot_into_trapezoids currently proceeds.
      * Parts of horizontal lines, which do not contact a filled trapezoid,
      * are parts of the spot bondairy. They to be marked in
@@ -1278,7 +1300,7 @@ remove_al(const line_list *ll, active_line *alp)
 
     alp->prev->next = nlp;
     if (nlp)
-	nlp->prev = alp->prev;
+        nlp->prev = alp->prev;
     if_debug1('F', "[F]drop 0x%lx\n", (ulong) alp);
 }
 
@@ -1297,39 +1319,39 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
      * sure not to process the start/end point twice.
      */
     const segment *next =
-	(alp->direction == DIR_UP ?
-	 (			/* Upward line, go forward along path. */
-	  pseg->type == s_line_close ?	/* end of subpath */
-	  ((const line_close_segment *)pseg)->sub->next :
-	  pseg->next) :
-	 (			/* Downward line, go backward along path. */
-	  pseg->type == s_start ?	/* start of subpath */
-	  ((const subpath *)pseg)->last->prev :
-	  pseg->prev)
-	);
+        (alp->direction == DIR_UP ?
+         (                      /* Upward line, go forward along path. */
+          pseg->type == s_line_close ?  /* end of subpath */
+          ((const line_close_segment *)pseg)->sub->next :
+          pseg->next) :
+         (                      /* Downward line, go backward along path. */
+          pseg->type == s_start ?       /* start of subpath */
+          ((const subpath *)pseg)->last->prev :
+          pseg->prev)
+        );
     int code;
 
     if (alp->end.y < alp->start.y) {
-	/* fixme: The condition above causes a horizontal
-	   part of a curve near an Y maximum to process twice :
-	   once scanning the left spot boundary and once scanning the right one.
-	   In both cases it will go to the H list.
-	   However the dropout prevention logic isn't
-	   sensitive to that, and such segments does not affect 
-	   trapezoids. Thus the resulting raster doesn't depend on that.
-	   However it would be nice to improve someday.
-	 */
-	remove_al(ll, alp);
-	return true;
+        /* fixme: The condition above causes a horizontal
+           part of a curve near an Y maximum to process twice :
+           once scanning the left spot boundary and once scanning the right one.
+           In both cases it will go to the H list.
+           However the dropout prevention logic isn't
+           sensitive to that, and such segments does not affect
+           trapezoids. Thus the resulting raster doesn't depend on that.
+           However it would be nice to improve someday.
+         */
+        remove_al(ll, alp);
+        return true;
     } else if (alp->more_flattened)
-	return false;
+        return false;
     code = init_al(alp, pseg, next, ll);
     if (code < 0)
-	return code;
+        return code;
     if (alp->start.y > alp->end.y) {
-	/* See comment above. */
-	remove_al(ll, alp);
-	return true;
+        /* See comment above. */
+        remove_al(ll, alp);
+        return true;
     }
     alp->x_current = alp->x_next = alp->start.x;
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 128));
@@ -1337,22 +1359,22 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
     return false;
 }
 
-static inline int 
+static inline int
 add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
     vd_bar(flp->start.x, flp->start.y, flp->end.x, flp->end.y, 1, RGB(255, 255, 255));
     return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
 }
 
-static inline int 
+static inline int
 continue_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{   
+{
     return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
 }
 
-static inline int 
+static inline int
 complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{   
+{
     return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
 }
 
@@ -1362,111 +1384,209 @@ complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, 
  * (or rectangle) plus two horizontal almost-rectangles.
  */
 static int
-fill_slant_adjust(const line_list *ll, 
-	const active_line *flp, const active_line *alp, fixed y, fixed y1)
+fill_slant_adjust(const line_list *ll,
+        const active_line *flp, const active_line *alp, fixed y, fixed y1)
 {
     const fill_options * const fo = ll->fo;
     const fixed Yb = y - fo->adjust_below;
-    const fixed Ya = y + fo->adjust_above;
-    const fixed Y1b = y1 - fo->adjust_below;
+    fixed Ya = y + fo->adjust_above;
+    fixed Y1b = y1 - fo->adjust_below;
     const fixed Y1a = y1 + fo->adjust_above;
     const gs_fixed_edge *plbot, *prbot, *pltop, *prtop;
     gs_fixed_edge vert_left, slant_left, vert_right, slant_right;
     int code;
 
     INCR(slant);
-    vd_quad(flp->x_current, y, alp->x_current, y, 
-	    alp->x_next, y1, flp->x_next, y1, 1, VD_TRAP_COLOR); /* fixme: Wrong X. */
+    vd_quad(flp->x_current, y, alp->x_current, y,
+            alp->x_next, y1, flp->x_next, y1, 1, VD_TRAP_COLOR); /* fixme: Wrong X. */
 
     /* Set up all the edges, even though we may not need them all. */
 
-    if (flp->start.x < flp->end.x) {
-	vert_left.start.x = vert_left.end.x = flp->x_current - fo->adjust_left;
-	vert_left.start.y = Yb, vert_left.end.y = Ya;
-	vert_right.start.x = vert_right.end.x = alp->x_next + fo->adjust_right;
-	vert_right.start.y = Y1b, vert_right.end.y = Y1a;
-	slant_left.start.y = flp->start.y + fo->adjust_above; 
-	slant_left.end.y = flp->end.y + fo->adjust_above;
-	slant_right.start.y = alp->start.y - fo->adjust_below; 
-	slant_right.end.y = alp->end.y - fo->adjust_below;
-	plbot = &vert_left, prbot = &slant_right;
-	pltop = &slant_left, prtop = &vert_right;
-    } else {
-	vert_left.start.x = vert_left.end.x = flp->x_next - fo->adjust_left;
-	vert_left.start.y = Y1b, vert_left.end.y = Y1a;
-	vert_right.start.x = vert_right.end.x = alp->x_current + fo->adjust_right;
-	vert_right.start.y = Yb, vert_right.end.y = Ya;
-	slant_left.start.y = flp->start.y - fo->adjust_below;
-	slant_left.end.y = flp->end.y - fo->adjust_below;
-	slant_right.start.y = alp->start.y + fo->adjust_above;
-	slant_right.end.y = alp->end.y + fo->adjust_above;
-	plbot = &slant_left, prbot = &vert_right;
-	pltop = &vert_left, prtop = &slant_right;
-    }
-    slant_left.start.x = flp->start.x - fo->adjust_left; 
+    slant_left.start.x = flp->start.x - fo->adjust_left;
     slant_left.end.x = flp->end.x - fo->adjust_left;
-    slant_right.start.x = alp->start.x + fo->adjust_right; 
+    slant_right.start.x = alp->start.x + fo->adjust_right;
     slant_right.end.x = alp->end.x + fo->adjust_right;
+    if (flp->start.x < flp->end.x) {
+        vert_left.start.x = vert_left.end.x = flp->x_current - fo->adjust_left;
+        vert_left.start.y = Yb, vert_left.end.y = Ya;
+        vert_right.start.x = vert_right.end.x = alp->x_next + fo->adjust_right;
+        vert_right.start.y = Y1b, vert_right.end.y = Y1a;
+        slant_left.start.y = flp->start.y + fo->adjust_above;
+        slant_left.end.y = flp->end.y + fo->adjust_above;
+        slant_right.start.y = alp->start.y - fo->adjust_below;
+        slant_right.end.y = alp->end.y - fo->adjust_below;
+        plbot = &vert_left, prbot = &slant_right;
+        pltop = &slant_left, prtop = &vert_right;
+        if (TRY_TO_EXTEND_TRAP)
+        {
+            int x, cx, cy, dy;
+            /* Extend the slanted edges so they extend above/below the
+             * adjusted Y range. This means we could maybe use them
+             * directly. */
+            while (slant_right.end.y < Y1a)
+            {
+                slant_right.end.x += slant_right.end.x - slant_right.start.x;
+                slant_right.end.y += slant_right.end.y - slant_right.start.y;
+            }
+            while (slant_left.start.y > Yb)
+            {
+                slant_left.start.x -= slant_left.end.x - slant_left.start.x;
+                slant_left.start.y -= slant_left.end.y - slant_left.start.y;
+            }
+            /* Consider the centre of the pixel above and to the right of
+             * vert_right.start. If that's inside our newly extended trap
+             * then we can't use the extended one without changing the
+             * rendered result. */
+            cy = fixed_pixround(vert_right.start.y)+fixed_half;
+            cx = fixed_pixround(vert_right.start.x)+fixed_half;
+            dy = slant_right.end.y-slant_right.start.y;
+            x = vert_right.start.x +
+                (fixed)((((int64_t)(slant_right.end.x-slant_right.start.x)) *
+                         ((int64_t)(cy-vert_right.start.y)) + dy - 1) /
+                        ((int64_t)dy));
+            if ((cy >= Y1a) || (x < cx))
+            {
+                /* We are safe to extend the trap upwards */
+                Y1b = Y1a;
+            }
+            /* Consider the centre of the pixel below and to the left of
+             * vert_left.end. If that's inside our newly extended trap
+             * then we can't use the extended one without changing the
+             * rendered result. */
+            cy = fixed_pixround(vert_left.end.y)-fixed_half;
+            cx = fixed_pixround(vert_left.end.x)-fixed_half;
+            dy = slant_left.end.y-slant_left.start.y;
+            x = vert_left.end.x -
+                (fixed)((((int64_t)(slant_left.end.x-slant_left.start.x)) *
+                         ((int64_t)(vert_left.end.y-cy)) + dy - 1) /
+                        ((int64_t)dy));
+            if ((cy < Yb) || (x > cx))
+            {
+                /* We are safe to extend the trap downwards */
+                Ya = Yb;
+            }
+        }
+    } else {
+        vert_left.start.x = vert_left.end.x = flp->x_next - fo->adjust_left;
+        vert_left.start.y = Y1b, vert_left.end.y = Y1a;
+        vert_right.start.x = vert_right.end.x = alp->x_current + fo->adjust_right;
+        vert_right.start.y = Yb, vert_right.end.y = Ya;
+        slant_left.start.y = flp->start.y - fo->adjust_below;
+        slant_left.end.y = flp->end.y - fo->adjust_below;
+        slant_right.start.y = alp->start.y + fo->adjust_above;
+        slant_right.end.y = alp->end.y + fo->adjust_above;
+        plbot = &slant_left, prbot = &vert_right;
+        pltop = &vert_left, prtop = &slant_right;
+        if (TRY_TO_EXTEND_TRAP)
+        {
+            int x, cx, cy, dy;
+            /* Extend the slanted edges so they extend above/below the
+             * adjusted Y range. This means we could maybe use them
+             * directly. */
+            while (slant_left.end.y < Y1a)
+            {
+                slant_left.end.x += slant_left.end.x - slant_left.start.x;
+                slant_left.end.y += slant_left.end.y - slant_left.start.y;
+            }
+            while (slant_right.start.y > Yb)
+            {
+                slant_right.start.x -= slant_right.end.x-slant_right.start.x;
+                slant_right.start.y -= slant_right.end.y-slant_right.start.y;
+            }
+            /* Consider the centre of the pixel above and to the left of
+             * vert_left.start. If that's inside our newly extended trap
+             * then we can't use the extended one without changing the
+             * rendered result. */
+            cy = fixed_pixround(vert_left.start.y)+fixed_half;
+            cx = fixed_pixround(vert_left.start.x)-fixed_half;
+            dy = slant_left.end.y-slant_left.start.y;
+            x = vert_left.start.x -
+                (fixed)((((int64_t)(slant_left.start.x-slant_left.end.x)) *
+                         ((int64_t)(cy-vert_left.start.y)) + dy - 1) /
+                        ((int64_t)dy));
+            if ((cy >= Y1a) || (x > cx))
+            {
+                /* We are safe to extend the trap upwards */
+                Y1b = Y1a;
+            }
+            /* Consider the centre of the pixel below and to the left of
+             * vert_left.end. If that's inside our newly extended trap
+             * then we can't use the extended one without changing the
+             * rendered result. */
+            cy = fixed_pixround(vert_right.end.y)-fixed_half;
+            cx = fixed_pixround(vert_right.end.x)-fixed_half;
+            dy = slant_right.end.y-slant_right.start.y;
+            x = vert_right.end.x +
+                (fixed)((((int64_t)(slant_right.start.x-slant_right.end.x)) *
+                         ((int64_t)(vert_right.end.y-cy)) + dy - 1) /
+                        ((int64_t)dy));
+            if ((cy < Yb) || (x < cx))
+            {
+                /* We are safe to extend the trap downwards */
+                Ya = Yb;
+            }
+        }
+    }
 
     if (Ya >= Y1b) {
-	/*
-	 * The upper and lower adjustment bands overlap.
-	 * Since the entire entity is less than 2 pixels high
-	 * in this case, we could handle it very efficiently
-	 * with no more than 2 rectangle fills, but for right now
-	 * we don't attempt to do this.
-	 */
-	int iYb = fixed2int_var_pixround(Yb);
-	int iYa = fixed2int_var_pixround(Ya);
-	int iY1b = fixed2int_var_pixround(Y1b);
-	int iY1a = fixed2int_var_pixround(Y1a);
+        /*
+         * The upper and lower adjustment bands overlap.
+         * Since the entire entity is less than 2 pixels high
+         * in this case, we could handle it very efficiently
+         * with no more than 2 rectangle fills, but for right now
+         * we don't attempt to do this.
+         */
+        int iYb = fixed2int_var_pixround(Yb);
+        int iYa = fixed2int_var_pixround(Ya);
+        int iY1b = fixed2int_var_pixround(Y1b);
+        int iY1a = fixed2int_var_pixround(Y1a);
 
-	INCR(slant_shallow);
-	if (iY1b > iYb) {
-	    code = fo->fill_trap(fo->dev, plbot, prbot,
-				 Yb, Y1b, false, fo->pdevc, fo->lop);
-	    if (code < 0)
-		return code;
-	}
-	if (iYa > iY1b) {
-	    int ix = fixed2int_var_pixround(vert_left.start.x);
-	    int iw = fixed2int_var_pixround(vert_right.start.x) - ix;
+        INCR(slant_shallow);
+        if (iY1b > iYb) {
+            code = fo->fill_trap(fo->dev, plbot, prbot,
+                                 Yb, Y1b, false, fo->pdevc, fo->lop);
+            if (code < 0)
+                return code;
+        }
+        if (iYa > iY1b) {
+            int ix = fixed2int_var_pixround(vert_left.start.x);
+            int iw = fixed2int_var_pixround(vert_right.start.x) - ix;
 
-	    code = gx_fill_rectangle_device_rop(ix, iY1b, iw, iYa - iY1b, 
-			fo->pdevc, fo->dev, fo->lop);
-	    if (code < 0)
-		return code;
-	}
-	if (iY1a > iYa)
-	    code = fo->fill_trap(fo->dev, pltop, prtop,
-				 Ya, Y1a, false, fo->pdevc, fo->lop);
-	else
-	    code = 0;
+            code = gx_fill_rectangle_device_rop(ix, iY1b, iw, iYa - iY1b,
+                        fo->pdevc, fo->dev, fo->lop);
+            if (code < 0)
+                return code;
+        }
+        if (iY1a > iYa)
+            code = fo->fill_trap(fo->dev, pltop, prtop,
+                                 Ya, Y1a, false, fo->pdevc, fo->lop);
+        else
+            code = 0;
     } else {
-	/*
-	 * Clip the trapezoid if possible.  This can save a lot
-	 * of work when filling paths that cross band boundaries.
-	 */
-	fixed Yac;
+        /*
+         * Clip the trapezoid if possible.  This can save a lot
+         * of work when filling paths that cross band boundaries.
+         */
+        fixed Yac;
 
-	if (fo->pbox->p.y < Ya) {
-	    code = fo->fill_trap(fo->dev, plbot, prbot,
-				 Yb, Ya, false, fo->pdevc, fo->lop);
-	    if (code < 0)
-		return code;
-	    Yac = Ya;
-	} else
-	    Yac = fo->pbox->p.y;
-	if (fo->pbox->q.y > Y1b) {
-	    code = fo->fill_trap(fo->dev, &slant_left, &slant_right,
-				 Yac, Y1b, false, fo->pdevc, fo->lop);
-	    if (code < 0)
-		return code;
-	    code = fo->fill_trap(fo->dev, pltop, prtop,
-				 Y1b, Y1a, false, fo->pdevc, fo->lop);
-	} else
-	    code = fo->fill_trap(fo->dev, &slant_left, &slant_right,
-				 Yac, fo->pbox->q.y, false, fo->pdevc, fo->lop);
+        if (fo->pbox->p.y < Ya) {
+            code = fo->fill_trap(fo->dev, plbot, prbot,
+                                 Yb, Ya, false, fo->pdevc, fo->lop);
+            if (code < 0)
+                return code;
+            Yac = Ya;
+        } else
+            Yac = fo->pbox->p.y;
+        if (fo->pbox->q.y > Y1b) {
+            code = fo->fill_trap(fo->dev, &slant_left, &slant_right,
+                                 Yac, Y1b, false, fo->pdevc, fo->lop);
+            if (code < 0)
+                return code;
+            code = fo->fill_trap(fo->dev, pltop, prtop,
+                                 Y1b, Y1a, false, fo->pdevc, fo->lop);
+        } else
+            code = fo->fill_trap(fo->dev, &slant_left, &slant_right,
+                                 Yac, fo->pbox->q.y, false, fo->pdevc, fo->lop);
     }
     return code;
 }
@@ -1480,17 +1600,17 @@ resort_x_line(active_line * alp)
 
     prev->next = next;
     if (next)
-	next->prev = prev;
+        next->prev = prev;
     while (x_order(prev, alp) > 0) {
-	if_debug2('F', "[F]swap 0x%lx,0x%lx\n",
-		  (ulong) alp, (ulong) prev);
-	next = prev, prev = prev->prev;
+        if_debug2('F', "[F]swap 0x%lx,0x%lx\n",
+                  (ulong) alp, (ulong) prev);
+        next = prev, prev = prev->prev;
     }
     alp->next = next;
     alp->prev = prev;
     /* next might be null, if alp was in the correct spot already. */
     if (next)
-	next->prev = alp;
+        next->prev = alp;
     prev->next = alp;
 }
 
@@ -1503,63 +1623,63 @@ move_al_by_y(line_list *ll, fixed y1)
     int code;
 
     for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
-	bool notend = false;
-	alp->x_current = alp->x_next;
+        bool notend = false;
+        alp->x_current = alp->x_next;
 
-	nlp = alp->next;
-	if (alp->end.y == y1 && alp->more_flattened) {
-	    code = step_al(alp, true);
-	    if (code < 0)
-		return code;
-	    alp->x_current = alp->x_next = alp->start.x;
-	    notend = (alp->end.y >= alp->start.y);
-	}
-	if (alp->end.y > y1 || notend) {
-	    if (alp->x_next <= x)
-		resort_x_line(alp);
-	    else
-		x = alp->x_next;
-	} else {
-	    code = end_x_line(alp, ll, true);
-	    if (code < 0)
-		return code;
-	    if (!code) {
-		if (alp->x_next <= x)
-		    resort_x_line(alp);
-		else
-		    x = alp->x_next;
-	    }
-	}
+        nlp = alp->next;
+        if (alp->end.y == y1 && alp->more_flattened) {
+            code = step_al(alp, true);
+            if (code < 0)
+                return code;
+            alp->x_current = alp->x_next = alp->start.x;
+            notend = (alp->end.y >= alp->start.y);
+        }
+        if (alp->end.y > y1 || notend) {
+            if (alp->x_next <= x)
+                resort_x_line(alp);
+            else
+                x = alp->x_next;
+        } else {
+            code = end_x_line(alp, ll, true);
+            if (code < 0)
+                return code;
+            if (!code) {
+                if (alp->x_next <= x)
+                    resort_x_line(alp);
+                else
+                    x = alp->x_next;
+            }
+        }
     }
     if (ll->x_list != 0 && ll->fo->pseudo_rasterization) {
-	/* Ensure that contacting vertical stems are properly ordered.
-	   We don't want to unite contacting stems into
-	   a single margin, because it can cause a dropout :
-	   narrow stems are widened against a dropout, but 
-	   an united wide one may be left unwidened.
-	 */
-	for (alp = ll->x_list; alp->next != 0; ) {
-	    if (alp->start.x == alp->end.x &&
-		alp->start.x == alp->next->start.x &&
-		alp->next->start.x == alp->next->end.x &&
-		alp->direction > alp->next->direction) {
-		/* Exchange. */
-		active_line *prev = alp->prev;
-		active_line *next = alp->next;
-		active_line *next2 = next->next;
-		if (prev)
-		    prev->next = next;
-		else
-		    ll->x_list = next;
-		next->prev = prev;
-		alp->prev = next;
-		alp->next = next2;
-		next->next = alp;
-		if (next2)
-		    next2->prev = alp;
-	    } else
-		alp = alp->next;
-	}
+        /* Ensure that contacting vertical stems are properly ordered.
+           We don't want to unite contacting stems into
+           a single margin, because it can cause a dropout :
+           narrow stems are widened against a dropout, but
+           an united wide one may be left unwidened.
+         */
+        for (alp = ll->x_list; alp->next != 0; ) {
+            if (alp->start.x == alp->end.x &&
+                alp->start.x == alp->next->start.x &&
+                alp->next->start.x == alp->next->end.x &&
+                alp->direction > alp->next->direction) {
+                /* Exchange. */
+                active_line *prev = alp->prev;
+                active_line *next = alp->next;
+                active_line *next2 = next->next;
+                if (prev)
+                    prev->next = next;
+                else
+                    ll->x_list = next;
+                next->prev = prev;
+                alp->prev = next;
+                alp->next = next2;
+                next->next = alp;
+                if (next2)
+                    next2->prev = alp;
+            } else
+                alp = alp->next;
+        }
     }
     return 0;
 }
@@ -1572,15 +1692,15 @@ process_h_segments(line_list *ll, fixed y)
     int code, inserted = 0;
 
     for (alp = ll->x_list; alp != 0; alp = nlp) {
-	nlp = alp->next;
-	if (alp->start.y == y && alp->end.y == y) {
-	    if (ll->fo->pseudo_rasterization) {
-		code = add_y_line_aux(NULL, NULL, &alp->start, &alp->end, DIR_HORIZONTAL, ll);
-		if (code < 0)
-		    return code;
-	    }
-	    inserted = 1;
-	}
+        nlp = alp->next;
+        if (alp->start.y == y && alp->end.y == y) {
+            if (ll->fo->pseudo_rasterization) {
+                code = add_y_line_aux(NULL, NULL, &alp->start, &alp->end, DIR_HORIZONTAL, ll);
+                if (code < 0)
+                    return code;
+            }
+            inserted = 1;
+        }
     }
     return inserted;
     /* After this should call move_al_by_y and step to the next band. */
@@ -1594,10 +1714,10 @@ loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_e
     fixed ytop = min(y1, fo->pbox->q.y);
 
     if (ybot >= ytop)
-	return 0;
+        return 0;
     vd_quad(le->start.x, ybot, re->start.x, ybot, re->end.x, ytop, le->end.x, ytop, 1, VD_TRAP_COLOR);
     return (*fo->fill_trap)
-	(fo->dev, le, re, ybot, ytop, false, fo->pdevc, fo->lop);
+        (fo->dev, le, re, ybot, ytop, false, fo->pdevc, fo->lop);
 }
 
 /* Define variants of the algorithm for filling a slanted trapezoid. */
@@ -1625,66 +1745,66 @@ intersect(active_line *endp, active_line *alp, fixed y, fixed y1, fixed *p_y_new
     fixed y_new, dy;
     fixed dx_old = alp->x_current - endp->x_current;
     fixed dx_den = dx_old + endp->x_next - alp->x_next;
-	    
+
     if (dx_den <= dx_old)
-	return false; /* Intersection isn't possible. */
+        return false; /* Intersection isn't possible. */
     dy = y1 - y;
     if_debug3('F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
-	      fixed2float(dy), fixed2float(dx_old),
-	      fixed2float(dx_den - dx_old));
+              fixed2float(dy), fixed2float(dx_old),
+              fixed2float(dx_den - dx_old));
     /* Do the computation in single precision */
     /* if the values are small enough. */
     y_new =
-	((dy | dx_old) < 1L << (size_of(fixed) * 4 - 1) ?
-	 dy * dx_old / dx_den :
-	 (INCR_EXPR(mq_cross), fixed_mult_quo(dy, dx_old, dx_den)))
-	+ y;
+        ((dy | dx_old) < 1L << (size_of(fixed) * 4 - 1) ?
+         dy * dx_old / dx_den :
+         (INCR_EXPR(mq_cross), fixed_mult_quo(dy, dx_old, dx_den)))
+        + y;
     /* The crossing value doesn't have to be */
     /* very accurate, but it does have to be */
     /* greater than y and less than y1. */
     if_debug3('F', "[F]cross y=%g, y_new=%g, y1=%g\n",
-	      fixed2float(y), fixed2float(y_new),
-	      fixed2float(y1));
+              fixed2float(y), fixed2float(y_new),
+              fixed2float(y1));
     if (y_new <= y) {
-	/*
-	 * This isn't possible.  Recompute the intersection
-	 * accurately.
-	 */
-	fixed ys, xs0, xs1, ye, xe0, xe1, dy, dx0, dx1;
+        /*
+         * This isn't possible.  Recompute the intersection
+         * accurately.
+         */
+        fixed ys, xs0, xs1, ye, xe0, xe1, dy, dx0, dx1;
 
-	INCR(cross_slow);
-	if (endp->start.y < alp->start.y)
-	    ys = alp->start.y,
-		xs0 = AL_X_AT_Y(endp, ys), xs1 = alp->start.x;
-	else
-	    ys = endp->start.y,
-		xs0 = endp->start.x, xs1 = AL_X_AT_Y(alp, ys);
-	if (endp->end.y > alp->end.y)
-	    ye = alp->end.y,
-		xe0 = AL_X_AT_Y(endp, ye), xe1 = alp->end.x;
-	else
-	    ye = endp->end.y,
-		xe0 = endp->end.x, xe1 = AL_X_AT_Y(alp, ye);
-	dy = ye - ys;
-	dx0 = xe0 - xs0;
-	dx1 = xe1 - xs1;
-	/* We need xs0 + cross * dx0 == xs1 + cross * dx1. */
-	if (dx0 == dx1) {
-	    /* The two lines are coincident.  Do nothing. */
-	    y_new = y1;
-	} else {
-	    double cross = (double)(xs0 - xs1) / (dx1 - dx0);
+        INCR(cross_slow);
+        if (endp->start.y < alp->start.y)
+            ys = alp->start.y,
+                xs0 = AL_X_AT_Y(endp, ys), xs1 = alp->start.x;
+        else
+            ys = endp->start.y,
+                xs0 = endp->start.x, xs1 = AL_X_AT_Y(alp, ys);
+        if (endp->end.y > alp->end.y)
+            ye = alp->end.y,
+                xe0 = AL_X_AT_Y(endp, ye), xe1 = alp->end.x;
+        else
+            ye = endp->end.y,
+                xe0 = endp->end.x, xe1 = AL_X_AT_Y(alp, ye);
+        dy = ye - ys;
+        dx0 = xe0 - xs0;
+        dx1 = xe1 - xs1;
+        /* We need xs0 + cross * dx0 == xs1 + cross * dx1. */
+        if (dx0 == dx1) {
+            /* The two lines are coincident.  Do nothing. */
+            y_new = y1;
+        } else {
+            double cross = (double)(xs0 - xs1) / (dx1 - dx0);
 
-	    y_new = (fixed)(ys + cross * dy);
-	    if (y_new <= y) {
-		/*
-		 * This can only happen through some kind of
-		 * numeric disaster, but we have to check.
-		 */
-		INCR(cross_low);
-		y_new = y + fixed_epsilon;
-	    }
-	}
+            y_new = (fixed)(ys + cross * dy);
+            if (y_new <= y) {
+                /*
+                 * This can only happen through some kind of
+                 * numeric disaster, but we have to check.
+                 */
+                INCR(cross_low);
+                y_new = y + fixed_epsilon;
+            }
+        }
     }
     *p_y_new = y_new;
     return true;
@@ -1694,8 +1814,8 @@ static inline void
 set_x_next(active_line *endp, active_line *alp, fixed x)
 {
     while(endp != alp) {
-	endp->x_next = x;
-	endp = endp->next;
+        endp->x_next = x;
+        endp = endp->next;
     }
 }
 
@@ -1706,7 +1826,7 @@ coord_weight(const active_line *alp)
 }
 
 
-/* Find intersections of active lines within the band. 
+/* Find intersections of active lines within the band.
    Intersect and reorder them, and correct the bund top. */
 static void
 intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
@@ -1717,140 +1837,140 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 
     /* don't bother if no pixels with no pseudo_rasterization */
     if (y == y1) {
-	/* Rather the intersection algorithm can handle this case with
-	   retrieving x_next equal to x_current, 
-	   we bypass it for safety reason.
-	 */
+        /* Rather the intersection algorithm can handle this case with
+           retrieving x_next equal to x_current,
+           we bypass it for safety reason.
+         */
     } else if (ll->fo->pseudo_rasterization || draw >= 0 || all_bands) {
-	/*
-	 * Loop invariants:
-	 *	alp = endp->next;
-	 *	for all lines lp from stopx up to alp,
-	 *	  lp->x_next = AL_X_AT_Y(lp, y1).
-	 */
-	for (alp = stopx = ll->x_list;
-	     INCR_EXPR(find_y), alp != 0;
-	     endp = alp, alp = alp->next
-	    ) {
-	    fixed nx = AL_X_AT_Y(alp, y1);
-	    fixed y_new;
+        /*
+         * Loop invariants:
+         *      alp = endp->next;
+         *      for all lines lp from stopx up to alp,
+         *        lp->x_next = AL_X_AT_Y(lp, y1).
+         */
+        for (alp = stopx = ll->x_list;
+             INCR_EXPR(find_y), alp != 0;
+             endp = alp, alp = alp->next
+            ) {
+            fixed nx = AL_X_AT_Y(alp, y1);
+            fixed y_new;
 
-	    alp->x_next = nx;
-	    /* Check for intersecting lines. */
-	    if (nx >= x)
-		x = nx;
-	    else if (alp->x_current >= endp->x_current &&
-		     intersect(endp, alp, y, y1, &y_new)) {
-		if (y_new <= y1) {
-		    stopx = endp;
-		    y1 = y_new;
-		    if (endp->diff.x == 0)
-			nx = endp->start.x;
-		    else if (alp->diff.x == 0)
-			nx = alp->start.x;
-		    else {
-			fixed nx0 = AL_X_AT_Y(endp, y1);
-			fixed nx1 = AL_X_AT_Y(alp, y1);
-			if (nx0 != nx1) {
-			    /* Different results due to arithmetic errors.
-			       Choose an imtermediate point. 
-			       We don't like to use floating numbners here,
-			       but the code with int64_t isn't much better. */
-			    int64_t w0 = coord_weight(endp);
-			    int64_t w1 = coord_weight(alp);
+            alp->x_next = nx;
+            /* Check for intersecting lines. */
+            if (nx >= x)
+                x = nx;
+            else if (alp->x_current >= endp->x_current &&
+                     intersect(endp, alp, y, y1, &y_new)) {
+                if (y_new <= y1) {
+                    stopx = endp;
+                    y1 = y_new;
+                    if (endp->diff.x == 0)
+                        nx = endp->start.x;
+                    else if (alp->diff.x == 0)
+                        nx = alp->start.x;
+                    else {
+                        fixed nx0 = AL_X_AT_Y(endp, y1);
+                        fixed nx1 = AL_X_AT_Y(alp, y1);
+                        if (nx0 != nx1) {
+                            /* Different results due to arithmetic errors.
+                               Choose an imtermediate point.
+                               We don't like to use floating numbners here,
+                               but the code with int64_t isn't much better. */
+                            int64_t w0 = coord_weight(endp);
+                            int64_t w1 = coord_weight(alp);
 
-			    nx = (fixed)((w0 * nx0 + w1 * nx1) / (w0 + w1));
-			} else
-			    nx = nx0;
-		    }
-		    endp->x_next = alp->x_next = nx;  /* Ensure same X. */
-		    draw = 0;
-		    /* Can't guarantee same x for triple intersections here. 
-		       Will take care below */
-		}
-		if (nx > x)
-		    x = nx;
-	    }
-	}
-	/* Recompute next_x for lines before the intersection. */
-	for (alp = ll->x_list; alp != stopx; alp = alp->next)
-	    alp->x_next = AL_X_AT_Y(alp, y1);
-	/* Ensure X monotonity (particularly imporoves triple intersections). */
-	if (ll->x_list != NULL) {
-	    for (;;) {
-		fixed x1;
-		double sx = 0xbaadf00d; /* 'fixed' can overflow. We operate 7-bytes integers. */
-		int k = 0xbaadf00d, n;
+                            nx = (fixed)((w0 * nx0 + w1 * nx1) / (w0 + w1));
+                        } else
+                            nx = nx0;
+                    }
+                    endp->x_next = alp->x_next = nx;  /* Ensure same X. */
+                    draw = 0;
+                    /* Can't guarantee same x for triple intersections here.
+                       Will take care below */
+                }
+                if (nx > x)
+                    x = nx;
+            }
+        }
+        /* Recompute next_x for lines before the intersection. */
+        for (alp = ll->x_list; alp != stopx; alp = alp->next)
+            alp->x_next = AL_X_AT_Y(alp, y1);
+        /* Ensure X monotonity (particularly imporoves triple intersections). */
+        if (ll->x_list != NULL) {
+            for (;;) {
+                fixed x1;
+                double sx = 0xbaadf00d; /* 'fixed' can overflow. We operate 7-bytes integers. */
+                int k = 0xbaadf00d, n;
 
-		endp = ll->x_list;
-		x1 = endp->x_next;
-		for (alp = endp->next; alp != NULL; x1 = alp->x_next, alp = alp->next)
-		    if (alp->x_next < x1)
-			break;
-		if (alp == NULL)
-		    break;
-		x1 = endp->x_next;
-		n = 0;
-		for (alp = endp->next; alp != NULL; alp = alp->next) {
-		     x = alp->x_next;
-		     if (x < x1) {
-			if (n == 0) {
-			    if (endp->diff.x == 0) {
-				k = -1;
-				sx = x1;
-			    } else {
-				k = coord_weight(endp);
-				sx = (double)x1 * k;
-			    }
-			    n = 1;
-			}
-			n++;
-			if (alp->diff.x == 0) {
-			    /* Vertical lines have a higher priority. */
-			    if (k <= -1) {
-				sx += x;
-				k--;
-			    } else {
-				k = -1;
-				sx = x;
-			    }
-			} else if (k > 0) {
-			    int w = coord_weight(alp);
+                endp = ll->x_list;
+                x1 = endp->x_next;
+                for (alp = endp->next; alp != NULL; x1 = alp->x_next, alp = alp->next)
+                    if (alp->x_next < x1)
+                        break;
+                if (alp == NULL)
+                    break;
+                x1 = endp->x_next;
+                n = 0;
+                for (alp = endp->next; alp != NULL; alp = alp->next) {
+                     x = alp->x_next;
+                     if (x < x1) {
+                        if (n == 0) {
+                            if (endp->diff.x == 0) {
+                                k = -1;
+                                sx = x1;
+                            } else {
+                                k = coord_weight(endp);
+                                sx = (double)x1 * k;
+                            }
+                            n = 1;
+                        }
+                        n++;
+                        if (alp->diff.x == 0) {
+                            /* Vertical lines have a higher priority. */
+                            if (k <= -1) {
+                                sx += x;
+                                k--;
+                            } else {
+                                k = -1;
+                                sx = x;
+                            }
+                        } else if (k > 0) {
+                            int w = coord_weight(alp);
 
-			    sx += (double)x * w;
-			    k += w;
-			}
-		     } else {
-			if (n > 1) { 
-			    k = any_abs(k);
-			    set_x_next(endp, alp, (fixed)((sx + k / 2) / k));
-			}
-			x1 = alp->x_next;
-			n = 0;
-			endp = alp;
-		     }
-		}
-		if (n > 1) {
-		    k = any_abs(k);
-    		    set_x_next(endp, alp, (fixed)((sx + k / 2) / k));
-		}
-	    }
-	}
+                            sx += (double)x * w;
+                            k += w;
+                        }
+                     } else {
+                        if (n > 1) {
+                            k = any_abs(k);
+                            set_x_next(endp, alp, (fixed)((sx + k / 2) / k));
+                        }
+                        x1 = alp->x_next;
+                        n = 0;
+                        endp = alp;
+                     }
+                }
+                if (n > 1) {
+                    k = any_abs(k);
+                    set_x_next(endp, alp, (fixed)((sx + k / 2) / k));
+                }
+            }
+        }
     } else {
-	/* Recompute next_x for lines before the intersection. */
-	for (alp = ll->x_list; alp != stopx; alp = alp->next)
-	    alp->x_next = AL_X_AT_Y(alp, y1);
+        /* Recompute next_x for lines before the intersection. */
+        for (alp = ll->x_list; alp != stopx; alp = alp->next)
+            alp->x_next = AL_X_AT_Y(alp, y1);
     }
 #ifdef DEBUG
     if (gs_debug_c('F')) {
-	dlprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
-	print_line_list(ll->x_list);
+        dlprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
+        print_line_list(ll->x_list);
     }
 #endif
     *y_top = y1;
 }
 
-static inline int sign(int a) 
+static inline int sign(int a)
 {
     return a < 0 ? -1 : a > 0 ? 1 : 0;
 }
@@ -1862,12 +1982,12 @@ static inline int sign(int a)
 /* The smart winding counter advance operator : */
 #define signed_eo(a) ((a) < 0 ? -((a) & 1) : (a) > 0 ? ((a) & 1) : 0)
 #define ADVANCE_WINDING(inside, alp, ll) \
-		{   int k = alp->contour_count; \
-		    int v = ll->windings[k]; \
-		    inside -= signed_eo(v); \
-		    v = ll->windings[k] += alp->direction; \
-		    inside += signed_eo(v); \
-		}
+                {   int k = alp->contour_count; \
+                    int v = ll->windings[k]; \
+                    inside -= signed_eo(v); \
+                    v = ll->windings[k] += alp->direction; \
+                    inside += signed_eo(v); \
+                }
 
 #define IS_SPOTAN 0
 #define PSEUDO_RASTERIZATION 1
@@ -2040,35 +2160,35 @@ spot_into_trapezoids(line_list *ll, fixed band_mask)
     const fill_options * const fo = ll->fo;
 
     if (fo->is_spotan)
-	return spot_into_trapezoids__spotan(ll, band_mask);
+        return spot_into_trapezoids__spotan(ll, band_mask);
     if (fo->pseudo_rasterization) {
-	if (ll->windings != NULL) {
-	    if (fo->fill_direct)
-		return spot_into_trapezoids__pr_fd_sw(ll, band_mask);
-	    else
-		return spot_into_trapezoids__pr_nd_sw(ll, band_mask);
-	} else {
-	    if (fo->fill_direct)
-		return spot_into_trapezoids__pr_fd(ll, band_mask);
-	    else
-		return spot_into_trapezoids__pr_nd(ll, band_mask);
-	}
+        if (ll->windings != NULL) {
+            if (fo->fill_direct)
+                return spot_into_trapezoids__pr_fd_sw(ll, band_mask);
+            else
+                return spot_into_trapezoids__pr_nd_sw(ll, band_mask);
+        } else {
+            if (fo->fill_direct)
+                return spot_into_trapezoids__pr_fd(ll, band_mask);
+            else
+                return spot_into_trapezoids__pr_nd(ll, band_mask);
+        }
     }
     if (fo->adjust_below | fo->adjust_above | fo->adjust_left | fo->adjust_right) {
-	if (fo->fill_direct)
-	    return spot_into_trapezoids__aj_fd(ll, band_mask);
-	else
-	    return spot_into_trapezoids__aj_nd(ll, band_mask);
+        if (fo->fill_direct)
+            return spot_into_trapezoids__aj_fd(ll, band_mask);
+        else
+            return spot_into_trapezoids__aj_nd(ll, band_mask);
     } else if (ll->windings != NULL) {
-	if (fo->fill_direct)
-	    return spot_into_trapezoids__nj_fd_sw(ll, band_mask);
-	else
-	    return spot_into_trapezoids__nj_nd_sw(ll, band_mask);
+        if (fo->fill_direct)
+            return spot_into_trapezoids__nj_fd_sw(ll, band_mask);
+        else
+            return spot_into_trapezoids__nj_nd_sw(ll, band_mask);
     } else {
-	if (fo->fill_direct)
-	    return spot_into_trapezoids__nj_fd(ll, band_mask);
-	else
-	    return spot_into_trapezoids__nj_nd(ll, band_mask);
+        if (fo->fill_direct)
+            return spot_into_trapezoids__nj_fd(ll, band_mask);
+        else
+            return spot_into_trapezoids__nj_nd(ll, band_mask);
     }
 }
 
@@ -2083,20 +2203,20 @@ typedef int coord_value_t;
 #define MAX_COORD_VALUE max_int
 /*
  * The invariant for coord_range_ts in a coord_range_list_t:
- *	if prev == 0:
- *		next != 0
- *		rmin == rmax == MIN_COORD_VALUE
- *	else if next == 0:
- *		prev != 0
- *		rmin == rmax == MAX_COORD_VALUE
- *	else
- *		rmin < rmax
- *	if prev != 0:
- *		prev->next == this
- *		prev->rmax < rmin
- *	if next != 0:
- *		next->prev = this
- *		next->rmin > rmax
+ *      if prev == 0:
+ *              next != 0
+ *              rmin == rmax == MIN_COORD_VALUE
+ *      else if next == 0:
+ *              prev != 0
+ *              rmin == rmax == MAX_COORD_VALUE
+ *      else
+ *              rmin < rmax
+ *      if prev != 0:
+ *              prev->next == this
+ *              prev->rmax < rmin
+ *      if next != 0:
+ *              next->prev = this
+ *              next->rmin > rmax
  * A coord_range_list_t has a boundary element at each end to avoid having
  * to test for null pointers in the insertion loop.  The boundary elements
  * are the only empty ranges.
@@ -2113,7 +2233,7 @@ gs_private_st_simple(st_coord_range, coord_range_t, "coord_range_t");
 typedef struct coord_range_list_s {
     gs_memory_t *memory;
     struct rl_ {
-	coord_range_t *first, *next, *limit;
+        coord_range_t *first, *next, *limit;
     } local;
     coord_range_t *allocated;
     coord_range_t *freed;
@@ -2127,17 +2247,17 @@ range_alloc(coord_range_list_t *pcrl)
     coord_range_t *pcr;
 
     if (pcrl->freed) {
-	pcr = pcrl->freed;
-	pcrl->freed = pcr->next;
+        pcr = pcrl->freed;
+        pcrl->freed = pcr->next;
     } else if (pcrl->local.next < pcrl->local.limit)
-	pcr = pcrl->local.next++;
+        pcr = pcrl->local.next++;
     else {
-	pcr = gs_alloc_struct(pcrl->memory, coord_range_t, &st_coord_range,
-			      "range_alloc");
-	if (pcr == 0)
-	    return 0;
-	pcr->alloc_next = pcrl->allocated;
-	pcrl->allocated = pcr;
+        pcr = gs_alloc_struct(pcrl->memory, coord_range_t, &st_coord_range,
+                              "range_alloc");
+        if (pcr == 0)
+            return 0;
+        pcr->alloc_next = pcrl->allocated;
+        pcrl->allocated = pcr;
     }
     return pcr;
 }
@@ -2146,7 +2266,7 @@ static void
 range_delete(coord_range_list_t *pcrl, coord_range_t *pcr)
 {
     if_debug3('Q', "[Qr]delete 0x%lx: [%d,%d)\n", (ulong)pcr, pcr->rmin,
-	      pcr->rmax);
+              pcr->rmax);
     pcr->prev->next = pcr->next;
     pcr->next->prev = pcr->prev;
     pcr->next = pcrl->freed;
@@ -2168,7 +2288,7 @@ range_list_clear(coord_range_list_t *pcrl)
 static void range_list_clear(coord_range_list_t *);
 static void
 range_list_init(coord_range_list_t *pcrl, coord_range_t *pcr_local,
-		int num_local, gs_memory_t *mem)
+                int num_local, gs_memory_t *mem)
 {
     pcrl->memory = mem;
     pcrl->local.first = pcrl->local.next = pcr_local;
@@ -2186,9 +2306,9 @@ static void
 range_list_reset(coord_range_list_t *pcrl)
 {
     if (pcrl->first.next != &pcrl->last) {
-	pcrl->last.prev->next = pcrl->freed;
-	pcrl->freed = pcrl->first.next;
-	range_list_clear(pcrl);
+        pcrl->last.prev->next = pcrl->freed;
+        pcrl->freed = pcrl->first.next;
+        range_list_clear(pcrl);
     }
 }
 
@@ -2210,10 +2330,10 @@ range_list_free(coord_range_list_t *pcrl)
     coord_range_t *pcr;
 
     while ((pcr = pcrl->allocated) != 0) {
-	coord_range_t *next = pcr->alloc_next;
+        coord_range_t *next = pcr->alloc_next;
 
-	gs_free_object(pcrl->memory, pcr, "range_list_free");
-	pcrl->allocated = next;
+        gs_free_object(pcrl->memory, pcr, "range_list_free");
+        pcrl->allocated = next;
     }
 }
 
@@ -2224,41 +2344,41 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
     coord_range_t *pcr = pcrl->current;
 
     if (rmin >= rmax)
-	return 0;
+        return 0;
     /*
      * Usually, ranges are added in increasing order within each scan line,
      * and overlapping ranges don't differ much.  Optimize accordingly.
      */
  top:
     if (rmax < pcr->rmin) {
-	if (rmin > pcr->prev->rmax)
-	    goto ins;
-	pcr = pcr->prev;
-	goto top;
+        if (rmin > pcr->prev->rmax)
+            goto ins;
+        pcr = pcr->prev;
+        goto top;
     }
     if (rmin > pcr->rmax) {
-	pcr = pcr->next;
-	if (rmax < pcr->rmin)
-	    goto ins;
-	goto top;
+        pcr = pcr->next;
+        if (rmax < pcr->rmin)
+            goto ins;
+        goto top;
     }
     /*
      * Now we know that (rmin,rmax) overlaps (pcr->rmin,pcr->rmax).
      * Don't delete or merge into the special min and max ranges.
      */
     while (rmin <= pcr->prev->rmax) {
-	/* Merge the range below pcr into this one. */
-	if (!pcr->prev->prev)
-	    break;		/* don't merge into the min range */
-	pcr->rmin = pcr->prev->rmin;
-	range_delete(pcrl, pcr->prev);
+        /* Merge the range below pcr into this one. */
+        if (!pcr->prev->prev)
+            break;              /* don't merge into the min range */
+        pcr->rmin = pcr->prev->rmin;
+        range_delete(pcrl, pcr->prev);
     }
     while (rmax >= pcr->next->rmin) {
-	/* Merge the range above pcr into this one. */
-	if (!pcr->next->next)
-	    break;		/* don't merge into the max range */
-	pcr->rmax = pcr->next->rmax;
-	range_delete(pcrl, pcr->next);
+        /* Merge the range above pcr into this one. */
+        if (!pcr->next->next)
+            break;              /* don't merge into the max range */
+        pcr->rmax = pcr->next->rmax;
+        range_delete(pcrl, pcr->next);
     }
     /*
      * Now we know that the union of (rmin,rmax) and (pcr->rmin,pcr->rmax)
@@ -2266,29 +2386,29 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
      * abut if the adjacent range is the special min or max range.
      */
     if (rmin < pcr->rmin) {
-	if_debug3('Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, rmin,
-		  pcr->rmax);
-	pcr->rmin = rmin;
+        if_debug3('Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, rmin,
+                  pcr->rmax);
+        pcr->rmin = rmin;
     }
     if (rmax > pcr->rmax) {
-	if_debug3('Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, pcr->rmin,
-		  rmax);
-	pcr->rmax = rmax;
+        if_debug3('Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, pcr->rmin,
+                  rmax);
+        pcr->rmax = rmax;
     }
     pcrl->current = pcr->next;
     return 0;
  ins:
     /* Insert a new range below pcr. */
     {
-	coord_range_t *prev = range_alloc(pcrl);
+        coord_range_t *prev = range_alloc(pcrl);
 
-	if (prev == 0)
-	    return_error(gs_error_VMerror);
-	if_debug3('Q', "[Qr]insert 0x%lx: [%d,%d)\n", (ulong)prev, rmin, rmax);
-	prev->rmin = rmin, prev->rmax = rmax;
-	(prev->prev = pcr->prev)->next = prev;
-	prev->next = pcr;
-	pcr->prev = prev;
+        if (prev == 0)
+            return_error(gs_error_VMerror);
+        if_debug3('Q', "[Qr]insert 0x%lx: [%d,%d)\n", (ulong)prev, rmin, rmax);
+        prev->rmin = rmin, prev->rmax = rmax;
+        (prev->prev = pcr->prev)->next = prev;
+        prev->next = pcr;
+        pcr->prev = prev;
     }
     pcrl->current = pcr;
     return 0;
@@ -2307,46 +2427,46 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
 
     range_list_rescan(pcrl);
     for (alp = ll->x_list; alp != 0 && code >= 0; alp = nlp) {
-	fixed x0 = alp->x_current, x1, xt;
-	bool forth = (alp->direction == DIR_UP || !alp->fi.curve);
-	fixed xe = (forth ? alp->fi.x3 : alp->fi.x0);
-	fixed ye = (forth ? alp->fi.y3 : alp->fi.y0);
+        fixed x0 = alp->x_current, x1, xt;
+        bool forth = (alp->direction == DIR_UP || !alp->fi.curve);
+        fixed xe = (forth ? alp->fi.x3 : alp->fi.x0);
+        fixed ye = (forth ? alp->fi.y3 : alp->fi.y0);
 
-	nlp = alp->next;
-	if (alp->start.y < y_min)
-	    continue;
-	if (alp->monotonic_x && alp->monotonic_y && ye <= y_top) {
-    	    vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 0, RGB(255, 0, 0));
-	    x1 = xe;
-	    if (x0 > x1)
-		xt = x0, x0 = x1, x1 = xt;
-	    code = range_list_add(pcrl,
-				  fixed2int_pixround(x0 - ll->fo->adjust_left),
-				  fixed2int_rounded(x1 + ll->fo->adjust_right));
-	    alp->more_flattened = false; /* Skip all the segments left. */
-	} else {
-	    x1 = x0;
-	    for (;;) {
-		if (alp->end.y <= y_top)
-		    xt = alp->end.x;
-		else
-		    xt = AL_X_AT_Y(alp, y_top);
-		x0 = min(x0, xt);
-		x1 = max(x1, xt);
-		if (!alp->more_flattened || alp->end.y > y_top)
-		    break;
-		code = step_al(alp, true);
-		if (code < 0)
-		    return code;
-		if (alp->end.y < alp->start.y) {
-		    remove_al(ll, alp); /* End of a monotonic part of a curve. */
-		    break;
-		}
-	    }
-	    code = range_list_add(pcrl,
-				  fixed2int_pixround(x0 - ll->fo->adjust_left),
-				  fixed2int_rounded(x1 + ll->fo->adjust_right));
-	}
+        nlp = alp->next;
+        if (alp->start.y < y_min)
+            continue;
+        if (alp->monotonic_x && alp->monotonic_y && ye <= y_top) {
+            vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 0, RGB(255, 0, 0));
+            x1 = xe;
+            if (x0 > x1)
+                xt = x0, x0 = x1, x1 = xt;
+            code = range_list_add(pcrl,
+                                  fixed2int_pixround(x0 - ll->fo->adjust_left),
+                                  fixed2int_rounded(x1 + ll->fo->adjust_right));
+            alp->more_flattened = false; /* Skip all the segments left. */
+        } else {
+            x1 = x0;
+            for (;;) {
+                if (alp->end.y <= y_top)
+                    xt = alp->end.x;
+                else
+                    xt = AL_X_AT_Y(alp, y_top);
+                x0 = min(x0, xt);
+                x1 = max(x1, xt);
+                if (!alp->more_flattened || alp->end.y > y_top)
+                    break;
+                code = step_al(alp, true);
+                if (code < 0)
+                    return code;
+                if (alp->end.y < alp->start.y) {
+                    remove_al(ll, alp); /* End of a monotonic part of a curve. */
+                    break;
+                }
+            }
+            code = range_list_add(pcrl,
+                                  fixed2int_pixround(x0 - ll->fo->adjust_left),
+                                  fixed2int_rounded(x1 + ll->fo->adjust_right));
+        }
 
     }
     return code;
@@ -2372,8 +2492,7 @@ static int
 spot_into_scan_lines(line_list *ll, fixed band_mask)
 {
     if (ll->fo->fill_direct)
-	return spot_into_scan_lines_fd(ll, band_mask);
+        return spot_into_scan_lines_fd(ll, band_mask);
     else
-	return spot_into_scan_lines_nd(ll, band_mask);
+        return spot_into_scan_lines_nd(ll, band_mask);
 }
-
