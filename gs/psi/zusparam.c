@@ -459,11 +459,15 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
    operator to NULL but this introduces issues */
 
 static void
-current_default_proof_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+current_proof_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "NULL";
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
+    static const char *const rfs = "";
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    pval->data = (const byte *)((pis->icc_manager->proof_profile == NULL) ?
+        		rfs :
+			pis->icc_manager->proof_profile->name);
+    pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
@@ -477,7 +481,7 @@ set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     gs_memory_t *mem = pis->memory; 
 
     /* Check if it was "NULL" */
-    if ( !gs_param_string_eq(pval,"NULL") ) {
+    if ( pval->size != 0 ) {
         pname = (char *)gs_alloc_bytes(mem, namelen,
 		   		     "set_proof_profile_icc");
         memcpy(pname,pval->data,namelen-1);
@@ -495,11 +499,16 @@ set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 /* No default for the deviceN profile. */
 
 static void
-current_default_devicen_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+current_devicen_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "NULL";
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
+    static const char *const rfs = "";
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    /*FIXME: This should return the entire list !!! */
+    /*       Just return the first one for now      */
+    pval->data = (const byte *)( (pis->icc_manager->device_n == NULL) ?
+        		rfs : pis->icc_manager->device_n->head->iccprofile->name);
+    pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
@@ -513,7 +522,7 @@ set_devicen_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     gs_memory_t *mem = pis->memory; 
 
     /* Check if it was "NULL" */
-    if (!gs_param_string_eq(pval,"NULL")) {
+    if (pval->size != 0) {
         /* The DeviceN name can have multiple files 
            in it.  This way we can define all the 
            DeviceN color spaces with ICC profiles.
@@ -554,8 +563,11 @@ static void
 current_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_GRAY_ICC;
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    pval->data = (const byte *)( (pis->icc_manager->default_gray == NULL) ?
+        		rfs : pis->icc_manager->default_gray->name);
+    pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
@@ -582,11 +594,14 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 }
 
 static void
-current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+current_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = DEFAULT_RGB_ICC;
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
+    static const char *const rfs = "%rom%iccprofiles/";   /* as good as any other */
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    pval->data = (const byte *)( (pis->icc_manager->profiledir == NULL) ?
+		  rfs : pis->icc_manager->profiledir);
+    pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
@@ -596,10 +611,10 @@ set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
     char *pname;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory; 
+    gs_memory_t *mem = pis->icc_manager->memory; 
 
     /* Check if it was "NULL" */
-    if (!gs_param_string_eq(pval,"NULL") ) {
+    if (pval->size != 0 ) {
         pname = (char *)gs_alloc_bytes(mem, namelen,
 		   		     "set_icc_directory");
         if (pname == NULL)
@@ -612,6 +627,18 @@ set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
         return(0);
     }
     return(0);
+}
+
+static void
+current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = DEFAULT_RGB_ICC;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    pval->data = (const byte *)( (pis->icc_manager->default_rgb == NULL) ?
+        		rfs : pis->icc_manager->default_rgb->name);
+    pval->size = strlen((const char *)pval->data);
+    pval->persistent = true;
 }
 
 static int
@@ -636,25 +663,17 @@ set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     return(code);
 }
 
-
 static void
-current_default_link_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+current_link_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "NULL";
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
+    static const char *const rfs = "";
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    pval->data = (const byte *)( (pis->icc_manager->output_link == NULL) ?
+        		rfs : pis->icc_manager->output_link->name);
+    pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
-
-static void
-current_default_dir_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
-{
-    static const char *const rfs = "NULL";
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
-    pval->persistent = true;
-}
-
 
 static int
 set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
@@ -666,7 +685,7 @@ set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     gs_memory_t *mem = pis->memory; 
 
     /* Check if it was "NULL" */
-    if (!gs_param_string_eq(pval,"NULL")) {
+    if (pval->size != 0) {
         pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		         "set_link_profile_icc");
         memcpy(pname,pval->data,namelen-1);
@@ -683,11 +702,14 @@ set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 }
 
 static void
-current_default_named_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+current_named_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "NULL";
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
+    static const char *const rfs = "";
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    pval->data = (const byte *)( (pis->icc_manager->device_named == NULL) ?
+        		rfs : pis->icc_manager->device_named->name);
+    pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
@@ -701,7 +723,7 @@ set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     gs_memory_t *mem = pis->memory; 
 
     /* Check if it was "NULL" */
-    if (!gs_param_string_eq(pval,"NULL")) {
+    if (pval->size != 0) {
         pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		         "set_named_profile_icc");
         memcpy(pname,pval->data,namelen-1);
@@ -721,8 +743,11 @@ static void
 current_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_CMYK_ICC;
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    pval->data = (const byte *)( (pis->icc_manager->default_cmyk == NULL) ?
+        		rfs : pis->icc_manager->default_cmyk->name);
+    pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
@@ -749,16 +774,19 @@ set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 }
 
 static void
-current_default_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+current_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     static const char *const rfs = LAB_ICC;
-    pval->data = (const byte *)rfs;
-    pval->size = strlen(rfs);
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    pval->data = (const byte *)( (pis->icc_manager->lab_profile == NULL) ?
+        		rfs : pis->icc_manager->lab_profile->name);
+    pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
 static int
-set_default_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+set_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     int code;
     char* pname;
@@ -767,13 +795,13 @@ set_default_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     gs_memory_t *mem = pis->memory; 
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
-	   		     "set_default_lab_icc");
+	   		     "set_lab_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pis->icc_manager, 
         (const char*) pname, namelen, LAB_TYPE);
     gs_free_object(mem, pname,
-                "set_default_lab_icc");
+                "set_lab_icc");
     if (code < 0)
         return gs_rethrow(code, "cannot find default lab icc profile");
     return(code);
@@ -815,12 +843,12 @@ static const string_param_def_t user_string_params[] =
     {"DefaultGrayProfile", current_default_gray_icc, set_default_gray_icc},
     {"DefaultRGBProfile", current_default_rgb_icc, set_default_rgb_icc},
     {"DefaultCMYKProfile", current_default_cmyk_icc, set_default_cmyk_icc},
-    {"ProofProfile", current_default_proof_icc, set_proof_profile_icc},
-    {"NamedProfile", current_default_named_icc, set_named_profile_icc},
-    {"DeviceLinkProfile", current_default_link_icc, set_link_profile_icc},
-    {"ICCProfilesDir", current_default_dir_icc, set_icc_directory}, 
-    {"LabProfile", current_default_lab_icc, set_default_lab_icc},
-    {"DeviceNProfile", current_default_devicen_icc, set_devicen_profile_icc} 
+    {"ProofProfile", current_proof_icc, set_proof_profile_icc},
+    {"NamedProfile", current_named_icc, set_named_profile_icc},
+    {"DeviceLinkProfile", current_link_icc, set_link_profile_icc},
+    {"ICCProfilesDir", current_icc_directory, set_icc_directory}, 
+    {"LabProfile", current_lab_icc, set_lab_icc},
+    {"DeviceNProfile", current_devicen_icc, set_devicen_profile_icc} 
 
 };
 
