@@ -4,7 +4,7 @@
 
 if %1/==/ goto usage
 if %2/==/ goto usage
-call gssetgs.bat
+call %~dp0gssetgs.bat
 
 rem Watcom C deletes = signs, so use # instead.
 %GSC% -q -dNODISPLAY -P- -dSAFER -dDELAYSAFER -sPDFname#%1 -sDSCname#%2 -sOutputFile#%2 pdf2dsc.ps

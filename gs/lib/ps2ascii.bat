@@ -1,7 +1,7 @@
 @echo off
 @rem $Id$
 
-call gssetgs.bat
+call %~dp0gssetgs.bat
 if '%1'=='' goto a0
 if '%2'=='' goto a1
 %GSC% -q -dNODISPLAY -P- -dSAFER -dDELAYBIND -dWRITESYSTEMDICT -dSIMPLE ps2ascii.ps %1 -c quit >%2

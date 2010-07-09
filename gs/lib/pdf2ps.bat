@@ -4,18 +4,18 @@
 
 if %1/==/ goto usage
 if %2/==/ goto usage
-call gssetgs.bat
-echo -dNOPAUSE -dBATCH -P- -dSAFER -sDEVICE#pswrite >_.at
+call %~dp0gssetgs.bat
+echo -dNOPAUSE -dBATCH -P- -dSAFER -sDEVICE#pswrite >%TEMP%_.at
 :cp
 if %3/==/ goto doit
-echo %1 >>_.at
+echo %1 >>%TEMP%_.at
 shift
 goto cp
 
 :doit
 rem Watcom C deletes = signs, so use # instead.
-%GSC% -q -sOutputFile#%2 @_.at %1
-if exist _.at erase _.at
+%GSC% -q -sOutputFile#%2 @%TEMP%_.at %1
+if exist %TEMP%_.at erase %TEMP%_.at
 goto end
 
 :usage

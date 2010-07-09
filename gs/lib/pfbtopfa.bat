@@ -5,7 +5,7 @@
 if %1/==/ goto usage
 if %2/==/ goto usage
 if not %3/==/ goto usage
-call gssetgs.bat
+call %~dp0gssetgs.bat
 
 %GSC% -P- -dSAFER -q -dNODISPLAY -- pfbtopfa.ps %1 %2
 goto end
