@@ -78,7 +78,7 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_gsave(ctx->pgs);
         gs_translate(ctx->pgs, c->viewbox.q.x * 2, 0.0);
         gs_scale(ctx->pgs, -1.0, 1.0);
-        xps_paint_tiling_brush_clipped(c);
+        code = xps_paint_tiling_brush_clipped(c);
         if (code)
             goto cleanup;
         gs_grestore(ctx->pgs);
@@ -89,7 +89,7 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_gsave(ctx->pgs);
         gs_translate(ctx->pgs, 0.0, c->viewbox.q.y * 2);
         gs_scale(ctx->pgs, 1.0, -1.0);
-        xps_paint_tiling_brush_clipped(c);
+        code = xps_paint_tiling_brush_clipped(c);
         if (code)
             goto cleanup;
         gs_grestore(ctx->pgs);
@@ -100,7 +100,7 @@ xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
         gs_gsave(ctx->pgs);
         gs_translate(ctx->pgs, c->viewbox.q.x * 2, c->viewbox.q.y * 2);
         gs_scale(ctx->pgs, -1.0, -1.0);
-        xps_paint_tiling_brush_clipped(c);
+        code = xps_paint_tiling_brush_clipped(c);
         if (code)
             goto cleanup;
         gs_grestore(ctx->pgs);
