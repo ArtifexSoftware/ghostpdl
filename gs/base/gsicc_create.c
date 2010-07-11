@@ -582,7 +582,9 @@ double2XYZtype(float number_in)
 
     if (number_in < 0) {
         number_in = 0;
+#ifdef DEBUG
         gs_warn("Negative CIEXYZ in created ICC Profile");
+#endif
     }
 
     s = (short) number_in;

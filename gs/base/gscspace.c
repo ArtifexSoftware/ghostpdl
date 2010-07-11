@@ -484,9 +484,6 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
 {
     gx_device *             dev = pgs->device;
     gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
-    gx_color_index          drawn_comps = 0;
-    gs_overprint_params_t   params;
-    gx_device_color        *pdc;
 
     /* check if we require special handling */
     if ( !pgs->overprint                      ||
@@ -494,6 +491,17 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
          pcinfo == 0                          ||
          pcinfo->opmode == GX_CINFO_OPMODE_NOT  )
         return gx_spot_colors_set_overprint(pcs, pgs);
+    /* Share code with CMYK ICC case */
+    return gx_set_overprint_cmyk(pcs, pgs);
+}
+
+int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
+{
+    gx_device *             dev = pgs->device;
+    gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
+    gx_color_index          drawn_comps = 0;
+    gs_overprint_params_t   params;
+    gx_device_color        *pdc;
 
     /* check if color model behavior must be determined */
     if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)
@@ -516,13 +524,11 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
             return code;
         drawn_comps &= nz_comps;
     }
-
     params.retain_any_comps = true;
     params.retain_spot_comps = false;
     params.drawn_comps = drawn_comps;
     return gs_state_update_overprint(pgs, &params);
 }
-
 
 /* A stub for a color mapping linearity check, when it is inapplicable. */
 int

@@ -63,6 +63,7 @@ static cs_proc_remap_concrete_color(gx_remap_concrete_ICC);
 static cs_proc_final(gx_final_ICC);
 static cs_proc_serialize(gx_serialize_ICC);
 static cs_proc_is_linear(gx_cspace_is_linear_ICC);
+static cs_proc_set_overprint(gx_set_overprint_ICC);
 
 const gs_color_space_type gs_color_space_type_ICC = {
     gs_color_space_index_ICC,       /* index */
@@ -77,7 +78,7 @@ const gs_color_space_type gs_color_space_type_ICC = {
     gx_remap_concrete_ICC,          /* remap_concrete_color */
     gx_remap_ICC,                   /* remap_color */
     gx_install_ICC,                 /* install_cpsace */
-    gx_spot_colors_set_overprint,   /* set_overprint */
+    gx_set_overprint_ICC,           /* set_overprint */
     gx_final_ICC,                   /* final */
     gx_no_adjust_color_count,       /* adjust_color_count */
     gx_serialize_ICC,               /* serialize */
@@ -489,3 +490,22 @@ gx_serialize_ICC(const gs_color_space * pcs, stream * s)
     code = sputs(s, (byte *)profile__serial, sizeof(gsicc_serialized_profile_t), &n);
     return(code);
 }
+
+/* Overprint.  Here we may have either spot colors or CMYK colors. */
+static int
+gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
+{
+    gx_device *             dev = pgs->device;
+    gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
+
+    /* check if we require special handling */
+    if ( !pgs->overprint                      ||
+         pgs->overprint_mode != 1             ||
+         pcinfo == 0                          ||
+         pcs->cmm_icc_profile_data->data_cs != gsCMYK ||
+         pcinfo->opmode == GX_CINFO_OPMODE_NOT  )
+        return gx_spot_colors_set_overprint(pcs, pgs);
+
+    return gx_set_overprint_cmyk(pcs, pgs);
+}
+

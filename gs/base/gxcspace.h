@@ -262,4 +262,7 @@ gs_cspace_alloc(gs_memory_t *mem, const gs_color_space_type *pcstype);
 /* if so what are its process color components. */
 gx_color_index check_cmyk_color_model_comps(gx_device * dev);
 
+/* Shared code with ICC overprint */
+int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs);
+
 #endif /* gxcspace_INCLUDED */
