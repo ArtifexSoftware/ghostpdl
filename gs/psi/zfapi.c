@@ -1311,6 +1311,7 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
     if (code > 0) {
 	/* Refine FontBBox : */
 	ref *v, mat[4], arr;
+        int attrs;
 
 	pbfont->FontBBox.p.x = (double)BBox[0] * size1 / size;
 	pbfont->FontBBox.p.y = (double)BBox[1] * size1 / size;
@@ -1345,6 +1346,9 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
 		ref_assign_old(v, v->value.refs + 2, &mat[2], "FAPI_refine_font_BBox");
 		ref_assign_old(v, v->value.refs + 3, &mat[3], "FAPI_refine_font_BBox");
 	    }
+            attrs = v->tas.type_attrs;
+            r_clear_attrs(v, a_all);
+            r_set_attrs(v, attrs | a_execute);
 	}
     }
 
