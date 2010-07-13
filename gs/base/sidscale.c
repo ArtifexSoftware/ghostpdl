@@ -146,6 +146,7 @@ idownscale_y(void /*PixelOut */ *dst, const void /* PixelIn */ *tmp,
 {
     int kn = ss->params.WidthOut * ss->params.Colors;
     int kc;
+    float scale = (float) ss->params.MaxValueOut/255.0;
 
     if_debug0('W', "[W]idownscale_y: ");
 
@@ -171,7 +172,7 @@ idownscale_y(void /*PixelOut */ *dst, const void /* PixelIn */ *tmp,
 
 	    for ( kc = 0; kc < kn; ++kc, pp++ ) {
 		if_debug1('W', " %d", *pp);
-		((bits16 *)dst)[kc] = byte2frac(*pp);
+		((bits16 *)dst)[kc] = (*pp)*scale;
 	    }
 	} else {	/* sizeofPixelIn == 2 */
 	    const bits16 *pp = (bits16 *)tmp;
