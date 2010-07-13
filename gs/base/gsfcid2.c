@@ -257,7 +257,7 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
     ulong origin = pfont->data.cmap;
     gs_cmap_tt_16bit_format4_t *pcmap;
     int code;
-    byte ttdata[2];
+    byte ttdata[8];
     ulong offset = origin;
     uint segCount2;
 
