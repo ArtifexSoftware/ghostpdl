@@ -3478,17 +3478,25 @@ static	void
 pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
 		 gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    int i,ncomps; 
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_device *trans_device;
 
+    /* If trans device is set, we need to use its procs. */
+    if (pis->trans_device != NULL){
+        trans_device = pis->trans_device;
+    } else {
+        trans_device = dev;
+    }
+    ncomps = trans_device->color_info.num_components;
     /* map to the color model */
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
+    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_gray(trans_device, gray, cm_comps);
     for (i = 0; i < ncomps; i++)
 	cv[i] = frac2cv(cm_comps[i]);
     /* encode as a color index */
-    color = dev_proc(dev, encode_color)(dev, cv);
+    color = dev_proc(trans_device, encode_color)(trans_device, cv);
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
 	color_set_pure(pdc, color);
@@ -3498,17 +3506,25 @@ static	void
 pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    int i,ncomps; 
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_device *trans_device;
 
+    /* If trans device is set, we need to use its procs. */
+    if (pis->trans_device != NULL){
+        trans_device = pis->trans_device;
+    } else {
+        trans_device = dev;
+    }
+    ncomps = trans_device->color_info.num_components;
     /* map to the color model */
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pis, r, g, b, cm_comps);
     for (i = 0; i < ncomps; i++)
 	cv[i] = frac2cv(cm_comps[i]);
     /* encode as a color index */
-    color = dev_proc(dev, encode_color)(dev, cv);
+    color = dev_proc(trans_device, encode_color)(trans_device, cv);
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
 	color_set_pure(pdc, color);
@@ -3518,16 +3534,24 @@ static	void
 pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    int i,ncomps; 
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_device *trans_device;
 
+    /* If trans device is set, we need to use its procs. */
+    if (pis->trans_device != NULL){
+        trans_device = pis->trans_device;
+    } else {
+        trans_device = dev;
+    }
+    ncomps = trans_device->color_info.num_components;
     /* map to the color model */
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, c, m, y, k, cm_comps);
+    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_cmyk(trans_device, c, m, y, k, cm_comps);
     for (i = 0; i < ncomps; i++)
 	cv[i] = frac2cv(cm_comps[i]);
-    color = dev_proc(dev, encode_color)(dev, cv);
+    color = dev_proc(trans_device, encode_color)(trans_device, cv);
     if (color != gx_no_color_index) 
 	color_set_pure(pdc, color);
 }
@@ -5782,25 +5806,24 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
     if (code < 0)
 	return code;
     /* Pass image to the target */
-    /* Do a quick change to the imager state
-       so that if we can return with -1 in
-       case the clist writer cannot handle
-       this image itself.  In such a case,
-       we want to make sure we dont use the
-       target device.  I don't necc. like
-       doing it this way.  Probably need to
-       go back and do something a bit
+    /* Do a quick change to the imager state so that if we can return with -1 in
+       case the clist writer cannot handle this image itself.  In such a case,
+       we want to make sure we dont use the target device.  I don't necc. like
+       doing it this way.  Probably need to go back and do something a bit
        more elegant. */
     pis_noconst->has_transparency = true;
+    pis_noconst->trans_device = dev;
     code = gx_forward_begin_typed_image(dev, pis, pmat,
 			    pic, prect, pdcolor, pcpath, mem, pinfo);  
     if (code < 0){
         code = gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
 					pdcolor, pcpath, mem, pinfo);
         pis_noconst->has_transparency = false;
+        pis_noconst->trans_device = NULL;
         return code;
     } else {
         pis_noconst->has_transparency = false;
+        pis_noconst->trans_device = NULL;
         return code;
     }
 }
@@ -6285,3 +6308,4 @@ pdf14_free_smask_color(pdf14_device * pdev)
         pdev->smaskcolor = NULL;
     }
 }
+
