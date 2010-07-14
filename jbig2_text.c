@@ -711,7 +711,6 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
 	}
 
 	as = jbig2_arith_new(ctx, ws);
-	ws = 0;
 
         params.IADT = jbig2_arith_int_ctx_new(ctx);
         params.IAFS = jbig2_arith_int_ctx_new(ctx);
@@ -730,7 +729,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     code = jbig2_decode_text_region(ctx, segment, &params,
                 (const Jbig2SymbolDict * const *)dicts, n_dicts, image,
                 segment_data + offset, segment->data_length - offset,
-		GR_stats, as, ws);
+		GR_stats, as, as ? NULL : ws);
 
     if (!params.SBHUFF && params.SBREFINE) {
 	jbig2_free(ctx->allocator, GR_stats);
@@ -745,6 +744,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
       jbig2_release_huffman_table(ctx, params.SBHUFFRDW);
       jbig2_release_huffman_table(ctx, params.SBHUFFRDH);
       jbig2_release_huffman_table(ctx, params.SBHUFFRSIZE);
+      jbig2_word_stream_buf_free(ctx, ws);
     }
     else {
 	jbig2_arith_int_ctx_free(ctx, params.IADT);
