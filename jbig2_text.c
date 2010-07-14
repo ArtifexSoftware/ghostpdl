@@ -119,7 +119,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	}
 
 	/* decode the symbol id codelengths using the runlength table */
-	symcodelengths = jbig2_alloc(ctx->allocator, SBNUMSYMS*sizeof(Jbig2HuffmanLine));
+	symcodelengths = jbig2_new(ctx, Jbig2HuffmanLine, SBNUMSYMS);
 	if (symcodelengths == NULL) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "memory allocation failure reading symbol ID huffman table!");
@@ -437,9 +437,9 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     params.SBREFINE = flags & 0x0002;
     params.LOGSBSTRIPS = (flags & 0x000c) >> 2;
     params.SBSTRIPS = 1 << params.LOGSBSTRIPS;
-    params.REFCORNER = (flags & 0x0030) >> 4;
+    params.REFCORNER = (Jbig2RefCorner)((flags & 0x0030) >> 4);
     params.TRANSPOSED = flags & 0x0040;
-    params.SBCOMBOP = (flags & 0x0180) >> 7;
+    params.SBCOMBOP = (Jbig2ComposeOp)((flags & 0x0180) >> 7);
     params.SBDEFPIXEL = flags & 0x0200;
     /* SBDSOFFSET is a signed 5 bit integer */
     params.SBDSOFFSET = (flags & 0x7C00) >> 10;
@@ -680,7 +680,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     /* 7.4.3.2 (3) */
     if (!params.SBHUFF && params.SBREFINE) {
 	int stats_size = params.SBRTEMPLATE ? 1 << 10 : 1 << 13;
-	GR_stats = jbig2_alloc(ctx->allocator, stats_size);
+	GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
 	memset(GR_stats, 0, stats_size);
     }
 

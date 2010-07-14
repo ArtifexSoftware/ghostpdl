@@ -61,8 +61,7 @@ jbig2_huffman_new (Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
   Jbig2HuffmanState *result;
 
-  result = (Jbig2HuffmanState *)jbig2_alloc(ctx->allocator,
-	sizeof(Jbig2HuffmanState));
+  result = jbig2_new(ctx, Jbig2HuffmanState, 1);
 
   if (result != NULL) {
       result->offset = 0;
@@ -338,7 +337,7 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
   int CURCODE;
   int CURTEMP;
 
-  LENCOUNT = jbig2_alloc(ctx->allocator, lencountsize);
+  LENCOUNT = jbig2_new(ctx, int, lencountsize);
   if (LENCOUNT == NULL) {
     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
       "couldn't allocate storage for huffman histogram");
@@ -370,9 +369,9 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 	"constructing huffman table log size %d", log_table_size);
   max_j = 1 << log_table_size;
 
-  result = (Jbig2HuffmanTable *)jbig2_alloc(ctx->allocator, sizeof(Jbig2HuffmanTable));
+  result = jbig2_new(ctx, Jbig2HuffmanTable, 1);
   result->log_table_size = log_table_size;
-  entries = (Jbig2HuffmanEntry *)jbig2_alloc(ctx->allocator, max_j * sizeof(Jbig2HuffmanEntry));
+  entries = jbig2_new(ctx, Jbig2HuffmanEntry, max_j);
   result->entries = entries;
 
   LENCOUNT[0] = 0;

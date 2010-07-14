@@ -91,11 +91,9 @@ jbig2_sd_new(Jbig2Ctx *ctx, int n_symbols)
 {
    Jbig2SymbolDict *new = NULL;
 
-   new = (Jbig2SymbolDict *)jbig2_alloc(ctx->allocator,
-   				sizeof(Jbig2SymbolDict));
+   new = jbig2_new(ctx, Jbig2SymbolDict, 1);
    if (new != NULL) {
-     new->glyphs = (Jbig2Image **)jbig2_alloc(ctx->allocator,
-     				n_symbols*sizeof(Jbig2Image*));
+     new->glyphs = jbig2_new(ctx, Jbig2Image*, n_symbols);
      new->n_symbols = n_symbols;
    } else {
      return NULL;
@@ -158,7 +156,7 @@ jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
     int n_dicts = jbig2_sd_count_referred(ctx, segment);
     int dindex = 0;
 
-    dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
+    dicts = jbig2_new(ctx, Jbig2SymbolDict*, n_dicts);
     for (index = 0; index < segment->referred_to_segment_count; index++) {
         rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
         if (rsegment && ((rsegment->flags & 63) == 0)) {
@@ -265,8 +263,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       SDHUFFRDX = jbig2_build_huffman_table(ctx,
 				&jbig2_huffman_params_O);
       if (!params->SDREFAGG) {
-	  SDNEWSYMWIDTHS = jbig2_alloc(ctx->allocator,
-		sizeof(*SDNEWSYMWIDTHS)*params->SDNUMNEWSYMS);
+	  SDNEWSYMWIDTHS = jbig2_new(ctx, uint32_t, params->SDNUMNEWSYMS);
 	  if (SDNEWSYMWIDTHS == NULL) {
 	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		"could not allocate storage for symbol widths");
@@ -401,7 +398,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			  /* First time through, we need to initialise the */
 			  /* various tables for Huffman or adaptive encoding */
 			  /* as well as the text region parameters structure */
-			  refagg_dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_refagg_dicts);
+			  refagg_dicts = jbig2_new(ctx, Jbig2SymbolDict*, n_refagg_dicts);
 		          if (refagg_dicts == NULL) {
 			      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			       "Out of memory allocating dictionary array");
@@ -420,7 +417,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			      refagg_dicts[0]->glyphs[i] = jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]);
 		          }
 
-			  tparams = jbig2_alloc(ctx->allocator, sizeof(Jbig2TextRegionParams));
+			  tparams = jbig2_new(ctx, Jbig2TextRegionParams, 1);
 			  if (tparams == NULL) {
 			      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 			      "Out of memory creating text region params");
@@ -898,11 +895,11 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   if (!params.SDHUFF) {
       int stats_size = params.SDTEMPLATE == 0 ? 65536 :
 	params.SDTEMPLATE == 1 ? 8192 : 1024;
-      GB_stats = jbig2_alloc(ctx->allocator, stats_size);
+      GB_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
       memset(GB_stats, 0, stats_size);
       if (params.SDREFAGG) {
 	stats_size = params.SDRTEMPLATE ? 1 << 10 : 1 << 13;
-	GR_stats = jbig2_alloc(ctx->allocator, stats_size);
+	GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
 	memset(GR_stats, 0, stats_size);
       }
   }
