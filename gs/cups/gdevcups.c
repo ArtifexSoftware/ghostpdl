@@ -218,6 +218,7 @@ typedef struct gx_device_cups_s
   unsigned short	EncodeLUT[gx_max_color_value + 1];/* RGB value to output color LUT */
   int			Density[CUPS_MAX_VALUE + 1];/* Density LUT */
   int			Matrix[3][3][CUPS_MAX_VALUE + 1];/* Color transform matrix LUT */
+  int                   cupsRasterVersion;
 
   /* Used by cups_put_params(): */
 } gx_device_cups;
@@ -415,7 +416,8 @@ gx_device_cups	gs_cups_device =
   { },                                  /* DecodeLUT */
   { },                                  /* EncodeLUT */
   { },                                  /* Density */
-  { }                                   /* Matrix */
+  { },                                  /* Matrix */
+  3                                     /* cupsRasterVersion */
 };
 
 /*
@@ -445,7 +447,9 @@ cups_close(gx_device *pdev)		/* I - Device info */
   if (cups->stream != NULL)
   {
     cupsRasterClose(cups->stream);
+    close(fileno(cups->file));
     cups->stream = NULL;
+    cups->file = NULL;
   }
 
 #if 0 /* Can't do this here because put_params() might close the device */
@@ -2682,7 +2686,8 @@ cups_print_pages(gx_device_printer *pdev,
   int		srcbytes;		/* Byte width of scanline */
   unsigned char	*src,			/* Scanline data */
 		*dst;			/* Bitmap data */
-
+  ppd_attr_t    *RasterVersion = NULL;  /* CUPS Raster version read from PPD
+					   file */
 
   (void)fp; /* reference unused file pointer to prevent compiler warning */
 
@@ -2752,8 +2757,21 @@ cups_print_pages(gx_device_printer *pdev,
 
   if (cups->stream == NULL)
   {
+    RasterVersion = ppdFindAttr(cups->PPD, "cupsRasterVersion", NULL); 
+    if (RasterVersion) {
+      dprintf1("DEBUG2: cupsRasterVersion = %s\n", RasterVersion->value);
+      cups->cupsRasterVersion = atoi(RasterVersion->value);
+      if ((cups->cupsRasterVersion != 2) &&
+	  (cups->cupsRasterVersion != 3)) {
+	dprintf1("ERROR: Unsupported CUPS Raster Version: %s",
+		 RasterVersion->value);
+	return_error(gs_error_unknownerror);
+      }
+    }
     if ((cups->stream = cupsRasterOpen(fileno(cups->file),
-                                       CUPS_RASTER_WRITE)) == NULL)
+                                       (cups->cupsRasterVersion == 3 ?
+					CUPS_RASTER_WRITE :
+					CUPS_RASTER_WRITE_COMPRESSED))) == NULL)
     {
       perror("ERROR: Unable to open raster stream - ");
       return_error(gs_error_ioerror);
