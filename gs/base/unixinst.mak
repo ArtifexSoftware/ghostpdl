@@ -49,11 +49,12 @@ wftopfa fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
 	done'
 
 PSRESDIR=$(PSLIBDIR)/../Resource
+ICCRESDIR=$(PSLIBDIR)/../iccprofiles
 PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-install-data: install-libdata install-resdata install-doc install-man install-examples
+install-data: install-libdata install-resdata install-iccdata install-doc install-man install-examples
 
 # There's no point in providing a complete dependency list: we include
 # one file from each subdirectory just as a sanity check.
@@ -103,6 +104,15 @@ install-resdata: $(PSRESDIR)/Decoding/Unicode
 	  for file in $(PSRESDIR)/$$dir/*; do \
 	    if test -f $$file; then $(INSTALL_DATA) $$file $$rdir ; fi \
 	  done \
+	done'
+
+# install default iccprofiles
+install-iccdata: $(ICCRESDIR)
+	-mkdir -p $(DESTDIR)$(datadir)
+	-mkdir -p $(DESTDIR)$(gsdir)
+	-mkdir -p $(DESTDIR)$(gsdatadir)/iccprofiles
+	$(SH) -c 'for file in $(ICCRESDIR)/*; do \
+	    if test -f $$file; then $(INSTALL_DATA) $$file $(DESTDIR)$(gsdatadir)/iccprofiles ; fi \
 	done'
 
 # install html documentation
