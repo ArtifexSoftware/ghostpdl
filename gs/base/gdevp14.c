@@ -1286,7 +1286,6 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     const pdf14_device * pdev = (pdf14_device *)dev;
     int code;
     gs_image1_t image;
-    gs_matrix pmat;
     gx_image_enum_common_t *info;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_int_rect rect = buf->rect;
@@ -1346,14 +1345,14 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     image.Width = width;
     image.Height = height;
     image.BitsPerComponent = 8;
-    pmat.xx = (float)width;
-    pmat.xy = 0;
-    pmat.yx = 0;
-    pmat.yy = (float)height;
-    pmat.tx = (float)rect.p.x;
-    pmat.ty = (float)rect.p.y;
+    ctm_only_writable(pis).xx = (float)width;
+    ctm_only_writable(pis).xy = 0;
+    ctm_only_writable(pis).yx = 0;
+    ctm_only_writable(pis).yy = (float)height;
+    ctm_only_writable(pis).tx = (float)rect.p.x;
+    ctm_only_writable(pis).ty = (float)rect.p.y;
     code = dev_proc(target, begin_typed_image) (target,
-						pis, &pmat,
+						pis, NULL,
 						(gs_image_common_t *)&image,
 						NULL, NULL, NULL,
 						pis->memory, &info);
