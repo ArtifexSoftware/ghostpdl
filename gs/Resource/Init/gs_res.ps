@@ -287,7 +287,8 @@ systemdict begin
     } {
       (Resource) search {
         exch concatstrings
-        exch 0 1 getinterval concatstrings exit
+        exch pop
+        .file_name_separator concatstrings exit
       } {
         pop
       } ifelse

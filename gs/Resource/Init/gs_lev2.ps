@@ -638,10 +638,27 @@ currentuserparams /WaitTimeout known
 % spaces gray, RGB and CMYK
 % defined by ICC profiles
 
-//systemdict /ICCProfilesDir .knownget{
-mark exch /ICCProfilesDir exch .dicttomark
-.setuserparams
-} if
+//systemdict /ICCProfilesDir .knownget {
+  mark exch /ICCProfilesDir exch .dicttomark .setuserparams
+} {
+  % Search for valid (iccprofiles) directory as a sibling to (Resource)
+  % and set it as a default if found.
+  LIBPATH { 
+    (Resource) search {
+      exch pop exch pop (iccprofiles) concatstrings
+      .file_name_separator concatstrings
+      dup (default_gray.icc) concatstrings status {
+        pop pop pop pop
+        mark exch /ICCProfilesDir exch .dicttomark .setuserparams
+        exit
+      } {
+        pop
+      } ifelse
+    } {
+      pop
+    } ifelse
+  } forall
+} ifelse
 
 //systemdict /DefaultRGBProfile .knownget{
 mark exch /DefaultRGBProfile exch .dicttomark

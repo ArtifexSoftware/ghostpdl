@@ -945,7 +945,7 @@ $error /SubstituteFont { } put
                  if
                }
                {                % Font file name
-                 .loadfontloop { true exit } if
+                 //true .loadfontloop { //true exit } if
                }
               ifelse
             }
@@ -988,39 +988,47 @@ $error /SubstituteFont { } put
   /.genericrfn where {
     pop
     pop dup .fonttempstring /FontResourceDir getsystemparam .genericrfn
-    .loadfontloop {
+    //false .loadfontloop {
       //true
     } {
-      dup .nametostring .loadfontloop
+      dup .nametostring
+      //true .loadfontloop
     } ifelse
   } {
-    .loadfontloop
+    //true .loadfontloop
   } ifelse
 } bind def
-/.loadfontloop {        % <fontname> <filename> .loadfontloop
+/.loadfontloop {        % <fontname> <filename> <libflag> .loadfontloop
                         %   <font> true
                         % -or-
                         %   <fontname> false
                         % See above regarding the use of 'loop'.
     {                   % Is the font name a string?
-        dup type /stringtype ne
-         { QUIET not
+        1 index type /stringtype ne
+         { pop
+           QUIET not
             { (Can't find font with non-string name: ) print dup =only (.) = flush
             }
-           if pop false exit
-         }
-        if
-                        % Can we open the file?
-        findlibfile not
-         { QUIET not
+           if pop //false exit
+         } if
+
+        % check <libflag>
+        {  
+          findlibfile not
+        } {
+          dup (r) { file } stopped {
+            pop pop //true
+          } {
+            //false
+          } ifelse  
+        } ifelse {
+          QUIET not
             { (Can't find \(or can't open\) font file ) print dup print
               (.) = flush
             }
            if pop false exit
-         }
-        if
-
-                        % Stack: fontname fontfilename fontfile
+        } if
+                         % Stack: fontname fontfilename fontfile
         DISKFONTS
          { .currentglobal true .setglobal
            2 index (r) file
