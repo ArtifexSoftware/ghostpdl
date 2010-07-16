@@ -324,7 +324,7 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 {
   int *LENCOUNT;
   int LENMAX = -1;
-  const int lencountsize = 256 * sizeof(*LENCOUNT);
+  const int lencountcount = 256;
   const Jbig2HuffmanLine *lines = params->lines;
   int n_lines = params->n_lines;
   int i, j;
@@ -337,13 +337,13 @@ jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
   int CURCODE;
   int CURTEMP;
 
-  LENCOUNT = jbig2_new(ctx, int, lencountsize);
+  LENCOUNT = jbig2_new(ctx, int, lencountcount);
   if (LENCOUNT == NULL) {
     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
       "couldn't allocate storage for huffman histogram");
     return NULL;
   }
-  memset(LENCOUNT, 0, lencountsize);
+  memset(LENCOUNT, 0, sizeof(int) * lencountcount);
 
   /* B.3, 1. */
   for (i = 0; i < params->n_lines; i++)
