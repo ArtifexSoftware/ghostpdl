@@ -558,46 +558,29 @@ status {
 	{ forall } 0 get
   	currentdict end 2 .execn begin
 } bind
-/.file_name_is_iodevice_or_absolute
-{ {
-    dup length 0 gt {
-      dup 0 get (%) 0 get eq {
-        pop true exit
-      } if
-    } if
-    .file_name_is_absolute exit
-  } loop
-} bind def
-/ResourceFileName
-	  {                                             % /in (scr)
-	    exch //.rfnstring cvs                       % (scr) (n)
-            /GenericResourcePathSep getsystemparam exch % (scr) (/) (n)
-            Category .namestring                        % (scr) (/) (n) (c)
-            3 1 roll                                    % (scr) (c) (/) (n)
-	    concatstrings concatstrings                 % (scr) (c/n)
-            /GenericResourceDir getsystemparam //.file_name_is_iodevice_or_absolute exec not {
-              /GenericResourceDir getsystemparam exch concatstrings
-	      findlibfile
-	      {                                         % (scr) (p/c/n) file
-	        pop exch copy true                      % (p/c/n) true
-	      } {                                       % (scr) (c/n)
-	        false                                   % (scr) (c/n) false
-	      } ifelse
-	    } {                                         % (scr) (c/n)
-	      false                                     % (scr) (c/n) false
-	    } ifelse
-	    not {                                       % (scr) (c/n)
-              /GenericResourceDir getsystemparam        % (scr) (c/n) (d/)
-              dup length exch                           % (scr) (c/n) Ld (d/)
-              3 index copy pop                          % (scr') (c/n) Ld
-              1 index length                            % (scr') (c/n) Ld Lcn
-              3 index 3 copy pop                        % (scr') (c/n) Ld Lcn (scr') Ld Lcn
-              getinterval                               % (scr') (c/n) Ld Lcn (scr[Ld:Lcn])
-              4 3 roll exch                             % (scr') Ld Lcn (c/n) (scr[Ld:Lcn])
-              copy pop                                  % (scr'') Ld Lcn
-              add 0 exch getinterval                    % (scr''[0:Ld+Lcn])
-	    } if
-	  } bind
+
+/ResourceFileName  {                          % /in (scr) --> (p/c/n)
+  exch //.rfnstring cvs                       % (scr) (n)
+  /GenericResourcePathSep getsystemparam exch % (scr) (/) (n)
+  Category .namestring                        % (scr) (/) (n) (c)
+  3 1 roll                                    % (scr) (c) (/) (n)
+  concatstrings concatstrings                 % (scr) (c/n)
+  /GenericResourceDir getsystemparam 1 index  % (scr) (c/n) (p/) (c/n)
+  concatstrings                               % (scr) (c/n) (p/c/n)
+  dup status {
+    pop pop pop pop exch pop                  % (scr) (p/c/n)
+  } {
+    exch                                      % (scr) (p/c/n) (c/n)
+    .libfile {
+      dup .filename pop                       % (scr) (p/c/n) file (p/c/n')
+      exch closefile                          % (scr) (p/c/n) (p/c/n')
+      exch pop                                % (scr) (p/c/n')
+    } {
+      pop                                     % (scr) (p/c/n)
+    } ifelse
+  } ifelse
+  exch copy                                   % (p/c/n)
+} bind
 
 		% Additional entries
 
