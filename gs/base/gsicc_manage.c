@@ -76,9 +76,9 @@ gs_private_st_ptrs2(st_gsicc_colorname, gsicc_colorname_t, "gsicc_colorname",
 
 gs_private_st_ptrs1(st_gsicc_namelist, gsicc_namelist_t, "gsicc_namelist",
 		    gsicc_namelist_enum_ptrs, gsicc_namelist_reloc_ptrs, head);
-gs_private_st_ptrs4(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
+gs_private_st_ptrs3(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
 		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, 
-                    dev, name, spotnames);
+                    dev, spotnames);
 
 gs_private_st_ptrs11(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
@@ -697,12 +697,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
             strcat(buffer, pname);
             str = sfopen(buffer, "rb", mem_gc);
             gs_free_object(mem_gc, buffer, "gsicc_open_search");
-            if (str != NULL) {
-                return(str);
-            } else {
-                gs_warn2("Could not find %s in %s checking default paths",
-                        pname,icc_manager->profiledir);
-            }
+            if (str != NULL) return(str);
         } 
     }
 
@@ -719,7 +714,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     str = sfopen(buffer, "rb", mem_gc);
     gs_free_object(mem_gc, buffer, "gsicc_open_search");
     if (str == NULL) {
-        gs_warn1("Could not find %s in root directory",pname);
+        gs_warn1("Could not find %s ",pname);
     }
     return(str);
 }
@@ -734,21 +729,24 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
 
     /* See if the device has a profile */
     if (dev->color_info.icc_profile[0] == '\0') {
-        /* Grab a default one.  Need to think a bit about duo devices.
-           We  should handle those as separation devices that have
-           empty CMYK planes, but I need to double check that. */
+        /* Grab a default one and prepend the icc directory to 
+           it so that we have a proper path during c-list reading
+           if build was without compile inits.   */
+        if (pgs->icc_manager->profiledir != NULL) {
+            strcpy(dev->color_info.icc_profile, pgs->icc_manager->profiledir);
+        }
         switch(dev->color_info.num_components) {
             case 1:
-                strcpy(dev->color_info.icc_profile, DEFAULT_GRAY_ICC);
+                strcat(dev->color_info.icc_profile, DEFAULT_GRAY_ICC);
                 break;
             case 3:
-                strcpy(dev->color_info.icc_profile, DEFAULT_RGB_ICC);
+                strcat(dev->color_info.icc_profile, DEFAULT_RGB_ICC);
                 break;
             case 4:
-                strcpy(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
+                strcat(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
                 break;
             default:
-                strcpy(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
+                strcat(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
                 break;
         }
     } 
@@ -863,7 +861,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
         return result;
     memset(result,0,sizeof(gsicc_serialized_profile_t));
     if (namelen > 0) {
-        nameptr = (char*) gs_alloc_bytes(memory, namelen,
+        nameptr = (char*) gs_alloc_bytes(memory->non_gc_memory, namelen,
 	   		     "gsicc_profile_new");
         memcpy(nameptr, pname, namelen);
         result->name = nameptr;
@@ -914,7 +912,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 
         /* Release the name if it has been set */
         if(profile->name != NULL) {
-            gs_free_object(mem,profile->name,"rc_free_icc_profile");
+            gs_free_object(mem->non_gc_memory ,profile->name,"rc_free_icc_profile");
             profile->name = NULL;
             profile->name_length = 0;
         }
