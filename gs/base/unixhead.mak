@@ -65,9 +65,6 @@ CONFLDTR=-ol
 
 # Define the compilation rules and flags.
 
-CC_D=$(CC_)
-CC_INT=$(CC_)
-
 BEGINFILES=
 
 # Define the default build rule, so the object directories get created

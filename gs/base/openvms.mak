@@ -430,7 +430,6 @@ include $(GLSRCDIR)contrib.mak
 # Define various incantations of the 'c' compiler.
 
 CC_=$(COMP)
-CC_INT=$(CC_)
 CC_NO_WARN=$(CC_)
 CC_SHARED=$(CC_)
 
