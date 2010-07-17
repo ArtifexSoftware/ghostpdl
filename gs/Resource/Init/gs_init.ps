@@ -1752,27 +1752,20 @@ defaultdevice
 
 % If the paper size is not specifed and the device defaults to 
 % letter or A4 paper, select the DEFAULTPAPERSIZE.
-systemdict /DEFAULTPAPERSIZE known not 
- {
-   % Use .defaultpapersize if it returns a known paper size
-   .defaultpapersize 
-    { 
-      false statusdict /.pagetypenames get 
-       {
-	2 index eq { pop true exit } if
-       }
-      forall
-       {systemdict exch /DEFAULTPAPERSIZE exch put}
-       {QUIET
-	 { pop } 
-	 { (Unknown .defaultpapersize: ) print ==only (.) = }
-	ifelse
-       } 
-      ifelse
-    } 
-   if
- } 
-if
+systemdict /DEFAULTPAPERSIZE known not {
+  % Use .defaultpapersize if it returns a known paper size
+  .defaultpapersize { 
+     statusdict /.pagetypeprocs get 1 index known {
+       systemdict exch /DEFAULTPAPERSIZE exch put
+     } {
+       QUIET {
+         pop
+       } {
+         (Unknown .defaultpapersize: ) print ==only (.) =
+       } ifelse
+     } ifelse
+  } if
+} if
 systemdict /DEFAULTPAPERSIZE known
 systemdict /PAPERSIZE known not and
 systemdict /DEVICEWIDTH known not and
@@ -1805,23 +1798,15 @@ systemdict /PAPERSIZE known
 systemdict /DEVICEWIDTH known not and
 systemdict /DEVICEHEIGHT known not and
 systemdict /DEVICEWIDTHPOINTS known not and
-systemdict /DEVICEHEIGHTPOINTS known not and
- {	% Convert the paper size to device dimensions.
-   true statusdict /.pagetypenames get
-    { PAPERSIZE eq
-       { PAPERSIZE load
-         dup 0 get /DEVICEWIDTHPOINTS exch def
-         1 get /DEVICEHEIGHTPOINTS exch def
-         pop false exit
-       }
-      if
-    }
-   forall
-    { (Unknown paper size: ) print PAPERSIZE ==only (.) =
-    }
-   if
- }
-if
+systemdict /DEVICEHEIGHTPOINTS known not and {
+  % Convert the paper size to device dimensions.
+  statusdict /.pagetypeprocs get PAPERSIZE .knownget {
+    dup 0 get /DEVICEWIDTHPOINTS exch def
+    1 get /DEVICEHEIGHTPOINTS exch def
+  } {
+    (Unknown paper size: ) print PAPERSIZE ==only (.) =
+  } ifelse
+} if
 % Adjust the device parameters per the command line.
 % It is possible to specify resolution, pixel size, and page size;
 % since any two of these determine the third, conflicts are possible.

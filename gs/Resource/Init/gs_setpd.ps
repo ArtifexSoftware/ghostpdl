@@ -201,11 +201,14 @@ level2dict begin
     % First put the device's default page size in slot 0
     % This satifies those that have devices built with a4 as the default
     0 mark /PageSize currentdevice /PageSize gsgetdeviceprop .dicttomark
+
     statusdict /.pagetypenames get {
+      statusdict /.pagetypeprocs get
+      exch get 0 2 getinterval cvlit
       counttomark 1 sub 2 idiv exch mark exch /PageSize exch
-      % stack: mark --dict-- --dict-- ... key mark /PageSize pagetypename
+      % stack: mark --dict-- --dict-- ... key mark /PageSize [x y]
       % see note above about pagetype executable array contents.
-      load dup 0 get exch 1 get 2 array astore .dicttomark
+      .dicttomark
     } forall
     % If NORANGEPAGESIZE is defined, (-dNORANGEPAGESIZE), then don't add
     % the 'match any' PageSize entry

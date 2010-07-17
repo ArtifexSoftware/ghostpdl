@@ -22,12 +22,18 @@ systemdict begin
 	% We make statusdict a little larger for Level 2 stuff.
 	% Note that it must be allocated in local VM.
  .currentglobal false .setglobal
- /statusdict 89 dict .forcedef		% statusdict is local, sys'dict global
+ /statusdict 91 dict .forcedef		% statusdict is local, sys'dict global
 	% To support the Level 2 job control features,
 	% serverdict must also be in local VM.
  /serverdict 10 dict .forcedef		% serverdict is local, sys'dict global
  .setglobal
 end
+
+statusdict begin
+
+% Keep the table of named paper sizes as procedures. Reuse them later
+% as compatibility operators.
+/.pagetypeprocs 70 dict begin
 
 % Define various paper formats.  The Adobe documentation defines only these:
 % 11x17, a3, a4, a4small, b5, ledger, legal, letter, lettersmall, note.
@@ -35,8 +41,8 @@ end
 % so the page dimensions must be the first two elements of the procedure.
 
 /.setpagesize { /statusdict .systemvar begin .setpagesize end } bind def
-userdict begin
-		% Page sizes defined by Adobe documentation
+
+              	% Page sizes defined by Adobe documentation
 		% Note: these executable arrays should all begin with two
 		% integers which are the width and height (see gs_setpd.ps).
  /11x17 {792 1224 //.setpagesize exec} bind def  % 11x17 portrait
@@ -120,30 +126,16 @@ STRICT { (%END SIZES) .skipeof } if
  /ANSI_E {2448 3168 //.setpagesize exec} bind def
  /ANSI_F {2016 2880 //.setpagesize exec} bind def
 %END SIZES
-end
-currentdict /.setpagesize .undef
-
-statusdict begin
+currentdict end
+dup /.setpagesize .undef
+userdict begin dup { def } forall end  % reuse!
+readonly def
 
 % Define the pagetype values for the known page formats.
-% The values for all but letter and note are arbitrary.
-/.pagetypenames
- [ /letter /note	%do not change this line, needed by 'setpagetype'
-   /legal /lettersmall
-   /11x17 /ledger
-   /a4small /a3 /a4
-STRICT { (%END SIZES) .skipeof } if
-   /a0 /a1 /a2 /a5 /a6 /a7 /a8 /a9 /a10
-   /archA /archB /archC /archD /archE
-   /b0 /b1 /b2 /b3 /b4 /b5 /b6
-   /c0 /c1 /c2 /c3 /c4 /c5 /c6
-   /flsa /flse /halfletter
-   /isob0 /isob1 /isob2 /isob3 /isob4 /isob5 /isob6
-   /jisb0 /jisb1 /jisb2 /jisb3 /jisb4 /jisb5 /jisb6
-   /pa4 /hagaki
-   /ANSI_A /ANSI_B /tabloid /ANSI_C /ANSI_D /ANSI_E /ANSI_F
-%END SIZES
- ] readonly def
+% This array is now used for deterministic enumeration of .pagetypeprocs
+/.pagetypenames [ .pagetypeprocs { pop } bind forall ]
+  { .namestring exch .namestring gt } bind .sort
+  readonly def
 
 %%%%%% The following items were suggested by a user as useful.
 
@@ -270,11 +262,12 @@ STRICT { (%END SIZES) .skipeof } if
 		% The Adobe documentation only defines setpagetype
 		% (a Level 1 operator) as accepting the values 0 and 1,
 		% so we do too.
-      dup .pagetypenames 0 2 getinterval exch get
+      {/letter /note} 1 index get 
       //systemdict /userdict get exch get cvx exec
       /pagetype exch def
     end
   } bind def
+
  /setpassword
   {exch checkpassword
     {statusdict exch /.password exch put true}
