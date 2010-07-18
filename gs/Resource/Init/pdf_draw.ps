@@ -188,7 +188,7 @@ pdfdict begin
     } {
       1 sub dup mul exch 1 sub dup mul add 1 sub
     } ifelse
-  }
+  } bind
   /Diamond {
     abs exch abs 2 copy add .75 le {
       dup mul exch dup mul add 1 exch sub
@@ -199,7 +199,7 @@ pdfdict begin
 	1 sub dup mul exch 1 sub dup mul add 1 sub
       } ifelse
     } ifelse
-  }
+  } bind
   /Ellipse {
     abs exch abs 2 copy 3 mul exch 4 mul add 3 sub dup 0 lt {
       pop dup mul exch .75 div dup mul add 4 div 1 exch sub
@@ -211,33 +211,27 @@ pdfdict begin
 	.5 exch sub exch pop exch pop
       } ifelse
     } ifelse
-  }
-  /EllipseA { dup mul .9 mul exch dup mul add 1 exch sub }
-  /InvertedEllipseA { dup mul .9 mul exch dup mul add 1 sub }
-  /EllipseB { dup 5 mul 8 div mul exch dup mul exch add sqrt 1 exch sub }
-  /EllipseC { dup mul .9 mul exch dup mul add 1 exch sub }
-  /InvertedEllipseC { dup mul .9 mul exch dup mul add 1 sub }
-  /Line { exch pop abs neg }
-  /LineX { pop }
-  /LineY { exch pop }
-  /Square { abs exch abs 2 copy lt { exch } if pop neg }
-  /Cross { abs exch abs 2 copy gt { exch } if pop neg }
-  /Rhomboid { abs exch abs 0.9 mul add 2 div }
-  /DoubleDot { 2 {360 mul sin 2 div exch } repeat add }
-  /InvertedDoubleDot { 2 {360 mul sin 2 div exch } repeat add neg }
-  /SimpleDot { dup mul exch dup mul add 1 exch sub }
-  /InvertedSimpleDot { dup mul exch dup mul add 1 sub }
-  /CosineDot { 180 mul cos exch 180 mul cos add 2 div }
-  /Double { exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add }
+  } bind
+  /EllipseA { dup mul .9 mul exch dup mul add 1 exch sub } bind
+  /InvertedEllipseA { dup mul .9 mul exch dup mul add 1 sub } bind
+  /EllipseB { dup 5 mul 8 div mul exch dup mul exch add sqrt 1 exch sub } bind
+  /EllipseC { dup mul .9 mul exch dup mul add 1 exch sub } bind
+  /InvertedEllipseC { dup mul .9 mul exch dup mul add 1 sub } bind
+  /Line { exch pop abs neg } bind
+  /LineX { pop } bind
+  /LineY { exch pop } bind
+  /Square { abs exch abs 2 copy lt { exch } if pop neg } bind
+  /Cross { abs exch abs 2 copy gt { exch } if pop neg } bind
+  /Rhomboid { abs exch abs 0.9 mul add 2 div } bind
+  /DoubleDot { 2 {360 mul sin 2 div exch } repeat add } bind
+  /InvertedDoubleDot { 2 {360 mul sin 2 div exch } repeat add neg } bind
+  /SimpleDot { dup mul exch dup mul add 1 exch sub } bind
+  /InvertedSimpleDot { dup mul exch dup mul add 1 sub } bind
+  /CosineDot { 180 mul cos exch 180 mul cos add 2 div } bind 
+  /Double { exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add } bind
   /InvertedDouble {
     exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add neg
-  }
-.dicttomark readonly def
-
-/htrdict mark
-  1 { .resolveht1 }
-  5 { .resolveht5 }
-	% We don't support types 6, 10, or 16 yet.
+  } bind
 .dicttomark readonly def
 
 /.resolveht1 {
@@ -261,14 +255,37 @@ pdfdict begin
   } forall .dicttomark
 } bdef
 
+/.resolveht6 {
+  mark exch { oforce } forall .dicttomark
+  dup dup //false resolvestream /ReusableStreamDecode filter
+  /Thresholds exch put
+  dup /TransferFunction .knownget {
+    resolveidfnproc
+    1 index exch /TransferFunction exch put
+  } if
+} bdef
+
+/htrdict mark
+  1 //.resolveht1
+  5 //.resolveht5
+  6 //.resolveht6
+ 10 //.resolveht6
+ 16 //.resolveht6
+.dicttomark readonly def
+
+currentdict /.resolveht1 undef
+currentdict /.resolveht5 undef
+currentdict /.resolveht6 undef
+
 /resolvehalftone {	% <dict> resolvehalftone <halftone>
   dup /HalftoneType oget
   dup //htrdict exch .knownget {
     exch pop exec
   } {
-    (\n\n   **** Unsupported HalftoneType ) pdfformaterror
-    =string cvs pdfformaterror (. ***\n\n) pdfformaterror
-    /resolvehalftone cvx /unregistered signalerror
+    =string cvs
+    (   **** Warning: Incorrect halftone type ) exch concatstrings
+    (. Using defailt.\n) concatstrings pdfformaterror
+    gsave .setdefaulthalftone currenthalftone grestore
   } ifelse
 } bdef
 
@@ -331,7 +348,6 @@ end
     dup /Default eq {
       pop .setdefaulthalftone
     } {
-	%****** DOESN'T IMPLEMENT THE STREAM CASE YET ******
       resolvehalftone sethalftone
     } ifelse
   } bdef
