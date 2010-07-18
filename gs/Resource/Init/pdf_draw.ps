@@ -1025,11 +1025,15 @@ end
 } bind def
 
 /jp2_csp_dict <<
-  16 { /DeviceRGB } bind
-  % 16 {/sRGBICC /ColorSpace findresource} bind
-  18 1 index  % YCC is converted to RGB
-  % 17 { /sGray /ColorSpace findresource } bind
-  17 { /DeviceGray } bind
+  12 { /DeviceCMYK } bind  % CMYK
+% 14                       % LAB
+  16 { /DeviceRGB } bind   % sRGB {/sRGBICC /ColorSpace findresource}
+  17 { /DeviceGray } bind  % Gray {/sGray /ColorSpace findresource}
+  18 3 index               % YCC is converted to RGB
+% 19                       % CIEJab not supportec by PDF 1.7
+% 20                       % e-sRGB
+% 21                       % ROMMRGB
+% 24                       % e-sYCC
 >> readonly def
  
 % Process jp2 blocks (aka boxes). All procedures have the signature
