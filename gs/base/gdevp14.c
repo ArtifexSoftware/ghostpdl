@@ -1096,34 +1096,43 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis)
            we won't be filling everything during the remap if it had not been 
            written into by the PDF14 fill rect */
         memset(new_data_buf, 0, tos->planestride);
-        if ( icc_match == 1 || tos->n_chan == 2) {
-            /* There is no need to convert.  Data is already gray scale.
-               We just need to copy the gray plane */
+        /* If the subtype was alpha, then just grab the alpha channel now
+           and we are all done */
+        if (tos->SMask_SubType == TRANSPARENCY_MASK_Alpha) {
             smask_copy(tos->rect.q.y - tos->rect.p.y,
                        tos->rect.q.x - tos->rect.p.x, 
-                       tos->rowstride, tos->data, new_data_buf);
+                       tos->rowstride, 
+                       (tos->data)+tos->planestride, new_data_buf);
         } else {
-            if ( icc_match == -1 ) {
-                /* The slow old fashioned way */
-                smask_luminosity_mapping(tos->rect.q.y - tos->rect.p.y ,
-                    tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
-                    tos->rowstride, tos->planestride, 
-                    tos->data,  new_data_buf, ctx->additive,
-            tos->SMask_is_CIE, tos->SMask_SubType); 
+            if ( icc_match == 1 || tos->n_chan == 2) {
+                /* There is no need to convert.  Data is already gray scale.
+                   We just need to copy the gray plane */
+                smask_copy(tos->rect.q.y - tos->rect.p.y,
+                           tos->rect.q.x - tos->rect.p.x, 
+                           tos->rowstride, tos->data, new_data_buf);
             } else {
-                /* ICC case where we use the CMM */
-                /* Request the ICC link for the transform that we will need to use */
-                rendering_params.black_point_comp = BP_OFF;
-                rendering_params.object_type = GS_IMAGE_TAG;
-                rendering_params.rendering_intent = gsPERCEPTUAL;
-                icc_link = gsicc_get_link_profile(pis, des_profile, 
-                    src_profile, &rendering_params, pis->memory, false);
-                smask_icc(tos->rect.q.y - tos->rect.p.y ,
-                                    tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
-                                    tos->rowstride, tos->planestride, 
-                                    tos->data, new_data_buf, icc_link);
-                /* Release the link */
-                gsicc_release_link(icc_link);
+                if ( icc_match == -1 ) {
+                    /* The slow old fashioned way */
+                    smask_luminosity_mapping(tos->rect.q.y - tos->rect.p.y ,
+                        tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
+                        tos->rowstride, tos->planestride, 
+                        tos->data,  new_data_buf, ctx->additive,
+                tos->SMask_is_CIE, tos->SMask_SubType); 
+                } else {
+                    /* ICC case where we use the CMM */
+                    /* Request the ICC link for the transform that we will need to use */
+                    rendering_params.black_point_comp = BP_OFF;
+                    rendering_params.object_type = GS_IMAGE_TAG;
+                    rendering_params.rendering_intent = gsPERCEPTUAL;
+                    icc_link = gsicc_get_link_profile(pis, des_profile, 
+                        src_profile, &rendering_params, pis->memory, false);
+                    smask_icc(tos->rect.q.y - tos->rect.p.y ,
+                                        tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
+                                        tos->rowstride, tos->planestride, 
+                                        tos->data, new_data_buf, icc_link);
+                    /* Release the link */
+                    gsicc_release_link(icc_link);
+                }
             }
         }
          /* Free the old object, NULL test was above */
@@ -4224,6 +4233,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 		memcpy(&params.GrayBackground, data, sizeof(params.GrayBackground));
 		data += sizeof(params.GrayBackground);
 	    }
+            read_value(data, params.icc_hash);
 	    if (params.function_is_identity) {
 		int i;
 
@@ -4234,7 +4244,6 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
 	    } else {
 		read_value(data, params.transfer_fn);
 	    }
-            read_value(data, params.icc_hash);
 	    break;
 	case PDF14_END_TRANS_MASK:
 	    break;

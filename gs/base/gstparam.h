@@ -145,14 +145,16 @@ typedef struct gx_transparency_mask_params_s {
              4 /* the clist cmd prefix byte cmd_opv_extend + extended function + 2 bytes for band_id */ + \
              1 + sizeof(float) * 6 /* See sput_matrix. */ + \
              sizeof(((gs_pdf14trans_params_t *)0)->subtype) + \
-             3 /* replacing, function_is_identity, Background_components */ + \
+             sizeof(((gs_pdf14trans_params_t *)0)->group_color_numcomps) + \
+             4 /* group color, replacing, function_is_identity, Background_components */ + \
 	     sizeof(((gs_pdf14trans_params_t *)0)->bbox) + \
 	     sizeof(((gs_pdf14trans_params_t *)0)->mask_id) + \
 	     sizeof(((gs_pdf14trans_params_t *)0)->Background) + \
-	     sizeof(((gs_pdf14trans_params_t *)0)->GrayBackground))	     
+             sizeof(float)*4 + /* If cmyk background */ \
+	     sizeof(((gs_pdf14trans_params_t *)0)->GrayBackground) + \
+             sizeof(int64_t)) /* ICC band information */
 #define MAX_CLIST_TRANSPARENCY_COMPOSITOR_SIZE (MAX_CLIST_TRANSPARENCY_BUFFER_SIZE + \
-	     sizeof(((gs_pdf14trans_params_t *)0)->transfer_fn)) + \
-             sizeof(int64_t) /* ICC band information */
+	     sizeof(((gs_pdf14trans_params_t *)0)->transfer_fn))
 #define MAX_CLIST_COMPOSITOR_SIZE MAX_CLIST_TRANSPARENCY_COMPOSITOR_SIZE
 
 /* Select the opacity or shape parameters. */
