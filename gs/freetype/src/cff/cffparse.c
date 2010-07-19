@@ -329,9 +329,17 @@
         goto Exit;
 
       /* Remove non-significant digits. */
-      if ( integer_length < 0 ) {
+      if ( integer_length < 0 )
+      {
         number          /= power_tens[-integer_length];
         fraction_length += integer_length;
+      }
+
+      /* this can only happen if exponent was non-zero */
+      if ( fraction_length == 10 )
+      {
+        number          /= 10;
+        fraction_length -= 1;
       }
 
       /* Convert into 16.16 format. */
@@ -699,7 +707,7 @@
     clazz[i].count_offset = 0;
 
     *output_class = clazz;
-    return FT_Err_Ok;
+    return CFF_Err_Ok;
   }
 
 

@@ -777,8 +777,8 @@
           }
 
           /* the two `results' are popped by the following setcurrentpoint */
-	  top[0] = x;
-	  top[1] = y;
+          top[0] = x;
+          top[1] = y;
           known_othersubr_result_cnt = 2;
           break;
 
@@ -1482,10 +1482,12 @@
             goto Syntax_Error;
           }
           else
+            ...
 #endif
+
           x = top[0];
           y = top[1];
-            decoder->flex_state = 0;
+          decoder->flex_state = 0;
           break;
 
         case op_unknown15:

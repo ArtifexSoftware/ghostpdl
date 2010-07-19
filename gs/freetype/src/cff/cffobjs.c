@@ -394,6 +394,41 @@
   }
 
 
+  /* Strip all subset prefixes of the form `ABCDEF+'.  Usually, there */
+  /* is only one, but font names like `APCOOG+JFABTD+FuturaBQ-Bold'   */
+  /* have been seen in the wild.                                      */
+
+  static void
+  remove_subset_prefix( FT_String*  name )
+  {
+    FT_Int32  idx             = 0;
+    FT_Int32  length          = strlen( name ) + 1;
+    FT_Bool   continue_search = 1;
+ 
+
+    while ( continue_search )
+    {
+      if ( length >= 7 && name[6] == '+' )
+      {
+        for ( idx = 0; idx < 6; idx++ )
+        {
+          /* ASCII uppercase letters */
+          if ( !( 'A' <= name[idx] && name[idx] <= 'Z' ) )
+            continue_search = 0;
+        }
+
+        if ( continue_search )
+        {
+          for ( idx = 7; idx < length; idx++ )
+            name[idx - 7] = name[idx];
+        }
+      }
+      else
+        continue_search = 0;
+    }
+  }
+
+
   FT_LOCAL_DEF( FT_Error )
   cff_face_init( FT_Stream      stream,
                  FT_Face        cffface,        /* CFF_Face */
@@ -678,6 +713,8 @@
           char*  family_name = NULL;
 
 
+          remove_subset_prefix( cffface->family_name ); 
+
           if ( dict->family_name )
           {
             family_name = cff_index_get_sid_string( cff,
@@ -828,13 +865,14 @@
         {
           cmap = cffface->charmaps[nn];
 
-          /* Windows Unicode (3,1)? */
-          if ( cmap->platform_id == 3 && cmap->encoding_id == 1 )
+          /* Windows Unicode? */
+          if ( cmap->platform_id == TT_PLATFORM_MICROSOFT &&
+               cmap->encoding_id == TT_MS_ID_UNICODE_CS   )
             goto Skip_Unicode;
 
-          /* Deprecated Unicode platform id? */
-          if ( cmap->platform_id == 0 )
-            goto Skip_Unicode; /* Standard Unicode (deprecated) */
+          /* Apple Unicode platform id? */
+          if ( cmap->platform_id == TT_PLATFORM_APPLE_UNICODE )
+            goto Skip_Unicode; /* Apple Unicode */
         }
 
         /* since CID-keyed fonts don't contain glyph names, we can't */
@@ -842,28 +880,51 @@
         if ( pure_cff && cff->top_font.font_dict.cid_registry != 0xFFFFU )
           goto Exit;
 
+#ifdef FT_MAX_CHARMAP_CACHEABLE
+        if ( nn + 1 > FT_MAX_CHARMAP_CACHEABLE )
+        {
+          FT_ERROR(( "cff_face_init: no Unicode cmap is found, "
+                     "and too many subtables (%d) to add synthesized cmap\n",
+                     nn ));
+          goto Exit;
+        }
+#endif
+
         /* we didn't find a Unicode charmap -- synthesize one */
         cmaprec.face        = cffface;
-        cmaprec.platform_id = 3;
-        cmaprec.encoding_id = 1;
+        cmaprec.platform_id = TT_PLATFORM_MICROSOFT;
+        cmaprec.encoding_id = TT_MS_ID_UNICODE_CS;
         cmaprec.encoding    = FT_ENCODING_UNICODE;
 
         nn = (FT_UInt)cffface->num_charmaps;
 
-        FT_CMap_New( &FT_CFF_CMAP_UNICODE_CLASS_REC_GET, NULL, &cmaprec, NULL );
+        error = FT_CMap_New( &FT_CFF_CMAP_UNICODE_CLASS_REC_GET, NULL,
+                             &cmaprec, NULL );
+        if ( error && FT_Err_No_Unicode_Glyph_Name != error )
+          goto Exit;
+        error = FT_Err_Ok;
 
         /* if no Unicode charmap was previously selected, select this one */
         if ( cffface->charmap == NULL && nn != (FT_UInt)cffface->num_charmaps )
           cffface->charmap = cffface->charmaps[nn];
 
       Skip_Unicode:
+#ifdef FT_MAX_CHARMAP_CACHEABLE
+        if ( nn > FT_MAX_CHARMAP_CACHEABLE )
+        {
+          FT_ERROR(( "cff_face_init: Unicode cmap is found, "
+                     "but too many preceding subtables (%d) to access\n",
+                     nn - 1 ));
+          goto Exit;
+        }
+#endif
         if ( encoding->count > 0 )
         {
           FT_CMap_Class  clazz;
 
 
           cmaprec.face        = cffface;
-          cmaprec.platform_id = 7;  /* Adobe platform id */
+          cmaprec.platform_id = TT_PLATFORM_ADOBE;  /* Adobe platform id */
 
           if ( encoding->offset == 0 )
           {
@@ -884,7 +945,7 @@
             clazz               = &FT_CFF_CMAP_ENCODING_CLASS_REC_GET;
           }
 
-          FT_CMap_New( clazz, NULL, &cmaprec, NULL );
+          error = FT_CMap_New( clazz, NULL, &cmaprec, NULL );
         }
       }
     }

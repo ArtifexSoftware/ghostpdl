@@ -429,7 +429,7 @@
         goto Exit;
       }
 
-      FT_TRACE4(( "glyph index %d (subfont %d):\n", glyph_index, fd_index ));
+      FT_TRACE3(( "glyph index %d (subfont %d):\n", glyph_index, fd_index ));
 
       sub = cff->subfonts[fd_index];
 
@@ -444,7 +444,7 @@
     }
 #ifdef FT_DEBUG_LEVEL_TRACE
     else
-      FT_TRACE4(( "glyph index %d:\n", glyph_index ));
+      FT_TRACE3(( "glyph index %d:\n", glyph_index ));
 #endif
 
     decoder->num_locals    = sub->local_subrs_index.count;
@@ -811,10 +811,10 @@
                                              charstring_len );
       decoder->seac = FALSE;
 
+      cff_free_glyph_data( face, &charstring, charstring_len );
+
       if ( error )
         goto Exit;
-
-      cff_free_glyph_data( face, &charstring, charstring_len );
     }
 
     /* Save the left bearing, advance and glyph width of the base */
@@ -841,10 +841,10 @@
                                              charstring_len );
       decoder->seac = FALSE;
 
+      cff_free_glyph_data( face, &charstring, charstring_len );
+
       if ( error )
         goto Exit;
-
-      cff_free_glyph_data( face, &charstring, charstring_len );
     }
 
     /* Restore the left side bearing, advance and glyph width */
@@ -1339,6 +1339,14 @@
             decoder->num_hints += num_args / 2;
           }
 
+          /* In a valid charstring there must be at least one byte */
+          /* after `hintmask' or `cntrmask' (e.g., for a `return'  */
+          /* instruction).  Additionally, there must be space for  */
+          /* `num_hints' bits.                                     */
+
+          if ( ( ip + ( ( decoder->num_hints + 7 ) >> 3 ) ) >= limit )
+            goto Syntax_Error;
+
           if ( hinter )
           {
             if ( op == cff_op_hintmask )
@@ -1357,20 +1365,18 @@
             FT_UInt maskbyte;
 
 
-            FT_TRACE4(( " (maskbytes: " ));
+            FT_TRACE4(( " (maskbytes:" ));
 
             for ( maskbyte = 0;
-                  maskbyte < (FT_UInt)(( decoder->num_hints + 7 ) >> 3);
+                  maskbyte < (FT_UInt)( ( decoder->num_hints + 7 ) >> 3 );
                   maskbyte++, ip++ )
-              FT_TRACE4(( "0x%02X", *ip ));
+              FT_TRACE4(( " 0x%02X", *ip ));
 
             FT_TRACE4(( ")\n" ));
           }
 #else
           ip += ( decoder->num_hints + 7 ) >> 3;
 #endif
-          if ( ip >= limit )
-            goto Syntax_Error;
           args = stack;
           break;
 
@@ -2275,6 +2281,8 @@
           /* this is the implementation described for `unknown' other  */
           /* subroutines in the Type1 spec.                            */
           args -= 2 + ( args[-2] >> 16 );
+          if ( args < stack )
+            goto Stack_Underflow;
           break;
 
         case cff_op_pop:
@@ -2667,11 +2675,15 @@
     /* this scaling is only relevant if the PS hinter isn't active */
     if ( cff->num_subfonts )
     {
-      FT_Byte  fd_index = cff_fd_select_get( &cff->fd_select,
-                                             glyph_index );
+      FT_ULong  top_upm, sub_upm;
+      FT_Byte   fd_index = cff_fd_select_get( &cff->fd_select,
+                                              glyph_index );
 
-      FT_ULong  top_upm = cff->top_font.font_dict.units_per_em;
-      FT_ULong  sub_upm = cff->subfonts[fd_index]->font_dict.units_per_em;
+      if ( fd_index >= cff->num_subfonts ) 
+        fd_index = cff->num_subfonts - 1;
+
+      top_upm = cff->top_font.font_dict.units_per_em;
+      sub_upm = cff->subfonts[fd_index]->font_dict.units_per_em;
 
 
       font_matrix = cff->subfonts[fd_index]->font_dict.font_matrix;

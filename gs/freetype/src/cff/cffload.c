@@ -251,7 +251,7 @@
 
       if ( offsize < 1 || offsize > 4 )
       {
-        error = FT_Err_Invalid_Table;
+        error = CFF_Err_Invalid_Table;
         goto Exit;
       }
 
@@ -385,10 +385,10 @@
                           FT_Byte***  table,
                           FT_Byte**   pool )
   {
-    FT_Error   error  = CFF_Err_Ok;
-    FT_Memory  memory = idx->stream->memory;
+    FT_Error   error     = CFF_Err_Ok;
+    FT_Memory  memory    = idx->stream->memory;
     FT_Byte**  t;
-    FT_Byte*   new_bytes;
+    FT_Byte*   new_bytes = NULL;
 
 
     *table = NULL;
@@ -412,6 +412,15 @@
 
       /* at this point, `idx->offsets' can't be NULL */
       cur_offset = idx->offsets[0] - 1;
+
+      /* sanity check */
+      if ( cur_offset >= idx->data_size )
+      {
+        FT_TRACE0(( "cff_index_get_pointers:"
+                    " invalid first offset value %d set to zero\n",
+                    cur_offset ));
+        cur_offset = 0;
+      }
 
       if ( !pool )
         t[0] = org_bytes + cur_offset;
@@ -760,7 +769,7 @@
                             FT_UInt      num_glyphs,
                             FT_Memory    memory )
   {
-    FT_Error   error   = FT_Err_Ok;
+    FT_Error   error   = CFF_Err_Ok;
     FT_UInt    i;
     FT_Long    j;
     FT_UShort  max_cid = 0;
@@ -920,14 +929,16 @@
 
             /* check whether the range contains at least one valid glyph; */
             /* the constant is given in the CFF specification             */
-            if ( glyph_sid >= 65000L ) {
+            if ( glyph_sid >= 65000L )
+            {
               FT_ERROR(( "cff_charset_load: invalid SID range\n" ));
               error = CFF_Err_Invalid_File_Format;
               goto Exit;
             }
 
             /* try to rescue some of the SIDs if `nleft' is too large */
-            if ( nleft > 65000L - 1L || glyph_sid >= 65000L - nleft ) {
+            if ( nleft > 65000L - 1L || glyph_sid >= 65000L - nleft )
+            {
               FT_ERROR(( "cff_charset_load: invalid SID range trimmed\n" ));
               nleft = ( FT_UInt )( 65000L - 1L - glyph_sid );
             }
