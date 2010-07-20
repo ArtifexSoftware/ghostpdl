@@ -22,6 +22,7 @@
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
+#include "jbig2_huffman.h"
 #include "jbig2_symbol_dict.h"
 #include "jbig2_metadata.h"
 
@@ -141,6 +142,10 @@ jbig2_free_segment (Jbig2Ctx *ctx, Jbig2Segment *segment)
 	case 40: /* intermediate refinement region */
 	  if (segment->result != NULL)
 	    jbig2_image_release(ctx, (Jbig2Image*)segment->result);
+	  break;
+	case 53: /* user-supplied huffman table */
+	  if (segment->result != NULL)
+		jbig2_table_free(ctx, (Jbig2HuffmanParams*)segment->result);
 	  break;
 	case 62:
 	  if (segment->result != NULL)
@@ -282,9 +287,8 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 52:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'profile'");
-    case 53:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled table segment");
+    case 53: /* user-supplied huffman table */
+      return jbig2_table(ctx, segment, segment_data);
     case 62:
       return jbig2_parse_extension_segment(ctx, segment, segment_data);
     default:

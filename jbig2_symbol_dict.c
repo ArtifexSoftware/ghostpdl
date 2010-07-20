@@ -751,6 +751,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   int offset;
   Jbig2ArithCx *GB_stats = NULL;
   Jbig2ArithCx *GR_stats = NULL;
+  int table_index = 0;
+  const Jbig2HuffmanParams *huffman_params;
 
   if (segment->data_length < 10)
     goto too_short;
@@ -778,9 +780,16 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		                       &jbig2_huffman_params_E);
 	break;
       case 3: /* Custom table from referred segment */
-	/* We handle this case later by leaving the table as NULL */
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-	    "symbol dictionary uses custom DH huffman table (NYI)");
+        huffman_params = jbig2_find_table(ctx, segment, table_index);
+        if (huffman_params == NULL) {
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                "Custom DH huffman table not found (%d)", table_index);
+        }
+        params.SDHUFFDH = jbig2_build_huffman_table(ctx, huffman_params);
+        ++table_index;
+        break;
+        /* FIXME: this function leaks memory when error happens.
+           i.e. not calling jbig2_release_huffman_table() */
       case 2:
       default:
 	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -797,9 +806,14 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		                       &jbig2_huffman_params_C);
 	break;
       case 3: /* Custom table from referred segment */
-	/* We handle this case later by leaving the table as NULL */
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-	    "symbol dictionary uses custom DW huffman table (NYI)");
+        huffman_params = jbig2_find_table(ctx, segment, table_index);
+        if (huffman_params == NULL) {
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                "Custom DW huffman table not found (%d)", table_index);
+        }
+        params.SDHUFFDW = jbig2_build_huffman_table(ctx, huffman_params);
+        ++table_index;
+        break;
       case 2:
       default:
 	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
@@ -808,8 +822,13 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
     if (flags & 0x0040) {
         /* Custom table from referred segment */
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-	    "symbol dictionary uses custom BMSIZE huffman table (NYI)");
+        huffman_params = jbig2_find_table(ctx, segment, table_index);
+        if (huffman_params == NULL) {
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                "Custom BMSIZE huffman table not found (%d)", table_index);
+        }
+        params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx, huffman_params);
+        ++table_index;
     } else {
 	/* Table B.1 */
 	params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx,
@@ -817,8 +836,13 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
     if (flags & 0x0080) {
         /* Custom table from referred segment */
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-	    "symbol dictionary uses custom REFAGG huffman table (NYI)");
+        huffman_params = jbig2_find_table(ctx, segment, table_index);
+        if (huffman_params == NULL) {
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                "Custom REFAGG huffman table not found (%d)", table_index);
+        }
+        params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx, huffman_params);
+        ++table_index;
     } else {
 	/* Table B.1 */
 	params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx,
