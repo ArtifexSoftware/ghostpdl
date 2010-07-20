@@ -98,14 +98,13 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     if (picc_profile == NULL) {
         rc_decrement(picc_profile,"seticc");
         rc_decrement(pcs,"seticc");
-        return gs_throw(e_unknownerror,
-              "couldn't create icc profile from stream");
+        return -1;
     }
     code = gsicc_set_gscs_profile(pcs, picc_profile, gs_state_memory(igs));
     if (code < 0) {
         rc_decrement(picc_profile,"seticc");
         rc_decrement(pcs,"seticc");
-        return gs_rethrow(code, "installing the profile");
+        return code;
     }
     picc_profile->num_comps = ncomps;
 
@@ -119,7 +118,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
            ahead and using a default based upon the number of components */
         rc_decrement(picc_profile,"seticc");
         rc_decrement(pcs,"seticc");
-        return gs_rethrow(-1, "installing the profile");
+        return -1;
     }
     picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
 
