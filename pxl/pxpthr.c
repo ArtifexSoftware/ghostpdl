@@ -299,8 +299,9 @@ pxpcl_release(void)
         gs_grestore_only(global_pcs->pgs);
         gs_nulldevice(global_pcs->pgs);
         pcl_do_resets(global_pcs, pcl_reset_permanent);
-        global_pcs = NULL;
+        global_pcs->end_page = pcl_end_page_top; /* pcl_end_page handling */
         pxpcl_pagestatereset();
+        global_pcs = NULL;
         global_this_pass_contiguous = false;
         global_pass_first = true;
         global_char_shear.x = 0;
