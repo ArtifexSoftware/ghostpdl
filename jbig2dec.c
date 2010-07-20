@@ -39,6 +39,7 @@
 #include "sha1.h"
 
 #include "jbig2.h"
+#include "jbig2_priv.h"
 #include "jbig2_image.h"
 
 typedef enum {
