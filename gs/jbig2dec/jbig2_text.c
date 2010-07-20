@@ -119,7 +119,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	}
 
 	/* decode the symbol id codelengths using the runlength table */
-	symcodelengths = jbig2_alloc(ctx->allocator, SBNUMSYMS*sizeof(Jbig2HuffmanLine));
+	symcodelengths = jbig2_new(ctx, Jbig2HuffmanLine, SBNUMSYMS);
 	if (symcodelengths == NULL) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "memory allocation failure reading symbol ID huffman table!");
@@ -437,9 +437,9 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     params.SBREFINE = flags & 0x0002;
     params.LOGSBSTRIPS = (flags & 0x000c) >> 2;
     params.SBSTRIPS = 1 << params.LOGSBSTRIPS;
-    params.REFCORNER = (flags & 0x0030) >> 4;
+    params.REFCORNER = (Jbig2RefCorner)((flags & 0x0030) >> 4);
     params.TRANSPOSED = flags & 0x0040;
-    params.SBCOMBOP = (flags & 0x0180) >> 7;
+    params.SBCOMBOP = (Jbig2ComposeOp)((flags & 0x0180) >> 7);
     params.SBDEFPIXEL = flags & 0x0200;
     /* SBDSOFFSET is a signed 5 bit integer */
     params.SBDSOFFSET = (flags & 0x7C00) >> 10;
@@ -680,7 +680,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     /* 7.4.3.2 (3) */
     if (!params.SBHUFF && params.SBREFINE) {
 	int stats_size = params.SBRTEMPLATE ? 1 << 10 : 1 << 13;
-	GR_stats = jbig2_alloc(ctx->allocator, stats_size);
+	GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
 	memset(GR_stats, 0, stats_size);
     }
 
@@ -711,7 +711,6 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
 	}
 
 	as = jbig2_arith_new(ctx, ws);
-	ws = 0;
 
         params.IADT = jbig2_arith_int_ctx_new(ctx);
         params.IAFS = jbig2_arith_int_ctx_new(ctx);
@@ -730,7 +729,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     code = jbig2_decode_text_region(ctx, segment, &params,
                 (const Jbig2SymbolDict * const *)dicts, n_dicts, image,
                 segment_data + offset, segment->data_length - offset,
-		GR_stats, as, ws);
+		GR_stats, as, as ? NULL : ws);
 
     if (!params.SBHUFF && params.SBREFINE) {
 	jbig2_free(ctx->allocator, GR_stats);
@@ -745,6 +744,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
       jbig2_release_huffman_table(ctx, params.SBHUFFRDW);
       jbig2_release_huffman_table(ctx, params.SBHUFFRDH);
       jbig2_release_huffman_table(ctx, params.SBHUFFRSIZE);
+      jbig2_word_stream_buf_free(ctx, ws);
     }
     else {
 	jbig2_arith_int_ctx_free(ctx, params.IADT);
