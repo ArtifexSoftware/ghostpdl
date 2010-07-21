@@ -1275,6 +1275,13 @@ pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuf
     transbuff->width = width;
     transbuff->height = height;
     transbuff->rect = rect;
+#if RAW_DUMP
+    /* Dump the buffer that should be going into the pattern */;
+        dump_raw_buffer(height, width, buf->n_chan,
+                    pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
+                    "pdf14_pattern_buff",buf->data);
+        global_index++;
+#endif
     return(0);
 }
 
@@ -2518,21 +2525,35 @@ pdf14_begin_transparency_group(gx_device *dev,
     /* If needed, update the color mapping procs. But only if we dont have a sep device.
         The exception would be if we are in doing the group for a soft mask */
     if (!sep_target) {
+        if (curr_profile != NULL) {
+            /* If the cs is different then force isolation */
+            if ( curr_profile->hashcode == 
+                pis->icc_manager->device_profile->hashcode) {
+                    /* cs same.  use parameter setting */
+                    isolated = ptgp->Isolated;
+            } else {
+                /* blend cs different.  force isolation. other
+                   option  would be to ignore the color space */
+                isolated = true;
+            }
+        } else {
+            if (group_color_numcomps == pdev->color_info.num_components) {
+                 /* cs same.  use parameter setting */
+                isolated = ptgp->Isolated;
+            } else {
+                /* blend cs different.  force isolation. other
+                   option  would be to ignore the color space */
+                isolated = true;
+            }
+        }
         code = pdf14_update_device_color_procs(dev, group_color, ptgp->icc_hashcode, pis, curr_profile);
+        if_debug0('v', "[v]Transparency group color space update\n");
     } else {
-        code = 0;
+        /* Sep devices always blend in the components */
+        isolated = ptgp->Isolated;
         group_color_numcomps = pdev->color_info.num_components;
     }
-    /* Note that our initial device buffer may have had a different color space
-       than the first transparency group.  In such a case, we really should force
-       this first group to be isolated, anytime that the parent color space is 
-       different than its child group, it should be isolated, per the PDF spec */
-    if (code == 1){
-        isolated = true;
-        if_debug0('v', "[v]Transparency group color space change\n");
-    } else {
-        isolated = ptgp->Isolated;
-    }
+
     if (code < 0)
 	return code;
     code = pdf14_push_transparency_group(pdev->ctx, &rect,
