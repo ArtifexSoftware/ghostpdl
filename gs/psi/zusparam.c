@@ -838,6 +838,18 @@ static const long_param_def_t user_long_params[] =
      current_GridFitTT, set_GridFitTT}
 };
 
+/* Note that string objects that are maintained as user params must be 
+   either allocated in non-gc memory or be a constant in the executable.
+   The problem stems from the way userparams are retained during garbage
+   collection in a param_list (collected by currentuserparams).  For
+   some reason this param_list does not get the pointers to strings relocated 
+   during the GC. Note that the param_dict itself is correctly updated by reloc, 
+   it is just the pointers to the strings in the param_list that are not traced 
+   and updated. An example of this includes the ICCProfilesDir, which sets a 
+   string in the icc_manager. When a reclaim occurs, the string is relocated 
+   (when in non-gc memory and when it is noted to the gc with the proper object 
+   descriptor).  Then if a set_icc_directory occurs, the user params pointer has 
+   NOT been updated and validation problems will occur. */
 static const string_param_def_t user_string_params[] =
 {
     {"DefaultGrayProfile", current_default_gray_icc, set_default_gray_icc},

@@ -80,11 +80,11 @@ gs_private_st_ptrs3(st_gsicc_profile, cmm_profile_t, "gsicc_profile",
 		    gsicc_profile_enum_ptrs, gsicc_profile_reloc_ptrs, buffer, 
                     dev, spotnames);
 
-gs_private_st_ptrs11(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
+gs_private_st_ptrs10(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
 		    gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
 		    device_profile, device_named, default_gray, default_rgb,
-                    default_cmyk, proof_profile, output_link, lab_profile, 
-                    profiledir, device_n, smask_profiles); 
+                    default_cmyk, proof_profile, output_link, lab_profile,
+                    device_n, smask_profiles); 
 
 gs_private_st_ptrs2(st_gsicc_devicen, gsicc_devicen_t, "gsicc_devicen",
 		gsicc_devicen_enum_ptrs, gsicc_devicen_reloc_ptrs, head, final);
@@ -134,7 +134,8 @@ gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname,
     char *result;
     gs_memory_t *mem_gc = pis->memory; 
 
-    result = (char*) gs_alloc_bytes(mem_gc, namelen,
+    /* User param string.  Must allocate in non-gc memory */
+    result = (char*) gs_alloc_bytes(mem_gc->non_gc_memory, namelen,
 		   		     "gsicc_set_icc_directory");
     if (result != NULL) {
         strcpy(result, pname);
@@ -1024,7 +1025,7 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
        rc_decrement(icc_manager->smask_profiles->smask_cmyk, 
            "rc_gsicc_manager_free");
    }
-   gs_free_object(icc_manager->memory, icc_manager->profiledir, 
+   gs_free_object(icc_manager->memory->non_gc_memory, icc_manager->profiledir, 
                   "rc_gsicc_manager_free");
    gs_free_object(icc_manager->memory, icc_manager, "rc_gsicc_manager_free");
 }
