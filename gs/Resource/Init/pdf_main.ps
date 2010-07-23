@@ -623,16 +623,40 @@ pdfdict begin
   % Initialize OC groups
   Trailer /Root oget /OCProperties knownoget {
     % By default, OCGs are 'on'; mark only 'off' OCGs.
+    % If, contrary to the spec, BaseState is OFF, mark all OCGs
+    % and unmark ON ones. Bug 691491.
+    dup /OCGs knownoget not { {} } if exch
     /D knownoget {
-      /OFF knownoget {
-        { oforce dup type /dicttype eq {
+      dup /BaseState knownoget { /OFF eq } { //false } ifelse {
+        (   **** Warning:  Default viewing OC config dictionary has /BaseState /OFF\n)
+	pdfformaterror
+        1 index {
+          oforce dup type /dicttype eq {
             /OFF 0 put
           } {
             pop
           } ifelse
         } forall
-      } if
+        /ON knownoget {
+          { oforce dup type /dicttype eq {
+              /OFF undef
+            } {
+              pop
+            } ifelse
+          } forall
+        } if
+      } {
+        /OFF knownoget {
+          { oforce dup type /dicttype eq {
+              /OFF 0 put
+            } {
+              pop
+            } ifelse
+          } forall
+        } if
+      } ifelse
     } if
+    pop
   } if
 } bind def
 
