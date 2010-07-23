@@ -924,8 +924,7 @@ mark
 
 % - .makesfnts -
 % Defines checksum, getloca, head, locatable, numloca, post, sfnts, upem
-% Note that the 'loca' table may be out of order. This is handled when
-% needed in .dividesfnts
+% Note that the 'loca' table may be out of order.
 /.makesfnts {
   .readttdata
   /head tabdict /head get def
@@ -957,12 +956,6 @@ mark
       } def
       2 idiv 1 sub
     } ifelse def		% numloca
-	% If necessary, re-partition the glyfs.
-    tabdict /glyf get dup type /stringtype ne {
-      .dividesfnts tabdict /glyf 3 -1 roll put
-    } {
-      pop
-    } ifelse
   } {
     % We did not load loca, take the number of glyphs from maxp.
     /numloca tabdict /maxp get 4 getu16 def
@@ -974,96 +967,6 @@ mark
       dup type /stringtype ne { aload pop } if
     } forall
   ] def
-} bind def
-
-% <glyfs> .dividesfnts <glyfs'>
-/.dividesfnts {
-  /glyfs exch def
-  /len1 0 glyfs { length add } forall def
-	% Determine where to split the glyfs by scanning the sorted locatable
-	% The very last entry in loca may be bogus.
-	% Note that some loca entries may be odd, but we can only
-	% split at even positions.
-	%
-	% Construct splitarray, the array of final lengths of
-	% the sfnts entries covering the glyfs (i.e., all but
-	% the first and last sfnts entries).
-    /prevsplit 0 def
-    /prevboundary 0 def
-    % sort the locatable in case it is out of order
-    % Note the 'loca' table remains unchanged
-    /needsort false def
-    numloca array	% the array of 'loca' entries (may be out of order)
-    -1	% initial values for in order check
-    0 1 numloca 1 sub {
-      dup getloca dup
-      4 -1 roll lt { /needsort true def } if 
-      3 copy put exch pop
-    } for pop		% discard inorder check value
-    needsort {
-      { lt } bind .sort	 % stack: locatable_array
-    } if
-    % Drop 'loca' entries that point beyond 'glyf' table. Bug 691221.
-    dup numloca 1 sub get len1 ge {
-      0 1 numloca 1 sub {
-        2 copy get len1 ge {
-          0 exch getinterval exit
-        } {
-          pop
-        } ifelse
-      } for
-    } if
-    /splitarray [
-      3 -1 roll 0 1 2 index length 1 sub {
-	% stack: /splitarray -mark- { splitlen splitlen ... } locatable_array index
-	1 index exch get dup prevsplit maxstring add gt {
-	  prevboundary prevsplit sub exch
-	  /prevsplit prevboundary def
-	} if
-	dup 1 and 0 eq { /prevboundary exch def } { pop } ifelse
-	dup type /arraytype ne { exch } if	% keep locatable_array on top
-      } for
-      len1 prevsplit sub
-      exch pop		% discard locatable_array
-    ] def
-    currentuserparams /VMReclaim get -2 vmreclaim
-    [
-	% Re-split the sfnts glyfs strings according to splitarray.
-	% We do this by iterating over the final segments defined
-	% by splitarray, and constructing them from pieces of the
-	% current glyfs strings.  We recycle the current strings
-	% when possible, to avoid stressing the allocator.
-      /sfnt_idx 0 def
-      /strpos 0 def
-      /avail () def
-      splitarray {
-	/seglen exch def
-	/segpos 0 def
-	avail length seglen ge
-	  { avail 0 seglen getinterval /avail () def } { seglen string }
-	ifelse
-	{
-	  /str glyfs sfnt_idx get def
-	  /strlen str length def
-	  /strleft strlen strpos sub def
-	  seglen segpos sub strleft lt { exit } if
-		% Copy the (rest of the) string into the new segment.
-		% We know strleft <= segleft.
-	  dup segpos str strpos strleft getinterval putinterval
-	  /segpos segpos strleft add def
-	  /avail str def
-	  /sfnt_idx sfnt_idx 1 add def
-	  /strpos 0 def
-	  segpos seglen eq { exit } if
-	} loop
-		% Fill up the segment with an initial piece of the next
-		% existing glyfs string.  We know strleft > segleft.
-	/segleft seglen segpos sub def
-	dup segpos str strpos segleft getinterval putinterval
-	/strpos strpos segleft add def
-      } forall
-    ]
-    exch vmreclaim
 } bind def
 
 /first_post_string % - first_post_string <string>
