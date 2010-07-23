@@ -116,7 +116,14 @@ sodebug: SODIRS
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSOC) $(GSSOX)
+	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) \
+                $(GLOBJDIR)/$(SOOBJRELDIR)/echogs$(XEAUX) $(GLOBJDIR)/$(SOOBJRELDIR)/genarch$(XEAUX)
+	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' \
+                prefix=$(prefix)
+	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
+
+
+#	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSOC) $(GSSOX)
 
 install-so: so
 	-mkdir -p $(DESTDIR)$(prefix)
