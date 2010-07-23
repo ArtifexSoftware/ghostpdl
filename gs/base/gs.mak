@@ -293,7 +293,7 @@ mostlyclean : config-clean
 #****** FOLLOWING IS WRONG, NEEDS TO BE PER-SUBSYSTEM ******
 config-clean :
 	$(RMN_) $(GSGEN)*.dev $(GSGEN)devs*.tr $(GSGEN)gconfig*.h
-	$(RMN_) $(GSGEN)gconfx*.h $(GSGEN)j*.h
+	$(RMN_) $(GSGEN)gconfx*.h $(GSGEN)j*.h $(GSGEN)tif*.h
 	$(RMN_) $(GSGEN)c*.tr $(GSGEN)o*.tr $(GSGEN)l*.tr
 
 # Macros for constructing the *.dev files that describe features and
