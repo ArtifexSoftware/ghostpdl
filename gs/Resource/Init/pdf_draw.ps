@@ -1793,13 +1793,20 @@ end
 %         if this bit is not set (and not hidden) and Printed is false
 %   Bit 7 Read Only - 1 --> No interaction.  We ignore this bit
 %
+%   AR8 and AR9 print 3D annotations even if Print flag is off. Bug 691486.
+%
 /annotvisible {			% <annot> annotvisible <visible>
-  /F knownoget not { 0 } if 		% Get flag value
-  dup 2 and 0 eq  			% Check hidden flag
-  exch dup 4 and 0 ne Printed and	% Check print flag
-  exch 32 and 0 eq Printed not and	% Check noview flag
-  or					% Combine print and view
-  and 					% Combine with 'hidden' flag test
+  dup /Subtype knownoget { /3D eq } { //false } ifelse % 3D annot
+  exch /F knownoget not { 0 } if  % Get flag value
+  dup 2 and 0 eq {
+    /Printed load {
+      4 and 4 eq or               % Printed or 3D
+    } {
+      32 and 0 eq exch pop        % not NoView
+    } ifelse
+  } {
+    pop pop //false                            % Hidden 
+  } ifelse
 } bdef
 
 /drawwidget {			% <scalefactor_x> <scalefactor_y> <annot> drawwidget -
