@@ -1671,15 +1671,44 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path;
                 const gx_drawing_color * pdcolor = penum->pdcolor;
 
+                /* If the stride of the bitmap we've got doesn't match what the rest
+                 * of the Ghostscript world expects, make one that does.
+                 */
+                byte *r;
+                byte *src, *dst;
+                int h, cpbytes, dstr = bitmap_raster(rast.width);
+                int sstr = rast.line_step;
+
+                if (dstr != sstr) {
+                    r = gs_alloc_bytes(penum->memory, dstr * rast.height, "fapi_finish_render_aux");
+                    if (!r) {
+                        return_error(e_VMerror);
+                    }
+
+                    cpbytes = sstr < dstr ? sstr: dstr;
+                    h = rast.height;
+                    src = rast.p;
+                    dst = r;
+                    while (h-- > 0) {
+                        memcpy(dst, src, cpbytes);
+                        src += sstr;
+                        dst += dstr;
+                    }
+                }
+                else {
+                    r = rast.p;
+                    dstr = rast.line_step;
+                }
+            
 		if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
-		    if ((code = gx_image_fill_masked(dev, rast.p, 0, rast.line_step, 0,
+		    if ((code = gx_image_fill_masked(dev, r, 0, dstr, 0,
 			          (int)(pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.x + 0.5),
 			          (int)(pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.y + 0.5),
 			          rast.width, rast.height,
 			          pdcolor, 1, rop3_default, pcpath)) < 0)
 				    return code;
 		} else {
-		    if ((code = gx_image_fill_masked(dev, rast.p, 0, rast.line_step, 0,
+		    if ((code = gx_image_fill_masked(dev, r, 0, dstr, 0,
 			          (int)(pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5),
 			          (int)(pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5),
 			          rast.width, rast.height,

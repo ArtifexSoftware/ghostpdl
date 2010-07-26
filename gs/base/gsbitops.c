@@ -653,10 +653,8 @@ void
 bytes_copy_rectangle(byte * dest, uint dest_raster,
 	     const byte * src, uint src_raster, int width_bytes, int height)
 {
-    int copy_width = width_bytes < src_raster ? width_bytes : src_raster;
-
     while (height-- > 0) {
-	memcpy(dest, src, copy_width);
+	memcpy(dest, src, width_bytes);
 	src += src_raster;
 	dest += dest_raster;
     }
