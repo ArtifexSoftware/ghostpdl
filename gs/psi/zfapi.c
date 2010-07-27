@@ -1671,8 +1671,11 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path;
                 const gx_drawing_color * pdcolor = penum->pdcolor;
 
+                
                 /* If the stride of the bitmap we've got doesn't match what the rest
                  * of the Ghostscript world expects, make one that does.
+                 * Ghostscript aligns bitmap raster memory in a platform specific manner,
+                 * so see gxbitmap.h for details.
                  */
                 byte *r;
                 byte *src, *dst;
