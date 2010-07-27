@@ -1718,6 +1718,9 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 			          pdcolor, 1, rop3_default, pcpath)) < 0)
 				    return code;
 		}
+                if (rast.p != r) {
+                    gs_free_object(penum->memory, r, "fapi_finish_render_aux");
+                }
             }
         }
     }
