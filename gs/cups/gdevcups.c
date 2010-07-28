@@ -1048,8 +1048,7 @@ cups_get_space_params(const gx_device_printer *pdev,
     switch (sscanf(cache_env, "%f%254s", &cache_size, cache_units))
     {
       case 0 :
-          cache_size = 8 * 1024 * 1024;
-	  break;
+          return;
       case 1 :
           cache_size *= 4 * CUPS_TILE_SIZE * CUPS_TILE_SIZE;
 	  break;
@@ -1066,12 +1065,15 @@ cups_get_space_params(const gx_device_printer *pdev,
     }
   }
   else
-    cache_size = 8 * 1024 * 1024;
+    return;
+
+  if (cache_size == 0)
+    return;
 
   dprintf1("DEBUG2: cache_size = %.0f\n", cache_size);
 
   space_params->MaxBitmap   = (long)cache_size;
-  space_params->BufferSpace = (long)cache_size / 10;
+  space_params->BufferSpace = (long)cache_size;
 }
 
 
