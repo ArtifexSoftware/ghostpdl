@@ -105,3 +105,15 @@ gp_create_thread(gp_thread_creation_callback_t proc, void *proc_data)
 {
     return_error(gs_error_unknownerror);
 }
+
+int
+gp_thread_start(gp_thread_creation_callback_t proc, void *proc_data, gp_thread_id *thread)
+{
+    *thread = NULL;
+    return_error(gs_error_unknownerror);
+}
+
+void
+gp_thread_finish(gp_thread_id thread)
+{
+}

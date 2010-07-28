@@ -250,6 +250,8 @@ clist_teardown_render_threads(gx_device *dev)
 
 	    if (thread->status == RENDER_THREAD_BUSY)
 		gx_semaphore_wait(thread->sema_this);
+            gp_thread_finish(thread->thread);
+            thread->thread = NULL;
 	    /* Free control semaphores */
 	    gx_semaphore_free(thread->sema_group);
 	    gx_semaphore_free(thread->sema_this);
@@ -308,7 +310,9 @@ clist_start_render_thread(gx_device *dev, int thread_index, int band)
     crdev->render_threads[thread_index].status = RENDER_THREAD_BUSY;
 
     /* Finally, fire it up */
-    code = gp_create_thread(clist_render_thread, &(crdev->render_threads[thread_index]));
+    code = gp_thread_start(clist_render_thread,
+                           &(crdev->render_threads[thread_index]),
+                           &(crdev->render_threads[thread_index].thread));
 
     return code;
 }
@@ -423,6 +427,8 @@ clist_get_band_from_thread(gx_device *dev, int band_needed)
     }
     /* Wait for this thread */
     gx_semaphore_wait(thread->sema_this);
+    gp_thread_finish(thread->thread);
+    thread->thread = NULL;
     if (thread->status < 0)
 	return thread->status;		/* FAIL */
 
@@ -594,13 +600,15 @@ int
 clist_enable_multi_thread_render(gx_device *dev)
 {   
     int code = -1;
+    gp_thread_id thread;
 
-    /* We need to test gp_create_thread since we may be on a platform */
+    /* We need to test gp_thread_start since we may be on a platform  */
     /* built without working threads, i.e., using gp_nsync.c dummy    */
-    /* routines. The nosync gp_create_thread returns a -ve error code */
-    if ((code = gp_create_thread(test_threads, NULL)) < 0 ) {
+    /* routines. The nosync gp_thread_start returns a -ve error code. */
+    if ((code = gp_thread_start(test_threads, NULL, &thread)) < 0 ) {
 	return code;	/* Threads don't work */
     }
+    gp_thread_finish(thread);
     set_dev_proc(dev, get_bits_rectangle, clist_get_bits_rect_mt);
 
     return 1;

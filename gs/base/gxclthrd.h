@@ -38,6 +38,7 @@ struct clist_render_thread_control_s {
     gx_device *cdev;	/* clist device copy */
     gx_device *bdev;	/* this thread's buffer device */
     int band;
+    gp_thread_id thread;
 #ifdef DEBUG
     ulong cputime;
 #endif

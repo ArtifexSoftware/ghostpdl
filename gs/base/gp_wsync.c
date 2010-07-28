@@ -21,6 +21,26 @@
 #include "windows_.h"
 #include <process.h>
 
+/* It seems that both Borland and Watcom *should* be able to cope with the
+ * new style threading using _beginthreadex/_endthreadex. I am unable to test
+ * this properly however, and the tests I have done lead me to believe it
+ * may be problematic. Given that these platforms are not a support priority,
+ * we leave the code falling back to just using the old style code (which
+ * presumably works).
+ *
+ * The upshot of this should be that we continue to work exactly as before.
+ *
+ * To try using the new functions, simply omit the definition of
+ * FALLBACK_TO_OLD_THREADING_FUNCTIONS below. If you find this works for
+ * either Borland or Watcom, then please let us know and we can make the
+ * change permanently.
+ */
+#if defined(__BORLANDC__)
+#define FALLBACK_TO_OLD_THREADING_FUNCTIONS
+#elif defined(__WATCOMC__)
+#define FALLBACK_TO_OLD_THREADING_FUNCTIONS
+#endif
+
 /* ------- Synchronization primitives -------- */
 
 /* Semaphore supports wait/signal semantics */
@@ -197,7 +217,62 @@ gp_create_thread(
      * takes different arguments in Watcom C.
      */
     if (~BEGIN_THREAD(gp_thread_begin_wrapper, 128*1024, closure) != 0)
+    {
+        free(closure);
 	return 0;
+    }
     return_error(gs_error_unknownerror);
 }
 
+/* gp_thread_creation_closure passed as magic data */
+static unsigned __stdcall
+gp_thread_start_wrapper(void *thread_data)
+{
+    gp_thread_creation_closure closure;
+
+    closure = *(gp_thread_creation_closure *)thread_data;
+    free(thread_data);
+    (*closure.function)(closure.data);
+    _endthreadex(0);
+    return 0;
+}
+
+int gp_thread_start(gp_thread_creation_callback_t function,
+                    void *data, gp_thread_id *thread)
+{
+#ifdef FALLBACK_TO_OLD_THREADING_FUNCTIONS
+    *thread = (gp_thread_id)1;
+    return gp_create_thread(function, data);
+#else
+    /* Create the magic closure that thread_wrapper gets passed */
+    HANDLE hThread;
+    unsigned threadID;
+    gp_thread_creation_closure *closure =
+        (gp_thread_creation_closure *)malloc(sizeof(*closure));
+
+    if (!closure)
+        return gs_error_VMerror;
+    closure->function = function;
+    closure->data = data;
+    hThread = (HANDLE)_beginthreadex(NULL, 0, &gp_thread_start_wrapper,
+                                     closure, 0, &threadID);
+    if (hThread == (HANDLE)0)
+    {
+        free(closure);
+        *thread = NULL;
+        return_error(gs_error_unknownerror);
+    }
+    *thread = (gp_thread_id)hThread;
+    return 0;
+#endif
+}
+
+void gp_thread_finish(gp_thread_id thread)
+{
+#ifndef FALLBACK_TO_OLD_THREADING_FUNCTIONS
+    if (thread == NULL)
+        return;
+    WaitForSingleObject((HANDLE)thread, INFINITE);
+    CloseHandle((HANDLE)thread);
+#endif
+}
