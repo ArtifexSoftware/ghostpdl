@@ -135,7 +135,6 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->cie_joint_caches_alt = NULL;
     pis->cmap_procs = cmap_procs_default;
     pis->pattern_cache = NULL;
-    pis->pattern_cache_alt = NULL;
     pis->have_pattern_streams = false;
     pis->devicergb_cs = gs_cspace_new_DeviceRGB(mem);
     pis->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
