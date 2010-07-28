@@ -11,7 +11,7 @@ goto bot
 
 rem Pass arguments through a file to avoid overflowing the command line.
 :top
-echo %1 %TEMP%_.at
+echo %1 >> %TEMP%_.at
 shift
 :bot
 if not %3/==/ goto top
