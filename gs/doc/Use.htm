@@ -536,6 +536,9 @@ On Unix and MS Windows systems you can send output to a pipe in the same way.  F
 In this case you must also use the <a href="#Quiet"><code>-q</code>
 switch</a> to prevent Ghostscript from writing messages to standard output
 which become mixed with the intended output stream.
+<p>
+Also, using the <b>-sstdout=%stderr</b> option is useful, particularly with
+input from PostScript files that may print to stdout.
 
 <p>
 Similar results can be obtained with the <tt>%stdout</tt> and <tt>%pipe%</tt> filedevices. The example above would become
