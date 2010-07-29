@@ -1129,7 +1129,6 @@ void gs_swapcolors_quick(gs_state *pgs)
 {
     struct gx_cie_joint_caches_s *tmp_cie;
     gs_devicen_color_map          tmp_ccm;
-    struct gx_pattern_cache_s    *tmp_pc;
     gs_client_color              *tmp_cc;
     int                           tmp;
     gx_device_color              *tmp_dc;
