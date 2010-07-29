@@ -1423,6 +1423,8 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     uint len;
     font_data *pdata;
     FAPI_server *I;
+    bool has_buildglyph;
+    bool has_buildchar;
 
     if (code < 0)
 	return code;
@@ -1444,6 +1446,24 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     }
     pdata = (font_data *)pfont->client_data;
     I = pbfont->FAPI;
+    
+    if (r_type(&(pdata->BuildGlyph)) != t_null) {
+        has_buildglyph = true;
+    } else {
+        has_buildglyph = false;
+    }
+    
+    if (r_type(&(pdata->BuildChar)) != t_null) {
+        has_buildchar = true;
+    } else {
+        has_buildchar = false;
+    }
+    
+    /* This shouldn't happen, but just in case */
+    if (has_buildglyph == false && has_buildchar == false) {
+        has_buildglyph = true;
+    }
+    
     if (dict_find_string(op - 1, "Path", &v) <= 0 || !r_has_type(v, t_string))
         v = NULL;
     if (pfont->FontType == ft_CID_encrypted && v == NULL) {
@@ -1454,12 +1474,24 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     } else
         if ((code = build_proc_name_refs(imemory, &build, ".FAPIBuildChar", ".FAPIBuildGlyph")) < 0)
 	    return code;
-    if (r_type(&(pdata->BuildChar)) != t_null && pdata->BuildChar.value.pname && build.BuildChar.value.pname &&
-	name_index(imemory, &pdata->BuildChar) == name_index(imemory, &build.BuildChar)) {
+    if ((r_type(&(pdata->BuildChar)) != t_null && pdata->BuildChar.value.pname && build.BuildChar.value.pname &&
+	name_index(imemory, &pdata->BuildChar) == name_index(imemory, &build.BuildChar))
+        || (r_type(&(pdata->BuildGlyph)) != t_null && pdata->BuildGlyph.value.pname && build.BuildGlyph.value.pname &&
+	name_index(imemory, &pdata->BuildGlyph) == name_index(imemory, &build.BuildGlyph))) {
         /* Already rebuilt - maybe a substituted font. */
     } else {
-        ref_assign_new(&pdata->BuildChar, &build.BuildChar);
-        ref_assign_new(&pdata->BuildGlyph, &build.BuildGlyph);
+
+        if (has_buildchar == true) {
+            ref_assign_new(&pdata->BuildChar, &build.BuildChar);
+        } else {
+            make_null(&pdata->BuildChar);
+        }
+        
+        if (has_buildglyph == true) {
+            ref_assign_new(&pdata->BuildGlyph, &build.BuildGlyph);
+        } else {
+            make_null(&pdata->BuildGlyph);
+        }
         if (v != NULL)
             font_file_path = ref_to_string(v, imemory_global, "font file path");
         code = FAPI_refine_font(i_ctx_p, op - 1, pbfont, font_file_path);
@@ -1801,8 +1833,26 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     I->ff = ff_stub;
     if(bBuildGlyph && !bCID) {
         check_type(*op, t_name);
-    } else
+    } else {
+
+        if (bBuildGlyph && pbfont->FontType == ft_CID_TrueType && r_has_type(op, t_name)) {
+            ref *chstrs, *chs;
+            /* This logic is lifted from %Type11BuildGlyph in gs_cidfn.ps
+             * Note we only have to deal with mistakenly being given a name object
+             * here, the out of range CID is handled later
+             */
+            if ((dict_find_string(op - 1, "CharStrings", &chstrs)) <= 0) {
+                return_error(e_undefined);
+            }
+            
+            if ((dict_find_string(chstrs, ".notdef", &chs)) <= 0) {
+                return_error(e_undefined);
+            }
+	    ref_assign_inline(op, chs);
+        }
+
         check_type(*op, t_integer);
+    }
 
     if (penum == 0)
         return_error(e_undefined);

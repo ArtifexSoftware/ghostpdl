@@ -645,11 +645,20 @@ transform_decompose(FT_Matrix *a_transform, int xres, int yres, FT_Fixed *a_x_sc
     /* We use 1 1/64th to calculate the scale, so that we *guarantee* the
      * scalex/y we calculate will be >64 after rounding.
      */
+     /* It turns out that pdfwrite uses a unit matrix for some/many/all of
+      * its nefarious needs, this causes small values to round to zero in
+      * some of Freetype's code, which can result in glyph metrics (height,
+      * width etc) being falsely recorded as zero.
+      * Raise the scale factor of what we consider a "small" glyph by an
+      * order of magnitude to keep pdfwrite happy - note this doesn't
+      * affect the ultimate size of the glyph since we recalculate the
+      * final scale matrix to suit below.
+      */
     if (scalex > scaley)
     {
-        if (scaley < 1.0)
+        if (scaley < 10.0)
 	{
-	    fact = 1.016 / scaley;
+	    fact = 10.016 / scaley;
 	    scaley = scaley * fact;
 	    scalex = scalex * fact;
 	}
@@ -674,9 +683,9 @@ transform_decompose(FT_Matrix *a_transform, int xres, int yres, FT_Fixed *a_x_sc
     }
     else
     {
-        if (scalex < 1.0)
+        if (scalex < 10.0)
 	{
-	    fact = 1.016 / scalex;
+	    fact = 10.016 / scalex;
 	    scalex = scalex * fact;
 	    scaley = scaley * fact;
 	}
