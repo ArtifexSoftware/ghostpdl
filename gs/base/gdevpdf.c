@@ -1060,6 +1060,52 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
 	    gx_finish_output_page(dev, num_copies, flush));
 }
 
+int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, int resource_pos)
+{
+    int start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
+
+    fseek(tfile, start_offset, SEEK_SET);
+    {
+	long i, r;
+
+	for (i = start; i < pdev->next_id; ++i) {
+	    ulong pos;
+	    char str[21];
+
+	    r = fread(&pos, sizeof(pos), 1, tfile);
+	    if (pos & ASIDES_BASE_POSITION)
+		pos += resource_pos - ASIDES_BASE_POSITION;
+	    pos -= pdev->OPDFRead_procset_length;
+	    if (pos == 0) {
+		return i;
+	    }
+	}
+    }
+    return pdev->next_id;
+}
+
+write_xref_section(gx_device_pdf *pdev, FILE *tfile, int start, int end, int resource_pos)
+{
+    int start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
+
+    fseek(tfile, start_offset, SEEK_SET);
+    {
+        long i, r;
+
+        for (i = start; i < end; ++i) {
+	    ulong pos;
+	    char str[21];
+
+	    r = fread(&pos, sizeof(pos), 1, tfile);
+	    if (pos & ASIDES_BASE_POSITION)
+	        pos += resource_pos - ASIDES_BASE_POSITION;
+	    pos -= pdev->OPDFRead_procset_length;
+	    sprintf(str, "%010ld 00000 n \n", pos);
+	    stream_puts(pdev->strm, str);
+	}
+    }
+}
+
 /* Close the device. */
 static int
 pdf_close(gx_device * dev)
@@ -1074,7 +1120,7 @@ pdf_close(gx_device * dev)
 	Pages_id = pdev->Pages->id, Encrypt_id = 0;
     long Threads_id = 0;
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
-    int code = 0, code1;
+    int code = 0, code1, start_section, end_section;
 
     /*
      * If this is an EPS file, or if the file didn't end with a showpage for
@@ -1323,30 +1369,26 @@ pdf_close(gx_device * dev)
 
     /* Write the cross-reference section. */
 
+    start_section = pdev->FirstObjectNumber;
+    end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+
     xref = pdf_stell(pdev) - pdev->OPDFRead_procset_length;
     if (pdev->FirstObjectNumber == 1)
 	pprintld1(s, "xref\n0 %ld\n0000000000 65535 f \n",
-		  pdev->next_id);
+		  end_section);
     else
 	pprintld2(s, "xref\n0 1\n0000000000 65535 f \n%ld %ld\n",
-		  pdev->FirstObjectNumber,
-		  pdev->next_id - pdev->FirstObjectNumber);
-    fseek(tfile, 0L, SEEK_SET);
-    {
-	long i, r;
+		  start_section,
+		  end_section - start_section);
 
-	for (i = pdev->FirstObjectNumber; i < pdev->next_id; ++i) {
-	    ulong pos;
-	    char str[21];
-
-	    r = fread(&pos, sizeof(pos), 1, tfile);
-	    if (pos & ASIDES_BASE_POSITION)
-		pos += resource_pos - ASIDES_BASE_POSITION;
-	    pos -= pdev->OPDFRead_procset_length;
-	    sprintf(str, "%010ld 00000 n \n", pos);
-	    stream_puts(s, str);
-	}
-    }
+    do {
+	write_xref_section(pdev, tfile, start_section, end_section, resource_pos);
+	if (end_section >= pdev->next_id)
+	    break;
+	start_section = end_section + 1;
+	end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+	pprintld2(s, "%ld %ld\n", start_section, end_section - start_section);
+    } while (1);
 
     /* Write the trailer. */
 

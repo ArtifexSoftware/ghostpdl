@@ -389,6 +389,29 @@ pdf_stell(gx_device_pdf * pdev)
     return pos;
 }
 
+/* Allocate an ID for a future object. 
+ * pdf_obj_ref below allocates an object and assigns it a position assuming 
+ * it will be written at the current location in the PDF file. But we want 
+ * some way to notice when writing the PDF file if some kinds of objects have 
+ * never been written out (eg pages allocated for /Dest targets). Setting the
+ * position to 0 is good, because we always write the header, which is 15
+ * bytes. However, pdf_obj_ref is so wisely used its no longer possible to
+ * tell whether writing the object out has been deferred (in which case the
+ * pos is updated by pdf_open_obj) or not. Adding this function to allow us
+ * to create an object whose writing is definitely deferred, in which case
+ * we know it will be updated later. This allows setting the pos to 0, 
+ * and we can detect that when writing the xref, and set the object to
+ * 'unused'.
+ */
+long pdf_obj_forward_ref(gx_device_pdf * pdev)
+{
+    long id = pdf_next_id(pdev);
+    long pos = 0;
+
+    fwrite(&pos, sizeof(pos), 1, pdev->xref.file);
+    return id;
+}
+
 /* Allocate an ID for a future object. */
 long
 pdf_obj_ref(gx_device_pdf * pdev)
@@ -1333,7 +1356,7 @@ pdf_page_id(gx_device_pdf * pdev, int page_num)
     if ((Page = pdev->pages[page_num - 1].Page) == 0) {
 	pdev->pages[page_num - 1].Page = Page =
 	    cos_dict_alloc(pdev, "pdf_page_id");
-	Page->id = pdf_obj_ref(pdev);
+	Page->id = pdf_obj_forward_ref(pdev);
     }
     return Page->id;
 }
