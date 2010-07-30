@@ -820,7 +820,6 @@ executable and want to save it, move it first to another place, because
 <dt><code>make so</code>
 <dd>On some platforms (Linux, *BSD, Darwin/Mac OS X, SunOS),
 it is possible to build ghostscript as a shared object library.
-<code>./configure --enable-dynamic</code>, is required.
 There is a corresponding "<code>make soclean</code>" for cleaning up.
 </dl>
 
@@ -1510,13 +1509,14 @@ make
 <p>or
 
 <blockquote><pre>
-./configure --enable-dynamic
+./configure
 make so
 </pre></blockquote>
 
-<p>for building ghostscript as a shared library.
-<code>./configure --enable-dynamic</code> will return an error message
-on unsupported platforms.
+<p>for building ghostscript as a shared library. It is recommended to
+have the extra option <code>--enable-dynamic</code> in
+<code>./configure --enable-dynamic</code> which returns an error message
+on platforms for which shared-library support is inadequate.
 
 <p>Please report any problems with this method on your system as a bug.
 
