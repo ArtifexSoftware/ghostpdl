@@ -389,6 +389,7 @@ gdev_x_setup_colors(gx_device_X * xdev)
     case 'G':
 grayscale:
 	xdev->color_info.num_components = 1;
+	xdev->color_info.gray_index = 0;
 	xdev->color_info.max_gray = xdev->cman.num_rgb - 1;
 #if HaveStdCMap
 	/* Get a standard color map if available */
@@ -434,6 +435,7 @@ grayscale:
     case 'M':
 monochrome:
 	xdev->color_info.num_components = 1;
+	xdev->color_info.gray_index = 0;
 	xdev->color_info.max_gray = 1;
 	xdev->color_info.dither_grays = 2;
 	break;
