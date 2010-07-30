@@ -856,7 +856,6 @@ enable_cairo=no
 fi
 
 if test "x$enable_cairo" != xno; then
-  AC_PATH_PROG(PKGCONFIG, pkg-config)
   if test "x$PKGCONFIG" != x; then
     AC_MSG_CHECKING([for cairo])
     if $PKGCONFIG --exists 'cairo >= 1.2.0'; then
