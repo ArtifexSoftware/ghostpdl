@@ -46,6 +46,8 @@ private_st_x11fontmap();
 
 /* Forward references */
 static void gdev_x_setup_fontmap(gx_device_X *);
+static void x_get_work_area(gx_device_X *xdev, int *pwidth, int *pheight);
+static long *x_get_win_property(gx_device_X *xdev, const char *atom_name);
 
 /* Catch the alloc error when there is not enough resources for the
  * backing pixmap.  Automatically shut off backing pixmap and let the
@@ -318,6 +320,10 @@ gdev_x_open(gx_device_X * xdev)
 	    xdev->y_pixels_per_inch == FAKE_RES) {
 	    float xsize = (float)xdev->width / xdev->x_pixels_per_inch;
 	    float ysize = (float)xdev->height / xdev->y_pixels_per_inch;
+	    int workarea_width = WidthOfScreen(xdev->scr), workarea_height = HeightOfScreen(xdev->scr);
+
+	    /* Get area available for windows placement */
+	    x_get_work_area(xdev, &workarea_width, &workarea_height);
 
 	    if (xdev->xResolution == 0.0 && xdev->yResolution == 0.0) {
 		float dpi, xdpi, ydpi;
@@ -348,11 +354,12 @@ gdev_x_open(gx_device_X * xdev)
 		xdev->x_pixels_per_inch = xdev->xResolution;
 		xdev->y_pixels_per_inch = xdev->yResolution;
 	    }
-	    if (xdev->width > WidthOfScreen(xdev->scr)) {
-		xdev->width = xsize * xdev->x_pixels_per_inch;
+	    /* Restrict maximum window size to available work area */
+	    if (xdev->width > workarea_width) {
+		xdev->width = min(xsize * xdev->x_pixels_per_inch, workarea_width);
 	    }
-	    if (xdev->height > HeightOfScreen(xdev->scr)) {
-		xdev->height = ysize * xdev->y_pixels_per_inch;
+	    if (xdev->height > workarea_height) {
+		xdev->height = min(ysize * xdev->y_pixels_per_inch, workarea_height);
 	    }
 	    xdev->MediaSize[0] =
 		(float)xdev->width / xdev->x_pixels_per_inch * 72;
@@ -498,6 +505,49 @@ gdev_x_open(gx_device_X * xdev)
 				       xdev->vinfo->depth);
 
     return 0;
+}
+
+/* Get area available for windows placement */
+static void
+x_get_work_area(gx_device_X *xdev, int *pwidth, int *pheight)
+{
+    /* First get work area from window manager if available */
+    long *area;
+
+    /* Try to get NET_WORKAREA then WIN_WORKAREA */
+    if ((area = x_get_win_property(xdev, "_NET_WORKAREA")) != NULL ||
+	    (area = x_get_win_property(xdev, "_WIN_WORKAREA")) != NULL) {
+	/* Update maximum screen size with usable screen size */
+	*pwidth = area[2];
+	*pheight = area[3];
+	XFree(area);
+    }
+}
+
+/* Get window property with specified name (should be CARDINAL, four 32-bit words) */
+static long *
+x_get_win_property(gx_device_X *xdev, const char *atom_name)
+{
+    Atom r_type = (Atom)0;
+    int r_format = 0;
+    unsigned long count = 0;
+    unsigned long bytes_remain;
+    unsigned char *prop;
+
+    if (XGetWindowProperty(xdev->dpy, RootWindowOfScreen(xdev->scr),
+			   XInternAtom(xdev->dpy, atom_name, False),
+                           0, 4, False, XA_CARDINAL,
+                           &r_type, &r_format,
+                           &count, &bytes_remain, &prop) == Success &&
+                           prop &&
+                           r_type == XA_CARDINAL &&
+                           r_format == 32 &&
+                           count == 4 &&
+                           bytes_remain == 0)
+            return (long *)prop;	/* should free at the caller */
+    /* property does not exists or something went wrong */
+    XFree(prop);
+    return NULL;
 }
 
 /* Set up or take down buffering in a RAM image. */
@@ -934,11 +984,28 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	 dev->HWResolution[0] != values.HWResolution[0] ||
 	 dev->HWResolution[1] != values.HWResolution[1])
 	) {
-	int dw = dev->width - values.width;
-	int dh = dev->height - values.height;
-	double qx = dev->HWResolution[0] / values.HWResolution[0];
-	double qy = dev->HWResolution[1] / values.HWResolution[1];
+	int area_width = WidthOfScreen(xdev->scr), area_height = HeightOfScreen(xdev->scr);
+	int dw, dh;
 
+	/* Get work area */
+	x_get_work_area(xdev, &area_width, &area_height);
+
+	/* Preserve screen resolution */
+	dev->x_pixels_per_inch = values.x_pixels_per_inch;
+	dev->y_pixels_per_inch = values.y_pixels_per_inch;
+	dev->HWResolution[0] = values.HWResolution[0];
+	dev->HWResolution[1] = values.HWResolution[1];
+
+	/* Recompute window size using screen resolution and available work area size*/
+	/* pixels */
+	dev->width = min(dev->width, area_width);
+        dev->height = min(dev->height, area_height);
+        /* points */
+        dev->MediaSize[0] = (float)dev->width / xdev->x_pixels_per_inch * 72;
+        dev->MediaSize[1] = (float)dev->height / xdev->y_pixels_per_inch * 72;
+
+        dw = dev->width - values.width;
+        dh = dev->height - values.height;
 	if (dw || dh) {
 	    XResizeWindow(xdev->dpy, xdev->win,
 			  dev->width, dev->height);
@@ -964,10 +1031,6 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 	    } else {		/* 270 degree rotation */
 	    }
 	}
-	xdev->initial_matrix.xx *= qx;
-	xdev->initial_matrix.xy *= qx;
-	xdev->initial_matrix.yx *= qy;
-	xdev->initial_matrix.yy *= qy;
     }
     xdev->MaxTempPixmap = values.MaxTempPixmap;
     xdev->MaxTempImage = values.MaxTempImage;
