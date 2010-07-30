@@ -148,9 +148,9 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 #define icMultiUnicodeText 0x6d6c7563           /* 'mluc' v4 text type */
 #define icMultiFunctionAtoBType 0x6d414220      /* 'mAB ' v4 lutAtoBtype type */
 #define icSigChromaticAdaptationTag 0x63686164  /* 'chad' */
-#define D50_X 0.9642
-#define D50_Y 1.0
-#define D50_Z 0.8249
+#define D50_X 0.9642f
+#define D50_Y 1.0f
+#define D50_Z 0.8249f
 #define DEFAULT_TABLE_NSIZE 9
 #define DEFAULT_TABLE_GRAYSIZE 128
 
@@ -1039,12 +1039,12 @@ static void
 gsicc_create_compute_cam( gs_vector3 *white_src, gs_vector3 *white_des, 
                                 float *cam)
 {
-    float cat02matrix[] = {0.7328, 0.4296, -0.1624,
-                            -0.7036, 1.6975, 0.0061,
-                             0.003, 0.0136, 0.9834};
-    float cat02matrixinv[] = {1.0961, -0.2789, 0.1827,
-                              0.4544, 0.4735, 0.0721,
-                             -0.0096, -0.0057, 1.0153};
+    float cat02matrix[] = {0.7328f, 0.4296f, -0.1624f,
+                            -0.7036f, 1.6975f, 0.0061f,
+                             0.003f, 0.0136f, 0.9834f};
+    float cat02matrixinv[] = {1.0961f, -0.2789f, 0.1827f,
+                              0.4544f, 0.4735f, 0.0721f,
+                             -0.0096f, -0.0057f, 1.0153f};
     float vonkries_diag[9];
     float temp_matrix[9];
     float lms_wp_src[3], lms_wp_des[3];
