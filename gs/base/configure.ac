@@ -552,7 +552,7 @@ case "x$with_system_libtiff" in
 	AC_CHECK_LIB(tiff, TIFFOpen,
 		     [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
 		     [], [-ljpeg])
-	if test -z $LOCAL_LIBTIFF_VERSION && test "x$HAVE_SYSTEM_LIBTIFF" == x; then
+	if test -z $LOCAL_LIBTIFF_VERSION && test "x$HAVE_SYSTEM_LIBTIFF" = x; then
 	    AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
 Disabling tiff output devices.])
 	else
@@ -878,7 +878,7 @@ AC_ARG_WITH([omni], AC_HELP_STRING([--with-omni],
 dnl set safe defaults
 OMNIDEVS=''
 INCLUDEOMNI=no
-if ( ! test -z "$CONTRIBINCLUDE" ) && ( test x$with_omni == xyes ); then
+if ( ! test -z "$CONTRIBINCLUDE" ) && ( test x$with_omni = xyes ); then
 	INCLUDEOMNI=yes
         OMNIDEVS='$(DD)omni.dev'
 
