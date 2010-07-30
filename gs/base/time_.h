@@ -35,7 +35,7 @@
 #  include <sys/time.h>
 #  if defined(Plan9) || defined(M_UNIX) || defined(_IBMR2) || \
       defined(_SEQUENT_) || defined(__GNUC__) || defined(__INTEL_COMPILER) ||\
-      defined(__hpux)
+      defined(__hpux) || defined(__SUNPRO_C)
      /* Plan 9, SCO, AIX and Sequent's DYNIX/ptx need both time.h and
       * sys/time.h! As of version 2.2, at least some glibc
       * installations also require both files. 
