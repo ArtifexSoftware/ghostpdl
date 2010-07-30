@@ -35,4 +35,4 @@ else
 	echo "running ./configure $@"
 fi
 
-$srcdir/configure "$@" && echo
+$srcdir/configure $@ && echo
