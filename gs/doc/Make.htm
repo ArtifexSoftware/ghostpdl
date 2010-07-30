@@ -1274,6 +1274,7 @@ add these defines to your Visual Studio project.
 Building Ghostscript for 64-bit Windows (AMD64 processor) requires
 Microsoft Visual Studio .NET 2005 or Microsoft Visual Studio 2008 
 on 64-bit Windows.  Cross compiling on 32-bit Windows is not supported.
+That said, see the notes at the end of this section.
 <p>
 Compiling for 64-bit is similar to the 
 <a href="#Microsoft_build">Microsoft Environment</a> instructions above,
@@ -1283,6 +1284,26 @@ To make ghostscript use
 <blockquote><code>
   nmake -f psi/msvc32.mak WIN64=
 </code></blockquote>
+<p>
+Cross-compiling of Win64 ghostscript on 32-bit windows follows the generic
+cross-compiling procedure outlined above, with some additional details and
+convenience as follows: save <code>obj\arch.h</code>, <code>obj\genconf.exe</code>,
+<code>obj\echogs.exe</code>, <code>obj\mkromfs.exe</code> from a 32-bit build.
+In <code>obj\arch.h</code>, change ARCH_ALIGN_PTR_MOD to 8 and
+ARCH_SIZEOF_PTR to 8. Then adjust <code>psi/msvc32.mak</code> for compiler
+location (e.g. <code>Program Files</code> instead of
+<code>Program Files (x86)</code>) and target (<code>x86_amd64</code>
+instead of <code>amd64</code>). Also edit
+<code>base\lib.mak</code> so that <code>arch.h</code> does not depend on
+<code>genarch</code>, nor <code>gsromfs1.c</code> on <code>mkromfs</code>.
+(we don't want <code>genarch</code> to fail to regenerate a new
+<code>arch.h</code>, nor trigger a 64-bit <code>mkromfs</code> to build;
+32-bit <code>echogs</code> and <code>genconf</code> are left alone and
+used when they are present). Then run
+<code>nmake -f psi/msvc32.mak WIN64=</code> as one would for a 64-bit build.
+There are some additional subtlety for packaging of installers: saving
+a 32-bit <code>make_filelist.exe</code> or the filelist itself,
+and adjusting for location of WINZIPSE and MAKENSIS.
 <p>
 
 <h4><a name="Self-extracting_executables"></a>Making self-extracting executables</h4>
