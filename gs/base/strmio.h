@@ -55,7 +55,7 @@ int sfseek(stream *s, long offset, int whence);
 /*
  * Seek to beginning of the file
  */
-int srewind(stream *s);;
+int srewind(stream *s);
 
 /*
  * Return the current position in the stream or -1 if error.

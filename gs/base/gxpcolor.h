@@ -178,7 +178,7 @@ struct gx_pattern_trans_s {
 #define private_st_pattern_trans() /* in gxpcmap.c */\
 gs_private_st_ptrs2(st_pattern_trans, gx_pattern_trans_t, "gx_pattern_trans",\
 		    pattern_trans_enum_ptrs, pattern_trans_reloc_ptrs,\
-		    pdev14, transbytes);
+		    pdev14, transbytes)
 
 
 

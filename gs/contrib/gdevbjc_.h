@@ -140,7 +140,7 @@ typedef struct gx_device_bjc_printer_s gx_device_bjc_printer;
     {  (int) 255,           /* White  paper  */        \
        (int) 255,           /*               */        \
        (int) 255 }          /*               */        \
-};
+}
 
 
 #define bjc_device(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page, def_ink)\
