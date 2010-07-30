@@ -51,7 +51,7 @@
 
 #if defined(HAVE_STDINT_H) || defined(__MACOS__)
 # include <stdint.h>
-#elif defined(__VMS)
+#elif defined(__VMS) || defined(__osf__)
 # include <inttypes.h>
 #endif
 
