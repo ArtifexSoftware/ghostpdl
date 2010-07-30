@@ -1172,7 +1172,7 @@ static const gx_device_bbox_procs_t box_procs_forward = {
 static int
 bbox_create_compositor(gx_device * dev,
 		       gx_device ** pcdev, const gs_composite_t * pcte,
-		       gs_imager_state * pis, gs_memory_t * memory, gx_device *cindev)
+		       gs_imager_state * pis, gs_memory_t * memory, gx_device *cdev)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *target = bdev->target;
@@ -1191,13 +1191,13 @@ bbox_create_compositor(gx_device * dev,
      * box in the same place.
      */
     {
-	gx_device *temp_cdev;
+	gx_device *cdev;
 	gx_device_bbox *bbcdev;
 	int code = (*dev_proc(target, create_compositor))
-	    (target, &temp_cdev, pcte, pis, memory, cindev);
+	    (target, &cdev, pcte, pis, memory, cdev);
 
 	/* If the target did not create a new compositor then we are done. */
-	if (code < 0 || target == temp_cdev) {
+	if (code < 0 || target == cdev) {
 	    *pcdev = dev;
 	    return code;
 	}
@@ -1205,11 +1205,11 @@ bbox_create_compositor(gx_device * dev,
 					   &st_device_bbox,
 					   "bbox_create_compositor");
 	if (bbcdev == 0) {
-	    (*dev_proc(temp_cdev, close_device)) (temp_cdev);
+	    (*dev_proc(cdev, close_device)) (cdev);
 	    return_error(gs_error_VMerror);
 	}
 	gx_device_bbox_init(bbcdev, target, memory);
-	gx_device_set_target((gx_device_forward *)bbcdev, temp_cdev);
+	gx_device_set_target((gx_device_forward *)bbcdev, cdev);
 	bbcdev->box_procs = box_procs_forward;
 	bbcdev->box_proc_data = bdev;
 	*pcdev = (gx_device *) bbcdev;

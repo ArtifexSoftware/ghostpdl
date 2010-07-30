@@ -294,7 +294,7 @@ typedef struct gs_overprint_s {
  * entire gs_overprint_s structure.
  */
 #define private_st_gs_overprint_t()	/* In gsovrc.c */\
-  gs_private_st_simple(st_overprint, gs_overprint_t, "gs_overprint_t")
+  gs_private_st_simple(st_overprint, gs_overprint_t, "gs_overprint_t");
 
 
 

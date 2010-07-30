@@ -133,7 +133,6 @@ extern const sample_unpack_proc_t sample_unpack_12_proc;
  * if 16-bit samples are supported, 0 otherwise.
  */
 extern const sample_unpack_proc_t sample_unpack_16_proc;
-extern const sample_unpack_proc_t sample_unpackicc_16_proc;
 
 /* Define the distinct postures of an image. */
 /* Each posture includes its reflected variant. */

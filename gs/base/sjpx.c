@@ -165,7 +165,7 @@ dump_jpxd_colorspace(const stream_jpxd_state * state)
 #endif /* DEBUG */
 
 static int
-copy_row_gray(byte *dest, jas_image_t *image,
+copy_row_gray(unsigned char *dest, jas_image_t *image,
         int x, int y, int bytes)
 {
     int i, p;
@@ -200,7 +200,7 @@ copy_row_gray(byte *dest, jas_image_t *image,
 }
 
 static int
-copy_row_rgb(byte *dest, jas_image_t *image,
+copy_row_rgb(unsigned char *dest, jas_image_t *image,
         int x, int y, int bytes)
 {
     int i, p;
@@ -227,7 +227,7 @@ copy_row_rgb(byte *dest, jas_image_t *image,
 }
 
 static int
-copy_row_yuv(byte *dest, jas_image_t *image,
+copy_row_yuv(unsigned char *dest, jas_image_t *image,
         int x, int y, int bytes)
 {
     int i,j;
@@ -287,7 +287,7 @@ copy_row_yuv(byte *dest, jas_image_t *image,
 }
 
 static int
-copy_row_default(byte *dest, jas_image_t *image,
+copy_row_default(unsigned char *dest, jas_image_t *image,
         int x, int y, int bytes)
 {
     int i, c,n;
@@ -304,67 +304,6 @@ copy_row_default(byte *dest, jas_image_t *image,
     return count;
 }
 
-/* This is really inefficient and needs some work but at least
-   now we will get 16 bit data out correctly when it is in a non standard
-   color space. Note that indexing into dest (stream buffer) starts at +1. */
-static int
-copy_row_default16(byte *dest, jas_image_t *image,
-        int x, int y, int bytes)
-{
-    int c,n;
-    int count;
-    int pixel_width;
-    byte *curr_ptr = dest+1;  /* The offset */
-    int value;
-
-    n = jas_image_numcmpts(image);
-    count = bytes;
-    pixel_width = n*sizeof(unsigned short);
-
-    while (count >= pixel_width) {
-        for (c = 0; c < n; c++) {
-            value = jas_image_readcmptsample(image, c, x, y);
-            /* endian issues here? */
-            *curr_ptr++ = ((value >> 8) & 0xff);
-            *curr_ptr++ = (value & 0xff);
-        }
-        x++;
-        count =  count - pixel_width;
-    }
-    return bytes-count;
-}
-
-static int
-copy_row_gray16(byte *dest, jas_image_t *image,
-        int x, int y, int bytes, int bits)
-{
-    int count;
-    int pixel_width;
-    byte *curr_ptr = dest+1; /* The offset */
-    int shift;
-    int p, v;
-    unsigned short value;
-
-    v = jas_image_getcmptbytype(image, JAS_IMAGE_CT_GRAY_Y);
-    if (v < 0) return 0; /* no matching component */
-
-    count = bytes;
-    pixel_width = 2;
-    shift = max(16 - bits, 0);
-
-    while (count >= pixel_width) {
-        p = jas_image_readcmptsample(image, v, x, y);
-        value = p << shift;
-        /* endian issues here? */
-        *curr_ptr++ = ((value >> 8) & 0xff);
-        *curr_ptr++ = (value & 0xff);
-        x++;
-        count =  count - pixel_width;
-    }
-    return bytes-count;
-}
-
-
 /* buffer the input stream into our state */
 static int
 s_jpxd_buffer_input(stream_jpxd_state *const state, stream_cursor_read *pr,
@@ -373,10 +312,10 @@ s_jpxd_buffer_input(stream_jpxd_state *const state, stream_cursor_read *pr,
     /* grow internal buffer if necessary */
     if (bytes > state->bufsize - state->buffill) {
         int newsize = state->bufsize;
-        byte *newbuf = NULL;
+        unsigned char *newbuf = NULL;
         while (newsize - state->buffill < bytes)
             newsize <<= 1;
-        newbuf = (byte *)gs_malloc(state->jpx_memory, newsize, 1,
+        newbuf = (unsigned char *)gs_malloc(state->jpx_memory, newsize, 1,
                                             "JPXDecode temp buffer");
         /* TODO: check for allocation failure */
         memcpy(newbuf, state->buffer, state->buffill);
@@ -479,28 +418,21 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
         jas_image_t *image = state->image;
         int numcmpts = jas_image_numcmpts(image);
         int bits = jas_image_cmptprec(image, 0);
-        int stride, image_size;
+        int stride = numcmpts*jas_image_width(image);
+        long image_size = stride*jas_image_height(image);
         int clrspc = jas_image_clrspc(image);
         int x, y;
         long usable, done;
 
-        stride = numcmpts*jas_image_width(image);
-
-        if (bits > 8)  stride = 2*numcmpts*jas_image_width(image);
         if (bits == 4) stride = (stride + 1)/2;
 
-        image_size = stride*jas_image_height(image);
         /* copy data out of the decoded image data */
         /* be lazy and only write the rest of the current row */
         y = state->offset / stride;
         x = state->offset - y*stride; /* bytes, not samples */
         usable = min(out_size, stride - x);
-        /* now samples */
-        if (bits > 8) {
-            x = x/(numcmpts*2);               
-        } else {
-            x = x/numcmpts;     
-        }
+        x = x/numcmpts;               /* now samples */
+
         /* Make sure we can return a full pixel.
            This can fail if we get the colorspace wrong. */
         if (usable < numcmpts) return ERRC;
@@ -526,20 +458,10 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
         else /* use the stream's colorspace */
           switch (jas_clrspc_fam(clrspc)) {
                 case JAS_CLRSPC_FAM_GRAY:
-                    if (bits > 8) {
-                        done = copy_row_gray16(pw->ptr, image, x, y, usable, bits);
-                    } else {
-                        done = copy_row_gray(pw->ptr, image, x, y, usable);
-                    }
+                    done = copy_row_gray(pw->ptr, image, x, y, usable);
                     break;
                 case JAS_CLRSPC_FAM_RGB:
-                    if (bits == 16) {
-                        /* This will have issues if we have mixed compononents
-                           with different bps. Unlikely, but it could happen */
-                        done = copy_row_default16(pw->ptr, image, x, y, usable);
-                    } else {
-                        done = copy_row_rgb(pw->ptr, image, x, y, usable);
-                    }
+                    done = copy_row_rgb(pw->ptr, image, x, y, usable);
                     break;
                 case JAS_CLRSPC_FAM_YCBCR:
                     done = copy_row_yuv(pw->ptr, image, x, y, usable);
@@ -548,13 +470,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 case JAS_CLRSPC_FAM_LAB:
                 case JAS_CLRSPC_FAM_UNKNOWN:
                 default:
-                    if (bits == 16) {
-                        /* This will have issues if we have mixed compononents
-                           with different bps. Unlikely, but it could happen */
-                        done = copy_row_default16(pw->ptr, image, x, y, usable);
-                    } else {
-                        done = copy_row_default(pw->ptr, image, x, y, usable);
-                    }
+                    done = copy_row_default(pw->ptr, image, x, y, usable);
                     break;
          }
         /* advance pointers for returned data */

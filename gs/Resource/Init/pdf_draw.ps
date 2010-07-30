@@ -1042,9 +1042,9 @@ end
 
 /jp2_csp_dict <<
   12 { /DeviceCMYK } bind  % CMYK
-  14 { /Lab } bind		   % LAB
-  16 {/sRGBICC /ColorSpace findresource}   
-  17 {/sGrayICC /ColorSpace findresource} 
+% 14                       % LAB
+  16 { /DeviceRGB } bind   % sRGB {/sRGBICC /ColorSpace findresource}
+  17 { /DeviceGray } bind  % Gray {/sGray /ColorSpace findresource}
   18 3 index               % YCC is converted to RGB
 % 19                       % CIEJab not supportec by PDF 1.7
 % 20                       % e-sRGB
@@ -1064,8 +1064,8 @@ end
     /Components 1 index 8 getu16         % file len-14 (14) /Components NC
     def                                  % file len-14 (14)
     10 get 16#7F and 1 add
-	dup 12 eq { pop 16 } if    
-	/BitsPerComponent exch def           % file len-14 
+    8 .min % color depth is reduced in the library
+    /BitsPerComponent exch def           % file len-14 
   } bind
   /colr {
     currentdict /ColorSpace known not {

@@ -321,7 +321,7 @@ static void
 cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
-}
+};
 
 static void
 private_rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,

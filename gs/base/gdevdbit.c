@@ -289,7 +289,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 		}
 		LINE_ACCUM(composite, bpp);
 	    }
-	    LINE_ACCUM_COPY(dev, lout, bpp, x, rx, out_size, ry);
+	    LINE_ACCUM_COPY(dev, lout, bpp, x, rx, raster, ry);
 	}
       out:gs_free_object(mem, lout, "copy_alpha(lout)");
 	gs_free_object(mem, lin, "copy_alpha(lin)");

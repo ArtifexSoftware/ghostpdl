@@ -287,7 +287,7 @@ cmyk_cs_to_spotrgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[
     color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
     for(; i>0; i--)			/* Clear spot colors */
         out[2 + i] = 0;
-}
+};
 
 static void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])

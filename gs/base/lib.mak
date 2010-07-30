@@ -460,7 +460,7 @@ gxht_h=$(GLSRC)gxht.h $(gsht1_h) $(gsrefct_h) $(gxhttype_h) $(gxtmap_h) $(gscspa
 gxcie_h=$(GLSRC)gxcie.h $(gscie_h)
 gxpcolor_h=$(GLSRC)gxpcolor.h\
  $(gspcolor_h) $(gxcspace_h) $(gxdevice_h) $(gxdevmem_h) $(gxpcache_h) $(gxblend_h)\
- $(gxcpath_h) $(gxdcolor_h) $(gxiclass_h) 
+ $(gxcpath_h) $(gxdcolor_h)
 gscolor_h=$(GLSRC)gscolor.h $(gxtmap_h)
 gsstate_h=$(GLSRC)gsstate.h\
  $(gscolor_h) $(gscpm_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
@@ -705,8 +705,7 @@ $(GLOBJ)gxi12bit.$(OBJ) : $(GLSRC)gxi12bit.c $(GXERR)\
  $(gsccolor_h) $(gspaint_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
- $(gxmatrix_h)  $(vdtrace_h) $(gsicc_h) $(gsicc_cache_h) $(gsicc_littlecms_h)\
- $(gxcie_h) $(gscie_h)
+ $(gxmatrix_h)  $(vdtrace_h)
 	$(GLCC) $(GLO_)gxi12bit.$(OBJ) $(C_) $(GLSRC)gxi12bit.c
 
 $(GLOBJ)gxi16bit.$(OBJ) : $(GLSRC)gxi16bit.c $(GXERR)\
@@ -2687,7 +2686,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
  $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gsovrc_h) $(gxcmap_h) $(gscolor1_h)\
  $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h) $(gxdcconv_h) $(vdtrace_h)\
  $(gscolorbuffer_h) $(gsptype2_h) $(gxpcolor_h) $(gsptype1_h) $(gzcpath_h)\
- $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h) $(gxiclass_h) $(gximage_h)
+ $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
