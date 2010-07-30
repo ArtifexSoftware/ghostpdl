@@ -57,7 +57,7 @@
    typedef unsigned int            uint32_t;
    typedef unsigned __int64        uint64_t;
 #  define STDINT_TYPES_DEFINED
-# elif defined(__VMS) /* OpenVMS provides these types in inttypes.h */
+# elif defined(__VMS) || defined(__osf__) /* OpenVMS and Tru64 provide these types in inttypes.h */
 #  include <inttypes.h>
 #  define STDINT_TYPES_DEFINED
 # elif defined(__CYGWIN__)
