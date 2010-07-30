@@ -184,7 +184,7 @@ BASIC_PTRS(pdf_base_font_ptrs) {\
     GC_OBJ_ELT(pdf_base_font_t, CIDSet),\
     GC_OBJ_ELT(pdf_base_font_t, FontFile),\
     GC_STRING_ELT(pdf_base_font_t, font_name)\
-};\
+}
 
 
 typedef struct {
