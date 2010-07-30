@@ -511,7 +511,7 @@ CC_LEAF_PG=$(CC_)
 # These are the specific warnings we have to turn off to compile those
 # specific few files that need this.  We may turn off others in the future.
 CC_NO_WARN=$(CC_)
-CC_SHARED=$(CC_) @DYNAMIC_LDFLAGS@
+CC_SHARED=$(CC_) @DYNAMIC_CFLAGS@
 
 # ---------------- End of platform-specific section ---------------- #
 
