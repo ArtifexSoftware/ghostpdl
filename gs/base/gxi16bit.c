@@ -57,7 +57,31 @@ sample_unpack_16(byte * bptr, int *pdata_x, const byte * data,
     return bptr;
 }
 
+static const byte *
+sample_unpackicc_16(byte * bptr, int *pdata_x, const byte * data,
+		 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
+		 int ignore_num_components_per_plane)
+{
+    /* Assuming an identity map for all components. */
+    register unsigned short *bufp = (unsigned short *) bptr;
+    uint dskip = data_x << 1;
+    const byte *psrc = data + dskip;
+#define inc_bufp16(bp, n) bp = ( unsigned short *)((byte *)(bp) + (n))
+    uint sample;
+    int left = dsize - dskip;
+
+    while (left > 2) {
+	sample = ((uint) psrc[0] << 8) + psrc[1];
+	*bufp = (unsigned short)(sample);
+	inc_bufp16(bufp, spread);
+	psrc += 2;
+	left -= 2;
+    }
+    *pdata_x = 0;
+    return bptr;
+}
 const sample_unpack_proc_t sample_unpack_16_proc = sample_unpack_16;
+const sample_unpack_proc_t sample_unpackicc_16_proc = sample_unpackicc_16;
 
 /* ---------------- Rendering procedures ---------------- */
 
