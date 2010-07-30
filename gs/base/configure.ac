@@ -78,7 +78,7 @@ AC_PROG_SED
 dnl See if it is GNU sed or else.
 dnl - need more work to tell SED features.
 SED_EXTENDED_REGEX_OPT=-nre
-sed_variant=`sed --version`
+sed_variant=`sed --version 2>&1`
 sed_variant=`echo $sed_variant|sed -e 's/ .*//'`
 if test "$sed_variant" != GNU ; then
 SED_EXTENDED_REGEX_OPT=-nEe
