@@ -499,69 +499,85 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
         {
         case pccd_bitmap:
             { uint width, height;
-            if ( data[2] != 14 ||
-                 (format != pcfh_bitmap &&
-                  format != pcfh_resolution_bitmap &&
-                  format != pcfh_truetype_large)
-                 )
-                return e_Range;
+                if ( data[2] != 14 ||
+                     (format != pcfh_bitmap &&
+                      format != pcfh_resolution_bitmap &&
+                      format != pcfh_truetype_large)
+                     )
+                    return e_Range;
 
-            width = pl_get_uint16(data + 10);
-            if (width < 1  || width > 16384)
-                return e_Range;
-            height = pl_get_uint16(data + 12);
-            if (height < 1 || height > 16384)
-                return e_Range;
-
-            switch ( data[3] ) {
-            case 1:             /* uncompressed bitmap */
-                font_data_size = 16 + (((width + 7) >> 3) * height);
-                break;
-            case 2:             /* compressed bitmap */
-                { uint y = 0;
-                const byte *src = data + 16;
-                const byte *end = data + count;
-                uint width_bytes = (width + 7) >> 3;
-                byte *row;
-
-                char_data = gs_alloc_bytes(pcs->memory, 16 + width_bytes * height,
-                                           "pcl_character_data(compressed bitmap)");
-                if ( char_data == 0 )
-                    return_error(e_Memory);
-                memcpy(char_data, data, 16);
-                memset(char_data + 16, 0, width_bytes * height);
-                row = char_data + 16;
-                while ( src < end && y < height ) { /* Read the next compressed row. */
-                    uint x;
-                    int color = 0;
-                    uint reps = *src++;
-                    for ( x = 0; src < end && x < width; color ^= 1 ) { /* Read the next run. */
-                        uint rlen = *src++;
-
-                        if ( rlen > width - x )
-                            return e_Range;  /* row overrun */
-                        if ( color ) { /* Set the run to black. */
-                            char *data = (char *)row;
-                            while ( rlen-- ) {
-                                data[x >> 3] |= (128 >> (x & 7));
-                                x++;
-                            }
-                        }
-                        else
-                            x += rlen;
-                    }
-                    row += width_bytes;
-                    ++y;
-                    /* Replicate the row if needed. */
-                    for ( ; reps > 0 && y < height;
-                          --reps, ++y, row += width_bytes
-                          )
-                        memcpy(row, row - width_bytes, width_bytes);
+                width = pl_get_uint16(data + 10);
+                if (width < 1  || width > 16384)
+                    return e_Range;
+                height = pl_get_uint16(data + 12);
+                if (height < 1 || height > 16384)
+		    return e_Range;
+                /* more error checking of offsets, delta, width and height. */
+                {
+                    int toff, loff;
+                    int deltax;
+                    loff = pl_get_int16(data + 6);
+                    if ((-16384 > loff) || (loff > 16384))
+			return e_Range;
+                    toff = pl_get_int16(data + 8);
+                    if ((-16384 > toff) || (toff > 16384))
+			return e_Range;
+                    deltax = pl_get_int16(data + 14);
+                    if ((-32768 > deltax) || (deltax > 32767))
+			return e_Range;
+                    /* also reject if width * height larger than 1MByte */
+                    if ((width * height / 8) > 1024 *1024) return e_Range;
                 }
-                } break;
-            default:
-                return e_Range;
-            }
+
+                switch ( data[3] ) {
+                case 1:             /* uncompressed bitmap */
+                    font_data_size = 16 + (((width + 7) >> 3) * height);
+                    break;
+                case 2:             /* compressed bitmap */
+                    { uint y = 0;
+                        const byte *src = data + 16;
+                        const byte *end = data + count;
+                        uint width_bytes = (width + 7) >> 3;
+                        byte *row;
+
+                        char_data = gs_alloc_bytes(pcs->memory, 16 + width_bytes * height,
+                                                   "pcl_character_data(compressed bitmap)");
+                        if ( char_data == 0 )
+                            return_error(e_Memory);
+                        memcpy(char_data, data, 16);
+                        memset(char_data + 16, 0, width_bytes * height);
+                        row = char_data + 16;
+                        while ( src < end && y < height ) { /* Read the next compressed row. */
+                            uint x;
+                            int color = 0;
+                            uint reps = *src++;
+                            for ( x = 0; src < end && x < width; color ^= 1 ) { /* Read the next run. */
+                                uint rlen = *src++;
+
+                                if ( rlen > width - x )
+                                    return e_Range;  /* row overrun */
+                                if ( color ) { /* Set the run to black. */
+                                    char *data = (char *)row;
+                                    while ( rlen-- ) {
+                                        data[x >> 3] |= (128 >> (x & 7));
+                                        x++;
+                                    }
+                                }
+                                else
+                                    x += rlen;
+                            }
+                            row += width_bytes;
+                            ++y;
+                            /* Replicate the row if needed. */
+                            for ( ; reps > 0 && y < height;
+                                  --reps, ++y, row += width_bytes
+                                  )
+                                memcpy(row, row - width_bytes, width_bytes);
+                        }
+                    } break;
+                default:
+                    return e_Range;
+                }
             }
             break;
         case pccd_intellifont:

@@ -648,79 +648,93 @@ const byte apxReadChar[] = {
 };
 int
 pxReadChar(px_args_t *par, px_state_t *pxs)
-{       uint char_code = par->pv[0]->value.i;
-        uint size = par->pv[1]->value.i;
-        uint pos = par->source.position;
+{       
+    uint char_code = par->pv[0]->value.i;
+    uint size = par->pv[1]->value.i;
+    uint pos = par->source.position;
 
-        if ( pos == 0 )
-          { /* We're starting a character definition. */
-            byte *def;
+    if ( pos == 0 ) { 
+        /* We're starting a character definition. */
+        byte *def;
 
-            if ( size < 2 )
-              return_error(errorIllegalCharacterData);
-            if ( par->source.available == 0 )
-              return pxNeedData;
-            def = gs_alloc_bytes(pxs->memory, size, "pxReadChar");
-            if ( def == 0 )
-              return_error(errorInsufficientMemory);
-            pxs->download_bytes.data = def;
-            pxs->download_bytes.size = size;
-          }
-        while ( pos < size )
-          { uint copy = min(par->source.available, size - pos);
+        if ( size < 2 )
+            return_error(errorIllegalCharacterData);
+        if ( par->source.available == 0 )
+            return pxNeedData;
+        def = gs_alloc_bytes(pxs->memory, size, "pxReadChar");
+        if ( def == 0 )
+            return_error(errorInsufficientMemory);
+        pxs->download_bytes.data = def;
+        pxs->download_bytes.size = size;
+    }
+    while ( pos < size ) { 
+        uint copy = min(par->source.available, size - pos);
+        if ( copy == 0 )
+            return pxNeedData;
+        memcpy(pxs->download_bytes.data + pos, par->source.data, copy);
+        par->source.data += copy;
+        par->source.available -= copy;
+        par->source.position = pos += copy;
+    }
+    /* We have the complete character. */
+    /* Do error checks before installing. */
+    {
+        /* const byte *header = pxs->download_font->header;
+           see NB just below */
+        const byte *data = pxs->download_bytes.data;
+        int code = 0;
 
-            if ( copy == 0 )
-              return pxNeedData;
-            memcpy(pxs->download_bytes.data + pos, par->source.data, copy);
-            par->source.data += copy;
-            par->source.available -= copy;
-            par->source.position = pos += copy;
-          }
-        /* We have the complete character. */
-        /* Do error checks before installing. */
-        {
-            /* const byte *header = pxs->download_font->header;
-             see NB just below */
-          const byte *data = pxs->download_bytes.data;
-          int code = 0;
-
-          switch ( data[0] )
-            {
-            case 0:             /* bitmap */
-                if ( false /* NB FIXME header[4] != plfst_bitmap */)
+        switch ( data[0] ) {
+        case 0:             /* bitmap */
+            if ( false /* NB FIXME header[4] != plfst_bitmap */)
                 code = gs_note_error(errorFSTMismatch);
-              else if ( data[1] != 0 )
+            else if ( data[1] != 0 )
                 code = gs_note_error(errorUnsupportedCharacterClass);
-              else if ( size < 10 ||
-                        size != 10 + ((pl_get_uint16(data + 6) + 7) >> 3) *
-                          pl_get_uint16(data + 8)
+            else if ( size < 10 ||
+                      size != 10 + ((pl_get_uint16(data + 6) + 7) >> 3) *
+                      pl_get_uint16(data + 8)
                       )
                 code = gs_note_error(errorIllegalCharacterData);
-              break;
-            case 1:             /* TrueType outline */
-                if ( false /* NB FIXME header[4] != plfst_TrueType */ )
+            else {
+                int loff = pl_get_int16(data+2);
+                int toff = pl_get_int16(data+4);
+                uint width = pl_get_uint16(data+6);
+                uint height = pl_get_uint16(data+8);
+                if ( size < 10 || size != 10 + ((width + 7) >> 3) * height)
+                    code = gs_note_error(errorIllegalCharacterData);
+                else if ((-16384 > toff) || (toff > 16384))
+                    code = gs_note_error(errorIllegalCharacterData);
+                else if ((-16384 > loff) || (loff > 16384))
+                    code = gs_note_error(errorIllegalCharacterData);
+                else if ((1 > height) || (height > 16384))
+                    code = gs_note_error(errorIllegalCharacterData);
+                else if ((1 > width) || (width > 16384))
+                    code = gs_note_error(errorIllegalCharacterData);
+            }
+            break;
+        case 1:             /* TrueType outline */
+            if ( false /* NB FIXME header[4] != plfst_TrueType */ )
                 code = gs_note_error(errorFSTMismatch);
-              else if ( data[1] != 0 && data[1] != 1 && data[1] != 2 )
+            else if ( data[1] != 0 && data[1] != 1 && data[1] != 2 )
                 code = gs_note_error(errorUnsupportedCharacterClass);
-              else if ( size < 6 || size != 2 + pl_get_uint16(data + 2) )
+            else if ( size < 6 || size != 2 + pl_get_uint16(data + 2) )
                 code = gs_note_error(errorIllegalCharacterData);
-              break;
-            default:
-              code = gs_note_error(errorUnsupportedCharacterFormat);
-            }
-          if ( code >= 0 )
-            {
-                code = pl_font_add_glyph(pxs->download_font, char_code, (byte *)data); /* const cast */
-                if ( code < 0 )
-                    code = gs_note_error(errorInternalOverflow);
-            }
-
-          if ( code < 0 )
-              gs_free_object(pxs->memory, pxs->download_bytes.data,
-                             "pxReadChar");
-          pxs->download_bytes.data = 0;
-          return code;
+            break;
+        default:
+            code = gs_note_error(errorUnsupportedCharacterFormat);
         }
+        if ( code >= 0 ) {
+            code = pl_font_add_glyph(pxs->download_font, char_code, (byte *)data); /* const cast */
+            if ( code < 0 )
+                code = gs_note_error(errorInternalOverflow);
+        }
+
+        if ( code < 0 )
+            gs_free_object(pxs->memory, pxs->download_bytes.data,
+                           "pxReadChar");
+        pxs->download_bytes.data = 0;
+        return code;
+    }
 }
 
 const byte apxEndChar[] = {0, 0};
