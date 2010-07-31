@@ -189,7 +189,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 		       gs_pattern1_instance_t *pinst, client_name_t cname)
 {
     gx_device *tdev = pinst->saved->device;
-    int depth = (pinst->template.PaintType == 1 ? 1 : tdev->color_info.depth);
+    int depth = (pinst->template.PaintType == 2 ? 1 : tdev->color_info.depth);
     int raster = (pinst->size.x * depth + 7) / 8;
     int64_t size = (int64_t)raster * pinst->size.y;
     gx_device_forward *fdev;
