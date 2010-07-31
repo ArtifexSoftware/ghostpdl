@@ -54,7 +54,7 @@ PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-install-data: install-libdata install-resdata install-iccdata install-doc install-man install-examples
+install-data: install-libdata install-resdata$(COMPILE_INITS) install-iccdata$(COMPILE_INITS) install-doc install-man install-examples
 
 # There's no point in providing a complete dependency list: we include
 # one file from each subdirectory just as a sanity check.
@@ -94,7 +94,7 @@ pdf2dsc.ps pdfopt.ps ;\
 # install the default resource files
 # copy in every category (directory) but CVS
 RES_CATEGORIES=`ls $(PSRESDIR) | grep -v CVS` 
-install-resdata: $(PSRESDIR)/Decoding/Unicode
+install-resdata0 : $(PSRESDIR)/Decoding/Unicode
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)
 	-mkdir -p $(DESTDIR)$(gsdatadir)/Resource
@@ -107,13 +107,19 @@ install-resdata: $(PSRESDIR)/Decoding/Unicode
 	done'
 
 # install default iccprofiles
-install-iccdata: $(ICCRESDIR)
+install-iccdata0 : $(ICCRESDIR)
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)
 	-mkdir -p $(DESTDIR)$(gsdatadir)/iccprofiles
 	$(SH) -c 'for file in $(ICCRESDIR)/*; do \
 	    if test -f $$file; then $(INSTALL_DATA) $$file $(DESTDIR)$(gsdatadir)/iccprofiles ; fi \
 	done'
+
+#COMPILE_INITS=1 don't need Resources, nor ICC
+
+install-resdata1 :
+
+install-iccdata1 :
 
 # install html documentation
 DOC_PAGES=PUBLIC README index.html gs.css \
