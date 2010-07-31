@@ -1174,10 +1174,6 @@
 						>
 					</File>
 					<File
-						RelativePath="base\gdevcairo.c"
-						>
-					</File>
-					<File
 						RelativePath="base\gdevccr.c"
 						>
 					</File>

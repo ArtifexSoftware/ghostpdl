@@ -345,7 +345,7 @@ HAVE_FONTCONFIG=""
 FONTCONFIG_CFLAGS=""
 FONTCONFIG_LIBS=""
 AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
-    [Don't use fontconfig to list system fonts (also implies disable cairo)]))
+    [Don't use fontconfig to list system fonts]))
 if test "$enable_fontconfig" != "no"; then
 	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
 	# autoconf macro and b) requires pkg-config on the system, which is
@@ -844,34 +844,6 @@ AC_SUBST(SOC_CFLAGS)
 AC_SUBST(SOC_LIBS)
 AC_SUBST(SOC_LOADER)
 
-dnl enable the cairo device if the library is available
-AC_ARG_ENABLE([cairo], AC_HELP_STRING([--disable-cairo],
-    [Don't include the cairo output device]))
-CAIRO_DEVS=""
-CAIRO_CFLAGS=""
-CAIRO_LIBS=""
-# Disable cairo if fontconfig is disabled, since cairo depends on fontconfig
-if test -z "$HAVE_FONTCONFIG"; then
-enable_cairo=no
-fi
-
-if test "x$enable_cairo" != xno; then
-  if test "x$PKGCONFIG" != x; then
-    AC_MSG_CHECKING([for cairo])
-    if $PKGCONFIG --exists 'cairo >= 1.2.0'; then
-      CAIRO_CFLAGS=`$PKGCONFIG --cflags cairo`
-      CAIRO_LIBS=`$PKGCONFIG --libs cairo`
-      CAIRO_DEVS="cairo"
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-fi
-
-AC_SUBST(CAIRO_CFLAGS)
-AC_SUBST(CAIRO_LIBS)
-
 dnl look for omni implementation
 AC_ARG_WITH([omni], AC_HELP_STRING([--with-omni],
 	[enable the omni driver]))
@@ -985,7 +957,6 @@ AC_ARG_WITH(drivers,
 			  PNG      = Output to PNG
                           PS       = Output to PostScript/PDF
                           TIFF     = Output to TIFF
-                          CAIRO    = Output using libcairo
 			  WTS      = WTS Halftoning devices
 			  ETS      = ETS Halftoning devices
                           You can mix both variants, e.g.
@@ -1032,7 +1003,6 @@ TIFF_DEVS="tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw t
 PCX_DEVS="pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up"
 PBM_DEVS="pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam"
 PS_DEVS="psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox"
-# CAIRO_DEVS is defined conditionally above
 WTS_HALFTONING_DEVS="imdi simdi wtsimdi wtscmyk"
 MISC_FDEVS="ccr cgm24 cgm8 cgmmono cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf"
 
@@ -1057,7 +1027,7 @@ while test -n "$drivers"; do
 		P_DEVS="$P_DEVS $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS $OPVP_DEVS"
 		;;
 	FILES)
-		F_DEVS="$F_DEVS $BMP_DEVS $FAX_DEVS $JPEG_DEVS $PNG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $CAIRO_DEVS $WTS_HALFTONING_DEVS $MISC_FDEVS"
+		F_DEVS="$F_DEVS $BMP_DEVS $FAX_DEVS $JPEG_DEVS $PNG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $WTS_HALFTONING_DEVS $MISC_FDEVS"
 		;;
 	APPLE)
 		# All Apple printers
@@ -1130,10 +1100,6 @@ while test -n "$drivers"; do
 	PS)
 		# PostScript/PDF writing
 		F_DEVS="$F_DEVS $PS_DEVS"
-		;;
-	CAIRO)
-		$ cairo output device
-		F_DEVS="$F_DEVS $CAIRO_DEVS"
 		;;
 	WTS)
 		# WTS Halftoning devices
