@@ -67,6 +67,7 @@
  
 /* -------------------------------------------------------- */ 
 #include "gdevprn.h" 
+#include "gxobj.h" 
 /* #include <stdio.h> should not be used in drivers */
 #include <stdlib.h>
  
@@ -350,9 +351,9 @@ static int
 imagen_print_page(gx_device_printer *pdev, FILE *prn_stream) 
 { 
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev); 
+  const int align_size = obj_align_round((line_size/BIGSIZE)+1);
   /* input buffer: one line of bytes rasterized by gs */
-  byte *in = (byte *)gs_malloc(pdev->memory, BIGSIZE, line_size / BIGSIZE + 1,
-	"imagen_print_page(in)"); 
+  byte *in = (byte *)gs_malloc(pdev->memory, BIGSIZE, align_size, "imagen_print_page(in)"); 
   /* output buffer: 32 lines, interleaved into imPress swatches */
   byte *out; 
   /* working pointer into output buffer */	
@@ -440,8 +441,9 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
     /* ------------------------------------------------------- */
     /* get 32 lines and interleave into a row of swatches */ 
     for (swatchLine = 0 ; swatchLine <= lastLine; swatchLine++) { 
+
       /* blank out end of buffer for BIGSIZE overlap */
-      for (temp = in + line_size; temp < in + line_size + BIGSIZE;temp++){
+      for (temp = in + line_size; temp < in + align_size*BIGSIZE; temp++){
 	*temp = 0;
       } /* for temp */
 
@@ -549,10 +551,10 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
  
   fflush(prn_stream); 
  
+  gs_free(pdev->memory, (char *)out, TotalBytesPerSw, swatchCount+1, "imagen_print_page(out)"); 
   gs_free(pdev->memory, (char *)swatchMap, BIGSIZE, swatchCount / BIGSIZE + 1,
 	"imagen_print_page(swatchMap)" );
-  gs_free(pdev->memory, (char *)out, TotalBytesPerSw, swatchCount+1, "imagen_print_page(out)"); 
-  gs_free(pdev->memory, (char *)in, BIGSIZE, line_size / BIGSIZE + 1, "imagen_print_page(in)"); 
+  gs_free(pdev->memory, (char *)in, BIGSIZE, align_size, "imagen_print_page(in)");
   /* ----------------------------------------- */
 
   DebugMsg(1,"Debug: Grey: %d \n",totalGreySwatches);
