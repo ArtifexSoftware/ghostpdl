@@ -1060,7 +1060,7 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
 	    gx_finish_output_page(dev, num_copies, flush));
 }
 
-int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, int resource_pos)
+static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, int resource_pos)
 {
     int start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
 
@@ -1084,7 +1084,7 @@ int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, int reso
     return pdev->next_id;
 }
 
-write_xref_section(gx_device_pdf *pdev, FILE *tfile, int start, int end, int resource_pos)
+static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int start, int end, int resource_pos)
 {
     int start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
 
@@ -1104,6 +1104,7 @@ write_xref_section(gx_device_pdf *pdev, FILE *tfile, int start, int end, int res
 	    stream_puts(pdev->strm, str);
 	}
     }
+    return 0;
 }
 
 /* Close the device. */

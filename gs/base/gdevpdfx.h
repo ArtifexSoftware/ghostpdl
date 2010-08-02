@@ -766,6 +766,9 @@ int pdf_open_document(gx_device_pdf * pdev);
 
 /* ------ Objects ------ */
 
+/* Allocate an ID for a future object, set its pos=0 so we can tell if it is used */
+long pdf_obj_forward_ref(gx_device_pdf * pdev)
+
 /* Allocate an ID for a future object. */
 long pdf_obj_ref(gx_device_pdf * pdev);
 
