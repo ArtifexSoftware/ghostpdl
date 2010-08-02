@@ -37,19 +37,20 @@ gp_defaultpapersize(char *ptr, int *plen)
     if (!paper) paper = defaultpapername();
 
     if (paper) {
-	int len = strlen(paper);
+	int rc, len = strlen(paper);
 
 	if (len < *plen) {
 	    /* string fits */
 	    strcpy(ptr, paper);
-	    *plen = len + 1;
-	    paperdone();
-	    return 0;
+	    rc = 0;
+	} else {
+	    /* string doesn't fit */
+	    rc = -1;
 	}
-	/* string doesn't fit */
 	*plen = len + 1;
 	paperdone();
-	return -1;
+	free(paper);
+	return rc;
     }
 #endif
 
