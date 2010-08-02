@@ -19,6 +19,7 @@
 #endif
 
 #include "string_.h"
+#include "malloc_.h"
 #include "gx.h"
 #include "gp.h"
 

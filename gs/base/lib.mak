@@ -2866,7 +2866,7 @@ $(GLOBJ)gp_paper.$(OBJ) : $(GLSRC)gp_paper.c $(AK) $(gp_h)
 	$(GLCC) $(GLO_)gp_paper.$(OBJ) $(C_) $(GLSRC)gp_paper.c
 
 # Unix implementation of gp_defaultpapersize.
-$(GLOBJ)gp_upapr.$(OBJ) : $(GLSRC)gp_upapr.c $(AK) $(gp_h)
+$(GLOBJ)gp_upapr.$(OBJ) : $(GLSRC)gp_upapr.c $(malloc__h) $(AK) $(gp_h)
 	$(GLCC) $(GLO_)gp_upapr.$(OBJ) $(C_) $(GLSRC)gp_upapr.c
 
 # File system implementation.
