@@ -1307,6 +1307,8 @@ end readonly def
 	       dup pdf_cached_PDF2PS_matrix exch
 	       dup /Rotate pget not { 0 } if 90 idiv exch
                pdfpagenumber
+               /FirstPage where {pop dup FirstPage lt {/rangecheck signalerror} if} if
+               /LastPage where {pop dup LastPage gt {/rangecheck signalerror} if} if
                true % now we have a page# and a transformation matrix
              } if
            } if
