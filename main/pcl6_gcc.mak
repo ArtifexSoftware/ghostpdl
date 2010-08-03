@@ -174,10 +174,11 @@ GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long"
 HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
 HAVE_HYPOT_DEFINE?=-DHAVE_HYPOT
+HAVE_NO_STRICT_ALIASING_WARNING?=-Wno-strict-aliasing
 
 GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
          -Wmissing-prototypes -Wpointer-arith \
-         -Wwrite-strings -Wno-strict-aliasing \
+         -Wwrite-strings $(HAVE_NO_STRICT_ALIASING_WARNING) \
          -fno-builtin -fno-common \
           $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) $(HAVE_HYPOT_DEFINE) \
           $(GX_COLOR_INDEX_DEFINE) $(PSICFLAGS) $(PDL_INCLUDE_FLAGS)
