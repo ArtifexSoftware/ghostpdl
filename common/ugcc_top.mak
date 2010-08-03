@@ -79,6 +79,7 @@ pdl-clean:
 	$(RMN_) $(GENDIR)/*.$(OBJ)
 	$(RMN_) $(GENDIR)/*.h
 	$(RMN_) $(GENDIR)/*.c
+	$(RMN_) $(GENDIR)/mkromfs
 	$(RMN_) $(GENARCH_XE)
 	$(RMN_) $(ECHOGS_XE)
 	$(RMN_) $(GENCONF_XE)
