@@ -1520,10 +1520,22 @@ static int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, gs
 {   FAPI_path path_interface = path_interface_stub;
     FAPI_outline_handler olh;
     int code;
+    gs_state *pgs;
+    extern_st(st_gs_show_enum);
+    extern_st(st_gs_state);
 
+    if (gs_object_type(penum_s->memory, penum_s) == &st_gs_show_enum) {
+	pgs = penum_s->pgs;
+    } else {
+	if (gs_object_type(penum_s->memory, penum_s->pis) == &st_gs_state) {
+	    pgs = (gs_state *)penum_s->pis;
+	} else
+	    /* No graphics state, give up... */
+	    return_error(e_undefined);
+    }
     olh.path = path;
-    olh.x0 = penum_s->pgs->ctm.tx_fixed;
-    olh.y0 = penum_s->pgs->ctm.ty_fixed;
+    olh.x0 = pgs->ctm.tx_fixed;
+    olh.y0 = pgs->ctm.ty_fixed;
     olh.close_path = close_path;
     olh.need_close = false;
     path_interface.olh = &olh;
