@@ -111,8 +111,10 @@ hpgl_default_all_fill_patterns(
 {
     int             i;
 
-    for (i = 1; i <= 8; ++i)
+    for (i = 1; i <= 8; ++i) {
         (void)pcl_pattern_RF(i, NULL, pgls);
+        (void)pcl_pattern_RF(-i, NULL, pgls);
+    }
 }
 
   void
