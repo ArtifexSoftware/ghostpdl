@@ -1948,10 +1948,55 @@ end
 } bdef
 
 % Draw an annotation.
-/drawannottypes mark
+/drawannottypes 10 dict begin
+
+  % x0 y0 x1 y1 x2 y2 x3 y3 -> x0 y0 x1-x0 y1-y0 x2-x0 y2-y0  
+  /quadpoints2basis {
+    8 { oforce 8 1 roll } repeat
+
+    % The text is oriented with respect to the vertex with the smallest
+    % y value (or the leftmost of those, if there are two such vertices)
+    % (x0, y0) and the next vertex in a counterclockwise direction
+    % (x1, y1), regardless of whether these are the first two points in
+    % the QuadPoints array.
+
+    2 {
+      2 index 1 index eq {
+        3 index 2 index gt {
+          4 2 roll
+        } if  
+      } {
+        2 index 1 index gt {
+          4 2 roll
+        } if
+      } ifelse
+      8 4 roll
+    } repeat
+    6 index 3 index gt {
+      8 4 roll
+    } if
+
+    %  ^
+    %  |
+    %  * (x2,y2)    * (x3,y3)
+    %  |
+    %  |
+    %  *------------*-> 
+    %  (x0,y0)      (x1,y1)
+
+    pop pop           % x0 y0 x1 y1 x2 y2
+    4 index sub exch  % x0 y0 x1 y1 y2-y0 x2
+    5 index sub exch  % x0 y0 x1 y1 x2-x0 y2-y0
+    4 2 roll
+    4 index sub exch  % x0 y0 x2-x0 y2-y0 y1-y0 x1
+    5 index sub exch  % x0 y0 x2-x0 y2-y0 x1-x0 y1-y0 
+    4 2 roll          % x0 y0 x1-x0 y1-y0 x2-x0 y2-y0 
+  } bdef
+
   /Link { % <annot> -> <false>
     dup drawborder dup calc_annot_scale 3 -1 roll drawwidget //false
-  } bind
+  } bdef
+
   /Ink { % <annot> -> <annot> <true>
          % <annot> -> <false>
     dup /AP oknown {
@@ -1973,8 +2018,68 @@ end
       } if
       //false
     } ifelse
-  } bind
-.dicttomark readonly def
+  } bdef
+
+  /Underline {
+    dup /AP oknown {
+      //true
+    } {
+      0 setlinecap
+      dup annotsetcolor
+      dup calc_annot_scale scale
+
+      /QuadPoints knownoget {
+        aload length 8 idiv {
+          //quadpoints2basis exec
+
+          % Acrobat draws the line at 1/7 of the box width from the bottom
+          % of the box and 1/16 thick of the box width. /Rect is ignored.
+
+          2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
+          7 div 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)/7+y0 x2-x0
+          7 div 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)/7+x0 (y2-y0)/7+y0
+          2 copy moveto
+          2 index add exch
+          3 index add exch lineto % x0 y0 x1-x0 y1-y0
+          pop pop pop pop
+          stroke
+        } repeat
+      } if
+      //false
+    } ifelse
+  } bdef
+
+  /StrikeOut {
+    dup /AP oknown {
+      //true
+    } {
+      0 setlinecap
+      dup annotsetcolor
+      dup calc_annot_scale scale
+
+      /QuadPoints knownoget {
+        aload length 8 idiv {
+          //quadpoints2basis exec
+
+          % Acrobat draws the line at 3/7 of the box width from the bottom
+          % of the box and 1/16 thick of the box width. /Rect is ignored.
+
+          2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
+          0.4285714 mul 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)*3/7+y0 x2-x0
+          0.4285714 mul 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)*3/7+x0 (y2-y0)*3/7+y0
+          2 copy moveto
+          2 index add exch
+          3 index add exch lineto % x0 y0 x1-x0 y1-y0
+          pop pop pop pop
+          stroke
+        } repeat
+      } if
+      //false
+    } ifelse
+  } bdef
+
+  currentdict /quadpoints2basis undef
+currentdict end readonly def
 
 /drawannot {		% <annot> drawannot -
   dup annotvisible {
