@@ -3340,8 +3340,17 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     * does not keep track of the margins in the bitmap size...
     */
 
-    width_old = pdev->width;
-    height_old = pdev->height;
+    /* We set the old dimensions to -1 if we have a color depth change, so
+       that memory reallocation gets forced. This is perhaps not the correct
+       approach to preven crashes like in bug 690435. We keep it for the
+       time being until we decide finally */
+    if (color_set) {
+      width_old = -1;
+      height_old = -1;
+    } else {
+      width_old = pdev->width;
+      height_old = pdev->height;
+    }
     if (cups->landscape)
     {
       width  = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
