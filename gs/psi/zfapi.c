@@ -1631,14 +1631,16 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 
     dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
 
-    if (SHOW_IS(penum, TEXT_DO_NONE)) {
-        /* do nothing */
-    } else if (igs->in_charpath) {
+    /* Even for "non-marking" text operations (for example, stringwidth) we are expected
+     * to have a glyph bitmap for the cache, if we're using the cache. For the
+     * non-cacheing, non-marking cases, we must not draw the glyph.
+     */
+    if (igs->in_charpath && !SHOW_IS(penum, TEXT_DO_NONE)) {
         if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->show_gstate->path, !pbfont->PaintType)) < 0)
 	    return code;
     } else {
         int code = I->get_char_raster(I, &rast);
-        if (code == e_limitcheck || pbfont->PaintType) {
+        if (!SHOW_IS(penum, TEXT_DO_NONE) && (code == e_limitcheck || pbfont->PaintType)) {
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
@@ -1711,7 +1713,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 			penum_s->cc->offset.y += float2fixed(penum_s->fapi_glyph_shift.y);
 		    }
 		}
-            } else { /* Not using GS cache */
+            } else if (!SHOW_IS(penum, TEXT_DO_NONE)) { /* Not using GS cache */
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path;
                 const gx_drawing_color * pdcolor = penum->pdcolor;
 
@@ -2211,6 +2213,7 @@ retry_oversampling:
 #if 0 /* Debug purpose only: search chars in UFST fonts. */
     cr.char_code = client_char_code; /* remove for release !!!!!!!!!!!!!!!! */
 #endif
+
     /* Provide glyph data for renderer : */
     if (!I->ff.is_cid) {
 	ref sname;

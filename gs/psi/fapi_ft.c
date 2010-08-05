@@ -978,7 +978,8 @@ can_replace_metrics(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_c
 static FAPI_retcode
 get_char_width(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
-    return load_glyph(a_font, a_char_ref, a_metrics, NULL, false);
+    FF_server *s = (FF_server*)a_server;
+    return load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->bitmap_glyph, true);
 }
 
 static FAPI_retcode get_fontmatrix(FAPI_server *server, gs_matrix *m)
