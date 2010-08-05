@@ -319,7 +319,7 @@ BOOL make_filelist(int argc, char *argv[])
 		    if ((title == NULL) || (strlen(title) == 0) ||
 			(dir == NULL) || (strlen(dir) == 0) ||
 			(list == NULL) || (strlen(list) == 0)) {
-			message_box("Usage: setupgs -title \042GPL Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
+			message_box("Usage: make_filelist -title \042GPL Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
 			return FALSE;
 		    }
 		    if (fList == (FILE *)NULL) {
