@@ -2928,6 +2928,17 @@ state.  In fact, the <a href="Language.htm#.setpdfwrite"><tt>.setpdfwrite</tt></
 operator used by the ps2pdf script and others sets a vmthreshold value of
 3&nbsp;MB to account for this.
 
+<li>
+<p>
+For pattern tiles that are very large, Ghostscript uses an internal display
+list (memory based clist), but this can slow things down. The current default
+threshold is 8Mb -- pattern tiles larger than this will be cached as clist
+rather than bitmap tiles. The parameter <code>-dMaxPatternBitmap=#</code> can
+be used to adjust this threshold, smaller to reduce memory requirements and
+larger to avoid performance impacts due to clist based pattern handling.
+<p>
+For example, <code>-dMaxPatternBitmap=200000</code> will use clist based
+patterns for pattern tiles larger than 200,000 bytes. 
 </ul>
 
 <h2><a name="Environment_variables"></a>Summary of environment variables</h2>
