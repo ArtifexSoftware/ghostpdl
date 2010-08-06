@@ -1948,7 +1948,7 @@ end
 } bdef
 
 % Draw an annotation.
-/drawannottypes 10 dict begin
+/drawannottypes 20 dict begin
 
   % x0 y0 x1 y1 x2 y2 x3 y3 -> x0 y0 x1-x0 y1-y0 x2-x0 y2-y0  
   /quadpoints2basis {
@@ -2074,6 +2074,162 @@ end
           stroke
         } repeat
       } if
+      //false
+    } ifelse
+  } bdef
+
+  /Text {
+    dup /AP oknown {
+      //true
+    } {
+      dup calc_annot_scale scale
+      annotrect 4 2 roll translate
+      exch pop
+
+      % Draw a page icon
+      0.5 exch 18.5 sub translate
+      1 setlinewidth
+      0.75 setgray
+      0.5 -1 moveto 10 -1 lineto 15 4 lineto 15 17.5 lineto stroke
+
+      0 0 moveto
+      9 0 lineto
+      14 5 lineto
+      14 18 lineto
+      0 18 lineto closepath
+      gsave .5 setgray fill grestore 0 setgray stroke
+
+      3 8 moveto 7.5 8 lineto
+      3 11 moveto 10 11 lineto
+      3 14 moveto 10 14 lineto
+      9 0 moveto 9 5 lineto 14 5 lineto
+      stroke
+      //false
+    } ifelse
+  } bdef
+ 
+  /frame {
+    { 255 div } forall setrgbcolor
+    -95 -25 translate
+    2 190 atan rotate
+    {
+      6 0 moveto
+      190 0 190 6 6 arct 
+      190 47 184 47 6 arct 
+      0 47 0 41 6 arct
+      0 0 6 0 6 arct
+      closepath
+
+      10 4 moveto
+      185 4 185 9 5 arct
+      185 43 180 43 5 arct
+      5 43 5 38 5 arct
+      5 4 9 4 5 arct
+      closepath
+      eofill
+   }
+   gsave 1 -1 translate 0.75 setgray dup exec grestore
+   exec
+  } bdef
+
+  % (text) y h -> -
+  /text { 
+    /Times-Bold findfont exch scalefont setfont  % (text) y
+    gsave
+    0 0 moveto
+    1 index //false charpath flattenpath pathbbox
+    pop exch pop sub 2 div
+    grestore
+    95 add exch moveto
+    gsave 1 -1 rmoveto  0.75 setgray dup show grestore
+    show
+  } bdef
+ 
+  /red   <ef4023> readonly def
+  /green <3fae49> readonly def
+  /blue  <0072bc> readonly def
+
+  /stamp_dict 14 dict begin
+    /Approved {
+      //green //frame exec
+      (APPROVED) 13 30 //text exec
+    } bdef
+    /AsIs {
+      //red //frame exec
+      (AS IS) 13 30 //text exec
+    } bdef
+    /Confidential {
+      //red //frame exec
+      (CONFIDENTIAL) 17 20 //text exec
+    } bdef
+    /Departmental {
+      //blue //frame exec
+      (DEPARTMENTAL) 17 20 //text exec
+    } bdef
+    /Draft {
+      //red //frame exec
+      (DRAFT) 13 30 //text exec
+    } bdef
+    /Experimental {
+      //blue //frame exec
+      (EXPERIMENTAL) 17 20 //text exec
+    } bdef
+    /Expired {
+      //red //frame exec
+      (EXPIRED) 13 30 //text exec
+    } bdef
+    /Final {
+      //red //frame exec
+      (FINAL) 13 30 //text exec
+    } bdef
+    /ForComment {
+      //green //frame exec
+      (FOR COMMENT) 17 20 //text exec
+    } bdef
+    /ForPublicRelease {
+      //green //frame exec
+      (FOR PUBLIC) 26 18 //text exec
+      (RELEASE)  8.5 18 //text exec
+    } bdef
+    /NotApproved {
+      //red //frame exec
+      (NOT APPROVED) 17 20 //text exec
+    } bdef
+    /NotForPublicRelease {
+      //red //frame exec
+      (NOT FOR) 26 18 //text exec
+      (PUBLIC RELEASE) 8.5 18 //text exec
+    } bdef
+    /Sold {
+      //blue //frame exec
+      (SOLD) 13 30 //text exec
+    } bdef
+    /TopSecret {
+      //red //frame exec
+      (TOP SECRET) 14 26 //text exec
+    } bdef
+  currentdict end readonly def
+
+  {/text/frame/red/green/blue} {currentdict exch undef} forall
+
+  /Stamp  {
+    dup /AP oknown {
+      //true
+    } {
+      dup calc_annot_scale scale
+
+      % translate to the center of Rect
+      dup annotrect
+      4 2 roll  % dx dy x0 y0
+      2 index 2 div add exch
+      3 index 2 div add exch translate  % dx dy
+      
+      50 div exch 190 div .min dup scale
+
+      /Name knownoget not { /Draft } if
+      //stamp_dict 1 index known not { exch pop /Draft exch } if
+      //stamp_dict exch get exec
+
       //false
     } ifelse
   } bdef
