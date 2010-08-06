@@ -408,11 +408,8 @@ names_trace_finish(name_table * nt, gc_state_t * gcst)
     nt->free = 0;
     for (i = nt->sub_count; --i >= 0;) {
 	name_sub_table *sub = nt->sub[i].names;
-	name_string_sub_table_t *ssub = nt->sub[i].strings;
 
 	if (sub != 0) {
-	    int save_count = nt->sub_count;
-
 	    name_scan_sub(nt, i, true, true && (gcst != 0));
 	}
     }
