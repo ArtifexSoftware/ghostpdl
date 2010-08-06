@@ -730,6 +730,7 @@ typedef struct gx_device_cached_colors_s {
 	long band_offset_x;		/* offsets of clist band base to (mem device) buffer */\
 	long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
 	gx_stroked_gradient_recognizer_t sgr;\
+	int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */

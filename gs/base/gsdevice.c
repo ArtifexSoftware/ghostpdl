@@ -750,6 +750,7 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 	COPY_ARRAY_PARAM(Margins);
 	COPY_ARRAY_PARAM(HWMargins);
 	COPY_PARAM(PageCount);
+	COPY_PARAM(MaxPatternBitmap);
 #undef COPY_ARRAY_PARAM
 	gx_device_copy_color_params(dev, target);
 }

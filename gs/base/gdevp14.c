@@ -1548,6 +1548,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
 	COPY_ARRAY_PARAM(Margins);
 	COPY_ARRAY_PARAM(HWMargins);
 	COPY_PARAM(PageCount);
+	COPY_PARAM(MaxPatternBitmap);
 #undef COPY_ARRAY_PARAM
 #undef COPY_PARAM
 }

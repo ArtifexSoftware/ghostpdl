@@ -162,7 +162,9 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 				&dev->color_info.anti_alias.text_bits)) < 0 ||
 	(code = param_write_int(plist, "GraphicsAlphaBits",
 				&dev->color_info.anti_alias.graphics_bits)) < 0 ||
-	(code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 
+	(code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 ||
+	(code = param_write_int(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap)) < 0
+
 	)
 	return code;
 
@@ -449,6 +451,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     long ColorValues = (depth >= 32 ? -1 : 1L << depth);
     int tab = dev->color_info.anti_alias.text_bits;
     int gab = dev->color_info.anti_alias.graphics_bits;
+    int mpbm = dev->MaxPatternBitmap;
     gs_param_string cms;
     int leadingedge = dev->LeadingEdge;
 
@@ -631,7 +634,7 @@ nce:
         if (icc_pro.size <= gp_file_name_sizeof) {
             
             /* Copy device ICC profile name in the device */
-  	    if (&(dev->color_info.icc_profile[0]) != icc_pro.data)
+  	    if (&(dev->color_info.icc_profile[0]) != (char *)(icc_pro.data))
   	        memcpy(&(dev->color_info.icc_profile[0]), icc_pro.data, icc_pro.size);        
         } 
 
@@ -644,6 +647,8 @@ nce:
     if ((code = param_anti_alias_bits(plist, "TextAlphaBits", &tab)) < 0)
 	ecode = code;
     if ((code = param_anti_alias_bits(plist, "GraphicsAlphaBits", &gab)) < 0)
+	ecode = code;
+    if ((code = param_read_int(plist, "MaxPatternBitmap", &mpbm)) < 0)
 	ecode = code;
 
     switch (code = param_read_bool(plist, (param_name = ".LockSafetyParams"), &locksafe)) {
@@ -826,6 +831,7 @@ nce:
 		param_normalize_anti_alias_bits(max(dev->color_info.max_gray,
 			dev->color_info.max_color), gab);
     dev->LockSafetyParams = locksafe;
+    dev->MaxPatternBitmap = mpbm;
     gx_device_decache_colors(dev);
     return 0;
 }

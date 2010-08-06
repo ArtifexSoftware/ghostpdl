@@ -179,8 +179,8 @@ static dev_proc_destroy_buf_device(dummy_destroy_buf_device)
 {
 }
 
-#ifndef MAX_BITMAP_PATTERN_SIZE		/* Allow override with XCFLAGS */
-#  define MAX_BITMAP_PATTERN_SIZE (1024*1024)
+#ifndef MaxPatternBitmap_DEFAULT
+#  define MaxPatternBitmap_DEFAULT (8*1024*1024) /* reasonable on most modern hosts */
 #endif
 
 /* Allocate a pattern accumulator, with an initial refct of 0. */
@@ -194,6 +194,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     int64_t size = (int64_t)raster * pinst->size.y;
     gx_device_forward *fdev;
     int force_no_clist = 0;
+    int max_pattern_bitmap = tdev->MaxPatternBitmap == 0 ? MaxPatternBitmap_DEFAULT :
+				tdev->MaxPatternBitmap;
 
     /* 
      * If the target device can accumulate a pattern stream and the language
@@ -217,7 +219,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     /* Do not allow pattern to be a clist if it uses transparency.  We
        will want to fix this at some point */
 
-    if (force_no_clist || size < MAX_BITMAP_PATTERN_SIZE || pinst->template.PaintType != 1 || 
+    if (force_no_clist || size < max_pattern_bitmap || pinst->template.PaintType != 1 || 
                         pinst->template.uses_transparency ) {
 
 	gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,

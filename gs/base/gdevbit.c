@@ -274,6 +274,7 @@ const gx_device_bit gs_bitrgbtags_device =
 	0,
 	0,
 	{false},
+	0,
         { 
             gx_default_install,
             gx_default_begin_page,
