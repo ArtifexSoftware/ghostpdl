@@ -2813,32 +2813,42 @@ msvc32.mak sets the other options automatically.
 <h2><a name="FT_build"></a>How to build Ghostscript with FreeType</h2>
 
 <p>
-<em>Note: This section is only for users who wish to use Ghostscript with
-the FreeType font renderer. Other users please skip this section.
-</em>
+As of Ghostscript version 9.0, Ghostscript uses the Freetype
+scaler/renderer for all fonts (except Type 3) by default.
 
-<p>
 Ghostscript sources include a copy of the the FreeType libary, or you
-can use a recent release which enables the incremental font interface.
+can use a recent release (Freetype 2.4.1 or later) which enables the
+incremental font interface.
 
 <p>
-With the autoconf build (Linux, MacOS X, Solaris, etc.) just pass
-<tt>--enable-freetype</tt> to the configure script. This will compile
-in the freetype source code and enable the font api bridge to freetype.
-<p>
+As the FAPI/Freetype code in its current form is relatively new, the
+old AFS (Artifex Font Scaler) is still included in Ghostscript, and
+will remain until we are fully satisfied that the "real world" performance
+of the FAPI/Freetype is proven.
 
-<p>For Windows/MSVC you need to define FT_BRIGE=1 on the nmake
+To return a build to the AFS with the autoconf build (Linux, MacOS X,
+Solaris, etc.), pass the <tt>--disable-freetype</tt> to the
+configure script.
+
+<p>For Windows/MSVC you need to define FT_BRIGE=0 on the nmake
 command line. For example:
 
-<blockquote><pre>nmake -f psi\msvc32.mak FT_BRIDGE=1</pre></blockquote>
+<blockquote><pre>nmake -f psi\msvc32.mak FT_BRIDGE=0</pre></blockquote>
 
 </p>
 
 <p>
 
-<p>With switching to freetype 2 as the default font renderer in April 2010, we
-added a new switch:<code>-dDisableFAPI=true</code> to revert to the older
-behavior, just in case serious regression happens that cannot be resolved in a timely manner.</p>
+<p>
+In a prebuilt binary (that is, one with FAPI/Freetype enabled by
+default, you can still revert to the AFS at run time by passing
+Ghostscript the <code>-dDisableFAPI=true</code> to revert to the older
+behavior, just in case a serious regression happens that cannot be resolved
+in a timely manner.
+
+Again, it is intended that this option will be removed in a future release.
+
+</p>
 <!-- [2.0 end contents] ==================================================== -->
 
 <!-- [3.0 begin visible trailer] =========================================== -->

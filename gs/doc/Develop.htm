@@ -1809,9 +1809,11 @@ Cairo and SVG output devices (cairo, svgwrite):
 <a href="../base/gdevsvg.c">base/gdevsvg.c</a>.
 
 <p>
-The svgwrite device produces SVG only. The cairo device uses the cairo 
-graphics library to produce PDF, EPS, SVG or PNG output, based on the
-requested filename extension.
+The svgwrite device produces SVG only.
+
+The cairo device has been removed for the
+Ghostscript version 9.0 release due to it's incompleteness
+and lack of attention.
 
 <dt>
 Text extraction:

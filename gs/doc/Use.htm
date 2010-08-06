@@ -3532,10 +3532,11 @@ Ghostscript.symbolFonts: \
 <h2><a name="FAPI_run"></a>Running Ghostscript with third-party font renderers</h2>
 
 <p>
-Font API (FAPI) is a new feature which allows to attach third-party font
+Font API (FAPI) is a feature which allows to attach third-party font
 renderers to Ghostscript.
 This section explains how to run Ghostscript with third-party font
-renderers, such as UFST or Free Type.
+renderers, such as UFST. NOTE: FreeType is now the default font renderer
+for Ghostscript.
 
 <p>
 <em>Note: To run Ghostscript with UFST you need a license from Monotype Imaging.
@@ -3544,22 +3545,25 @@ Please ignore issues about UFST if you haven't got it.
 
 <p>
 <em>
-Important note: Third-party font renderers are incompatible
+Important note: Third-party font renderers may be incompatible
 with devices that can embed fonts in their output (such as pdfwrite),
-because such renderers store fonts in a form from which Ghostscript cannot
-get the necessary information for embedding.  Ghostscript disables such
-renderers when such device is being used.  In particular, UFST and Free Type are
-disabled while running Ghostscript with the <code>pdfwrite</code>
-device.
+because such renderers may store fonts in a form from which Ghostscript cannot
+get the necessary information for embedding, for example, the Microtype fonts supplied
+with the UFST.  Ghostscript can be configured to disable such renderers when such a
+device is being used.
 </em>
 
 <p>
-To run Ghostscript with Free Type, you first need to build Ghostscript
-with the Free Type bridge. Refer <a href="Make.htm#FT_build">How to build Ghostscript with Free Type</a>.
+As of Ghostscript version 9.0, Ghostscript uses Freetype 2.4.x as the default font
+scaler/renderer.
 
-<p>With switching to freetype 2 as the default font renderer in April 2010, we
-added a new switch:<code>-dDisableFAPI=true</code> to revert to the older
-behavior, just in case serious regression happens that cannot be resolved in a timely manner.</p>
+With this change, we added a new switch:<code>-dDisableFAPI=true</code> to revert to the older
+behavior, just in case serious regression happens that cannot be resolved in a timely manner.
+It is intended that this switch will be removed once the FAPI/Freetype implementation has
+proven itself robust and reliable in the "real world".
+
+
+</p>
 
 <p>
 To run Ghostscript with UFST, you first need to build Ghostscript
@@ -3802,7 +3806,7 @@ symbol set files in the current directory.
 <p>
 Note that UFST and Free Type cannot handle some Ghostscript fonts because
 they do not include a PostScript interpreter and therefore have stronger restrictions on
-font formats than Ghostscript itself does.
+font formats than Ghostscript itself does - in particular, Type 3 fonts.
 If their font types are listed in <code>HookDiskFonts</code> or in
 <code>HookEmbeddedFonts</code>, Ghostscript interprets them as PS files,
 then serializes font data into a RAM buffer and passes it to FAPI as
