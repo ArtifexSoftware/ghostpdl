@@ -563,12 +563,15 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	gs_text_params_t text = penum->text;
 	int xy_index_step = (!(penum->text.operation & TEXT_REPLACE_WIDTHS) ? 0 :
 			     penum->text.x_widths == penum->text.y_widths ? 2 : 1);
-	/* process_text_modify_width also modifies penum->text.data, but calls
-	 * routines which rely on gdata. Copy gdata here (if set) to prevent
-	 * corruption if gdata is pointing at penum->text->data.glyphs
+	/* A glyphshow takes a shortcut by storing the single glyph directly into
+	 * penum->text.data.d_glyph. However, process_text_modify_width
+	 * replaces pte->text.data.bytes (these two are part of a union) with
+	 * pstr->data, which is not valid for a glyphshow because it alters
+	 * the glyph value store there. If we make a copy of the single glyph, 
+	 * it all works correctly.then 
 	 */
-	gs_glyph gdata_i, gdata_p = 0x00;
-	if (gdata) {
+	gs_glyph gdata_i, *gdata_p = (gs_glyph *)gdata;
+	if (penum->text.operation & TEXT_FROM_SINGLE_GLYPH) {
 	    gdata_i = *gdata;
 	    gdata_p = &gdata_i;
 	}
@@ -582,7 +585,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	penum->xy_index = 0;
 	code = process_text_modify_width(penum, (gs_font *)font, ppts,
 					 (gs_const_string *)pstr,
-					 &width_pt, gdata_p, false);
+					 &width_pt, (const gs_glyph *)gdata_p, false);
 	if (penum->text.operation & TEXT_REPLACE_WIDTHS) {
 	    if (penum->text.x_widths != NULL)
 		penum->text.x_widths -= xy_index * xy_index_step;
