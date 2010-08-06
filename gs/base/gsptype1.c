@@ -290,6 +290,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	      inst.size.x, inst.size.y);
     /* Absent other information, instances always require a mask. */
     inst.uses_mask = true;
+    inst.is_clist = false;	/* automatically set clist (don't force use) */
     gx_translate_to_fixed(saved, float2fixed_rounded(inst.step_matrix.tx - bbox.p.x),
 			         float2fixed_rounded(inst.step_matrix.ty - bbox.p.y));
     inst.step_matrix.tx = bbox.p.x;
@@ -1491,7 +1492,7 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, uint offset, byte *data, 
 
 
 
-/* Write a pattern into command list, possibly dividing intoi portions. */
+/* Write a pattern into command list, possibly dividing into portions. */
 int
 gx_dc_pattern_write(
     const gx_device_color *         pdevc,
@@ -1816,36 +1817,19 @@ gx_dc_pattern_read(
 	size_c = buf.size_c;
 	ptile->tbits.size.x = size_b; /* HACK: Use unrelated field for saving size_b between calls. */
 	ptile->tbits.size.y = size_c; /* HACK: Use unrelated field for saving size_c between calls. */
-	{   /* HACK: Artificial arguments for gx_pattern_accum_alloc 
-	       to force a clist-based accummulator. 
-	       A better way would be to split gx_pattern_accum_alloc.
-	     */
+	{
 	    gs_state state;
 	    gs_pattern1_instance_t inst;
 
 	    memset(&state, 0, sizeof(state));
 	    memset(&inst, 0, sizeof(inst));
-#	    if 0 /* wrong. Currently PaintType 2 can't pass here. */
-	    if (buf.paint_type == 2) {
-		/* Convert to a raster pattern cell cropped with the current band. */
-		gx_device_memory *mdev = gs_alloc_struct(mem, gx_device_memory,
-				       &st_device_memory,
-				       "gx_dc_pattern_read");
-
-		if (mdev == 0)
-		    return_error(gs_error_VMerror);
-		gs_make_mem_device(mdev, gdev_mem_device_for_bits(1), mem, -1, NULL);
-		state.device = (gx_device *)mdev;
-		inst.template.PaintType = 2;
-	    } else 
-#	    endif
-	    {
-		state.device = (gx_device *)dev; /* Break 'const'. */
-		inst.template.PaintType = 1;
-	    }
+	    /* NB: Currently PaintType 2 can't pass here. */
+	    state.device = (gx_device *)dev; /* Break 'const'. */
+	    inst.template.PaintType = 1;
 	    inst.size.x = buf.size.x;
 	    inst.size.y = buf.size.y;
 	    inst.saved = &state;
+	    inst.is_clist = buf.is_clist;	/* tell gx_pattern_accum_alloc to use clist */
 	    ptile->cdev = (gx_device_clist *)gx_pattern_accum_alloc(mem, mem, 
 			       &inst, "gx_dc_pattern_read");
 	    if (ptile->cdev == NULL)

@@ -215,11 +215,10 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	pattern_manage))((gx_device *)pinst->saved->device, 
 	0, pinst, pattern_manage__can_accum) == 1)
 	force_no_clist = 1;
-
     /* Do not allow pattern to be a clist if it uses transparency.  We
        will want to fix this at some point */
 
-    if (force_no_clist || size < max_pattern_bitmap || pinst->template.PaintType != 1 || 
+    if (force_no_clist || (size < max_pattern_bitmap && !pinst->is_clist) || pinst->template.PaintType != 1 || 
                         pinst->template.uses_transparency ) {
 
 	gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
@@ -227,6 +226,11 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 
 	if (adev == 0)
 	    return 0;
+#ifdef DEBUG
+	if (pinst->is_clist)
+	    eprintf("not using clist even though clist is requested\n");
+#endif
+	pinst->is_clist = false;
 	gx_device_init((gx_device *)adev,
 		       (const gx_device *)&gs_pattern_accum_device,
 		       mem, true);
@@ -259,6 +263,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	    gs_free_object(mem, cdev, cname);
 	    return 0;
 	}
+	pinst->is_clist = true;
 	memset(cdev, 0, sizeof(*cdev));
 	cwdev->params_size = sizeof(gx_device_clist);
 	cwdev->static_procs = NULL;

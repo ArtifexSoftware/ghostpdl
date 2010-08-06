@@ -83,6 +83,7 @@ struct gs_pattern1_instance_s {
      * for bitmap patterns that don't have explicit transparent pixels.
      */
     bool uses_mask;	        /* if true, pattern mask must be created */
+    bool is_clist;		/* if false, automatically determine and set, if true, use_clist */
     gs_int_point size;		/* in device coordinates */
     gx_bitmap_id id;		/* key for cached bitmap (= id of mask) */
 };
