@@ -47,8 +47,8 @@ gs_private_st_composite(st_name_table, name_table, "name_table",
 
 /* Forward references */
 static int name_alloc_sub(name_table *);
-static void name_free_sub(name_table *, uint);
-static void name_scan_sub(name_table *, uint, bool);
+static void name_free_sub(name_table *, uint, bool);
+static void name_scan_sub(name_table *, uint, bool, bool);
 
 /* Debugging printout */
 #ifdef DEBUG
@@ -99,7 +99,7 @@ names_init(ulong count, gs_ref_memory_t *imem)
 
 	if (code < 0) {
 	    while (nt->sub_next > 0)
-		name_free_sub(nt, --(nt->sub_next));
+		name_free_sub(nt, --(nt->sub_next), false);
 	    gs_free_object(mem, nt, "name_init(nt)");
 	    return 0;
 	}
@@ -413,16 +413,7 @@ names_trace_finish(name_table * nt, gc_state_t * gcst)
 	if (sub != 0) {
 	    int save_count = nt->sub_count;
 
-	    name_scan_sub(nt, i, true);
-	    if (save_count != nt->sub_count) {
-		/* name_scan_sub has released the i-th entry. */
-		continue;
-	    }
-	    if (nt->sub[i].names == 0 && gcst != 0) {
-		/* Mark the just-freed sub-table as unmarked. */
-		o_set_unmarked((obj_header_t *)sub - 1);
-		o_set_unmarked((obj_header_t *)ssub - 1);
-	    }
+	    name_scan_sub(nt, i, true, true && (gcst != 0));
 	}
     }
     nt->sub_next = 0;
@@ -506,7 +497,7 @@ name_alloc_sub(name_table * nt)
     /* Add the newly allocated entries to the free list. */
     /* Note that the free list will only be properly sorted if */
     /* it was empty initially. */
-    name_scan_sub(nt, sub_index, false);
+    name_scan_sub(nt, sub_index, false, false);
 #ifdef DEBUG
     if (gs_debug_c('n')) {	/* Print the lengths of the hash chains. */
 	int i0;
@@ -535,8 +526,20 @@ name_alloc_sub(name_table * nt)
 
 /* Free a sub-table. */
 static void
-name_free_sub(name_table * nt, uint sub_index)
+name_free_sub(name_table * nt, uint sub_index, bool unmark)
 {
+    /* If the subtable is in a previous save level, gs_free_object()
+     * may not actually free the memory, in case that happens, we need
+     * to explicitly remove the gc mark if requested.
+     */
+    if (unmark) {
+        name_sub_table *sub = nt->sub[sub_index].names;
+        name_string_sub_table_t *ssub = nt->sub[sub_index].strings;
+        
+	o_set_unmarked((obj_header_t *)sub - 1);
+	o_set_unmarked((obj_header_t *)ssub - 1);
+    }
+    
     gs_free_object(nt->memory, nt->sub[sub_index].strings,
 		   "name_free_sub(string sub-table)");
     gs_free_object(nt->memory, nt->sub[sub_index].names,
@@ -550,7 +553,7 @@ name_free_sub(name_table * nt, uint sub_index)
 /* will stay sorted.  If all entries are unmarked and free_empty is true, */
 /* free the sub-table. */
 static void
-name_scan_sub(name_table * nt, uint sub_index, bool free_empty)
+name_scan_sub(name_table * nt, uint sub_index, bool free_empty, bool unmark)
 {
     name_string_sub_table_t *ssub = nt->sub[sub_index].strings;
     uint free = nt->free;
@@ -579,7 +582,7 @@ name_scan_sub(name_table * nt, uint sub_index, bool free_empty)
 	nt->free = free;
     else {
 	/* No marked entries, free the sub-table. */
-	name_free_sub(nt, sub_index);
+	name_free_sub(nt, sub_index, unmark);
 	if (sub_index == nt->sub_count - 1) {
 	    /* Back up over a final run of deleted sub-tables. */
 	    do {
