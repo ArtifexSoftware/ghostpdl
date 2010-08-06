@@ -1123,14 +1123,20 @@ pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
     if (pdfont->u.simple.s.type3.Resources == NULL)
 	return_error(gs_error_VMerror);
     /* Adobe viewers have a precision problem with small font matrices : */
-    while (any_abs(pdfont->u.simple.s.type3.FontMatrix.xx) < 0.001 &&
-	   any_abs(pdfont->u.simple.s.type3.FontMatrix.xy) < 0.001 &&
-	   any_abs(pdfont->u.simple.s.type3.FontMatrix.yx) < 0.001 &&
-	   any_abs(pdfont->u.simple.s.type3.FontMatrix.yy) < 0.001) {
-	pdfont->u.simple.s.type3.FontMatrix.xx *= 10;
-	pdfont->u.simple.s.type3.FontMatrix.xy *= 10;
-	pdfont->u.simple.s.type3.FontMatrix.yx *= 10;
-	pdfont->u.simple.s.type3.FontMatrix.yy *= 10;
+    /* Don't perform this test if all entries are 0, leads to infinite loop! */
+    if (pdfont->u.simple.s.type3.FontMatrix.xx != 0.0 ||
+	pdfont->u.simple.s.type3.FontMatrix.xy != 0.0 ||
+	pdfont->u.simple.s.type3.FontMatrix.yx != 0.0 ||
+	pdfont->u.simple.s.type3.FontMatrix.yy != 0.0) {
+	while (any_abs(pdfont->u.simple.s.type3.FontMatrix.xx) < 0.001 &&
+	       any_abs(pdfont->u.simple.s.type3.FontMatrix.xy) < 0.001 &&
+	       any_abs(pdfont->u.simple.s.type3.FontMatrix.yx) < 0.001 &&
+	       any_abs(pdfont->u.simple.s.type3.FontMatrix.yy) < 0.001) {
+	    pdfont->u.simple.s.type3.FontMatrix.xx *= 10;
+	    pdfont->u.simple.s.type3.FontMatrix.xy *= 10;
+	    pdfont->u.simple.s.type3.FontMatrix.yx *= 10;
+	    pdfont->u.simple.s.type3.FontMatrix.yy *= 10;
+	}
     }
     *ppdfont = pdfont;
     return 0;
