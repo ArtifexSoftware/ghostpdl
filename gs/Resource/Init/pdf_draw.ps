@@ -1809,6 +1809,12 @@ end
   } ifelse
 } bdef
 
+/set_bc_color <<
+ 1 { 0 get oforce setgray } bind
+ 3 { { oforce } forall setrgbcolor } bind
+ 4 { { oforce } forall setcmykcolor } bind
+>> readonly def
+
 /drawwidget {			% <scalefactor_x> <scalefactor_y> <annot> drawwidget -
   dup /AP knownoget {
     dup /N known not {
@@ -1867,6 +1873,34 @@ end
       DoForm Q
     } if
   } {
+    dup /MK knownoget {    % mk
+      dup /BG knownoget {  % mk bg
+        dup length         % mk bg len
+        //set_bc_color exch .knownget {
+           gsave
+           exec
+           3 index 3 index scale
+           1 index annotrect rectfill
+           grestore
+        } {
+          pop
+        } ifelse
+      } if
+      dup /BC knownoget {
+        dup length
+        //set_bc_color exch .knownget {
+           gsave
+           exec
+           1 setlinewidth
+           3 index 3 index scale
+           1 index annotrect rectstroke
+           grestore
+        } {
+          pop
+        } ifelse
+      } if
+      pop
+    } if
     dup /FT knownoget {
       /Tx eq {
 	  % Stack: scalex scaley annot
@@ -1908,6 +1942,8 @@ end
   } ifelse
   pop pop pop
 } bdef
+
+currentdict /set_bc_color undef
 
 %  For annotation object we have to determine the size of the output rectangle
 %  and the size of the BBox for the form XObject. From these we calculate
