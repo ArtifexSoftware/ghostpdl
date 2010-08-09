@@ -92,15 +92,15 @@ nodict readonly pop
 
 /q {
   gsave //nodict begin
-  PDFusingtransparency {.pushextendedgstate cvx} if
+  PDFusingtransparency { .pushextendedgstate } if
 } bdef
 
 % Some PDF files have excess Q operators!
 /Q {
-  PDFusingtransparency {.popextendedgstate cvx} if
   currentdict /self .knownget {
     exec //nodict eq {
       end
+      PDFusingtransparency { .popextendedgstate } if
       % Restore graphics state, but do not modify path. Paths are not part
       % of the PDF graphics state; see 4.4.1 of PDF reference 3rd ed.
       % Collecting the path with one ctm and re-playing it with another ctm
