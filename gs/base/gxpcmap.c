@@ -727,6 +727,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
                             ctile->cdev->common.memory);
             rc_decrement(ctile->cdev->common.icc_cache_cl,
                             "gx_pattern_cache_free_entry");
+	    gs_free_object(ctile->cdev->common.memory, ctile->cdev, "free_pattern_cache_entry(pattern-clist)");
 	    ctile->cdev = NULL;
 	}
 
