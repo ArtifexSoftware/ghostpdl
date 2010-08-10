@@ -134,6 +134,7 @@ my %testSource=(
   $svnURLPrivate."tests_private/ps/ps3cet" => 'gs',
   $svnURLPrivate."tests_private/comparefiles" => 'gs',
   $svnURLPrivate."tests_private/pdf/PDFIA1.7_SUBSET" => 'gs',
+  $svnURLPrivate."tests_private/pdf/PDF_1.7_FTS" => 'gs',
 
   $svnURLPublic."tests/pcl" => 'pcl',
   $svnURLPrivate."tests_private/customer_tests" => 'pcl',
@@ -486,7 +487,7 @@ sub build($$$$$) {
       $cmd2c =~ s|$temp|$baselineRaster|;
       $cmd.=" ; $preCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
       $cmd.=" ; bash -c \"nice ./bmpcmp $bmpcmpOptions <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\""; # ; gzip $bmpcmpFilename.* ";
-      $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=\\\$?; if [ \\\$t == 0 ]; then break; fi; echo 'scp retry \\\$c' ; done \"";
+      $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=\\\$?; if [ \\\$t == 0 ]; then break; fi; echo 'scp retry \$c' ; done \"";
 #     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
@@ -575,7 +576,7 @@ sub build($$$$$) {
       }
       $cmd.=" ; $preCommand $cmd2a -sOutputFile='|gzip -1 -n >$baselineFilename.gz' $cmd2c >>$logFilename 2>&1";
       $cmd.=" ; bash -c \"nice ./bmpcmp $bmpcmpOptions <(gunzip -c $outputFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\""; # ; gzip $bmpcmpFilename.* ";
-      $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=\\\$?; if [ \\\$t == 0 ]; then break; fi; echo 'scp retry \\\$c' ; done \"";
+      $cmd.=" ; bash -c \"for (( c=1; c<=5; c++ )); do scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $bmpcmpFilename.* regression\@casper.ghostscript.com:/home/regression/cluster/bmpcmp/. ; t=\\\$?; if [ \\\$t == 0 ]; then break; fi; echo 'scp retry \$c' ; done \"";
 #     $cmd.=" ; scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $logFilename regression\@casper.ghostscript.com:/home/regression/cluster/bmpcmp/.";
     } else {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
@@ -677,19 +678,18 @@ foreach my $testfile (sort keys %testfiles) {
 }
 }
 
-while (scalar(@slowCommands) || scalar(@commands)) {
-  if (scalar(@slowCommands)) {
-    my $n=rand(scalar @slowCommands);
-    my $filename=$slowFilenames[$n];  splice(@slowFilenames,$n,1);
-    my $command=$slowCommands[$n];  splice(@slowCommands,$n,1);
-    print "$filename\t$command\n";
-  }
-  if (scalar(@commands)) {
-    my $n=rand(scalar @commands);
-    my $filename=$filenames[$n];  splice(@filenames,$n,1);
-    my $command=$commands[$n];  splice(@commands,$n,1);
-    print "$filename\t$command\n";
-  }
+while (scalar(@slowCommands)) {
+  my $n=rand(scalar @slowCommands);
+  my $filename=$slowFilenames[$n];  splice(@slowFilenames,$n,1);
+  my $command=$slowCommands[$n];  splice(@slowCommands,$n,1);
+  print "$filename\t$command\n";
+}
+
+while (scalar(@commands)) {
+  my $n=rand(scalar @commands);
+  my $filename=$filenames[$n];  splice(@filenames,$n,1);
+  my $command=$commands[$n];  splice(@commands,$n,1);
+  print "$filename\t$command\n";
 }
 
 #while (scalar(@slowCommands)) {

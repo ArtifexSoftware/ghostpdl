@@ -176,15 +176,18 @@ if (!$local) {
         $user=$a[1];
         $products=$a[2];
       } else {
-        mylog "oops 3";
+        unlink $runningSemaphore;
+        mylog "oops 3: t=$t";
         die "oops 3";  # hack
       }
     } else {
+      unlink $runningSemaphore;
       mylog "oops 1";  # hack
       die "oops 1";  # hack
     }
     unlink("$machine.start");
   } else {
+    unlink $runningSemaphore;
     mylog "oops 2";  # hack
     die "oops 2";  # hack
   }
@@ -205,10 +208,10 @@ my $usersDir="/home/regression/cluster/users";
 
 my $temp="./temp";
 my $temp2="./temp.tmp";
-my $raster="./temp/raster";
+#my $raster="./temp/raster";
 my $bmpcmpOutput="./temp/bmpcmp";
-#my $baselineRaster="./baselineraster";
-#my $baselineRaster2="./baselineraster.tmp";
+my $baselineRaster="./baselineraster";
+my $baselineRaster2="./baselineraster.tmp";
 
 my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
@@ -468,7 +471,7 @@ if (!$local) {
       mkdir "users/$user";
       mkdir "users/$user/ghostpdl";
       mkdir "users/$user/ghostpdl/gs";
-      $cmd="cd users/$user          ; rsync -vlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
+      $cmd="cd users/$user          ; rsync -cvlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
       systemWithRetry($cmd);
 
       $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
@@ -503,6 +506,7 @@ if (!$local) {
       if ($revs eq "head") {
       } elsif ($revs =~ m/(\d+)/) {
       } else {
+        unlink $runningSemaphore;
         mylog "oops 4: revs=$revs";
         die "oops 4";  # hack
       }
@@ -519,15 +523,17 @@ if (!$local) {
 #`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
 `svn update $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c`;
 `cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
+`svn update $baseDirectory/ghostpdl/gs/toolbin/tests/fuzzy.c`;
+`cc -o fuzzy $baseDirectory/ghostpdl/gs/toolbin/tests/fuzzy.c -lm`;
 
 mkdir("$gsBin");
 mkdir("$gsBin/bin");
 
-#$cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
-#print "$cmd\n" if ($verbose);
-#`$cmd`;
+$cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
+print "$cmd\n" if ($verbose);
+`$cmd`;
 
-$cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; mkdir $raster ; mkdir $bmpcmpOutput ; touch raster.yes ; rm -fr $temp2 &";
+$cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; mkdir $bmpcmpOutput ; rm -fr $temp2 &";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 
@@ -536,19 +542,21 @@ if (!$abort) {
 
   # modify product name so that files that print that information don't change
   # when we rev. the revision
-  open(F1,"<$gsSource/base/gscdef.c") || die "file $gsSource/base/gscdef.c not found";
-  open(F2,">$gsSource/base/gscdef.tmp") || die "$gsSource/base/gscdef.tmp cannot be open for writing";
-  while(<F1>) {
-    print F2 $_;
-    if (m/define GS_PRODUCT/) {
-      my $dummy=<F1>;
-      print F2 "\t\"GPL Ghostscript\"\n";
+# open(F1,"<$gsSource/base/gscdef.c") || die "file $gsSource/base/gscdef.c not found";
+  if (open(F1,"<$gsSource/base/gscdef.c")) {
+    open(F2,">$gsSource/base/gscdef.tmp") || die "$gsSource/base/gscdef.tmp cannot be opened for writing";
+    while(<F1>) {
+      print F2 $_;
+      if (m/define GS_PRODUCT/) {
+        my $dummy=<F1>;
+        print F2 "\t\"GPL Ghostscript\"\n";
+      }
     }
+    close(F1);
+    close(F2);
+    $cmd="mv $gsSource/base/gscdef.tmp $gsSource/base/gscdef.c";
+    `$cmd`;
   }
-  close(F1);
-  close(F2);
-  $cmd="mv $gsSource/base/gscdef.tmp $gsSource/base/gscdef.c";
-  `$cmd`;
 
   unlink "$gsSource/makegs.out";
   unlink "$gpdlSource/makepcl.out";
@@ -556,6 +564,12 @@ if (!$abort) {
   unlink "$gpdlSource/makesvg.out";
   unlink "$gpdlSource/makels.out";
   unlink "mupdf/makemupdf.out";
+  `touch $gsSource/makegs.out`;
+  `touch $gpdlSource/makepcl.out`;
+  `touch $gpdlSource/makexps.out`;
+  `touch $gpdlSource/makesvg.out`;
+  `touch $gpdlSource/makels.out`;
+  `touch mupdf/makemupdf.out`;
 
   if (!$dontBuild) {
     if (-e "./head/bin/gs") {
@@ -738,7 +752,7 @@ if ($md5sumFail ne "") {
 } elsif ($compileFail ne "") {
   updateStatus('Compile fail');
   mylog("setting $machine.fail on casper\n");
-  spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+  spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");  # mhw2
   @commands=();
 } else {
   updateStatus('Starting jobs');
@@ -751,7 +765,8 @@ open(F4,">$machine.log");
 
 my $startTime=time;
 
-while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
+while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mhw2
+#while (($poll==1 || scalar(@commands)) && !$abort) {  # mhw2
   my $count=0;
 
   if ($poll==1 && scalar(@commands)==0) {
@@ -786,6 +801,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
       @commands=();
       killAll();
       checkAbort();
+      unlink $runningSemaphore;
       die "can not connect to port $port on $host: $!";  # hack
     }
 
@@ -920,6 +936,10 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
     splice(@commands,$n,1);
     my $filename=$a[0];
     my $cmd=$a[1];
+
+#$maxCount=8  if ($cmd =~ m| ./bmpcmp |);
+#$timeOut=600 if ($cmd =~ m| ./bmpcmp |);
+
     $jobs++;
     my $t=int($jobs*$maxTimeoutPercentage/100+0.5);
     $maxTimeout=$t if ($maxTimeout<$t);
@@ -947,7 +967,6 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
 #       my @files = <$raster/*>;
 #       my $count = @files;
         my $count2=scalar (keys %timeOuts);
-        unlink('raster.yes') if ($count>$maxRaster);
         mylog("timeOuts=$count2 maxTimeout=$maxTimeout");
 
       }
@@ -977,7 +996,8 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {
 # }
 }
 
-if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
+if (!$abort || $compileFail ne "" || $timeoutFail ne "") {  # mhw2
+#if (!$abort || $timeoutFail ne "") {  # mhw2
 
   print "\n" if ($debug);
   my $count;
@@ -1076,7 +1096,8 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
 
   #print Dumper(\%logfiles);
 
-  if ($md5sumFail || $compileFail || $timeoutFail) {
+  if ($md5sumFail || $compileFail || $timeoutFail) {  # mhw2
+# if ($md5sumFail || $timeoutFail) {  # mhw2
     close(F4);
     open(F4,">$machine.log");
     if ($md5sumFail ne "") {
@@ -1099,9 +1120,9 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
           }
           close(F3);
           my $t1=$count;
-          $count-=20;
-          $count=$start-5 if ($start!=-1);
-          $count=$t1-10 if ($t1-$count<10);
+          $count-=50;
+          $count=$start-10 if ($start!=-1);
+          $count=$t1-20 if ($t1-$count<20);
           $count=$t1-250 if ($t1-$count>250);
           $t1-=$count;
           print F4 "\n$i (last $t1 lines):\n\n";
@@ -1144,6 +1165,33 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
   close(F4);
 
   if (!$local) {
+  if (1) {
+    my @files = <$temp/*.gz>;
+    if (scalar(@files)>0) {
+      updateStatus('Running fuzzy on '.scalar(@files).' file(s).');
+      foreach my $i (@files) {
+if (1) {
+        $i =~ m|.+/(.+).gz|;
+        $i = $1;
+        $cmd="echo \"fuzzy $i\" >>$machine.log";
+        `$cmd`;
+        $cmd="bash -c \" fuzzy <(gunzip -c $temp/$i.gz) <(gunzip -c $baselineRaster/$i.gz) >>$machine.log\"";
+        mylog "$cmd";
+        `$cmd`;
+} else {
+        $i =~ m|.+/(.+).gz|;
+        $i = $1;
+        $cmd="gunzip $temp/$i $baselineRaster/$i";
+        mylog "$cmd";
+        `$cmd`;
+        $cmd="./fuzzy $temp/$i $baselineRaster/$i >>$machine.log";
+        mylog "$cmd";
+        `$cmd`;
+}
+      }
+    }
+    }
+
     updateStatus('Uploading log files');
     unlink "$machine.log.gz";
     unlink "$machine.out.gz";
@@ -1159,6 +1207,16 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {
     $cmd="scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.out.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.out.gz 2>&1";
     systemWithRetry($cmd);
     mylog "done with uploading $machine.out.gz";
+
+    unlink "$machine.warnings.tar";
+    `tar cvf $machine.warnings.tar $gsSource/makegs.out $gpdlSource/makepcl.out $gpdlSource/makexps.out $gpdlSource/makesvg.out $gpdlSource/makels.out mupdf/makemupdf.out`;
+    unlink "$machine.warnings.tar.gz";
+    `gzip $machine.warnings.tar`;
+
+    mylog "about to upload $machine.warnings.tar.gz";
+    $cmd="scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.warnings.tar.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.warnings.tar.gz 2>&1";
+    systemWithRetry($cmd);
+    mylog "done with uploading $machine.warnings.tar.gz";
 
     updateStatus('idle');
   } else {

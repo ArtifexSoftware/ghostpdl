@@ -42,6 +42,10 @@ my %months=(
 
 my $b="";
 
+
+my ($rows,$cols) = split(/ /,`/bin/stty size`);
+chomp $cols;
+
 print chr(0x1b)."[1;1H";
 print chr(0x1b)."[J";
 
@@ -52,6 +56,7 @@ while(1) {
 
   if (!exists $status{'main'}{"status"} || $status{'main'}{"status"} ne $status) {
     print chr(0x1b)."[".(1).";1H";
+    $status=substr($status,0,$cols-1);
     printf "%s".chr(0x1b)."[K\n",$status;
     print chr(0x1b)."[".(scalar(@machines)+2).";1H";
     $status{'main'}{"status"}=$status;
@@ -70,6 +75,7 @@ for (my $i=0;  $i<scalar(@machines);  $i++) {
     $status{$machine}{"status"}=$s0;
     $status{$machine}{"down"}=$down;
     print chr(0x1b)."[".($i+2).";1H";
+    $s0=substr($s0,0,$cols-14-length($down));
     printf "%-10s  %s %s".chr(0x1b)."[K\n",$machine,$down,$s0;
     print chr(0x1b)."[".(scalar(@machines)+2).";1H";
   }

@@ -38,9 +38,19 @@ sub mylog($) {
 
 sub updateStatus($) {
   my $s=shift;
-  open(F,">status");
-  print F "$s";
-  close(F);
+  if (open(F,">status")) {
+    print F "$s";
+    close(F);
+  }
+}
+
+sub updateNodeStatus($$) {
+  my $m=shift;  # machine
+  my $s=shift;  # message
+  if (open(F,">$m.status")) {
+    print F "$s";
+    close(F);
+  }
 }
 
 sub removeQueue {
@@ -69,6 +79,7 @@ mylog "aborting all machines\n";
   foreach my $m (keys %machines) {
 mylog "touching $m.abort\n";
     `touch $m.abort`;
+    updateNodeStatus($m,"Aborting run");
   }
   my $done=0;
   my %doneTable;
@@ -87,9 +98,7 @@ mylog "touching $m.abort\n";
   }
   sleep 5;  # allow final machine to set status
   foreach my $machine (keys %machines) {
-    open(F,">$machine.status");
-    print F "idle\n";
-    close(F);
+    updateNodeStatus($machine,"idle");
   }
 
 }
@@ -154,6 +163,7 @@ sub checkProblem {
           delete $machines{$m} if (exists $machines{$m});
           if (scalar keys %lastTransfer) {
             `touch $m.abort`;
+            updateNodeStatus($m,"went down, re-running jobs on remaining nodes");
             if (exists $sent{$m}) {
               mylog "1: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
               @jobs=(@jobs,@{$sent{$m}});
@@ -175,6 +185,7 @@ sub checkProblem {
           delete $machines{$m} if (exists $machines{$m});
           if (scalar keys %lastTransfer) {
             `touch $m.abort`;
+            updateNodeStatus($m,"went down, re-running jobs on remaining nodes");
             if (exists $sent{$m}) {
               mylog "2: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
               @jobs=(@jobs,@{$sent{$m}});
@@ -395,6 +406,7 @@ mylog "setting 'abort.job'\n";
 if (open(F,"<$runningSemaphore")) {
   my $pid=<F>;
   close(F);
+  if ($pid!=0) {
   my $fileTime = stat($runningSemaphore)->mtime;
   my $t=time;
   if ($t-$fileTime>7200) {
@@ -412,6 +424,7 @@ if (open(F,"<$runningSemaphore")) {
     mylog "process $pid no longer running, removing semaphore\n";
     updateStatus "Regression terminated due to missing clustermaster.pl process";
     unlink $runningSemaphore;
+  }
   }
 }
 
@@ -470,7 +483,8 @@ my %rules=(
   'pl' => 14,
   'main' => 2,
   'common' => 14,
-  'gs/psi' => 1,
+# 'gs/psi' => 1,
+  'gs/psi' => 15,
   'gs/base' => 15,
   'gs/Resource' => 15,
   'gs/doc' => 0,
@@ -692,7 +706,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       if ($product=~m/^bmpcmp/) {
         $bmpcmp=1;
         my @a=split ' ',$product,2;
-        if ($userName eq "mvrhel") {
+        if ($userName eq "mvrhel-disabled") {
           $product="bmpcmp_icc_work bmpcmp $userName";
         } else {
           $product="bmpcmp $userName";
@@ -807,7 +821,7 @@ mylog "done checking jobs, product=$product\n";
     }
 
     if ($userRegression ne "") {
-      if ($userName eq "mvrhel") {
+      if ($userName eq "mvrhel-disabled") {
       my $cmd="diff -I '\$Id:' -w -c -r ./icc_work ./users/$userName/ghostpdl/gs | grep -v \"Only in\" > $userName.diff";
       `$cmd`;
       } else {
@@ -1165,6 +1179,22 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
 
     } elsif ($updateBaseline) {
     } elsif ($bmpcmp) {
+open(F9,">bmpcmp/fuzzy.txt");
+my @logs=split ' ',$logs;
+foreach my $i (@logs) {
+  if (open(F8,"<$i")) {
+    my $name;
+    while (<F8>) {
+      chomp;
+       $name=$1 if(m/fuzzy (.+)/);
+       if (m/: (.+ max diff)/) {
+         print F9 "$name: $1\n";
+       }
+    }
+    close(F8);
+  }
+}
+close(F9);
     } else {
       my @a=split ' ',$product;
       my $filter="cat current.tab";
@@ -1182,7 +1212,7 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
 
       checkPID();
 
-      if ($userName eq "mvrhel") {
+      if ($userName eq "mvrhel-disabled") {
         open(F,">>$userName.txt");
         print F "\nComparison made to current icc_work branch md5sums\n\n";
         close(F);
@@ -1275,8 +1305,13 @@ mylog("finished cachearchive.pl");
   } elsif ($updateBaseline) {
   } elsif ($bmpcmp) {
     if (exists $emails{$userName}) {
-      `mail $emails{$userName} -s \"bmpcmp finished\" <$userName.txt`;
-      `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <bmpcmpFinished.txt`;
+      `cp bmpcmpFinished.txt bmpcmpResults.txt`;
+      `echo >>bmpcmpResults.txt`;
+      `echo http://www.ghostscript.com/~regression/$userName >>bmpcmpResults.txt`;
+      `echo >>bmpcmpResults.txt`;
+      `cat bmpcmp/fuzzy.txt >>bmpcmpResults.txt`;
+      `mail $emails{$userName} -s \"bmpcmp finished\" <bmpcmpResults.txt`;
+      `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <bmpcmpResults.txt`;
     }
   } elsif ($userRegression) {
     `echo >>$userName.txt`;
@@ -1322,5 +1357,6 @@ if ($bmpcmp) {
   `chmod 777 ../public_html/$userName`;
   `cd ../public_html/$userName; ln -s compare.html index.html`;
   `./pngs2html.pl bmpcmp ../public_html/$userName`;
+  `cp bmpcmp/fuzzy.txt ../public_html/$userName/.`;
 }
 

@@ -127,6 +127,7 @@ if ($input2) {
 
 open(F,">$output") || die "file $output can't be written to";
 foreach (sort keys %results) {
+  $results{$_}{"md5"}=0 if ($results{$_}{"error"}!=0);
   print F "$_\t$results{$_}{'error'}\t$results{$_}{'time1'}\t$results{$_}{'time2'}\t$results{$_}{'time3'}\t$results{$_}{'time4'}\t$results{$_}{'md5'}\t$rev\t$results{$_}{'product'}\t$machine\n";
 }
 close(F);

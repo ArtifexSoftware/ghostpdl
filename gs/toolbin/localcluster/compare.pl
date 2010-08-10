@@ -36,7 +36,8 @@ if (open(F,"<skip.lst")) {
   while(<F>) {
     chomp;
     s|__|/|g;
-    $skip{$_}=1;
+    my @a=split '\s';
+    $skip{$_}=$a[0];
   }
   close(F);
 }
@@ -48,10 +49,14 @@ my %current;
 my %currentError;
 my %currentProduct;
 my %currentMachine;
+my %currentTime1;
+my %currentTime2;
 my %previous;
 my %previousError;
 my %previousProduct;
 my %previousMachine;
+my %previousTime1;
+my %previousTime2;
 my %archive;
 my %archiveProduct;
 my %archiveMachine;
@@ -78,16 +83,19 @@ while(<F>) {
   chomp;
   s|__|/|g;
   my @a=split '\t';
-  next if (exists $skip{$a[0]});
+  next if (exists $skip{$a[0]} && $a[1]==0);  # skip only if no error
 # $a[6]=$a[1] if ($a[1] ne "0");
   $current{$a[0]}=$a[6];
   $currentError{$a[0]}=0;
   if ($a[1]!=0) {
     $currentError{$a[0]}='unknown';
     $currentError{$a[0]}=$errorDescription[$a[1]] if (exists $errorDescription[$a[1]]);
+    $current{$a[0]}=0;
   }
   $currentProduct{$a[0]}=$a[8];
   $currentMachine{$a[0]}=$a[9];
+  $currentTime1{$a[0]}=$a[2];
+  $currentTime2{$a[0]}=$a[3];
 }
 
 print STDERR "reading $previous\n" if ($verbose);
@@ -96,16 +104,19 @@ while(<F>) {
   chomp;
   s|__|/|g;
   my @a=split '\t';
-  next if (exists $skip{$a[0]});
+  next if (exists $skip{$a[0]} && $a[1]==0);  # skip only if no error
 # $a[6]=$a[1] if ($a[1] ne "0");
   $previous{$a[0]}=$a[6];
   $previousError{$a[0]}=0;
   if ($a[1]!=0) {
     $previousError{$a[0]}='unknown';
     $previousError{$a[0]}=$errorDescription[$a[1]] if (exists $errorDescription[$a[1]]);
+    $previous{$a[0]}=0;
   }
   $previousProduct{$a[0]}=$a[8];
   $previousMachine{$a[0]}=$a[9];
+  $previousTime1{$a[0]}=$a[2];
+  $previousTime2{$a[0]}=$a[3];
 }
 close(F);
 
@@ -175,6 +186,18 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 #print "previous\n".Dumper(\%previous);
 #print "current \n".Dumper(\%current);
 
+my $first=0;
+
+foreach my $t (sort keys %current) {
+  if ($currentError{$t} =~ m/Seg_Fault/) {
+    print "\n*******************************************************************\nSeg faults with current rev:\n\n" if (!$first);
+    $first=1;
+    print "$t $currentMachine{$t} $currentError{$t}\n";
+  }
+}
+print "\n*******************************************************************\n\n\n" if ($first);
+
+
 foreach my $t (sort keys %previous) {
   if (exists $current{$t}) {
     my $match=0;
@@ -186,7 +209,6 @@ foreach my $t (sort keys %previous) {
             my @a=split "\t", $archiveCache{$t.' '.$current{$t}};
             my $message="";
             $message=$currentError{$t} if ($currentError{$t});
-            # die "happened" if ($currentError{$t});
             push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3] $message";
             $match=1;
       } else {
@@ -198,7 +220,6 @@ foreach my $t (sort keys %previous) {
             my @a=split "\t", $archiveCache{$t.' '.$current{$t}};
             my $message="";
             $message=$currentError{$t} if ($currentError{$t});
-            # die "happened" if ($currentError{$t});
             push @archiveMatch,"$t $a[1] $a[2] $currentMachine{$t} $a[0] $a[3] $message";
             $match=1;
         } else {
@@ -231,6 +252,17 @@ foreach my $t (sort keys %previous) {
               push @differencePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
 	    }
           }
+        }
+        if ($currentMachine{$t} eq $previousMachine{$t}) {
+          my $timeDelta1=0;
+          my $timeDelta2=0;
+          if ($previousTime1{$t}>0) {
+            $timeDelta1=($currentTime1{$t}-$previousTime1{$t})/$previousTime1{$t};
+          }
+          if ($previousTime2{$t}>0) {
+            $timeDelta2=($currentTime2{$t}-$previousTime2{$t})/$previousTime2{$t};
+          }
+#printf  "%10f %10f %10f %s\n",$timeDelta1,$currentTime1{$t},$previousTime1{$t},$t;
         }
 ##    }
 ##  }
