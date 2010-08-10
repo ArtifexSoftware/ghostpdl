@@ -176,6 +176,7 @@ struct cmm_profile_s {
 				 * name.  This is primarily here for the system profiles, and
 				 * so that we avoid resetting them everytime the user params
 				 * are reloaded. */
+    gs_memory_t *memory;        /* In case we have some in non-gc and some in gc memory */
 };
 
 #ifndef cmm_profile_DEFINED
@@ -301,6 +302,7 @@ typedef struct gsicc_smask_s {
     cmm_profile_t *smask_gray;
     cmm_profile_t *smask_rgb;
     cmm_profile_t *smask_cmyk;
+    gs_memory_t *memory;            
 } gsicc_smask_t;
 
 /* The manager object */
@@ -312,7 +314,6 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *default_cmyk;    /* Default CMYK profile for device CMKY */
     cmm_profile_t *proof_profile;   /* Proofing profile */
     cmm_profile_t *output_link;     /* Output device Link profile */
-    cmm_profile_t *device_profile;  /* The actual profile for the device */
     cmm_profile_t *lab_profile;     /* Colorspace type ICC profile from LAB to LAB */
     gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */ 
     gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */

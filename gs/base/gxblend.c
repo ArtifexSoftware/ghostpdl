@@ -189,7 +189,7 @@ void smask_icc(int num_rows, int num_cols, int n_chan, int row_stride,
                   row_stride, num_rows, num_cols);
     /* Transform the data */
     gscms_transform_color_buffer(icclink, &input_buff_desc, 
-                        &output_buff_desc, src, dst);
+                        &output_buff_desc, (void*) src, (void*) dst);
 }
 
 void
@@ -1409,7 +1409,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
    /* clist_band_count is incremented at every pdf14putimage */
    /* Useful for catching this thing and only dumping */
    /* during a particular band if we have a large file */
-   /* if (clist_band_count != 80) return; */
+   /* if (clist_band_count != 0) return; */
 
     buff_ptr = Buffer;
 

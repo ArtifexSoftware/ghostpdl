@@ -276,7 +276,8 @@ gs_cached_color_index(gs_color_index_cache_t *this, const float *paint_values, g
 	    pdevc = &devc_local;
 	memcpy(this->paint_values + i * client_num_components, paint_values, sizeof(*paint_values) * client_num_components);
 	memcpy(fcc.paint.values, paint_values, sizeof(*paint_values) * client_num_components);
-	code = pcs->type->remap_color(&fcc, pcs, pdevc, this->pis, this->dev, gs_color_select_texture);
+	code = pcs->type->remap_color(&fcc, pcs, pdevc, this->pis, this->trans_dev, 
+                                      gs_color_select_texture);
 	if (code < 0)
 	    return code;
 	if (pdevc->type != &gx_dc_type_data_pure)

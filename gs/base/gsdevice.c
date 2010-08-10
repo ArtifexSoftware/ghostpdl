@@ -46,6 +46,9 @@ gx_device_finalize(void *vptr)
 {
     gx_device * const dev = (gx_device *)vptr;
 
+    if (dev->device_icc_profile != NULL && !dev->retained) {
+        rc_decrement(dev->device_icc_profile, "gx_device_finalize(icc_profile)");
+    }
     if (dev->finalize)
 	dev->finalize(dev);
     discard(gs_closedevice(dev));
@@ -539,6 +542,10 @@ gs_nulldevice(gs_state * pgs)
 	 * aside from references from graphics states.
 	 */
 	rc_init(ndev, pgs->memory, 0);
+        if (pgs->device != NULL && pgs->device->device_icc_profile != NULL) {
+            ndev->device_icc_profile = pgs->device->device_icc_profile;
+            rc_increment(ndev->device_icc_profile);
+        }
 	return gs_setdevice_no_erase(pgs, ndev);
     }
     return 0;
@@ -751,6 +758,8 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 	COPY_ARRAY_PARAM(HWMargins);
 	COPY_PARAM(PageCount);
 	COPY_PARAM(MaxPatternBitmap);
+        COPY_PARAM(device_icc_profile);
+        rc_increment(dev->device_icc_profile);
 #undef COPY_ARRAY_PARAM
 	gx_device_copy_color_params(dev, target);
 }

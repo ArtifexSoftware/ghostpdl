@@ -118,7 +118,7 @@ struct pdf14_parent_color_s {
     int (*parent_color_comp_index)(gx_device *, const char *, int, int); 
     const pdf14_procs_t * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
-    cmm_profile_t *icc_profile;
+    cmm_profile_t *icc_profile;  /* Opaque to GC.  Allocated in non-gc memory */
     pdf14_parent_color_t *previous;
  
 };

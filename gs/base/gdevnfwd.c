@@ -40,6 +40,12 @@ gx_device_set_target(gx_device_forward *fdev, gx_device *target)
      */
     if (target && !fdev->finalize)
 	fdev->finalize = gx_device_forward_finalize;
+    /* Assign the profile of the target device to the forward device.
+       if it has not already been done with a parameter copy */
+    if (target && fdev->device_icc_profile != target->device_icc_profile) {
+        fdev->device_icc_profile = target->device_icc_profile;
+        rc_increment(fdev->device_icc_profile);
+    }
     rc_assign(fdev->target, target, "gx_device_set_target");
 }
 

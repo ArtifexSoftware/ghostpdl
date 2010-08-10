@@ -413,7 +413,7 @@ gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h) $(stdint__h)\
  $(gscompt_h) $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h)\
  $(gsrefct_h) $(gsropt_h) $(gsstruct_h) $(gstparam_h) $(gsxfont_h)\
  $(gxbitmap_h) $(gxcindex_h) $(gxcvalue_h) $(gxfixed_h)\
- $(gxtext_h) $(gscspace_h) $(gsnamecl_h)
+ $(gxtext_h) $(gscspace_h) $(gsnamecl_h) $(gscms_h)
 gscicach_h=$(GLSRC)gscicach.h $(gxdevcli_h)
 gxdevice_h=$(GLSRC)gxdevice.h $(stdio__h)\
  $(gsfname_h) $(gsmalloc_h) $(gsparam_h) $(gxdevcli_h) $(gxstdio_h)
@@ -2515,7 +2515,8 @@ $(GLOBJ)gsicc_manage.$(OBJ) : $(GLSRC)gsicc_manage.c $(GX) $(stdpre_h)\
 $(GLOBJ)gsicc_cache.$(OBJ) : $(GLSRC)gsicc_cache.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(smd5_h)\
  $(gxistate_h) $(gscms_h) $(gsicc_manage_h) $(gsicc_cache_h)\
- $(gserrors_h) $(gsmalloc_h) $(string__h) $(gsicc_profilecache_h)
+ $(gserrors_h) $(gsmalloc_h) $(string__h) $(gsicc_profilecache_h)\
+ $(gzstate_h) 
 	$(GLCC) $(GLO_)gsicc_cache.$(OBJ) $(C_) $(GLSRC)gsicc_cache.c
 	
 $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\

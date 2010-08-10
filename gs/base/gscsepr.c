@@ -298,7 +298,7 @@ gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
 
 static int
 gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
-			 frac *pconc, const gs_imager_state *pis)
+			 frac *pconc, const gs_imager_state *pis, gx_device *dev)
 {
     int code;
     gs_client_color cc;
@@ -328,10 +328,10 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
             pcs->params.separation.get_colorname_string(pis->memory, name,
 						&pname, &name_size);
             code = gsicc_transform_named_color(pc->paint.values[0], pname, 
-                            name_size, device_values, pis, NULL, 
+                            name_size, device_values, pis, dev, NULL, 
                             &rendering_params, false);
             if (code == 0) {
-                for (k = 0; k < pis->icc_manager->device_profile->num_comps; k++){
+                for (k = 0; k < dev->device_icc_profile->num_comps; k++){
                     pconc[k] = float2frac(((float) device_values[k])/65535.0);
                 }
                 return(0);
@@ -365,7 +365,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
             cc.paint.values[1] = (cc.paint.values[1]+128)/255.0;
             cc.paint.values[2] = (cc.paint.values[2]+128)/255.0;
         } 
-	return cs_concretize_color(&cc, pacs, pconc, pis);
+	return cs_concretize_color(&cc, pacs, pconc, pis, dev);
     }
     else {
     	pconc[0] = gx_unit_frac(pc->paint.values[0]);

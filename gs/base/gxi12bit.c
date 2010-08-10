@@ -158,10 +158,10 @@ gs_image_class_2_fracs(gx_image_enum * penum)
             penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
             penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
             penum->icc_setup.has_transfer = gx_has_transfer(penum->pis,
-                                    penum->pis->icc_manager->device_profile->num_comps);
+                                    penum->dev->device_icc_profile->num_comps);
             if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
-                penum->icc_link = gsicc_get_link(penum->pis, pcs, NULL, 
+                penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL, 
                     &rendering_params, penum->memory, false);
             }
             /* Use the direct unpacking proc */
@@ -613,7 +613,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
         bufend = psrc_cm +  w;
         psrc_cm_start = NULL;
     } else {
-        spp_cm = pis->icc_manager->device_profile->num_comps;
+        spp_cm = dev->device_icc_profile->num_comps;
         psrc_cm = (unsigned short*) gs_alloc_bytes(pis->memory,  
                         sizeof(unsigned short)  * w * spp_cm/spp, 
                         "image_render_icc16");

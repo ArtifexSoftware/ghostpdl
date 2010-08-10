@@ -100,7 +100,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     /* Do not allow mismatch in devices component output with the
        profile output size.  For example sep device with CMYK profile should
        not go through the fast method */
-    if (penum->pis->icc_manager->device_profile->num_comps 
+    if (penum->dev->device_icc_profile->num_comps 
         != penum->dev->color_info.num_components) {
         use_icc = false;
     }
@@ -309,9 +309,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
         penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
         penum->icc_setup.has_transfer = gx_has_transfer(penum->pis,
-                                penum->pis->icc_manager->device_profile->num_comps);
+                                penum->dev->device_icc_profile->num_comps);
         if (penum->icc_link == NULL) {
-            penum->icc_link = gsicc_get_link(penum->pis, pcs, NULL, 
+            penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL, 
                 &rendering_params, penum->memory, false);
         }
         return &image_render_interpolate_icc;
@@ -1004,7 +1004,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
 		if_debug1('B', "[B]Interpolated row %d:\n[B]",
 			  penum->line_xy);
                 /* Take care of CM on the entire interpolated row */
-                spp_cm = pis->icc_manager->device_profile->num_comps;
+                spp_cm = dev->device_icc_profile->num_comps;
                 if (penum->icc_link->is_identity) {
                     /* Fastest case. No CM needed */
                     psrc_cm = (unsigned short *) psrc;

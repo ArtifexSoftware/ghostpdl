@@ -105,9 +105,8 @@ gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
 		    stack, maskbuf);
 
-gs_private_st_ptrs2(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
-		    pdf14_clr_enum_ptrs, pdf14_clr_reloc_ptrs,
-		    icc_profile, previous);
+gs_private_st_ptrs1(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
+		    pdf14_clr_enum_ptrs, pdf14_clr_reloc_ptrs, previous);
 
 gs_private_st_ptrs2(st_pdf14_mask, pdf14_mask_t, "pdf_mask",
                     pdf14_mask_enum_ptrs, pdf14_mask_reloc_ptrs,
@@ -733,7 +732,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 static	int
 pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     const pdf14_nonseparable_blending_procs_t * pblend_procs, 
-    int curr_num_color_comp, cmm_profile_t *curr_icc_profile)
+    int curr_num_color_comp, cmm_profile_t *curr_icc_profile, gx_device *dev)
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
@@ -829,7 +828,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                 rendering_params.object_type = GS_IMAGE_TAG;
                 rendering_params.rendering_intent = gsPERCEPTUAL;
                 /* Request the ICC link for the transform that we will need to use */
-                icc_link = gsicc_get_link_profile(pis, curr_icc_profile, 
+                icc_link = gsicc_get_link_profile(pis, dev, curr_icc_profile, 
                     nos->parent_color_info_procs->icc_profile,
                     &rendering_params, pis->memory, false);
                 /* If the link is the identity, then we don't need to do 
@@ -1031,13 +1030,13 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 }
 
 static	int
-pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis)
+pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev)
 {
     pdf14_buf *tos = ctx->stack;
     byte *new_data_buf;
     int icc_match;
     cmm_profile_t *des_profile = tos->parent_color_info_procs->icc_profile; /* If set, this should be a gray profile */
-    cmm_profile_t *src_profile = pis->icc_manager->device_profile;    
+    cmm_profile_t *src_profile = dev->device_icc_profile;    
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
 
@@ -1124,7 +1123,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis)
                     rendering_params.black_point_comp = BP_OFF;
                     rendering_params.object_type = GS_IMAGE_TAG;
                     rendering_params.rendering_intent = gsPERCEPTUAL;
-                    icc_link = gsicc_get_link_profile(pis, des_profile, 
+                    icc_link = gsicc_get_link_profile(pis, dev, des_profile, 
                         src_profile, &rendering_params, pis->memory, false);
                     smask_icc(tos->rect.q.y - tos->rect.p.y ,
                                         tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
@@ -1353,8 +1352,8 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
 	return_error(gs_error_VMerror);
     /* Need to set this to avoid color management during the 
        image color render operation */
-    pcs->cmm_icc_profile_data = pis->icc_manager->device_profile;
-    rc_increment(pis->icc_manager->device_profile);
+    pcs->cmm_icc_profile_data = dev->device_icc_profile;
+    rc_increment(dev->device_icc_profile);
     gs_image_t_init_adjust(&image, pcs, false);
     image.ImageMatrix.xx = (float)width;
     image.ImageMatrix.yy = (float)height;
@@ -1549,6 +1548,11 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
 	COPY_ARRAY_PARAM(HWMargins);
 	COPY_PARAM(PageCount);
 	COPY_PARAM(MaxPatternBitmap);
+        /* Don't let put params blow away a group color space */
+        if (dev->device_icc_profile == NULL) {
+            COPY_PARAM(device_icc_profile);
+            rc_increment(dev->device_icc_profile);
+        }
 #undef COPY_ARRAY_PARAM
 #undef COPY_PARAM
 }
@@ -1844,7 +1848,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         gs_free_object(pis->memory, fill_trans_buffer, "pdf14_tile_pattern_fill");
         /* pop our transparency group which will force the blending */
         code = pdf14_pop_transparency_group(pis, p14dev->ctx, p14dev->blend_procs, 
-                            p14dev->color_info.num_components, pis->icc_manager->device_profile);
+                            p14dev->color_info.num_components, pdev->device_icc_profile,
+                            pdev);
     }
     return(code);
 }
@@ -2510,7 +2515,7 @@ pdf14_begin_transparency_group(gx_device *dev,
            group push. */
         if (group_color_numcomps < 5 ) {
             group_color = ICC;
-            curr_profile = pis->icc_manager->device_profile;
+            curr_profile = dev->device_icc_profile;
         } else {
                 /* We can end up here if we are in
                    a deviceN color space and 
@@ -2529,7 +2534,7 @@ pdf14_begin_transparency_group(gx_device *dev,
         if (curr_profile != NULL) {
             /* If the cs is different then force isolation */
             if ( curr_profile->hashcode == 
-                pis->icc_manager->device_profile->hashcode) {
+                dev->device_icc_profile->hashcode) {
                     /* cs same.  use parameter setting */
                     isolated = ptgp->Isolated;
             } else {
@@ -2574,7 +2579,7 @@ pdf14_end_transparency_group(gx_device *dev,
     pdf14_device *pdev = (pdf14_device *)dev;
     int code;
     pdf14_parent_color_t *parent_color;
-    cmm_profile_t *curr_device_profile = pis->icc_manager->device_profile;
+    cmm_profile_t *icc_profile = dev->device_icc_profile;
 
     if_debug0('v', "[v]pdf14_end_transparency_group\n");
     vd_get_dc('c');
@@ -2582,7 +2587,9 @@ pdf14_end_transparency_group(gx_device *dev,
     vd_set_scale(0.01);
     vd_set_origin(0, 0);
     vd_erase(RGB(192, 192, 192));
-    code = pdf14_pop_transparency_group(pis, pdev->ctx, pdev->blend_procs,pdev->color_info.num_components, curr_device_profile);
+    code = pdf14_pop_transparency_group(pis, pdev->ctx, pdev->blend_procs,
+                                pdev->color_info.num_components, icc_profile,
+                                (gx_device *) pdev);
    /* May need to reset some color stuff related
      * to a mismatch between the parents color space
      * and the group blending space */
@@ -2609,7 +2616,7 @@ pdf14_end_transparency_group(gx_device *dev,
 	    parent_color->parent_color_comp_index = NULL;
 	    parent_color->parent_color_mapping_procs = NULL;
         if (parent_color->icc_profile != NULL) {
-            pis->icc_manager->device_profile = parent_color->icc_profile;
+            dev->device_icc_profile = parent_color->icc_profile;
             rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_group");
             parent_color->icc_profile = NULL;
 	}
@@ -2777,7 +2784,7 @@ pdf14_update_device_color_procs(gx_device *dev,
         /* Don't increment the space since we are going to remove it from the 
            ICC manager anyway.  */
         if (group_color == ICC && iccprofile != NULL) {
-            parent_color_info->icc_profile = pis->icc_manager->device_profile;
+            parent_color_info->icc_profile = dev->device_icc_profile;
         }
 
         /* Set new information */
@@ -2803,7 +2810,7 @@ pdf14_update_device_color_procs(gx_device *dev,
            in the ICC manager, since that is the profile that is used for the
            PDF14 device */
         if (group_color == ICC && iccprofile != NULL) {
-            pis->icc_manager->device_profile = iccprofile;
+            dev->device_icc_profile = iccprofile;
             rc_increment(parent_color_info->icc_profile);
         }
         return(1);  /* Lets us detect that we did do an update */
@@ -2902,7 +2909,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                 break;
             case ICC:
                 /* Check if the profile is different. */
-                if (pis->icc_manager->device_profile->hashcode != 
+                if (dev->device_icc_profile->hashcode != 
                                         icc_profile->hashcode) {
                     update_color_info = true;
                     new_num_comps = icc_profile->num_comps;
@@ -2976,7 +2983,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                device in the ICC manager.  We already stored in in pdf14_parent_color_t.
                That will be stored in the clist and restored during the reading phase. */
            if (group_color == ICC) {
-                pis->icc_manager->device_profile = icc_profile;
+                dev->device_icc_profile = icc_profile;
             }
             if (pdev->ctx) {
                pdev->ctx->additive = new_additive; 
@@ -3035,7 +3042,7 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
           A match with pdf14_update_device_color_procs_push_c.  There functions
           are closely integrated with pdf14_pop_parent_color and pdf14_push_parent color.
           All four are used only on the clist writer side of the transparency code */
-         pis->icc_manager->device_profile = parent_color->icc_profile;
+         dev->device_icc_profile = parent_color->icc_profile;
          if_debug0('v', "[v]procs updated\n");
     } else {
         if_debug0('v', "[v]pdf14_update_device_color_procs_pop_c ERROR \n");
@@ -3082,8 +3089,8 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     memcpy(&(new_parent_color->comp_shift),&(pdev->color_info.comp_shift),
                         GX_DEVICE_COLOR_MAX_COMPONENTS);
     /* The ICC manager has the ICC profile for the device */
-    new_parent_color->icc_profile = pis->icc_manager->device_profile;
-    rc_increment(pis->icc_manager->device_profile);
+    new_parent_color->icc_profile = dev->device_icc_profile;
+    rc_increment(dev->device_icc_profile);
     /* isadditive is only used in ctx */
     if (pdev->ctx) {
         new_parent_color->isadditive = pdev->ctx->additive;
@@ -3195,7 +3202,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
     int ok;
 
     if_debug0('v', "pdf14_end_transparency_mask\n");
-    ok = pdf14_pop_transparency_mask(pdev->ctx, pis);
+    ok = pdf14_pop_transparency_mask(pdev->ctx, pis, dev);
     /* May need to reset some color stuff related
      * to a mismatch between the Smask color space
      * and the Smask blending space */
@@ -3224,7 +3231,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
                                 GX_DEVICE_COLOR_MAX_COMPONENTS);
             /* Take care of the ICC profile */
             if (parent_color->icc_profile != NULL) {
-                pis->icc_manager->device_profile = parent_color->icc_profile;
+                dev->device_icc_profile = parent_color->icc_profile;
                 rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_mask");
                 parent_color->icc_profile = NULL;
         }

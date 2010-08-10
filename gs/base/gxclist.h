@@ -222,14 +222,14 @@ struct clist_icctable_entry_s {
 
     clist_icc_serial_entry_t serial_data;
     clist_icctable_entry_t *next;  /* The next entry in the table */ 
-    cmm_profile_t *icc_profile;    /* The profile.  This is written out at the end of the writer phase */
-
+    cmm_profile_t *icc_profile;    /* The profile.  In non-gc memory. This is 
+                                      written out at the end of the writer phase */
 };
 
 #define private_st_clist_icctable_entry()\
-  gs_private_st_ptrs2(st_clist_icctable_entry,\
+  gs_private_st_ptrs1(st_clist_icctable_entry,\
 		clist_icctable_entry_t, "clist_icctable_entry",\
-		clist_icctable_entry_enum_ptrs, clist_icctable_entry_reloc_ptrs, next, icc_profile)
+		clist_icctable_entry_enum_ptrs, clist_icctable_entry_reloc_ptrs, next)
 
 typedef struct clist_icctable_s clist_icctable_t;
 

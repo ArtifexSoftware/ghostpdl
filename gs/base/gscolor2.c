@@ -453,7 +453,7 @@ gx_concrete_space_Indexed(const gs_color_space * pcs,
 
 static int
 gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
-		      frac * pconc, const gs_imager_state * pis)
+		      frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
 
     gs_client_color cc;
@@ -463,7 +463,7 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 
     if (code < 0)
 	return code;
-    return (*pbcs->type->concretize_color) (&cc, pbcs, pconc, pis);
+    return (*pbcs->type->concretize_color) (&cc, pbcs, pconc, pis, dev);
 }
 
 /* Look up an index in an Indexed color space. */

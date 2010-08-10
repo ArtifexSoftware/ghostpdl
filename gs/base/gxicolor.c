@@ -158,10 +158,10 @@ gs_image_class_4_color(gx_image_enum * penum)
         penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
         penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
         penum->icc_setup.has_transfer = gx_has_transfer(penum->pis,
-                                penum->pis->icc_manager->device_profile->num_comps);
+                                penum->dev->device_icc_profile->num_comps);
         if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
         if (penum->icc_link == NULL) {
-            penum->icc_link = gsicc_get_link(penum->pis, pcs, NULL, 
+            penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL, 
                 &rendering_params, penum->memory, false);
         }
         /* PS CIE color spaces may have addition decoding that needs to
@@ -318,7 +318,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
     gx_color_index color;
-    int src_num_comp = cs_num_components(penum->pcs);
     bool need_decode = penum->icc_setup.need_decode;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
@@ -349,7 +348,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
         bufend = psrc_cm +  w;
         psrc_cm_start = NULL;
     } else {
-        spp_cm = pis->icc_manager->device_profile->num_comps;
+        spp_cm = dev->device_icc_profile->num_comps;
         psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, "image_render_color_icc");
         psrc_cm_start = psrc_cm;
         bufend = psrc_cm +  w * spp_cm/spp;

@@ -88,7 +88,7 @@ gx_restrict_DevicePixel(gs_client_color * pcc, const gs_color_space * pcs)
 
 static int
 gx_concretize_DevicePixel(const gs_client_color * pc, const gs_color_space * pcs,
-			  frac * pconc, const gs_imager_state * pis)
+			  frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
     /****** NOT ENOUGH BITS IN float OR frac ******/
     pconc[0] = (frac) (ulong) pc->paint.values[0];

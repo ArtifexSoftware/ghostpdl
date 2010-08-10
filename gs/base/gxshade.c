@@ -388,13 +388,14 @@ top:
     rendering_params.rendering_intent = pis->renderingintent;
     /* Grab the icc link transform that we need now */
     if (pcs->cmm_icc_profile_data != NULL) {
-        pfs->icclink = gsicc_get_link(pis, pcs, NULL, &rendering_params, 
-                                        pis->memory, false);
+        pfs->icclink = gsicc_get_link(pis, pis->trans_device, pcs, NULL, 
+                                        &rendering_params, pis->memory, false);
     } else {
         if (pcs->icc_equivalent != NULL ) {
             /* We have a PS equivalent ICC profile.  We may need to go 
                through special range adjustments in this case */
-            pfs->icclink = gsicc_get_link(pis, pcs->icc_equivalent, NULL, 
+            pfs->icclink = gsicc_get_link(pis, pis->trans_device, 
+                                          pcs->icc_equivalent, NULL, 
                                           &rendering_params, pis->memory, false);
         } else {
             pfs->icclink = NULL;

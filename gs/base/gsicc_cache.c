@@ -29,6 +29,7 @@
 #include "gsmalloc.h" /* Needed for named color structure allocation */
 #include "string_.h"  /* Needed for named color structure allocation */
 #include "gxsync.h"
+#include "gzstate.h"
         /*
 	 *  Note that the the external memory used to maintain 
          *  links in the CMS is generally not visible to GS.  
@@ -49,11 +50,14 @@ static gsicc_link_t * gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t has
 
 static void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
 
-static void gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *profile, int64_t *hash);
+static void gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev, 
+                                  cmm_profile_t *profile, int64_t *hash);
 
-static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, cmm_profile_t *input_profile, 
-                   cmm_profile_t *output_profile, 
-                   gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash);
+static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev, 
+                                   cmm_profile_t *input_profile, 
+                                   cmm_profile_t *output_profile, 
+                                   gsicc_rendering_param_t *rendering_params, 
+                                   gsicc_hashlink_t *hash);
 
 static gsicc_link_t* gsicc_findcachelink(gsicc_hashlink_t hashcode,gsicc_link_cache_t *icc_link_cache, 
                                    bool includes_proof);
@@ -267,13 +271,15 @@ gsicc_get_buff_hash(unsigned char *data, int64_t *hash, unsigned int num_bytes)
     and rendering params structure.  We may change this later */
 
 static void
-gsicc_compute_linkhash(gsicc_manager_t *icc_manager, cmm_profile_t *input_profile, 
-                   cmm_profile_t *output_profile, 
-                   gsicc_rendering_param_t *rendering_params, gsicc_hashlink_t *hash)
+gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
+                       cmm_profile_t *input_profile, 
+                       cmm_profile_t *output_profile, 
+                       gsicc_rendering_param_t *rendering_params, 
+                       gsicc_hashlink_t *hash)
 {
    /* first get the hash codes for the color spaces */
-    gsicc_get_cspace_hash(icc_manager, input_profile, &(hash->src_hash));
-    gsicc_get_cspace_hash(icc_manager, output_profile, &(hash->des_hash));
+    gsicc_get_cspace_hash(icc_manager, dev, input_profile, &(hash->src_hash));
+    gsicc_get_cspace_hash(icc_manager, dev, output_profile, &(hash->des_hash));
 
     /* now for the rendering paramaters */
     gsicc_get_buff_hash((unsigned char *) rendering_params, &(hash->rend_hash),
@@ -284,10 +290,11 @@ gsicc_compute_linkhash(gsicc_manager_t *icc_manager, cmm_profile_t *input_profil
 }
 
 static void
-gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, cmm_profile_t *cmm_icc_profile_data, int64_t *hash)
+gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev, 
+                      cmm_profile_t *cmm_icc_profile_data, int64_t *hash)
 {
     if (cmm_icc_profile_data == NULL ) {
-        *hash = icc_manager->device_profile->hashcode;
+        *hash = dev->device_icc_profile->hashcode;
         return;
     }
     if (cmm_icc_profile_data->hash_is_valid ) {
@@ -400,12 +407,25 @@ gsicc_remove_link(gsicc_link_t *link, gs_memory_t *memory)
 }
 
 gsicc_link_t* 
-gsicc_get_link(const gs_imager_state *pis, const gs_color_space  *input_colorspace, 
-                    gs_color_space *output_colorspace, 
-                    gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
+gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in, 
+               const gs_color_space  *input_colorspace, 
+               gs_color_space *output_colorspace, 
+               gsicc_rendering_param_t *rendering_params, 
+               gs_memory_t *memory, bool include_softproof)
 {
     cmm_profile_t *gs_input_profile;
     cmm_profile_t *gs_output_profile;
+    gs_state *pgs;
+    gx_device *dev;
+
+    if (dev_in == NULL) {
+        /* Get from the imager state which is going to be a graphic state.
+           This only occurs for the other (non-ps/pdf) interpreters */
+        pgs = (gs_state*) pis;
+        dev = pgs->device;
+    } else {
+        dev = dev_in;
+    }
 
     if ( input_colorspace->cmm_icc_profile_data == NULL ) {
         /* Use default type */
@@ -418,9 +438,9 @@ gsicc_get_link(const gs_imager_state *pis, const gs_color_space  *input_colorspa
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
     } else {
         /* Use the device profile */
-        gs_output_profile = pis->icc_manager->device_profile;
+        gs_output_profile = dev->device_icc_profile;
     }
-    return(gsicc_get_link_profile(pis, gs_input_profile, gs_output_profile, 
+    return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile, 
                     rendering_params, memory, include_softproof));
 }
 
@@ -431,9 +451,11 @@ gsicc_get_link(const gs_imager_state *pis, const gs_color_space  *input_colorspa
    is updating a reference count) */
 
 gsicc_link_t* 
-gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile, 
-                    cmm_profile_t *gs_output_profile, 
-                    gsicc_rendering_param_t *rendering_params, gs_memory_t *memory, bool include_softproof)
+gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev, 
+                       cmm_profile_t *gs_input_profile, 
+                       cmm_profile_t *gs_output_profile, 
+                       gsicc_rendering_param_t *rendering_params, 
+                       gs_memory_t *memory, bool include_softproof)
 {
     gsicc_hashlink_t hash;
     gsicc_link_t *link, *found_link;
@@ -448,7 +470,8 @@ gsicc_get_link_profile(gs_imager_state *pis, cmm_profile_t *gs_input_profile,
 
     /* First compute the hash code for the incoming case */
     /* If the output color space is NULL we will use the device profile for the output color space */
-    gsicc_compute_linkhash(icc_manager, gs_input_profile, gs_output_profile, rendering_params, &hash);
+    gsicc_compute_linkhash(icc_manager, dev, gs_input_profile, gs_output_profile, 
+                            rendering_params, &hash);
 
     /* Check the cache for a hit.  Need to check if softproofing was used */
     found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
@@ -657,7 +680,7 @@ get_to_next_line(unsigned char **buffptr, int *buffer_count)
 int
 gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                             gx_color_value device_values[], 
-                            const gs_imager_state *pis, 
+                            const gs_imager_state *pis, gx_device *dev, 
                             cmm_profile_t *gs_output_profile, 
                             gsicc_rendering_param_t *rendering_params, 
                             bool include_softproof)
@@ -808,11 +831,12 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                     curr_output_profile = gs_output_profile;
                 } else {
                     /* Use the device profile */
-                    curr_output_profile = pis->icc_manager->device_profile;
+                    curr_output_profile = dev->device_icc_profile;
                 }
-                icc_link = gsicc_get_link_profile(pis, pis->icc_manager->lab_profile, 
-                                                    curr_output_profile, rendering_params, 
-                                                    pis->memory, false);
+                icc_link = gsicc_get_link_profile(pis, dev, 
+                                                pis->icc_manager->lab_profile, 
+                                                curr_output_profile, rendering_params, 
+                                                pis->memory, false);
                 if (icc_link->is_identity) {
                     psrc_temp = &(psrc[0]);
                 } else {

@@ -117,9 +117,9 @@ struct gs_color_space_type_s {
 
 #define cs_proc_concretize_color(proc)\
   int proc(const gs_client_color *, const gs_color_space *,\
-    frac *, const gs_imager_state *)
-#define cs_concretize_color(pcc, pcs, values, pis)\
-  (*(pcs)->type->concretize_color)(pcc, pcs, values, pis)
+    frac *, const gs_imager_state *, gx_device *)
+#define cs_concretize_color(pcc, pcs, values, pis, dev)\
+  (*(pcs)->type->concretize_color)(pcc, pcs, values, pis, dev)
 	cs_proc_concretize_color((*concretize_color));
 
     /* Map a concrete color to a device color. */

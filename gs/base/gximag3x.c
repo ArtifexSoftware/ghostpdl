@@ -228,6 +228,8 @@ gx_begin_image3x_generic(gx_device * dev,
 			(int)ceil(mrect.q.x) - origin[i].x,
 			(int)ceil(mrect.q.y) - origin[i].y,
 			penum->mask[i].depth, mem);
+        mdev->device_icc_profile = dev->device_icc_profile;
+        rc_increment(dev->device_icc_profile);
 	if (code < 0)
 	    goto out1;
 	penum->mask[i].mdev = mdev;

@@ -66,10 +66,14 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
     frac xyz[3];
     int ncomp = gs_color_space_num_components(pcs);
     int i;
+    gx_device dev;
+    
+    /* Need a device profile */
+    dev.device_icc_profile = pcs->cmm_icc_profile_data;
 
     for (i = 0; i < ncomp; ++i)
 	cc.paint.values[i] = in[i];
-    cs_concretize_color(&cc, pcs, xyz, pis);
+    cs_concretize_color(&cc, pcs, xyz, pis, &dev);
     out[0] = frac2float(xyz[0]);
     out[1] = frac2float(xyz[1]);
     out[2] = frac2float(xyz[2]);

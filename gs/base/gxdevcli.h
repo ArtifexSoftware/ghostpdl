@@ -36,6 +36,7 @@
 #include "gxcmap.h"
 #include "gsnamecl.h"
 #include "gp.h"
+#include "gscms.h"
 
 /* See Drivers.htm for documentation of the driver interface. */
 
@@ -731,6 +732,7 @@ typedef struct gx_device_cached_colors_s {
 	long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
 	gx_stroked_gradient_recognizer_t sgr;\
 	int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
+        cmm_profile_t *device_icc_profile;     /* Device profile in non-gc memory */\
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */

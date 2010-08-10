@@ -608,6 +608,8 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	/* Pass the correct target, but decrement its refct afterwards. */
 	gs_make_mem_mono_device(pdev, pdev->memory, target);
 	rc_decrement_only(target, "gx_alloc_char_bits"); /* can't go to 0 */
+        /* Decrement the ICC profile also.  Same device is getting reinitialized */
+        rc_decrement(target->device_icc_profile,"gx_alloc_char_bits(icc profile)");
 	pdev->rc = rc;
 	pdev->retained = retained;
 	pdev->width = iwidth;

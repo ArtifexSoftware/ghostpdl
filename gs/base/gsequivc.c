@@ -387,6 +387,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     temp_device.sep_num = sep_num;
     temp_device.pequiv_cmyk_colors = pparams;
     temp_device.memory = pgs->memory;
+    temp_device.device_icc_profile = pdev->device_icc_profile;
     /*
      * Create a temp copy of the imager state.  We do this so that we
      * can modify the color space mapping (cmap) procs.  We use our

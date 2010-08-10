@@ -576,7 +576,7 @@ gx_same_concrete_space(const gs_color_space * pcs, const gs_imager_state * pis)
 /* Indicate that a color cannot be concretized. */
 int
 gx_no_concretize_color(const gs_client_color * pcc, const gs_color_space * pcs,
-		       frac * pconc, const gs_imager_state * pis)
+		       frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
     return_error(gs_error_rangecheck);
 }
@@ -591,7 +591,7 @@ gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     const gs_color_space *pconcs;
     int i = pcs->type->num_components(pcs);
-    int code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis);
+    int code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis, dev);
 
     if (code < 0)
 	return code;
@@ -614,7 +614,7 @@ gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
 /* DeviceGray */
 int
 gx_concretize_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
-			 frac * pconc, const gs_imager_state * pis)
+			 frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
     pconc[0] = gx_unit_frac(pc->paint.values[0]);
     return 0;
@@ -655,7 +655,7 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
 /* DeviceRGB */
 int
 gx_concretize_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
-			frac * pconc, const gs_imager_state * pis)
+			frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
     pconc[0] = gx_unit_frac(pc->paint.values[0]);
     pconc[1] = gx_unit_frac(pc->paint.values[1]);
@@ -701,7 +701,7 @@ gx_remap_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
 /* DeviceCMYK */
 int
 gx_concretize_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
-			 frac * pconc, const gs_imager_state * pis)
+			 frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
     pconc[0] = gx_unit_frac(pc->paint.values[0]);
     pconc[1] = gx_unit_frac(pc->paint.values[1]);
@@ -1185,7 +1185,7 @@ devicen_has_cmyk(gx_device * dev)
 }
 
 static int
-devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis)
+devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
 {
     gsicc_link_t *icc_link;
     gsicc_rendering_param_t rendering_params;
@@ -1202,9 +1202,8 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis)
     for (k = 0; k < 4; k++){
         psrc[k] = frac2cv(cm_comps[k]);
     }
-    icc_link = gsicc_get_link_profile(pis, pis->icc_manager->default_cmyk, 
-                pis->icc_manager->device_profile,
-                &rendering_params, pis->memory, false);
+    icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_cmyk, 
+                dev->device_icc_profile, &rendering_params, pis->memory, false);
     /* Transform the color */
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
@@ -1243,8 +1242,8 @@ cmap_devicen_halftoned(const frac * pcc,
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);
     /* See comments in cmap_devicen_direct for details on below operations */
     if (devicen_has_cmyk(dev) && 
-        pis->icc_manager->device_profile->data_cs == gsCMYK) {
-        code = devicen_icc_cmyk(cm_comps, pis);
+        dev->device_icc_profile->data_cs == gsCMYK) {
+        code = devicen_icc_cmyk(cm_comps, pis, dev);
     } 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1294,14 +1293,14 @@ cmap_devicen_direct(const frac * pcc,
        20% M 0% Y 0% K. Hence the CMYK values should go through the same
        color management as a stand alone CMYK value.  */
     if (devicen_has_cmyk(dev) && 
-        pis->icc_manager->device_profile->data_cs == gsCMYK) {
+        dev->device_icc_profile->data_cs == gsCMYK) {
         /* We need to do a CMYK to CMYK conversion here.  This will always
            use the default CMYK profile and the device's output profile.
            We probably need to add some checking here
            and possibly permute the colorants, much as is done on the input
            side for the case when we add DeviceN icc source profiles for use
            in PDF and PS data. */
-        code = devicen_icc_cmyk(cm_comps, pis);
+        code = devicen_icc_cmyk(cm_comps, pis, dev);
     } 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)

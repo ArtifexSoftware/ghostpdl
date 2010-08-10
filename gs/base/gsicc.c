@@ -283,9 +283,8 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			  gs_color_select_t select)
 {
-    const gsicc_manager_t *icc_manager = pis->icc_manager;
-    const cmm_profile_t *device_profile = icc_manager->device_profile;
-    int num_colorants = device_profile->num_comps;
+    const cmm_profile_t *icc_profile = dev->device_icc_profile;
+    int num_colorants = icc_profile->num_comps;
     int code;
 
     switch( num_colorants ) {
@@ -345,7 +344,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 }
 }
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
-    icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
+    icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory, false);
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
     } else {
@@ -356,7 +355,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 #ifdef DEBUG
     if (!icc_link->is_identity) {
         num_src_comps = pcs->cmm_icc_profile_data->num_comps;
-        num_des_comps = pis->icc_manager->device_profile->num_comps;
+        num_des_comps = dev->device_icc_profile->num_comps;
         if_debug0('c',"[c]ICC remap [ ");
         for (k = 0; k < num_src_comps; k++) {
             if_debug1('c', "%d ",psrc[k]);
@@ -374,7 +373,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
        the transfer function and potentially the halftoning */
     /* Right now we need to go from unsigned short to frac.  I really
        would like to avoid this sort of stuff.  That will come. */
-    for ( k = 0; k< pis->icc_manager->device_profile->num_comps; k++){
+    for ( k = 0; k< dev->device_icc_profile->num_comps; k++){
         conc[k] = ushort2frac(psrc_temp[k]);
     }
     gx_remap_concrete_ICC(conc, pcs, pdc, pis, dev, select);
@@ -395,7 +394,8 @@ gx_concretize_ICC(
     const gs_client_color * pcc,
     const gs_color_space *  pcs,
     frac *                  pconc,
-    const gs_imager_state * pis )
+    const gs_imager_state * pis,
+    gx_device *dev)
     {
 
     gsicc_link_t *icc_link;
@@ -412,7 +412,7 @@ gx_concretize_ICC(
         psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
 	}
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
-    icc_link = gsicc_get_link(pis, pcs, NULL, &rendering_params, pis->memory, false);
+    icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory, false);
     /* Transform the color */
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
@@ -422,7 +422,7 @@ gx_concretize_ICC(
         gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
     }
     /* This needs to be optimized */
-    for (k = 0; k < pis->icc_manager->device_profile->num_comps; k++){
+    for (k = 0; k < dev->device_icc_profile->num_comps; k++){
         pconc[k] = float2frac(((float) psrc_temp[k])/65535.0);
     }
     /* Release the link */

@@ -364,7 +364,7 @@ gx_remap_DeviceN(const gs_client_color * pcc, const gs_color_space * pcs,
         }
         return(code);
     } else {
-        code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis);
+        code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis, dev);
         if (code < 0)
 	    return code;
         pconcs = cs_concrete_space(pcs, pis);
@@ -380,7 +380,7 @@ gx_remap_DeviceN(const gs_client_color * pcc, const gs_color_space * pcs,
 
 static int
 gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
-		      frac * pconc, const gs_imager_state * pis)
+		      frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
     int code, tcode = 0;
     gs_client_color cc;
@@ -424,7 +424,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
         if (tcode < 0)
 	    return tcode;
 
-	code = cs_concretize_color(&cc, pacs, pconc, pis);
+	code = cs_concretize_color(&cc, pacs, pconc, pis, dev);
 
     }
     else {

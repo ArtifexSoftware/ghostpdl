@@ -731,10 +731,8 @@ ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
     if (index == 1)
 	return ENUM_OBJ(pcs->pclient_color_space_data);
     if (index == 2)
- 	return ENUM_OBJ(pcs->cmm_icc_profile_data);
-    if (index == 3)
         return ENUM_OBJ(pcs->icc_equivalent);
-    return ENUM_USING(*pcs->type->stype, vptr, size, index - 4);
+    return ENUM_USING(*pcs->type->stype, vptr, size, index - 3);
     ENUM_PTRS_END_PROC
 }
 static 
@@ -742,7 +740,6 @@ RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_VAR(pcs->base_space);
     RELOC_VAR(pcs->pclient_color_space_data);
-    RELOC_VAR(pcs->cmm_icc_profile_data);
     RELOC_VAR(pcs->icc_equivalent);
     RELOC_USING(*pcs->type->stype, vptr, size);
 }

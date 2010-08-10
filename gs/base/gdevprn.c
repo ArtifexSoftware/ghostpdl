@@ -1039,9 +1039,12 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
 	assign_dev_procs(mdev, mdproto);
         check_device_separable((gx_device *)mdev);
 	gx_device_fill_in_procs((gx_device *)mdev);
-    } else
+    } else {
 	gs_make_mem_device(mdev, mdproto, mem, (band_complexity == NULL ? 1 : 0),
 			   (target == (gx_device *)mdev ? NULL : target));
+        mdev->device_icc_profile = target->device_icc_profile;
+        rc_increment(mdev->device_icc_profile);
+    }
     mdev->width = target->width;
     mdev->band_y = y;
     /*
@@ -1155,6 +1158,7 @@ gx_default_destroy_buf_device(gx_device *bdev)
 	mdev = ((gx_device_plane_extract *)bdev)->plane_dev;
 	gs_free_object(bdev->memory, bdev, "destroy_buf_device");
     }
+    /* gs_free_object will do finalize which will decrement icc profile */
     dev_proc(mdev, close_device)(mdev);
     gs_free_object(mdev->memory, mdev, "destroy_buf_device");
 }

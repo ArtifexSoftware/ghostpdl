@@ -236,6 +236,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 		       mem, true);
 	adev->instance = pinst;
 	adev->bitmap_memory = storage_memory;
+        adev->device_icc_profile = tdev->device_icc_profile;
+        rc_increment(tdev->device_icc_profile);
 	fdev = (gx_device_forward *)adev;
     } else {
 	gx_device_buf_procs_t buf_procs = {dummy_create_buf_device,
@@ -323,6 +325,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	cwdev->pinst = pinst;
 	set_dev_proc(cwdev, get_clipping_box, gx_default_get_clipping_box);
 	fdev = (gx_device_forward *)cdev;
+        cdev->common.device_icc_profile = tdev->device_icc_profile;
+        rc_increment(tdev->device_icc_profile);
     }
     check_device_separable((gx_device *)fdev);
     gx_device_forward_fill_in_procs(fdev);

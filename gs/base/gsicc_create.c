@@ -1493,9 +1493,10 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     for(k = 0; k < num_tags; k++) {
         profile_size += tag_list[k].size;
     }
-
-    /* Now we can go ahead and fill our buffer with the data */
-    buffer = gs_alloc_bytes(memory,profile_size,"gsicc_create_from_cal");
+    /* Now we can go ahead and fill our buffer with the data.  Profile
+       buffer data is in non-gc memory */
+    buffer = gs_alloc_bytes(memory->non_gc_memory, 
+                            profile_size, "gsicc_create_from_cal");
     curr_ptr = buffer;
     /* The header */
     header->size = profile_size;
@@ -1653,8 +1654,10 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
         profile_size += tag_list[k].size;
     }
     /* End of tag table information */
-    /* Now we can go ahead and fill our buffer with the data */
-    buffer = gs_alloc_bytes(memory,profile_size,"create_lutAtoBprofile");
+    /* Now we can go ahead and fill our buffer with the data.  Profile
+       is in non-gc memory */
+    buffer = gs_alloc_bytes(memory->non_gc_memory, profile_size, 
+        "create_lutAtoBprofile");
     curr_ptr = buffer;
     /* The header */
     header->size = profile_size;
