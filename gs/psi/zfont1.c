@@ -186,6 +186,12 @@ charstring_font_params(const gs_memory_t *mem,
      */
     if (pdata1->LanguageGroup > 1 || pdata1->LanguageGroup < 0)
 	pdata1->LanguageGroup = 0;
+    /* This is used only when determining if its possible to copy glyphs
+     * between fonts. Currenly only by pdfwrite and friends. Rather than 
+     * check all the subrs (which we used to do) we hash tehm, store it
+     * and check the hashes. Zero except when in use by pdfwrite.. 
+     */
+    memset(&pdata1->hash_subrs, 0x00, 16);
     return 0;
 }
 

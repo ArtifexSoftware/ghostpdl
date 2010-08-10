@@ -137,6 +137,7 @@ struct gs_type1_data_s {
     /* Additional information for Multiple Master fonts */
 #define max_WeightVector 16
     float_array(max_WeightVector) WeightVector;
+    byte hash_subrs[16];	/* Used only for checking font copyign compatibility */
 };
 
 #define gs_type1_data_s_DEFINED
