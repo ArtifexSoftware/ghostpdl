@@ -743,7 +743,7 @@ $(GLOBJ)gdevpsdi.$(OBJ) : $(GLSRC)gdevpsdi.c $(GXERR)\
  $(scfx_h) $(slzwx_h) $(spngpx_h)\
  $(strimpl_h) $(szlibx_h)\
  $(gdevpsdf_h) $(gdevpsds_h) $(gxdevmem_h) $(gxcspace_h) $(gxparamx_h)\
- $(sjbig2_luratech_h) $(sjpx_luratech_h)
+ $(sjbig2_luratech_h) $(sjpx_luratech_h) $(gsicc_manage_h)
 	$(GDEVLWFJB2JPXCC) $(GLO_)gdevpsdi.$(OBJ) $(C_) $(GLSRC)gdevpsdi.c
 
 $(GLOBJ)gdevpsdp.$(OBJ) : $(GLSRC)gdevpsdp.c $(GDEVH)\

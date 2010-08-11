@@ -29,6 +29,7 @@
 #include "slzwx.h"
 #include "spngpx.h"
 #include "szlibx.h"
+#include "gsicc_manage.h"
 #ifdef USE_LDF_JB2
 #include "sjbig2_luratech.h"
 #endif
