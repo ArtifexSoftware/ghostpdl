@@ -291,10 +291,19 @@ Jbig2Image *jbig2_page_out(Jbig2Ctx *ctx)
     /* search for a completed page */
     for (index=0; index < ctx->max_page_index; index++) {
         if (ctx->pages[index].state == JBIG2_PAGE_COMPLETE) {
+            Jbig2Image *img = ctx->pages[index].image;
+            uint32_t page_number = ctx->pages[index].number;
             ctx->pages[index].state = JBIG2_PAGE_RETURNED;
-            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
-                "page %d returned to the client", ctx->pages[index].number);
-            return jbig2_image_clone(ctx, ctx->pages[index].image);
+            if (img != NULL) {
+                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
+                            "page %d returned to the client", page_number);
+                return jbig2_image_clone(ctx, img);
+            } else {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
+                            "page %d returned with no associated image",
+                            page_number);
+                ; /* continue */
+            }
         }
     }
 
