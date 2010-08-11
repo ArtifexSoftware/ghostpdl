@@ -70,7 +70,7 @@ sample_unpackicc_16(byte * bptr, int *pdata_x, const byte * data,
     uint sample;
     int left = dsize - dskip;
 
-    while (left > 2) {
+    while (left >= 2) {
 	sample = ((uint) psrc[0] << 8) + psrc[1];
 	*bufp = (unsigned short)(sample);
 	inc_bufp16(bufp, spread);
