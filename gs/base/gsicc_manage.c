@@ -745,11 +745,35 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
         code = gsicc_set_device_profile(pgs->icc_manager, dev, pgs->memory);
         return(code);
     } else {
+        /* Check for cases where the color model has changed */
         if (dev->device_icc_profile->num_comps != 
             dev->color_info.num_components) {
-            /* The color model for the device has changed, or the device
-               itself has changed. */
+            /* First go ahead and try to use the profile path that is already 
+               given in the dev */
             code = gsicc_set_device_profile(pgs->icc_manager, dev, pgs->memory);
+            /* Check that we are OK in our setting of the profile.  If not,
+               then we go ahead and grab the proper default rather than 
+               render wrong or even worst crash */
+            if (dev->device_icc_profile->num_comps != 
+                dev->color_info.num_components || code < 0) {
+                if (pgs->icc_manager->profiledir != NULL) {
+                    strcpy(dev->color_info.icc_profile, pgs->icc_manager->profiledir);
+                }
+                switch(dev->color_info.num_components) {
+                    case 1:
+                        strcat(dev->color_info.icc_profile, DEFAULT_GRAY_ICC);
+                        break;
+                    case 3:
+                        strcat(dev->color_info.icc_profile, DEFAULT_RGB_ICC);
+                        break;
+                    case 4:
+                        strcat(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
+                        break;
+                    default:
+                        strcat(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
+                        break;
+                }
+            }
             return(code);
         }
         return(0);
