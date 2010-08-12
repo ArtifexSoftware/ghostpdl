@@ -31,7 +31,7 @@ GS_LIB="${CUPS_FONTPATH:=/usr/share/cups/fonts}"
 export GS_LIB
 
 # Options we use with Ghostscript...
-gsopts="-dQUIET -dDEBUG -dPARANOIDSAFER -dNOPAUSE -dBATCH"
+gsopts="-dQUIET -dPARANOIDSAFER -dNOPAUSE -dBATCH"
 gsopts="$gsopts -dNOMEDIAATTRS -sDEVICE=cups -sstdout=%stderr"
 
 # See if we have a profile=n,n,n,n,n,n,n,n,n,n,n option...
