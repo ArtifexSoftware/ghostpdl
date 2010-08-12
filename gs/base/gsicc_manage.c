@@ -758,6 +758,11 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
                 dev->color_info.num_components || code < 0) {
                 if (pgs->icc_manager->profiledir != NULL) {
                     strcpy(dev->color_info.icc_profile, pgs->icc_manager->profiledir);
+                } else {
+                    /* profiledir not set.  go ahead and clear out the 
+                       current profile information to avoid two profile 
+                       names getting concatenated */
+                    dev->color_info.icc_profile[0] = '\0';
                 }
                 switch(dev->color_info.num_components) {
                     case 1:
