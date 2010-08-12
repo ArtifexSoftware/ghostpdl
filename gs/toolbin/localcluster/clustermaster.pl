@@ -139,10 +139,12 @@ sub checkPID {
     mylog "terminating: $runningSemaphore missing\n";
   }
   alarm 0;
+
   open(F,">$runningSemaphore");
-  print F "0\n";
+  print F "$$\n";
   close(F);
   abortAll();
+  sleep 300;
   unlink $runningSemaphore;
   exit;
 }
@@ -406,14 +408,24 @@ mylog "setting 'abort.job'\n";
 if (open(F,"<$runningSemaphore")) {
   my $pid=<F>;
   close(F);
-  if ($pid!=0) {
+  if ($pid==0) {
+    open(F,">$runningSemaphore");
+    print F "$$\n";
+    close(F);
+    sleep 300;
+    unlink $runningSemaphore;
+    exit;
+  }
   my $fileTime = stat($runningSemaphore)->mtime;
   my $t=time;
   if ($t-$fileTime>7200) {
     mylog "semaphore file too old, removing\n";
     updateStatus "Regression terminated due to timeout";
+    open(F,">$runningSemaphore");
+    print F "$$\n";
+    close(F);
+    sleep 300;
     unlink $runningSemaphore;
-    sleep 60;
     exit;   # we pause and then exit here since we have to wait until the current clustermaster realizes we've removed the semaphore
   }
   chomp $pid;
@@ -423,8 +435,12 @@ if (open(F,"<$runningSemaphore")) {
   } else {
     mylog "process $pid no longer running, removing semaphore\n";
     updateStatus "Regression terminated due to missing clustermaster.pl process";
+    open(F,">$runningSemaphore");
+    print F "$$\n";
+    close(F);
+    sleep 300;
     unlink $runningSemaphore;
-  }
+    exit;
   }
 }
 
@@ -488,7 +504,8 @@ my %rules=(
   'gs/base' => 15,
   'gs/Resource' => 15,
   'gs/doc' => 0,
-  'gs/toolbin' => 0,
+# 'gs/toolbin' => 0,
+  'gs/toolbin' => 15,
   'gs/examples' => 0,
   'gs/lib' => 0,
   'gs/freetype' => 15,
@@ -844,6 +861,7 @@ mylog "done checking jobs, product=$product\n";
     if (!$server) {
       abortAll();
       unlink $runningSemaphore;
+
       die "can't setup server";
     }
 
@@ -892,6 +910,7 @@ mylog "done checking jobs, product=$product\n";
               unlink "$m.start";
             }
             abortAll();
+            sleep 300;
             unlink $runningSemaphore;
             exit;
           } else {

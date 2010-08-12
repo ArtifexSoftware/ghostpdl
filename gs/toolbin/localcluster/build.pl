@@ -183,6 +183,7 @@ my %tests=(
     "ppmraw.300.1",
     "pam.72.0",
     "psdcmyk.72.0",
+    "cups.300.1",
 ##"psdcmyk.300.0",
 ##"psdcmyk.300.1",
     "pdf.ppmraw.72.0",

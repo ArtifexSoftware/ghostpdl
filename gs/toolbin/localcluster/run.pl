@@ -72,6 +72,13 @@ mkdir("icc_work/bin");
 mkdir("./head/");
 mkdir("./head/bin");
 
+`rm *Raw*raw`;
+`rm *Device*raw`;
+`rm *Image*raw`;
+`rm *Composed*raw`;
+`rm *_*x*raw`;
+
+
 my $user;
 my $revs;
 my $icc_work;
@@ -606,7 +613,8 @@ if (!$abort) {
       updateStatus('Building Ghostscript');
 
       # build ghostscript
-      $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; echo >>makegs.out ; nice make >>makegs.out 2>&1";
+#     $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; echo >>makegs.out ; nice make >>makegs.out 2>&1";
+      $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-fontconfig --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; echo >>makegs.out ; nice make >>makegs.out 2>&1";
       print "$cmd\n" if ($verbose);
       `$cmd`;
 
