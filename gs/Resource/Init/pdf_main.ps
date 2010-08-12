@@ -658,6 +658,24 @@ pdfdict begin
     } if
     pop
   } if
+
+  % Enumerate all AcroForm fielda and link all separate widgets
+  % to the parent field.
+  Trailer /Root oget /AcroForm knownoget {
+    dup /NeedAppearances knownoget not { //false } if {
+      /NeedAppearances //true def
+      dup
+      /Fields knownoget {
+        { oforce
+          link_widget_annots
+          pop
+        } forall 
+      } if
+      pop
+    } {
+      pop
+    } ifelse
+  } if
 } bind def
 
 % Verify that each entry in the xref table is pointing at an object with
@@ -724,7 +742,7 @@ pdfdict begin
 
 /pdfopenfile {		% <file> pdfopenfile <dict>
    pdfdict readonly pop		% can't do it any earlier than this
-   15 dict begin
+   30 dict begin
    /LocalResources 0 dict def
    /DefaultQstate //null def	% establish binding
    /Printed where { pop } {
@@ -737,6 +755,7 @@ pdfdict begin
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
    /Repaired false def
+   /NeedAppearances //false def
    currentglobal true .setglobal globaldict begin
    /UndefProcList 0 dict def
    end .setglobal

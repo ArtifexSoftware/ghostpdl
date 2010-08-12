@@ -1706,7 +1706,22 @@ end
 
 % ============================== Annotations ============================== %
 
-
+% Create links from separate widget annotations to the parent field nodes.
+% Surprisingly, separate widget annotations don't have a link to the parent
+% from which they inherit some data.
+/link_widget_annots { % <<parent>> <<kid>> -> <<parent>> <<kid>>
+  dup /Kids knownoget {
+    { oforce
+      dup type /dicttype eq {
+        link_widget_annots
+      } if
+      pop
+    } forall
+  } if
+  dup /Parent oknown not {
+    2 copy exch /ParentField exch put
+  } if
+} bdef
 
 % Get and normalize an annotation's rectangle.
 /annotrect {		% <annot> annotrect <x> <y> <w> <h>
@@ -1815,6 +1830,69 @@ end
  4 { { oforce } forall setcmykcolor } bind
 >> readonly def
 
+% Get an inherited attribute from a node through /Parent and /ParentField
+% links. The latter is set at start-up to access parents of annotations and
+% defaults at AcroForm.
+/fget	% <field> <key> fget <value> -true-
+ {	% <field> <key> fget -false-
+   {
+     2 copy knownoget {
+       exch pop exch pop //true exit
+     } {
+       exch
+       dup /Parent knownoget {
+         exch pop exch
+       } {
+         /ParentField knownoget {
+           exch
+         } {
+           pop //false exit
+         } ifelse
+       } ifelse
+     } ifelse
+   } loop
+ } bind def
+
+% <annot> foo <annot>
+/make_tx_da {
+  dup /AP << /N 10 dict dup cvx begin >> put
+  /Subtype /Form def
+  /BBox [ 0 0 4 index /Rect oget { oforce } forall  3 -1 roll sub abs 3 1 roll sub abs exch ] def
+  /Resources 1 index /DR fget not { 0 dict } if def
+  /File 1 index /V fget not { () } if length
+     2 index /DA fget not { () } if length add
+     500 add 65535 .min  string dup 3 1 roll def
+  /NullEncode filter    % <annot> file 
+
+  dup (BT ) writestring
+  1 index /DA fget not { () } if
+  [ exch
+    { token {
+        dup /Tf eq {
+          2 index 0 eq {
+            /BBox load 3 get
+            0.75 mul   % empirical constant
+            4 -1 roll pop 3 1 roll
+          } if
+        } if
+        exch
+      } {
+        exit
+      } ifelse
+    } loop
+  ]
+  { 1 index exch write== } forall
+  dup 2 index /MaxLen fget not { 0 } if write=
+  dup 2 index /V fget not { () } if write==
+  dup 2 index /Ff fget not { 0 } if write=
+  dup 2 index /Q fget not { 0 } if write=
+  dup (Tform ET) write=
+  dup .fileposition /Length exch def
+  /File File 0 Length getinterval def
+  closefile             % <annot>
+  end
+} bdef
+
 /drawwidget {			% <scalefactor_x> <scalefactor_y> <annot> drawwidget -
   dup /AP knownoget {
     dup /N known not {
@@ -1901,42 +1979,18 @@ end
       } if
       pop
     } if
-    dup /FT knownoget {
-      /Tx eq {
-	  % Stack: scalex scaley annot
-	dup /DA known 1 index /V known and {
-	  dup /DA oget
-	  q graphicsbeginpage textbeginpage
-	  1 index annotrect pop pop translate
-	  3 index 3 index scale		% Apply scale factors
-	  cvx exec
-	  dup /V oget
-	  0 0 moveto dup false charpath pathbbox newpath 3 -1 roll
-	  sub abs 3 1 roll sub abs
-	  3 index annotrect 4 2 roll pop pop
-	  6 index mul exch 6 index mul
-	    % stack: scale annot V vsize hsize vrect hrect
-	  % Calculate horizontal justification first
-	  % horizontal can be left (Q=0), center (Q=1), or right (Q=2) justification
-	  3 -1 roll 
-	    % stack: scalex scaley annot V vsize vrect hrect hsize 
-	  5 index /Q knownoget not { 0 } if	% default 0 == left
-	  dup 0 eq {
-	      pop pop pop 0		% left justified
-	    } {
-	    1 eq {
-	      2 div exch 2 div exch sub	% centered
-	    } {
-	      sub			% right justified (hrect - hsize)
-	    } ifelse
-	  } ifelse
-	    % stack: scalex scaley annot V vsize vrect hoffset
-	  % Center the text vertically in the rect (Acrobat Reader seems to do this)
-	  3 1 roll 2 div exch 2 div sub abs
-	    % stack: scalex scaley annot V hoffset voffset
-	  moveto show
-	  Q
-	} if
+    NeedAppearances {
+      dup /FT fget {
+        /Tx eq {
+          % Stack: scalex scaley annot
+	  dup /V oknown {
+            dup /DA fget {
+              pop
+              make_tx_da
+              3 copy drawwidget
+            } if
+  	  } if
+        } if
       } if
     } if
   } ifelse
