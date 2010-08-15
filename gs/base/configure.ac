@@ -548,10 +548,11 @@ case "x$with_system_libtiff" in
 	    LIBTIFFDIR=tiff
 	    LOCAL_LIBTIFF_VERSION=`sed -n '/TIFFLIB_VERSION[[^_]]/s/[[^0-9]]*\([[0-9]]*\).*/\1/p' $LIBTIFFDIR/libtiff/tiffvers.h`
 	    SHARE_LIBTIFF=0
-	fi
-	AC_CHECK_LIB(tiff, TIFFOpen,
+	else
+	    AC_CHECK_LIB(tiff, TIFFOpen,
 		     [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
 		     [], [-ljpeg])
+	    fi
 	if test -z $LOCAL_LIBTIFF_VERSION && test "x$HAVE_SYSTEM_LIBTIFF" = x; then
 	    AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
 Disabling tiff output devices.])
