@@ -56,6 +56,8 @@
 #include "iddict.h"
 #include "ifont42.h"        /* for string_array_access_proc */
 #include "gdebug.h"
+#include "gsimage.h"
+#include "gxcldev.h"
 
 /* -------------------------------------------------------- */
 
@@ -1599,6 +1601,120 @@ static int fapi_copy_mono(gx_device *dev1, FAPI_raster *rast, int dx, int dy)
 
 static const int frac_pixel_shift = 4;
 
+/* NOTE: fapi_image_uncached_glyph() doesn't check various paramters: it assumes fapi_finish_render_aux()
+ * has done so: if it gets called from another function, the function must either do all the parameter
+ * validation, or fapi_image_uncached_glyph() must be changed to include the validation.
+ */
+static int fapi_image_uncached_glyph (i_ctx_t *i_ctx_p, gs_show_enum *penum, FAPI_raster *rast, const int import_shift_v)
+{
+    gx_device *dev1;
+    gx_device *dev = penum->dev;
+    gs_state *pgs = (gs_state *)penum->pis;
+    int code;
+    const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path;
+    const gx_drawing_color * pdcolor = penum->pdcolor;
+    int rast_orig_x =   rast->orig_x;
+    int rast_orig_y = - rast->orig_y;
+    extern_st(st_gs_show_enum);
+
+    byte *r = rast->p;
+    byte *src, *dst;
+    int h, cpbytes, dstr = bitmap_raster(rast->width);
+    int sstr = rast->line_step;
+
+    dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
+   
+
+    /* we can only safely use the gx_image_fill_masked() "shortcut" if we're drawing
+     * a "simple" colour, rather than a pattern.
+     */
+    if (gs_color_writes_pure(pgs)) {
+        if (dstr != sstr) {
+    
+            /* If the stride of the bitmap we've got doesn't match what the rest
+             * of the Ghostscript world expects, make one that does.
+             * Ghostscript aligns bitmap raster memory in a platform specific manner,
+             * so see gxbitmap.h for details.
+             */
+            r = gs_alloc_bytes(penum->memory, dstr * rast->height, "fapi_finish_render_aux");
+            if (!r) {
+                return_error(e_VMerror);
+            }
+
+            cpbytes = sstr < dstr ? sstr: dstr;
+            h = rast->height;
+            src = rast->p;
+            dst = r;
+            while (h-- > 0) {
+                memcpy(dst, src, cpbytes);
+                src += sstr;
+                dst += dstr;
+            }
+        }
+
+        if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
+            code = gx_image_fill_masked(dev, r, 0, dstr, 0,
+                          (int)(pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + penum->fapi_glyph_shift.x + 0.5),
+                          (int)(pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + penum->fapi_glyph_shift.y + 0.5),
+                          rast->width, rast->height,
+                          pdcolor, 1, rop3_default, pcpath);
+        } else {
+            code = gx_image_fill_masked(dev, r, 0, dstr, 0,
+                          (int)(pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5),
+                          (int)(pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5),
+                          rast->width, rast->height,
+                          pdcolor, 1, rop3_default, pcpath);
+        }
+        if (rast->p != r) {
+            gs_free_object(penum->memory, r, "fapi_finish_render_aux");
+        }
+    }
+    else {
+        gs_memory_t *mem = penum->memory->non_gc_memory;
+        gs_image_enum *pie = gs_image_enum_alloc(mem, "image_char(image_enum)");
+        gs_image_t image;
+        int iy, nbytes;
+        uint used;
+        int code1;
+        int x, y, w, h;
+       
+        if (!pie) {
+            return_error(e_VMerror);
+        }
+        
+        x = (floatp) (pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5);
+        y = (floatp) (pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5);
+        w = rast->width;
+        h = rast->height;
+        
+            
+        /* Make a matrix that will place the image */
+        /* at (x,y) with no transformation. */
+        gs_image_t_init_mask(&image, true);
+        gs_make_translation((floatp) -x, (floatp) -y, &image.ImageMatrix);
+        gs_matrix_multiply(&ctm_only(pgs), &image.ImageMatrix, &image.ImageMatrix);
+        image.Width = w;
+        image.Height = h;
+        image.adjust = false;
+        code = gs_image_init(pie, &image, false, pgs);
+        nbytes = (rast->width + 7) >> 3;
+        
+        switch (code) {
+            case 1:         /* empty image */
+                code = 0;
+        default:
+            break;
+        case 0:
+            for (iy = 0; iy < h && code >= 0; iy++, r += sstr)
+                 code = gs_image_next(pie, r, nbytes, &used);
+        }
+        code1 = gs_image_cleanup_and_free_enum(pie, pgs);
+        if (code >= 0 && code1 < 0)
+            code = code1;
+    }
+    return(code);
+}
+
 static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_server *I)
 {   gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
@@ -1714,59 +1830,8 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 		    }
 		}
             } else if (!SHOW_IS(penum, TEXT_DO_NONE)) { /* Not using GS cache */
-	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path;
-                const gx_drawing_color * pdcolor = penum->pdcolor;
-
-                
-                /* If the stride of the bitmap we've got doesn't match what the rest
-                 * of the Ghostscript world expects, make one that does.
-                 * Ghostscript aligns bitmap raster memory in a platform specific manner,
-                 * so see gxbitmap.h for details.
-                 */
-                byte *r;
-                byte *src, *dst;
-                int h, cpbytes, dstr = bitmap_raster(rast.width);
-                int sstr = rast.line_step;
-
-                if (dstr != sstr) {
-                    r = gs_alloc_bytes(penum->memory, dstr * rast.height, "fapi_finish_render_aux");
-                    if (!r) {
-                        return_error(e_VMerror);
-                    }
-
-                    cpbytes = sstr < dstr ? sstr: dstr;
-                    h = rast.height;
-                    src = rast.p;
-                    dst = r;
-                    while (h-- > 0) {
-                        memcpy(dst, src, cpbytes);
-                        src += sstr;
-                        dst += dstr;
-                    }
-                }
-                else {
-                    r = rast.p;
-                    dstr = rast.line_step;
-                }
-            
-		if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
-		    if ((code = gx_image_fill_masked(dev, r, 0, dstr, 0,
-			          (int)(pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.x + 0.5),
-			          (int)(pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + penum_s->fapi_glyph_shift.y + 0.5),
-			          rast.width, rast.height,
-			          pdcolor, 1, rop3_default, pcpath)) < 0)
-				    return code;
-		} else {
-		    if ((code = gx_image_fill_masked(dev, r, 0, dstr, 0,
-			          (int)(pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5),
-			          (int)(pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5),
-			          rast.width, rast.height,
-			          pdcolor, 1, rop3_default, pcpath)) < 0)
-				    return code;
-		}
-                if (rast.p != r) {
-                    gs_free_object(penum->memory, r, "fapi_finish_render_aux");
-                }
+                if ((code = fapi_image_uncached_glyph(i_ctx_p, penum_s, &rast, import_shift_v)) < 0)
+                    return code;
             }
         }
     }
@@ -1832,7 +1897,7 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     int alpha_bits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
     double FontMatrix_div = (bCID && bIsType1GlyphData && font_file_path == NULL ? 1000 : 1);
     bool bVertical = (gs_rootfont(igs)->WMode != 0), bVertical0 = bVertical;
-    double sbw[4] = {0, 0, 0, 0};
+    double *sbwp, sbw[4] = {0, 0, 0, 0};
     double em_scale_x, em_scale_y;
     gs_rect char_bbox;
     op_proc_t exec_cont = 0;
@@ -2349,6 +2414,17 @@ retry_oversampling:
     char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
     char_bbox.q.x = metrics.bbox_x1 / em_scale_x;
     char_bbox.q.y = metrics.bbox_y1 / em_scale_y;
+
+    /* We must use the FontBBox, but it seems some buggy Type 1 fonts have glyphs which extend outside the
+     * FontBBox, so we have to do this....
+     */
+    if (bIsType1GlyphData && pbfont->FontBBox.q.x > pbfont->FontBBox.p.x && pbfont->FontBBox.q.y > pbfont->FontBBox.p.y) {
+        char_bbox.p.x = min(char_bbox.p.x, pbfont->FontBBox.p.x);
+        char_bbox.p.y = min(char_bbox.p.y, pbfont->FontBBox.p.y);
+        char_bbox.q.x = max(char_bbox.q.x, pbfont->FontBBox.q.x);
+        char_bbox.q.y = max(char_bbox.q.y, pbfont->FontBBox.q.y);
+    }    
+
     if (pbfont->PaintType != 0) {
 	float w = pbfont->StrokeWidth / 2;
 
@@ -2429,14 +2505,25 @@ retry_oversampling:
      * from glyph code ? Currently we keep a compatibility
      * to the native GS font renderer without a deep analyzis.
      */
+    if (igs->in_cachedevice == CACHE_DEVICE_CACHING) {
+        sbwp = sbw;
+    }
+    else {
+        /* Very occasionally, if we don't do this, setcachedevice2
+         * will decide we are cacheing, when we're not, and this
+         * causes problems when we get to show_update().
+         */
+        sbwp = NULL;
+    }
+    
     if (bCID)
 	code = zchar_set_cache(i_ctx_p, pbfont, op,
 		           NULL, sbw + 2, &char_bbox,
-			   fapi_finish_render, &exec_cont, sbw);
+			   fapi_finish_render, &exec_cont, sbwp);
     else
 	code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
 		           NULL, sbw + 2, &char_bbox,
-			   fapi_finish_render, &exec_cont, sbw);
+			   fapi_finish_render, &exec_cont, sbwp);
     if (code >= 0 && exec_cont != 0)
 	code = (*exec_cont)(i_ctx_p);
     if (code != 0) {
