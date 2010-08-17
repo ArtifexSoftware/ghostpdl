@@ -58,6 +58,11 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
     state.jpx_memory = imemory->non_gc_memory;
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
+        if ( dict_find_string(op, "Alpha", &sop) > 0) {
+            check_type(*sop, t_boolean);
+            if (sop->value.boolval)
+                state.alpha = true;
+        }
         if ( dict_find_string(op, "ColorSpace", &sop) > 0) {
 	    /* parse the value */
 	    if (r_is_array(sop)) {

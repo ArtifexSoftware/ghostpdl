@@ -51,6 +51,7 @@ typedef struct stream_jpxd_state_s
     long bufsize; /* total size of the buffer */
     long buffill; /* number of bytes written into the buffer */
     gs_jpx_cs colorspace; /* external colorspace setting */
+    bool alpha; /* return opacity channel */
 }
 stream_jpxd_state;
 

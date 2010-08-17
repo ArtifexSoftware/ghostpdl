@@ -286,21 +286,44 @@ copy_row_yuv(byte *dest, jas_image_t *image,
     return count;
 }
 
+
+static inline bool 
+is_color_component(jas_image_t *image, int n)
+{
+    int k = jas_image_cmpttype(image, n) & (JAS_IMAGE_CT_UNKNOWN | JAS_IMAGE_CT_OPACITY);
+    return !k;
+}
+
+static int color_cmpts(jas_image_t *image)
+{
+     int cnt = 0;
+     int n = jas_image_numcmpts(image);
+
+     while(--n >= 0) {
+        if (is_color_component(image, n))
+            cnt++;
+    }
+    return cnt;
+}
+
 static int
 copy_row_default(byte *dest, jas_image_t *image,
         int x, int y, int bytes)
 {
-    int i, c,n;
+    int i, c, d, n, clr;
     int count;
 
     n = jas_image_numcmpts(image);
-    count = (bytes/n) * n;
-    for (i = 1; i <= count; i+=n) {
-        for (c = 0; c < n; c++)
-            dest[i+c] = jas_image_readcmptsample(image, c, x, y);
+    clr = color_cmpts(image);
+    count = (bytes/clr) * clr;
+    for (i = 1; i <= count; i += clr) {
+        for (c = d = 0; c < n; c++) {
+            if (is_color_component(image, c)) {
+                dest[i + d++] = jas_image_readcmptsample(image, c, x, y);
+            }
+        }
         x++;
     }
-
     return count;
 }
 
@@ -311,22 +334,25 @@ static int
 copy_row_default16(byte *dest, jas_image_t *image,
         int x, int y, int bytes)
 {
-    int c,n;
+    int c, n, clr;
     int count;
     int pixel_width;
     byte *curr_ptr = dest+1;  /* The offset */
     int value;
 
     n = jas_image_numcmpts(image);
+    clr = color_cmpts(image);
     count = bytes;
-    pixel_width = n*sizeof(unsigned short);
+    pixel_width = clr*sizeof(unsigned short);
 
     while (count >= pixel_width) {
         for (c = 0; c < n; c++) {
-            value = jas_image_readcmptsample(image, c, x, y);
-            /* endian issues here? */
-            *curr_ptr++ = ((value >> 8) & 0xff);
-            *curr_ptr++ = (value & 0xff);
+            if (is_color_component(image, c)) {
+                value = jas_image_readcmptsample(image, c, x, y);
+                /* endian issues here? */
+                *curr_ptr++ = ((value >> 8) & 0xff);
+                *curr_ptr++ = (value & 0xff);
+            }
         }
         x++;
         count =  count - pixel_width;
@@ -477,7 +503,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
       }
       if (state->image != NULL) {
         jas_image_t *image = state->image;
-        int numcmpts = jas_image_numcmpts(image);
+        int numcmpts = color_cmpts(image);
         int bits = jas_image_cmptprec(image, 0);
         int stride, image_size;
         int clrspc = jas_image_clrspc(image);
@@ -601,6 +627,7 @@ s_jpxd_set_defaults(stream_state *ss)
     state->buffill = 0;
     /* the following can be set by the client before calling init() */
     state->colorspace = gs_jpx_cs_unset;
+    state->alpha = false;
 }
 
 
