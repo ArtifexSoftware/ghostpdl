@@ -1040,40 +1040,43 @@ end
   2 copy getu16 16 bitshift 3 1 roll 2 add getu16 add
 } bind def
 
-/jp2_csp_dict <<
-  12 { /DeviceCMYK } bind  % CMYK
-  14 { /Lab } bind		   % LAB
-  16 {/sRGBICC /ColorSpace findresource}   
-  17 {/sGrayICC /ColorSpace findresource} 
+/jp2_csp_dict mark
+  12 { /DeviceCMYK }       % CMYK
+  14 { /Lab }              % LAB
+  16 { /sRGBICC /ColorSpace findresource } bind
+  17 { /sGrayICC /ColorSpace findresource } bind
   18 3 index               % YCC is converted to RGB
 % 19                       % CIEJab not supportec by PDF 1.7
 % 20                       % e-sRGB
 % 21                       % ROMMRGB
 % 24                       % e-sYCC
->> readonly def
+.dicttomark readonly def
  
 % Process jp2 blocks (aka boxes). All procedures have the signature
 % <file> <length> -> ... <file> <flush_length>
-/jp2_tag_dict <<
+/jp2_tag_dict 10 dict begin
+
   /jp2h { % descend into a sub-stream, don't return.
     () /SubFileDecode filter 0
-  } bind
+  } bdef
+
   /ihdr {
-    14 sub                               % file len-14
-    1 index 14 string readstring pop     % file len-14 (14)
-    /Components 1 index 8 getu16         % file len-14 (14) /Components NC
-    def                                  % file len-14 (14)
+    14 sub                                   % file len-14
+    1 index (1234567890abcd) readstring pop  % file len-14 (14)
+    /JPXComponents 1 index 8 getu16          % file len-14 (14) /JPXComponents NC
+    def                                      % file len-14 (14)
     10 get 16#7F and 1 add
-	dup 12 eq { pop 16 } if    
-	/BitsPerComponent exch def           % file len-14 
-  } bind
+    dup 12 eq { pop 16 } if    
+    /BitsPerComponent exch def               % file len-14 
+  } bdef
+
   /colr {
     currentdict /ColorSpace known not {
       3 sub
-      1 index 3 string readstring pop      % file len-3 (3)
+      1 index (123) readstring pop      % file len-3 (3)
       0 get dup 1 eq {
         pop 4 sub                          % file len-7
-        1 index 4 string readstring pop    % file len-16 (4) 
+        1 index (1234) readstring pop    % file len-16 (4) 
         0 getu32                           % file len-16 enum
         //jp2_csp_dict exch .knownget {
           exec /ColorSpace exch def        % file len-7
@@ -1082,26 +1085,39 @@ end
           pdfformaterror
         } ifelse
       } {
-        2 eq {
-          3 dict begin
-          /N /Components load def
-          string 1 index exch readstring pop % file ()
-          /ReusableStreamDecode filter /DataSource exch def
-          currentdict end
-          /ICCBased exch 2 array astore
-          /ColorSpace exch                 % file /ColorSpace [...]
-          def 0                            % file 0
+        dup 2 eq exch 3 eq or {
+          1 index exch () /SubFileDecode filter /ReusableStreamDecode filter
+          /JPXICC exch def
+          0                                % file 0
         } {
           (   **** Warning: Unknown color space method in JPX stream.\n)
           pdfformaterror
         } ifelse
       } ifelse
     } if
-  } bind
+  } bdef
+
   % Palette colors are decoded by the library.
   % For now, ignore 'pclr' table.
-  /pclr { }
->> readonly def
+  /pclr { } bdef
+
+  /cdef {
+    pop
+    dup (12) readstring pop
+    0 getu16 {
+      dup (123456) readstring pop
+      2 getu16
+      dup 3 lt {
+        { /JPXColors /JPXOpacity /JPXPremult } exch get
+          currentdict 1 index .knownget { 1 add } { 1 } ifelse def
+      } {
+        pop
+      } ifelse
+    } repeat
+    0
+  } bdef
+
+currentdict end readonly def
 
 
 % Parse jp2 file format to get color space and image depth info.
@@ -1233,6 +1249,23 @@ currentdict /jp2_csp_dict .undef
             } ifelse
 
             //false resolvestream get_jp2_csp
+
+            currentdict /ColorSpace oknown not {
+              currentdict /JPXICC .knownget {
+                 [ /ICCBased mark
+                     /DataSource 5 -1 roll
+                     /N currentdict /JPXColors .knownget not {
+                       currentdict /JPXComponents get
+                     } if
+                   .dicttomark
+                 ] /ColorSpace exch def
+              } if
+            } if
+
+            { /JPXICC /JPXColors /JPXComponents /JPXOpacity /JPXPremult } {
+              currentdict exch undef
+            } forall
+
           } ifelse
         } if
       } if
