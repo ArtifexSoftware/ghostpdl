@@ -308,7 +308,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 	cwdev->procs = gs_clist_device_procs;
 	cwdev->procs.open_device = pattern_clist_open_device;
 	gx_device_copy_color_params((gx_device *)cwdev, tdev);
-	cwdev->target = tdev;
+	rc_assign(cwdev->target, tdev, "gx_pattern_accum_alloc");
 	clist_init_io_procs(cdev, true);
 	cwdev->data = data;
 	cwdev->data_size = data_size;
