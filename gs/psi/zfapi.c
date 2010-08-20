@@ -1044,6 +1044,18 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
     return glyph_length;
 }
 
+/* If we're rendering an uncached glyph, we need to know
+ * whether we're filling it with a pattern, and whether
+ * transparency is involved - if so, we have to produce
+ * a path outline, and not a bitmap.
+ */
+static bool using_transparency_pattern (gs_state *pgs)
+{
+    gx_device *dev = gs_currentdevice_inline(pgs);
+    
+    return((!gs_color_writes_pure(pgs)) && dev->procs.begin_transparency_group != NULL && dev->procs.end_transparency_group != NULL);
+}
+
 static const FAPI_font ff_stub = {
     0, /* server_font_data */
     0, /* need_decrypt */
@@ -1756,7 +1768,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 	    return code;
     } else {
         int code = I->get_char_raster(I, &rast);
-        if (!SHOW_IS(penum, TEXT_DO_NONE) && (code == e_limitcheck || pbfont->PaintType)) {
+        if (!SHOW_IS(penum, TEXT_DO_NONE) && (code == e_limitcheck || pbfont->PaintType || (using_transparency_pattern (pgs) && pgs->in_cachedevice != CACHE_DEVICE_CACHING))) {
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
@@ -1903,11 +1915,13 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     op_proc_t exec_cont = 0;
     int code;
     bool align_to_pixels = gs_currentaligntopixels(pbfont->dir);
+    bool use_outline, switch_back;
     enum {
 	SBW_DONE,
 	SBW_SCALE,
 	SBW_FROM_RENDERER
     } sbw_state = SBW_SCALE;
+    int in_cachedevice;
 
     I->ff = ff_stub;
     if(bBuildGlyph && !bCID) {
@@ -1936,7 +1950,9 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     if (penum == 0)
         return_error(e_undefined);
     /* Compute the scale : */
-    if (!SHOW_IS(penum, TEXT_DO_NONE) && !igs->in_charpath) {
+    use_outline = (igs->in_charpath || pbfont->PaintType != 0 || (using_transparency_pattern ((gs_state *)penum_s->pis) && igs->in_cachedevice != CACHE_DEVICE_CACHING));
+    
+    if (!SHOW_IS(penum, TEXT_DO_NONE) && !use_outline) {
         gs_currentcharmatrix(igs, NULL, 1); /* make char_tm valid */
         penum_s->fapi_log2_scale.x = -1;
         gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, alpha_bits, &log2_scale);
@@ -2376,7 +2392,7 @@ retry_oversampling:
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
 	if ((code = renderer_retcode(i_ctx_p, I, I->get_char_width(I, &I->ff, &cr, &metrics))) < 0)
 	    return code;
-    } else if (igs->in_charpath || I->ff.is_outline_font) {
+    } else if (use_outline) {
         if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &I->ff, &cr, &metrics))) < 0)
 	    return code;
     } else {
@@ -2415,10 +2431,10 @@ retry_oversampling:
     char_bbox.q.x = metrics.bbox_x1 / em_scale_x;
     char_bbox.q.y = metrics.bbox_y1 / em_scale_y;
 
-    /* We must use the FontBBox, but it seems some buggy Type 1 fonts have glyphs which extend outside the
+    /* We must use the FontBBox, but it seems some buggy fonts have glyphs which extend outside the
      * FontBBox, so we have to do this....
      */
-    if (bIsType1GlyphData && pbfont->FontBBox.q.x > pbfont->FontBBox.p.x && pbfont->FontBBox.q.y > pbfont->FontBBox.p.y) {
+    if (pbfont->FontBBox.q.x > pbfont->FontBBox.p.x && pbfont->FontBBox.q.y > pbfont->FontBBox.p.y) {
         char_bbox.p.x = min(char_bbox.p.x, pbfont->FontBBox.p.x);
         char_bbox.p.y = min(char_bbox.p.y, pbfont->FontBBox.p.y);
         char_bbox.q.x = max(char_bbox.q.x, pbfont->FontBBox.q.x);
@@ -2505,7 +2521,10 @@ retry_oversampling:
      * from glyph code ? Currently we keep a compatibility
      * to the native GS font renderer without a deep analyzis.
      */
-    if (igs->in_cachedevice == CACHE_DEVICE_CACHING) {
+    
+    in_cachedevice = igs->in_cachedevice;
+    switch_back = false;
+    if (in_cachedevice == CACHE_DEVICE_CACHING) {
         sbwp = sbw;
     }
     else {
@@ -2513,7 +2532,16 @@ retry_oversampling:
          * will decide we are cacheing, when we're not, and this
          * causes problems when we get to show_update().
          */
-        sbwp = NULL;
+         sbwp = NULL;
+        
+        if (use_outline) {
+           /* HACK!!
+            * The decision about whether to cache has already been
+            * we need to prevent it being made again....
+            */
+            igs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
+            switch_back = true;
+        }
     }
     
     if (bCID)
@@ -2524,6 +2552,9 @@ retry_oversampling:
 	code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
 		           NULL, sbw + 2, &char_bbox,
 			   fapi_finish_render, &exec_cont, sbwp);
+    
+    if (switch_back) igs->in_cachedevice = in_cachedevice;
+    
     if (code >= 0 && exec_cont != 0)
 	code = (*exec_cont)(i_ctx_p);
     if (code != 0) {
