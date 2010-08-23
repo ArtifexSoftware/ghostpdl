@@ -292,12 +292,14 @@ decode_escape(const byte *data, int data_length, int *index)
 	return 0; /* Must_not_happen, because the string is PS encoded. */
     c = data[*index];
     switch (c) {
-	case '(': (*index)++; return '(';
-	case ')': (*index)++; return ')';
-	case '\\': (*index)++; return '\\';
-	case 'n': (*index)++; return '\n';
-	case 'r': (*index)++; return '\r';
-	case 't': (*index)++; return '\t';
+	case '(': return '(';
+	case ')': return ')';
+	case '\\': return '\\';
+	case 'n': return '\n';
+	case 'r': return '\r';
+	case 't': return '\t';
+	case 'b': return '\b';
+	case 'f': return '\f';
 	default:
 	    break;
     }
@@ -368,7 +370,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
 	    }
 	    buf0b = (UTF16 *)(buf0 + 2);
 	    switch (ConvertUTF16toUTF8((const UTF16**)&buf0b, (UTF16 *)(buf0 + j),
-			     &buf1b, buf1 + j, strictConversion)) {
+			     &buf1b, buf1 + (data_length * sizeof(unsigned char)), strictConversion)) {
 		case conversionOK:
 		    write(s, buf1, buf1b - buf1);
 		    gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
