@@ -1338,8 +1338,22 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 
     gdata.memory = font42->memory;
     code = font42->data.get_outline(font42, gid, &gdata);
+    /* If the glyph is a /.notdef, and the GID is not 0, and we failed to find 
+     * the /.notdef, try again with GID 0. We have seen fonts from GraphPad
+     * Prism which end up putting the /.notdef in the CharStrings dictionary
+     * with the wrong GID value (Bug #691573)
+     */
+    if (code < 0 && gid != 0) {
+	gs_const_string gnstr;
+	if (font->procs.glyph_name(font, glyph, &gnstr) >= 0 && gnstr.size == 7
+	    && !memcmp(gnstr.data, ".notdef", 7)) {
+	    gid = 0;
+	    code = font42->data.get_outline(font42, gid, &gdata);
+	} 
+    }
     if (code < 0)
 	return code;
+
     code = copy_glyph_data(font, gid + GS_MIN_GLYPH_INDEX, copied, options,
 			   &gdata, NULL, 0);
     if (code < 0)
