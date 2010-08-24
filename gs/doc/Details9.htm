@@ -101,12 +101,15 @@ TrueType byte code interpreter (now unencumbered by patents).
 stores two separate colour space settings for stroking and filling, to better
 support the stroke and fill colours required by the PDF interpreter.
 
-<p>Finally, support for optional content has bee added to the PDF interpreter.
+<p>Finally, support for optional content has been added to the PDF interpreter.
 
 <p> This release also includes a number of improvements to the pdfwrite device
 to improve reliability and quality with PCL and XPS input. Many improvements to
 the support of JPX images in PDF files, PDF annotation rendering and the usual
 number of general bug and robustness fixes. 
+
+<p>For security reasons, Ghostscript no longer searches the current directory
+by default. Use -P option to revert to old behavior.
 
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
