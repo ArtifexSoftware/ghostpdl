@@ -43,7 +43,7 @@ class GSCheckEmptyTopDirectory(GSTestCase):
 
 gsFilesInTopDirectory = ['LICENSE', 'autogen.sh', 'Makefile',
 			 'configure', 'config.log', 'config.status',
-			 'ghostscript.vcproj']
+			 'ghostscript.vcproj', 'ghostscript-ufst.vcproj']
 # Add the tests defined in this file to a suite.
 
 def addTests(suite, gsroot, **args):
