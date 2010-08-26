@@ -1070,7 +1070,6 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, i
 
 	for (i = start; i < pdev->next_id; ++i) {
 	    ulong pos;
-	    char str[21];
 
 	    r = fread(&pos, sizeof(pos), 1, tfile);
 	    if (pos & ASIDES_BASE_POSITION)
