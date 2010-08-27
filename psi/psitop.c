@@ -243,7 +243,7 @@ ps_impl_allocate_interp_instance(
 
 /* NB this pointer should be placed in the ps instance */
 
-/* Set a client language into an interperter instance */
+/* Set a client language into an interpreter instance */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_set_client_instance(
   pl_interp_instance_t   *instance,     /* interp instance to use */
@@ -282,7 +282,7 @@ ps_impl_set_post_page_action(
 	return 0;
 }
 
-/* Set a device into an interperter instance */
+/* Set a device into an interpreter instance */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_set_device(
   pl_interp_instance_t   *instance,     /* interp instance to use */
@@ -477,15 +477,34 @@ ps_impl_dnit_job(
 
     /* take care of a stored pdf file */
     if ( psi->pdf_stream ) {
-	/* gp_file_name_sizeof + 7 is 
-	 * max filename size + space + (run) + new line + null 
+
+	/* 
+         * Hex encode to avoid problems with window's directory
+	 * separators '\' being interpreted in postscript as escape
+	 * sequences.  The buffer length is the maximum file name size
+	 * (gp_file_name_sizeof) * 2 (hex encoding) + 2 (hex
+	 * delimiters '<' and '>') + the rest of the run command 7
+	 * (space + (run) + new line + null).
 	 */
-        char buf[gp_file_name_sizeof + 7];
+        char buf[gp_file_name_sizeof * 2 + 2 + 7];
+        const char *run_str = " run\n";
+        const char *hex_digits = "0123456789ABCDEF";
+        char *pd = buf;                       /* destination */
+        const char *ps = psi->pdf_file_name;  /* source */
+        
+        *pd = '<'; pd++;
+        while (*ps) {
+            *pd = hex_digits[*ps >> 4 ]; pd++;
+            *pd = hex_digits[*ps & 0xf]; pd++;
+            ps++;
+        }
+        *pd = '>'; pd++;
+        strcpy(pd, run_str);
+
         /* at this point we have finished writing the spooled pdf file
            and we need to close it */
         fclose(psi->pdf_filep);
-        /* run the temporary pdf spool file */
-        sprintf(buf, "(%s) run\n", psi->pdf_file_name);
+
         /* Send the buffer to Ghostscript */
         code = gsapi_run_string_continue(psi->plmemory->gs_lib_ctx, buf, strlen(buf), 0, &exit_code);
 
@@ -514,7 +533,7 @@ ps_impl_dnit_job(
     return 0;
 }
 
-/* Remove a device from an interperter instance */
+/* Remove a device from an interpreter instance */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_remove_device(
   pl_interp_instance_t   *instance     /* interp instance to use */
