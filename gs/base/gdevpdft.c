@@ -330,6 +330,11 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
 	pdev->pres_soft_mask_dict->where_used |= pdev->used_mask;
 	pis->soft_mask_id = pdev->pres_soft_mask_dict->object->id;
 	pdev->pres_soft_mask_dict = NULL;
+	/* We called pdf_start_trnasparency_group (see pdf_begin_transparency_mask
+	 * above) but we don't call pdf_end_transparency_group, so we must reduce
+	 * the FormDepth ourselves.
+	 */
+	pdev->FormDepth--; 
     }
     return 0;
 }
