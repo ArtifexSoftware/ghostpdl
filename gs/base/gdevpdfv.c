@@ -219,12 +219,21 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
        positive bitmap pixel indices. Compensate it now. */
     smat.tx += pinst->step_matrix.tx;
     smat.ty += pinst->step_matrix.ty;
-    smat.xx /= scale_x;
-    smat.xy /= scale_x;
-    smat.yx /= scale_y;
-    smat.yy /= scale_y;
-    smat.tx /= scale_x;
-    smat.ty /= scale_y;
+    /*
+     * In PDF, the Matrix is the transformation from the pattern space to
+     * the *default* user coordinate space, not the current space.
+     * NB. For a form the default space is the parent. This means that when a
+     * form is nested inside a form, the default space is the space of the
+     * first form, and therefore we do *not* remove the resolution scaling.
+     */
+    if (pdev->FormDepth <= 1) {
+	smat.xx /= scale_x;
+	smat.xy /= scale_x;
+	smat.yx /= scale_y;
+	smat.yy /= scale_y;
+	smat.tx /= scale_x;
+	smat.ty /= scale_y;
+    }
     if (any_abs(smat.tx) < 0.0001)  /* Noise. */
 	smat.tx = 0;
     if (any_abs(smat.ty) < 0.0001)
