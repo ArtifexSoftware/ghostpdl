@@ -1203,6 +1203,9 @@ if (1) {
     updateStatus('Uploading log files');
     unlink "$machine.log.gz";
     unlink "$machine.out.gz";
+#   mylog "filtering log start";
+#   `grep -a -v DEBUG $machine.log >temp.log ; mv temp.log $machine.log`;
+#   mylog "filtering log done";
     `gzip $machine.log`;
     `gzip $machine.out`;
 

@@ -61,12 +61,12 @@ while(<F>) {
     $divider=1;
   }
 
-  if (m/Unrecoverable error, exit code/ || m/Command exited with non-zero status/ || m/Command terminated by signal/ || m/Warning interpreter exited with error code/) {
+  if (m/Unrecoverable error, exit code/ || m/Command exited with non-zero status/ || m/Warning interpreter exited with error code/) {
     $error=1 if ($divider==0 && $error==0);
     $error=2 if ($divider==1 && $error==0);
     $results{$file}{"error"}=$error;
   }
-  if (m/Segmentation fault/ || m/Backtrace:/) {
+  if (m/Segmentation fault/ || m/Backtrace:/ || m/Command terminated by signal/) {
     $error=8 if ($divider==0 && $error==0);
     $error=9 if ($divider==1 && $error==0);
     $results{$file}{"error"}=$error;

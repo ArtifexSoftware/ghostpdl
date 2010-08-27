@@ -321,6 +321,20 @@ foreach my $testSource (sort keys %testSource) {
 #print "$testSource\n";
     my $a=`svn list $testSource`;
 
+    my %nightly_only;
+    if (!$local) {
+      unlink "nightly_only.lst";
+      my $b=`svn export $testSource/nightly_only.lst 2> /dev/null`;
+      if (open(F,"<nightly_only.lst")) {
+        foreach (<F>) {
+          chomp;
+          $nightly_only{$_}=1;
+        }
+        close(F);
+        unlink "nightly_only.lst";
+      }
+    }
+
     my $t1=$testSource;
     my $t2=$svnURLPrivate;
     my $t3=$svnURLPublic ;
@@ -335,13 +349,17 @@ foreach my $testSource (sort keys %testSource) {
     my @a=split '\n',$a;
     foreach (@a) {
       chomp;
-      my $testfile=$t1.'/'.$_;
-      if (exists $products{'mupdf'}) {
-        $testfiles{'./'.$testfile}='mupdf'                  if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~ m/.disabled$/) && $testfile =~ m/.pdf$/i);
+      if (exists $nightly_only{$_} || $_ eq "nightly_only.lst") {
+#print STDERR "skipping: $_\n";
       } else {
-        $testfiles{'./'.$testfile}=$testSource{$testSource} if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~ m/.disabled$/));
+        my $testfile=$t1.'/'.$_;
+        if (exists $products{'mupdf'}) {
+          $testfiles{'./'.$testfile}='mupdf'                  if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~ m/.disabled$/) && $testfile =~ m/.pdf$/i);
+        } else {
+          $testfiles{'./'.$testfile}=$testSource{$testSource} if (!($testfile =~ m|/$|) && !($testfile =~ m/^\./) && !($testfile =~ m/.disabled$/));
+        }
+#       print "$testfile\n";
       }
-#     print "$testfile\n";
     }
   }
 }
@@ -636,6 +654,8 @@ if ($bmpcmp) {
     my $cmd="";
     my $outputFilenames="";
     my $filename="";
+    my @a=split ' ';
+    if (scalar(@a)==4) {
     if (m/^(.+)\.(pdf\.p.mraw\.\d+\.[01]) (\S+) pdfwrite /) {
 #       print "$1 $2 $3 -- pdfwrite\n";
       ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1) if (!$done);
@@ -650,6 +670,7 @@ print "$filename\t$cmd\n" if (!$done);
 print "$filename\t$cmd\n" if (!$done);
     } elsif (m/errors:$/ || m/previous clusterpush/i) {
       $done=1;
+    }
     }
     
   }

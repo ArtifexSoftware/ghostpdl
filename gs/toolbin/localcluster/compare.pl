@@ -188,14 +188,16 @@ foreach my $i (sort {$b cmp $a} keys %archives) {
 
 my $first=0;
 
+if (!($previous=~m/users/)) {
 foreach my $t (sort keys %current) {
   if ($currentError{$t} =~ m/Seg_Fault/) {
-    print "\n*******************************************************************\nSeg faults with current rev:\n\n" if (!$first);
+    print "\n*****************************************************************************\nSeg faults with current rev:\n\n" if (!$first);
     $first=1;
     print "$t $currentMachine{$t} $currentError{$t}\n";
   }
 }
-print "\n*******************************************************************\n\n\n" if ($first);
+print "\n*****************************************************************************\n\n\n" if ($first);
+}
 
 
 foreach my $t (sort keys %previous) {
