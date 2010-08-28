@@ -2201,6 +2201,56 @@ currentdict /set_bc_color undef
     } ifelse
   } bdef
 
+  % Connect 2 points with an arc that has max distance from the line
+  % segment to the ark equal 1/4 of the radius.
+  /highlight-arc {                      % x1 y1 x0 y0 -> -
+    4 2 roll                            % x0 y0 x1 y1
+    dup 3 index add 2 div               % x0 y0 x1 y1 (y1+y0)/2
+    2 index 5 index sub .9375 mul add   % x0 y0 x1 y1 (y1+y0)/2+15/16*dx=yc
+    4 index 3 index add 2 div           % x0 y0 x1 y1 yc (x0+x1)/2
+    2 index 5 index sub .9375 mul add   % x0 y0 x1 y1 yc xc
+    exch                                % x0 y0 x1 y1 xc yc
+    dup 3 index exch sub                % x0 y0 x1 y1 xc yc y1-yc
+    4 index 3 index sub                 % x0 y0 x1 y1 xc yc y1-yc x1-xc
+    dup dup mul 2 index dup mul add sqrt %x0 y0 x1 y1 xc yc y1-yc x1-xc r
+    3 1 roll atan                       % x0 y0 x1 y1 xc yc r a1
+    6 index 3 index sub                 % x0 y0 x1 y1 xc yc r a1 y0-yc
+    8 index 5 index sub                 % x0 y0 x1 y1 xc yc r a1 y0-yc x0-xc
+    atan                                % x0 y0 x1 y1 xc yc r a1 a2
+    exch arcn                           % x0 y0 x1 y1
+    pop pop pop pop
+  } bind def
+
+  /emptydict 0 dict readonly def
+
+  /Highlight {
+    % Acrobat ignores /AP and uses transparent highlighting
+    0 setlinecap
+    dup annotsetcolor
+    /QuadPoints knownoget {
+      aload length 8 idiv {
+        6 -2 roll
+        2 copy moveto
+        //highlight-arc exec
+        2 copy lineto
+        //highlight-arc exec
+        closepath
+      } repeat
+      PDFusingtransparency {
+        //emptydict
+        pathbbox 2 index add exch 3 index add exch .begintransparencygroup
+        /Multiply .setblendmode
+        fill
+        .endtransparencygroup
+      } { % for -dNOTRANSPARENCY
+        stroke newpath
+      } ifelse
+    } if
+    //false
+  } bdef
+  currentdict /emptydict undef
+  currentdict /highlight-arc undef
+
   /Squiggly {
     dup /AP oknown {
       //true

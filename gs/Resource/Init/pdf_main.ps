@@ -1902,6 +1902,11 @@ currentdict /PDF2PS_matrix_key undef
      {
        oforce
        dup //null ne {
+         dup /Subtype knownoget {
+           /Highlight eq {      % Highlight annotation is always implemented
+             pop pop //true exit  % as transparency.
+           } if
+         } if
          /AP knownoget {	% Get appearance dict for the annoation
            /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
              4 dict exch resourceusestransparency { pop //true exit } if
