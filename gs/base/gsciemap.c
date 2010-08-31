@@ -185,7 +185,7 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
 		gs_color_select_t select)
 {
     gs_color_space *pcs_icc;
-    int code;
+    int code, i;
     gs_client_color scale_pc;
 
     if_debug4('c', "[c]remap CIEDEFG [%g %g %g %g]\n",
@@ -207,7 +207,12 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     /* Do the rescale from 0 to 1 */
     rescale_input_color(&(pcs->params.defg->RangeDEFG.ranges[0]), 4, pc, &scale_pc);
     /* Now the icc remap */
-    return((pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
+    code = (pcs_icc->type->remap_color)(&scale_pc,pcs_icc,pdc,pis,dev,select);
+    /* Save unscaled data for high level device (e.g. pdfwrite) */
+    for (i = 0; i < 4; i++)
+	pdc->ccolor.paint.values[i] = pc->paint.values[i];
+    pdc->ccolor_valid = true;
+    return(code);
 }
 
 /* Render a CIEBasedDEFG color. */
@@ -449,6 +454,7 @@ gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
 {
     gs_color_space *pcs_icc;
     gs_client_color scale_pc;
+    int i,code;
 
     if_debug3('c', "[c]remap CIEDEF [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
@@ -465,11 +471,16 @@ gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
        created to remap this range from 0 to 1 */
     if (check_range(&(pcs->params.def->RangeDEF.ranges[0]), 3)) {
         return((pcs_icc->type->remap_color)(pc,pcs_icc,pdc,pis,dev,select));
-}
+    }
     /* Do the rescale from 0 to 1 */
     rescale_input_color(&(pcs->params.def->RangeDEF.ranges[0]), 3, pc, &scale_pc);
     /* Now the icc remap */
-    return((pcs_icc->type->remap_color)(&scale_pc,pcs_icc,pdc,pis,dev,select));
+    code = (pcs_icc->type->remap_color)(&scale_pc,pcs_icc,pdc,pis,dev,select);
+    /* Save unscaled data for high level device (e.g. pdfwrite) */
+    for (i = 0; i < 3; i++)
+	pdc->ccolor.paint.values[i] = pc->paint.values[i];
+    pdc->ccolor_valid = true;
+    return(code);
 }
 
 /* Render a CIEBasedDEF color. */
@@ -541,6 +552,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     gs_color_space *pcs_icc;
     gs_client_color scale_pc;
     bool islab;
+    int i,code;
 
     if_debug3('c', "[c]remap CIEABC [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
@@ -561,7 +573,13 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     /* Do the rescale from 0 to 1 */
     rescale_input_color(&(pcs->params.abc->RangeABC.ranges[0]), 3, pc, &scale_pc);
     /* Now the icc remap */
-    return((pcs_icc->type->remap_color)(&scale_pc,pcs_icc,pdc,pis,dev,select));
+    code = (pcs_icc->type->remap_color)(&scale_pc,pcs_icc,pdc,pis,dev,select);
+    /* Save unscaled data for high level device (e.g. pdfwrite) */
+    for (i = 0; i < 3; i++)
+	pdc->ccolor.paint.values[i] = pc->paint.values[i];
+    pdc->ccolor_valid = true;
+    /* Now the icc remap */
+    return(code);
 }
 
 int
@@ -645,7 +663,11 @@ gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
     /* Do the rescale from 0 to 1 */
     rescale_input_color(&(pcs->params.a->RangeA), 1, pc, &scale_pc);
     /* Now the icc remap */
-    return((pcs_icc->type->remap_color)(&scale_pc,pcs_icc,pdc,pis,dev,select));
+    code = (pcs_icc->type->remap_color)(&scale_pc,pcs_icc,pdc,pis,dev,select);
+    /* Save unscaled data for high level device (e.g. pdfwrite) */
+    pdc->ccolor.paint.values[0] = pc->paint.values[0];
+    pdc->ccolor_valid = true;
+    return(code);
 }
 
 /* Render a CIEBasedA color. */

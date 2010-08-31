@@ -60,23 +60,69 @@ pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
 /* Transform a CIEBased color to XYZ. */
 static int
 cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
-	   const gs_imager_state *pis)
+	   const gs_imager_state *pis, const gs_cie_common *pciec)
 {
     gs_client_color cc;
     frac xyz[3];
     int ncomp = gs_color_space_num_components(pcs);
     int i;
     gx_device dev;
-    
+    gs_color_space_index cs_index;
+    const gs_vector3 *const pWhitePoint = &pciec->points.WhitePoint;
+    double xyz_float[3];
+
+    cs_index = gs_color_space_get_index(pcs);
     /* Need a device profile */
     dev.device_icc_profile = pcs->cmm_icc_profile_data;
 
     for (i = 0; i < ncomp; ++i)
 	cc.paint.values[i] = in[i];
-    cs_concretize_color(&cc, pcs, xyz, pis, &dev);
-    out[0] = frac2float(xyz[0]);
-    out[1] = frac2float(xyz[1]);
-    out[2] = frac2float(xyz[2]);
+
+    /* The standard concretization makes use of the equivalent ICC profile
+       to ensure that all color management is handled by the CMM. 
+       Unfortunately, we can't do that here since we have no access to the
+       icc manager.  Also the PDF write outputs have restrictions on the
+       ICC profiles that can be embedded so we must use this older form.
+       Need to add an ICC version number into the icc creator to enable
+       creation to and from various versions */
+
+    switch (cs_index) {
+        case gs_color_space_index_CIEA:
+            gx_psconcretize_CIEA(&cc, pcs, xyz, pis);
+            break;
+        case gs_color_space_index_CIEABC:
+            gx_psconcretize_CIEABC(&cc, pcs, xyz, pis);
+            break;
+        case gs_color_space_index_CIEDEF:
+            gx_psconcretize_CIEDEF(&cc, pcs, xyz, pis);
+            break;
+        case gs_color_space_index_CIEDEFG:
+           gx_psconcretize_CIEDEFG(&cc, pcs, xyz, pis);
+           break;
+        default:
+            break;
+    }
+    if (cs_index == gs_color_space_index_CIEA) {
+        /* AR forces this case to always be achromatic.  We will
+        do the same even though it does not match the PS
+        specification */
+        /* Use the resulting Y value to scale the wp Illumination.
+        note that we scale to the whitepoint here.  Matrix out
+        handles mapping to CIE D50.  This forces an achromatic result */
+        xyz_float[1] = frac2float(xyz[1]);
+        xyz_float[0] = pWhitePoint->u * xyz_float[1];
+        xyz_float[2] = pWhitePoint->w * xyz_float[1];
+    } else {
+        xyz_float[0] = frac2float(xyz[0]);
+        xyz_float[1] = frac2float(xyz[1]);
+        xyz_float[2] = frac2float(xyz[2]);
+    }
+
+    /* Do wp mapping to D50 in XYZ for now.  We should do bradford correction.
+       Will add that in next release */
+    out[0] = xyz_float[0]*0.9642/pWhitePoint->u;
+    out[1] = xyz_float[1];
+    out[2] = xyz_float[2]*0.8249/pWhitePoint->w;
     return 0;
 }
 
@@ -136,7 +182,7 @@ lab_range(gs_range range_out[3] /* only [1] and [2] used */,
 
 	for (j = 0; j < ncomp; ++j)
 	    in[j] = (i & (1 << j) ? ranges[j].rmax : ranges[j].rmin);
-	if (cie_to_xyz(in, xyz, pcs, pis) >= 0) {
+	if (cie_to_xyz(in, xyz, pcs, pis, pciec) >= 0) {
 	    double lab[3];
 
 	    xyz_to_lab(xyz, lab, pciec);
@@ -209,6 +255,26 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
     int code;
     cos_stream_t * pcstrm = 0;
     cos_array_t * prngca = 0;
+    bool std_ranges = true;
+    bool scale_inputs = false;
+    int i;
+
+    /* Check the ranges. */
+    if (pprange)
+	*pprange = 0;
+    for (i = 0; i < ncomps; ++i) {
+	double rmin = prange[i].rmin, rmax = prange[i].rmax;
+
+	if (rmin < 0.0 || rmax > 1.0) {
+	    /* We'll have to scale the inputs.  :-( */
+	    if (pprange == 0)
+		return_error(gs_error_rangecheck); /* scaling not allowed */
+	    *pprange = prange;
+	    scale_inputs = true;
+	}
+	else if (rmin > 0.0 || rmax < 1.0)
+	    std_ranges = false;
+    }
 
     /* Range values are a bit tricky to check.
        For example, CIELAB ICC profiles have
@@ -233,28 +299,30 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
     if (code < 0)
 	goto fail;
 
-    /* Always add the range */
+    /* Indicate the range, if needed. */
+    if (!std_ranges && !scale_inputs) {
 	code = pdf_cie_add_ranges(cos_stream_dict(pcstrm), prange, ncomps, true);
 	if (code < 0)
 	    goto fail;
+    }
 
     /* In the new design there may not be a specified alternate color space */
     if (pcs_alt != NULL){
 
-    /* Output the alternate color space, if necessary. */
-    switch (gs_color_space_get_index(pcs_alt)) {
-    case gs_color_space_index_DeviceGray:
-    case gs_color_space_index_DeviceRGB:
-    case gs_color_space_index_DeviceCMYK:
-	break;			/* implicit (default) */
-    default:
-	if ((code = pdf_color_space_named(pdev, &v, NULL, pcs_alt,
-				    &pdf_color_space_names, false, NULL, 0)) < 0 ||
-	    (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
-				       &v)) < 0
-	    )
-	    goto fail;
-    }
+        /* Output the alternate color space, if necessary. */
+        switch (gs_color_space_get_index(pcs_alt)) {
+        case gs_color_space_index_DeviceGray:
+        case gs_color_space_index_DeviceRGB:
+        case gs_color_space_index_DeviceCMYK:
+	    break;			/* implicit (default) */
+        default:
+	    if ((code = pdf_color_space_named(pdev, &v, NULL, pcs_alt,
+				        &pdf_color_space_names, false, NULL, 0)) < 0 ||
+	        (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
+				           &v)) < 0
+	        )
+	        goto fail;
+        }
 
     }
 
@@ -297,7 +365,8 @@ struct profile_table_s {
     const byte *data;
     uint length;
     uint data_length;		/* may be < length if write != 0 */
-    int (*write)(cos_stream_t *, const profile_table_t *, gs_memory_t *);
+    int (*write)(cos_stream_t *, const profile_table_t *, gs_memory_t *, 
+                 const gs_cie_common *pciec);
     const void *write_data;
     const gs_range_t *ranges;
 };
@@ -432,7 +501,8 @@ typedef struct icc_a2b0_s {
     int num_points;		/* on each axis of LUT */
     int count;			/* total # of entries in LUT */
 } icc_a2b0_t;
-static int write_a2b0(cos_stream_t *, const profile_table_t *, gs_memory_t *);
+static int write_a2b0(cos_stream_t *, const profile_table_t *, gs_memory_t *,
+                      const gs_cie_common *pciec);
 static profile_table_t *
 add_a2b0(profile_table_t **ppnt, icc_a2b0_t *pa2b, int ncomps,
 	 const gs_color_space *pcs)
@@ -473,7 +543,7 @@ add_a2b0(profile_table_t **ppnt, icc_a2b0_t *pa2b, int ncomps,
 }
 static int
 write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
-	   gs_memory_t *mem)
+	   gs_memory_t *mem, const gs_cie_common *pciec)
 {
     const icc_a2b0_t *pa2b = pnt->write_data;
     const gs_color_space *pcs = pa2b->pcs;
@@ -507,7 +577,7 @@ write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
 	for (n = i, j = ncomps - 1; j >= 0; --j, n /= num_points)
 	    in[j] = cache_arg(n % num_points, num_points - 1,
 			      (pnt->ranges ? pnt->ranges + j : NULL));
-	cie_to_xyz(in, xyz, pcs, pis);
+	cie_to_xyz(in, xyz, pcs, pis, pciec);
 	/*
 	 * NOTE: Due to an obscure provision of the ICC Profile
 	 * specification, values in a2b0 lookup tables do *not* represent
@@ -530,6 +600,17 @@ write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
 
     return cos_stream_add_bytes(pcstrm, v01, 3 * 4);
 }
+
+/* XYZ wp mapping for now.  Will replace later with Bradford or other */
+static int
+adjust_wp(const gs_vector3 *color_in, const gs_vector3 *wp_in, 
+          gs_vector3 *color_out, const gs_vector3 *wp_out)
+{
+    color_out->u = color_in->u * wp_out->u / wp_in->u;
+    color_out->v = color_in->v * wp_out->v / wp_in->v;
+    color_out->w = color_in->w * wp_out->w / wp_in->w;
+}
+
 static int
 pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
 			    const gs_color_space *pcs, const char *dcsname,
@@ -548,7 +629,8 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     int ncomps = gs_color_space_num_components(pcs);
     gs_color_space *alt_space;
     cos_stream_t *pcstrm;
-
+    gs_vector3 white_d50;
+    gs_vector3 temp_xyz;
     /*
      * Even though Ghostscript includes icclib, icclib is unusable here,
      * because it requires random access to the output stream.
@@ -604,6 +686,11 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     profile_table_t tables[MAX_NUM_TABLES];
     profile_table_t *next_table = tables;
 
+    /* White point must be D50 */
+    white_d50.u = 0.9642f;
+    white_d50.v = 1.0f;
+    white_d50.w = 0.8249f;
+
     pdf_cspace_init_Device(pdev->memory, &alt_space, ncomps);	/* can't fail */
     code = pdf_make_iccbased(pdev, pca, ncomps, prange, alt_space,
 			     &pcstrm, pprange);
@@ -624,8 +711,8 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     memcpy(desc, desc_data, sizeof(desc_data));
     DISCARD(add_table(&next_table, "desc", desc, sizeof(desc)));
 
-    /* wtpt */
-    add_table_xyz3(&next_table, "wtpt", wtpt, &pciec->points.WhitePoint);
+    /* wtpt. must be D50 */
+    add_table_xyz3(&next_table, "wtpt", wtpt, &white_d50);
     memcpy(header + 68, wtpt + 8, 12); /* illuminant = white point */
 
     /* cprt */
@@ -647,9 +734,15 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
 	    tg->ranges = *pprange + 1;
 	    tb->ranges = *pprange + 2;
 	}
-	add_table_xyz3(&next_table, "rXYZ", rXYZ, &pmat->cu);
-	add_table_xyz3(&next_table, "gXYZ", gXYZ, &pmat->cv);
-	add_table_xyz3(&next_table, "bXYZ", bXYZ, &pmat->cw);
+        /* These values need to be adjusted to D50.  Again
+           use XYZ wp mapping for now.  Later we will add in
+           the bradford stuff */
+        adjust_wp(&(pmat->cu), &(pciec->points.WhitePoint), &temp_xyz, &white_d50);
+	add_table_xyz3(&next_table, "rXYZ", rXYZ, &temp_xyz);
+        adjust_wp(&(pmat->cv), &(pciec->points.WhitePoint), &temp_xyz, &white_d50);
+	add_table_xyz3(&next_table, "gXYZ", gXYZ, &temp_xyz);
+        adjust_wp(&(pmat->cw), &(pciec->points.WhitePoint), &temp_xyz, &white_d50);
+	add_table_xyz3(&next_table, "bXYZ", bXYZ, &temp_xyz);
     } else {
 	/* General case, use a lookup table. */
 	/* AToB (mft2) */
@@ -685,7 +778,7 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
 
 	    if ((code = cos_stream_add_bytes(pcstrm, tables[i].data, len)) < 0 ||
 		(tables[i].write != 0 &&
-		 (code = tables[i].write(pcstrm, &tables[i], pdev->pdf_memory)) < 0) ||
+		 (code = tables[i].write(pcstrm, &tables[i], pdev->pdf_memory, pciec)) < 0) ||
 		(code = cos_stream_add_bytes(pcstrm, pad, 
 			-(int)(tables[i].length) & 3)) < 0
 		)

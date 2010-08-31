@@ -551,14 +551,20 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     if ((pdev->CompatibilityLevel < 1.3) || !gs_color_space_is_PSCIE(pcs_in) ) {
         pcs = pcs_in;
     } else {
+        pcs = pcs_in;
+        /* The snippet below creates an ICC equivalent profile for the PS
+           color space.  This is disabled until I add the capability to
+           specify the profile version to ensure compatability with
+           the PDF versions */
+#if 0
         if (pcs_in->icc_equivalent != NULL) {
             pcs = pcs_in->icc_equivalent;
         } else {
             /* Need to create the equivalent object */
-            
             gs_colorspace_set_icc_equivalent((gs_color_space *)pcs_in, &islab, pdev->memory);
             pcs = pcs_in->icc_equivalent;
-        }
+        } 
+#endif
     }
     csi = gs_color_space_get_index(pcs);
     /* Note that if csi is ICC, check to see if this was one of 

@@ -79,32 +79,34 @@ data_image_params(const gs_memory_t *mem,
 	)
 	return code;
 
-
     /* Decode size pulled out of here to catch case of Lab color space which
        has a 4 entry range.  We also do NOT want to do Lab decoding IF range
        is the common -128 127 for a and b. Otherwise we end up doing multiple
-       decode operations, since ICC flow will expect encoded data. That is resolved later.*/
-
+       decode operations, since ICC flow will expect encoded data. 
+       That is resolved later.  Also discovered that PDF write will stick
+       6 entry range in wich appears to be OK as far as AR is concerned so
+       we have to handle that too. */
     if (islab) {
-        
+        /* Note that it is possible that only the ab range values are there 
+           or the lab values.  I have seen both cases.... */
         code = decode_size = dict_floats_param(mem, op, "Decode", 4,
 						    &pim->Decode[2], NULL);
+        if (code < 0) {
+            /* Try for all three */
+            code = decode_size = dict_floats_param(mem, op, "Decode", 6,
+						        &pim->Decode[0], NULL);
+        } else {
+            /* Set the range on the L */
+            pim->Decode[0] = 0;
+            pim->Decode[1] = 100.0;
+        }
         if (code < 0) return code;
-
-        pim->Decode[0] = 0;
-        pim->Decode[1] = 100.0;
-
     } else {
-
         code = decode_size = dict_floats_param(mem, op, "Decode",
 						    num_components * 2,
 						    &pim->Decode[0], NULL);
         if (code < 0) return code;
-
     }
-
-
-
     pip->pDecode = &pim->Decode[0];
     /* Extract and check the data sources. */
     if ((code = dict_find_string(op, "DataSource", &pds)) <= 0) {

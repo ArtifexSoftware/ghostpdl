@@ -5303,6 +5303,8 @@ static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
             /* Single gamma (gray) */
             if (r_has_type(tempref, t_real)) 
                 value[0] = (float)(tempref->value.realval);
+            else if (r_has_type(tempref, t_integer))
+                    value[0] = (float)(tempref->value.intval);
             else 
                 return_error(e_typecheck);
             if (value[0] <= 0) return_error(e_rangecheck);
