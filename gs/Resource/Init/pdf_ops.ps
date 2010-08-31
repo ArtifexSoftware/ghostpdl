@@ -755,7 +755,7 @@ end readonly def
 	% Tr 0 - Fill
 	{ setfillstate show } bind
 	% Tr 1 - Stroke
-	{ setstrokestate
+	{ currentlinewidth exch setstrokestate
         % Need to set the stroke width to a value which gives the correct
         % width under pdfwrite. Pdfwrite uses (in text mode) an identity
         % CTM, so we need to calculate the stroke width which would result
@@ -769,7 +769,7 @@ end readonly def
           % we can ignore it. (wrong answer, but consistent)
           pop pop currentlinewidth
         }ifelse setlinewidth
-        .swapcolors show .swapcolors } bind
+        .swapcolors show .swapcolors setlinewidth} bind
 	% Tr 2 - Fill then Stroke
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show currentpoint 3 -1 roll 
