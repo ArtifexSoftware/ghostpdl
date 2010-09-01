@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version9.00">Version 9.00 (2010-08-24)</a>
+<li><a href="#Version9.00">Version 9.00 (2010-09-01)</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -63,7 +63,7 @@ overview</a>.
 <!-- [2.0 begin contents] ================================================== -->
 
 
-<h2><a name="Version9.00"></a>Version 9.00 (2010-08-24)</h2>
+<h2><a name="Version9.00"></a>Version 9.00 (2010-09-01)</h2>
 
 <p>This is the first release in the stable 9.x series.
 
@@ -110,6 +110,41 @@ please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 No recorded incompatible changes.
 
 <h3><a name="9.00_changelog"></a>Changelog</h3>
+
+<p><strong><a name="2010-09-01T135934.488373Z"></a>
+2010-09-01T13:59:34.488373Z Ken Sharp</strong></p>
+<blockquote>
+<pre>
+Silence some compiler warnings. 
+
+Altered a static function to 'void' from 'int' as it returns no values and the callers
+don't test any putative return value.
+
+#ifdef a boolean declaration, as the code which uses it has been #ifdef'ed
+
+Add some parameters to two functions, so that they match the prototypes, the 
+parameters are not used in these functions.
+
+</pre>
+<p>[base/gdevpdfk.c base/gdevpdfc.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-01T060851.456140Z"></a>
+2010-09-01T06:08:51.456140Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix to avoid issues with subtractive monochrome devices when we have transparency.  The gray device pdf14 prototype is used in this case.  VERY limited testing indicates that this fixes a crash with the cups device with its default settings and gives proper rendering.  More complete testing is required to ensure that proper blending is being performed and to investigate the other process color models that the cups device supports (e.g. cmy).  </pre>
+<p>[base/gdevp14.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-31T232115.562664Z"></a>
+2010-08-31T23:21:15.562664Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Revert back to having pdfwrite handle what to do with PS color spaces instead of using the V4 profile that gsicc_create generates.  Also, fix a few issues that existed with pdfwrites handling of those spaces, in particular adjustments are made for non D50 white points.  D50 is the required white point for the ICC profile.  About 189 pdfwrite test files will report differences.  I went through them with bmpcmp.    Since the profiles that were generated differ between gsicc_create and pdfwrite minor color differences exist.  In addition, there were some regressions that existed, which this revision will fix.  </pre>
+<p>[psi/zcolor.c base/gdevpdfk.c psi/zimage.c base/gdevpdfc.c base/gsciemap.c]</p>
+</blockquote>
+
 <p><strong><a name="2010-08-24T123334.461027Z"></a>
 2010-08-24T12:33:34.461027Z Chris Liddell</strong></p>
 <blockquote>
