@@ -1971,7 +1971,10 @@ pdf14_disable_device(gx_device * dev)
 static	pdf14_default_colorspace_t
 pdf14_determine_default_blend_cs(gx_device * pdev)
 {
-    if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+    /* If num components is one, just go ahead and use gray.  This avoids
+       issues with additive/subtractive mono color devices  */
+    if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE || 
+        pdev->color_info.num_components == 1)
 	/*
 	 * Note:  We do not allow the SeparationOrder device parameter for
 	 * additive devices.  Thus we always have 1 colorant for DeviceGray
