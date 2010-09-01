@@ -545,7 +545,9 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     byte *serialized = NULL, serialized0[100];
     pdf_resource_t *pres = NULL;
     int code;
+#if 0
     bool islab = false;
+#endif
 
     /* If color space is CIE based and we have compatibility then go ahead and use the ICC alternative */
     if ((pdev->CompatibilityLevel < 1.3) || !gs_color_space_is_PSCIE(pcs_in) ) {

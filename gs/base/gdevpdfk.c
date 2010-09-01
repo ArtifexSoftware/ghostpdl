@@ -419,8 +419,8 @@ set_sample16(byte *p, floatp v)
     p[1] = (byte)value;
 }
 /* Create and write a TRC curve table. */
-static int write_trc_abc(cos_stream_t *, const profile_table_t *, gs_memory_t *);
-static int write_trc_lmn(cos_stream_t *, const profile_table_t *, gs_memory_t *);
+static int write_trc_abc(cos_stream_t *, const profile_table_t *, gs_memory_t *, const gs_cie_common *);
+static int write_trc_lmn(cos_stream_t *, const profile_table_t *, gs_memory_t *, const gs_cie_common *);
 static profile_table_t *
 add_trc(profile_table_t **ppnt, const char *tag, byte bytes[12],
 	const gs_cie_common *pciec, cie_cache_one_step_t one_step)
@@ -459,7 +459,7 @@ cache_arg(int i, int denom, const gs_range_t *range)
 
 static int
 write_trc_abc(cos_stream_t *pcstrm, const profile_table_t *pnt,
-	      gs_memory_t *ignore_mem)
+	      gs_memory_t *ignore_mem, const gs_cie_common *unused)
 {
     /* Write the curve table from DecodeABC. */
     const gs_cie_abc *pabc = pnt->write_data;
@@ -476,7 +476,7 @@ write_trc_abc(cos_stream_t *pcstrm, const profile_table_t *pnt,
 }
 static int
 write_trc_lmn(cos_stream_t *pcstrm, const profile_table_t *pnt,
-	      gs_memory_t *ignore_mem)
+	      gs_memory_t *ignore_mem, const gs_cie_common *unused)
 {
     const gs_cie_common *pciec = pnt->write_data;
     int ci = rgb_to_index(pnt);
@@ -602,7 +602,7 @@ write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
 }
 
 /* XYZ wp mapping for now.  Will replace later with Bradford or other */
-static int
+static void
 adjust_wp(const gs_vector3 *color_in, const gs_vector3 *wp_in, 
           gs_vector3 *color_out, const gs_vector3 *wp_out)
 {
