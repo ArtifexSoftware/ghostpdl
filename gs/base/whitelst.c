@@ -23,6 +23,7 @@
    the moment the fonts are stored without TM and R characters but this may
    need to be altered.
  */
+#include "whitelst.h"
 
 #define WHITE_LIST_SIZE 465
 
