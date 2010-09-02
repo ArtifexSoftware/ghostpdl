@@ -30,6 +30,7 @@
 #include "gdevpdtf.h"
 #include "gdevpdtw.h"
 #include "gdevpdti.h"
+#include "whitelst.h"		/* Checks whether protected fonta cna be embedded */
 
 /* GC descriptors */
 public_st_pdf_font_resource();
@@ -664,7 +665,8 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     memset(&info, 0x00, sizeof(gs_font_info_t));
     code = font->procs.font_info(font, NULL, FONT_INFO_EMBEDDING_RIGHTS, &info);
     if (code == 0 && (info.members & FONT_INFO_EMBEDDING_RIGHTS)) {
-	if ((info.EmbeddingRights == 0x0002) || (info.EmbeddingRights & 0x0200)) {
+	if (((info.EmbeddingRights == 0x0002) || (info.EmbeddingRights & 0x0200))
+	    && !IsInWhiteList ((const char *)chars, size)) {
 	    /* See the OpenType specification, "The 'OS/2' and Windows Metrics Table" for details
 	       of the fstype parameter. This is a bitfield, currently we forbid embedding of fonts
 	       with these bits set:

@@ -980,6 +980,7 @@ gdevpdts_h=$(GLSRC)gdevpdts.h $(gsmatrix_h)
 gdevpdtt_h=$(GLSRC)gdevpdtt.h
 gdevpdtv_h=$(GLSRC)gdevpdtv.h
 gdevpdtw_h=$(GLSRC)gdevpdtw.h
+whitelst_h=$(GLSRC)whitelst.h
 
 # We reserve space for all of a..z, just in case.
 pdxtext_ab=$(GLOBJ)gdevpdt.$(OBJ) $(GLOBJ)gdevpdtb.$(OBJ)
@@ -989,7 +990,7 @@ pdxtext_ijk=$(GLOBJ)gdevpdti.$(OBJ)
 pdxtext_lmn=
 pdxtext_opq=
 pdxtext_rst=$(GLOBJ)gdevpdts.$(OBJ) $(GLOBJ)gdevpdtt.$(OBJ)
-pdxtext_uvw=$(GLOBJ)gdevpdtv.$(OBJ) $(GLOBJ)gdevpdtw.$(OBJ)
+pdxtext_uvw=$(GLOBJ)gdevpdtv.$(OBJ) $(GLOBJ)gdevpdtw.$(OBJ) $(GLOBJ)whitelst.$(OBJ)
 pdxtext_xyz=
 pdxtext_=$(pdxtext_ab) $(pdxtext_cde) $(pdxtext_fgh) $(pdxtext_ijk)\
  $(pdxtext_lmn) $(pdxtext_opq) $(pdxtext_rst) $(pdxtext_uvw) $(pdxtext_xyz)\
@@ -1071,6 +1072,9 @@ $(GLOBJ)gdevpdtw.$(OBJ) : $(GLSRC)gdevpdtw.c $(gx_h) $(gserrors_h) $(memory__h)\
  $(gdevpsf_h) $(gdevpdfx_h) $(gdevpdfo_h)\
  $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdtw_h) $(gdevpdtv_h) $(sarc4_h)
 	$(GLCC) $(GLO_)gdevpdtw.$(OBJ) $(C_) $(GLSRC)gdevpdtw.c
+
+$(GLOBJ)whitelst.$(OBJ) : $(GLSRC)whitelst.c $(whitelst_h)
+	$(GLCC) $(GLO_)whitelst.$(OBJ) $(C_) $(GLSRC)whitelst.c
 
 ################ END PDF WRITER ################
 
