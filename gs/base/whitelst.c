@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: embd_lst.c 11608 2010-08-06 11:11:40Z ken $ */
+/* $Id: whitelst.c 11608 2010-08-06 11:11:40Z ken $ */
 /* The following font names are taken from the Adobe webs site
    (http://www.adobe.com/type/browser/legal/embeddingeula.html)
    and comprise a list of font names for which permission is granted to embed
@@ -25,7 +25,7 @@
  */
 #include "whitelst.h"
 
-#define WHITE_LIST_SIZE 465
+#define WHITE_LIST_SIZE 463
 
 static const char EmbeddingWhiteList[][WHITE_LIST_SIZE] = {
 "Aachen",
@@ -84,7 +84,6 @@ static const char EmbeddingWhiteList[][WHITE_LIST_SIZE] = {
 "Brush Script",
 "Bulmer",
 "Bundesbahn Pi",
-"Caflisch Script",
 "Caflisch Script",
 "Caflisch Script Web",
 "Calcite",
@@ -318,7 +317,6 @@ static const char EmbeddingWhiteList[][WHITE_LIST_SIZE] = {
 "Mercurius",
 "Meridien",
 "Mesquite",
-"Mezz",
 "Mezz",
 "Mezz Web",
 "MICR",
