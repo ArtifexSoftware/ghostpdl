@@ -371,7 +371,10 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             state->offset += available;
             pw->ptr += available;
             /* more output to deliver? */
-            if (state->offset == state->stride*state->height) return 1;
+            if (state->offset == state->stride*state->height)
+		return EOFC;
+	    else
+		return 1;
         }
     }
 
