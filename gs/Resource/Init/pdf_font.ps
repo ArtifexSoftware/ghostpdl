@@ -1769,6 +1769,16 @@ currentdict /bndef undef
   } if {
     /PSFont get 
   } {
+  
+    % In the event we have a Type 0 dictionary with a spurious
+    % FontDescriptor object, remove it here to prevent confusion
+    % later on.
+    % Bug 691589
+    dup /Subtype get /Type0 eq 1 index /FontDescriptor known and
+    {
+        dup /FontDescriptor undef
+    }if
+
     dup dup /FontDescriptor knownoget {
                                           % font-res font-res font-desc
       % The same font descriptor can be reused in a CID and non-CID contexts.
