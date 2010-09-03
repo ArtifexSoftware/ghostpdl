@@ -4,7 +4,7 @@
 
 if %1/==/ goto usage
 if %2/==/ goto usage
-"call %~dp0gssetgs.bat"
+call "%~dp0gssetgs.bat"
 echo -q -dNODISPLAY -P- -dSAFER -dDELAYSAFER >"%TEMP%\_.at"
 :cp
 if %3/==/ goto doit
