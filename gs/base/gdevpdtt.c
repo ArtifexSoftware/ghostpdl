@@ -1622,17 +1622,30 @@ do_unknown:
 			return_error(gs_error_unregistered);
 		    }
 		}
+	    }
 	}
-    }
 	if (pdfont != NULL)
 	    pdfont->u.simple.last_reserved_char = last_reserved_char;
 	/* Change glyphs to char codes in the text : */
 	for (i = 0; i < pstr->size; i++) {
-	    /* Picked up by Coverity, if pdfont is NULL then the call would dereference it */
+	    /* Picked up by Coverity, if pdfont is NULL then the call might dereference it */
 	    if (pdfont != NULL) {
 		/* A trick : pdf_reserve_char_code_in_pdfont here simply encodes with cgp. */
 		ch = pdf_reserve_char_code_in_pdfont(pdfont, cgp, gdata[i], &pdfont->u.simple.last_reserved_char);
 		pstr->data[i] = ch;
+	    } else {
+		/* So if pdffont is NULL, do the 'trick' code mentioned above.
+		 * If that fails (I believe it shouod not), then return an error.
+		 */
+		int j;
+
+		for (j = 0; j < cgp->num_all_chars; j++)
+		    if (cgp->s[j].glyph == gdata[i])
+			break;
+		if (j < cgp->num_all_chars)
+		    pstr->data[i] = cgp->s[j].chr;
+		else
+		    return_error(gs_error_unregistered);
 	    }
 	}
 	return 0;
