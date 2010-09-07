@@ -172,3 +172,28 @@ How to use later versions of Visual Studio
 Later versions of Visual Studio should import the Solution/Project files
 without any problems. When you first open the file, a wizard should allow
 you to convert to the latest version. No manual editing should be required.
+
+At the time of writing VS2010 has just been released; it appears to import
+and build the project files quite happily (with a few warnings that can
+safely be ignored). The one problem is with the 'Clean' build options; due
+to a bug in the initial release of VS2010 the environment is not set up
+correctly, so nmake cannot be found. Microsoft have acknowledged the bug
+and stated that it will be fixed in the next release (presumably the next
+service pack).
+
+There are 3 possible workarounds:
+
+ * Most people use 'Clean' just so they can then do 'Build' and get a
+   clean build. Instead use 'Rebuild', which does exactly that but in
+   one step.
+
+ * Copy nmake.exe to somewhere on your PATH. It can be found in:
+ 
+    C:\Program Files\Microsoft Visual Studio 10.0\VC\bin
+
+   (or alternatively, set that directory to be on your PATH, though beware
+   this hasn't been tested and may cause problems with other compilation
+   environments).
+
+ * Change the project 'Clean' command lines to include an explicit path
+   for nmake.
