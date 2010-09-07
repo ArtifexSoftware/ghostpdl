@@ -20,7 +20,7 @@
 #include "iplugin.h"
 #include "gstypes.h"
 #include "gsmatrix.h"
-
+#include "gp.h"
 
 typedef int FracInt; /* A fractional integer with statically unknown number of fraction bits. 
                         The number of bits depends on plugin and is being specified in
