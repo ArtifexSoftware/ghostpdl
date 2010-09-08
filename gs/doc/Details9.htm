@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version9.00">Version 9.00 (2010-09-01)</a>
+<li><a href="#Version9.00">Version 9.00 (2010-09-08)</a>
 <ul>
 <li><a href="#9.00_Incompatible_changes">Incompatible changes</a>,
     <a href="#9.00-Documentation">Documentation</a>,
@@ -73,7 +73,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.00"></a>Version 9.00 (2010-09-01)</h2>
+<h2><a name="Version9.00"></a>Version 9.00 (2010-09-08)</h2>
 
 <p>This is the first release in the stable 9.x series.
 
@@ -123,8 +123,245 @@ No recorded incompatible changes.
 
 <h3><a name="9.00_changelog"></a>Changelog</h3>
 
+
+<p><strong><a name="2010-09-08T083015.885002Z"></a>
+2010-09-08T08:30:15.885002Z chrisl</strong></p>
+<blockquote>
+<pre>
+Slight refinement in the how the FAPI character generation detects we are
+producing anti-aliased glyphs.
+
+Also, it seems that when assigning variable value to a second, larger data
+type, whilst gcc promotes the data type before the assignment, MSVC promotes
+the variable later, so shifting a 32 bit integer up during an assignment to
+a 64 bit integer variable works find on gcc, but MSVC loses the most
+significant bits. So we need to force the promotion to happen with a cast.
+
+Bug 691588
+
+</pre>
+<p>[psi/fapi_ft.c psi/zfapi.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-07T165136.404533Z"></a>
+2010-09-07T16:51:36.404533Z chrisl</strong></p>
+<blockquote>
+<pre>
+Add a further header to ifapi.h required for Unix/Linux builds, and
+add the two additional headers to ifapi.h's dependencies.
+
+</pre>
+<p>[psi/ifapi.h psi/int.mak]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-07T162646.989782Z"></a>
+2010-09-07T16:26:46.989782Z chrisl</strong></p>
+<blockquote>
+<pre>
+Pull in gp.h in ifapi.h for the int64_t type - it seems to be required on Windows.</pre>
+<p>[psi/ifapi.h]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-07T153217.143998Z"></a>
+2010-09-07T15:32:17.143998Z chrisl</strong></p>
+<blockquote>
+<pre>
+Some fairly substantial changes to the FAPI code to get very high resolutions and
+anti-aliased text working reliably.
+
+For AA text, we now make *sure* to produce outlines for non-cached glyphs, thus
+the GS path code can anti-alias correctly (for cached glyphs, the &quot;show&quot; machinery
+does the anti-aliasing from the cache bitmap).
+
+The high res problems were highlighted by the bbox device (which runs at 4000 dpi).
+To resolve these the width and height parameters for Freetype had to have value
+overflow compensation added, to match the existing underflow compensation.
+
+FAPI/Freetype also now will only create a glyph bitmap if the bitmap size is smaller
+than the allowable glyph cache bitmap. It may still produce a bitmap for a non-cached
+glyph, if the cache is full, but the individual glyph bitmap is not larger than the
+allowable glyph item - this is allow for better consistency when we're near the limit
+of the total cache size.
+
+Finally, the FAPI outline retrieval code now requires 32.32 fixed point variables (rather
+than the previous 16.16), which prevents overflow, and improves accuracy. If also provides
+us with the opportunity to check for overflow/underflow of the GS internal fixed point
+variables, before calling the GS path code.
+
+There are quite a few cluster changes. I have checked them all, and one is a progression
+(missing glyphs now render) and the rest are the pixel level differences expected by
+having GS render a path, rather than Freetype - most are due to Freetype grid fitting to
+the glyph bitmap, and GS grid fitting to the page raster.
+
+Bug 691592 - bbox issue
+Bug 691588 - anti-aliasing
+	
+
+
+
+</pre>
+<p>[psi/fapi_ft.c psi/zfapi.c psi/ifapi.h psi/fapiufst.c psi/fapibstm.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-06T101425.582663Z"></a>
+2010-09-06T10:14:25.582663Z ken</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : string not being re-encoded
+
+Bug #690441 &quot; Files render properly with gs, but are misformatted by ps2pdf&quot;
+
+A Coverity fix in revision 9072 prevented a crash, but also circumvented code that was
+essential to run under some conditions. (This is described by comments in the code as a
+'trick'). The routine created a text string with the encoded text for a font with a
+custom encoding derived from a CIDFont with an unusual CMap.
+
+In order to avoid the potential crash, but still re-encode the string, which is
+essential, the relevant portion of the code has been copied and is exercised instead of
+executing 'pdf_reserve_char_code_in_pdfont()'. This produces the reencoded string we
+need, but if the encoding fails, where we would have caused a crash by dereferencing a
+NULL pointer, we instead return an error.
+
+No differences expected, we obviously don't have a test case in the regression suite.
+</pre>
+<p>[base/gdevpdtt.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-03T154954.010009Z"></a>
+2010-09-03T15:49:54.010009Z ray</strong></p>
+<blockquote>
+<pre>
+Fix for hang condition in the stream logic for the luratech JPXDecode.
+We need to return EOFC with the final bit of data. Found with PDF 1.7 FTS.
+</pre>
+<p>[base/sjpx_luratech.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-03T083132.767708Z"></a>
+2010-09-03T08:31:32.767708Z chrisl</strong></p>
+<blockquote>
+<pre>
+A Type 0 font dictionary in a PDF which contained a spurious FontDescriptor
+object confused the interpreter, which resulted in creating a Font resource
+directly, rather than instantiating the DescendantFonts for the Type 0.
+
+We'll now remove the spurious entry from the Type 0 dictionary, to prevent
+any on-going confusion.
+
+No cluster differences expected.
+
+Bug 691589
+
+</pre>
+<p>[Resource/Init/pdf_font.ps]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-03T072106.059509Z"></a>
+2010-09-03T07:21:06.059509Z ken</strong></p>
+<blockquote>
+<pre>
+typo, misplaced quote in revision 11684
+</pre>
+<p>[lib/lpgs.bat]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-03T071933.619992Z"></a>
+2010-09-03T07:19:33.619992Z ken</strong></p>
+<blockquote>
+<pre>
+Typo, misplaced quote in revision 11684
+</pre>
+<p>[lib/pdfopt.bat]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-03T065244.087509Z"></a>
+2010-09-03T06:52:44.087509Z ken</strong></p>
+<blockquote>
+<pre>
+More Windows batch file madness. 
+
+Guard all path expansion with quotes, since the Windows command shell processor is too
+stupid to do so, even when expanding variables/arguments itself.
+
+Add a trailing separator to the %TEMP% variable before specifying the filename, as
+apparently some setups don't get a trailing separator by default. A paired separator
+(ie \\) doesn't seem to cause a problem so this ought to be safe even if the setup
+does have a trailing separator.
+
+</pre>
+<p>[lib/pf2afm.bat lib/gsdj500.bat lib/ps2ascii.bat lib/ps2pdfxx.bat lib/lpr2.bat lib/gsndt.bat lib/gstt.bat lib/eps2eps.bat lib/pdf2dsc.bat lib/gsbj.bat lib/ps2epsi.bat lib/gsdj.bat lib/dumphint.bat lib/ps2ps2.bat lib/gsnd.bat lib/font2c.bat lib/pdfopt.bat lib/gst.bat lib/pdf2ps.bat lib/ps2pdf.bat lib/gslj.bat lib/bdftops.bat lib/pfbtopfa.bat lib/ps2pdf12.bat lib/ps2pdf13.bat lib/ps2pdf14.bat lib/lpgs.bat lib/gslp.bat lib/ps2ps.bat lib/pftogsf.bat]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-02T155750.419060Z"></a>
+2010-09-02T15:57:50.419060Z ken</strong></p>
+<blockquote>
+<pre>
+Remove a couple of duplicated font names form the embedding white list, and reduce the
+list length #define appropriately.</pre>
+<p>[base/whitelst.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-02T141539.116953Z"></a>
+2010-09-02T14:15:39.116953Z ken</strong></p>
+<blockquote>
+<pre>
+Include the header file purely to get the prototype for the function, otherwise gcc
+complains.
+</pre>
+<p>[base/whitelst.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-02T135013.043694Z"></a>
+2010-09-02T13:50:13.043694Z ken</strong></p>
+<blockquote>
+<pre>
+pdfwrite enhancement
+
+The addition of code to test and honour the 'embedding flags' in TrueType fonts has
+led to problems because PostScript producers are embedding type 42 fonts in the
+PostScript which are non-embeddable and worse use a custom non-reversible encoding,
+so that the  resulting PDF file has garbage text when a normally encoded font is used
+as a replacement.
+
+It seems that Adobe has published a 'white list' of fonts which have been granted
+at least some embeddable rights. It isn't obvious if these are fonts which were type
+1 (and therefore could be converted to TrueType and get incorrect embedding rights) or
+if the fonts were originally released as TrueType with the wrong embedding rights.
+
+In any event, this list has now been added to pdfwrite; if a font is encountered which
+has restricted embedding, then its name will be checked against this list, if it is
+found in the list then it will be considered as embeddable. We have already 
+encountered one font on this list which has a slightly different name to the original
+(a space was removed) so spaces in the font names are ignored. 
+
+This list will have to change over time, and we may find other examples of characters
+which we want to handle specially (eg oumlaut treated as o and e)
+
+No differences expected as this is not tested in the current regression suite.
+</pre>
+<p>[base/whitelst.c base/gdevpdtf.c base/devs.mak base/whitelst.h]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-01T184752.658366Z"></a>
+2010-09-01T18:47:52.658366Z chrisl</strong></p>
+<blockquote>
+<pre>
+Update the release notes, dates etc for a second 9.00 release candidate
+</pre>
+<p>[doc/History7.htm doc/Projects.htm doc/History8.htm doc/History9.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm man/ps2epsi.1 doc/Install.htm doc/API.htm doc/Issues.htm doc/DLL.htm doc/Drivers.htm man/pfbtopfa.1 doc/Release.htm doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm man/gs.1 man/pf2afm.1 doc/Ps2ps2.htm doc/Fonts.htm man/printafm.1 doc/Ps2pdf.htm doc/Develop.htm doc/Helpers.htm man/pdf2dsc.1 doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp man/font2c.1 man/gsnd.1 base/version.mak man/pdfopt.1 man/pdf2ps.1 man/ps2pdf.1 doc/Make.htm doc/Details8.htm doc/Details9.htm doc/Unix-lpr.htm doc/C-style.htm doc/Ps-style.htm doc/History1.htm doc/History2.htm man/gslp.1 man/wftopfa.1 doc/History3.htm man/ps2ps.1 doc/Ps2epsi.htm doc/History4.htm man/ps2pdfwr.1 doc/History5.htm doc/History6.htm]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-01T174918.515475Z"></a>
+2010-09-01T17:49:18.515475Z chrisl</strong></p>
+<blockquote>
+<pre>
+Update the release notes for the second 9.00 release candidate.
+</pre>
+<p>[doc/History9.htm doc/News.htm doc/Details9.htm doc/Details.htm]</p>
+</blockquote>
+
 <p><strong><a name="2010-09-01T135934.488373Z"></a>
-2010-09-01T13:59:34.488373Z Ken Sharp</strong></p>
+2010-09-01T13:59:34.488373Z ken</strong></p>
 <blockquote>
 <pre>
 Silence some compiler warnings. 
@@ -142,7 +379,7 @@ parameters are not used in these functions.
 </blockquote>
 
 <p><strong><a name="2010-09-01T060851.456140Z"></a>
-2010-09-01T06:08:51.456140Z Michael Vrhel</strong></p>
+2010-09-01T06:08:51.456140Z mvrhel</strong></p>
 <blockquote>
 <pre>
 Fix to avoid issues with subtractive monochrome devices when we have transparency.  The gray device pdf14 prototype is used in this case.  VERY limited testing indicates that this fixes a crash with the cups device with its default settings and gives proper rendering.  More complete testing is required to ensure that proper blending is being performed and to investigate the other process color models that the cups device supports (e.g. cmy).  </pre>
@@ -150,24 +387,233 @@ Fix to avoid issues with subtractive monochrome devices when we have transparenc
 </blockquote>
 
 <p><strong><a name="2010-08-31T232115.562664Z"></a>
-2010-08-31T23:21:15.562664Z Michael Vrhel</strong></p>
+2010-08-31T23:21:15.562664Z mvrhel</strong></p>
 <blockquote>
 <pre>
 Revert back to having pdfwrite handle what to do with PS color spaces instead of using the V4 profile that gsicc_create generates.  Also, fix a few issues that existed with pdfwrites handling of those spaces, in particular adjustments are made for non D50 white points.  D50 is the required white point for the ICC profile.  About 189 pdfwrite test files will report differences.  I went through them with bmpcmp.    Since the profiles that were generated differ between gsicc_create and pdfwrite minor color differences exist.  In addition, there were some regressions that existed, which this revision will fix.  </pre>
 <p>[psi/zcolor.c base/gdevpdfk.c psi/zimage.c base/gdevpdfc.c base/gsciemap.c]</p>
 </blockquote>
 
-<p><strong><a name="2010-08-24T123334.461027Z"></a>
-2010-08-24T12:33:34.461027Z Chris Liddell</strong></p>
+<p><strong><a name="2010-08-31T153427.935572Z"></a>
+2010-08-31T15:34:27.935572Z ken</strong></p>
 <blockquote>
 <pre>
-merge changes from the trunk doc directory to the 9.00 release tag.
+Fix (pdfwrite) : linewidth corruption when Tr is 1
+
+Bug #690436 &quot; (regression) re-distilling pdf causes R graphics to go block-single-color.&quot;
+
+The problem was cause din the pdfwrite-specific text rendering routines. When the text
+render mode is 1 (stroke), the linewidth is adjusted by the current text matrix. However
+the routine to do this is called each time any element of the text 'graphics state'
+changes. So if multiple calls to (eg) Td were made, the linewidth would be altered
+even though there had been no change in 'w'.
+
+Fixed by getting the current linewidth before the text rendering routine, and setting
+it back to this value after the text rendering routine.
+
+No expected differences. However z400454b01d4-1.pdf seems to exhibit some minor
+differences which I am unable to reproduce locally. They are so minor that bmpcmp
+ignores them, and on my tests the PDF files are identical bar the date/time stamps
+and other metadata. I don't believe this is a real difference.
 </pre>
-<p>[/tags/ghostscript-9.00/doc /tags/ghostscript-9.00/doc/History9.htm /tags/ghostscript-9.00/doc/News.htm /tags/ghostscript-9.00/doc/AUTHORS]</p>
+<p>[Resource/Init/pdf_ops.ps]</p>
 </blockquote>
 
-<p><strong><a name="2010-08-20T175448.049092Z"></a>
-2010-08-20T17:54:48.049092Z Chris Liddell</strong></p>
+<p><strong><a name="2010-08-28T220455.196791Z"></a>
+2010-08-28T22:04:55.196791Z alexcher</strong></p>
+<blockquote>
+<pre>
+Implement rendering of /Highlight annotation. Acrobat always uses transparency
+and ignores appearance streams. Bug 691572, customer 532.
+
+Progressions or minor differences (when the annotation has an appearance
+stream) are observed in annots.pdf, CATX1385.pdf, CATX6166.pdf, CATX6508.pdf,
+CATX7659.pdf, CATX8255.pdf, IA3Z4030.pdf, fts_32_3225.pdf
+</pre>
+<p>[Resource/Init/pdf_main.ps Resource/Init/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-27T135414.847396Z"></a>
+2010-08-27T13:54:14.847396Z ken</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : faulty matrix transformations for Pattern dictionaries
+
+Bug #690398 &quot;Geometric issue with pattern&quot;
+The problem is the definition of the default co-ordinate space. When a Pattern is at the
+page level or drawn inside a form, we need to remove our 0.1 scaling in order to return
+to the 'default co-ordinate space'. However, when painted on a form nested inside a
+form, the default co-ordinate space is the parent form, so we don't need to undo
+the scaling. 
+
+This is the same problem addressed for shading dictionaries in revision 11347.
+
+</pre>
+<p>[base/gdevpdfv.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-27T121054.938774Z"></a>
+2010-08-27T12:10:54.938774Z ken</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : FormDepth not tracked properly.
+
+Part of the fix for Bug#690398. In order to know whether a pattern matrix should be
+converted to the top level CTM, or to an enclosing Form CTM, we track the Form Depth
+by noting when transparency groups begin and end (currently this is the only way to get
+a form output by pdfwrite).
+
+There was a problem with mask groups, because although pdf_begin_transparency_mask calls
+pdf_begin_transparency_group, pdf_end_transparency_mask doe snot call
+pdf_end_transparency_group. This resulted in the depth being incremented at the start
+of the mask, but not decremented at the end, so patterns could be emitted at the page
+level but with the CTM for a Form level, leading to missing content.
+
+Fixed by decrementing the FormDepth appropriately.
+ 
+</pre>
+<p>[base/gdevpdft.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-27T120246.764612Z"></a>
+2010-08-27T12:02:46.764612Z regression</strong></p>
+<blockquote>
+<pre>
+Added the ability to specify which regression test files will only be
+run during nightly regression testing (i.e. not for commit regression
+tests).  To skip files add them, one per line, to the nightly_only.lst
+file in the corresponding directory (creating this file if none exists).
+See tests_private/customer_tests/nightly_only.lst for an example.
+
+</pre>
+<p>[toolbin/localcluster/clustermaster.pl toolbin/localcluster/readlog.pl toolbin/localcluster/build.pl toolbin/localcluster/run.pl toolbin/localcluster/compare.pl]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-26T233428.641761Z"></a>
+2010-08-26T23:34:28.641761Z alexcher</strong></p>
+<blockquote>
+<pre>
+Implement rendering of /Squiggly annotation without an appearance stream.
+Bug 691572, customer 532.
+</pre>
+<p>[Resource/Init/pdf_draw.ps]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-26T154951.752958Z"></a>
+2010-08-26T15:49:51.752958Z ken</strong></p>
+<blockquote>
+<pre>
+Remove an unused local variable (gcc compiler warning)
+
+No differences expected
+</pre>
+<p>[base/gdevpdf.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-24T213729.611143Z"></a>
+2010-08-24T21:37:29.611143Z chrisl</strong></p>
+<blockquote>
+<pre>
+Merge a couple of corrections from the 9.00 tag.
+</pre>
+<p>[doc doc/History9.htm doc/News.htm doc/Details9.htm]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-24T203140.602213Z"></a>
+2010-08-24T20:31:40.602213Z chrisl</strong></p>
+<blockquote>
+<pre>
+Merge doc changes from 9.00 and bump version number to 9.01
+</pre>
+<p>[doc/Projects.htm man/dvipdf.1 man/ps2ascii.1 doc/Use.htm man/ps2epsi.1 doc/DLL.htm doc/Drivers.htm doc/Release.htm man/gs.1 doc/Ps2pdf.htm man/printafm.1 psi/psromfs.mak psi/dxmain.c toolbin/tests/check_dirs.py doc/Helpers.htm psi/dxmainc.c man/gsnd.1 man/pdfopt.1 base/version.mak Resource/Init/gs_init.ps man/ps2pdf.1 man/pdf2ps.1 doc/News.htm doc/Details8.htm doc/Make.htm doc/Unix-lpr.htm doc/Details9.htm doc/History1.htm doc/History2.htm man/wftopfa.1 doc/History3.htm doc/History4.htm doc/Details.htm man/ps2ps.1 doc/History5.htm doc/History6.htm doc/History7.htm doc/History8.htm doc/History9.htm doc/Readme.htm doc/Source.htm doc/Deprecated.htm /trunk/gs doc/Install.htm doc/Changes.htm doc/API.htm doc/Issues.htm man/pfbtopfa.1 doc/Commprod.htm doc/Xfonts.htm doc/Devices.htm doc/Language.htm psi/dmmain.c doc/Fonts.htm doc/Ps2ps2.htm man/pf2afm.1 doc/Develop.htm man/pdf2dsc.1 psi/dmmain.r doc/Psfiles.htm doc/Lib.htm doc/gs-vms.hlp man/font2c.1 doc/C-style.htm doc/Ps-style.htm man/gslp.1 doc/Ps2epsi.htm man/ps2pdfwr.1]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-24T134629.931715Z"></a>
+2010-08-24T13:46:29.931715Z ken</strong></p>
+<blockquote>
+<pre>
+Enhancement - Font copying (pdfwrite)
+
+Bug #691573 &quot; invalidfont in xshow&quot;. The file does in fact contain an invalidfont, the
+type 42 embedded fonts are defined by adding /.notdef to the CharStrings dictionary as 
+if it were the Encoding array. The key /.notdef is added 256 times with values ranging
+from 0 to 255. Of course only the last one is actually defined.
+
+This means that when we come to copy the /.notdef glyph for our font copy, the type 42
+GID is 255. However the font does not contain a glyph with GID 255, so the copy of the
+font fails.
+
+Although this is an illegal font, Adobe Acrobat Distiller does produce a PDF file from
+it. In order to duplicate this, code has been added when copying a font. If we fail to
+copy a glyph, and the glyph is /.notdef and the GID is non-zero, we try to copy a glyph
+with GID 0 instead. If that fails we error out, otherwise we use the glyph with GID 0.
+(TrueType font /.notdef glyph has GID 0)
+
+This works for the supplied file but is not, of course, a guaranteed solution since 
+another badly formed font may not contain a glyph with GID 0.
+
+No Expected Differences
+</pre>
+<p>[base/gxfcopy.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-24T122959.958275Z"></a>
+2010-08-24T12:29:59.958275Z chrisl</strong></p>
+<blockquote>
+<pre>
+In preparation for the release, add my username to real name mapping
+in AUTHORS, add an initially empty History9.htm, and update News.htm
+to point to it.
+
+</pre>
+<p>[doc/History9.htm doc/News.htm doc/AUTHORS]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-23T164947.032287Z"></a>
+2010-08-23T16:49:47.032287Z ken</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : errors in XMP metadata parsing
+
+Bug #691562 &quot;ERROR -15 closing pdfwrite device&quot;.
+
+This use of a DOCINFO pdfmark exposed 3 separate bugs in pdfwrite's handling of XMP
+metadata.
+
+1) Decoding an escaped PostScript string. Unescaped characters and octal escapes worked
+correctly, but non-octal escapes moved the index into the string one place too many.
+
+2) The escape '\b' (backspace) wasn't handled and returned incorrect data. Although not
+tested by this issue, the form feed (\f) also wasn't handled.
+
+3) When converting UTF16 data to UTF-8, the end of the destination (UTF-8) buffer was
+calculated incorrectly, causing a spurious buffer overrun error.
+
+The code now handles the missing escapes, does not advance the character position after
+decoding a non-octal escape and correctly defines the end of buffer. After this the
+Title string displays the same in Acrobat as the same pdfmark sent through Adobe
+Distiller.
+
+No expected differences as this only affects the document metadata.
+</pre>
+<p>[base/gdevpdfe.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-21T080346.086781Z"></a>
+2010-08-21T08:03:46.086781Z larsu</strong></p>
+<blockquote>
+<pre>
+Remove unnecessary version checks for libtiff in configure.ac.
+
+Since the local copy is preferred over the system's (see r11635), comparing the
+version of the two libraries is unnecessary.
+
+</pre>
+<p>[base/configure.ac]</p>
+</blockquote>
+
+<p><strong><a name="2010-08-20T160722.239869Z"></a>
+2010-08-20T16:07:22.239869Z chrisl</strong></p>
 <blockquote>
 <pre>
 When we produce a glyph uncached, and it's to be filled with a
@@ -181,20 +627,19 @@ cluster files, but improves a load of PDF 1.7 FTS jobs.
 
 Bug 691550
 
-Merge from trunk r11645
-
 </pre>
-<p>[/tags/ghostscript-9.00/psi/zfapi.c]</p>
+<p>[psi/zfapi.c]</p>
 </blockquote>
 
-<p><strong><a name="2010-08-18T100340.871603Z"></a>
-2010-08-18T10:03:40.871603Z Chris Liddell</strong></p>
+<p><strong><a name="2010-08-19T040105.188148Z"></a>
+2010-08-19T04:01:05.188148Z henrys</strong></p>
 <blockquote>
 <pre>
-Tag the ghostscript 9.00 release
-
+Fix bug #691564.  The assignment of the target device did not use the
+proper reference counting assignment procedure resulting in a lost
+reference to the target device.
 </pre>
-<p>[/tags/ghostscript-9.00]</p>
+<p>[base/gxpcmap.c]</p>
 </blockquote>
 
 <p><strong><a name="2010-08-17T143158.354019Z"></a>
