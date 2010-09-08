@@ -2688,7 +2688,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
  $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gsovrc_h) $(gxcmap_h) $(gscolor1_h)\
  $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h) $(gxdcconv_h) $(vdtrace_h)\
  $(gscolorbuffer_h) $(gsptype2_h) $(gxpcolor_h) $(gsptype1_h) $(gzcpath_h)\
- $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h) $(gxiclass_h) $(gximage_h)
+ $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h) $(gxiclass_h) $(gximage_h) $(gsmatrix_h)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\

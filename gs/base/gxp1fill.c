@@ -594,6 +594,8 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
     h = ymax - ymin;
     w = xmax - xmin;
 
+    if (h <= 0 || w <= 0) return;
+
     dx = (xmin + px) % tile_width;
     dy = (ymin + py) % tile_height;
 
@@ -766,14 +768,40 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, co
 
 }
 
+/* This version does a rect fill with the transparency object */
+int
+gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
+			     int w, int h, gx_device * dev,
+			     gs_logical_operation_t lop,
+			     const gx_rop_source_t * source)
+{
+    gx_color_tile *ptile = pdevc->colors.pattern.p_tile;
+    int code;
+    gs_int_point phase;
+    const gx_rop_source_t *rop_source = source;
+    gx_rop_source_t no_source;
 
+    if (ptile == 0)             /* null pattern */
+        return 0;
+    if (rop_source == NULL)
+        set_rop_no_source(rop_source, no_source, dev);
+
+    phase.x = pdevc->phase.x;
+    phase.y = pdevc->phase.y;
+
+    code = gx_trans_pattern_fill_rect(x, y, x+w, y+h, ptile, 
+                                    ptile->ttrans->fill_trans_buffer, phase);
+
+    return code;
+}
 
 /* This fills the transparency buffer rectangles with a pattern
    buffer that includes transparency */
 
 int
 gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile,
-                               gx_pattern_trans_t *fill_trans_buffer, gs_int_point phase)
+                               gx_pattern_trans_t *fill_trans_buffer, 
+                               gs_int_point phase)
 {
 
     tile_fill_trans_state_t state;
@@ -782,49 +810,44 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile
     if (ptile == 0)             /* null pattern */
         return 0;
 
-    /* Initialize the fill state */
+    /* Fit fill */
+    if ( (xmin | ymin) < 0 ) {
+        if ( xmin < 0 )
+	    xmin = 0;
+        if ( ymin < 0 )
+            ymin = 0;
+    }
 
     state.phase.x = phase.x;
     state.phase.y = phase.y;
 
     if (ptile->is_simple && ptile->cdev == NULL) {
-
         /* A simple case.  Tile is not clist and simple. */
-
         int px =
-            imod(-(int)fastfloor(ptile->step_matrix.tx - state.phase.x + 0.5),
+            imod(-(int)fastfloor(ptile->step_matrix.tx - phase.x + 0.5),
                   ptile->ttrans->width);
         int py =
-            imod(-(int)fastfloor(ptile->step_matrix.ty - state.phase.y + 0.5),
+            imod(-(int)fastfloor(ptile->step_matrix.ty - phase.y + 0.5),
                  ptile->ttrans->height);
-
+        
         tile_rect_trans_simple(xmin, ymin, xmax, ymax, px, py, ptile,
             fill_trans_buffer);
-
     } else {
-
         if (ptile->cdev == NULL) {
-
             /* No clist for the pattern, but a complex case
                This portion transforms the bounding box by the step matrix
                and does partial rect fills with tiles that fall into this
                transformed bbox */
-
             code = tile_by_steps_trans(&state, xmin, ymin, xmax-xmin, ymax-ymin,
                 fill_trans_buffer, ptile);
-
         } else {
-
             /* clist for the tile.  Currently this is not implemented
                for the case when the tile has transparency.  This is
                on the to do list.  Right now, all tiles with transparency
                are rendered into the pattern cache or into the clist
                */
             return_error(gs_error_unregistered);
-
         }
     }
-
 return(0);
-
 }

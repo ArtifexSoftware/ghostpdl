@@ -331,6 +331,7 @@ clist_begin_typed_image(gx_device * dev,
     gs_image_format_t format;
     gx_color_index colors_used = 0;
     int code;
+    bool mask_use_hl;
 
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
@@ -387,6 +388,10 @@ clist_begin_typed_image(gx_device * dev,
 	for (i = 1; i < pie->num_planes; ++i)
 	    varying_depths |= pie->plane_depths[i] != pie->plane_depths[0];
     }
+
+    mask_use_hl = 
+        masked && ( gx_dc_is_pattern1_color(pdcolor) || gx_dc_is_pure(pdcolor) ); 
+
     if (code < 0 ||
 	!USE_HL_IMAGES ||	/* Always use the default. */
 	(cdev->disable_mask & clist_disable_hl_image) || 
@@ -403,9 +408,10 @@ clist_begin_typed_image(gx_device * dev,
 	!(cdev->disable_mask & clist_disable_nonrect_hl_image ?
 	  (is_xxyy(&mat) || is_xyyx(&mat)) :
 	  image_matrix_ok_to_band(&mat)) ||
-	/****** CAN'T HANDLE NON-PURE COLORS YET ******/
-	(uses_color && !gx_dc_is_pure(pdcolor) && !gx_dc_is_pattern1_color_clist_based(pdcolor))
-	)
+	/* Only add in masks that are pure or pattern or 
+           pattern trans types */
+	(!mask_use_hl && uses_color && !gx_dc_is_pure(pdcolor) && 
+        !gx_dc_is_pattern1_color_clist_based(pdcolor)))
 	goto use_default;
     {
 	int bytes_per_plane, bytes_per_row;

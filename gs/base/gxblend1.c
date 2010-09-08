@@ -393,7 +393,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 #if RAW_DUMP
 
 	/* The group alpha should disappear */
-    dump_raw_buffer(y1-y0, width, tos->n_planes - tos->has_alpha_g,
+    dump_raw_buffer(y1-y0, width, tos->n_planes - tos->has_alpha_g - tos->has_shape,
                 nos_planestride, nos->rowstride, 
                 "Composed",composed_ptr);
 

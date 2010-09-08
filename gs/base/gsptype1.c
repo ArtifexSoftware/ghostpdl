@@ -509,12 +509,6 @@ gs_pattern1_get_pattern(const gs_pattern_instance_t *pinst)
 	&((const gs_pattern1_instance_t *)pinst)->template;
 }
 
-/* Check device color for Pattern Type 1. */
-bool
-gx_dc_is_pattern1_color(const gx_device_color *pdevc)
-{
-    return pdevc->type == &gx_dc_pattern;
-}
 
 /* Get transparency object pointer */
 void *
@@ -528,7 +522,7 @@ gx_pattern1_get_transptr(const gx_device_color *pdevc)
 bool
 gx_dc_is_pattern1_color_clist_based(const gx_device_color *pdevc)
 {
-    if (pdevc->type != &gx_dc_pattern)
+    if (!(gx_dc_is_pattern1_color(pdevc)))
 	return false;
     return gx_pattern_tile_is_clist(pdevc->colors.pattern.p_tile);
 }
@@ -537,7 +531,7 @@ gx_dc_is_pattern1_color_clist_based(const gx_device_color *pdevc)
 gs_id
 gs_dc_get_pattern_id(const gx_device_color *pdevc)
 {
-    if (pdevc->type != &gx_dc_pattern)
+    if (!(gx_dc_is_pattern1_color(pdevc)))
 	return gs_no_id;
     if (pdevc->colors.pattern.p_tile == NULL)
 	return gs_no_id;
@@ -969,6 +963,16 @@ const gx_device_color_type_t gx_dc_pattern = {
     gx_dc_pattern_get_nonzero_comps
 };
 
+const gx_device_color_type_t gx_dc_pattern_trans = {
+    &st_dc_pattern,
+    gx_dc_pattern_save_dc, gx_dc_pattern_get_dev_halftone,
+    gx_dc_ht_get_phase,
+    gx_dc_pattern_load, gx_dc_pat_trans_fill_rectangle,
+    gx_dc_default_fill_masked, gx_dc_pattern_equal,
+    gx_dc_pattern_write, gx_dc_pattern_read, 
+    gx_dc_pattern_get_nonzero_comps
+};
+
 extern_st(st_dc_ht_binary);
 gs_private_st_composite(st_dc_pure_masked, gx_device_color, "dc_pure_masked",
 			dc_masked_enum_ptrs, dc_masked_reloc_ptrs);
@@ -1207,13 +1211,13 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
 	}
 	if (ctile->id == id &&
 	    ctile->is_dummy == !internal_accum &&
-	    (pdevc->type != &gx_dc_pattern ||
+	    (!(gx_dc_is_pattern1_color(pdevc)) ||
 	     ctile->depth == dev->color_info.depth)
 	    ) {
 	    int px = pis->screen_phase[select].x;
 	    int py = pis->screen_phase[select].y;
 
-	    if (pdevc->type == &gx_dc_pattern) {	/* colored */
+	    if (gx_dc_is_pattern1_color(pdevc)) {	/* colored */
 		pdevc->colors.pattern.p_tile = ctile;
 #	    if 0 /* Debugged with Bug688308.ps and applying patterns after clist.
 		    Bug688308.ps has a step_matrix much bigger than pattern bbox;
@@ -1798,6 +1802,7 @@ gx_dc_pattern_read(
                 ptile->ttrans->rect.q.y = trans_info.rect.q.y;
                 ptile->ttrans->rowstride = trans_info.rowstride;
                 ptile->ttrans->width = trans_info.width;
+                pdevc->type = &gx_dc_pattern_trans;
 
        	        code = gx_dc_pattern_read_trans_buff(ptile, offset1, dp, left, mem);
 	        if (code < 0)
@@ -1872,3 +1877,35 @@ gx_dc_pattern_read(
     }
     return size - left;
 }
+
+/* Set the transparency pattern procs for filling rects.  */
+void
+gx_set_pattern_procs_trans(gx_device_color *pdevc)
+{
+    pdevc->type = &gx_dc_pattern_trans;
+    return;
+}
+
+/* Set the standard pattern procs for filling rects.  */
+void
+gx_set_pattern_procs_standard(gx_device_color *pdevc)
+{
+    pdevc->type = &gx_dc_pattern;
+    return;
+}
+
+/* Check if transparency pattern procs for filling rects.  */
+bool 
+gx_pattern_procs_istrans(gx_device_color *pdevc)
+{
+    return(pdevc->type == &gx_dc_pattern_trans);
+}
+
+/* Check device color for Pattern Type 1. */
+bool
+gx_dc_is_pattern1_color(const gx_device_color *pdevc)
+{
+    return (pdevc->type == &gx_dc_pattern || pdevc->type == &gx_dc_pattern_trans);
+}
+
+

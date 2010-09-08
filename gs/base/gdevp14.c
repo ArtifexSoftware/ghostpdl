@@ -52,6 +52,9 @@
 #include "gsicc_manage.h"
 #include "gsicc_cache.h"
 #include "gxclist.h"
+#include "gxiclass.h"
+#include "gximage.h"
+#include "gsmatrix.h"
 
 #if RAW_DUMP
 unsigned int global_index = 0;
@@ -67,6 +70,9 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath);
 static pdf14_mask_t *pdf14_mask_element_new(gs_memory_t *memory);
 static void pdf14_free_smask_color(pdf14_device * pdev); 
+static	int compute_group_device_int_rect(pdf14_device *pdev, gs_int_rect *rect, 
+                              const gs_rect *pbbox, gs_imager_state *pis);
+
 
 /* Functions for dealing with soft mask color */
 static int pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev);
@@ -144,6 +150,7 @@ static	dev_proc_fill_rectangle(pdf14_mark_fill_rectangle);
 static	dev_proc_fill_rectangle(pdf14_mark_fill_rectangle_ko_simple);
 static	dev_proc_fill_path(pdf14_fill_path);
 static  dev_proc_copy_mono(pdf14_copy_mono);
+static	dev_proc_fill_mask(pdf14_fill_mask);
 static	dev_proc_stroke_path(pdf14_stroke_path);
 static	dev_proc_begin_typed_image(pdf14_begin_typed_image);
 static	dev_proc_text_begin(pdf14_text_begin);
@@ -196,7 +203,7 @@ static	const gx_color_map_procs *
 	NULL,				/* copy_rop */\
 	pdf14_fill_path,		/* fill_path */\
 	pdf14_stroke_path,		/* stroke_path */\
-	NULL,				/* fill_mask */\
+	pdf14_fill_mask,		/* fill_mask */\
 	NULL,				/* fill_trapezoid */\
 	NULL,				/* fill_parallelogram */\
 	NULL,				/* fill_triangle */\
@@ -828,6 +835,10 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                 rendering_params.object_type = GS_IMAGE_TAG;
                 rendering_params.rendering_intent = gsPERCEPTUAL;
                 /* Request the ICC link for the transform that we will need to use */
+                /* Note that if pis is NULL we assume the same color space.  This
+                   is due to a call to pop the group from fill_mask when filling
+                   with a mask with transparency.  In that case, the parent
+                   and the child will have the same color space anyway */
                 icc_link = gsicc_get_link_profile(pis, dev, curr_icc_profile, 
                     nos->parent_color_info_procs->icc_profile,
                     &rendering_params, pis->memory, false);
@@ -1731,6 +1742,97 @@ pdf14_stroke_path(gx_device *dev, const	gs_imager_state	*pis,
 				  pcpath);
 }
 
+static	int
+pdf14_fill_mask(gx_device * orig_dev,
+		     const byte * data, int dx, int raster, gx_bitmap_id id,
+		     int x, int y, int w, int h,
+		     const gx_drawing_color * pdcolor, int depth,
+		     gs_logical_operation_t lop, const gx_clip_path * pcpath)
+{
+    gx_device *dev;
+    pdf14_device *p14dev = (pdf14_device *)orig_dev;
+    gx_device_clip cdev;
+    gx_color_tile *ptile = NULL;
+    int code = 0;
+    gs_int_rect group_rect;
+    gx_pattern_trans_t *fill_trans_buffer = NULL;
+    bool has_pattern_trans = false;
+
+    /* If we are doing a fill with a pattern that has a transparency then
+       go ahead and do a push and a pop of the transparency group */
+    if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)) {
+        if( gx_pattern1_get_transptr(pdcolor) != NULL) {
+            ptile = pdcolor->colors.pattern.p_tile;
+            /* Set up things in the ptile so that we get the proper 
+               blending etc */
+            /* Set the blending procs and the is_additive setting based 
+               upon the number of channels */
+            if (ptile->ttrans->n_chan-1 < 4) {
+                ptile->ttrans->blending_procs = &rgb_blending_procs;
+                ptile->ttrans->is_additive = true;
+            } else {
+                ptile->ttrans->blending_procs = &cmyk_blending_procs;
+                ptile->ttrans->is_additive = false;
+            }
+            /* Set the procs so that we use the proper filling method. */
+            gx_set_pattern_procs_trans((gx_device_color*) pdcolor);
+            /* Based upon if the tiles overlap pick the type of rect
+               fill that we will want to use */
+            if (ptile->has_overlap) {
+                /* This one does blending since there is tile overlap */
+                ptile->ttrans->pat_trans_fill = &tile_rect_trans_blend;
+            } else {
+                /* This one does no blending since there is no tile overlap */
+                ptile->ttrans->pat_trans_fill = &tile_rect_trans_simple;
+            }
+            /* Push the group */
+            group_rect.p.x = x;
+            group_rect.p.y = max(0,y);
+            group_rect.q.x = x + w;
+            group_rect.q.y = y + h;
+            if (!(w <= 0 || h <= 0)) {
+                code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
+	             1, 0, 255,255, ptile->ttrans->blending_mode, 0, 0, ptile->ttrans->n_chan-1);
+                /* Fix the reversed bbox. Not clear on why the push group does that */
+                p14dev->ctx->stack->bbox.p.x = p14dev->ctx->rect.p.x;
+                p14dev->ctx->stack->bbox.p.y = p14dev->ctx->rect.p.y;
+                p14dev->ctx->stack->bbox.q.x = p14dev->ctx->rect.q.x;
+                p14dev->ctx->stack->bbox.q.y = p14dev->ctx->rect.q.y;
+                /* Set up the output buffer information now that we have
+                   pushed the group */
+                fill_trans_buffer = new_pattern_trans_buff(p14dev->memory);
+                pdf14_get_buffer_information((gx_device *) p14dev, fill_trans_buffer);
+                /* Store this in the appropriate place in pdcolor.  This
+                   is released later after the mask fill */
+                ptile->ttrans->fill_trans_buffer = fill_trans_buffer;
+                has_pattern_trans = true;
+            }
+        }
+    }
+    if (pcpath != 0) {
+	gx_make_clip_device_on_stack(&cdev, pcpath, orig_dev);
+	dev = (gx_device *) & cdev;
+    } else
+	dev = orig_dev;
+    if (depth > 1) {
+	/****** CAN'T DO ROP OR HALFTONE WITH ALPHA ******/
+        code = (*dev_proc(dev, copy_alpha))
+	    (dev, data, dx, raster, id, x, y, w, h,
+	     gx_dc_pure_color(pdcolor), depth);
+    } else {
+        code = pdcolor->type->fill_masked(pdcolor, data, dx, raster, id,
+				          x, y, w, h, dev, lop, false);
+    }
+    if (has_pattern_trans) {
+            code = pdf14_pop_transparency_group(NULL, p14dev->ctx, p14dev->blend_procs, 
+                                p14dev->color_info.num_components, 
+                                p14dev->device_icc_profile, orig_dev);
+            gs_free_object(p14dev->memory, ptile->ttrans->fill_trans_buffer, 
+                           "pdf14_fill_mask");
+            ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
+    }
+    return code;
+}
 
 /* Used for filling rects when we are doing a fill with a pattern that
    has transparency */
@@ -1846,14 +1948,144 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         }
         /* free our buffer object */
         gs_free_object(pis->memory, fill_trans_buffer, "pdf14_tile_pattern_fill");
+        ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
         /* pop our transparency group which will force the blending */
         code = pdf14_pop_transparency_group(pis, p14dev->ctx, p14dev->blend_procs, 
-                            p14dev->color_info.num_components, pdev->device_icc_profile,
-                            pdev);
+                            p14dev->color_info.num_components, 
+                            p14dev->device_icc_profile, pdev);
     }
     return(code);
 }
 
+/* Imager render for pattern transparency filling.  This is just here to catch
+   the final flush, at which time we will pop the group and reset a few items */
+static	int
+pdf14_pattern_trans_render(gx_image_enum * penum, const byte * buffer, int data_x,
+		    uint w, int h, gx_device * dev)
+{
+    int code;
+    pdf14_device * p14dev = (pdf14_device *)dev;
+    const gs_imager_state * pis = penum->pis;
+    gx_device_color * pdcolor = (penum->icolor1);
+    gx_color_tile *ptile = pdcolor->colors.pattern.p_tile;
+
+    /* Pass along to the original renderer */
+    code = (ptile->ttrans->image_render)(penum, buffer, data_x, w, h, dev);
+    /* On our final time through here, go ahead and pop the transparency 
+       group and reset the procs in the device color. And free the fill
+       trans buffer object */
+    if ( h == 0 && ptile->trans_group_popped == false) {
+        if (pis->is_gstate) {
+            /* Used if we are on clist writing phase.  Would only
+               occur if we somehow failed in high level clist 
+               image writing */
+            code = gs_end_transparency_group((gs_state *) pis);
+        } else {
+            /* Used if we are on clist reading phase.  If we had high level
+               image in clist */
+            code = pdf14_pop_transparency_group(NULL, p14dev->ctx, p14dev->blend_procs, 
+                    p14dev->color_info.num_components, 
+                    p14dev->device_icc_profile, (gx_device *) p14dev);
+        }
+        pdcolor->colors.pattern.p_tile->trans_group_popped = true;
+        gs_free_object(pis->memory, ptile->ttrans->fill_trans_buffer, 
+                       "pdf14_pattern_trans_render");
+        ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
+    }
+    return(code);
+}
+
+/* This function is used to get things in place for filling a mask image
+   with a pattern that has transparency.  It is used by pdf14_begin_type_image
+   and pdf14_clist_begin_type_image */
+static int
+pdf14_patt_trans_image_fill(gx_device * dev, const gs_imager_state * pis,
+			   const gs_matrix *pmat, const gs_image_common_t *pic,
+			   const gs_int_rect * prect,
+			   const gx_drawing_color * pdcolor,
+			   const gx_clip_path * pcpath, gs_memory_t * mem,
+			   gx_image_enum_common_t ** pinfo)
+{
+    const gs_image_t *pim = (const gs_image_t *)pic;
+    pdf14_device * p14dev = (pdf14_device *)dev;
+    gx_color_tile *ptile;
+    int code = 0;
+    gs_int_rect group_rect;
+    gx_image_enum *penum;
+    gs_rect bbox_in, bbox_out;
+    gx_pattern_trans_t *fill_trans_buffer;
+
+    ptile = pdcolor->colors.pattern.p_tile;
+    /* Set up things in the ptile so that we get the proper 
+       blending etc */
+    /* Set the blending procs and the is_additive setting based 
+       upon the number of channels */
+    if (ptile->ttrans->n_chan-1 < 4) {
+        ptile->ttrans->blending_procs = &rgb_blending_procs;
+        ptile->ttrans->is_additive = true;
+    } else {
+        ptile->ttrans->blending_procs = &cmyk_blending_procs;
+        ptile->ttrans->is_additive = false;
+    }
+    /* Set the blending mode in the ptile based upon the current 
+       setting in the imager state */
+    ptile->ttrans->blending_mode = pis->blend_mode;
+    /* Based upon if the tiles overlap pick the type of rect
+       fill that we will want to use */
+    if (ptile->has_overlap) {
+        /* This one does blending since there is tile overlap */
+        ptile->ttrans->pat_trans_fill = &tile_rect_trans_blend;
+    } else {
+        /* This one does no blending since there is no tile overlap */
+        ptile->ttrans->pat_trans_fill = &tile_rect_trans_simple;
+    }
+    /* Set the procs so that we use the proper filling method. */
+    gx_set_pattern_procs_trans((gx_device_color*) pdcolor);
+    /* Let the imaging stuff get set up */
+    code = gx_default_begin_typed_image(dev, pis, pmat, pic, 
+                            prect, pdcolor,pcpath, mem, pinfo);
+    /* Now Push the group */
+    /* First apply the inverse of the image matrix to our 
+       image size to get our bounding box. */
+    bbox_in.p.x = 0;
+    bbox_in.p.y = 0;
+    bbox_in.q.x = pim->Width;
+    bbox_in.q.y = pim->Height;
+    code = gs_bbox_transform_inverse(&bbox_in, &(pim->ImageMatrix), 
+                                &bbox_out);
+    if (code < 0) return code;
+    /* That in turn will get hit by the matrix in the imager state */
+    code = compute_group_device_int_rect(p14dev, &group_rect, 
+                                            &bbox_out, pis);
+    if (!(pim->Width == 0 || pim->Height == 0)) {
+        code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
+	     1, 0, 255,255,
+	     pis->blend_mode, 0,
+	     0, ptile->ttrans->n_chan-1);
+        /* Fix the reversed bbox. Not clear on why the push group does that */
+        p14dev->ctx->stack->bbox.p.x = p14dev->ctx->rect.p.x;
+        p14dev->ctx->stack->bbox.p.y = p14dev->ctx->rect.p.y;
+        p14dev->ctx->stack->bbox.q.x = p14dev->ctx->rect.q.x;
+        p14dev->ctx->stack->bbox.q.y = p14dev->ctx->rect.q.y;
+        /* Set up the output buffer information now that we have
+           pushed the group */
+        fill_trans_buffer = new_pattern_trans_buff(pis->memory);
+        pdf14_get_buffer_information(dev, fill_trans_buffer);
+        /* Store this in the appropriate place in pdcolor.  This
+           is released later in pdf14_pattern_trans_render when
+           we are all done with the mask fill */
+        ptile->ttrans->fill_trans_buffer = fill_trans_buffer;
+        /* Change the renderer to handle this case so we can catch the
+           end.  We will then pop the group and reset the pdcolor proc.
+           Keep the base renderer also. */
+        penum = (gx_image_enum *) *pinfo;
+        ptile->ttrans->image_render = penum->render;
+        penum->render = &pdf14_pattern_trans_render;
+        ptile->trans_group_popped = false;
+    }
+    return code;
+}
+                
 static	int
 pdf14_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 			   const gs_matrix *pmat, const gs_image_common_t *pic,
@@ -1862,6 +2094,32 @@ pdf14_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 			   const gx_clip_path * pcpath, gs_memory_t * mem,
 			   gx_image_enum_common_t ** pinfo)
 {
+    const gs_image_t *pim = (const gs_image_t *)pic;
+    int code;
+
+    /* If we are filling an image mask with a pattern that has a transparency
+       then we need to do some special handling */
+    if (pim->ImageMask) {
+        if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)) {
+            if( gx_pattern1_get_transptr(pdcolor) != NULL){
+                /* If we are in a final run through here for this case then
+                   go ahead and push the transparency group.   Also, update 
+                   the proc for the pattern color so that we used the
+                   appropriate fill operation.  Note that the group
+                   is popped and the proc will be reset when we flush the 
+                   image data.  This is handled in a special pdf14 image 
+                   renderer which will end up installed for this case.
+                   Detect setting of begin_image to gx_no_begin_image.
+                   (final recursive call) */
+                if (dev->procs.begin_image != gx_default_begin_image) {
+                    code = pdf14_patt_trans_image_fill(dev, pis, pmat, pic,
+                                                prect, pdcolor, pcpath, mem,
+			                        pinfo);
+                    return code;
+                }
+            }
+        }
+    }
     pdf14_set_marking_params(dev, pis);
     return gx_default_begin_typed_image(dev, pis, pmat, pic, prect, pdcolor,
 					pcpath, mem, pinfo);
@@ -5832,16 +6090,19 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
 			   gx_image_enum_common_t ** pinfo)
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
-    int code;
+    int code = 0;
     gs_imager_state * pis_noconst = (gs_imager_state *)pis; /* Break 'const'. */
-
+    const gs_image_t *pim = (const gs_image_t *)pic;
+    gx_image_enum *penum;
+    gx_color_tile *ptile;
+    gs_rect bbox_in, bbox_out;
+    gs_transparency_group_params_t tgp;
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
      * blending parameters.  This is needed since the fill_rectangle routines
      * do not have access to the imager state.  Thus we have to pass any
      * changes explictly.
      */
-
     code = pdf14_clist_update_params(pdev, pis);
     if (code < 0)
 	return code;
@@ -5853,6 +6114,68 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
        more elegant. */
     pis_noconst->has_transparency = true;
     pis_noconst->trans_device = dev;
+
+    /* If we are filling an image mask with a pattern that has a transparency
+       then we need to do some special handling */
+    if (pim->ImageMask) {
+        if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)) {
+            if( gx_pattern1_get_transptr(pdcolor) != NULL){
+                 if (dev->procs.begin_image != pdf14_clist_begin_image) {
+                    ptile = pdcolor->colors.pattern.p_tile;
+                    /* Set up things in the ptile so that we get the proper 
+                       blending etc */
+                    /* Set the blending procs and the is_additive setting based 
+                       upon the number of channels */
+                    if (ptile->ttrans->n_chan-1 < 4) {
+                        ptile->ttrans->blending_procs = &rgb_blending_procs;
+                        ptile->ttrans->is_additive = true;
+                    } else {
+                        ptile->ttrans->blending_procs = &cmyk_blending_procs;
+                        ptile->ttrans->is_additive = false;
+                    }
+                    /* Set the blending mode in the ptile based upon the current 
+                       setting in the imager state */
+                    ptile->ttrans->blending_mode = pis->blend_mode;
+                    /* Set the procs so that we use the proper filling method. */
+                    /* Let the imaging stuff get set up */
+                    code = gx_default_begin_typed_image(dev, pis, pmat, pic, 
+                                            prect, pdcolor,pcpath, mem, pinfo);
+                    penum = (gx_image_enum *) *pinfo;
+                    /* Apply inverse of the image matrix to our 
+                       image size to get our bounding box. */
+                    bbox_in.p.x = 0;
+                    bbox_in.p.y = 0;
+                    bbox_in.q.x = pim->Width;
+                    bbox_in.q.y = pim->Height;
+                    code = gs_bbox_transform_inverse(&bbox_in, &(pim->ImageMatrix), 
+                                                &bbox_out);
+                    if (code < 0) return code;
+                    /* Set up a compositor action for pushing the group */
+                    if_debug0('v', "[v]Pushing special trans group for image\n");
+                    tgp.Isolated = true;
+                    tgp.Knockout = false;
+                    tgp.mask_id = 0;
+                    tgp.image_with_SMask = false;
+                    tgp.idle = false;
+                    tgp.iccprofile = NULL;
+                    tgp.icc_hashcode = 0;
+                    tgp.group_color_numcomps = ptile->ttrans->n_chan-1;
+                    tgp.ColorSpace = NULL;
+                    /* This will handle the compositor command */
+                    gs_begin_transparency_group((gs_state *) pis_noconst, &tgp, 
+                                                &bbox_out);
+                    ptile->ttrans->image_render = penum->render;
+                    penum->render = &pdf14_pattern_trans_render;
+                    ptile->trans_group_popped = false;
+                    pis_noconst->has_transparency = false;
+                    pis_noconst->trans_device = NULL;
+                    return code;
+                }
+            }
+        }
+    }
+    /* This basically tries high level images for clist. If that fails
+       then we do the default */
     code = gx_forward_begin_typed_image(dev, pis, pmat,
 			    pic, prect, pdcolor, pcpath, mem, pinfo);  
     if (code < 0){

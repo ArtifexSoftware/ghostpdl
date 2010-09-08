@@ -399,7 +399,7 @@ gs_end_transparency_group(gs_state *pgs)
 {
     gs_pdf14trans_params_t params = { 0 };
 
-    if (check_for_nontrans_pattern(pgs,
+    if (pgs->is_gstate && check_for_nontrans_pattern(pgs,
                   (unsigned char *)"gs_end_transparency_group")) {
         return(0);
     }

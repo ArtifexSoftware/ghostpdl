@@ -26,6 +26,7 @@
 #include "gxblend.h"
 #include "gxcpath.h"
 #include "gxdcolor.h"
+#include "gxiclass.h"
 
 #define RAW_PATTERN_DUMP 0
 
@@ -159,6 +160,7 @@ struct gx_pattern_trans_s {
 
     const gx_device *pdev14; 
     byte *transbytes;
+    gx_pattern_trans_t *fill_trans_buffer;  /* buffer to fill */
     gs_int_rect rect;
     int rowstride;
     int planestride;
@@ -169,19 +171,17 @@ struct gx_pattern_trans_s {
     const pdf14_nonseparable_blending_procs_t *blending_procs;
     bool is_additive;
     gs_blend_mode_t blending_mode;
-    void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
-            gx_pattern_trans_t *fill_trans_buffer);
+    void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px, 
+                            int py, const gx_color_tile *ptile,
+                            gx_pattern_trans_t *fill_trans_buffer);
+    int (* image_render)(gx_image_enum * penum, const byte * buffer, 
+                            int data_x, uint w, int h, gx_device * dev);
 };
 
-
-
 #define private_st_pattern_trans() /* in gxpcmap.c */\
-gs_private_st_ptrs2(st_pattern_trans, gx_pattern_trans_t, "gx_pattern_trans",\
+gs_private_st_ptrs3(st_pattern_trans, gx_pattern_trans_t, "gx_pattern_trans",\
 		    pattern_trans_enum_ptrs, pattern_trans_reloc_ptrs,\
-		    pdev14, transbytes)
-
-
-
+		    pdev14, transbytes, fill_trans_buffer)
 /*
  * Define a color tile, an entry in the rendered Pattern cache (and
  * eventually in the colored halftone cache).  Note that the depth is
@@ -220,6 +220,7 @@ struct gx_color_tile_s {
     byte pad[2];		/* structure members alignment. */
     /* The following is neither key nor value. */
     uint index;			/* the index of the tile within */
+    bool trans_group_popped;    /* Used to avoid multiple group pops in image mask fills */
     /* the cache (for GC) */
 };
 
@@ -313,19 +314,23 @@ bool gx_pattern_tile_is_clist(gx_color_tile *ptile);
 dev_proc_open_device(pattern_clist_open_device);
 
 /* Code to fill a pdf14 transparency rectangles with a pattern trans buffer object */
-
-int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile, 
-                               gx_pattern_trans_t *fill_trans_buffer, gs_int_point phase);
+int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, 
+                               gx_color_tile *ptile, 
+                               gx_pattern_trans_t *fill_trans_buffer, 
+                               gs_int_point phase);
 
 gx_pattern_trans_t* new_pattern_trans_buff(gs_memory_t *mem);
 
-void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
-                        gx_pattern_trans_t *fill_trans_buffer);
+void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, 
+                            int py, const gx_color_tile *ptile,
+                            gx_pattern_trans_t *fill_trans_buffer);
 
-/* This is used for the case when we may have overlapping tiles.  We need to get better detection for this as 
+/* This is used for the case when we may have overlapping tiles.  
+   We need to get better detection for this as 
    it would be best to avoid doing it if not needed. */
-void tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
-                        gx_pattern_trans_t *fill_trans_buffer);
+void tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, 
+                           int py, const gx_color_tile *ptile,
+                            gx_pattern_trans_t *fill_trans_buffer);
 
 /* File a colored pattern with white */
 int gx_erase_colored_pattern(gs_state *pgs);

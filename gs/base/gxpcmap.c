@@ -384,6 +384,7 @@ pattern_accum_open(gx_device * dev)
         padev->transbuff = gs_alloc_struct(mem,gx_pattern_trans_t,&st_pattern_trans,"pattern_accum_open(trans)");
         padev->transbuff->transbytes = NULL;
         padev->transbuff->pdev14 = NULL;
+        padev->transbuff->fill_trans_buffer = NULL;
 
     } else {
 
@@ -478,9 +479,9 @@ new_pattern_trans_buff(gs_memory_t *mem)
     result = gs_alloc_struct(mem, gx_pattern_trans_t, &st_pattern_trans, "new_pattern_trans_buff");
     result->transbytes = NULL;
     result->pdev14 = NULL;
+    result->fill_trans_buffer = NULL;
 
     return(result);
-
 }
 
 
@@ -738,16 +739,17 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
         if (ctile->ttrans != NULL) {
          
             if ( ctile->ttrans->pdev14 == NULL) {
-
                 /* This can happen if we came from the clist */
-                gs_free_object(mem,ctile->ttrans->transbytes,"free_pattern_cache_entry(transbytes)");
+                gs_free_object(mem,ctile->ttrans->transbytes,
+                               "free_pattern_cache_entry(transbytes)");
+                gs_free_object(mem,ctile->ttrans->fill_trans_buffer,
+                                "free_pattern_cache_entry(fill_trans_buffer)");
                 ctile->ttrans->transbytes = NULL;
-
             } else {
-
 	        dev_proc(ctile->ttrans->pdev14, close_device)((gx_device *)ctile->ttrans->pdev14);
                 ctile->ttrans->pdev14 = NULL;  /* should be ok due to pdf14_close */
                 ctile->ttrans->transbytes = NULL;  /* should be ok due to pdf14_close */
+                ctile->ttrans->fill_trans_buffer = NULL; /* This is always freed */
             }
 
             used += ctile->ttrans->n_chan*ctile->ttrans->planestride;

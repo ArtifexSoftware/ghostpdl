@@ -363,7 +363,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	is_mask = pim1->ImageMask;
 	if (is_mask) {
 	    /* If parameters are invalid, use the default implementation. */
-	    if (pdcolor->type != &gx_dc_pattern)
+	    if (!(gx_dc_is_pattern1_color(pdcolor)))
 		if (pim1->BitsPerComponent != 1 ||
 		    !((pim1->Decode[0] == 0.0 && pim1->Decode[1] == 1.0) ||
 		      (pim1->Decode[0] == 1.0 && pim1->Decode[1] == 0.0))
