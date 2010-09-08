@@ -200,7 +200,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
 			gs_pattern1_instance_t *pinst)
 {
     gs_pattern1_template_t *t = &pinst->template;
-    gs_matrix smat = ctm_only((gs_imager_state *)pinst->saved);
+    gs_matrix smat2 = ctm_only((gs_imager_state *)pinst->saved), smat;
     double scale_x = pdev->HWResolution[0] / 72.0;
     double scale_y = pdev->HWResolution[1] / 72.0;
     cos_dict_t *pcd = cos_stream_dict((cos_stream_t *)pres->object);
@@ -217,8 +217,8 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     bbox[3] = t->BBox.q.y;
     /* The graphics library assumes a shifted origin to provide 
        positive bitmap pixel indices. Compensate it now. */
-    smat.tx += pinst->step_matrix.tx;
-    smat.ty += pinst->step_matrix.ty;
+    smat2.tx += pinst->step_matrix.tx;
+    smat2.ty += pinst->step_matrix.ty;
     /*
      * In PDF, the Matrix is the transformation from the pattern space to
      * the *default* user coordinate space, not the current space.
@@ -227,12 +227,12 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
      * first form, and therefore we do *not* remove the resolution scaling.
      */
     if (pdev->FormDepth <= 1) {
-	smat.xx /= scale_x;
-	smat.xy /= scale_x;
-	smat.yx /= scale_y;
-	smat.yy /= scale_y;
-	smat.tx /= scale_x;
-	smat.ty /= scale_y;
+	gs_matrix scaled;
+
+	gs_make_scaling(1 / scale_x, 1 / scale_y, &scaled);
+	gs_matrix_multiply(&smat2, &scaled, &smat); 
+    } else {
+	smat = smat2;
     }
     if (any_abs(smat.tx) < 0.0001)  /* Noise. */
 	smat.tx = 0;
