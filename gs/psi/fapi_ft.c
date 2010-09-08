@@ -1104,8 +1104,8 @@ static int move_to(const FT_Vector *aTo, void *aObject)
      * be able to convert to GS co-ordinates properly.
      */
      /* FAPI now expects these coordinates in 32.32 */
-    p->x = aTo->x << 26;
-    p->y = aTo->y << 26;
+    p->x = ((int64_t)aTo->x) << 26;
+    p->y = ((int64_t)aTo->y) << 26;
 
     return p->path->moveto(p->path, p->x, p->y) ? -1 : 0;
 }
@@ -1115,8 +1115,8 @@ static int line_to(const FT_Vector *aTo, void *aObject)
     FF_path_info *p = (FF_path_info*)aObject;
 
     /* See move_to() above */
-    p->x = aTo->x << 26;
-    p->y = aTo->y << 26;
+    p->x = ((int64_t)aTo->x) << 26;
+    p->y = ((int64_t)aTo->y) << 26;
 
     return p->path->lineto(p->path, p->x, p->y) ? -1 : 0;
 }
@@ -1169,10 +1169,10 @@ static int cubic_to(const FT_Vector *aControl1, const FT_Vector *aControl2, cons
     p->x = aTo->x << 26;
     p->y = aTo->y << 26;
 
-    Control1x = aControl1->x << 26;
-    Control1y = aControl1->y << 26;
-    Control2x = aControl2->x << 26;
-    Control2y = aControl2->y << 26;
+    Control1x = ((int64_t)aControl1->x) << 26;
+    Control1y = ((int64_t)aControl1->y) << 26;
+    Control2x = ((int64_t)aControl2->x) << 26;
+    Control2y = ((int64_t)aControl2->y) << 26;
     return p->path->curveto(p->path, Control1x, Control1y, Control2x, Control2y, p->x, p->y) ? -1 : 0;
 
     p->x = aTo->x;

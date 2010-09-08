@@ -1083,17 +1083,27 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
 static bool using_transparency_pattern (gs_state *pgs)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
-    
+    int abits = 1;
+   
+    if (dev_proc(dev, get_alpha_bits)) {
+        abits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
+    }
+   
     return((!gs_color_writes_pure(pgs)) && dev->procs.begin_transparency_group != NULL && dev->procs.end_transparency_group != NULL);
 }
 
-static bool produce_outline_char (i_ctx_t *i_ctx_p, gs_show_enum *penum_s, gs_font_base *pbfont)
+static bool produce_outline_char (i_ctx_t *i_ctx_p, gs_show_enum *penum_s, gs_font_base *pbfont, int abits, gs_log2_scale_point *log2_scale)
 {
     gs_state *pgs = (gs_state *)penum_s->pis;
-
-    return(pgs->in_charpath || pbfont->PaintType != 0 ||
+    
+    log2_scale->x = 0;
+    log2_scale->y = 0;
+    
+    gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, abits, log2_scale);
+    
+    return (pgs->in_charpath || pbfont->PaintType != 0 ||
             (pgs->in_cachedevice != CACHE_DEVICE_CACHING && using_transparency_pattern ((gs_state *)penum_s->pis)) ||
-            (pgs->in_cachedevice != CACHE_DEVICE_CACHING && (penum_s->fapi_log2_scale.x > 0 || penum_s->fapi_log2_scale.y > 0)));
+            (pgs->in_cachedevice != CACHE_DEVICE_CACHING && (log2_scale->x > 0 || log2_scale->y > 0)));
 }
 
 static const FAPI_font ff_stub = {
@@ -1997,16 +2007,20 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
 
     if (penum == 0)
         return_error(e_undefined);
-    /* Compute the scale : */
-    I->use_outline = produce_outline_char(i_ctx_p, penum_s, pbfont);
+
+    I->use_outline = produce_outline_char(i_ctx_p, penum_s, pbfont, alpha_bits, &log2_scale);
     I->max_bitmap = pbfont->dir->ccache.upper;
     
+    /* Compute the scale : */
     if (!SHOW_IS(penum, TEXT_DO_NONE) && !I->use_outline) {
         gs_currentcharmatrix(igs, NULL, 1); /* make char_tm valid */
-        penum_s->fapi_log2_scale.x = -1;
-        gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, alpha_bits, &log2_scale);
         penum_s->fapi_log2_scale = log2_scale;
     }
+    else {
+        log2_scale.x = 0;
+        log2_scale.y = 0;
+    }
+
     scale = 1 << I->frac_shift;
 retry_oversampling:
     if (I->face.font_id != pbfont->id ||
