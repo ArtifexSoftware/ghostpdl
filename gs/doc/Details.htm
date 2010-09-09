@@ -8,9 +8,59 @@
 </head>
 <body>
 
+<p><strong><a name="2010-09-09T062654.427296Z"></a>
+2010-09-09T06:26:54.427296Z Chris Liddell</strong></p>
+<blockquote>
+<pre>
+Add a couple of &quot;.0&quot;s to ensure we get floating point division
+to arrive at intermediate values for the conic to cubic
+spline conversion.
+
+</pre>
+<p>[psi/fapi_ft.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-09T034512.738999Z"></a>
+2010-09-09T03:45:12.738999Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix for compiler complaint from commit of rev 11700</pre>
+<p>[base/gdevpdfb.c base/devs.mak]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-08T232036.969829Z"></a>
+2010-09-08T23:20:36.969829Z Michael Vrhel</strong></p>
+<blockquote>
+<pre>
+Fix to enable proper mask filling with patterns that have transparency.  Major change is in gdevp14.c where begin_type_image and mask_fill procedures now will (if we are filling with a pattern that has transparency) push a transparency group.  When we are finished processing the image, the group is popped which enables proper blending.  There remains an issue with a special file that Ken created when it is run in c-list mode.  A new bug will be opened for this issue.  Thanks to Ray for helping with this project and finding a bounding box issue in the creation of the transparency group during c-list reading.</pre>
+<p>[base/gdevp14.c base/gxclimag.c base/gsptype1.c base/lib.mak base/gxpcmap.c base/gdevpdfb.c base/gsptype1.h base/gstrans.c base/gxpcolor.h base/gxblend1.c base/gxp1fill.c base/gxp1impl.h base/gdevpdfi.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-08T162242.112334Z"></a>
+2010-09-08T16:22:42.112334Z Ken Sharp</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : incorrect pattern matrix calculation
+
+Bug #690504 &quot;ps2write does not work with asymmetric resolutions, like 600x1200dpi &quot;
+
+The problem was caused by frankly totally incorrect calculations when generating the 
+/Matrix for a pattern. Because we always see the CTM including the resolution scaling
+but need to output a matrix with this removed, we scale the CTM by the inverse of the
+resolution scaling.
+
+But the calculation simply divided the CTM through by the scale factors, which is
+totally incorrect and fails badly if the matrix involves rotation. The code now
+correctly creates and multiplies a scale matrix. Note, the order of multiplication is
+important here.
+
+No differences expected.
+</pre>
+<p>[base/gdevpdfv.c]</p>
+</blockquote>
 
 <p><strong><a name="2010-09-08T083015.885002Z"></a>
-2010-09-08T08:30:15.885002Z chrisl</strong></p>
+2010-09-08T08:30:15.885002Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 Slight refinement in the how the FAPI character generation detects we are
@@ -29,7 +79,7 @@ Bug 691588
 </blockquote>
 
 <p><strong><a name="2010-09-07T165136.404533Z"></a>
-2010-09-07T16:51:36.404533Z chrisl</strong></p>
+2010-09-07T16:51:36.404533Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 Add a further header to ifapi.h required for Unix/Linux builds, and
@@ -40,7 +90,7 @@ add the two additional headers to ifapi.h's dependencies.
 </blockquote>
 
 <p><strong><a name="2010-09-07T162646.989782Z"></a>
-2010-09-07T16:26:46.989782Z chrisl</strong></p>
+2010-09-07T16:26:46.989782Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 Pull in gp.h in ifapi.h for the int64_t type - it seems to be required on Windows.</pre>
@@ -48,7 +98,7 @@ Pull in gp.h in ifapi.h for the int64_t type - it seems to be required on Window
 </blockquote>
 
 <p><strong><a name="2010-09-07T153217.143998Z"></a>
-2010-09-07T15:32:17.143998Z chrisl</strong></p>
+2010-09-07T15:32:17.143998Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 Some fairly substantial changes to the FAPI code to get very high resolutions and
@@ -89,7 +139,7 @@ Bug 691588 - anti-aliasing
 </blockquote>
 
 <p><strong><a name="2010-09-06T101425.582663Z"></a>
-2010-09-06T10:14:25.582663Z ken</strong></p>
+2010-09-06T10:14:25.582663Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : string not being re-encoded
@@ -113,7 +163,7 @@ No differences expected, we obviously don't have a test case in the regression s
 </blockquote>
 
 <p><strong><a name="2010-09-03T154954.010009Z"></a>
-2010-09-03T15:49:54.010009Z ray</strong></p>
+2010-09-03T15:49:54.010009Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
 Fix for hang condition in the stream logic for the luratech JPXDecode.
@@ -123,7 +173,7 @@ We need to return EOFC with the final bit of data. Found with PDF 1.7 FTS.
 </blockquote>
 
 <p><strong><a name="2010-09-03T083132.767708Z"></a>
-2010-09-03T08:31:32.767708Z chrisl</strong></p>
+2010-09-03T08:31:32.767708Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 A Type 0 font dictionary in a PDF which contained a spurious FontDescriptor
@@ -142,7 +192,7 @@ Bug 691589
 </blockquote>
 
 <p><strong><a name="2010-09-03T072106.059509Z"></a>
-2010-09-03T07:21:06.059509Z ken</strong></p>
+2010-09-03T07:21:06.059509Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 typo, misplaced quote in revision 11684
@@ -151,7 +201,7 @@ typo, misplaced quote in revision 11684
 </blockquote>
 
 <p><strong><a name="2010-09-03T071933.619992Z"></a>
-2010-09-03T07:19:33.619992Z ken</strong></p>
+2010-09-03T07:19:33.619992Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Typo, misplaced quote in revision 11684
@@ -160,7 +210,7 @@ Typo, misplaced quote in revision 11684
 </blockquote>
 
 <p><strong><a name="2010-09-03T065244.087509Z"></a>
-2010-09-03T06:52:44.087509Z ken</strong></p>
+2010-09-03T06:52:44.087509Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 More Windows batch file madness. 
@@ -178,7 +228,7 @@ does have a trailing separator.
 </blockquote>
 
 <p><strong><a name="2010-09-02T155750.419060Z"></a>
-2010-09-02T15:57:50.419060Z ken</strong></p>
+2010-09-02T15:57:50.419060Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Remove a couple of duplicated font names form the embedding white list, and reduce the
@@ -187,7 +237,7 @@ list length #define appropriately.</pre>
 </blockquote>
 
 <p><strong><a name="2010-09-02T141539.116953Z"></a>
-2010-09-02T14:15:39.116953Z ken</strong></p>
+2010-09-02T14:15:39.116953Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Include the header file purely to get the prototype for the function, otherwise gcc
@@ -197,7 +247,7 @@ complains.
 </blockquote>
 
 <p><strong><a name="2010-09-02T135013.043694Z"></a>
-2010-09-02T13:50:13.043694Z ken</strong></p>
+2010-09-02T13:50:13.043694Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 pdfwrite enhancement
@@ -228,7 +278,7 @@ No differences expected as this is not tested in the current regression suite.
 </blockquote>
 
 <p><strong><a name="2010-09-01T184752.658366Z"></a>
-2010-09-01T18:47:52.658366Z chrisl</strong></p>
+2010-09-01T18:47:52.658366Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 Update the release notes, dates etc for a second 9.00 release candidate
@@ -237,7 +287,7 @@ Update the release notes, dates etc for a second 9.00 release candidate
 </blockquote>
 
 <p><strong><a name="2010-09-01T174918.515475Z"></a>
-2010-09-01T17:49:18.515475Z chrisl</strong></p>
+2010-09-01T17:49:18.515475Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 Update the release notes for the second 9.00 release candidate.
@@ -246,7 +296,7 @@ Update the release notes for the second 9.00 release candidate.
 </blockquote>
 
 <p><strong><a name="2010-09-01T135934.488373Z"></a>
-2010-09-01T13:59:34.488373Z ken</strong></p>
+2010-09-01T13:59:34.488373Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Silence some compiler warnings. 
@@ -264,7 +314,7 @@ parameters are not used in these functions.
 </blockquote>
 
 <p><strong><a name="2010-09-01T060851.456140Z"></a>
-2010-09-01T06:08:51.456140Z mvrhel</strong></p>
+2010-09-01T06:08:51.456140Z Michael Vrhel</strong></p>
 <blockquote>
 <pre>
 Fix to avoid issues with subtractive monochrome devices when we have transparency.  The gray device pdf14 prototype is used in this case.  VERY limited testing indicates that this fixes a crash with the cups device with its default settings and gives proper rendering.  More complete testing is required to ensure that proper blending is being performed and to investigate the other process color models that the cups device supports (e.g. cmy).  </pre>
@@ -272,7 +322,7 @@ Fix to avoid issues with subtractive monochrome devices when we have transparenc
 </blockquote>
 
 <p><strong><a name="2010-08-31T232115.562664Z"></a>
-2010-08-31T23:21:15.562664Z mvrhel</strong></p>
+2010-08-31T23:21:15.562664Z Michael Vrhel</strong></p>
 <blockquote>
 <pre>
 Revert back to having pdfwrite handle what to do with PS color spaces instead of using the V4 profile that gsicc_create generates.  Also, fix a few issues that existed with pdfwrites handling of those spaces, in particular adjustments are made for non D50 white points.  D50 is the required white point for the ICC profile.  About 189 pdfwrite test files will report differences.  I went through them with bmpcmp.    Since the profiles that were generated differ between gsicc_create and pdfwrite minor color differences exist.  In addition, there were some regressions that existed, which this revision will fix.  </pre>
@@ -280,7 +330,7 @@ Revert back to having pdfwrite handle what to do with PS color spaces instead of
 </blockquote>
 
 <p><strong><a name="2010-08-31T153427.935572Z"></a>
-2010-08-31T15:34:27.935572Z ken</strong></p>
+2010-08-31T15:34:27.935572Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : linewidth corruption when Tr is 1
@@ -305,7 +355,7 @@ and other metadata. I don't believe this is a real difference.
 </blockquote>
 
 <p><strong><a name="2010-08-28T220455.196791Z"></a>
-2010-08-28T22:04:55.196791Z alexcher</strong></p>
+2010-08-28T22:04:55.196791Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
 Implement rendering of /Highlight annotation. Acrobat always uses transparency
@@ -319,7 +369,7 @@ CATX7659.pdf, CATX8255.pdf, IA3Z4030.pdf, fts_32_3225.pdf
 </blockquote>
 
 <p><strong><a name="2010-08-27T135414.847396Z"></a>
-2010-08-27T13:54:14.847396Z ken</strong></p>
+2010-08-27T13:54:14.847396Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : faulty matrix transformations for Pattern dictionaries
@@ -338,7 +388,7 @@ This is the same problem addressed for shading dictionaries in revision 11347.
 </blockquote>
 
 <p><strong><a name="2010-08-27T121054.938774Z"></a>
-2010-08-27T12:10:54.938774Z ken</strong></p>
+2010-08-27T12:10:54.938774Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : FormDepth not tracked properly.
@@ -375,7 +425,7 @@ See tests_private/customer_tests/nightly_only.lst for an example.
 </blockquote>
 
 <p><strong><a name="2010-08-26T233428.641761Z"></a>
-2010-08-26T23:34:28.641761Z alexcher</strong></p>
+2010-08-26T23:34:28.641761Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
 Implement rendering of /Squiggly annotation without an appearance stream.
@@ -385,7 +435,7 @@ Bug 691572, customer 532.
 </blockquote>
 
 <p><strong><a name="2010-08-26T154951.752958Z"></a>
-2010-08-26T15:49:51.752958Z ken</strong></p>
+2010-08-26T15:49:51.752958Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Remove an unused local variable (gcc compiler warning)
@@ -396,7 +446,7 @@ No differences expected
 </blockquote>
 
 <p><strong><a name="2010-08-24T213729.611143Z"></a>
-2010-08-24T21:37:29.611143Z chrisl</strong></p>
+2010-08-24T21:37:29.611143Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 Merge a couple of corrections from the 9.00 tag.
@@ -405,7 +455,7 @@ Merge a couple of corrections from the 9.00 tag.
 </blockquote>
 
 <p><strong><a name="2010-08-24T203140.602213Z"></a>
-2010-08-24T20:31:40.602213Z chrisl</strong></p>
+2010-08-24T20:31:40.602213Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 Merge doc changes from 9.00 and bump version number to 9.01
@@ -414,7 +464,7 @@ Merge doc changes from 9.00 and bump version number to 9.01
 </blockquote>
 
 <p><strong><a name="2010-08-24T134629.931715Z"></a>
-2010-08-24T13:46:29.931715Z ken</strong></p>
+2010-08-24T13:46:29.931715Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Enhancement - Font copying (pdfwrite)
@@ -443,7 +493,7 @@ No Expected Differences
 </blockquote>
 
 <p><strong><a name="2010-08-24T122959.958275Z"></a>
-2010-08-24T12:29:59.958275Z chrisl</strong></p>
+2010-08-24T12:29:59.958275Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 In preparation for the release, add my username to real name mapping
@@ -455,7 +505,7 @@ to point to it.
 </blockquote>
 
 <p><strong><a name="2010-08-23T164947.032287Z"></a>
-2010-08-23T16:49:47.032287Z ken</strong></p>
+2010-08-23T16:49:47.032287Z Ken Sharp</strong></p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : errors in XMP metadata parsing
@@ -485,7 +535,7 @@ No expected differences as this only affects the document metadata.
 </blockquote>
 
 <p><strong><a name="2010-08-21T080346.086781Z"></a>
-2010-08-21T08:03:46.086781Z larsu</strong></p>
+2010-08-21T08:03:46.086781Z Lars Uebernickel</strong></p>
 <blockquote>
 <pre>
 Remove unnecessary version checks for libtiff in configure.ac.
@@ -498,7 +548,7 @@ version of the two libraries is unnecessary.
 </blockquote>
 
 <p><strong><a name="2010-08-20T160722.239869Z"></a>
-2010-08-20T16:07:22.239869Z chrisl</strong></p>
+2010-08-20T16:07:22.239869Z Chris Liddell</strong></p>
 <blockquote>
 <pre>
 When we produce a glyph uncached, and it's to be filled with a
@@ -6127,7 +6177,7 @@ Minor tweaks/improvements to the cluster code:
 
 Fixed bug which occasionally left jobs running on macpro.
 
-Clusterpush.pl when run with user==mvrhel now compares to icc_work branch.
+Clusterpush.pl when run with user==Michael Vrhel now compares to icc_work branch.
 
 Report all icc_work branch errors (not just new ones).
 
