@@ -1135,18 +1135,21 @@ static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObje
      * NB this code is funcitonally the same as the original, but I don't believe
      * the comment (below) to be what the code is actually doing....
      *
+     * NB2: the comment below was wrong, even though the code was correct(!!)
+     * The comment has now been amended.
+     *
      * Convert a quadratic spline to a cubic. Do this by changing the three points
-     * A, B and C to A, 1/3(B,A), 1/3(B,C), C - that is, the two cubic control points are
+     * A, B and C to A, 2/3(B,A), 2/3(B,C), C - that is, the two cubic control points are
      * a third of the way from the single quadratic control point to the end points. This
      * gives the same curve as the original quadratic.
      */
 
-    x = aTo->x / 64;
+    x = aTo->x / 64.0;
     p->x = ((int64_t)float2fixed(x)) << 24;
-    y = aTo->y / 64;
+    y = aTo->y / 64.0;
     p->y = ((int64_t)float2fixed(y)) << 24;
-    Controlx = aControl->x / 64;
-    Controly = aControl->y / 64;
+    Controlx = aControl->x / 64.0;
+    Controly = aControl->y / 64.0;
 
     Control1x = ((int64_t)float2fixed((x + Controlx * 2) / 3)) << 24;
     Control1y = ((int64_t)float2fixed((y + Controly * 2) / 3)) << 24;
