@@ -26,6 +26,7 @@
 #include "gxchar.h"
 #include "gdevpdtf.h"		/* Required to include gdevpdti.h */
 #include "gdevpdti.h"		/* For pdf_charproc_x_offset */
+#include "gsptype1.h"
 
 /* We need this color space type for constructing temporary color spaces. */
 extern const gs_color_space_type gs_color_space_type_Indexed;
