@@ -1127,7 +1127,6 @@ static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObje
     floatp x, y, Controlx, Controly;
     int64_t Control1x, Control1y, Control2x, Control2y;
     
-
     /* More complivated than above, we need to do arithmetic on the
      * co-ordinates, so we want them as floats and we will convert the
      * result into 16.16 fixed precision for FAPI
