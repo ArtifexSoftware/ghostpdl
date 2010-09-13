@@ -151,9 +151,9 @@ struct FAPI_path_s {
     void *olh; /* Client's data. */
     int shift;
     int gs_error;
-    int (*moveto   )(FAPI_path *, FracInt, FracInt);
-    int (*lineto   )(FAPI_path *, FracInt, FracInt);
-    int (*curveto  )(FAPI_path *, FracInt, FracInt, FracInt, FracInt, FracInt, FracInt);
+    int (*moveto   )(FAPI_path *, int64_t, int64_t);
+    int (*lineto   )(FAPI_path *, int64_t, int64_t);
+    int (*curveto  )(FAPI_path *, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t);
     int (*closepath)(FAPI_path *);
 };
 
@@ -196,6 +196,8 @@ struct FAPI_server_s {
     int frac_shift; /* The number of fractional bits in coordinates. */
     FAPI_face face;
     FAPI_font ff;
+    int max_bitmap;
+    bool use_outline;
     gs_matrix initial_FontMatrix; /* Font Matrix at the time the font is defined */
 				  /* Used to use the stored 'OrigFont' entry but */
 				  /* this did not change f a font was defined    */
