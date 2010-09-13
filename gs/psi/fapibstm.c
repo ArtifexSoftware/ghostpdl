@@ -284,6 +284,7 @@ static const i_plugin_descriptor bitstream_descriptor = {
     gs_fapibstm_finit
 };
 
+
 static const FAPI_server If0 = {
     {   &bitstream_descriptor
     },
