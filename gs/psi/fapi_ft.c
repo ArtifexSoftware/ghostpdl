@@ -30,7 +30,6 @@
 #include "gsmalloc.h"
 #include "gxfixed.h"
 #include "gdebug.h"
-#include "gxbitmap.h"
 
 /* FreeType headers */
 #include <ft2build.h>
@@ -40,10 +39,7 @@
 #include FT_SYSTEM_H
 #include FT_MODULE_H
 #include FT_TRIGONOMETRY_H
-#include FT_BBOX_H
 #include FT_OUTLINE_H
-#include FT_IMAGE_H
-
 
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
@@ -362,7 +358,7 @@ ft_to_gs_error(FT_Error a_error)
  */
 static FAPI_retcode
 load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
-	FAPI_metrics *a_metrics, FT_Glyph *a_glyph, bool a_bitmap, int max_bitmap)
+	FAPI_metrics *a_metrics, FT_Glyph *a_glyph, bool a_bitmap)
 {
     FT_Error ft_error = 0;
     FT_Error ft_error_fb = 1;
@@ -428,10 +424,10 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         /* maintain consistency better.  (FT_LOAD_NO_BITMAP) */
         a_fapi_font->char_data = saved_char_data;
         if (!a_fapi_font->is_type1)
-            ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP : FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP);
+            ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_BITMAP : FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP);
 	else {
             /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
-            ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+            ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
 	    if (ft_error == FT_Err_Invalid_File_Format) 
 		return index+1;
 	}
@@ -439,7 +435,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 
     if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index) {
         a_fapi_font->char_data = saved_char_data;
-        ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+        ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
     }
 
     /* If FT gives us an error, try to fall back to the notdef - if that doesn't work, we'll throw an error over to Ghostscript */
@@ -447,7 +443,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         a_fapi_font->char_data = (void *)".notdef";
         a_fapi_font->char_data_len = 7;
         
-        ft_error_fb = FT_Load_Glyph(ft_face, 0, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+        ft_error_fb = FT_Load_Glyph(ft_face, 0, a_bitmap ? FT_LOAD_MONOCHROME | FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
         
         a_fapi_font->char_data = saved_char_data;
         a_fapi_font->char_data_len = saved_char_data_len;
@@ -464,8 +460,6 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         FT_Long h;
         FT_Long hadv;
         FT_Long vadv;
-        
-        FT_BBox      cbox;
 
         /* In order to get the metrics in the form we need them, we have to remove the size scaling
          * the resolution scaling, and convert to points.
@@ -496,24 +490,6 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         a_metrics->v_escapement = vadv;
         a_metrics->em_x = ft_face->units_per_EM;
         a_metrics->em_y = ft_face->units_per_EM;
-        
-        
-        /* compute the control box, and grid fit it - lifted from ft_raster1_render() */
-        FT_Outline_Get_CBox(&ft_face->glyph->outline,&cbox);
-
-        w = (FT_UInt)(( cbox.xMax - cbox.xMin ) >> 6 );
-        h = (FT_UInt)(( cbox.yMax - cbox.yMin ) >> 6 );
-
-        if (a_bitmap == true) {
-            if ((bitmap_raster(w) * h) < max_bitmap && ft_face->glyph->format != FT_GLYPH_FORMAT_BITMAP && ft_face->glyph->format != FT_GLYPH_FORMAT_COMPOSITE) {
-               FT_Render_Mode  mode = FT_RENDER_MODE_MONO;
-               
-               ft_error = FT_Render_Glyph(ft_face->glyph, mode);           
-            }
-            else {
-                return(e_VMerror);
-            }
-        }
     }
 
     if ((!ft_error || !ft_error_fb) && a_glyph)
@@ -652,12 +628,10 @@ make_rotation(FT_Matrix *a_transform, const FT_Vector *a_vector)
  * The scaling part is used for setting the pixel size for hinting.
  */
 static void
-transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
+transform_decompose(FT_Matrix *a_transform, int xres, int yres, FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
 {
     double scalex, scaley, fact = 1.0;
     FT_Matrix ftscale_mat;
-    FT_UInt xres = *xresp;
-    FT_UInt yres = *yresp;
     
     scalex = hypot ((double)a_transform->xx, (double)a_transform->xy) / 65536.0;
     scaley = hypot ((double)a_transform->yx, (double)a_transform->yy) / 65536.0;
@@ -705,17 +679,7 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
             scalex *= fact;
         }
         
-        /* We also have to watch for variable overflow in Freetype.
-         * I've opted to fiddle with the resolution here, as it is
-         * almost always a larger value than the text size, and therefore
-         * we have more scope to manipulate it.
-         */
-        fact = 1;
-        while (((scalex * xres) / 72) > 256.0 && xres > 0 && yres > 0) {
-            xres /= 2;
-            yres /= 2;
-            fact *= 2;
-        }
+        
     }
     else
     {
@@ -734,27 +698,16 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
             scaley *= fact;
             scalex *= fact;
         }
-        
-        /* see above */
-        fact = 1;
-        while (((scaley * yres) / 72) > 256.0 && xres > 0 && yres > 0) {
-            xres /= 2;
-            yres /= 2;
-            
-            fact *= 2;
-        }
     }
-        
-    ftscale_mat.xx = (FT_Fixed)(((1.0 / scalex)) * 65536.0) * fact;
+    
+    ftscale_mat.xx = (FT_Fixed)(((1.0 / scalex)) * 65536.0);
     ftscale_mat.xy = 0;
     ftscale_mat.yx = 0;
-    ftscale_mat.yy = (FT_Fixed)(((1.0 / scaley)) * 65536.0) * fact;
+    ftscale_mat.yy = (FT_Fixed)(((1.0 / scaley)) * 65536.0);
     
     FT_Matrix_Multiply (a_transform, &ftscale_mat);
     memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));
         
-    *xresp = xres;
-    *yresp = yres;
     /* Return values ready scaled for FT */
     *a_x_scale = (FT_Fixed)(scalex * 64);
     *a_y_scale = (FT_Fixed)(scaley * 64);
@@ -917,8 +870,8 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
         /* Split the transform into scale factors and a rotation-and-shear
          * transform.
          */
-        transform_decompose(&face->ft_transform, &face->horz_res, &face->vert_res, &face->width, &face->height);
-        
+        transform_decompose(&face->ft_transform, face->horz_res, face->vert_res, &face->width, &face->height);
+		
         ft_error = FT_Set_Char_Size(face->ft_face, face->width, face->height,
                 face->horz_res, face->vert_res);
         
@@ -1026,7 +979,7 @@ static FAPI_retcode
 get_char_width(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
-    return load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->bitmap_glyph, a_server->max_bitmap > 0 ? true : false, a_server->max_bitmap);
+    return load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->bitmap_glyph, true);
 }
 
 static FAPI_retcode get_fontmatrix(FAPI_server *server, gs_matrix *m)
@@ -1050,7 +1003,7 @@ get_char_raster_metrics(FAPI_server *a_server, FAPI_font *a_font,
 	FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
-    FAPI_retcode error = load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->bitmap_glyph, true, a_server->max_bitmap);
+    FAPI_retcode error = load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->bitmap_glyph, true);
     return error;
 }
 
@@ -1083,14 +1036,14 @@ get_char_outline_metrics(FAPI_server *a_server, FAPI_font *a_font,
 	FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
-    return load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->outline_glyph, false, a_server->max_bitmap);
+    return load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->outline_glyph, false);
 }
 
 typedef struct FF_path_info_s
 {
     FAPI_path *path;
-    int64_t x;
-    int64_t y;
+    FracInt x;
+    FracInt y;
 } FF_path_info;
 
 static int move_to(const FT_Vector *aTo, void *aObject)
@@ -1103,9 +1056,8 @@ static int move_to(const FT_Vector *aTo, void *aObject)
      * FT returns a 26.6 format. Rescale to 16.16 so that FAPI will
      * be able to convert to GS co-ordinates properly.
      */
-     /* FAPI now expects these coordinates in 32.32 */
-    p->x = ((int64_t)aTo->x) << 26;
-    p->y = ((int64_t)aTo->y) << 26;
+    p->x = aTo->x << 10;
+    p->y = aTo->y << 10;
 
     return p->path->moveto(p->path, p->x, p->y) ? -1 : 0;
 }
@@ -1115,8 +1067,8 @@ static int line_to(const FT_Vector *aTo, void *aObject)
     FF_path_info *p = (FF_path_info*)aObject;
 
     /* See move_to() above */
-    p->x = ((int64_t)aTo->x) << 26;
-    p->y = ((int64_t)aTo->y) << 26;
+    p->x = aTo->x << 10;
+    p->y = aTo->y << 10;
 
     return p->path->lineto(p->path, p->x, p->y) ? -1 : 0;
 }
@@ -1124,9 +1076,8 @@ static int line_to(const FT_Vector *aTo, void *aObject)
 static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info*)aObject;
-    floatp x, y, Controlx, Controly;
-    int64_t Control1x, Control1y, Control2x, Control2y;
-    
+    floatp x, y, Controlx, Controly, Control1x, Control1y, Control2x, Control2y;
+
     /* More complivated than above, we need to do arithmetic on the
      * co-ordinates, so we want them as floats and we will convert the
      * result into 16.16 fixed precision for FAPI
@@ -1134,47 +1085,44 @@ static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObje
      * NB this code is funcitonally the same as the original, but I don't believe
      * the comment (below) to be what the code is actually doing....
      *
-     * NB2: the comment below was wrong, even though the code was correct(!!)
-     * The comment has now been amended.
-     *
      * Convert a quadratic spline to a cubic. Do this by changing the three points
-     * A, B and C to A, 2/3(B,A), 2/3(B,C), C - that is, the two cubic control points are
+     * A, B and C to A, 1/3(B,A), 1/3(B,C), C - that is, the two cubic control points are
      * a third of the way from the single quadratic control point to the end points. This
      * gives the same curve as the original quadratic.
      */
 
-    x = aTo->x / 64.0;
-    p->x = ((int64_t)float2fixed(x)) << 24;
-    y = aTo->y / 64.0;
-    p->y = ((int64_t)float2fixed(y)) << 24;
-    Controlx = aControl->x / 64.0;
-    Controly = aControl->y / 64.0;
+    x = aTo->x / 64;
+    p->x = float2fixed(x) << 8;
+    y = aTo->y / 64;
+    p->y = float2fixed(y) << 8;
+    Controlx = aControl->x / 64;
+    Controly = aControl->y / 64;
 
-    Control1x = ((int64_t)float2fixed((x + Controlx * 2) / 3)) << 24;
-    Control1y = ((int64_t)float2fixed((y + Controly * 2) / 3)) << 24;
-    Control2x = ((int64_t)float2fixed((x + Controlx * 2) / 3)) << 24;
-    Control2y = ((int64_t)float2fixed((y + Controly * 2) / 3)) << 24;
+    Control1x = float2fixed((x + Controlx * 2) / 3) << 8;
+    Control1y = float2fixed((y + Controly * 2) / 3) << 8;
+    Control2x = float2fixed((x + Controlx * 2) / 3) << 8;
+    Control2y = float2fixed((y + Controly * 2) / 3) << 8;
 
-    return p->path->curveto(p->path, Control1x,
-	    Control1y,
-	    Control2x,
-	    Control2y,
+    return p->path->curveto(p->path, (FracInt)Control1x,
+	    (FracInt)Control1y,
+	    (FracInt)Control2x,
+	    (FracInt)Control2y,
 	    p->x, p->y) ? -1 : 0;
 }
 
 static int cubic_to(const FT_Vector *aControl1, const FT_Vector *aControl2, const FT_Vector *aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info*)aObject;
-    int64_t Control1x, Control1y, Control2x, Control2y;
+    unsigned long Control1x, Control1y, Control2x, Control2y;
 
     /* See move_to() above */
-    p->x = aTo->x << 26;
-    p->y = aTo->y << 26;
+    p->x = aTo->x << 10;
+    p->y = aTo->y << 10;
 
-    Control1x = ((int64_t)aControl1->x) << 26;
-    Control1y = ((int64_t)aControl1->y) << 26;
-    Control2x = ((int64_t)aControl2->x) << 26;
-    Control2y = ((int64_t)aControl2->y) << 26;
+    Control1x = aControl1->x << 10;
+    Control1y = aControl1->y << 10;
+    Control2x = aControl2->x << 10;
+    Control2y = aControl2->y << 10;
     return p->path->curveto(p->path, Control1x, Control1y, Control2x, Control2y, p->x, p->y) ? -1 : 0;
 
     p->x = aTo->x;
@@ -1253,8 +1201,6 @@ static const FAPI_server TheFreeTypeServer =
     16, /* frac_shift */
     {gs_no_id},
     {0},
-    0,
-    false,
     {1, 0, 0, 1, 0, 0},
     ensure_open,
     get_scaled_font,

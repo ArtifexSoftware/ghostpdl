@@ -14,8 +14,6 @@
 /* $Id$ */
 /* Font API client */
 
-#include "stdlib.h" /* abs() */
-
 #include "memory_.h"
 #include "math_.h"
 #include "stat_.h" /* include before definition of esp macro, bug 691123 */
@@ -69,7 +67,7 @@ typedef struct FAPI_outline_handler_s {
     bool close_path, need_close; /* This stuff fixes unclosed paths being rendered with UFST */
 } FAPI_outline_handler;
 
-static inline int64_t import_shift(int64_t x, int64_t n)
+static inline int import_shift(int x, int n)
 {   return n > 0 ? x << n : x >> -n;
 }
 
@@ -91,61 +89,32 @@ static int add_closepath(FAPI_path *I)
     return I->gs_error;
 }
 
-static int add_move(FAPI_path *I, int64_t x, int64_t y)
+static int add_move(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
-    x = import_shift(x, I->shift) + olh->x0;
-    y = -import_shift(y, I->shift) + olh->y0;
-    if (x > (int64_t)max_fixed || y > (int64_t)max_fixed || x < -(int64_t)max_fixed || y < -(int64_t)max_fixed) {
-        I->gs_error = e_rangecheck;
-    }
-    else {
-
-        if (olh->need_close && olh->close_path)
-            if ((I->gs_error = add_closepath(I)) < 0)
-                return I->gs_error;
-        olh->need_close = false;
-        I->gs_error = gx_path_add_point(olh->path, (fixed)x, (fixed)y);
-    }
+    if (olh->need_close && olh->close_path)
+        if ((I->gs_error = add_closepath(I)) < 0)
+	    return I->gs_error;
+    olh->need_close = false;
+    I->gs_error = gx_path_add_point(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0);
     return I->gs_error;
 }
 
-static int add_line(FAPI_path *I, int64_t x, int64_t y)
+static int add_line(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
 
-    x = import_shift(x, I->shift) + olh->x0;
-    y = -import_shift(y, I->shift) + olh->y0;
-    if (x > (int64_t)max_fixed || y > (int64_t)max_fixed || x < -(int64_t)max_fixed || y < -(int64_t)max_fixed) {
-        I->gs_error = e_rangecheck;
-    }
-    else {
-
-        olh->need_close = true;
-        I->gs_error =  gx_path_add_line_notes(olh->path, (fixed)x, (fixed)y, 0);
-    }
+    olh->need_close = true;
+    I->gs_error =  gx_path_add_line_notes(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0, 0);
     return I->gs_error;
 }
 
-static int add_curve(FAPI_path *I, int64_t x0, int64_t y0, int64_t x1, int64_t y1, int64_t x2, int64_t y2)
+static int add_curve(FAPI_path *I, FracInt x0, FracInt y0, FracInt x1, FracInt y1, FracInt x2, FracInt y2)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
-    
-    x0 = import_shift(x0, I->shift) + olh->x0;
-    y0 = -import_shift(y0, I->shift) + olh->y0;
-    x1 = import_shift(x1, I->shift) + olh->x0;
-    y1 = -import_shift(y1, I->shift) + olh->y0;
-    x2 = import_shift(x2, I->shift) + olh->x0;
-    y2 = -import_shift(y2, I->shift) + olh->y0;
 
-    if (x0 > (int64_t)max_fixed || y0 > (int64_t)max_fixed || x0 < -(int64_t)max_fixed || y0 < -(int64_t)max_fixed ||
-        x1 > (int64_t)max_fixed || y1 > (int64_t)max_fixed || x1 < -(int64_t)max_fixed || y1 < -(int64_t)max_fixed ||
-        x2 > (int64_t)max_fixed || y2 > (int64_t)max_fixed || x2 < -(int64_t)max_fixed || y2 < -(int64_t)max_fixed) {
-        I->gs_error = e_rangecheck;
-    }
-    else {
-
-        olh->need_close = true;
-        I->gs_error = gx_path_add_curve_notes(olh->path, (fixed)x0, (fixed)y0, (fixed)x1, (fixed)y1, (fixed)x2, (fixed)y2, 0);
-    }
+    olh->need_close = true;
+    I->gs_error =   gx_path_add_curve_notes(olh->path, import_shift(x0, I->shift) + olh->x0, -import_shift(y0, I->shift) + olh->y0,
+					      import_shift(x1, I->shift) + olh->x0, -import_shift(y1, I->shift) + olh->y0,
+					      import_shift(x2, I->shift) + olh->x0, -import_shift(y2, I->shift) + olh->y0, 0);
     return I->gs_error;
 }
 
@@ -1092,20 +1061,6 @@ static bool using_transparency_pattern (gs_state *pgs)
     return((!gs_color_writes_pure(pgs)) && dev->procs.begin_transparency_group != NULL && dev->procs.end_transparency_group != NULL);
 }
 
-static bool produce_outline_char (i_ctx_t *i_ctx_p, gs_show_enum *penum_s, gs_font_base *pbfont, int abits, gs_log2_scale_point *log2_scale)
-{
-    gs_state *pgs = (gs_state *)penum_s->pis;
-    
-    log2_scale->x = 0;
-    log2_scale->y = 0;
-    
-    gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, abits, log2_scale);
-    
-    return (pgs->in_charpath || pbfont->PaintType != 0 ||
-            (pgs->in_cachedevice != CACHE_DEVICE_CACHING && using_transparency_pattern ((gs_state *)penum_s->pis)) ||
-            (pgs->in_cachedevice != CACHE_DEVICE_CACHING && (log2_scale->x > 0 || log2_scale->y > 0)));
-}
-
 static const FAPI_font ff_stub = {
     0, /* server_font_data */
     0, /* need_decrypt */
@@ -1783,7 +1738,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
     gs_state *pgs;
     gx_device *dev1;
     gx_device *dev;
-    const int import_shift_v = _fixed_shift - 32; /* we always 32.32 values for the outline interface now */
+    const int import_shift_v = _fixed_shift - I->frac_shift;
     FAPI_raster rast;
     int code;
     extern_st(st_gs_show_enum);
@@ -1818,7 +1773,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 	    return code;
     } else {
         int code = I->get_char_raster(I, &rast);
-        if (!SHOW_IS(penum, TEXT_DO_NONE) && I->use_outline) {
+        if (!SHOW_IS(penum, TEXT_DO_NONE) && (code == e_limitcheck || pbfont->PaintType || (using_transparency_pattern (pgs) && pgs->in_cachedevice != CACHE_DEVICE_CACHING))) {
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
@@ -1837,15 +1792,9 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
 		gs_setlinewidth(pgs, lw);
 		if (code < 0)
 		    return code;
-            } else {
-                gs_in_cache_device_t in_cachedevice = pgs->in_cachedevice;
-                pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
-                
+            } else
                 if ((code = gs_fill(pgs)) < 0)
 		    return code;
-                
-                pgs->in_cachedevice = in_cachedevice;
-            }
             if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
 		return code;
         } else {
@@ -1971,16 +1920,14 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     op_proc_t exec_cont = 0;
     int code;
     bool align_to_pixels = gs_currentaligntopixels(pbfont->dir);
-    bool switch_back;
+    bool use_outline, switch_back;
     enum {
 	SBW_DONE,
 	SBW_SCALE,
 	SBW_FROM_RENDERER
     } sbw_state = SBW_SCALE;
-    gs_in_cache_device_t in_cachedevice;
-    
-    I->use_outline = false;
-    
+    int in_cachedevice;
+
     I->ff = ff_stub;
     if(bBuildGlyph && !bCID) {
         check_type(*op, t_name);
@@ -2007,12 +1954,10 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
 
     if (penum == 0)
         return_error(e_undefined);
-
-    I->use_outline = produce_outline_char(i_ctx_p, penum_s, pbfont, alpha_bits, &log2_scale);
-    I->max_bitmap = pbfont->dir->ccache.upper;
-    
     /* Compute the scale : */
-    if (!SHOW_IS(penum, TEXT_DO_NONE) && !I->use_outline) {
+    use_outline = (igs->in_charpath || pbfont->PaintType != 0 || (using_transparency_pattern ((gs_state *)penum_s->pis) && igs->in_cachedevice != CACHE_DEVICE_CACHING));
+    
+    if (!SHOW_IS(penum, TEXT_DO_NONE) && !use_outline) {
         gs_currentcharmatrix(igs, NULL, 1); /* make char_tm valid */
         penum_s->fapi_log2_scale = log2_scale;
     }
@@ -2453,20 +2398,9 @@ retry_oversampling:
 
     /* Take metrics from font : */
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
-        code = I->get_char_width(I, &I->ff, &cr, &metrics);
-        /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
-         * so it's worth retrying as an outline glyph
-         */
-        if (code == e_VMerror && I->use_outline == false) {
-            I->max_bitmap = 0;
-            I->use_outline = true;
-            goto retry_oversampling;
-        }
-
-	if ((code = renderer_retcode(i_ctx_p, I, code)) < 0) {
+	if ((code = renderer_retcode(i_ctx_p, I, I->get_char_width(I, &I->ff, &cr, &metrics))) < 0)
 	    return code;
-        }
-    } else if (I->use_outline) {
+    } else if (use_outline) {
         if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &I->ff, &cr, &metrics))) < 0)
 	    return code;
     } else {
@@ -2485,14 +2419,6 @@ retry_oversampling:
 	    } else
 		return e_invalidfont;
 	}
-        
-        /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
-         * so it's worth retrying as an outline glyph
-         */
-        if (code == e_VMerror) {
-            I->use_outline = true;
-            goto retry_oversampling;
-        }
 
 	if (code == e_limitcheck) {
             if(log2_scale.x > 0 || log2_scale.y > 0) {
@@ -2616,7 +2542,7 @@ retry_oversampling:
          */
          sbwp = NULL;
         
-        if (I->use_outline) {
+        if (use_outline) {
            /* HACK!!
             * The decision about whether to cache has already been
             * we need to prevent it being made again....
