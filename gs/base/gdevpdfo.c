@@ -1301,7 +1301,7 @@ cos_stream_release(cos_object_t *pco, client_name_t cname)
     cos_dict_release(pco, cname);
 }
 
-static void hash_cos_stream(gs_memory_t *mem, const cos_object_t *pco, FILE *sfile, uint64_t *hash)
+static int hash_cos_stream(gs_memory_t *mem, const cos_object_t *pco, FILE *sfile, uint64_t *hash)
 {
     const cos_stream_t *pcs = (const cos_stream_t *)pco;
     cos_stream_piece_t *pcsp = pcs->pieces;
@@ -1325,6 +1325,7 @@ static void hash_cos_stream(gs_memory_t *mem, const cos_object_t *pco, FILE *sfi
     }
     fseek(sfile, position_save, SEEK_SET);
     gs_md5_finish(&md5, (gs_md5_byte_t *)hash);
+    return 0;
 }
 
 static int
