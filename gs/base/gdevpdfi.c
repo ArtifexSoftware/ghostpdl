@@ -664,7 +664,10 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	        convert_to_process_colors = true;
         }
     }
-    if (image[0].pixel.ColorSpace != NULL) { /* Not an imagemask. */
+    if (image[0].pixel.ColorSpace != NULL && !(context == PDF_IMAGE_TYPE3_MASK)) { 
+	/* Not an imagemask. Also not a SMask, we carefully made a Gray space
+	 * for SMasks above, do not destroy it now!
+	 */
 	if ((pdev->params.ColorConversionStrategy == ccs_Gray &&
 	     !check_image_color_space(&image[0].pixel, gs_color_space_index_DeviceGray)) ||
 	    (pdev->params.ColorConversionStrategy == ccs_sRGB &&
