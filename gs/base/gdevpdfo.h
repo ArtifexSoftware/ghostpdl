@@ -34,6 +34,7 @@
  */
 
 #include "gsparam.h"
+#include "smd5.h"
 
 /* Define some needed abstract types. */
 #ifndef gx_device_pdf_DEFINED
@@ -114,6 +115,9 @@ struct otype_s {\
     byte written;		/* see above */\
     long length;                /* only for stream objects */\
     stream *input_strm;		/* only for stream objects */\
+    gs_md5_state_t md5;         /* only for stream objects */\
+    int md5_valid;              /* only for stream objects */\
+    byte hash[16];		/* only for stream objects */\
     /* input_strm is introduced recently for pdfmark. */\
     /* Using this field, psdf_binary_writer_s may be simplified. */\
 }

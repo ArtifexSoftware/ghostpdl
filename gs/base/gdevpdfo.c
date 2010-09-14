@@ -1279,6 +1279,9 @@ cos_stream_alloc(gx_device_pdf *pdev, client_name_t cname)
 	gs_alloc_struct(mem, cos_stream_t, &st_cos_object, cname);
 
     cos_object_init((cos_object_t *)pcs, pdev, &cos_stream_procs);
+    pcs->md5_valid = 0;
+    gs_md5_init(&pcs->md5);
+    memset(&pcs->hash, 0x00, 16);
     return pcs;
 }
 
@@ -1298,12 +1301,37 @@ cos_stream_release(cos_object_t *pco, client_name_t cname)
     cos_dict_release(pco, cname);
 }
 
+static void hash_cos_stream(gs_memory_t *mem, const cos_object_t *pco, FILE *sfile, uint64_t *hash)
+{
+    const cos_stream_t *pcs = (const cos_stream_t *)pco;
+    cos_stream_piece_t *pcsp = pcs->pieces;
+    byte *ptr;
+    long position_save = ftell(sfile);
+    int result;
+    gs_md5_state_t md5;
+
+    gs_md5_init(&md5);
+    
+    while(pcsp) {
+	ptr = gs_malloc(mem, sizeof (byte), pcsp->size, "hash_cos_stream");
+	fseek(sfile, pcsp->position, SEEK_SET);
+	if (fread(ptr, 1, pcsp->size, sfile) != pcsp->size) {
+	    result = gs_note_error(gs_error_ioerror);
+	    return result;
+	}
+	gs_md5_append(&md5, ptr, pcsp->size);
+	gs_free(mem, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
+	pcsp = pcsp->next;
+    }
+    fseek(sfile, position_save, SEEK_SET);
+    gs_md5_finish(&md5, (gs_md5_byte_t *)hash);
+}
+
 static int
 cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
 {
     const cos_stream_t *pcs0 = (const cos_stream_t *)pco0;
     const cos_stream_t *pcs1 = (const cos_stream_t *)pco1;
-    bool result = false;
     int code;
 
     code = cos_dict_equal(pco0, pco1, pdev);
@@ -1311,45 +1339,16 @@ cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_p
 	return code;
     if (!code)
 	return false;
-    {
-	/* fixme : this assumes same segmentation for both streams.
-	   In general it is not true. */
-	FILE *sfile = pdev->streams.file;
-	cos_stream_piece_t *pcsp0 = pcs0->pieces, *pcsp1 = pcs1->pieces;
-	long position_save = ftell(sfile);
-
-	for (; pcsp0 && pcsp1; pcsp0 = pcsp0->next, pcsp1 = pcsp1->next) {
-	    long position0 = pcsp0->position;
-	    long position1 = pcsp1->position;
-	    uint size0 = pcsp0->size;
-	    uint size1 = pcsp1->size;
-	    byte buf0[512], buf1[sizeof(buf0)];
-
-	    if (size0 != size1)
-		goto notequal;
-	    for(; size0; position0 += size1, position1 += size1, size0 -= size1) {
-		size1 = min(sizeof(buf0), size0);
-		fseek(sfile, position0, SEEK_SET);
-		if (fread(buf0, 1, size1, sfile) != size1) {
-		    result = gs_note_error(gs_error_ioerror);
-		    goto notequal;
-		}
-		fseek(sfile, position1, SEEK_SET);
-		if (fread(buf1, 1, size1, sfile) != size1) {
-		    result = gs_note_error(gs_error_ioerror);
-		    goto notequal;
-		}
-		if (memcmp(buf0, buf1, size1))
-		    goto notequal;
-	    }
-	}
-	if (pcsp0 || pcsp1)
-	    goto notequal;
-	result = true;
-notequal:
-	fseek(sfile, position_save, SEEK_SET);
-	return result;
+    if (!pco0->md5_valid) {
+	hash_cos_stream(pdev->memory, pco0, pdev->streams.file, (uint64_t *)&pcs0->hash);
     }
+    if (!pco1->md5_valid) {
+	hash_cos_stream(pdev->memory, pco1, pdev->streams.file, (uint64_t *)&pcs1->hash);
+    }
+    if (memcmp(&pcs0->hash, &pcs1->hash, 16) == 0)
+	return true;
+    return false;
+
 }
 
 /* Find the total length of a stream. */
@@ -1554,6 +1553,7 @@ cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
     int code;
 
     stream_write(target, pr->ptr + 1, count);
+    gs_md5_append(&ss->pcs->md5, pr->ptr + 1, count);
     pr->ptr = pr->limit;
     sflush(target);
     code = cos_stream_add(ss->pcs, (uint)(stell(pdev->streams.strm) - start_pos));
@@ -1567,6 +1567,8 @@ cos_write_stream_close(stream *s)
 
     sflush(s);
     status = s_close_filters(&ss->target, ss->pdev->streams.strm);
+    gs_md5_finish(&ss->pcs->md5, (gs_md5_byte_t *)ss->pcs->hash);
+    ss->pcs->md5_valid = 1;
     return (status < 0 ? status : s_std_close(s));
 }
 
@@ -1592,6 +1594,9 @@ cos_write_stream_alloc(cos_stream_t *pcs, gx_device_pdf *pdev,
 	goto fail;
     ss->template = &cos_write_stream_template;
     ss->pcs = pcs;
+    ss->pcs->md5_valid = 0;
+    gs_md5_init(&ss->pcs->md5);
+    memset(&ss->pcs->hash, 0x00, 16);
     ss->pdev = pdev;
     ss->s = s;
     ss->target = pdev->streams.strm; /* not s->strm */
