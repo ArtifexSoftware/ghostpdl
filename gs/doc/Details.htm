@@ -8,6 +8,85 @@
 </head>
 <body>
 
+<p><strong><a name="2010-09-13T150940.310889Z"></a>
+2010-09-13T15:09:40.310889Z Chris Liddell</strong></p>
+<blockquote>
+<pre>
+Commit the missing header changes from the previous checkin.
+</pre>
+<p>[psi/ifapi.h]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-13T145346.788657Z"></a>
+2010-09-13T14:53:46.788657Z Chris Liddell</strong></p>
+<blockquote>
+<pre>
+Another revision of the FAPI code. Due to a problem in Freetype which needs
+further investigation, we cannot produce an outline, then decide to produce
+a bitmap if it is small enough. We work around this by producing a bitmap,
+and if it is too large, dispose of it, and retry with an outline, thus although
+we still risk larger than ideal memory use, it is very short lived. A glyph
+too large to be cached (for which we will now usually use an outline) does
+not suffer from the Freetype issue mentioned above.
+
+The maximum allowable bit for Freetype to produce is now 1.5 x the maximum
+cache bitmap as set in the Postscript state - it is set larger than the
+cache bitmap since it is *vital* that if GS expects a bitmap to be cache
+we supply a bitmap. Given that the bounding boxes arrived at the GS cache
+device and the Freetype rendering code arrived at slightly differently, there
+would be the chance of edge cases where FAPI would produce an outline, when
+the cache expects a bitmap. Allowing FAPI plenty of leeway avoids that.
+
+The calculation to convert a quadratic to a cubic spline in the
+Freetype interface code was slightly wrong.
+
+Also, FAPI now sets the fill adjust to 0 for filling outline glyph, instead
+of inhereting the value from the originating graphics state, which gives
+*much* more consistent output between the bitmap and outline cases, and
+addresses the slightly excessive boldness observed for outline glyphs since
+the adoption of Freetype/FAPI as the default font scaler/renderer.
+
+Finally, support for the existing Ghostscrit text anti-aliasing
+capability is improved.
+
+Bug 691604 
+
+</pre>
+<p>[psi/fapi_ft.c psi/zfapi.c psi/fapiufst.c psi/fapibstm.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-13T102534.372202Z"></a>
+2010-09-13T10:25:34.372202Z Chris Liddell</strong></p>
+<blockquote>
+<pre>
+Revert revisions 11690 and later from the FAPI code (and revert version no. to 9.00)
+to get a &quot;good&quot; base version, in preparation for a corrected version of the changes
+in 11690 (and subsequent changes in the FAPI code).
+
+</pre>
+<p>[psi/fapi_ft.c psi/zfapi.c base/version.mak Resource/Init/gs_init.ps psi/ifapi.h psi/fapiufst.c psi/fapibstm.c]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-09T135148.502020Z"></a>
+2010-09-09T13:51:48.502020Z Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix a case where /Width attribute was not checked for null.
+Bug 691602, customer 700.
+</pre>
+<p>[Resource/Init/pdf_font.ps]</p>
+</blockquote>
+
+<p><strong><a name="2010-09-09T072652.042155Z"></a>
+2010-09-09T07:26:52.042155Z Chris Liddell</strong></p>
+<blockquote>
+<pre>
+Fix broken version number in gs_init.ps in trunk
+</pre>
+<p>[Resource/Init/gs_init.ps]</p>
+</blockquote>
+
+
 <p><strong><a name="2010-09-09T062654.427296Z"></a>
 2010-09-09T06:26:54.427296Z Chris Liddell</strong></p>
 <blockquote>
