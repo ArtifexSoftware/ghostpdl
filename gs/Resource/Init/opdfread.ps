@@ -255,6 +255,8 @@ currentdict end def
 /TempMatrix matrix def
 /GraphicStateStack 20 array def
 /GraphicStateStackPointer 0 def
+/InitialTextMatrixStack 20 array def
+/InitialTextMatrixStackPointer 0 def
 /PDFColorSpaces 50 dict def
 /InstalledFonts 50 dict def
 /MacRomanEncodingInverse null def
@@ -1099,6 +1101,15 @@ currentdict end readonly def
 
 /RunDelayedStream % <stream_obj> RunDelayedStream -
 {
+  % Save InitialTextMatrix, as this is local to each content stream
+  //GraphicState /InitialTextMatrix get
+  //InitialTextMatrixStack //PDFReader /InitialTextMatrixStackPointer get
+    2 copy get null eq {
+      2 copy currentglobal true setglobal matrix exch setglobal put
+    } if
+  get copy pop
+  //PDFReader /InitialTextMatrixStackPointer 2 copy get 1 add put
+  % Execute the stream
   //MakeStreamReader exec                                       % file
   mark exch
   cvx exec                                                      %
@@ -1106,6 +1117,11 @@ currentdict end readonly def
     mark (Data left on ostack after a delayed stream execution.) //error exec
   } if
   cleartomark
+  % Restore InitialTextMatrix
+  //PDFReader /InitialTextMatrixStackPointer 2 copy get 1 sub put
+  //InitialTextMatrixStack //PDFReader /InitialTextMatrixStackPointer get get
+  //GraphicState /InitialTextMatrix get
+  copy pop
 } bind def
 
 % ===================== Font Management ======================
