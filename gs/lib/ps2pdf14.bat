@@ -3,6 +3,8 @@
 
 rem Convert PostScript to PDF 1.4 (Acrobat 5-and-later compatible).
 
+set LIBDIR=%~dp0
+
 echo -dCompatibilityLevel#1.4 >"%TEMP%\_.at"
 goto bot
 
@@ -12,4 +14,4 @@ echo %1 >>"%TEMP%\_.at"
 shift
 :bot
 if not %3/==/ goto top
-call "%~dp0ps2pdfxx" %1 %2
+call "%LIBDIR%ps2pdfxx.bat" %1 %2
