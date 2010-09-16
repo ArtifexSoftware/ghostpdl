@@ -318,4 +318,9 @@ void bytes_fill_rectangle(byte * dest, uint raster,
 void bytes_copy_rectangle(byte * dest, uint dest_raster,
     const byte * src, uint src_raster, int width_bytes, int height);
 
+/* Copy a rectangle of bytes, ensuring that any padding bits at the end
+ * of each dest_raster line are zeroed. */
+void bytes_copy_rectangle(byte * dest, uint dest_raster,
+    const byte * src, uint src_raster, int width_bytes, int height);
+
 #endif /* gsbitops_INCLUDED */

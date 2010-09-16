@@ -659,3 +659,29 @@ bytes_copy_rectangle(byte * dest, uint dest_raster,
 	dest += dest_raster;
     }
 }
+
+/* Copy a rectangle of bytes zeroing any padding bytes. */
+void
+bytes_copy_rectangle_zero_padding(byte * dest, uint dest_raster,
+	     const byte * src, uint src_raster, int width_bytes, int height)
+{
+    int padlen = dest_raster;
+    if (padlen < 0)
+        padlen = -padlen;
+    padlen -= width_bytes;
+    if (padlen == 0)
+    {
+        while (height-- > 0) {
+            memcpy(dest, src, width_bytes);
+            src += src_raster;
+            dest += dest_raster;
+        }
+    } else {
+        while (height-- > 0) {
+            memcpy(dest, src, width_bytes);
+            memset(dest+width_bytes, 0, padlen);
+            src += src_raster;
+            dest += dest_raster;
+        }
+    }
+}

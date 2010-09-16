@@ -471,10 +471,10 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
     slot->x_reps = slot->y_reps = 1;
     slot->id = tiles->id;
     memset(ts_mask(slot), 0, cldev->tile_band_mask_size);
-    bytes_copy_rectangle(ts_bits(cldev, slot), raster,
-			 tiles->data, sraster,
-			 (tiles->rep_width * depth + 7) >> 3,
-			 tiles->rep_height);
+    bytes_copy_rectangle_zero_padding(ts_bits(cldev, slot), raster,
+                                      tiles->data, sraster,
+                                      (tiles->rep_width * depth + 7) >> 3,
+                                      tiles->rep_height);
     /* Make the hash table entry. */
     {
 	tile_loc loc;
