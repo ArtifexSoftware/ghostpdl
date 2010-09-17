@@ -190,8 +190,8 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_ret_devn_params,
     clist_fillpage,
     NULL,                      /* push_transparency_state */
-    NULL                       /* pop_transparency_state */
-
+    NULL,                      /* pop_transparency_state */
+    NULL                       /* put_image */
 };
 
 /*------------------- Choose the implementation -----------------------

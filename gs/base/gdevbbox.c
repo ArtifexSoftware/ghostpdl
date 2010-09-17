@@ -146,7 +146,8 @@ gx_device_bbox gs_bbox_device =
      NULL,			/* ret_devn_params */
      bbox_fillpage,		/* fillpage */
      NULL,                      /* push_transparency_state */
-     NULL                       /* pop_transparency_state */
+     NULL,                      /* pop_transparency_state */
+     NULL                       /* put_image */
     },
     0,				/* target */
     1,				/*true *//* free_standing */

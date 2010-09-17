@@ -304,7 +304,9 @@ private gx_device_procs	cups_procs =
    NULL,				/* ret_devn_params */
    NULL,				/* fillpage */
    NULL,				/* push_transparency_state */
-   NULL					/* pop_transparency_state */
+   NULL,				/* pop_transparency_state */
+   NULL,                                /* put_image */
+
 };
 
 #define prn_device_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_pages)\

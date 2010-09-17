@@ -136,6 +136,7 @@ struct pdf14_buf_s {
 
     bool has_alpha_g;
     bool has_shape;
+    bool has_tags;
 
     gs_int_rect rect;
     /* Note: the traditional GS name for rowstride is "raster" */

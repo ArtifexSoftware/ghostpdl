@@ -228,8 +228,12 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     int tos_shape_offset = n_chan * tos_planestride;
     int tos_alpha_g_offset = tos_shape_offset +
     (tos->has_shape ? tos_planestride : 0);
+    bool tos_has_tag = tos->has_tags;
+    int tos_tag_offset = tos_planestride * (tos->n_planes - 1);
     int nos_shape_offset = n_chan * nos_planestride;
     bool nos_has_shape = nos->has_shape;
+    bool nos_has_tag = nos->has_tags;
+    int nos_tag_offset = nos_planestride * (nos->n_planes - 1);
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
 #if RAW_DUMP
     byte *composed_ptr = NULL;
@@ -237,12 +241,13 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 
     rect_merge(nos->bbox, tos->bbox);
 
-    if_debug6('v', "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, bm = %d\n",
+    if_debug6('v', "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag =  bm = %d\n",
 			y0, y1, width, alpha, shape, blend_mode);
     if (nos->has_alpha_g)
 	nos_alpha_g_ptr = nos_ptr + n_chan * nos_planestride;
     else
 	nos_alpha_g_ptr = NULL;
+
 
     if (maskbuf != NULL) { 
        
@@ -330,31 +335,47 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 	    if (nos_knockout) {
 		byte *nos_shape_ptr = nos_has_shape ?
 		    &nos_ptr[x + nos_shape_offset] : NULL;
+                byte *nos_tag_ptr = nos_has_tag ?
+                    &nos_ptr[x + nos_tag_offset] : NULL;
 		byte tos_shape = tos_ptr[x + tos_shape_offset];
-
+		byte tos_tag = tos_ptr[x + tos_tag_offset];
 		art_pdf_composite_knockout_isolated_8(nos_pixel,
 						    nos_shape_ptr,
+                                                    nos_tag_ptr,
 						    tos_pixel,
 						    n_chan - 1,
 						    tos_shape,
+                                                    tos_tag,
 						    pix_alpha, shape);
-	    } else if (tos_isolated) {
-		art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
-				    tos_pixel, n_chan - 1,
-				    pix_alpha, blend_mode, pblend_procs);
-	    } else {
-		byte tos_alpha_g = tos_ptr[x + tos_alpha_g_offset];
-		art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
-				    tos_pixel, tos_alpha_g, n_chan - 1,
-				    pix_alpha, blend_mode, pblend_procs);
-	    }
+            } else {
+                if (tos_isolated) {
+		    art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
+				        tos_pixel, n_chan - 1,
+				        pix_alpha, blend_mode, pblend_procs);
+	        } else {
+		    byte tos_alpha_g = tos_ptr[x + tos_alpha_g_offset];
+		    art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
+				        tos_pixel, tos_alpha_g, n_chan - 1,
+				        pix_alpha, blend_mode, pblend_procs);
+	        }
+                if (tos_has_tag) {
+                    if (pix_alpha == 255) {
+                        nos_ptr[x + nos_tag_offset] = tos_ptr[x + tos_tag_offset];     
+                    } else if (tos_ptr[x + tos_tag_offset] != GS_UNTOUCHED_TAG) {  
+                        nos_ptr[x + nos_tag_offset] = 
+                            (nos_ptr[x + nos_tag_offset] | 
+                            tos_ptr[x + tos_tag_offset]) &
+                            ~GS_UNTOUCHED_TAG;     
+                    }
+                }
+            }
 	    if (nos_has_shape) {
 		nos_ptr[x + nos_shape_offset] =
 		    art_pdf_union_mul_8 (nos_ptr[x + nos_shape_offset],
 					    tos_ptr[x + tos_shape_offset],
 					    shape);
-	    }
-        
+
+            }         
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {
 		for (i = 0; i < n_chan; ++i) {
@@ -721,6 +742,38 @@ gx_build_blended_image_row(byte *buf_ptr, int y, int planestride,
 		linebuf[x * num_comp + comp_num] = comp;
 	    }
 	}
+    }
+}
+
+void
+gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride, 
+                      int planestride, int num_comp, byte bg)
+{
+    int x, y;
+    int position;
+    byte comp, a;
+    int tmp, comp_num;
+
+    for (y = 0; y < height; y++) {
+        position = y * rowstride;
+        for (x = 0; x < width; x++) {
+	    /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+            a = buf_ptr[position + planestride * num_comp];
+	    if ((a + 1) & 0xfe) {
+	        a ^= 0xff;
+	        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+		    comp  = buf_ptr[position + planestride * comp_num];
+		    tmp = ((bg - comp) * a) + 0x80;
+		    comp += (tmp + (tmp >> 8)) >> 8;
+		    buf_ptr[position + planestride * comp_num] = comp;
+	        }
+	    } else if (a == 0) {
+	        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+		    buf_ptr[position + planestride * comp_num] = bg;
+	        }
+	    }
+            position+=1;
+        }
     }
 }
 

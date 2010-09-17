@@ -424,8 +424,8 @@ static const gx_device_procs no_overprint_procs = {
     0,					/* ret_devn_params */
     gx_forward_fillpage,
     0,                                  /* push_transparency_state */
-    0                                   /* pop_transparency_state */
-
+    0,                                  /* pop_transparency_state */
+    0                                   /* put_image */   
 };
 
 /*

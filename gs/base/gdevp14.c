@@ -488,9 +488,8 @@ RELOC_PTRS_END
  * Return value: Newly allocated buffer, or NULL on failure.
  **/
 static	pdf14_buf *
-pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
-	       int n_chan,
-	       gs_memory_t *memory)
+pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g, 
+              bool has_shape, bool idle, int n_chan, gs_memory_t *memory)
 {
 
 	/* Note that alpha_g is the alpha for the GROUP */
@@ -502,7 +501,8 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     pdf14_parent_color_t *new_parent_color;
     int rowstride = (rect->q.x - rect->p.x + 3) & -4;
     int height = (rect->q.y - rect->p.y);
-    int n_planes = n_chan + (has_shape ? 1 : 0) + (has_alpha_g ? 1 : 0);
+    int n_planes = n_chan + (has_shape ? 1 : 0) + (has_alpha_g ? 1 : 0) +
+                   (has_tags ? 1 : 0);
     int planestride;
     double dsize = (((double) rowstride) * height) * n_planes;
 
@@ -519,6 +519,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
     result->knockout = false;
     result->has_alpha_g = has_alpha_g;
     result->has_shape = has_shape;
+    result->has_tags = has_tags;
     result->rect = *rect;
     result->n_chan = n_chan;
     result->n_planes = n_planes;
@@ -552,6 +553,11 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool	has_shape, bool idle,
 	    int alpha_g_plane = n_chan + (has_shape ? 1 : 0);
 	    memset (result->data + alpha_g_plane * planestride, 0, planestride);
 	}
+        if (has_tags) {
+            int tags_plane = n_chan + (has_shape ? 1 : 0) + (has_alpha_g ? 1 : 0);
+            memset (result->data + tags_plane * planestride, 
+                    GS_UNTOUCHED_TAG, planestride);
+        }
     }
     /* Initialize bbox with the reversed rectangle for further accumulation : */
     result->bbox.p.x = rect->q.x;
@@ -604,21 +610,29 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
 {
     pdf14_ctx *result;
     pdf14_buf *buf;
+    bool has_tags;
+
+    has_tags = (memory->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
 
     result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx,
 			     "pdf14_ctx_new");
     if (result == NULL)
 	return result;
-	/* Note:  buffer creation expects alpha to be in number of channels */
-    buf = pdf14_buf_new(rect, false, false, false, n_chan+1, memory);
+    /* Note:  buffer creation expects alpha to be in number of channels */
+    buf = pdf14_buf_new(rect, has_tags, false, false, false, n_chan+1, memory);
     if (buf == NULL) {
 	gs_free_object(memory, result, "pdf14_ctx_new");
 	return NULL;
     }
-    if_debug3('v', "[v]base buf: %d x %d, %d channels\n",
-	      buf->rect.q.x, buf->rect.q.y, buf->n_chan);
-    if (buf->data != NULL)
-	memset(buf->data, 0, buf->planestride * buf->n_planes);
+    if_debug4('v', "[v]base buf: %d x %d, %d color channels, %d planes \n",
+	      buf->rect.q.x, buf->rect.q.y, buf->n_chan, buf->n_planes);
+    if (buf->data != NULL) {
+        if (buf->has_tags) {
+	    memset(buf->data, 0, buf->planestride * (buf->n_planes-1));
+        } else {
+	    memset(buf->data, 0, buf->planestride * buf->n_planes);
+        }
+    }
     buf->saved = NULL;
     result->stack = buf;
     result->maskbuf = pdf14_mask_element_new(memory);
@@ -676,7 +690,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *buf, *backdrop;
-    bool has_shape;
+    bool has_shape, has_tags;
 
     if_debug1('v', "[v]pdf14_push_transparency_group, idle = %d\n", idle);
     /* todo: fix this hack, which makes all knockout groups isolated.
@@ -687,6 +701,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     if (knockout) 
 	isolated = true;
     has_shape = tos->has_shape || tos->knockout;
+    has_tags = tos->has_tags;
     /* We need to create this based upon the size of
     the color space + an alpha channel. NOT the device size
     or the previous ctx size. */
@@ -695,9 +710,10 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
        buffer will be added.  If it is isolated, then the buffer will not be added.
        I question the redundancy here of the alpha and the group alpha channel, 
        but that will need to be looked at later. */
-    buf = pdf14_buf_new(rect, !isolated, has_shape, idle, numcomps+1, ctx->memory);
-    if_debug3('v', "[v]push buf: %d x %d, %d channels\n", 
-        buf->rect.q.x - buf->rect.p.x, buf->rect.q.y - buf->rect.p.y, buf->n_chan);
+    buf = pdf14_buf_new(rect, has_tags, !isolated, has_shape, idle, 
+                        numcomps+1, ctx->memory);
+    if_debug4('v', "[v]base buf: %d x %d, %d color channels, %d planes \n",
+	      buf->rect.q.x, buf->rect.q.y, buf->n_chan, buf->n_planes);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
     buf->isolated = isolated;
@@ -980,7 +996,9 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
        a bit tricky.  We need to create this based upon the size of
        the color space + an alpha channel. NOT the device size
        or the previous ctx size */
-    buf = pdf14_buf_new(rect, false, false, idle, numcomps+1, ctx->memory);
+    /* A mask doesnt worry about tags */
+    buf = pdf14_buf_new(rect, false, false, false, idle, numcomps+1, 
+                        ctx->memory);
     if (buf == NULL)
 	return_error(gs_error_VMerror);
     buf->alpha = bg_alpha;
@@ -1322,6 +1340,8 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     const byte bg = pdev->ctx->additive ? 255 : 0;
     int x1, y1, width, height;
     byte *buf_ptr;
+    bool data_blended = false;
+    int num_rows_left;
 
     if_debug0('v', "[v]pdf14_put_image\n");
     rect_intersect(rect, buf->bbox);
@@ -1335,6 +1355,62 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     if (width <= 0 || height <= 0 || buf->data == NULL)
 	return 0;
     buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
+    /* See if the target device has a put_image command.  If
+       yes then see if it can handle the image data directly.
+       If it cannot, then we will need to use the begin_typed_image
+       interface, which cannot pass along tag nor alpha data to 
+       the target device */
+    if (target->procs.put_image != NULL) {
+        /* See if the target device can handle the data in its current 
+           form with the alpha component */
+        int alpha_offset = num_comp;
+        int tag_offset = buf->has_tags ? num_comp+1 : 0;
+        code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+                                            rect.p.x, rect.p.y, width, height,
+                                            buf->rowstride, buf->planestride,
+                                            num_comp,tag_offset);
+        if (code == 0) {
+            /* Device could not handle the alpha data.  Go ahead and 
+               preblend now. Note that if we do this, and we end up in the
+               default below, we only need to repack in chunky not blend */
+#if RAW_DUMP
+            /* Dump before and after the blend to make sure we are doing that ok */
+            dump_raw_buffer(height, width, buf->n_planes,
+                        pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
+                        "pre_final_blend",buf_ptr);
+            global_index++;
+#endif
+            gx_blend_image_buffer(buf_ptr, width, height, buf->rowstride,
+                                  buf->planestride, num_comp, bg);
+#if RAW_DUMP
+            /* Dump before and after the blend to make sure we are doing that ok */
+            dump_raw_buffer(height, width, buf->n_planes,
+                        pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
+                        "post_final_blend",buf_ptr);
+            global_index++;
+            clist_band_count++;
+#endif
+            data_blended = true;
+            /* Try again now */
+            alpha_offset = 0;
+            code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+                                                rect.p.x, rect.p.y, width, height,
+                                                buf->rowstride, buf->planestride,
+                                                alpha_offset, tag_offset);
+        }
+        if (code > 0) {
+            /* We processed some or all of the rows.  Continue until we are done */
+            num_rows_left = height - code;
+            while (num_rows_left > 0) {
+                code = dev_proc(target, put_image) (target, buf_ptr, buf->n_planes,
+                                                    rect.p.x, rect.p.y+code, width, 
+                                                    num_rows_left, buf->rowstride, 
+                                                    buf->planestride,
+                                                    alpha_offset, tag_offset);
+                num_rows_left = num_rows_left - code;
+            }
+        }
+    }
 #if 0
     /* Set graphics state device to target, so that image can set up
        the color mapping properly. */
@@ -1397,14 +1473,25 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
                 pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride, 
                 "PDF14_PUTIMAGE_SMALL",buf_ptr);
     global_index++;
-    clist_band_count++;
+    if (!data_blended) {
+        clist_band_count++;
+    }
 #endif
     linebuf = gs_alloc_bytes(pdev->memory, width * num_comp, "pdf14_put_image");
     for (y = 0; y < height; y++) {
 	gx_image_plane_t planes;
-	int rows_used;
+	int rows_used,k,x;
 
-	gx_build_blended_image_row(buf_ptr, y, buf->planestride, width, num_comp, bg, linebuf);
+        if (data_blended) {
+            for (x = 0; x < width; x++) {
+	        for (k = 0; k < num_comp; k++) {
+		    linebuf[x * num_comp + k] = buf_ptr[x + buf->planestride * k];
+	        }
+            }
+        } else {
+	    gx_build_blended_image_row(buf_ptr, y, buf->planestride, width, 
+                                       num_comp, bg, linebuf);
+        }
 	planes.data = linebuf;
 	planes.data_x = 0;
 	planes.raster = width * num_comp;
@@ -3515,12 +3602,15 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
+    const gs_object_tag_type_t curr_tag = dev->memory->gs_lib_ctx->BITTAG;
     bool has_alpha_g = buf->has_alpha_g;
     bool has_shape = buf->has_shape;
+    bool has_tags = buf->has_tags;
     int num_chan = buf->n_chan;
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
+    int tag_off = alpha_g_off + (has_tags ? planestride : 0);
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps;
     gx_color_index comps;
@@ -3605,6 +3695,14 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 		int tmp = (255 - dst_ptr[shape_off]) * (255 - shape) + 0x80;
 		dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
 	    }
+            if (has_tags) {
+                /* If alpha is 100% then set to pure path, else or */
+                if (dst[num_comp] == 255) { 
+                    dst_ptr[tag_off] = curr_tag;
+                } else {
+                    dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
+                }
+            }
 	    ++dst_ptr;
 	}
 	line += rowstride;
@@ -3641,7 +3739,13 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
     bool has_shape = buf->has_shape;
+    int alpha_g_off = shape_off + (has_shape ? planestride : 0);
+    bool has_alpha_g = buf->has_alpha_g;
+    int tag_off = shape_off + (has_alpha_g ? planestride : 0) +
+                  (has_shape ? planestride : 0);
+    bool has_tags = buf->has_tags;
     bool additive = pdev->ctx->additive;
+    const gs_object_tag_type_t curr_tag = dev->memory->gs_lib_ctx->BITTAG;
 
     if (buf->data == NULL)
 	return 0;
@@ -3693,7 +3797,9 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
 		dst[num_comp] = dst_ptr[num_comp * planestride];
 	    }
 	    art_pdf_composite_knockout_simple_8(dst,
-		has_shape ? dst_ptr + shape_off : NULL, src, num_comp, 255);
+		has_shape ? dst_ptr + shape_off : NULL, 
+                has_tags ? dst_ptr + tag_off : NULL,     
+                src, curr_tag, num_comp, 255);
             /* ToDo:  Review use of shape and opacity above.   */ 
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {

@@ -1173,7 +1173,9 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
 void
 art_pdf_composite_knockout_simple_8(byte *dst,
 				    byte *dst_shape,
+                                    byte *dst_tag,
 				    const byte *src,
+                                    byte tag,
 				    int n_chan, byte opacity)
 {
     byte src_shape = src[n_chan];
@@ -1218,9 +1220,11 @@ art_pdf_composite_knockout_simple_8(byte *dst,
 void
 art_pdf_composite_knockout_isolated_8(byte *dst,
 				      byte *dst_shape,
+                                      byte *dst_tag,
 				      const byte *src,
 				      int n_chan,
 				      byte shape,
+                                      byte tag,
 				      byte alpha_mask, byte shape_mask)
 {
     int tmp;
@@ -1235,6 +1239,8 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
 	dst[n_chan] = (tmp + (tmp >> 8)) >> 8;
 	if (dst_shape != NULL)
 	    *dst_shape = 255;
+        if (dst_tag != NULL)
+            *dst_tag = tag;
     } else {
 	/* Use src_shape to interpolate (in premultiplied alpha space)
 	   between dst and (src, opacity). */
@@ -1267,6 +1273,9 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
 	if (dst_shape != NULL) {
 	    tmp = (255 - *dst_shape) * (255 - src_shape) + 0x80;
 	    *dst_shape = 255 - ((tmp + (tmp >> 8)) >> 8);
+	}
+	if (dst_tag != NULL) {
+            *dst_tag = (*dst_tag | tag) & ~GS_UNTOUCHED_TAG;
 	}
     }
 }
@@ -1389,16 +1398,13 @@ art_pdf_composite_knockout_8(byte *dst,
 }
 
 #if RAW_DUMP
-
 /* Debug dump of buffer data from pdf14 device.  Saved in
    planar form with global indexing and tag information in
    file name */
-
 void
 dump_raw_buffer(int num_rows, int width, int n_chan,
                 int plane_stride, int rowstride, 
                 char filename[],byte *Buffer)
-
 {
     char full_file_name[50];
     FILE *fid;
@@ -1410,33 +1416,20 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
    /* Useful for catching this thing and only dumping */
    /* during a particular band if we have a large file */
    /* if (clist_band_count != 0) return; */
-
     buff_ptr = Buffer;
-
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,max_bands);
     fid = fopen(full_file_name,"wb");
 
     for (z = 0; z < max_bands; ++z) {
-
         /* grab pointer to the next plane */
-
         buff_ptr = &(Buffer[z*plane_stride]);
-    
         for ( y = 0; y < num_rows; y++ ) {
-
             /* write out each row */
             fwrite(buff_ptr,sizeof(unsigned char),width,fid);
-
             buff_ptr += rowstride;
-
         }
-
     }
-
-	fclose(fid);
-
+    fclose(fid);
 }
-
-
 #endif

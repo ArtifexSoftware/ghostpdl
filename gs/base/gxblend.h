@@ -283,17 +283,19 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
 void
 art_pdf_composite_knockout_simple_8(byte *dst,
 				    byte *dst_shape,
-
-				    const byte *src,
+                                    byte *dst_tag,
+				    const byte *src, byte tag,
 				    int n_chan, byte opacity);
 
 /**
  * art_pdf_composite_knockout_isolated_8: Simple knockout compositing.
  * @dst: Destination pixel. 
  * @dst_shape: Shape associated with @dst.
+ * @dst_tag: Tag associated with @dst.
  * @src: Source pixel.
  * @n_chan: Number of channels.
  * @shape: Shape.
+ * @shape: Tag.
  * @alpha_mask: Alpha mask.
  * @shape_mask: Shape mask.
  *
@@ -303,9 +305,11 @@ art_pdf_composite_knockout_simple_8(byte *dst,
 void
 art_pdf_composite_knockout_isolated_8(byte *dst,
 				      byte *dst_shape,
+                                      byte *dst_tag,
 				      const byte *src,
 				      int n_chan,
 				      byte shape,
+                                      byte tag,
 				      byte alpha_mask, byte shape_mask);
 
 /**
@@ -389,6 +393,8 @@ void pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, f
 
 void gx_build_blended_image_row(byte *buf_ptr, int y, int planestride, 
 			   int width, int num_comp, byte bg, byte *linebuf);
+void gx_blend_image_buffer(byte *buf_ptr, int width, int height, 
+                      int rowstride, int planestride, int num_comp, byte bg);
 int gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, 
 		      int planestride, int rowstride,
 		      int x0, int y0, int width, int height, int num_comp, byte bg,
