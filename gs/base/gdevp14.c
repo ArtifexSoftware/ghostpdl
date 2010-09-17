@@ -3739,7 +3739,6 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
     bool has_shape = buf->has_shape;
-    int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     bool has_alpha_g = buf->has_alpha_g;
     int tag_off = shape_off + (has_alpha_g ? planestride : 0) +
                   (has_shape ? planestride : 0);
