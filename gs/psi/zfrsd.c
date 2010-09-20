@@ -442,9 +442,9 @@ s_aos_process(stream_state * st, stream_cursor_read * ignore_pr,
     unsigned const char *data;
     ref *blk_ref;
 
+    pos += sbufavailable(ss->s);
     if (pos >= ss->file_sz)
 	return EOFC;
-    pos += sbufavailable(ss->s);
     blk_i   = pos / ss->blk_sz;
     blk_off = pos % ss->blk_sz;
     blk_cnt = r_size(&ss->blocks);
