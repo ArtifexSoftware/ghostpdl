@@ -291,6 +291,8 @@ static const FAPI_server If0 = {
     16, /* frac_shift */
     {gs_no_id},
     {0},
+    0,
+    false,
     {1, 0, 0, 1, 0, 0},
     ensure_open,
     get_scaled_font,
