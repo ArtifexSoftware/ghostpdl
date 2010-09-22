@@ -647,7 +647,7 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
 			   gs_color_select_source);
 mapped:	if (mcode < 0)
 	    goto fill;
-f:	if (sizeof(pdevc_next->colors.binary.color[0]) <= sizeof(ulong))
+	if (sizeof(pdevc_next->colors.binary.color[0]) <= sizeof(ulong))
 	    if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> 0x%lx,0x%lx,0x%lx\n",
 		  next.v[0], next.v[1], next.v[2], next.v[3],
 		  (ulong)pdevc_next->colors.binary.color[0],
