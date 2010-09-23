@@ -167,6 +167,10 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 	gx_device_forward_color_procs((gx_device_forward *) dev);
 	gx_device_copy_color_procs((gx_device *)dev, target);
 	dev->cached_colors = target->cached_colors;
+        /* Do a copy of put_image since it needs the source buffer */
+#define COPY_PROC(p) set_dev_proc(dev, p, target->procs.p)
+        COPY_PROC(put_image);
+#undef COPY_PROC
     }
     if (dev->color_info.depth == 1) {
 	gx_color_value cv[3];

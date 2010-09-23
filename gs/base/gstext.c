@@ -247,7 +247,7 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 	return_error(gs_error_undefinedresult); /* sic! : CPSI compatibility */
     if (text->operation & TEXT_DO_DRAW) {
 	code = gx_effective_clip_path(pgs, &pcpath);
-        gs_set_object_tag(pgs, GS_TEXT_TAG);
+        gs_set_object_tag((gs_imager_state*) pgs, GS_TEXT_TAG);
 	if (code < 0)
 	    return code;
     }
@@ -257,7 +257,7 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
        Unfortunately we can't effectively know a leaf font type here,
        so we load the color unconditionally . */
     /* Processing a text object operation */
-    gs_set_object_tag(pgs, GS_TEXT_TAG);
+    gs_set_object_tag((gs_imager_state*) pgs, GS_TEXT_TAG);
 
     gx_set_dev_color(pgs);
     code = gs_state_color_load(pgs);
@@ -286,7 +286,7 @@ gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte)
      * well.
      */
     /* Processing a text object operation */
-    gs_set_object_tag(pgs, GS_TEXT_TAG);
+    gs_set_object_tag((gs_imager_state*) pgs, GS_TEXT_TAG);
 
     if (pte->pdcolor != 0)
         gx_set_dev_color(pgs);

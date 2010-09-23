@@ -1295,6 +1295,8 @@ set_phase:      /*
                                   image.d.Width, image.d.Height);
 ibegin:                 if_debug0('L', "\n");
                         {
+                            /* Processing an image operation */
+                            gs_set_object_tag(&imager_state, GS_IMAGE_TAG);
                             code = (*dev_proc(tdev, begin_typed_image))
                                 (tdev, &imager_state, NULL,
                                  (const gs_image_common_t *)&image,

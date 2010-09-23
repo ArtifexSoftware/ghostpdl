@@ -46,6 +46,8 @@ static dev_proc_map_cmyk_color(bit_map_cmyk_color);
 static dev_proc_get_params(bit_get_params);
 static dev_proc_put_params(bit_put_params);
 static dev_proc_print_page(bit_print_page);
+static dev_proc_print_page(bittags_print_page);
+static dev_proc_put_image(bit_put_image);
 
 #define bit_procs(encode_color)\
 {	gdev_prn_open,\
@@ -203,8 +205,20 @@ static const gx_device_procs bitrgbtags_procs =
         ((void *)0),                       /* discard_transparency_layer */
         bittag_get_color_mapping_procs,      /* get_color_mapping_procs */
         ((void *)0),                       /* get_color_comp_index */
-        bittag_rgb_map_rgb_color,            /* encode_color */
-        bittag_map_color_rgb                 /* decode_color */
+        bittag_rgb_map_rgb_color,           /* encode_color */
+        bittag_map_color_rgb,               /* decode_color */
+        ((void *)0),                        /* pattern_manage */ 
+        ((void *)0),                        /* fill_rectangle_hl_color */ 
+        ((void *)0),                        /* include_color_space */ 
+        ((void *)0),                        /* fill_linear_color_scanline */ 
+        ((void *)0),                        /* fill_linear_color_trapezoid */ 
+        ((void *)0),                        /* fill_linear_color_triangle */ 
+        ((void *)0),                        /* update_spot_equivalent_colors */ 
+        ((void *)0),                        /* ret_devn_params */ 
+        ((void *)0),                        /* fillpage */ 
+        ((void *)0),                        /* push_transparency_state */ 
+        ((void *)0),                        /* pop_transparency_state */ 
+        bit_put_image                        /* put_image */ 
     };
 
 const gx_device_bit gs_bitrgbtags_device =
@@ -221,8 +235,8 @@ const gx_device_bit gs_bitrgbtags_device =
         0 ,                             /* is open */
         0,                              /* max_fill_band */
         {                               /* color infor */
-            4,                          /* max_components */
-            4,                          /* num_components */
+            3,                          /* max_components */
+            3,                          /* num_components */
             GX_CINFO_POLARITY_ADDITIVE, /* polarity */
             32,                         /* depth */                        
             GX_CINFO_COMP_NO_INDEX,     /* gray index */
@@ -232,10 +246,10 @@ const gx_device_bit gs_bitrgbtags_device =
             256 ,                         /* dither colors */
             { 1, 1 } ,                  /* antialiasing */
             GX_CINFO_UNKNOWN_SEP_LIN,   /* sep and linear */
-            { 0 } ,                     /* comp shift */
-            { 0 } ,                     /* comp bits */
-            { 0 } ,                     /* comp mask */
-            ( "DeviceRGB" ),            /* color model name */
+	    { 16, 8, 0, 0 } ,                    /* comp shift */
+	    { 8, 8, 8, 8 } ,                     /* comp bits */
+	    { 0xFF0000, 0x00FF00, 0x0000FF } ,     /* comp mask */
+            ( "DeviceRGBT" ),            /* color model name */
             GX_CINFO_OPMODE_UNKNOWN ,   /* overprint mode */
             0                           /* process comps */
         },
@@ -283,7 +297,7 @@ const gx_device_bit gs_bitrgbtags_device =
         },
         { 0 },
         { 0 },
-        { bit_print_page,
+        { bittags_print_page,
           gx_default_print_page_copies,
           { gx_default_create_buf_device,
             gx_default_size_buf_device,
@@ -299,7 +313,7 @@ const gx_device_bit gs_bitrgbtags_device =
             PRN_BUFFER_SPACE,
             { 0, 0, 0 },
             0 ,
-            BandingAlways },
+            BandingAuto },
         { 0 },
         0 ,
         0 ,
@@ -691,4 +705,79 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
     gs_free_object(pdev->memory, in, "bit_print_page(in)");
     return 0;
+}
+
+/* For tags device go ahead and add in the size so that we can strip and create
+   proper ppm outputs for various dimensions and not be restricted to 72dpi when
+   using the tag viewer */
+static int
+bittags_print_page(gx_device_printer * pdev, FILE * prn_stream)
+{				/* Just dump the bits on the file. */
+    /* If the file is 'nul', don't even do the writes. */
+    int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
+    byte *in = gs_alloc_bytes(pdev->memory, line_size, "bit_print_page(in)");
+    byte *data;
+    int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");
+    int lnum = ((gx_device_bit *)pdev)->FirstLine >= pdev->height ?  pdev->height - 1 :
+		 ((gx_device_bit *)pdev)->FirstLine;
+    int bottom = ((gx_device_bit *)pdev)->LastLine >= pdev->height ?  pdev->height - 1 :
+		 ((gx_device_bit *)pdev)->LastLine;
+    int line_count = any_abs(bottom - lnum);
+    int i, step = lnum > bottom ? -1 : 1;
+
+    if (in == 0)
+	return_error(gs_error_VMerror);
+
+    fprintf(prn_stream, "P6\n%d %d\n255\n", pdev->width, pdev->height);
+    if ((lnum == 0) && (bottom == 0))
+	line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
+    for (i = 0; i <= line_count; i++, lnum += step) {
+	gdev_prn_get_bits(pdev, lnum, in, &data);
+	if (!nul)
+	    fwrite(data, 1, line_size, prn_stream);
+    }
+    gs_free_object(pdev->memory, in, "bit_print_page(in)");
+    return 0;
+}
+
+static int
+bit_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart, 
+              int ystart, int width, int height, int row_stride, 
+              int plane_stride, int alpha_plane_index, int tag_plane_index)
+{
+    gx_device_memory *pmemdev = (gx_device_memory *)pdev;
+    byte *buffer_prn;
+    int yend = ystart + height;
+    int xend = xstart + width;
+    int x, y, k;
+    int src_position, des_position;
+
+    if (alpha_plane_index != 0)
+        return 0;                /* we don't want alpha, return 0 to ask for the    */
+                                 /* pdf14 device to do the alpha composition        */
+    /* Eventually, the pdf14 device might be chunky pixels, punt for now */
+    if (plane_stride == 0)
+        return 0;
+    if (num_chan != 3 || tag_plane_index <= 0)
+            return_error(gs_error_unknownerror);        /* can't handle these cases */
+    /* Drill down to get the appropriate memory buffer pointer */
+    buffer_prn = pmemdev->base;
+    /* Now go ahead and fill */
+    for ( y = ystart; y < yend; y++ ) {
+        src_position = (y - ystart) * row_stride;
+        des_position = y * pmemdev->raster + xstart * 4;
+        for ( x = xstart; x < xend; x++ ) {
+            /* Tag data first, then RGB */
+            buffer_prn[des_position] = 
+                buffer[src_position + tag_plane_index * plane_stride];
+                des_position += 1;
+            for ( k = 0; k < 3; k++) {
+                buffer_prn[des_position] = 
+                    buffer[src_position + k * plane_stride];
+                    des_position += 1;
+            }
+            src_position += 1;
+        }
+    }
+    return height;        /* we used all of the data */
 }

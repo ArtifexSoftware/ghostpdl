@@ -145,7 +145,6 @@ extern unsigned int global_index;
 void
 pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 {
-
     /* make copy of backdrop for compositing */
     int x0 = max(buf->rect.p.x, tos->rect.p.x);
     int x1 = min(buf->rect.q.x, tos->rect.q.x);
@@ -158,46 +157,39 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 	byte *tos_plane = tos->data + x0 - tos->rect.p.x + (y0 - tos->rect.p.y) * tos->rowstride;
 	int i;
 	/*int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);*/
-	int n_chan_copy = tos->n_chan + (tos->has_shape ? 1 : 0);
+        int n_chan_copy = tos->n_chan + (tos->has_shape ? 1 : 0) + (tos->has_tags ? 1 : 0);
 
 	for (i = 0; i < n_chan_copy; i++) {
-		byte *buf_ptr = buf_plane;
-		byte *tos_ptr = tos_plane;
-		int y;
+	    byte *buf_ptr = buf_plane;
+	    byte *tos_ptr = tos_plane;
+	    int y;
 
-		for (y = y0; y < y1; ++y) {
-			memcpy (buf_ptr, tos_ptr, width); 
-			buf_ptr += buf->rowstride;
-			tos_ptr += tos->rowstride;
-		}
-		buf_plane += buf->planestride;
-		tos_plane += tos->planestride;
+	    for (y = y0; y < y1; ++y) {
+		    memcpy (buf_ptr, tos_ptr, width); 
+		    buf_ptr += buf->rowstride;
+		    tos_ptr += tos->rowstride;
 	    }
-	if (has_shape && !tos->has_shape)
-	    memset (buf_plane, 0, buf->planestride);
+	    buf_plane += buf->planestride;
+	    tos_plane += tos->planestride;
+	}
+        if (has_shape && !tos->has_shape) {
+            if (tos->has_tags) {
+                buf_plane -= buf->planestride;
+            }
+            memset (buf_plane, 0, buf->planestride);
+        }
     }
-
-
 #if RAW_DUMP
-
     if (x0 < x1 && y0 < y1) {
-        
         byte *buf_plane = buf->data + x0 - buf->rect.p.x + 
             (y0 - buf->rect.p.y) * buf->rowstride;
-
         dump_raw_buffer(y1-y0, x1 - x0, buf->n_planes,
                     buf->planestride, buf->rowstride, 
                     "BackDropInit",buf_plane);
-
         global_index++;
-
     }
-
 #endif
-
 }
-
-
 
 void
 pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf, 
@@ -426,42 +418,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 }
 
 /*
- * Encode a list of smask colorant values into a gx_color_index_value.
- * This has its own encoder as it may have a different number of colorants
- * compared to the actual device.
- */
-gx_color_index
-pdf14_encode_smask_color(gx_device *dev, const gx_color_value	colors[],int ncomp)
-{
-    int drop = sizeof(gx_color_value) * 8 - 8;
-    gx_color_index color = 0;
-    int i;
-
-    for (i = 0; i < ncomp; i++) {
-	color <<= 8;
-	color |= (colors[i] >> drop);
-    }
-    return (color == gx_no_color_index ? color ^ 1 : color);
-}
-
-/*
- * Decode a gx_color_index value back to a list of colorant values.
-  * This has its own decoder as it may have a different number of colorants
- * compared to the actual device.*/
-int
-pdf14_decode_smask_color(gx_device * dev, gx_color_index color, gx_color_value * out, int ncomp)
-{
-    int i;
-
-    for (i = 0; i < ncomp; i++) {
-	out[ncomp - i - 1] = (gx_color_value) ((color & 0xff) * 0x101);
-	color >>= 8;
-    }
-    return 0;
-}
-
-
-/*
  * Encode a list of colorant values into a gx_color_index_value.
  */
 gx_color_index
@@ -472,6 +428,28 @@ pdf14_encode_color(gx_device *dev, const gx_color_value	colors[])
     int i;
     int ncomp = dev->color_info.num_components;
 
+    for (i = 0; i < ncomp; i++) {
+	color <<= 8;
+	color |= (colors[i] >> drop);
+    }
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+/*
+ * Encode a list of colorant values into a gx_color_index_value.
+   Stick the tag information at the end.  
+ */
+gx_color_index
+pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
+{
+    int drop = sizeof(gx_color_value) * 8 - 8;
+    gx_color_index color;
+    int i;
+    int ncomp = dev->color_info.num_components;
+    int tag_value;
+
+    /* Add in the tag information */
+    color = gs_current_object_tag(dev->memory);
     for (i = 0; i < ncomp; i++) {
 	color <<= 8;
 	color |= (colors[i] >> drop);

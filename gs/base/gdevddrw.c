@@ -987,6 +987,9 @@ gx_default_begin_image(gx_device * dev,
     const gs_image_t *ptim;
     int code;
 
+    /* Processing an image object operation */
+    gs_set_object_tag(pis, GS_IMAGE_TAG);
+
     set_dev_proc(dev, begin_image, gx_no_begin_image);
     if (pim->format == format)
 	ptim = pim;
@@ -1008,8 +1011,12 @@ gx_default_begin_typed_image(gx_device * dev,
 		   const gs_image_common_t * pic, const gs_int_rect * prect,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
 		      gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
-{	/*
-	 * If this is an ImageType 1 image using the imager's CTM,
+{   
+    /* Processing an image object operation */
+    if (pis != NULL)   /* Null can happen when generating image3 mask */
+        gs_set_object_tag(pis, GS_IMAGE_TAG);
+
+    /* If this is an ImageType 1 image using the imager's CTM,
 	 * defer to begin_image.
 	 */
     if (pic->type->begin_typed_image == gx_begin_image1) {

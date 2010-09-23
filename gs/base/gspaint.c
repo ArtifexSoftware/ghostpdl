@@ -77,7 +77,7 @@ gs_fillpage(gs_state * pgs)
 	return_error(gs_error_Fatal);
     }
     /* Processing a fill object operation */
-    gs_set_object_tag(pgs, GS_PATH_TAG);
+    gs_set_object_tag((gs_imager_state*) pgs, GS_PATH_TAG);
 
     gx_set_dev_color(pgs);
 
@@ -257,10 +257,10 @@ static int do_fill(gs_state *pgs, int rule)
 	  which sets gs_hit_device, which is uncolored.
      */
     if (gx_device_has_color(gs_currentdevice(pgs))) {
-	gs_set_object_tag(pgs, GS_PATH_TAG);
+	gs_set_object_tag((gs_imager_state*) pgs, GS_PATH_TAG);
     }
     else {
-	gs_set_object_tag(pgs, GS_TEXT_TAG);
+	gs_set_object_tag((gs_imager_state*) pgs, GS_TEXT_TAG);
     }
     gx_set_dev_color(pgs);
     code = gs_state_color_load(pgs);
@@ -333,9 +333,9 @@ do_stroke(gs_state * pgs)
        target device 1 bit per component is a cache and this is
        text else it is a path */
     if (gx_device_has_color(gs_currentdevice(pgs)))
-        gs_set_object_tag(pgs, GS_PATH_TAG);
+        gs_set_object_tag((gs_imager_state*) pgs, GS_PATH_TAG);
     else
-        gs_set_object_tag(pgs, GS_TEXT_TAG);
+        gs_set_object_tag((gs_imager_state*) pgs, GS_TEXT_TAG);
 
     /* Here we need to distinguish text from vectors to compute the object tag.
        Actually we need to know whether this function is called to rasterize a character,
@@ -364,10 +364,10 @@ do_stroke(gs_state * pgs)
           Type 3 charproc streams immediately.
      */
     if (gx_device_has_color(gs_currentdevice(pgs))) {
-	gs_set_object_tag(pgs, GS_PATH_TAG);
+	gs_set_object_tag((gs_imager_state*) pgs, GS_PATH_TAG);
     }
     else {
-	gs_set_object_tag(pgs, GS_TEXT_TAG);
+	gs_set_object_tag((gs_imager_state*) pgs, GS_TEXT_TAG);
     }
     /* Evil: The following call is a macro that might return! */
     gx_set_dev_color(pgs);

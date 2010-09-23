@@ -142,6 +142,7 @@ static	dev_proc_put_params(pdf14_put_params);
 static	dev_proc_get_color_comp_index(pdf14_cmykspot_get_color_comp_index);
 static	dev_proc_get_color_mapping_procs(pdf14_cmykspot_get_color_mapping_procs);
 dev_proc_encode_color(pdf14_encode_color);
+dev_proc_encode_color(pdf14_encode_color_tag);
 dev_proc_encode_color(pdf14_compressed_encode_color);
 dev_proc_decode_color(pdf14_decode_color);
 dev_proc_decode_color(pdf14_compressed_decode_color);
@@ -1360,7 +1361,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
        If it cannot, then we will need to use the begin_typed_image
        interface, which cannot pass along tag nor alpha data to 
        the target device */
-    if (target->procs.put_image != NULL) {
+    if (target->procs.put_image != NULL && 0) {
         /* See if the target device can handle the data in its current 
            form with the alpha component */
         int alpha_offset = num_comp;
@@ -1409,6 +1410,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
                                                     alpha_offset, tag_offset);
                 num_rows_left = num_rows_left - code;
             }
+            return 0;
         }
     }
 #if 0
@@ -2998,6 +3000,8 @@ pdf14_update_device_color_procs(gx_device *dev,
     byte comp_bits[] = {0,0,0,0};
     byte comp_shift[] = {0,0,0,0};
     int k;
+    bool has_tags = (dev->memory->gs_lib_ctx->BITTAG != 
+                        GS_DEVICE_DOESNT_SUPPORT_TAGS);
 
     if (pdev->ctx->stack != NULL){
         parent_color_info = pdev->ctx->stack->parent_color_info_procs;
@@ -3155,6 +3159,9 @@ pdf14_update_device_color_procs(gx_device *dev,
         pdev->color_info.num_components = new_num_comps;
         pdev->ctx->additive = new_additive; 
         pdev->pdf14_procs = new_14procs;
+        if (has_tags) {
+            new_depth += 8;
+        }
         pdev->color_info.depth = new_depth;
         memset(&(pdev->color_info.comp_bits),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
         memset(&(pdev->color_info.comp_shift),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -3191,6 +3198,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     byte comp_bits[] = {0,0,0,0};
     byte comp_shift[] = {0,0,0,0};
     int k;
+    bool has_tags = (dev->memory->gs_lib_ctx->BITTAG != 
+                        GS_DEVICE_DOESNT_SUPPORT_TAGS);
 
     if (group_color == ICC && icc_profile == NULL) {
         return gs_rethrow(gs_error_undefinedresult, 
@@ -3310,6 +3319,9 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
 	        break;
          }    
          if (update_color_info){
+             if (has_tags) {
+                 new_depth += 8;
+             }
             if_debug2('v', "[v]pdf14_update_device_color_procs_push_c,num_components_old = %d num_components_new = %d\n", 
                 pdev->color_info.num_components,new_num_comps);
             /* Set new information in the device */
@@ -3610,7 +3622,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
-    const gs_object_tag_type_t curr_tag = dev->memory->gs_lib_ctx->BITTAG;
+    gs_object_tag_type_t curr_tag;
     bool has_alpha_g = buf->has_alpha_g;
     bool has_shape = buf->has_shape;
     bool has_tags = buf->has_tags;
@@ -3642,6 +3654,9 @@ pdf14_mark_fill_rectangle(gx_device * dev,
      * Unpack the gx_color_index values.  Complement the components for subtractive
      * color spaces.
      */
+    if (has_tags) {
+        curr_tag = (color >> (num_comp*8)) & 0xff; 
+    }
     pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
     src_alpha = src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     if (has_shape)
@@ -3752,7 +3767,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
                   (has_shape ? planestride : 0);
     bool has_tags = buf->has_tags;
     bool additive = pdev->ctx->additive;
-    const gs_object_tag_type_t curr_tag = dev->memory->gs_lib_ctx->BITTAG;
+    gs_object_tag_type_t curr_tag;
 
     if (buf->data == NULL)
 	return 0;
@@ -3770,6 +3785,9 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
      * Unpack the gx_color_index values.  Complement the components for subtractive
      * color spaces.
      */
+    if (has_tags) {
+        curr_tag = (color >> (num_comp*8)) & 0xff; 
+    }
     pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
     src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     if (x < buf->rect.p.x) {
@@ -3993,10 +4011,10 @@ pdf14_cmap_gray_direct_group(frac gray, gx_device_color * pdc, const gs_imager_s
     ncomps = trans_device->color_info.num_components;
    /* If we are doing concretization of colors in an SMask or isolated group 
        then just return the color as is */
-   if (ncomps == 1 ){
+   if (ncomps == 1 ) {
 	cv[0] = frac2cv(gray);
         /* encode as a color index */
-        color = pdf14_encode_smask_color(trans_device,cv,1);
+        color = dev_proc(trans_device, encode_color)(trans_device, cv);
         /* check if the encoding was successful; we presume failure is rare */
          if (color != gx_no_color_index)
 	    color_set_pure(pdc, color);
@@ -4042,7 +4060,7 @@ pdf14_cmap_rgb_direct_group(frac r, frac g, frac b, gx_device_color *	pdc,
         cv[1] = frac2cv(g);
         cv[2] = frac2cv(b);
         /* encode as a color index */
-        color = pdf14_encode_smask_color(trans_device,cv,3);
+        color = dev_proc(trans_device, encode_color)(trans_device, cv);
        /* check if the encoding was successful; we presume failure is rare */
          if (color != gx_no_color_index)
         color_set_pure(pdc, color);    
@@ -4100,7 +4118,7 @@ pdf14_cmap_cmyk_direct_group(frac c, frac m, frac y, frac k, gx_device_color * p
         cv[2] = frac2cv(y);
         cv[3] = frac2cv(k);
          /* encode as a color index */
-        color = pdf14_encode_smask_color(trans_device,cv,4);
+        color = dev_proc(trans_device, encode_color)(trans_device, cv);
         /* check if the encoding was successful; we presume failure is rare */
         if (color != gx_no_color_index)
 	    color_set_pure(pdc, color); 
@@ -4286,6 +4304,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     pdf14_device * dev_proto;
     pdf14_device * p14dev, temp_dev_proto;
     int code;
+    bool has_tags = (mem->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
 
     if_debug0('v', "[v]gs_pdf14_device_push\n");
     code = get_pdf14_device_proto(target, &dev_proto,
@@ -4298,6 +4317,17 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
 	return code;
     gs_pdf14_device_copy_params((gx_device *)p14dev, target);
     rc_assign(p14dev->target, target, "gs_pdf14_device_push");
+    /* If we have a tag device then go ahead and do a special encoder
+       decoder for the pdf14 device to make sure we maintain this
+       information in the encoded color information.  We could use
+       the target device's methods but the PDF14 device has to maintain
+       8 bit color always and we could run into other issues if the number
+       of colorants became large.  If we need to do compressed color with
+       tags that will be a special project at that time */
+    if (has_tags) {
+        p14dev->procs.encode_color = pdf14_encode_color_tag;
+        p14dev->color_info.depth += 8;
+    }
     check_device_separable((gx_device *)p14dev);
     gx_device_fill_in_procs((gx_device *)p14dev);
     p14dev->save_get_cmap_procs = pis->get_cmap_procs;
@@ -5304,6 +5334,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     pdf14_clist_device * dev_proto;
     pdf14_clist_device * pdev, temp_dev_proto;
     int code;
+    bool has_tags = (mem->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
 
     if_debug0('v', "[v]pdf14_create_clist_device\n");
     code = get_pdf14_clist_device_proto(target, &dev_proto,
@@ -5314,12 +5345,24 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
 			 (const gx_device *) dev_proto, mem);
     if (code < 0)
 	return code;
+    /* If we have a tag device then go ahead and do a special encoder
+       decoder for the pdf14 device to make sure we maintain this
+       information in the encoded color information.  We could use
+       the target device's methods but the PDF14 device has to maintain
+       8 bit color always and we could run into other issues if the number
+       of colorants became large.  If we need to do compressed color with
+       tags that will be a special project at that time */
+    if (has_tags) {
+        pdev->procs.encode_color = pdf14_encode_color_tag;
+        pdev->color_info.depth += 8;
+    }
     check_device_separable((gx_device *)pdev);
     gx_device_fill_in_procs((gx_device *)pdev);
     gs_pdf14_device_copy_params((gx_device *)pdev, target);
     rc_assign(pdev->target, target, "pdf14_create_clist_device");
     code = dev_proc((gx_device *) pdev, open_device) ((gx_device *) pdev);
     pdev->pclist_device = target;
+
     pdev->my_encode_color = pdev->procs.encode_color;
     pdev->my_decode_color = pdev->procs.decode_color;
     pdev->my_get_color_mapping_procs = pdev->procs.get_color_mapping_procs;

@@ -65,7 +65,12 @@ gs_object_tag_type_t gs_current_object_tag(gs_memory_t *);
 
 #include "gxstate.h"
 
-void gs_set_object_tag(gs_state * pgs, const gs_object_tag_type_t tag);
+#ifndef gs_imager_state_DEFINED
+#  define gs_imager_state_DEFINED
+typedef struct gs_imager_state_s gs_imager_state;
+#endif
+
+void gs_set_object_tag(gs_imager_state * pis, const gs_object_tag_type_t tag);
 void gs_enable_object_tagging(gs_memory_t *);
 
 #endif /* gsutil_INCLUDED */

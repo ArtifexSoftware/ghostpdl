@@ -290,15 +290,15 @@ gs_enable_object_tagging(gs_memory_t * mem)
 }
 
 void
-gs_set_object_tag(gs_state * pgs, const gs_object_tag_type_t tag)
+gs_set_object_tag(gs_imager_state * pis, const gs_object_tag_type_t tag)
 {
-    if (pgs->memory->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS) {
-        pgs->object_tag = tag;
+    if (pis->memory->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS) {
+        pis->object_tag = tag;
         /* mkromfs breaks this dependance 
            NB: needs to be fixed.
            gx_unset_dev_color(pgs);
          **/
-        pgs->memory->gs_lib_ctx->BITTAG = tag;
+        pis->memory->gs_lib_ctx->BITTAG = tag;
         /* the assumption is made that the caller will:
          * gx_set_dev_color(pgs);
          */

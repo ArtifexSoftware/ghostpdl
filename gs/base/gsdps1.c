@@ -199,7 +199,7 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
     bool center_of_pixel = (pgs->fill_adjust.x == 0 && pgs->fill_adjust.y == 0);
 
     /* Processing a fill object operation */
-    gs_set_object_tag(pgs, GS_PATH_TAG);
+    gs_set_object_tag((gs_imager_state*) pgs, GS_PATH_TAG);
 
     gx_set_dev_color(pgs);
     if ((is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ||

@@ -373,14 +373,8 @@ void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 	      int x0, int x1, int y0, int y1, int n_chan, bool additive,
 	      const pdf14_nonseparable_blending_procs_t * pblend_procs);
 
-gx_color_index pdf14_encode_smask_color(gx_device *dev, 
-             const gx_color_value colors[], int ncomp);
-
-int pdf14_decode_smask_color(gx_device * dev, gx_color_index color, 
-                             gx_color_value * out, int ncomp);
-
-
 gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[]);
+gx_color_index pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[]);
 
 int pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out);
 gx_color_index pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[]);
