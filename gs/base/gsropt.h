@@ -30,6 +30,42 @@
  */
 #define TRANSPARENCY_PER_H_P
 
+/* Raster ops are explained in Chapter 5 of "The PCL 5 Color Technical
+ * Reference Manual", but essentially, they provide a way of mixing
+ * various bitmaps together. The most general form is where a texture
+ * bitmap, a source bitmap, and a destination bitmap are added together to
+ * give a new destination bitmap value.
+ *
+ * Each bitmap value is either 0 or 1, so essentially each raster op is
+ * a function of the form f(D,S,T). (Confusingly, the HP documentation uses
+ * the name 'pattern' in the english descriptive text in an inconsistent way
+ * to sometimes mean 'texture' and sometimes mean something that is used to
+ * help generate the texture. We will use texture exclusively here.)
+ *
+ * There are therefore 8 possible values on input to such functions, and 2
+ * possible output values for each input. Hence 2^8 = 256 possible raster
+ * op functions.
+ *
+ * For any given function, f(D,S,T), we can form an 8 bit number as follows:
+ *  Bit 0 = f(0,0,0)
+ *  Bit 1 = f(1,0,0)
+ *  Bit 2 = f(0,1,0)
+ *  Bit 3 = f(1,1,0)
+ *  Bit 4 = f(0,0,1)
+ *  Bit 5 = f(1,0,1)
+ *  Bit 6 = f(0,1,1)
+ *  Bit 7 = f(1,1,1)
+ * Running this in reverse for each number from 0 to 255 we have an
+ * enumeratation of the possible 3 input raster op functions.
+ *
+ * We could therefore define F(op,D,S,T) to be a 'master' function that
+ * encapsulates all these raster op functions as follows:
+ *  F(op,D,S,T) = !!(op & ((D?0xAA:0x55) & (S?0xCC:0x33) & (T?0xF0:0xF)))
+ * We don't actually use that technique here (as it only works for 1bpp
+ * inputs, and we actually use the rasterops for doing multiple bits at
+ * once - it is mentioned for interests sake only.
+ */
+
 /*
  * By the magic of Boolean algebra, we can operate on the rop codes using
  * Boolean operators and get the right result.  E.g., the value of
@@ -130,11 +166,24 @@ typedef enum {
 #define rop3_uses_T(op) rop3_uses_(op, rop3_T, rop3_T_shift)
 /*
  * Test whether an operation is idempotent, i.e., whether
- * f(D, S, T) = f(f(D, S, T), S, T).  This is equivalent to the condition that
- * for all values s and t, !( f(0,s,t) == 1 && f(1,s,t) == 0 ).
+ *      f(D, S, T) = f(f(D, S, T), S, T)   (for all D,S,T)
+ * f has a range of 0 or 1, so this is equivalent to the condition that:
+ *    There exists no s,t, s.t. (f(0,s,t) == 1 && f(1,s,t) == 0)
+ * or equivalently:
+ *    For all s, t, ~(f(0,s,t) == 1 &&   f(1,s,t) == 0 )
+ * or For all s, t, ~(f(0,s,t) == 1 && ~(f(1,s,t) == 1))
+ * or For all s, t, ~((f(0,s,t) & ~f(1,s,t)) == 1)
+ * or For all s, t,  ((f(0,s,t) & ~f(1,s,t)) == 0)
+ *
+ * We can code this as a logical operation by observing that:
+ *     ((~op)                 & rop3_D) gives us a bitfield of ~f(1,s,t)
+ *     (((op)<<rop_3_D_shift) & rop3_D) gives us a bitfield of  f(0,s,t)
+ * So
+ *     ((~op) & rop3_D) & ((op<<rop3_D_shift) & rop3_D) == 0 iff idempotent
+ * === ((~op) & (op<<rop3_D_shift) & rop3_D) == 0 iff idempotent
  */
 #define rop3_is_idempotent(op)\
-  !( (op) & ~((op) << rop3_D_shift) & rop3_D )
+  !( (~op) & ((op) << rop3_D_shift) & rop3_D )
 
 /* Transparency */
 #define source_transparent_default false
