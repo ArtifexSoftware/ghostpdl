@@ -1804,9 +1804,9 @@ idata:                  data_size = 0;
                         case cmd_opv_stroke:
                             stroke_params.flatness = imager_state.flatness;
                             stroke_params.traditional = false;
-                            code = gx_stroke_path_only(ppath,
-                                                       (gx_path *) 0, tdev,
-                                              &imager_state, &stroke_params,
+                            code = (*dev_proc(tdev, stroke_path))
+                                                       (tdev, &imager_state,
+                                                       ppath, &stroke_params,
                                                        &dev_color, pcpath);
                             break;
                         case cmd_opv_polyfill:
