@@ -1259,8 +1259,14 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    }
 	}
     }
-    if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2 || 
-	font->FontType == ft_TrueType) {
+    if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2) {
+	/*|| font->FontType == ft_TrueType) */
+	/* Removed the addition of Encodings to TrueType fonts as we always write
+	 * these with the Symbolic flag set. The comment below explains why we
+	 * previously wrote these, but as the comment notes this was incorrect.
+	 * Removed as it is causing preflight problems, and is specifically
+	 * disallowed with PDF/A output.
+	 */
         /*
 	 * We write True Types with Symbolic flag set.
 	 * PDF spec says that "symbolic font should not specify Encoding entry"
