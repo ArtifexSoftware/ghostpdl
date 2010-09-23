@@ -1735,11 +1735,27 @@ pdf14_set_marking_params(gx_device *dev, const gs_imager_state *pis)
     pdev->shape = pis->shape.alpha;
     pdev->alpha = pis->opacity.alpha * pis->shape.alpha;
     pdev->blend_mode = pis->blend_mode;
-	pdev->overprint = pis->overprint;
-	pdev->overprint_mode = pis->overprint_mode;
+    pdev->overprint = pis->overprint;
+    pdev->overprint_mode = pis->overprint_mode;
 
     if_debug3('v', "[v]set_marking_params, opacity = %g, shape = %g, bm = %d\n",
 	      pdev->opacity, pdev->shape, pis->blend_mode);
+}
+
+static  void
+update_lop_for_pdf14(gs_imager_state *pis)
+{
+    if ((pis->alpha != 0xFFFF) ||
+        (pis->blend_mode != BLEND_MODE_Normal) ||
+        (pis->opacity.alpha != 1.0) ||
+        (pis->shape.alpha != 1.0))
+    {
+        /*
+         * The blend operations are not idempotent.  Force non-idempotent
+         * filling and stroking operations.
+         */
+        pis->log_op |= lop_pdf14;
+    }
 }
 
 static	int
@@ -1794,11 +1810,7 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
               by the pdf14 clist writer device.  */
            pinst->saved->trans_device = dev;
     }
-    /*
-     * The blend operations are not idempotent.  Force non-idempotent
-     * filling and stroking operations.
-     */
-    new_is.log_op |= lop_pdf14;
+    update_lop_for_pdf14(&new_is);
     pdf14_set_marking_params(dev, pis);
     new_is.trans_device = dev;
     new_is.has_transparency = true;
@@ -1819,11 +1831,7 @@ pdf14_stroke_path(gx_device *dev, const	gs_imager_state	*pis,
 {
     gs_imager_state new_is = *pis;
 
-    /*
-     * The blend operations are not idempotent.  Force non-idempotent
-     * filling and stroking operations.
-     */
-    new_is.log_op |= lop_pdf14;
+    update_lop_for_pdf14(&new_is);
     pdf14_set_marking_params(dev, pis);
     return gx_default_stroke_path(dev, &new_is, ppath, params, pdcolor,
 				  pcpath);
@@ -6053,11 +6061,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
               by the pdf14 clist writer device.  */
            pinst->saved->trans_device = dev;
     }
-    /*
-     * The blend operations are not idempotent.  Force non-idempotent
-     * filling and stroking operations.
-     */
-    new_is.log_op |= lop_pdf14;
+    update_lop_for_pdf14(&new_is);
     new_is.trans_device = dev;
     new_is.has_transparency = true;
     code = gx_forward_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
@@ -6107,11 +6111,7 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_imager_state *pis,
            pinst->saved->trans_device = dev;
     }
 
-    /*
-     * The blend operations are not idempotent.  Force non-idempotent
-     * filling and stroking operations.
-     */
-    new_is.log_op |= lop_pdf14;
+    update_lop_for_pdf14(&new_is);
     new_is.trans_device = dev;
     new_is.has_transparency = true;
     code = gx_forward_stroke_path(dev, &new_is, ppath, params, pdcolor, pcpath);
