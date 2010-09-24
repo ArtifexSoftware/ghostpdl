@@ -2198,20 +2198,32 @@ retry_oversampling:
 		        break;
 		}
 	    } else {
-		code = cid_to_TT_charcode(imemory, Decoding, TT_cmap, SubstNWP,
-				      client_char_code, &c, &src_type, &dst_type);
-		if (code < 0)
-		    return code;
+		ref *CIDSystemInfo;
+                ref *Ordering;
+                
+                /* We only have to lookup the char code if we're *not* using an identity ordering */
+                if (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) >= 0 && r_has_type(CIDSystemInfo, t_dictionary) &&
+                    dict_find_string(CIDSystemInfo, "Ordering", &Ordering) >= 0 && r_has_type(Ordering, t_string) &&
+                    strncmp((const char *)Ordering->value.bytes, "Identity", 8) != 0) {
+            
+                    code = cid_to_TT_charcode(imemory, Decoding, TT_cmap, SubstNWP,
+                                client_char_code, &c, &src_type, &dst_type);
+                    if (code < 0)
+                        return code;
 
-		/* cid_to_TT_charcode() returns 1 if it found a
-                 * matching character code. Otherwise it returns
-                 * zero after setting c to zero (.notdef glyph id)
-                 * or a negative value on error. */
+                    /* cid_to_TT_charcode() returns 1 if it found a
+                     * matching character code. Otherwise it returns
+                     * zero after setting c to zero (.notdef glyph id)
+                     * or a negative value on error. */
 #if 0
-		if (code > 0)
-		    is_glyph_index = false;
+                     if (code > 0)
+                         is_glyph_index = false;
 #endif
-	    }
+                }
+                else {
+                    c = client_char_code;
+                }
+            }
 	    cr.char_codes[0] = c;
 	    cr.is_glyph_index = is_glyph_index;
             /* fixme : process the narrow/wide/proportional mapping type,
