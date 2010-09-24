@@ -1361,7 +1361,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
        If it cannot, then we will need to use the begin_typed_image
        interface, which cannot pass along tag nor alpha data to 
        the target device */
-    if (target->procs.put_image != NULL && 0) {
+    if (target->procs.put_image != NULL) {
         /* See if the target device can handle the data in its current 
            form with the alpha component */
         int alpha_offset = num_comp;
