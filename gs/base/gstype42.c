@@ -60,6 +60,7 @@ font_proc_font_info(gs_truetype_font_info); /* Type check. */
 /* ---------------- Font level ---------------- */
 
 GS_NOTIFY_PROC(gs_len_glyphs_release);
+GS_NOTIFY_PROC(gs_gsub_release);
 
 /* Read data from sfnts. */
 int
@@ -202,6 +203,11 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
 							"gs_type42_font_init(GSUB)");
 	    if (pfont->data.gsub == 0)
 		return_error(gs_error_VMerror);
+
+	    code = gs_font_notify_register((gs_font *)pfont, gs_gsub_release, (void *)pfont);
+	    if (code < 0)
+		return code;
+
 	    code = gs_type42_read_data(pfont, offset, pfont->data.gsub_size, pfont->data.gsub);
 	    if ( code < 0 )
 		return code;
@@ -437,6 +443,16 @@ gs_len_glyphs_release(void *data, void *event)
 
     gs_font_notify_unregister((gs_font *)pfont, gs_len_glyphs_release, (void *)data);
     gs_free_object(pfont->memory, pfont->data.len_glyphs, "gs_len_glyphs_release");
+    return 0;
+}
+
+int
+gs_gsub_release(void *data, void *event)
+{   
+    gs_font_type42 *pfont = (gs_font_type42 *)data;
+
+    gs_font_notify_unregister((gs_font *)pfont, gs_gsub_release, (void *)data);
+    gs_free_object(pfont->memory, pfont->data.gsub, "gs_gsub_release");
     return 0;
 }
 
@@ -1240,7 +1256,8 @@ gs_type42_append(uint glyph_index, gs_state * pgs,
     return gs_imager_setflat((gs_imager_state *)pgs, 
 		gs_char_flatness((gs_imager_state *)pgs, 1.0));
 }
-
+#if 0
+/* Used only by add_simple below, which has been removed as unused. */
 /* Add 2nd degree Bezier to the path */
 static int
 add_quadratic_curve(gx_path * const ppath, const gs_fixed_point * const a,
@@ -1249,7 +1266,9 @@ add_quadratic_curve(gx_path * const ppath, const gs_fixed_point * const a,
     return gx_path_add_curve(ppath, (a->x + 2*b->x)/3, (a->y + 2*b->y)/3,
 	(c->x + 2*b->x)/3, (c->y + 2*b->y)/3, c->x, c->y);
 }
-
+#endif
+#if 0
+/* Used only by check_component below, which was removed as unused. */
 /*
  * Append a simple glyph outline to a path (ppath != 0) and/or return
  * its list of points (ppts != 0).
@@ -1446,7 +1465,11 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
     }
     return 0;
 }
-
+#endif
+#if 0
+/* Used only by append_component below, which is also apprently unused and
+ * was removed by RJW.
+ */
 /* Append a glyph outline. */
 static int
 check_component(uint glyph_index, const gs_matrix_fixed *pmat,
@@ -1478,6 +1501,7 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
     *pgd = glyph_data;
     return 1;			/* composite */
 }
+#endif
 #if 0
 /* RJW: Does not appear to be used */
 static int
