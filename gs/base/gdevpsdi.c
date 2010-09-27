@@ -454,7 +454,7 @@ psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev,
 		const gs_imager_state * pis, const gs_pixel_image_t * pim)
 {
     return pdev->params.ConvertCMYKImagesToRGB &&
-	    pis != 0 &&
+	    pis != 0 && pim->ColorSpace &&
 	    gs_color_space_get_index(pim->ColorSpace) ==
 	    gs_color_space_index_DeviceCMYK;
 }
