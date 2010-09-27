@@ -1056,8 +1056,11 @@ show_proceed(gs_show_enum * penum)
 		        /* If antialiasing is in effect, don't use xfont */
 		        if (log2_scale.x + log2_scale.y > 0)
 			    goto no_cache;
+			/* Don't use xfont for outline (stroked) fonts or
+			 * as the descendant of a type 0 font.
+			 */
 			if (pfont->ExactSize == fbit_use_outlines ||
-			    pfont->PaintType == 2
+			    pfont->PaintType == 2 || rfont->FontType == 0
 			    )
 			    goto no_cache;
 			if (pfont->BitmapWidths) {
