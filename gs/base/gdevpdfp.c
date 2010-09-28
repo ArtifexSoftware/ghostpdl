@@ -317,8 +317,12 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 		    cl = (float)1.3;
 		else if (cl < (float)1.45)
 		    cl = (float)1.4;
-		else
+		else if (cl < (float)1.55)
 		    cl = (float)1.5;
+		else if (cl < (float)1.65)
+		    cl = (float)1.6;
+		else
+		    cl = (float)1.7;
 	    case 1:
 		break;
 	}
