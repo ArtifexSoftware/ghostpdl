@@ -538,6 +538,19 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     }
     /* Handle the float/double mismatch. */
     pdev->CompatibilityLevel = (int)(cl * 10 + 0.5) / 10.0;
+    if(pdev->OwnerPassword.size != save_dev->OwnerPassword.size || 
+	(pdev->OwnerPassword.size != 0 && 
+	 memcmp(pdev->OwnerPassword.data, save_dev->OwnerPassword.data, 
+	 pdev->OwnerPassword.size) != 0)) {
+	if (pdev->is_open) {
+	    if (pdev->PageCount == 0) {
+	        gs_closedevice((gx_device *)save_dev);
+	        return 0;
+	    }
+	    else
+	        emprintf(pdev->memory, "Owner Password changed mid-job, ignoring.\n");
+	}
+    }
     return 0;
  fail:
     /* Restore all the parameters to their original state. */
