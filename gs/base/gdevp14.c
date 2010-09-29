@@ -3630,7 +3630,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
-    int tag_off = alpha_g_off + (has_tags ? planestride : 0);
+    int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps;
     gx_color_index comps;
