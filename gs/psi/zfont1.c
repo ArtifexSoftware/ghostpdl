@@ -98,61 +98,56 @@ charstring_font_params(const gs_memory_t *mem,
     int code;
 
     /* Get the rest of the information from the Private dictionary. */
-    if ((code = dict_int_param(pprivate, "lenIV", -1, 255, pdata1->lenIV,
-			       &pdata1->lenIV)) < 0 ||
-	(code = dict_uint_param(pprivate, "subroutineNumberBias",
-				0, max_uint, pdata1->subroutineNumberBias,
-				&pdata1->subroutineNumberBias)) < 0 ||
-	(code = dict_int_param(pprivate, "BlueFuzz", 0, 1999, 1,
-			       &pdata1->BlueFuzz)) < 0 ||
-	(code = dict_float_param(pprivate, "BlueScale", 0.039625,
-				 &pdata1->BlueScale)) < 0 ||
-	(code = dict_float_param(pprivate, "BlueShift", 7.0,
-				 &pdata1->BlueShift)) < 0 ||
-	(code = pdata1->BlueValues.count =
-	 dict_float_array_param(mem, pprivate, "BlueValues", max_BlueValues * 2,
-				&pdata1->BlueValues.values[0], NULL)) < 0 ||
-	(code = dict_float_param(pprivate, "ExpansionFactor", 0.06,
-				 &pdata1->ExpansionFactor)) < 0 ||
-	(code = pdata1->FamilyBlues.count =
-	 dict_float_array_param(mem, pprivate, "FamilyBlues", max_FamilyBlues * 2,
-				&pdata1->FamilyBlues.values[0], NULL)) < 0 ||
-	(code = pdata1->FamilyOtherBlues.count =
-	 dict_float_array_param(mem, pprivate,
-				"FamilyOtherBlues", max_FamilyOtherBlues * 2,
-			    &pdata1->FamilyOtherBlues.values[0], NULL)) < 0 ||
-	(code = dict_bool_param(pprivate, "ForceBold", false,
-				&pdata1->ForceBold)) < 0 ||
+    if ((code = dict_int_param(pprivate, "lenIV", -1, 255, pdata1->lenIV, &pdata1->lenIV)) < 0)
+        return code;
+    if ((code = dict_uint_param(pprivate, "subroutineNumberBias",
+         0, max_uint, pdata1->subroutineNumberBias, &pdata1->subroutineNumberBias)) < 0)
+        return code;
+    if ((code = dict_int_param(pprivate, "BlueFuzz", 0, 1999, 1, &pdata1->BlueFuzz)) < 0)
+        return code;
+    if ((code = dict_float_param(pprivate, "BlueScale", 0.039625, &pdata1->BlueScale)) < 0)
+        return code;
+    if ((code = dict_float_param(pprivate, "BlueShift", 7.0, &pdata1->BlueShift)) < 0)
+        return code;
+    if ((code = pdata1->BlueValues.count = dict_float_array_param(mem, pprivate, "BlueValues",
+                max_BlueValues * 2, &pdata1->BlueValues.values[0], NULL)) < 0)
+        return code;
+    if ((code = dict_float_param(pprivate, "ExpansionFactor", 0.06, &pdata1->ExpansionFactor)) < 0)
+        return code;
+    if ((code = pdata1->FamilyBlues.count = dict_float_array_param(mem, pprivate, "FamilyBlues",
+                max_FamilyBlues * 2, &pdata1->FamilyBlues.values[0], NULL)) < 0)
+        return code;
+    if ((code = pdata1->FamilyOtherBlues.count = dict_float_array_param(mem, pprivate, "FamilyOtherBlues",
+                max_FamilyOtherBlues * 2, &pdata1->FamilyOtherBlues.values[0], NULL)) < 0)
+        return code;
+    if ((code = dict_bool_param(pprivate, "ForceBold", false, &pdata1->ForceBold)) < 0)
+        return code;
     /*
      * We've seen a few fonts with out-of-range LanguageGroup values;
      * if it weren't for this, the only legal values should be 0 or 1.
      */
-	(code = dict_int_param(pprivate, "LanguageGroup", min_int, max_int, 0,
-			       &pdata1->LanguageGroup)) < 0 ||
-	(code = pdata1->OtherBlues.count =
-	 dict_float_array_param(mem, pprivate, "OtherBlues", max_OtherBlues * 2,
-				&pdata1->OtherBlues.values[0], NULL)) < 0 ||
-	(code = dict_bool_param(pprivate, "RndStemUp", true,
-				&pdata1->RndStemUp)) < 0 ||
-	(code = pdata1->StdHW.count =
-	 dict_float_array_check_param(mem, pprivate, "StdHW", 1,
-				      &pdata1->StdHW.values[0], NULL,
-				      0, e_rangecheck)) < 0 ||
-	(code = pdata1->StdVW.count =
-	 dict_float_array_check_param(mem, pprivate, "StdVW", 1,
-				      &pdata1->StdVW.values[0], NULL,
-				      0, e_rangecheck)) < 0 ||
-	(code = pdata1->StemSnapH.count =
-	 dict_float_array_param(mem, pprivate, "StemSnapH", max_StemSnap,
-				&pdata1->StemSnapH.values[0], NULL)) < 0 ||
-	(code = pdata1->StemSnapV.count =
-	 dict_float_array_param(mem, pprivate, "StemSnapV", max_StemSnap,
-				&pdata1->StemSnapV.values[0], NULL)) < 0 ||
+    if ((code = dict_int_param(pprivate, "LanguageGroup", min_int, max_int, 0, &pdata1->LanguageGroup)) < 0)
+        return code;
+    if ((code = pdata1->OtherBlues.count = dict_float_array_param(mem, pprivate, "OtherBlues",
+                max_OtherBlues * 2, &pdata1->OtherBlues.values[0], NULL)) < 0)
+        return code;
+    if ((code = dict_bool_param(pprivate, "RndStemUp", true, &pdata1->RndStemUp)) < 0)
+        return code;
+    if ((code = pdata1->StdHW.count = dict_float_array_check_param(mem, pprivate, "StdHW",
+                1, &pdata1->StdHW.values[0], NULL, 0, e_rangecheck)) < 0)
+        return code;
+    if ((code = pdata1->StdVW.count = dict_float_array_check_param(mem, pprivate, "StdVW",
+                1, &pdata1->StdVW.values[0], NULL, 0, e_rangecheck)) < 0)
+        return code;
+    if ((code = pdata1->StemSnapH.count = dict_float_array_param(mem, pprivate, "StemSnapH",
+                max_StemSnap, &pdata1->StemSnapH.values[0], NULL)) < 0)
+        return code;
+    if ((code = pdata1->StemSnapV.count = dict_float_array_param(mem, pprivate, "StemSnapV",
+                max_StemSnap, &pdata1->StemSnapV.values[0], NULL)) < 0)
+        return code;
     /* The WeightVector is in the font dictionary, not Private. */
-	(code = pdata1->WeightVector.count =
-	 dict_float_array_param(mem, op, "WeightVector", max_WeightVector,
-				pdata1->WeightVector.values, NULL)) < 0
-	)
+    if ((code = pdata1->WeightVector.count = dict_float_array_param(mem, op, "WeightVector",
+                max_WeightVector, pdata1->WeightVector.values, NULL)) < 0)
 	return code;
     /*
      * According to section 5.6 of the "Adobe Type 1 Font Format",
@@ -164,16 +159,10 @@ charstring_font_params(const gs_memory_t *mem,
     {
 	float max_zone_height = 1.0;
 
-#define SCAN_ZONE(z)\
-    find_zone_height(&max_zone_height, pdata1->z.count, pdata1->z.values);
-
-	SCAN_ZONE(BlueValues);
-	SCAN_ZONE(OtherBlues);
-	SCAN_ZONE(FamilyBlues);
-	SCAN_ZONE(FamilyOtherBlues);
-
-#undef SCAN_ZONE
-
+        find_zone_height(&max_zone_height, pdata1->BlueValues.count, pdata1->BlueValues.values);
+        find_zone_height(&max_zone_height, pdata1->OtherBlues.count, pdata1->OtherBlues.values);
+        find_zone_height(&max_zone_height, pdata1->FamilyBlues.count, pdata1->FamilyBlues.values);
+        find_zone_height(&max_zone_height, pdata1->FamilyOtherBlues.count, pdata1->FamilyOtherBlues.values);
 	if (pdata1->BlueScale * max_zone_height > 1.0)
 	    pdata1->BlueScale = 1.0 / max_zone_height;
     }

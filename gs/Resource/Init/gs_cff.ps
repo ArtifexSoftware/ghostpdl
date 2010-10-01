@@ -734,7 +734,8 @@ dup							% Format 2
   /DEBUG CFFDEBUG def	% bring the binding closer
   /StringCache 1 dict def % Private DICT may be reused.
 
-	% Read the header.
+systemdict /OLDCFF known {
+        % Read the header.
 
   /f cff def
   /vmajor next def
@@ -758,6 +759,7 @@ dup							% Format 2
   /offsets 50 dict def
   /queued [] def
   /opdict null def		% reserve a slot
+
   /fonts [ topdicts {
     0 () /SubFileDecode filter /f exch def
     40 dict begin
@@ -817,7 +819,6 @@ dup							% Format 2
     } ifelse
     end
   } forall
-
 	% Wrap up.
 
   resname mark 0 1 fonts length 1 sub {
@@ -836,6 +837,27 @@ dup							% Format 2
       1 index exch definefont
     } ifelse
   } for .dicttomark
+
+} {
+  forcecidfont
+  [ { cff 1024 string readstring not { exit } if } loop ]
+  .parsecff /fonts exch def
+
+  resname
+  mark fonts {
+    forceresname { exch pop resname exch } if
+    dup /CIDFontType known { % This is a CIDFont.
+      dup /CIDFontName 3 index put
+      1 index exch /CIDFont defineresource
+    } {      	             % This is a font.
+      dup /FontName 3 index put
+      dup /FontType 2 put
+      1 index exch
+      definefont
+    } ifelse
+  } forall .dicttomark
+} ifelse
+
   end		% temporary dict
   end		% FontSetInit ProcSet
   /FontSet defineresource

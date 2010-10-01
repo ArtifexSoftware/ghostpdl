@@ -775,9 +775,10 @@ $(PSOBJ)zchar2.$(OBJ) : $(PSSRC)zchar2.c $(OP)\
  $(ichar1_h)
 	$(PSCC) $(PSO_)zchar2.$(OBJ) $(C_) $(PSSRC)zchar2.c
 
-$(PSOBJ)zfont2.$(OBJ) : $(PSSRC)zfont2.c $(OP)\
+$(PSOBJ)zfont2.$(OBJ) : $(PSSRC)zfont2.c $(OP) $(string__h)\
  $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(bfont_h) $(idict_h) $(idparam_h) $(ifont1_h) $(ifont2_h)
+ $(bfont_h) $(idict_h) $(idparam_h) $(ifont1_h) $(ifont2_h)\
+ $(iname_h) $(iddict_h) $(store_h)
 	$(PSCC) $(PSO_)zfont2.$(OBJ) $(C_) $(PSSRC)zfont2.c
 
 type2_=$(PSOBJ)zchar2.$(OBJ) $(PSOBJ)zfont2.$(OBJ)
