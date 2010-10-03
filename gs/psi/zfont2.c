@@ -2306,7 +2306,6 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 return code;
         }
     }
-  done:
     return 0;
 }
 
@@ -2629,7 +2628,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
                 encoding.value.refs[gid2char[gid]] = name;
             }     
         }
-        if ((enc_format & 0x80) && offsets.encoding_off > 1) {
+        if (offsets.encoding_off > 1 && (enc_format & 0x80)) {
             unsigned int n_supp, charcode, sid;
 
             if ((code = card8(&n_supp, data, supp_enc_offset, pe_all)) < 0)
