@@ -595,8 +595,12 @@ def
 	       if			% If StrF is known
       	     }
 	    ifelse			% Ifelse R < 4
-	  }
-	 if				% If = stringtype
+	  } {
+            dup type /nametype eq {
+              .pdffixname
+            } if
+          }
+         ifelse
 	 exch pop
        }
       ifelse
