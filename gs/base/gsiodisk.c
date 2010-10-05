@@ -217,7 +217,7 @@ iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
             return_error(gs_error_undefinedfilename);
     }
 
-    return iodev_os_fopen(iodev_default, realname, access, pfile, rfname, rnamelen);
+    return iodev_os_fopen(iodev_default(pstate->memory), realname, access, pfile, rfname, rnamelen);
 }
 
 static int
