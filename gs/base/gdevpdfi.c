@@ -713,6 +713,20 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	image[0].pixel.ColorSpace = pcs_device;
     }
     pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
+    
+    /* This is rather hacky. the gs_image_pixel_t union has copies of the image
+     * information, including the ColorSpace, but it does not increment the
+     * reference counts of the counted objects (teh ColorSpace) when it makes
+     * copies. However, if psdf_setup_image_filters() should change the colour
+     * space into DeviceCMYK because it converts the image, it will decrement
+     * the reference count of the original space. There is at least one place
+     * where it is called with the original space, so we can't simply remove
+     * the decrement. Handling this properly would entail incrementing the
+     * reference count when we make the copy, and correctly decrementing it
+     * in all the error conditions. Its easier to isolate the changes to
+     * this piece of code.
+     */
+    rc_increment_cs(image[0].pixel.ColorSpace);
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 		    height, pnamed, in_line)) < 0 ||
 	/*
@@ -731,8 +745,14 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 		 psdf_setup_image_filters((gx_device_psdf *) pdev,
 					  &pie->writer.binary[0], &image[0].pixel,
 					  pmat, pis, true, in_line))) < 0
-	)
+	) {
+	if (image[0].pixel.ColorSpace == pim->ColorSpace)
+	    rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
 	goto fail;
+    }
+    if (image[0].pixel.ColorSpace == pim->ColorSpace)
+        rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
+
     if (convert_to_process_colors) {
 	image[0].pixel.ColorSpace = pcs_orig;
 	code = psdf_setup_image_colors_filter(&pie->writer.binary[0], 
@@ -741,6 +761,9 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
   	    goto fail;
 	image[0].pixel.ColorSpace = pcs_device;
     }
+
+    /* See the comment above about reference counting of the colour space */
+    rc_increment_cs(image[1].pixel.ColorSpace);
     if (pie->writer.alt_writer_count > 1) {
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
         if (code)
@@ -755,17 +778,26 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    pie->writer.alt_writer_count = 1;
 	    memset(pie->writer.binary + 1, 0, sizeof(pie->writer.binary[1]));
 	    memset(pie->writer.binary + 2, 0, sizeof(pie->writer.binary[1]));
-	} else if (code)
+	} else if (code) {
+	    if (image[1].pixel.ColorSpace == pim->ColorSpace)
+		rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
 	    goto fail;
+	}
 	else if (convert_to_process_colors) {
 	    image[1].pixel.ColorSpace = pcs_orig;
 	    code = psdf_setup_image_colors_filter(&pie->writer.binary[1], 
 		    (gx_device_psdf *)pdev, &image[1].pixel, pis);
-	    if (code < 0)
+	    if (code < 0) {
+		if (image[1].pixel.ColorSpace == pim->ColorSpace)
+		    rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
   		goto fail;
+	    }
 	    image[1].pixel.ColorSpace = pcs_device;
 	}
     }
+    if (image[1].pixel.ColorSpace == pim->ColorSpace)
+        rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
+
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
 	code = pdf_begin_image_data_decoded(pdev, num_components, pranges, i,
 			     &image[i].pixel, &cs_value, pie);
