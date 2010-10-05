@@ -747,7 +747,9 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
     } else {
         /* Check for cases where the color model has changed */
         if (dev->device_icc_profile->num_comps != 
-            dev->color_info.num_components) {
+            dev->color_info.num_components || 
+            strncmp(dev->device_icc_profile->name,dev->color_info.icc_profile,
+            dev->device_icc_profile->name_length) != 0 ) {
             /* First go ahead and try to use the profile path that is already 
                given in the dev */
             code = gsicc_set_device_profile(pgs->icc_manager, dev, pgs->memory);
