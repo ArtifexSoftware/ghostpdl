@@ -708,9 +708,8 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     return(str);
 }
 
-/* This set the device profile entry of the ICC manager.  If the
-   device does not have a defined profile, then a default one
-   is selected. */
+/* This sets the device profile. If the device does not have a defined 
+   profile, then a default one is selected. */
 int
 gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
 {
@@ -787,14 +786,10 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
     }
 }
 
-/*  This computes the hash code for the
-    device profile and assigns the code
-    and the profile to the DeviceProfile
-    member variable in the ICC Manager
-    This should really occur only one time.
-    This is different than gs_set_device_profile
-    which sets the profile on the output
-    device */
+/*  This computes the hash code for the device profile and assigns the profile 
+    to the device_icc_profile member variable of the device.  This should 
+    really occur only one time, but may occur twice if a color model is 
+    specified or a non default profile is specified on the command line */
 static int 
 gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev, 
                          gs_memory_t * mem)
