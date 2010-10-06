@@ -212,7 +212,8 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 	(param_requested(plist, "DSC") > 0 &&
 	 (code = param_write_null(plist, "DSC")) < 0) ||
 	(code = gs_param_write_items(plist, pdev, NULL, pdf_param_items)) < 0
-	);
+	)
+    {}
     return code;
 }
 
@@ -345,7 +346,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	    if (code < 0 ||
 		(pdev->is_ps2write && (code = param_read_string(plist, "OPDFReadProcsetPath", &pdev->OPDFReadProcsetPath)) < 0) ||
 		(!pdev->is_ps2write && (code = param_read_bool(plist, "ForOPDFRead", &pdev->ForOPDFRead)) < 0)
-		);
+		){
+	    }
 	    plist->memory = mem;
 	}
 	if (code < 0)

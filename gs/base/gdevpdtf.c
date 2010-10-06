@@ -640,7 +640,7 @@ has_extension_glyphs(gs_font *pfont)
 	code = pfont->procs.glyph_name(pfont, glyph, &str);
 	if (code < 0)
 	    return code;
-	l = str.size - sl, j;
+	l = str.size - sl;
 	for (j = 0; j < l; j ++)
 	    if (!memcmp(gx_extendeg_glyph_name_separator, str.data + j, sl))
 		return true;
