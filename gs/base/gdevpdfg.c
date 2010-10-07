@@ -886,7 +886,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
     char trs[17 + MAX_FN_CHARS + 1];
     int code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
 				  trs);
-    long id, spot_id;
+    long spot_id;
     stream *s;
     int i = countof(ht_functions);
     gs_memory_t *mem = pdev->pdf_memory;
@@ -935,7 +935,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
 	if (code < 0) 
 	    return code;
     }	
-    *pid = id = pdf_begin_separate(pdev);
+    *pid = pdf_begin_separate(pdev);
     s = pdev->strm;
     /* Use the original, requested frequency and angle. */
     pprintg2(s, "<</Type/Halftone/HalftoneType 1/Frequency %g/Angle %g",
@@ -1002,7 +1002,6 @@ pdf_write_threshold_halftone(gx_device_pdf *pdev,
 			     const gx_ht_order *porder, long *pid)
 {
     char trs[17 + MAX_FN_CHARS + 1];
-    stream *s;
     pdf_data_writer_t writer;
     int code = pdf_write_transfer(pdev, porder->transfer, "",
 				  trs);
@@ -1010,7 +1009,6 @@ pdf_write_threshold_halftone(gx_device_pdf *pdev,
     if (code < 0)
 	return code;
     CHECK(pdf_begin_data(pdev, &writer)); 
-    s = pdev->strm;
     *pid = writer.pres->object->id;
     CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
 	"/Type", "/Halftone"));
@@ -1040,7 +1038,6 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
     if (code < 0)
 	return code;
     CHECK(pdf_begin_data(pdev, &writer)); 
-    s = pdev->strm;
     *pid = writer.pres->object->id;
     CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
 	"/Type", "/Halftone"));
