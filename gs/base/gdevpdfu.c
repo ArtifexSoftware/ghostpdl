@@ -726,7 +726,7 @@ stream_to_none(gx_device_pdf * pdev)
 	    sclose(s);		/* Next terminate the compression filter */
 	    gs_free_object(pdev->pdf_memory, s->cbuf, "zlib buffer");
 	    gs_free_object(pdev->pdf_memory, s, "zlib stream");
-	    pdev->strm = s = fs;
+	    pdev->strm = fs;
 	}
 	pdf_end_encrypt(pdev);
     	s = pdev->strm;
@@ -1299,6 +1299,10 @@ pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 	uint copy = min(left, sbuf_size);
 
 	r = fread(buf, 1, copy, file);
+	if (r < 1) {
+	    gs_note_error(gs_error_ioerror);
+	    return;
+	}
 	if (ss)
 	    s_arcfour_process_buffer(ss, buf, copy);
 	stream_write(s, buf, copy);
@@ -1321,6 +1325,10 @@ pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
 
 	fseek(file, position + count - left, SEEK_SET);
 	r = fread(buf, 1, copy, file);
+	if (r < 1) {
+	    gs_note_error(gs_error_ioerror);
+	    return;
+	}
 	fseek(file, end_pos, SEEK_SET);
 	stream_write(s, buf, copy);
 	sflush(s);

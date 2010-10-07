@@ -727,7 +727,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
      * this piece of code.
      */
     rc_increment_cs(image[0].pixel.ColorSpace);
-    if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
+    if ((pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 		    height, pnamed, in_line)) < 0 ||
 	/*
 	 * Some regrettable PostScript code (such as LanguageLevel 1 output
@@ -738,7 +738,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * filters if the transfer function(s) is/are other than the
 	 * identity.
 	 */
-	(code = (pie->writer.alt_writer_count == 1 ?
+	((pie->writer.alt_writer_count == 1 ?
 		 psdf_setup_lossless_filters((gx_device_psdf *) pdev,
 					     &pie->writer.binary[0],
 					     &image[0].pixel, in_line) :
@@ -1277,6 +1277,8 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	code = gx_default_begin_typed_image
 	    ((gx_device *)&cvd->mdev, pis, pmat, pic, prect, pdcolor, NULL, mem,
 	    pinfo);
+	if (code < 0)
+	    return code;
     } else {
 	code = pdf_make_mxd(pmcdev, midev, mem);
 	if (code < 0)
@@ -1284,6 +1286,8 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	code = pdf_begin_typed_image
 	    ((gx_device_pdf *)dev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
 	    pinfo, PDF_IMAGE_TYPE3_DATA);
+	if (code < 0)
+	    return code;
     }
     /* Due to equal image merging, we delay the adding of the "Mask" entry into 
        a type 3 image dictionary until the mask is completed. 
@@ -1322,7 +1326,6 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
     int code;
     pdf_image_enum *pmie;
     pdf_image_enum *pmce;
-    cos_stream_t *pmcs;
     int i;
     const gs_image3x_mask_t *pixm;
 
@@ -1350,7 +1353,6 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
     }
     pmie = (pdf_image_enum *)pminfo[i];
     pmce = (pdf_image_enum *)(*pinfo);
-    pmcs = (cos_stream_t *)pmce->writer.pres->object;
     /*
      * Add the SMask entry to the image dictionary, and, if needed,
      * the Matte entry to the mask dictionary.

@@ -194,7 +194,6 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     code = pdf_finish_write_contents_type3(pdev, pdfont);
     if (code < 0)
 	return code;
-    s = pdev->strm; /* pdf_finish_write_contents_type3 changes pdev->strm . */
     if (!pdfont->u.simple.s.type3.bitmap_font && diff_id > 0) {
 	code = pdf_write_encoding(pdev, pdfont, diff_id, 0);
 	if (code < 0)

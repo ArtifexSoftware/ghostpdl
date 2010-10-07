@@ -282,6 +282,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      * psdf_put_params.
      */
     ecode = code = param_read_bool(plist, "LockDistillerParams", &locked);
+    if (ecode < 0)
+	param_signal_error(plist, param_name, ecode);
  
     if (!(locked && pdev->params.LockDistillerParams)) {
 	/* General parameters. */
@@ -290,6 +292,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	    int efo = 1;
 
 	    ecode = param_put_int(plist, (param_name = ".EmbedFontObjects"), &efo, ecode);
+	    if (ecode < 0)
+		param_signal_error(plist, param_name, ecode);
 	    if (efo != 1)
 		param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
 	}
@@ -297,6 +301,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	    int cdv = CoreDistVersion;
 
 	    ecode = param_put_int(plist, (param_name = "CoreDistVersion"), &cdv, ecode);
+	    if (ecode < 0)
+		return gs_note_error(ecode);
 	    if (cdv != CoreDistVersion)
 		param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
 	}
@@ -457,14 +463,14 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	  strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
 	emprintf(pdev->memory,
                  "ColorConversionStrategy is incompatible to ProcessColorModel.\n");
-	ecode = gs_note_error(gs_error_rangecheck);
+	gs_note_error(gs_error_rangecheck);
 	pdev->params.ColorConversionStrategy = save_ccs;
     }
     if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColor) {
 	if (!pdev->UseCIEColor) {
 	    emprintf(pdev->memory,
                      "Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
-	    ecode = gs_note_error(gs_error_rangecheck);
+	    gs_note_error(gs_error_rangecheck);
 	    pdev->UseCIEColor = true;
 	}
     }
@@ -476,7 +482,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	    if (!pdev->UseCIEColor) {
 		emprintf(pdev->memory,
                          "Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
-		ecode = gs_note_error(gs_error_rangecheck);
+		gs_note_error(gs_error_rangecheck);
 		pdev->UseCIEColor = true;
 	    }
 	}
@@ -500,19 +506,19 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	    !strcmp(pdev->params.ColorImage.Filter, "JPXEncode")) {
 	emprintf(pdev->memory,
                  "JPXEncode requires CompatibilityLevel >= 1.5 .\n");
-	ecode = gs_note_error(gs_error_rangecheck);
+	gs_note_error(gs_error_rangecheck);
     }
     if (cl < 1.5 && pdev->params.GrayImage.Filter != NULL &&
 	    !strcmp(pdev->params.GrayImage.Filter, "JPXEncode")) {
 	emprintf(pdev->memory,
                  "JPXEncode requires CompatibilityLevel >= 1.5 .\n");
-	ecode = gs_note_error(gs_error_rangecheck);
+	gs_note_error(gs_error_rangecheck);
     }
     if (cl < 1.4  && pdev->params.MonoImage.Filter != NULL &&
 	    !strcmp(pdev->params.MonoImage.Filter, "JBIG2Encode")) {
 	emprintf(pdev->memory,
                  "JBIG2Encode requires CompatibilityLevel >= 1.4 .\n");
-	ecode = gs_note_error(gs_error_rangecheck);
+	gs_note_error(gs_error_rangecheck);
     }
     if (pdev->HaveTrueTypes && pdev->version == psdf_version_level2) {
 	pdev->version = psdf_version_level2_with_TT ;

@@ -209,7 +209,6 @@ find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
 	return -1;
     }
 
-    mask |= FONT_SAME_OUTLINES;
     for (i = 0; i < PDF_NUM_STANDARD_FONTS; ++psf, ++i) {
 	gs_font_base *cfont;
 	int code;
@@ -636,7 +635,7 @@ has_extension_glyphs(gs_font *pfont)
     const int sl = strlen(gx_extendeg_glyph_name_separator);
 
     psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, NULL, 0, GLYPH_SPACE_NAME);
-    for (glyph = gs_no_glyph; (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1; ) {
+    for (glyph = gs_no_glyph; (psf_enumerate_glyphs_next(&genum, &glyph)) != 1; ) {
 	code = pfont->procs.glyph_name(pfont, glyph, &str);
 	if (code < 0)
 	    return code;
@@ -895,6 +894,8 @@ pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 					   pdf_font_descriptor_FontType(pfd),
 					   pdf_write_contents_simple);
 
+    if (code < 0)
+	return(gs_note_error(code));
     pdfont->FontDescriptor = pfd;
     set_is_MM_instance(pdfont, pdf_font_descriptor_font(pfd, false));
     *ppfres = pdfont;

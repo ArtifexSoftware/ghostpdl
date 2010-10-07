@@ -403,7 +403,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
      */
     notdef = GS_NO_GLYPH;
     for (index = 0;
-	 (code = bfont->procs.enumerate_glyph((gs_font *)bfont, &index, 
+	 (bfont->procs.enumerate_glyph((gs_font *)bfont, &index, 
 		(is_cid ? GLYPH_SPACE_INDEX : GLYPH_SPACE_NAME), &glyph)) >= 0 &&
 	     index != 0;
 	 ) {

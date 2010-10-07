@@ -1289,7 +1289,6 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	(code = font_alloc(pdev, &pdfont, base_font->id, pfd)) < 0
 	)
 	return code;
-    code = 1;
 
     if (!pdf_is_CID_font(font)) {
 	pdfont->u.simple.BaseEncoding = BaseEncoding;
@@ -1317,6 +1316,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    widths.Width.w = 0;
 	    code = pdf_glyph_widths(pdfont, font->WMode, notdef_glyph,
 		 font, &widths, cdevproc_result);
+	    if (code < 0)
+		return code;
 	    w[0] = widths.Width.w;
 	    pdfont->used[0] |= 0x80;
 	}
@@ -2154,10 +2155,14 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 
 	/* Sort out any pending glyphs */
 	code = pdf_set_PaintType0_params(pdev, pis, size, scaled_width, &ppts->values);
+	if (code < 0)
+	    return code;
 
 	pis->line_params.half_width = scaled_width / 2;
 	code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
 				      ppts);
+	if (code < 0)
+	    return code;
 
 	pis->line_params.half_width = saved_width;
     } else {
@@ -2189,6 +2194,9 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
 	int code;
 
 	code = pdf_open_contents(pdev, PDF_IN_STRING);
+	if (code < 0)
+	    return code;
+
 	code = pdf_prepare_stroke(pdev, pis);
 	if (code >= 0) 
 	    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
@@ -2453,7 +2461,7 @@ pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_con
 	p = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr->size, "pdf_text_set_cache");
 	if (p == NULL)
 	    return_error(gs_error_VMerror);
-	sprintf(buf, "g%04x", glyph & 0xFFFF);
+	sprintf(buf, "g%04x", (unsigned int)(glyph & 0xFFFF));
 	memcpy(p, buf, 5);
 	gnstr->data = p;
     } else {

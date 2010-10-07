@@ -223,7 +223,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     if (pbfont->do_subset != DO_SUBSET_YES && reserve_glyphs == -1) {
 	/* The only possibly non-subsetted fonts are Type 1/2 and Type 42. */
 	if (is_standard)
-	    complete = copied, code = 0;
+	    complete = copied;
 	else {
 	    code = gs_copy_font((gs_font *)font, &font->FontMatrix, mem, &complete, -1);
 	    if (code < 0)

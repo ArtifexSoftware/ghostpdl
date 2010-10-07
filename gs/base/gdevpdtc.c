@@ -488,7 +488,6 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 		    return_error(gs_error_unregistered); /* Must not happen */
 		if (pdsubf->FontType == ft_user_defined  || pdsubf->FontType == ft_encrypted || 
 				pdsubf->FontType == ft_encrypted2) {
-		    code += 0; /* A good place for a breakpoint. */
 		} else {
 		    pdf_font_resource_t *pdfont;
 		    bool notdef_subst = false;
@@ -702,7 +701,6 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 		    type1_glyphs[0] = type1_glyphs[num_type1_glyphs];
 		    num_type1_glyphs = 1;
 		    subfont = saved_subfont;
-		    font_change = 0;
 		} else {
 		    num_type1_glyphs = 0;
 		}

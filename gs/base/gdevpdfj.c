@@ -426,7 +426,7 @@ pdf_complete_image_data(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h,
 	    for (; lines_left; lines_left--) 
 		for (i = 0; i < piw->alt_writer_count; i++) {
 		    for (l = bytes_per_line; l > 0; l -= lb)
-			if ((status = sputs(piw->binary[i].strm, buf, min(l, lb), 
+			if ((sputs(piw->binary[i].strm, buf, min(l, lb), 
 					    &ignore)) < 0)
 			    return_error(gs_error_ioerror);
 		}

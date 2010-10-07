@@ -1512,7 +1512,7 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		    return_error(gs_error_VMerror);
 		memcpy(str, vdata, j);
 		memcpy(str + j, buf + 1, len);
-		alt_pair[1].data = vdata = str;
+		alt_pair[1].data = str;
 		alt_pair[1].size = vsize = j + len;
 		pair = alt_pair;
 	    }
