@@ -419,7 +419,7 @@ pdf_complete_image_data(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h,
 	    int lines_left = piw->height - data_h;
 	    byte buf[256];
 	    const uint lb = sizeof(buf);
-	    int i, l, status;
+	    int i, l;
 	    uint ignore;
 
 	    memset(buf, 128, lb);

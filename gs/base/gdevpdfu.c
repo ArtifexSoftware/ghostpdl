@@ -1292,7 +1292,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 void
 pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 {
-    long r, left = count;
+    long r, left = count, code;
     byte buf[sbuf_size];
     
     while (left > 0) {
@@ -1300,7 +1300,7 @@ pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 
 	r = fread(buf, 1, copy, file);
 	if (r < 1) {
-	    gs_note_error(gs_error_ioerror);
+	    code = gs_note_error(gs_error_ioerror);
 	    return;
 	}
 	if (ss)
@@ -1316,7 +1316,7 @@ pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 void
 pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
 {   
-    long r, left = count;
+    long r, left = count, code;
 
     while (left > 0) {
 	byte buf[sbuf_size];
@@ -1326,7 +1326,7 @@ pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
 	fseek(file, position + count - left, SEEK_SET);
 	r = fread(buf, 1, copy, file);
 	if (r < 1) {
-	    gs_note_error(gs_error_ioerror);
+	    code = gs_note_error(gs_error_ioerror);
 	    return;
 	}
 	fseek(file, end_pos, SEEK_SET);
