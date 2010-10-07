@@ -985,7 +985,8 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     cvd->m = *m;
     if (write_on_close) {
 	cvd->mdev.is_open = true;
-	mask->is_open = true;
+	if (mask)
+	    mask->is_open = true;
 	dev_proc(&cvd->mdev, close_device) = lcvd_close_device_with_writing;
     }
     return 0;
