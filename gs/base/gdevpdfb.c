@@ -171,7 +171,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		y -= y_offset;
 		y -= h;
 		pdf_make_bitmap_image(&image, x, y, w, h);
-		y+= h;
 		/*
 		 * The Y axis of the text matrix is inverted,
 		 * so we need to negate the Y offset appropriately.
@@ -203,7 +202,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    y -= pdf_charproc_y_offset(pcp);
 	    y -= h;
 	    pdf_make_bitmap_image(&image, x, y, w, h);
-	    y += h;
 	    goto rx;
 	}
 	set_image_color(pdev, one);
