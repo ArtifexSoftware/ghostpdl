@@ -1073,7 +1073,7 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, i
 
 	    r = fread(&pos, sizeof(pos), 1, tfile);
 	    if (r != 1)
-		gs_note_error(gs_error_ioerror);
+		return(gs_note_error(gs_error_ioerror));
 	    if (pos & ASIDES_BASE_POSITION)
 		pos += resource_pos - ASIDES_BASE_POSITION;
 	    pos -= pdev->OPDFRead_procset_length;
@@ -1099,7 +1099,7 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int start, int e
 
 	    r = fread(&pos, sizeof(pos), 1, tfile);
 	    if (r != 1)
-		gs_note_error(gs_error_ioerror);
+		return(gs_note_error(gs_error_ioerror));
 	    if (pos & ASIDES_BASE_POSITION)
 	        pos += resource_pos - ASIDES_BASE_POSITION;
 	    pos -= pdev->OPDFRead_procset_length;
