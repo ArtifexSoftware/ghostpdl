@@ -36,9 +36,7 @@ typedef struct pl_main_instance_s {
     gs_memory_t *device_memory;
     long base_time[2];		/* starting usertime */
     int error_report;		/* -E# */
-    bool pause;			/* -dNOPAUSE => false */
-    bool print_page_count;      /* print the page number to stdout at
-                                   the end of the job. */
+    bool pause;		        /* -dNOPAUSE => false */
     int first_page;		/* -dFirstPage= */
     int last_page;		/* -dLastPage= */
     gx_device *device;
@@ -55,7 +53,6 @@ typedef struct pl_main_instance_s {
                                      personality - rtl, pcl5c, pcl5e, and
                                      pcl == default.  NB doesn't belong here. */
     bool interpolate;
-    bool leak_check;
 } pl_main_instance_t;
 
 /* initialize gs_stdin, gs_stdout, and gs_stderr.  Eventually the gs

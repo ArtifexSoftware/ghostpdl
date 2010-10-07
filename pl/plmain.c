@@ -74,7 +74,7 @@ extern pl_interp_implementation_t const * const pdl_implementation[];   /* zero-
 /* Define the usage message. */
 static const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
-Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
+Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
          -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>\n";
@@ -201,8 +201,6 @@ get_device_index(const gs_memory_t *mem, const char *value)
 static int
 close_job(pl_main_universe_t *universe, pl_main_instance_t *pti)
 {
-    if ( pti->print_page_count )
-        dlprintf1("%%%%PageCount: %d\n", pti->page_count);
     return pl_dnit_job(universe->curr_instance);
 }
 
@@ -491,12 +489,6 @@ pl_main(
     if ( gs_debug_c('A') )
         dprintf("Final time" );
     pl_platform_dnit(0);
-#ifdef DEBUG
-#ifndef HEAP_ALLOCATOR_ONLY
-    if (inst.leak_check)
-        gs_memory_chunk_dump_memory(mem);
-#endif
-#endif
     return 0;
 }
 
@@ -769,7 +761,6 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 
     pti->error_report = -1;
     pti->pause = true;
-    pti->print_page_count = false;
     pti->device = 0;
     pti->implementation = 0;
     gp_get_usertime(pti->base_time);
@@ -778,7 +769,6 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->page_count = 0;
     pti->saved_hwres = false;
     pti->interpolate = false;
-    pti->leak_check = false;
     strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
@@ -808,7 +798,7 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
                              pti->device_memory);
         if (pti->device != NULL)
           gs_register_struct_root(pti->device_memory, &device_root,
-                                    &pti->device, "pl_top_create_device");
+                                  (void **)&pti->device, "pl_top_create_device");
 
     }
     return code;
@@ -856,10 +846,6 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
         case '\0':
             /* read from stdin - must be last arg */
             continue;
-        case 'c':
-        case 'C':
-            pmi->print_page_count = true;
-            break;
         case 'd':
         case 'D':
             if ( !strcmp(arg, "BATCH") )
@@ -993,11 +979,42 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                 rawheap->limit = (long)maxk << 10;
             }
             break;
-        case 'l':
-            pmi->leak_check=true;
-            break;
-        case 'p':
-        case 'P':
+        case 'o':
+            {
+                const char *adef;
+                gs_param_string str;
+
+		if (arg[0] == 0) {
+		    adef = arg_next(pal, &code);
+		    if (code < 0)
+                        break;
+		} else
+		    adef = arg;
+                param_string_from_transient_string(str, adef);   
+                code = param_write_string((gs_param_list *)params, "OutputFile", &str);
+                pmi->pause=false;
+                break;
+            }
+        case 'L': /* language */
+            {
+                int index;
+                for (index = 0; impl_array[index] != 0; ++index)
+                    if (!strcmp(arg,
+                                pl_characteristics(impl_array[index])->language))
+                        break;
+                if (impl_array[index] != 0)
+                    pmi->implementation = impl_array[index];
+                else {
+                    dprintf("Choose language in -L<language> from: ");
+                    for (index = 0; impl_array[index] != 0; ++index)
+                        dprintf1("%s ",
+                                pl_characteristics(impl_array[index])->language);
+                    dprintf("\n");
+                    return -1;
+                }
+                break;
+            }
+        case 'l': /* personality */
             {
                 if ( !strcmp(arg, "RTL") || !strcmp(arg, "PCL5E") ||
                      !strcmp(arg, "PCL5C") )
@@ -1063,25 +1080,6 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
         case 'Z':
             set_debug_flags(arg, gs_debug);
             break;
-        case 'L': /* language */
-            {
-                int index;
-                for (index = 0; impl_array[index] != 0; ++index)
-                    if (!strcmp(arg,
-                                pl_characteristics(impl_array[index])->language))
-                        break;
-                if (impl_array[index] != 0)
-                    pmi->implementation = impl_array[index];
-                else {
-                    dprintf("Choose language in -L<language> from: ");
-                    for (index = 0; impl_array[index] != 0; ++index)
-                        dprintf1("%s ",
-                                pl_characteristics(impl_array[index])->language);
-                    dprintf("\n");
-                    return -1;
-                }
-                break;
-            }
         }
     }
  out:   if ( help ) {
@@ -1167,7 +1165,7 @@ pl_print_usage(const pl_main_instance_t *pti,
 }
 
 /* Log a string to console, optionally wait for input */
-void
+static void
 pl_log_string(const gs_memory_t *mem, const char *str, int wait_for_key)
 {
     errwrite(mem, str, strlen(str));
