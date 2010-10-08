@@ -583,7 +583,8 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
     e->num_chars = num_chars;
     e->num_widths = num_widths;
     memset(e->glyph_usage, 0, len);
-    memset(e->real_widths, 0, num_widths * sizeof(*e->real_widths));
+    if (e->real_widths != NULL)
+	memset(e->real_widths, 0, num_widths * sizeof(*e->real_widths));
     return 0;
 }
 
