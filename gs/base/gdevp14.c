@@ -6381,9 +6381,12 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	     */
 	    p14dev = (pdf14_clist_device *)(*pcdev);
             if (cdev->clist_color_info.num_components * 8 != cdev->clist_color_info.depth &&
-			p14dev->my_encode_color != pdf14_compressed_encode_color)
-                cdev->clist_color_info.depth = cdev->clist_color_info.num_components * 8;
+		p14dev->my_encode_color != pdf14_compressed_encode_color) {
+                    int i = (cdev->clist_color_info.num_components);
 
+		    i += mem->gs_lib_ctx->BITTAG == GS_DEVICE_DOESNT_SUPPORT_TAGS ? 0 : 1;
+		    cdev->clist_color_info.depth = 8 * i;
+	    }
 	    p14dev->saved_target_color_info = dev->color_info;
 	    dev->color_info = (*pcdev)->color_info;
 	    p14dev->saved_target_encode_color = dev->procs.encode_color;
