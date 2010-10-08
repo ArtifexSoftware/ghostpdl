@@ -217,7 +217,6 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     gx_device_psdf *pdev = pbw->dev;
     gs_memory_t *mem = pdev->v_memory;
     const stream_template *template = pdip->filter_template;
-    const stream_template *orig_template = template;
     const stream_template *lossless_template =
 	(pdev->params.UseFlateCompression &&
 	 pdev->version >= psdf_version_ll3 ?
@@ -248,16 +247,16 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 * called 2 times with different values of the 'lossless' argument.
 	 */
         if (lossless) {
-            orig_template = template = lossless_template;
+            template = lossless_template;
         } else if (template == NULL || template == &s_zlibE_template || 
 		   template == &s_LZWE_template) {
-            orig_template = template = &s_DCTE_template;
+            template = &s_DCTE_template;
         }
 	dict = pdip->ACSDict;
     } else if (!lossless)
 	return gs_error_rangecheck; /* Reject the alternative stream. */   
     if (pdev->version < psdf_version_ll3 && template == &s_zlibE_template)
-	orig_template = template = lossless_template;
+	template = lossless_template;
     if (dict != NULL) /* Some interpreters don't supply filter parameters. */
 	gs_c_param_list_read(dict);	/* ensure param list is in read mode */
     if (template == 0)	/* no compression */
