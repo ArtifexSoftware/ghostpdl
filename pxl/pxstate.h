@@ -139,6 +139,8 @@ struct px_state_s {
   px_pattern_enum_t *pattern_enum;
 
 	/* Miscellaneous */
+  bool interpolate; /* image interpolation */
+
   struct db_ {
     byte *data;
     uint size;

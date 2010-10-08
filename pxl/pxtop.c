@@ -301,6 +301,12 @@ pxl_impl_set_post_page_action(
 	return 0;
 }
 
+static bool
+pxl_get_interpolation(pl_interp_instance_t *instance)
+{
+    return instance->interpolate;
+}
+
 /* Set a device into an interperter instance */
 static int   /* ret 0 ok, else -ve error code */
 pxl_impl_set_device(
@@ -310,10 +316,13 @@ pxl_impl_set_device(
 {
 	int code;
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
+	px_state_t *pxs = pxli->pxs;
+
 	enum {Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone} stage;
 	stage = Sbegin;
 	gs_opendevice(device);
 
+        pxs->interpolate = pxl_get_interpolation(instance);
 	/* Set the device into the gstate */
 	stage = Ssetdevice;
 	if ((code = gs_setdevice_no_erase(pxli->pgs, device)) < 0)	/* can't erase yet */

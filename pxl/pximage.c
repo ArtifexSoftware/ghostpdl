@@ -614,6 +614,8 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	  gs_matrix_multiply(&dmat, &imat, &pxenum->image.ImageMatrix);
 	}
 	pxenum->image.CombineWithColor = true;
+        pxenum->image.Interpolate = pxs->interpolate;
+
 	code = pl_begin_image(pgs, &pxenum->image, &pxenum->info);
 	if ( code < 0 )
 	  { gs_free_object(pxs->memory, pxenum->row, "pxReadImage(row)");
