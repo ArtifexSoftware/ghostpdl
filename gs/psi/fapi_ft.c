@@ -44,7 +44,6 @@
 #include FT_OUTLINE_H
 #include FT_IMAGE_H
 
-
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
 typedef struct FF_server_s
@@ -510,7 +509,8 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         FT_BitmapGlyph bg = (FT_BitmapGlyph)*a_glyph;
 
         if (bitmap_raster(bg->bitmap.width) * bg->bitmap.rows > max_bitmap) {
-            ft_glyphslot_free_bitmap(ft_face->glyph);
+            FT_Done_Glyph(bg);
+            *a_glyph = NULL;
             return (e_VMerror);
         }
     }
@@ -768,6 +768,16 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
     FF_server *s = (FF_server*)a_server;
     FF_face *face = (FF_face*)a_font->server_font_data;
     FT_Error ft_error = 0;
+    
+    if (s->bitmap_glyph) {
+        FT_Done_Glyph(&s->bitmap_glyph->root);
+        s->bitmap_glyph = NULL;
+    }
+    if (s->outline_glyph) {
+        FT_Done_Glyph(&s->outline_glyph->root);
+        s->outline_glyph = NULL;
+    }
+    
 
     /* dpf("get_scaled_font enter: is_type1=%d is_cid=%d font_file_path='%s' a_descendant_code=%d\n",
        a_font->is_type1, a_font->is_cid, a_font->font_file_path ? a_font->font_file_path : "", a_descendant_code); */
@@ -1022,7 +1032,8 @@ static FAPI_retcode
 get_char_width(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
-    return load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->bitmap_glyph, a_server->max_bitmap > 0 ? true : false, a_server->max_bitmap);
+    return load_glyph(a_font, a_char_ref, a_metrics, a_server->max_bitmap > 0 ? (FT_Glyph*)&s->bitmap_glyph : (FT_Glyph*)&s->outline_glyph,
+                           a_server->max_bitmap > 0 ? true : false, a_server->max_bitmap);
 }
 
 static FAPI_retcode get_fontmatrix(FAPI_server *server, gs_matrix *m)
