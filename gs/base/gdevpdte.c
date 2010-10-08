@@ -1017,7 +1017,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    }
 	}
 	pdf_char_widths_to_uts(pdfont3, &cw); /* convert design->text space */
-	if (pte->text.operation & TEXT_DO_DRAW) {
+	if (pte->text.operation & (TEXT_DO_DRAW | TEXT_RENDER_MODE_3)) {
 	    gs_distance_transform(cw.Width.xy.x * ppts->values.size,
 				  cw.Width.xy.y * ppts->values.size,
 				  &ppts->values.matrix, &did);
