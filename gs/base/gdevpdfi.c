@@ -1325,7 +1325,6 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 {
     int code;
     pdf_image_enum *pmie;
-    pdf_image_enum *pmce;
     int i;
     const gs_image3x_mask_t *pixm;
 
@@ -1352,7 +1351,6 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	return_error(gs_error_rangecheck);
     }
     pmie = (pdf_image_enum *)pminfo[i];
-    pmce = (pdf_image_enum *)(*pinfo);
     /*
      * Add the SMask entry to the image dictionary, and, if needed,
      * the Matte entry to the mask dictionary.
