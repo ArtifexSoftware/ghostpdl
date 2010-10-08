@@ -1745,13 +1745,13 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 	code = pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL, NULL);
 	if (code < 0)
 	    return code;
-	if (*ppdfont != NULL && base_font != font) {
+	if (base_font != font) {
 	    if (pdfont_not_allowed == *ppdfont)
 		*ppdfont = NULL;	
-	    else if(!pdf_is_compatible_encoding(pdev, *ppdfont, 
+	}
+	if(*ppdfont != NULL && !pdf_is_compatible_encoding(pdev, *ppdfont, 
 				    base_font, cgp->s, cgp->num_all_chars))
 		*ppdfont = NULL;
-	}
 	if (*ppdfont == NULL || *ppdfont == pdfont_not_allowed) {
 	    pdf_resource_type_t type = 
 		(pdf_is_CID_font(base_font) ? resourceCIDFont 
