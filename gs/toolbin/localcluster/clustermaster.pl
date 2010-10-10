@@ -28,12 +28,14 @@ my %machines;
 
 my $footer="";
 
+open (LOG,">>clustermaster.log");
+
 sub mylog($) {
   my $d=`date`;
   chomp $d;
   my $s=shift;
   chomp $s;
-  print "$d: $s\n";
+  print LOG "$d: $s\n";
 }
 
 sub updateStatus($) {
@@ -66,15 +68,19 @@ sub removeQueue {
     close(F);
     open(F,">$queue");
     for (my $i=1;  $i<scalar(@a);  $i++) {
-      print F "$a[$i]\n";
+      print F "$a[$i]\n" if ($a[$i] =~ m/^user/);
+    }
+    for (my $i=1;  $i<scalar(@a);  $i++) {
+      print F "$a[$i]\n" if (!($a[$i] =~ m/^user/));;
     }
     close(F);
   }
   close(LOCK);
 }
 
-sub abortAll {
-mylog "aborting all machines\n";
+sub abortAll ($) {
+  my $reason=shift;
+mylog "aborting all machines: $reason\n";
   my $startTime=time;
   foreach my $m (keys %machines) {
 mylog "touching $m.abort\n";
@@ -112,12 +118,12 @@ mylog "abort.job found\n";
     updateStatus "Aborting current job";
 
 #   removeQueue();  not necessary
-    abortAll();
+    abortAll("abort.job found");
 
     updateStatus "Last job aborted";
     unlink $runningSemaphore;
+    close LOG;
     exit;
-
   }
 }
 
@@ -143,9 +149,10 @@ sub checkPID {
   open(F,">$runningSemaphore");
   print F "$$\n";
   close(F);
-  abortAll();
+  abortAll("checkPID() failed");
   sleep 300;
   unlink $runningSemaphore;
+  close LOG;
   exit;
 }
 
@@ -165,6 +172,7 @@ sub checkProblem {
           delete $machines{$m} if (exists $machines{$m});
           if (scalar keys %lastTransfer) {
             `touch $m.abort`;
+            unlink "$m.start";  # so it does connect later and try to run jobs
             updateNodeStatus($m,"went down, re-running jobs on remaining nodes");
             if (exists $sent{$m}) {
               mylog "1: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
@@ -244,7 +252,7 @@ sub checkProblem {
     die "svn info failed";
   }
   if ($currentRev1 != $newRev1 || $currentRev2 != $newRev2) {
-    #   print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
+#   print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
     open(LOCK,">$lock") || die "can't write to $lock";
     flock(LOCK,LOCK_EX);
     my $rev=$newRev1;
@@ -252,9 +260,9 @@ sub checkProblem {
     my $s="svn $rev";
     my $t=`grep "$s" $queue`;
     chomp $t;
-    #   print "grep '$s' returned: $t\n";
+#   print "grep '$s' returned: $t\n";
     if (length($t)==0) {
-      mylog "grep '$s' returns no match, adding to queue\n";
+      mylog "  grep '$s' returns no match, adding to queue\n";
       open(F,">>$queue");
       print F "$s\n";
       close(F);
@@ -263,7 +271,7 @@ sub checkProblem {
   }
 }
 
-{
+if (0) {
   my $url1=`svn info icc_work | grep "URL" | awk '{ print \$2 } '`;
   chomp $url1;
   my $currentRev1=`svn info icc_work | grep "Last Changed Rev" | awk '{ print \$4 } '`;
@@ -276,13 +284,13 @@ sub checkProblem {
     die "svn info failed";
   }
   if ($currentRev1 != $newRev1) {
-    #   print "$currentRev1 $newRev1\n";
+#   print "$currentRev1 $newRev1\n";
     open(LOCK,">$lock") || die "can't write to $lock";
     flock(LOCK,LOCK_EX);
     my $s="svn-icc_work $newRev1";
     my $t=`grep "$s" $queue`;
     chomp $t;
-    #   print "grep '$s' returned: $t\n";
+#   print "grep '$s' returned: $t\n";
     if (length($t)==0) {
       mylog "grep '$s' returns no match, adding to queue\n";
       open(F,">>$queue");
@@ -305,7 +313,7 @@ if (0) {
     my $s="mupdf";
     my $t=`grep "$s" $queue`;
     chomp $t;
-    #   print "grep '$s' returned: $t\n";
+#   print "grep '$s' returned: $t\n";
     if (length($t)==0) {
       mylog "grep '$s' returns no match, adding to queue\n";
       open(F,">>$queue");
@@ -351,13 +359,13 @@ if (0) {
     $options="" if (!$options);
     if ($product) {
       $product =~ s/ +$//;
-      mylog "user $product\n";
+      mylog "  user $product\n";
       open(LOCK,">$lock") || die "can't write to $lock";
       flock(LOCK,LOCK_EX);
       if ($product =~  m/abort$/) {
         if ($product =~ m/^(.+) /) {
           $user = $1;
-mylog "abort for user $user\n";
+mylog "  abort for user $user\n";
           if (open(F,"<$queue")) {
             my $first=1;
             my @a;
@@ -367,7 +375,7 @@ mylog "abort for user $user\n";
                 push @a,$_ 
               } else {
                 if ($first) {
-mylog "setting 'abort.job'\n";
+mylog "  setting 'abort.job'\n";
                   `touch abort.job`;
                 }
               }
@@ -385,17 +393,17 @@ mylog "setting 'abort.job'\n";
         my $s="user $product";
         my $t=`grep "$s" $queue`;
         chomp $t;
-        mylog "grep '$s' returned: $t\n";
+        mylog "  grep '$s' returned: $t\n";
         if (length($t)==0) {
-          mylog "grep '$s' returns no match, adding to queue\n";
+          mylog "  grep '$s' returns no match, adding to queue\n";
           open(F,">>$queue");
           print F "$s $options\n";
           close(F);
-          mylog "running: find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u\n";
+          mylog "  running: find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u\n";
           `find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u`;
-          mylog "running: find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u\n";
+          mylog "  running: find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u\n";
           `find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u`;
-          mylog "running: chmod -R +xr $usersDir/$user/ghostpdl\n";
+          mylog "  running: chmod -R +xr $usersDir/$user/ghostpdl\n";
           `chmod -R +xr $usersDir/$user/ghostpdl`;
         }
         close(LOCK);
@@ -414,6 +422,7 @@ if (open(F,"<$runningSemaphore")) {
     close(F);
     sleep 300;
     unlink $runningSemaphore;
+    close LOG;
     exit;
   }
   my $fileTime = stat($runningSemaphore)->mtime;
@@ -426,11 +435,13 @@ if (open(F,"<$runningSemaphore")) {
     close(F);
     sleep 300;
     unlink $runningSemaphore;
+    close LOG;
     exit;   # we pause and then exit here since we have to wait until the current clustermaster realizes we've removed the semaphore
   }
   chomp $pid;
   my $running=`ps -p $pid`;
   if ($running =~ m/clustermaster/) {
+    close LOG;
     exit;
   } else {
     mylog "process $pid no longer running, removing semaphore\n";
@@ -440,6 +451,7 @@ if (open(F,"<$runningSemaphore")) {
     close(F);
     sleep 300;
     unlink $runningSemaphore;
+    close LOG;
     exit;
   }
 }
@@ -515,7 +527,7 @@ my %rules=(
   'gs/contrib' => 0,
   'psi' => 16,
   'gs/jasper' => 15,
-  'gs/cups' =>0
+  'gs/cups' =>15
 );
 
 #my $currentRev1=`svn info ghostpdl | grep "Last Changed Rev" | awk '{ print \$4} '`;
@@ -536,6 +548,7 @@ close(LOCK);
 if (!$regression) {
   checkPID();
   unlink $runningSemaphore;
+  close LOG;
   exit;
 }
 
@@ -565,7 +578,7 @@ if ($regression =~ m/svn (\d+)/) {
 
   $footer.="\nChanged files:\n";
   $a.=$b;
-  #print "$a";
+# print "$a";
   my @a=split '\n',$a;
   my $set=0;
   for (my $i=0;  $i<scalar(@a);  $i++) {
@@ -573,7 +586,7 @@ if ($regression =~ m/svn (\d+)/) {
     chomp $s;
 
     if ($s =~ m|/|) {
-      #   print "$s\n";
+#     print "$s\n";
       $s=~ s|ghostpdl/||;
       if ($s =~ m|. +(.+)/|) {
         $footer.="$s\n";
@@ -594,7 +607,7 @@ if ($regression =~ m/svn (\d+)/) {
   }
   $set|=$tests{'ls'} if ($set>0);  # we test the language_switch build if anything has changed
 
-  #print "$set\n";
+# print "$set\n";
   foreach my $i (sort keys %tests) {
     $product .= "$i " if ($set & $tests{$i});
   }
@@ -621,14 +634,14 @@ if ($regression =~ m/svn (\d+)/) {
 } elsif ($regression=~/user (.+)/) {
   mylog "found user regression in queue: $regression\n";
   $userRegression=$1;
-} elsif ($regression=~/svn-icc_work (.+)/) {
+} elsif (0 && $regression=~/svn-icc_work (.+)/) {
   mylog "found icc_work regression in queue: $regression\n";
   $icc_workRegression=1;
   $rev=$1;
   $product="gs pcl xps ls";
   $footer.="icc_work regression: $rev\n\nProducts tested: $product\n\n";
 } elsif ($regression=~/mupdf/) {
-  mylog "found mupdf entry in queue.lst\n";
+  mylog "found mupdf entry in $queue\n";
   my $cmd="touch mupdf.tar.gz ; rm mupdf.tar.gz ; tar cvf mupdf.tar --exclude=_darcs mupdf ; gzip mupdf.tar";
   `$cmd`;
   $cmd="cd mupdf ; darcs changes --count";
@@ -640,7 +653,7 @@ $mupdfRegression=1;
   mylog "found updatebaseline in regression: $regression\n";
   $updateBaseline=1;
 } else {
-  mylog "found unknown entry in queue.lst, removing.\n";
+  mylog "found unknown entry in $queue, removing.\n";
 }
 
 $product =~ s/\s+$//;
@@ -677,9 +690,9 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
   my @machines = <*.up>;
   mylog "@machines\n" if ($verbose);
   foreach (@machines) {
-    # print "$_\n";
-    # my $t=time-stat("$_")->ctime;
-    # print "$_ $t\n";
+#   print "$_\n";
+#   my $t=time-stat("$_")->ctime;
+#   print "$_ $t\n";
     $machines{$_}=1 if (stat("$_") && (time-stat("$_")->ctime)<$maxTouchTime);
   }
   foreach (keys %machines) {
@@ -730,7 +743,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
         }
         $options=$a[1];
         $options="" if (!$options);
-#     print "userName=$userName product=$product options=$options\n"; exit;
+#       print "userName=$userName product=$product options=$options\n"; exit;
       }
       mylog "userName=$userName product=$product options=$options\n" if ($verbose);
       my $t=`date +\"%D %H:%M:%S\"`;
@@ -746,10 +759,14 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       # horrible hack, fix later
       mylog "build.pl $product failed\n";
       unlink $runningSemaphore;
+      close LOG;
       exit;
     }
 
 if ($bmpcmp) {
+  $maxTouchTime*=3;
+  $maxTransferTime*=3;
+
 `head -1000 jobs >jobs.tmp ; mv jobs.tmp jobs`;
         my $gs="";
         my $pcl="";
@@ -789,8 +806,9 @@ mylog "done checking jobs, product=$product\n";
             foreach my $m (keys %machines) {
               unlink "$m.start";
             }
-            abortAll();
+            abortAll("found $_.start");
             unlink $runningSemaphore;
+            close LOG;
             exit;
       }
       open(F,">$_.start");
@@ -859,7 +877,7 @@ mylog "done checking jobs, product=$product\n";
       );
 
     if (!$server) {
-      abortAll();
+      abortAll("can't setup server");
       unlink $runningSemaphore;
 
       die "can't setup server";
@@ -891,7 +909,7 @@ mylog "done checking jobs, product=$product\n";
         while (!$failOccured && !$tempDone && ($client = $server->accept())) {
           alarm 30;
 
-          #print "doneCount=$doneCount machines=".(scalar(keys %machines))."\n";
+#         print "doneCount=$doneCount machines=".(scalar(keys %machines))."\n";
           $SIG{PIPE} = 'IGNORE';
           $client->autoflush(1);
           my $t=<$client>;
@@ -909,9 +927,10 @@ mylog "done checking jobs, product=$product\n";
             foreach my $m (keys %machines) {
               unlink "$m.start";
             }
-            abortAll();
+            abortAll("$t.start exists");
             sleep 300;
             unlink $runningSemaphore;
+            close LOG;
             exit;
           } else {
           mylog "Connect from $t (".$client->peerhost.") (".(time-$lastTransfer{$t})." seconds); jobs remaining ".scalar(@jobs)."\n";
@@ -990,7 +1009,7 @@ mylog "done checking jobs, product=$product\n";
         }
         if ($count<scalar keys %machines) {
           mylog "aborting all machines\n";
-          abortAll();
+          abortAll('$count < scalar keys %machines');
         }
         %machines=%tempMachines;
       }
@@ -1000,7 +1019,7 @@ mylog "done checking jobs, product=$product\n";
 
     mylog "all machines sent done, some machine went down, or one or more failed\n";
     if ($abort) {
-      abortAll();
+      abortAll("all machines sent done, some machine went down, or one or more failed");
     }
 
     my $machineSentDoneTime=time;
@@ -1027,7 +1046,7 @@ mylog "done checking jobs, product=$product\n";
           mylog "$m is down\n" if ($verbose);
           $abort=1;
           %doneTime=();  # avoids a race condition where the machine we just aborted reports done
-          abortAll();
+          abortAll("$m.up is missin or hasn't been updated in a long time");
           delete $machines{$m};
         }
       }
@@ -1035,6 +1054,16 @@ mylog "done checking jobs, product=$product\n";
     }
     mylog "abort=$abort\n" if ($verbose);
   } while ($abort && !$failOccured);
+
+  if (!$failOccured) {
+    foreach my $m (keys %machines) {
+      my $t=0;
+      if (exists $sent{$m}) {
+        $t=scalar @{$sent{$m}};
+      }
+      mylog "$m completed $t jobs\n";
+    }
+  }
 
   my $elapsedTime=time-$startTime;
 
@@ -1073,6 +1102,7 @@ mylog "done checking jobs, product=$product\n";
         checkPID();
         unlink $runningSemaphore;  # force checkPID() to fail
         checkPID();
+        close LOG;
         exit;  # unecessary, checkPID() won't return
       }
       my $a=`./readlog.pl $_.log $_.tab $_ $_.out`;
@@ -1093,6 +1123,7 @@ mylog "done checking jobs, product=$product\n";
 my $a=`ls -ls *log* *out*`;
 mylog "ls:\n$a";
         unlink $runningSemaphore;
+        close LOG;
         exit;
       }
     }

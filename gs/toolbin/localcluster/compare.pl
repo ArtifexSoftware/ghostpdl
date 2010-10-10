@@ -269,7 +269,9 @@ foreach my $t (sort keys %previous) {
 ##    }
 ##  }
   } else {
-    push @filesRemoved,"$t $previousProduct{$t}";
+    if (!exists $skip{$t}) {
+      push @filesRemoved,"$t $previousProduct{$t}";
+    }
   }
 }
 
@@ -279,7 +281,7 @@ my $pdfwriteTestCount=0;
 my $notPdfwriteTestCount=0;
 
 foreach my $t (sort keys %current) {
-  if (!exists $previous{$t}) {
+  if (!exists $previous{$t} && !exists $skip{$t}) {
     push @filesAdded,"$t $currentProduct{$t}";
     if ($currentError{$t}) {
       push @allErrors,"$t $currentMachine{$t} $currentError{$t}";

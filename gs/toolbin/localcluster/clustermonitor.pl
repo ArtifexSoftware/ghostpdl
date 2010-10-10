@@ -8,11 +8,7 @@ use File::stat;
 
 my $watchdog=0;
 
-#my @machines=("i7","i7a","macpro","peeves","test");
-#my @machines=("i7","i7a","test");
-#
 my @machines = </home/regression/cluster/*.status>;
-#print "@machines\n";
 
 for (my $i=0;  $i<scalar(@machines);  $i++) {
   $machines[$i]=~s/.status//;
@@ -42,57 +38,60 @@ my %months=(
 
 my $b="";
 
+my $lastCols=0;
+my $lastRows=0;
 
-my ($rows,$cols) = split(/ /,`/bin/stty size`);
-chomp $cols;
-
-print chr(0x1b)."[1;1H";
-print chr(0x1b)."[J";
 
 while(1) {
 
-  my $status=`cat /home/regression/cluster/status`;
-  chomp $status;
-
-  if (!exists $status{'main'}{"status"} || $status{'main'}{"status"} ne $status) {
-    print chr(0x1b)."[".(1).";1H";
-    $status=substr($status,0,$cols-1);
-    printf "%s".chr(0x1b)."[K\n",$status;
-    print chr(0x1b)."[".(scalar(@machines)+2).";1H";
-    $status{'main'}{"status"}=$status;
+  my ($rows,$cols) = split(/ /,`/bin/stty size`);
+  chomp $cols;
+  if ($rows != $lastRows || $cols != $lastCols) {
+    $lastRows=$rows;
+    $lastCols=$cols;
+    print chr(0x1b)."[1;1H";  # clear screen
+    print chr(0x1b)."[J";
+    %status={};   # force refresh
   }
 
-for (my $i=0;  $i<scalar(@machines);  $i++) {
-  my $machine=$machines[$i];
-  my $s1;
+    my $status=`cat /home/regression/cluster/status`;
+    chomp $status;
 
-  my $s0=`cat /home/regression/cluster/$machine.status`;
-  chomp $s0;
-  my $down="";
-  my $downTime=0;
-  $down="--DOWN--" if (!stat("/home/regression/cluster/$machine.up") || ($downTime=(time-stat("/home/regression/cluster/$machine.up")->ctime))>300);
-  if (!exists $status{$machine}{"status"} || $status{$machine}{"status"} ne $s0 || $status{$machine}{"down"} ne $down) {
-    $status{$machine}{"status"}=$s0;
-    $status{$machine}{"down"}=$down;
-    print chr(0x1b)."[".($i+2).";1H";
-    $s0=substr($s0,0,$cols-14-length($down));
-    printf "%-10s  %s %s".chr(0x1b)."[K\n",$machine,$down,$s0;
-    print chr(0x1b)."[".(scalar(@machines)+2).";1H";
+    if (!exists $status{'main'}{"status"} || $status{'main'}{"status"} ne $status) {
+      print chr(0x1b)."[".(1).";1H";
+      $status=substr($status,0,$cols-1);
+      printf "%s".chr(0x1b)."[K\n",$status;
+      print chr(0x1b)."[".(scalar(@machines)+2).";1H";
+      $status{'main'}{"status"}=$status;
+    }
+
+  for (my $i=0;  $i<scalar(@machines);  $i++) {
+    my $machine=$machines[$i];
+    my $s1;
+
+    my $s0=`cat /home/regression/cluster/$machine.status`;
+    chomp $s0;
+    my $down="";
+    my $downTime=0;
+    $down="--DOWN--" if (!stat("/home/regression/cluster/$machine.up") || ($downTime=(time-stat("/home/regression/cluster/$machine.up")->ctime))>300);
+    if (!exists $status{$machine}{"status"} || $status{$machine}{"status"} ne $s0 || $status{$machine}{"down"} ne $down) {
+      $status{$machine}{"status"}=$s0;
+      $status{$machine}{"down"}=$down;
+      print chr(0x1b)."[".($i+2).";1H";
+      $s0=substr($s0,0,$cols-14-length($down));
+      printf "%-10s  %s %s".chr(0x1b)."[K\n",$machine,$down,$s0;
+      print chr(0x1b)."[".(scalar(@machines)+2).";1H";
+    }
+    my $a=`cat /home/regression/cluster/queue.lst`;
+    if ($a ne $b) {
+      print chr(0x1b)."[".(scalar(@machines)+3).";1H";
+      print "Current and pending jobs:\n";
+      print chr(0x1b)."[J";
+      print $a;
+      $b=$a;
+    }
   }
-  my $a=`cat /home/regression/cluster/queue.lst`;
-  if ($a ne $b) {
-    print chr(0x1b)."[".(scalar(@machines)+3).";1H";
-    print "Current and pending jobs:\n";
-print chr(0x1b)."[J";
-    print $a;
-    $b=$a;
-  }
-}
 
-
-#print $s."\n";
-#print $s2."\n";
-
-sleep 1;
+  sleep 1;
 }
 

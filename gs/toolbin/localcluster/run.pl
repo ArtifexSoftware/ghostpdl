@@ -530,8 +530,8 @@ if (!$local) {
 #`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
 `svn update $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c`;
 `cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
-`svn update $baseDirectory/ghostpdl/gs/toolbin/tests/fuzzy.c`;
-`cc -o fuzzy $baseDirectory/ghostpdl/gs/toolbin/tests/fuzzy.c -lm`;
+#`svn update $baseDirectory/ghostpdl/gs/toolbin/tests/fuzzy.c`;
+#`cc -o fuzzy $baseDirectory/ghostpdl/gs/toolbin/tests/fuzzy.c -lm`;
 
 mkdir("$gsBin");
 mkdir("$gsBin/bin");
@@ -1173,7 +1173,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {  # mhw2
   close(F4);
 
   if (!$local) {
-  if (1) {
+  if (0) {
     my @files = <$temp/*.gz>;
     if (scalar(@files)>0) {
       updateStatus('Running fuzzy on '.scalar(@files).' file(s).');
@@ -1219,15 +1219,15 @@ if (1) {
     systemWithRetry($cmd);
     mylog "done with uploading $machine.out.gz";
 
-    unlink "$machine.warnings.tar";
-    `tar cvf $machine.warnings.tar $gsSource/makegs.out $gpdlSource/makepcl.out $gpdlSource/makexps.out $gpdlSource/makesvg.out $gpdlSource/makels.out mupdf/makemupdf.out`;
-    unlink "$machine.warnings.tar.gz";
-    `gzip $machine.warnings.tar`;
+#   unlink "$machine.warnings.tar";
+#   `tar cvf $machine.warnings.tar $gsSource/makegs.out $gpdlSource/makepcl.out $gpdlSource/makexps.out $gpdlSource/makesvg.out $gpdlSource/makels.out mupdf/makemupdf.out`;
+#   unlink "$machine.warnings.tar.gz";
+#   `gzip $machine.warnings.tar`;
 
-    mylog "about to upload $machine.warnings.tar.gz";
-    $cmd="scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.warnings.tar.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.warnings.tar.gz 2>&1";
-    systemWithRetry($cmd);
-    mylog "done with uploading $machine.warnings.tar.gz";
+#   mylog "about to upload $machine.warnings.tar.gz";
+#   $cmd="scp -q -o ConnectTimeout=30 -i ~/.ssh/cluster_key $machine.warnings.tar.gz regression\@casper.ghostscript.com:/home/regression/cluster/$machine.warnings.tar.gz 2>&1";
+#   systemWithRetry($cmd);
+#   mylog "done with uploading $machine.warnings.tar.gz";
 
     updateStatus('idle');
   } else {

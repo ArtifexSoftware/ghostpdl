@@ -485,6 +485,7 @@ sub build($$$$$) {
 
     $cmd2c.=" -sDEVICE=".$a[1];
     $cmd2c.=" -dGrayValues=256" if ($a[0] eq 'bitrgb');
+    $cmd2c.=" -dcupsColorSpace=0" if ($a[0] eq 'cups');
     $cmd2c.=" -r".$a[2];
     #   $cmd2c.=" -q"
     $cmd2c.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
@@ -572,6 +573,7 @@ sub build($$$$$) {
 
     $cmd2c.=" -sDEVICE=".$a[0];
     $cmd2c.=" -dGrayValues=256" if ($a[0] eq 'bitrgb');
+    $cmd2c.=" -dcupsColorSpace=0" if ($a[0] eq 'cups');
     $cmd2c.=" -r".$a[1];
     #   $cmd2c.=" -q" if ($product eq 'gs');
     $cmd2c.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
@@ -649,13 +651,15 @@ my @slowFilenames;
 if ($bmpcmp) {
   open (F,"$filename") || die "file $filename not found";
   my $done=0;
+  my $start=0;
   while(<F>) {
     chomp;
     my $cmd="";
     my $outputFilenames="";
     my $filename="";
     my @a=split ' ';
-    if (scalar(@a)==4) {
+    $start=1 if (m/ran \d+ tests in \d+ seconds/);
+    if ($start && scalar(@a)>=4) {  # horrible, horrible hack
     if (m/^(.+)\.(pdf\.p.mraw\.\d+\.[01]) (\S+) pdfwrite /) {
 #       print "$1 $2 $3 -- pdfwrite\n";
       ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1) if (!$done);
