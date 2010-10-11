@@ -370,6 +370,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     int index = a_char_ref->char_code;
     FT_Long w;
     FT_Long h;
+    FT_Long fflags;
 
     /* Save a_fapi_font->char_data, which is set to null by FAPI_FF_get_glyph as part of a hack to
      * make the deprecated Type 2 endchar ('seac') work, so that it can be restored
@@ -440,7 +441,12 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 
     if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index) {
         a_fapi_font->char_data = saved_char_data;
+        /* We want to prevent hinting, even for a "tricky" font - it shouldn't matter for the notdef */
+        fflags = ft_face->face_flags;
+        ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
         ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ?  FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+
+        ft_face->face_flags = fflags;
     }
     
     if (ft_error == FT_Err_Out_Of_Memory || ft_error == FT_Err_Array_Too_Large) {
@@ -452,7 +458,13 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         a_fapi_font->char_data = (void *)".notdef";
         a_fapi_font->char_data_len = 7;
         
+        /* We want to prevent hinting, even for a "tricky" font - it shouldn't matter for the notdef */
+        fflags = ft_face->face_flags;
+        ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
+        
         ft_error_fb = FT_Load_Glyph(ft_face, 0, a_bitmap ?  FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+        
+        ft_face->face_flags = fflags;
         
         a_fapi_font->char_data = saved_char_data;
         a_fapi_font->char_data_len = saved_char_data_len;
