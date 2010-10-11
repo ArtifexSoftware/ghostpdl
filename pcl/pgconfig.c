@@ -284,6 +284,10 @@ hpgl_IN(
     if (code == 0)
         code = pcl_palette_IN(pgls);
 
+    /* default color range */
+    hpgl_args_setup(&args);
+    hpgl_CR(&args, pgls);
+
     /* pen width units - metric, also reset pen widths.  This is also
        done in hpgl_IN_implicit() above but we have to set the pen
        widths again in the case a new palette was created.  The

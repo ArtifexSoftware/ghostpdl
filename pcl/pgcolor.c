@@ -96,6 +96,38 @@ hpgl_NP(
 }
 
 /*
+ * CR [black reference point red, white reference point red, ...];
+ */
+  int
+hpgl_CR(
+    hpgl_args_t *   pargs,
+    hpgl_state_t *  pgls
+)
+{
+
+    floatp b_ref_r, b_ref_g, b_ref_b,
+        w_ref_r, w_ref_g, w_ref_b;
+
+    if ( pgls->personality == pcl5e )
+        return 0;
+
+    if (hpgl_arg_c_real(pgls->memory, pargs, &b_ref_r))
+        if ( !hpgl_arg_c_real(pgls->memory, pargs, &w_ref_r) ||
+             !hpgl_arg_c_real(pgls->memory, pargs, &b_ref_g) ||
+             !hpgl_arg_c_real(pgls->memory, pargs, &w_ref_g) ||
+             !hpgl_arg_c_real(pgls->memory, pargs, &b_ref_b) ||
+             !hpgl_arg_c_real(pgls->memory, pargs, &w_ref_b) )
+            return e_Range;
+        else
+            return pcl_palette_CR(pgls, w_ref_r, w_ref_g, w_ref_b,
+                                        b_ref_r, b_ref_g, b_ref_b);
+    else /* no args - default references */
+        return pcl_palette_CR(pgls, 255, 255, 255, 0, 0, 0);
+}
+            
+    
+
+/*
  * Initialization. There is no reset or copy command, as those operations are
  * carried out by the palette mechanism.
  */
@@ -109,6 +141,7 @@ pgcolor_do_registration(
     DEFINE_HPGL_COMMANDS(mem)
     HPGL_COMMAND('N', 'P', hpgl_NP, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('P', 'C', hpgl_PC, hpgl_cdf_pcl_rtl_both),
+    HPGL_COMMAND('C', 'R', hpgl_CR, hpgl_cdf_pcl_rtl_both),
     END_HPGL_COMMANDS
     return 0;
 }

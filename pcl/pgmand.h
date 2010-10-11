@@ -259,6 +259,7 @@ int hpgl_TD(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_NP(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_PP(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_CR(hpgl_args_t *pargs, hpgl_state_t *pgls);
 
 /* commands from pgconfig.c - HP-GL/2 configuration and status commands */
 int hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls);

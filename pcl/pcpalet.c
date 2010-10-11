@@ -318,6 +318,35 @@ push_pop_palette(
         return 0;
 }
 
+/*
+ * Set the white and black point of the GL/2 color palette.
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+
+int pcl_palette_CR(    
+    pcl_state_t *   pcs,
+    floatp          wht0,
+    floatp          wht1,
+    floatp          wht2,
+    floatp          blk0,
+    floatp          blk1,
+    floatp          blk2
+)
+
+{
+   int             code = unshare_palette(pcs);
+
+    /* if the default color space must be built, it is fixed, so don't bother */
+    if (pcs->ppalet->pindexed == 0)
+        return code;
+
+    return pcl_cs_indexed_set_norm_and_Decode( &(pcs->ppalet->pindexed),
+                                               wht0, wht1, wht2,
+                                               blk0, blk1, blk2
+                                               );                               
+}
+
 
 /*
  * Set the number of entries in a color palette. This is needed only for the
