@@ -188,7 +188,8 @@ unshare_indexed_cspace(
     pnew->cid = pindexed->cid;
     pnew->original_cspace = pindexed->original_cspace;
     pnew->num_entries = pindexed->num_entries;
-    memcpy(pnew->palette.data, pindexed->palette.data, 3 * num_entries);
+    pnew->palette.size = pindexed->palette.size;
+    memcpy(pnew->palette.data, pindexed->palette.data, pindexed->palette.size);
     memcpy(pnew->pen_widths, pindexed->pen_widths, num_entries * sizeof(float));
     memcpy(pnew->norm, pindexed->norm, 3 * sizeof(pindexed->norm[0]));
     memcpy(pnew->Decode, pindexed->Decode, 6 * sizeof(float));
@@ -498,7 +499,8 @@ set_default_entries(
                                     cnt
                                     );
 
-    /* all other entries are black (always comp. value 0).  For simplicity we reset all of the the remaining pallete data. */
+    /* all other entries are black (always comp. value 0).  For
+       simplicity we reset all of the the remaining pallete data. */
     if (num > cnt) {
         int bytes_initialized = 3 * (start + cnt);
         int bytes_left = (3 * pcl_cs_indexed_palette_size) - bytes_initialized;
@@ -707,10 +709,6 @@ pcl_cs_indexed_set_num_entries(
         return code;
     pindexed = *ppindexed;
     pindexed->num_entries = new_num;
-    /* syncronize pcl's copy of the palette with the graphics
-       library's color index.  The need for parallel tables is
-       dubious. */
-    pindexed->pcspace->params.indexed.hival = new_num - 1;
     pindexed->cid.bits_per_index = bits;
 
     /* check if the Decode array must be updated */
