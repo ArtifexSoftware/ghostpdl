@@ -1195,85 +1195,94 @@ currentdict /jp2_csp_dict .undef
     //true
   } {
 		% Opaque image
-    dup /ColorSpace oknown 
-    1 index /BitsPerComponent oknown and not {
-      dup /Filter knownoget {
-        dup type /arraytype eq {
-          dup length
-          dup 0 gt {
-            1 sub get oforce
-          } {
-            pop
-          } ifelse
-        } if
-        /JPXDecode eq {
-          % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
-          % keys, in which case the interpreter must retrieve this information
-          % from inside the compressed stream. Here we substitute the most
-          % likely values as a work-around.
-          dup /IDFlag known {
-            (   **** Warning: PDF spec bans inline JPX images.\n) pdfformaterror
-            % Inline stream is not positionable. Cannot get ColorSpace.
-          } {
-            % Drop the last filter (JPXDecode) from the pipeline
-            dup dup length dict copy
-            dup /Filter oget
-            dup type /arraytype eq {
-              dup length 1 gt {
-                dup length 1 sub 0 exch getinterval
-                1 index exch /Filter exch put
+    dup /Filter knownoget {
+      dup type /arraytype eq {
+        dup length
+        dup 0 gt {
+          1 sub get oforce
+        } {
+          pop
+        } ifelse
+      } if
+      /JPXDecode eq
+    } {
+      //false
+    } ifelse { % /JPXDecode tricks
+      dup /ColorSpace oknown 
+      1 index /BitsPerComponent oknown and not {
+        % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
+        % keys, in which case the interpreter must retrieve this information
+        % from inside the compressed stream.
+        dup /IDFlag known {
+          (   **** Warning: PDF spec bans inline JPX images.\n) pdfformaterror
+          % Inline stream is not positionable. Cannot get ColorSpace.
+        } {
+          % Drop the last filter (JPXDecode) from the pipeline
+          dup dup length dict copy
+          dup /Filter oget
+          dup type /arraytype eq {
+            dup length 1 gt {
+              dup length 1 sub 0 exch getinterval
+              1 index exch /Filter exch put
 
-                dup /Params knownoget {
-                  dup type /arraytype eq {
-                    dup length 1 gt {
-                      dup length 1 sub 0 exch getinterval
-                      1 index exch /Params exch put
-                    } {
-                      pop
-                      dup /Params undef
-                    } ifelse
+              dup /Params knownoget {
+                dup type /arraytype eq {
+                  dup length 1 gt {
+                    dup length 1 sub 0 exch getinterval
+                    1 index exch /Params exch put
                   } {
                     pop
                     dup /Params undef
                   } ifelse
-                } if
-              } {
-                pop
-                dup /Filter undef
-                dup /Params undef
-              } ifelse
+                } {
+                  pop
+                  dup /Params undef
+                } ifelse
+              } if
             } {
               pop
               dup /Filter undef
               dup /Params undef
             } ifelse
-
-            //false resolvestream get_jp2_csp
-
-            currentdict /ColorSpace oknown not {
-              currentdict /JPXICC .knownget {
-                 [ /ICCBased mark
-                     /DataSource 5 -1 roll
-                     /N currentdict /JPXColors .knownget not {
-                       currentdict /JPXComponents get
-                     } if
-                   .dicttomark
-                 ] /ColorSpace exch def
-              } if
-            } if
-
-            { /JPXICC /JPXColors /JPXComponents /JPXOpacity /JPXPremult } {
-              currentdict exch undef
-            } forall
-
+          } {
+            pop
+            dup /Filter undef
+            dup /Params undef
           } ifelse
+
+          //false resolvestream get_jp2_csp
+
+          currentdict /ColorSpace oknown not {
+            currentdict /JPXICC .knownget {
+               [ /ICCBased mark
+                   /DataSource 5 -1 roll
+                   /N currentdict /JPXColors .knownget not {
+                     currentdict /JPXComponents get
+                   } if
+                 .dicttomark
+               ] /ColorSpace exch def
+            } if
+          } if
+
+          { /JPXICC /JPXColors /JPXComponents /JPXOpacity /JPXPremult } {
+            currentdict exch undef
+          } forall
+
+        } ifelse
+      } if % fi missing csp, bpc
+
+      dup /SMaskInData knownoget {
+        0 ne {
+          % For now do nothing
         } if
       } if
-      currentdict /BitsPerComponent oknown not {
-        (   **** Warning: image has no /BitsPerComponent key; assuming 8 bit.\n)
-        pdfformaterror
-        /BitsPerComponent 8 def
-      } if
+ 
+    } if  % fi JPX tricks
+
+    currentdict /BitsPerComponent oknown not {
+      (   **** Warning: image has no /BitsPerComponent key; assuming 8 bit.\n)
+      pdfformaterror
+      /BitsPerComponent 8 def
     } if
 
     currentdict /ColorSpace knownoget not {
