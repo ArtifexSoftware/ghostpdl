@@ -297,27 +297,18 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 	(gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
     gx_device_pattern_accum const *padev = (const gx_device_pattern_accum *) pdev;
 
-
     if (pdev != NULL) {
 	gx_color_tile *ctile;
 	int code;
-
 	if (pinst->template.uses_transparency) {
 	    gs_state *pgs = igs;
 	    int code;
-
             /* Get PDF14 buffer information */
-
             code = pdf14_get_buffer_information(pgs->device,padev->transbuff);
+            /* PDF14 device (and buffer) is destroyed when pattern cache 
+               entry is removed */
 	    if (code < 0)
 		return code;
-
-            /* Do not pop the device.  Instead go ahead and and disable it.
-               We will later free it when the pattern cache entry is freed. 
-               The ctile maintains a pointer to the device */
-
-            pdf14_disable_device(pgs->device);
-
 	} 
 	code = gx_pattern_cache_add_entry((gs_imager_state *)igs, pdev, &ctile);
 	if (code < 0)

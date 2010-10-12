@@ -693,6 +693,8 @@ gstate_set_pattern_cache(gs_state * pgs, gx_pattern_cache * pcache)
 static void
 gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
+    gx_device *temp_device;
+
     if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
 	gs_memory_t *mem = pcache->memory;
 	gx_device_memory *pmdev;
@@ -747,7 +749,10 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
                 ctile->ttrans->transbytes = NULL;
             } else {
 	        dev_proc(ctile->ttrans->pdev14, close_device)((gx_device *)ctile->ttrans->pdev14);
-                ctile->ttrans->pdev14 = NULL;  /* should be ok due to pdf14_close */
+                temp_device = ctile->ttrans->pdev14;
+                gx_device_retain(temp_device, false);
+                rc_decrement(temp_device,"gx_pattern_cache_free_entry");
+                ctile->ttrans->pdev14 = NULL;  
                 ctile->ttrans->transbytes = NULL;  /* should be ok due to pdf14_close */
                 ctile->ttrans->fill_trans_buffer = NULL; /* This is always freed */
             }
