@@ -111,8 +111,6 @@ Mitchell_filter(double t)
 static double
 Interp_filter(double t)
 {
-    double t2 = t * t;
-
     if (t < 0)
         t = -t;
 
