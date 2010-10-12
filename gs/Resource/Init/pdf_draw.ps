@@ -1225,29 +1225,29 @@ currentdict /jp2_csp_dict .undef
               dup length 1 sub 0 exch getinterval
               1 index exch /Filter exch put
 
-              dup /Params knownoget {
+              dup /DecodeParms knownoget {
                 dup type /arraytype eq {
                   dup length 1 gt {
                     dup length 1 sub 0 exch getinterval
-                    1 index exch /Params exch put
+                    1 index exch /DecodeParms exch put
                   } {
                     pop
-                    dup /Params undef
+                    dup /DecodeParms undef
                   } ifelse
                 } {
                   pop
-                  dup /Params undef
+                  dup /DecodeParms undef
                 } ifelse
               } if
             } {
               pop
               dup /Filter undef
-              dup /Params undef
+              dup /DecodeParms undef
             } ifelse
           } {
             pop
             dup /Filter undef
-            dup /Params undef
+            dup /DecodeParms undef
           } ifelse
 
           //false resolvestream get_jp2_csp
