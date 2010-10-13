@@ -59,11 +59,16 @@ COMPILE_INITS?=1
 # builds and null otherwise.
 PLPLATFORM?=
 
-# specify the locate of the jpeg library.
+# specify the location and setup of the jpeg library.
 JSRCDIR?=../gs/jpeg
 JGENDIR?=$(GENDIR)
 JOBJDIR?=$(GENDIR)
 SHARE_JPEG?=0
+
+# specify the location and setup of the tiff library.
+SHARE_LIBTIFF?=0
+TIFFSRCDIR?=../gs/tiff
+TIFFPLATFORM?=unix
 
 # ridiculousness, not worth documenting.
 AK?=
@@ -198,11 +203,14 @@ DD?=$(GLGENDIR)/
 DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
    $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev \
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite.dev\
+   $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
+   $(DD)tifflzw.dev $(DD)tiffpack.dev $(DD)tiffgray.dev $(DD)tiffscaled.dev\
+   $(DD)tiff12nc.dev $(DD)tiff24nc.dev\
    $(DD)pxlmono.dev $(DD)pxlcolor.dev\
    $(DD)bmpmono.dev $(DD)bmp16m.dev $(DD)bmpsep8.dev \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev \
-   $(DD)png16m.dev $(DD)pngmono.dev $(DD)jpeg.dev \
-   $(DD)wtscmyk.dev $(DD)wtsimdi.dev $(DD)imdi.dev \
+   $(DD)png16m.dev $(DD)pngmono.dev $(DD)jpeg.dev\
+   $(DD)wtscmyk.dev $(DD)wtsimdi.dev $(DD)imdi.dev\
    $(DD)romfs$(COMPILE_INITS).dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
