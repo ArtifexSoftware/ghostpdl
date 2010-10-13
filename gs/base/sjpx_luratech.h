@@ -51,6 +51,7 @@ typedef struct stream_jpxd_state_s
     bool alpha; /* return opacity channel */
     int ncomp;			/* number of image components */
     int bpc;			/* sample bits per component */
+    int *clut;			/* channel indices */
     unsigned long width, height;
     unsigned long stride;
     unsigned char *image;	/* decoded image buffer */

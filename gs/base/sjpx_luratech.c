@@ -110,9 +110,12 @@ s_jpxd_write_data(unsigned char * pucData,
     p = state->image + state->stride*ulRow + state->ncomp*ulStart;
     if (state->ncomp == 1)
         memcpy(p, pucData, ulNum);
-    else for (i = 0; i < ulNum; i++) {
-        p[sComponent] = pucData[i];
-        p += state->ncomp;
+    else if (state->clut[sComponent] >= 0) {
+        p += state->clut[sComponent];
+        for (i = 0; i < ulNum; i++) {
+            *p = pucData[i];
+            p += state->ncomp;
+        }
     }
     return cJP2_Error_OK;
 }
@@ -176,8 +179,10 @@ s_jpxd_init(stream_state * ss)
     state->inbuf_size = 0;
     state->inbuf_fill = 0;
 
+    state->alpha = false;
     state->ncomp = 0;
     state->bpc = 0;
+    state->clut = NULL;
     state->width = 0;
     state->height = 0;
     state->stride = 0;
@@ -185,6 +190,41 @@ s_jpxd_init(stream_state * ss)
     state->offset = 0;
 
     return 0;
+}
+
+/* write component mapping into 'clut' and return number of used components
+ */
+static int
+map_components(JP2_Channel_Def_Params *chans, int nchans, int alpha, int clut[])
+{
+    int i, cnt = 0;
+
+    alpha = alpha ? 1 : 0;
+
+    for (i = 0; i < nchans; i++)
+        clut[i] = -1;
+
+    /* always write the alpha channel as first component */
+    if (alpha) {
+        for (i = 0; i < nchans; i++) {
+            if (chans[i].ulType == cJP2_Channel_Type_Opacity) {
+                clut[0] = i;
+                break;
+            }
+        }
+    }
+
+    for (i = 0; i < nchans; i++) {
+        if (chans[i].ulType == cJP2_Channel_Type_Color) {
+            int assoc = chans[i].ulAssociated -1;
+            if (assoc >= nchans)
+                return -1;
+            clut[assoc + alpha] = i;
+            cnt++;
+        }
+    }
+
+    return cnt + alpha;
 }
 
 /* process a secton of the input and return any decoded data.
@@ -209,6 +249,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
         /* we have all the data, decode and return */
 
         if (state->handle == (JP2_Decomp_Handle)NULL) {
+            int ncomp;
             /* initialize decompressor */
             err = JP2_Decompress_Start(&state->handle,
                 /* memory allocator callbacks */
@@ -237,7 +278,23 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 dlprintf1("Luratech JP2 error %d decoding number of image components\n", (int)err);
                 return ERRC;
             }
-            state->ncomp = result;
+            ncomp = result;
+
+            {
+                JP2_Channel_Def_Params *chans = NULL;
+                unsigned long nchans = 0;
+                err = JP2_Decompress_GetChannelDefs(state->handle, &chans, &nchans);
+                if (err != cJP2_Error_OK) {
+                    dlprintf1("Luratech JP2 error %d reading channel definitions\n", (int)err);
+                    return ERRC;
+                }
+                state->clut = malloc(nchans * sizeof(int));
+                state->ncomp = map_components(chans, nchans, state->alpha, state->clut);
+                if (state->ncomp < 0) {
+                    dlprintf("Luratech JP2 error decoding channel definitions\n");
+                    return ERRC;
+                }
+            }
 
             if_debug1('w', "[w]jpxd image has %d components\n", state->ncomp);
 
@@ -281,7 +338,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 int comp;
                 int width, height;
                 int bits, is_signed;
-                for (comp = 0; comp < state->ncomp; comp++) {
+                for (comp = 0; comp < ncomp; comp++) {
                     err= JP2_Decompress_GetProp(state->handle,
                         cJP2_Prop_Width, &result, -1, (short)comp);
                     if (err != cJP2_Error_OK) {
@@ -328,7 +385,6 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             if_debug3('w', "[w]jpxd decoding image at %ldx%ld"
                 " with %d bits per component\n",
                 state->width, state->height, state->bpc);
-
         }
 
         if (state->handle != (JP2_Decomp_Handle)NULL &&
@@ -395,6 +451,7 @@ s_jpxd_release(stream_state *ss)
         err = JP2_Decompress_End(state->handle);
         if (state->inbuf) free(state->inbuf);
         if (state->image) free(state->image);
+        if (state->clut) free(state->clut);
     }
 }
 
