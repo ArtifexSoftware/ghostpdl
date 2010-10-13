@@ -343,7 +343,7 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
  $(DD)\pxlmono.dev $(DD)\pxlcolor.dev\
  $(DD)\tiffcrle.dev $(DD)\tiffg3.dev $(DD)\tiffg32d.dev $(DD)\tiffg4.dev\
  $(DD)\tifflzw.dev $(DD)\tiffpack.dev\
- $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev \
+ $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev $(DD)\tiffscaled.dev \
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\jpeg.dev \
  $(DD)\pswrite.dev $(DD)\pdfwrite.dev \
  $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev $(DD)\imdi.dev
