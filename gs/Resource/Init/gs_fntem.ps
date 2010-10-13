@@ -318,10 +318,15 @@ currentdict end def
     } {
       dup //encodingnames
       exch .knownget {
-        exch pop
-        /Decoding findresource 1 index exch /Decoding exch put
-      } {
-        % unknown encoding, convert it to decoding :
+        { /Decoding findresource } stopped {pop pop true}{ exch pop 1 index exch /Decoding exch put false } ifelse
+      }
+      {
+          true
+      } ifelse 
+
+      {
+        % unknown encoding, or an encoding for which we don't have a
+        % predefined decoding, convert it to decoding :
         dup length dict begin
         /.notdef 0 def
         0 1 currentdict length 1 sub
@@ -335,7 +340,7 @@ currentdict end def
         pop
         currentdict end
         1 index exch /Decoding exch put
-      } ifelse
+      } if
     } ifelse
     exit
   } loop
