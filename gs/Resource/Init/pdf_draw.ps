@@ -1163,6 +1163,51 @@ currentdict end readonly def
 currentdict /jp2_tag_dict .undef
 currentdict /jp2_csp_dict .undef
 
+% Add a key-value pair to the last /DecodeParms dictionary
+% <resdict> <key> <value> -> <resdict>
+/add-to-last-param {
+  2 index /DecodeParms knownoget {
+    dup {} eq {
+      pop //false
+    } {
+      //true
+    } ifelse
+  } {
+    //false
+  } ifelse {
+    dup type /arraytype eq {
+      [ exch { oforce } forall
+        dup //null eq { pop 1 dict } if
+      ] 
+      dup dup length 1 sub get           % <resdict> <key> <value> []   <<>>
+    } {
+      dup                                % <resdict> <key> <value> <<>> <<>>
+    } ifelse
+    4 2 roll put                         % <resdict> obj
+  } {
+    mark 3 1 roll .dicttomark            % <resdict> obj
+  } ifelse
+  1 index exch
+  /DecodeParms exch put                  % <resdict>
+} bdef
+
+/last-ditch-bpc-csp {
+  currentdict /BitsPerComponent oknown not {
+    (   **** Warning: image has no /BitsPerComponent key; assuming 8 bit.\n)
+    pdfformaterror
+    /BitsPerComponent 8 def
+  } if
+
+  currentdict /ColorSpace knownoget not {
+    dup /ColorSpace knownoget not {
+      (   **** Warning: image has no /ColorSpace key; assuming /DeviceRGB.\n)
+      pdfformaterror
+      /DeviceRGB
+    } if
+  } if
+  resolvecolorspace /ColorSpace exch def
+} bdef
+
 /makeimagedict {	% <resdict> <newdict> makeimagedict <imagemask>
 			% On return, newdict' is currentdict
   begin
@@ -1173,6 +1218,7 @@ currentdict /jp2_csp_dict .undef
   /Interpolate 2 copy knownoget { def } { pop } ifelse
   makeimagekeys
 } bdef
+
 /makeimagekeys {	% <resdict> makeimagekeys <imagemask>
               	% newdict is currentdict
 		% Assumes Width, Height, BPC, Interpolate already copied.
@@ -1273,26 +1319,20 @@ currentdict /jp2_csp_dict .undef
 
       dup /SMaskInData knownoget {
         0 ne {
-          % For now do nothing
+          % Propagate Alpha flag to the filter
+          /Alpha //true //add-to-last-param exec
         } if
       } if
- 
-    } if  % fi JPX tricks
 
-    currentdict /BitsPerComponent oknown not {
-      (   **** Warning: image has no /BitsPerComponent key; assuming 8 bit.\n)
-      pdfformaterror
-      /BitsPerComponent 8 def
-    } if
+      //last-ditch-bpc-csp exec
 
-    currentdict /ColorSpace knownoget not {
-      dup /ColorSpace knownoget not {
-        (   **** Warning: image has no /ColorSpace key; assuming /DeviceRGB.\n)
-        pdfformaterror
-        /DeviceRGB
+      dup /ColorSpace oknown {
+        % Propagate known color space to the filter
+        /ColorSpace currentdict /ColorSpace get //add-to-last-param exec
       } if
-    } if
-    resolvecolorspace /ColorSpace exch def
+    } { % not JPX image
+      //last-ditch-bpc-csp exec
+    } ifelse % fi JPX tricks
 
 		% Decode is required for the PostScript image operators.
     /Decode 2 copy knownoget not {
@@ -1306,6 +1346,9 @@ currentdict /jp2_csp_dict .undef
     //false
   } ifelse
 } bdef
+
+currentdict /add-to-last-param undef
+currentdict /last-ditch-bpc-csp undef
 
 /DoImage {
   checkaltimage dup length 6 add dict
