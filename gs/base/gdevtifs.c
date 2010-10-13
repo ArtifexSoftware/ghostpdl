@@ -332,7 +332,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 int
 tiff_print_page(gx_device_printer *dev, TIFF *tif)
 {
-    int code;
+    int code = 0;
     byte *data;
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int max_size = max(size, TIFFScanlineSize(tif));
@@ -488,13 +488,12 @@ static void down_and_out(TIFF *tif,
 int
 tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor)
 {
-    int code;
+    int code = 0;
     byte *data;
     int *errors;
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int max_size = max(size, TIFFScanlineSize(tif)) + factor-1;
     int row;
-    int bpc = dev->color_info.depth / dev->color_info.num_components;
     int n;
     int width = (dev->width + factor-1)/factor;
 
