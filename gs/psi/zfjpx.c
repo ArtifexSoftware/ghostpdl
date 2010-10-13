@@ -137,10 +137,20 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
 		       (stream_state *) & state, 0);
 }
 
+/* - .jpxlib <name> */
+static int
+zjpxlib(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    return name_ref(imemory, (unsigned char *)JPX_LIB, sizeof(JPX_LIB) - 1, op, 0);
+}
 
 /* Match the above routine to the corresponding filter name.
    This is how our static routines get called externally. */
 const op_def zfjpx_op_defs[] = {
+    {"0.jpxlib", zjpxlib},
     op_def_begin_filter(),
     {"2JPXDecode", z_jpx_decode},
     op_def_end(0)

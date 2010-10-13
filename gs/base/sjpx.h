@@ -23,6 +23,9 @@
 #include "scommon.h"
 #include <jasper/jasper.h>
 
+/* For .jpxlib operator */
+#define JPX_LIB "Jasper"
+
 /* define colorspace enumeration for the input image data */
 typedef enum {
   gs_jpx_cs_unset,  /* colorspace hasn't been set */

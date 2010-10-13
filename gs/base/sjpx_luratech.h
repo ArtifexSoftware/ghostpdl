@@ -23,6 +23,9 @@
 #include "scommon.h"
 #include <lwf_jp2.h>
 
+/* For .jpxlib operator */
+#define JPX_LIB "Luratech"
+
 /* define colorspace enumeration for the decompressed image data */
 typedef enum {
   gs_jpx_cs_unset,  /* colorspace hasn't been set */
