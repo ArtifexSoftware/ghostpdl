@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -30,6 +30,7 @@ typedef struct gx_device_tiff_s {
     bool  BigEndian;            /* true = big endian; false = little endian*/
     uint16 Compression;		/* same values as TIFFTAG_COMPRESSION */
     long MaxStripSize;
+    long DownScaleFactor;
     TIFF *tif;			/* TIFF file opened on gx_device_common.file */
 } gx_device_tiff;
 
@@ -37,7 +38,9 @@ dev_proc_output_page(tiff_output_page);
 dev_proc_open_device(tiff_open);
 dev_proc_close_device(tiff_close);
 dev_proc_get_params(tiff_get_params);
+dev_proc_get_params(tiff_get_params_downscale);
 dev_proc_put_params(tiff_put_params);
+dev_proc_put_params(tiff_put_params_downscale);
 
 /*
  * Open a TIFF file for writing from a file descriptor.
@@ -46,18 +49,22 @@ TIFF * tiff_from_filep(const char *name, FILE *filep, int big_endian);
 
 int tiff_print_page(gx_device_printer *dev, TIFF *tif);
 
+int tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor);
+
 /*
  * Sets the compression tag for TIFF and updates the rows_per_strip tag to
  * reflect max_strip_size under the new compression scheme.
  */
 #define TIFF_DEFAULT_STRIP_SIZE 1048576
 
+#define TIFF_DEFAULT_DOWNSCALE 1
+
 int tiff_set_compression(gx_device_printer *pdev,
 			 TIFF *tif,
 			 uint compression,
 			 long max_strip_size);
 
-int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif);
+int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif, int factor);
 
 int gdev_tiff_begin_page(gx_device_tiff *tfdev, FILE *file);
 

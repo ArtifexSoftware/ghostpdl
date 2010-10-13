@@ -359,7 +359,7 @@ tfax_begin_page(gx_device_tfax * tfdev, FILE * file, int width)
     }
 
     tfdev->width = width;
-    code = tiff_set_fields_for_printer(pdev, tfdev->tif);
+    code = tiff_set_fields_for_printer(pdev, tfdev->tif, 1);
     tfdev->width = save_width;
     return code;
 }

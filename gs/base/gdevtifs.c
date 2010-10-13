@@ -37,41 +37,41 @@ tiff_output_page(gx_device *pdev, int num_copies, int flush)
     bool upgraded_copypage = false;
 
     if (num_copies > 0 || !flush) {
-	int code = gdev_prn_open_printer_positionable(pdev, 1, 1);
+        int code = gdev_prn_open_printer_positionable(pdev, 1, 1);
 
-	if (code < 0)
-	    return code;
+        if (code < 0)
+            return code;
 
-	/* If copypage request, try to do it using buffer_page */
-	if ( !flush &&
-	     (*ppdev->printer_procs.buffer_page)
-	     (ppdev, ppdev->file, num_copies) >= 0
-	     ) {
-	    upgraded_copypage = true;
-	    flush = true;
-	}
-	else if (num_copies > 0)
-	    /* Print the accumulated page description. */
-	    outcode =
-		(*ppdev->printer_procs.print_page_copies)(ppdev, ppdev->file,
-							  num_copies);
-	fflush(ppdev->file);
-	errcode =
-	    (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
-	if (!upgraded_copypage)
-	    closecode = gdev_prn_close_printer(pdev);
+        /* If copypage request, try to do it using buffer_page */
+        if ( !flush &&
+             (*ppdev->printer_procs.buffer_page)
+             (ppdev, ppdev->file, num_copies) >= 0
+             ) {
+            upgraded_copypage = true;
+            flush = true;
+        }
+        else if (num_copies > 0)
+            /* Print the accumulated page description. */
+            outcode =
+                (*ppdev->printer_procs.print_page_copies)(ppdev, ppdev->file,
+                                                          num_copies);
+        fflush(ppdev->file);
+        errcode =
+            (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
+        if (!upgraded_copypage)
+            closecode = gdev_prn_close_printer(pdev);
     }
     endcode = (ppdev->buffer_space && !ppdev->is_async_renderer ?
-	       clist_finish_page(pdev, flush) : 0);
+               clist_finish_page(pdev, flush) : 0);
 
     if (outcode < 0)
-	return outcode;
+        return outcode;
     if (errcode < 0)
-	return errcode;
+        return errcode;
     if (closecode < 0)
-	return closecode;
+        return closecode;
     if (endcode < 0)
-	return endcode;
+        return endcode;
     endcode = gx_finish_output_page(pdev, num_copies, flush);
     return (endcode < 0 ? endcode : upgraded_copypage ? 1 : 0);
 }
@@ -85,9 +85,9 @@ tiff_open(gx_device *pdev)
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (code < 0)
-	return code;
+        return code;
     if (ppdev->OpenOutputFile)
-	code = gdev_prn_open_printer_seekable(pdev, 1, true);
+        code = gdev_prn_open_printer_seekable(pdev, 1, true);
     return code;
 }
 
@@ -97,13 +97,13 @@ tiff_close(gx_device * pdev)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
 
     if (tfdev->tif)
-	TIFFCleanup(tfdev->tif);
+        TIFFCleanup(tfdev->tif);
 
     return gdev_prn_close(pdev);
 }
 
-int
-tiff_get_params(gx_device * dev, gs_param_list * plist)
+static int
+tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)dev;
     int code = gdev_prn_get_params(dev, plist);
@@ -113,15 +113,32 @@ tiff_get_params(gx_device * dev, gs_param_list * plist)
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
     if ((code = tiff_compression_param_string(&comprstr, tfdev->Compression)) < 0 ||
-	(code = param_write_string(plist, "Compression", &comprstr)) < 0)
-	ecode = code;
+        (code = param_write_string(plist, "Compression", &comprstr)) < 0)
+        ecode = code;
+    if (which & 1)
+    {
+      if ((code = param_write_long(plist, "DownScaleFactor", &tfdev->DownScaleFactor)) < 0)
+          ecode = code;
+    }
     if ((code = param_write_long(plist, "MaxStripSize", &tfdev->MaxStripSize)) < 0)
         ecode = code;
     return ecode;
 }
 
 int
-tiff_put_params(gx_device * dev, gs_param_list * plist)
+tiff_get_params(gx_device * dev, gs_param_list * plist)
+{
+    return tiff_get_some_params(dev, plist, 0);
+}
+
+int
+tiff_get_params_downscale(gx_device * dev, gs_param_list * plist)
+{
+    return tiff_get_some_params(dev, plist, 1);
+}
+
+static int
+tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)dev;
     int ecode = 0;
@@ -130,58 +147,87 @@ tiff_put_params(gx_device * dev, gs_param_list * plist)
     bool big_endian = tfdev->BigEndian;
     uint16 compr = tfdev->Compression;
     gs_param_string comprstr;
+    long downscale = tfdev->DownScaleFactor;
     long mss = tfdev->MaxStripSize;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &big_endian)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
         case 0:
-	case 1:
-	    break;
+        case 1:
+            break;
     }
     /* Read Compression */
     switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
-	case 0:
-	    if ((ecode = tiff_compression_id(&compr, &comprstr)) < 0 ||
-		!tiff_compression_allowed(compr, dev->color_info.depth))
-		param_signal_error(plist, param_name, ecode);
-	    break;
-	case 1:
-	    break;
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
+        case 0:
+            if ((ecode = tiff_compression_id(&compr, &comprstr)) < 0 ||
+                !tiff_compression_allowed(compr, dev->color_info.depth))
+                param_signal_error(plist, param_name, ecode);
+            break;
+        case 1:
+            break;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
     }
-
+    /* Read Downscale factor */
+    if (which & 1) {
+        switch (code = param_read_long(plist,
+                                       (param_name = "DownScaleFactor"),
+                                       &downscale)) {
+            case 0:
+                if (downscale <= 0)
+                    downscale = 1;
+                break;
+            case 1:
+                break;
+            default:
+                ecode = code;
+                param_signal_error(plist, param_name, ecode);
+        }
+    }
     switch (code = param_read_long(plist, (param_name = "MaxStripSize"), &mss)) {
         case 0:
-	    /*
-	     * Strip must be large enough to accommodate a raster line.
-	     * If the max strip size is too small, we still write a single
-	     * line per strip rather than giving an error.
-	     */
-	    if (mss >= 0)
-	        break;
-	    code = gs_error_rangecheck;
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 1:
-	    break;
+            /*
+             * Strip must be large enough to accommodate a raster line.
+             * If the max strip size is too small, we still write a single
+             * line per strip rather than giving an error.
+             */
+            if (mss >= 0)
+                break;
+            code = gs_error_rangecheck;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            break;
     }
 
     if (ecode < 0)
-	return ecode;
+        return ecode;
     code = gdev_prn_put_params(dev, plist);
     if (code < 0)
-	return code;
+        return code;
 
     tfdev->BigEndian = big_endian;
     tfdev->Compression = compr;
     tfdev->MaxStripSize = mss;
+    tfdev->DownScaleFactor = downscale;
     return code;
+}
+
+int
+tiff_put_params(gx_device * dev, gs_param_list * plist)
+{
+    return tiff_put_some_params(dev, plist, 0);
+}
+
+int
+tiff_put_params_downscale(gx_device * dev, gs_param_list * plist)
+{
+    return tiff_put_some_params(dev, plist, 1);
 }
 
 TIFF *
@@ -190,89 +236,91 @@ tiff_from_filep(const char *name, FILE *filep, int big_endian)
     int fd;
 
 #ifdef __WIN32__
-	fd = _get_osfhandle(fileno(filep));
+        fd = _get_osfhandle(fileno(filep));
 #else
-	fd = fileno(filep);
+        fd = fileno(filep);
 #endif
 
     if (fd < 0)
-	return NULL;
+        return NULL;
 
     return TIFFFdOpen(fd, name, big_endian ? "wb" : "wl");
 }
 
 int gdev_tiff_begin_page(gx_device_tiff *tfdev,
-			 FILE *file)
+                         FILE *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)tfdev;
 
     if (gdev_prn_file_is_new(pdev)) {
-	/* open the TIFF device */
-	tfdev->tif = tiff_from_filep(pdev->dname, file, tfdev->BigEndian);
-	if (!tfdev->tif)
-	    return_error(gs_error_invalidfileaccess);
+        /* open the TIFF device */
+        tfdev->tif = tiff_from_filep(pdev->dname, file, tfdev->BigEndian);
+        if (!tfdev->tif)
+            return_error(gs_error_invalidfileaccess);
     }
 
-    return tiff_set_fields_for_printer(pdev, tfdev->tif);
+    return tiff_set_fields_for_printer(pdev, tfdev->tif, tfdev->DownScaleFactor);
 }
 
 int tiff_set_compression(gx_device_printer *pdev,
-			 TIFF *tif,
-			 uint compression,
-			 long max_strip_size)
+                         TIFF *tif,
+                         uint compression,
+                         long max_strip_size)
 {
     TIFFSetField(tif, TIFFTAG_COMPRESSION, compression);
 
     if (max_strip_size == 0) {
-	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, pdev->height);
+        TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, pdev->height);
     }
     else {
-	int rows = max_strip_size /
-	    gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-	TIFFSetField(tif,
-		     TIFFTAG_ROWSPERSTRIP,
-		     TIFFDefaultStripSize(tif, max(1, rows)));
+        int rows = max_strip_size /
+            gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+        TIFFSetField(tif,
+                     TIFFTAG_ROWSPERSTRIP,
+                     TIFFDefaultStripSize(tif, max(1, rows)));
     }
 
     return 0;
 }
 
-int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif)
+int tiff_set_fields_for_printer(gx_device_printer *pdev,
+                                TIFF              *tif,
+                                int                factor)
 {
-    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, pdev->width);
-    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, pdev->height);
+    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (pdev->width + factor-1)/factor);
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (pdev->height + factor-1)/factor);
     TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
     TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
-    TIFFSetField(tif, TIFFTAG_XRESOLUTION, (float)pdev->x_pixels_per_inch);
-    TIFFSetField(tif, TIFFTAG_YRESOLUTION, (float)pdev->y_pixels_per_inch);
+    TIFFSetField(tif, TIFFTAG_XRESOLUTION, (float)pdev->x_pixels_per_inch/factor);
+    TIFFSetField(tif, TIFFTAG_YRESOLUTION, (float)pdev->y_pixels_per_inch/factor);
 
     {
-	char revs[10];
+        char revs[10];
 #define maxSoftware 40
-	char softwareValue[maxSoftware];
+        char softwareValue[maxSoftware];
 
-	strncpy(softwareValue, gs_product, maxSoftware);
-	softwareValue[maxSoftware - 1] = 0;
-	sprintf(revs, " %1.2f", gs_revision / 100.0);
-	strncat(softwareValue, revs,
-		maxSoftware - strlen(softwareValue) - 1);
+        strncpy(softwareValue, gs_product, maxSoftware);
+        softwareValue[maxSoftware - 1] = 0;
+        sprintf(revs, " %1.2f", gs_revision / 100.0);
+        strncat(softwareValue, revs,
+                maxSoftware - strlen(softwareValue) - 1);
 
-	TIFFSetField(tif, TIFFTAG_SOFTWARE, softwareValue);
+        TIFFSetField(tif, TIFFTAG_SOFTWARE, softwareValue);
     }
     {
-	struct tm tms;
-	time_t t;
-	char dateTimeValue[20];
+        struct tm tms;
+        time_t t;
+        char dateTimeValue[20];
 
-	time(&t);
-	tms = *localtime(&t);
-	sprintf(dateTimeValue, "%04d:%02d:%02d %02d:%02d:%02d",
-		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
-		tms.tm_hour, tms.tm_min, tms.tm_sec);
+        time(&t);
+        tms = *localtime(&t);
+        sprintf(dateTimeValue, "%04d:%02d:%02d %02d:%02d:%02d",
+                tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
+                tms.tm_hour, tms.tm_min, tms.tm_sec);
 
-	TIFFSetField(tif, TIFFTAG_DATETIME, dateTimeValue);
+        TIFFSetField(tif, TIFFTAG_DATETIME, dateTimeValue);
     }
 
     TIFFSetField(tif, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
@@ -293,25 +341,207 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif)
 
     data = gs_alloc_bytes(dev->memory, max_size, "tiff_print_page(data)");
     if (data == NULL)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     TIFFCheckpointDirectory(tif);
 
     memset(data, 0, max_size);
     for (row = 0; row < dev->height; row++) {
-	code = gdev_prn_copy_scan_lines(dev, row, data, size);
-	if (code < 0)
-	    break;
+        code = gdev_prn_copy_scan_lines(dev, row, data, size);
+        if (code < 0)
+            break;
 
-#if defined(ARCH_IS_BIG_ENDIAN) && (!ARCH_IS_BIG_ENDIAN) 
-	if (bpc == 16)
-	    TIFFSwabArrayOfShort((uint16 *)data,
-				 dev->width * dev->color_info.num_components);
+#if defined(ARCH_IS_BIG_ENDIAN) && (!ARCH_IS_BIG_ENDIAN)
+        if (bpc == 16)
+            TIFFSwabArrayOfShort((uint16 *)data,
+                                 dev->width * dev->color_info.num_components);
 #endif
 
-	TIFFWriteScanline(tif, data, row, 0);
+        TIFFWriteScanline(tif, data, row, 0);
     }
 
+    gs_free_object(dev->memory, data, "tiff_print_page(data)");
+
+    TIFFWriteDirectory(tif);
+    return code;
+}
+
+/* Error diffusion data is stored in errors block.
+ * We have 1 empty entry at each end to avoid overflow. When
+ * moving left to right we read from entries 2->width+1 (inclusive), and
+ * write to 1->width. When moving right to left we read from width->1 and
+ * write to width+1->2.
+ */
+static void down_and_out(TIFF *tif,
+                         byte *data,
+                         int   max_size,
+                         int   factor,
+                         int   row,
+                         int   width,
+                         int  *errors)
+{
+    int x, xx, y, value;
+    byte *outp;
+    byte *inp = data;
+    int mask;
+    int e_downleft, e_down, e_forward = 0;
+    const int threshold = factor*factor*128;
+    const int max_value = factor*factor*255;
+
+    if ((row & 1) == 0)
+    {
+        /* Left to Right pass */
+        const int back = max_size * factor -1;
+        errors += 2;
+        outp = inp;
+        for (x = width; x > 0; x--)
+        {
+            value = e_forward + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            if (value >= threshold)
+            {
+                *outp++ = 1;
+                value -= max_value;
+            }
+            else
+            {
+                *outp++ = 0;
+            }
+            e_forward  = value * 7/16;
+            e_downleft = value * 3/16;
+            e_down     = value * 5/16;
+            value     -= e_forward + e_downleft + e_down;
+            errors[-2] += e_downleft;
+            errors[-1] += e_down;
+            *errors++   = value;
+        }
+        outp -= width;
+    }
+    else
+    {
+        /* Right to Left pass */
+        const int back = max_size * factor + 1;
+        errors += width;
+        inp += width*factor-1;
+        outp = inp;
+        for (x = width; x > 0; x--)
+        {
+            value = e_forward + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            if (value >= threshold)
+            {
+                *outp-- = 1;
+                value -= max_value;
+            }
+            else
+            {
+                *outp-- = 0;
+            }
+            e_forward  = value * 7/16;
+            e_downleft = value * 3/16;
+            e_down     = value * 5/16;
+            value     -= e_forward + e_downleft + e_down;
+            errors[2] += e_downleft;
+            errors[1] += e_down;
+            *errors--   = value;
+        }
+        outp++;
+    }
+    /* Now pack the data pointed to by outp into byte form */
+    data = inp = outp;
+    outp--;
+    mask = 0;
+    for (x = width; x > 0; x--)
+    {
+        value = *inp++;
+        if (mask == 0)
+        {
+            mask = 128;
+            *++outp = 0;
+        }
+        if (value)
+            *outp |= mask;
+        mask >>= 1;
+    }
+
+    TIFFWriteScanline(tif, data, row, 0);
+}
+
+/* Special version, called with 8 bit grey input to be downsampled to 1bpp
+ * output. */
+int
+tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor)
+{
+    int code;
+    byte *data;
+    int *errors;
+    int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
+    int max_size = max(size, TIFFScanlineSize(tif)) + factor-1;
+    int row;
+    int bpc = dev->color_info.depth / dev->color_info.num_components;
+    int n;
+    int width = (dev->width + factor-1)/factor;
+
+    data = gs_alloc_bytes(dev->memory,
+                          max_size * factor,
+                          "tiff_print_page(data)");
+    if (data == NULL)
+        return_error(gs_error_VMerror);
+
+    errors = (int *)gs_alloc_bytes(dev->memory,
+                                   (width+3) * sizeof(int),
+                                   "tiff_print_page(errors)");
+    if (errors == NULL)
+    {
+        gs_free_object(dev->memory, data, "tiff_print_page(data)");
+        return_error(gs_error_VMerror);
+    }
+
+    TIFFCheckpointDirectory(tif);
+
+    memset(data, 0, max_size * factor);
+    memset(errors, 0, (width+3) * sizeof(int));
+    n = 0;
+    for (row = 0; row < dev->height; row++) {
+        code = gdev_prn_copy_scan_lines(dev, row, data + max_size*n, size);
+        if (code < 0)
+            break;
+        n++;
+        if (n == factor)
+        {
+            /* Do the downsample */
+            n = 0;
+            down_and_out(tif, data, max_size, factor, row/factor, width, errors);
+        }
+    }
+    if (n != 0)
+    {
+        while (n != factor)
+        {
+            memset(data + max_size * n, 0, max_size);
+            n++;
+            row++;
+        }
+        down_and_out(tif, data, max_size, factor, row/factor, width, errors);
+    }
+
+    gs_free_object(dev->memory, errors, "tiff_print_page(errors)");
     gs_free_object(dev->memory, data, "tiff_print_page(data)");
 
     TIFFWriteDirectory(tif);
@@ -338,10 +568,10 @@ tiff_compression_param_string(gs_param_string *param, uint16 id)
 {
     struct compression_string *c;
     for (c = compression_strings; c->str; c++)
-	if (id == c->id) {
-	    param_string_from_string(*param, c->str);
-	    return 0;
-	}
+        if (id == c->id) {
+            param_string_from_string(*param, c->str);
+            return 0;
+        }
     return gs_error_undefined;
 }
 
@@ -350,20 +580,20 @@ tiff_compression_id(uint16 *id, gs_param_string *param)
 {
     struct compression_string *c;
     for (c = compression_strings; c->str; c++)
-	if (!bytes_compare(param->data, param->size,
-			   (const byte *)c->str, strlen(c->str)))
-	{
-	    *id = c->id;
-	    return 0;
-	}
+        if (!bytes_compare(param->data, param->size,
+                           (const byte *)c->str, strlen(c->str)))
+        {
+            *id = c->id;
+            return 0;
+        }
     return gs_error_undefined;
 }
 
 int tiff_compression_allowed(uint16 compression, byte depth)
 {
     return depth == 1 || (compression != COMPRESSION_CCITTRLE &&
-			  compression != COMPRESSION_CCITTFAX3 &&
-			  compression != COMPRESSION_CCITTFAX4);
+                          compression != COMPRESSION_CCITTFAX3 &&
+                          compression != COMPRESSION_CCITTFAX4);
 
 }
 

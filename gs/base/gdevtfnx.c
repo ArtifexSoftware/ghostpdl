@@ -49,7 +49,8 @@ const gx_device_tiff gs_tiff12nc_device = {
 			24, tiff12_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
     COMPRESSION_NONE,
-    TIFF_DEFAULT_STRIP_SIZE
+    TIFF_DEFAULT_STRIP_SIZE,
+    TIFF_DEFAULT_DOWNSCALE
 };
 
 const gx_device_tiff gs_tiff24nc_device = {
@@ -60,7 +61,8 @@ const gx_device_tiff gs_tiff24nc_device = {
 			24, tiff_rgb_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
     COMPRESSION_NONE,
-    TIFF_DEFAULT_STRIP_SIZE
+    TIFF_DEFAULT_STRIP_SIZE,
+    TIFF_DEFAULT_DOWNSCALE
 };
 
 const gx_device_tiff gs_tiff48nc_device = {
@@ -71,7 +73,8 @@ const gx_device_tiff gs_tiff48nc_device = {
 			48, tiff_rgb_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
     COMPRESSION_NONE,
-    TIFF_DEFAULT_STRIP_SIZE
+    TIFF_DEFAULT_STRIP_SIZE,
+    TIFF_DEFAULT_DOWNSCALE
 };
 
 /* ------ Private functions ------ */

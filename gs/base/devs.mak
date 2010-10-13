@@ -183,6 +183,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	tiffsep1  Creates halftoned tiff 1-bit per pixel for each colorant
 #	tifflzw  TIFF LZW (tag = 5) (monochrome)
 #	tiffpack  TIFF PackBits (tag = 32773) (monochrome)
+#	tiffscaled  TIFF (monochrome output, integer downsampled and dithered from grayscale rendering)
 
 # Note that MS Windows-specific drivers are defined in pcwin.mak, not here,
 # because they have special compilation requirements that require defining
@@ -1691,7 +1692,7 @@ $(DD)tiffpack.dev : $(DEVS_MAK) $(libtiff_dev) $(DD)tfax.dev
 
 # TIFF Gray, no compression
 
-tiffgray_=$(GLOBJ)gdevtsep.$(OBJ)
+tiffgray_=$(GLOBJ)gdevtsep.$(OBJ) $(GLOBJ)gsequivc.$(OBJ)
 
 $(DD)tiffgray.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev
 	$(SETPDEV2) $(DD)tiffgray $(tiffgray_)
@@ -1700,6 +1701,14 @@ $(DD)tiffgray.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev
 $(GLOBJ)gdevtsep.$(OBJ) : $(GLSRC)gdevtsep.c $(PDEVH) $(stdint__h) $(gdevtifs_h)\
 	$(gdevdevn_h) $(gsequivc_h) $(stdio__h) $(ctype__h)
 	$(GLCC) $(I_)$(TI_)$(_I) $(GLO_)gdevtsep.$(OBJ) $(C_) $(GLSRC)gdevtsep.c
+
+# TIFF Scaled (downscaled gray -> mono), configurable compression
+
+tiffscaled_=$(tiffgray_) $(GLOBJ)gdevtsep.$(OBJ)
+
+$(DD)tiffscaled.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled_) $(DD)tiffs.dev
+	$(SETPDEV2) $(DD)tiffscaled $(tiffscaled_)
+	$(ADDMOD) $(DD)tiffscaled -include $(DD)tiffs $(tiff_i_)
 
 # TIFF RGB, no compression
 

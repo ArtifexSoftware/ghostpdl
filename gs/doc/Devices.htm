@@ -430,6 +430,14 @@ If the file name specified via the OutputFile parameter ends with the suffix
 '.tif', then the suffix is removed prior to adding the component name in
 '(' and ').tif'.
 
+<a name="tiffscaled"></a><dt><code>tiffscaled</code>
+<dd>
+The tiffscaled device renders internally at the specified resolution to an
+8 bit greyscale image. This is then scaled down by an integer scale factor
+(set by -dDownScaleFactor= described below) and then error diffused to give
+1bpp output. The compression can be set using -sCompression= as described
+below.
+
 </dl>
 </blockquote>
 
@@ -529,6 +537,18 @@ The black-and-white TIFF drivers also provide this parameter:
 1680..1736 or 2000..2056 columns, set the page width to A4 (1728 columns)
 or B4 (2048 columns) respectively.
 This behavior is the default. Pass -dAdjustWidth=0 to turn off this behavior.
+
+</dl></blockquote>
+
+<p>
+The <tt>tiffscaled</tt> TIFF driver also provides this parameter:
+
+<blockquote><dl>
+<dt><code>-dDownScaleFactor=<em>factor</em></code> (small non-negative integer; default = 1)
+<dd>If this option set then the page is downscaled by the given factor on both
+axes before error diffusion takes place. For example rendering with
+<tt>-r600</tt> and then specifying <tt>-dDownScaleFactor=3</tt> will produce a
+200dpi image.
 </dl></blockquote>
 
 
