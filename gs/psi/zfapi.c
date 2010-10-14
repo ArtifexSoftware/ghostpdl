@@ -2006,6 +2006,9 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     
     I->ff = ff_stub;
     if(bBuildGlyph && !bCID) {
+        if (r_type(op) != t_name) {
+            name_enter_string (imemory, ".notdef", op);
+        }
         check_type(*op, t_name);
     } else {
 
