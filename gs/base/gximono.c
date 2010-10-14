@@ -79,18 +79,19 @@ gs_image_class_3_mono(gx_image_enum * penum)
 /* Temporary function to make it easier to debug the uber-macro below */
 static int
 image_set_gray(byte sample_value, const bool masked, uint mask_base,
-                uint mask_limit, gx_device_color *pdevc, gs_client_color *cc,
-                gs_color_space *pcs, const gs_imager_state *pis, 
+                uint mask_limit, gx_device_color **ppdevc, gs_client_color *cc,
+                const gs_color_space *pcs, const gs_imager_state *pis, 
                 gx_device * dev, gs_color_select_t gs_color_select_source,
                 gx_image_enum * penum, bool tiles_fit)
 {
    cs_proc_remap_color((*remap_color));
    int code;
+   gx_device_color *pdevc;
+   pdevc = *ppdevc = &penum->clues[sample_value].dev_color;
 
-    pdevc = &penum->clues[sample_value].dev_color;
-    if (!color_is_set(pdevc)) {
+   if (!color_is_set(pdevc)) {
        if ((uint)(sample_value - mask_base) < mask_limit) {
-            color_set_null(pdevc);
+           color_set_null(pdevc);
        } else {
             switch ( penum->map[0].decoding )
             {
@@ -383,7 +384,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 		    if (run != htrun) {
 			htrun = run;
 #if USE_SET_GRAY_FUNCTION
-                        code = image_set_gray(run,masked,mask_base,mask_limit,pdevc,
+                        code = image_set_gray(run,masked,mask_base,mask_limit,&pdevc,
                             &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
                         if (code < 0) 
                             goto err;
@@ -425,7 +426,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 		if (run != htrun) {
 		    htrun = run;
 #if USE_SET_GRAY_FUNCTION
-                    code = image_set_gray(run,masked,mask_base,mask_limit,pdevc,
+                    code = image_set_gray(run,masked,mask_base,mask_limit,&pdevc,
                         &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
                     if (code < 0) 
                         goto err;
@@ -452,7 +453,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
       last:if (stop < endp && (*stop || !masked)) {
 	    if (!masked) {
 #if USE_SET_GRAY_FUNCTION
-                    code = image_set_gray(*stop, masked,mask_base,mask_limit,pdevc,
+                    code = image_set_gray(*stop, masked,mask_base,mask_limit,&pdevc,
                         &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
                     if (code < 0) 
                         goto err;
@@ -560,7 +561,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 			  ht:	/* Use halftone if needed */
 			    if (run != htrun) {
 #if USE_SET_GRAY_FUNCTION
-                                code = image_set_gray(run, masked,mask_base,mask_limit,pdevc,
+                                code = image_set_gray(run, masked,mask_base,mask_limit,&pdevc,
                                     &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
                                 if (code < 0) 
                                     goto err;
@@ -607,7 +608,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 		    goto lmt;
 	    }
 #if USE_SET_GRAY_FUNCTION
-            code = image_set_gray(*stop, masked,mask_base,mask_limit,pdevc,
+            code = image_set_gray(*stop, masked,mask_base,mask_limit,&pdevc,
                 &cc,pcs,pis,dev,gs_color_select_source,penum,tiles_fit);
             if (code < 0) 
                 goto err;
