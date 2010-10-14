@@ -117,12 +117,23 @@ s_jpxd_write_data(unsigned char * pucData,
        from each call in planar buffers and interleave a tile at
        a time into a stipe buffer for output */
 
-    /* todo: handle non-8-bit samples, subsampled components,
-        and Y'CrCb colorspace rotation */
-
-    if (state->ncomp == 1)
-        memcpy(&state->image[state->stride*ulRow + state->ncomp*ulStart],
-               pucData, ulNum);
+    if (state->ncomp == 1) {
+        if (state->bpc <= 8) {
+            memcpy(&state->image[state->stride*ulRow + state->ncomp*ulStart],
+                   pucData, ulNum);
+        }
+        else {
+            unsigned long i;
+            unsigned short *src = (unsigned short *)pucData;
+            unsigned char *dst = &state->image[state->stride * ulRow + 2 * ulStart];
+            unsigned int shift = 16 - state->bpc;
+            for (i = 0; i < ulNum; i++) {
+                unsigned short v = *src++ << shift;
+                *dst++ = (v >> 8) & 0xff;
+                *dst++ = v & 0xff;
+            }
+        }
+    }
     else if (comp >= 0) {
         unsigned long cw, ch, i, hstep, vstep, x, y;
         unsigned char *row;
@@ -133,18 +144,35 @@ s_jpxd_write_data(unsigned char * pucData,
         hstep = state->width / cw;
         vstep = state->height / ch;
 
-        row = &state->image[state->stride * ulRow * vstep +
-                            state->ncomp * ulStart * hstep + comp];
-        for (y = 0; y < vstep; y++) {
-            unsigned char *p = row;
-            for (i = 0; i < ulNum; i++)
-                for (x = 0; x < hstep; x++) {
-                    if (p < state->image)
-                        dprintf("ups\n");
-                    *p = pucData[i];
-                    p += state->ncomp;
-                }
-            row += state->stride;
+        if (state->bpc <= 8) {
+            row = &state->image[state->stride * ulRow * vstep +
+                                state->ncomp * ulStart * hstep + comp];
+            for (y = 0; y < vstep; y++) {
+                unsigned char *p = row;
+                for (i = 0; i < ulNum; i++)
+                    for (x = 0; x < hstep; x++) {
+                        *p = pucData[i];
+                        p += state->ncomp;
+                    }
+                row += state->stride;
+            }
+        }
+        else {
+            int shift = 16 - state->bpc;
+            unsigned short *src = (unsigned short *)pucData;
+            row = &state->image[state->stride * ulRow * vstep +
+                                2 * state->ncomp * ulStart * hstep + 2 * comp];
+            for (y = 0; y < vstep; y++) {
+                unsigned char *p = row;
+                for (i = 0; i < ulNum; i++)
+                    for (x = 0; x < hstep; x++) {
+                        unsigned short v = *src++ << shift;
+                        p[0] = (v >> 8) & 0xff;
+                        p[1] = v & 0xff;
+                        p += 2 * state->ncomp;
+                    }
+                row += state->stride;
+            }
         }
     }
     return cJP2_Error_OK;
@@ -479,7 +507,8 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 state->image == NULL) {
 
             /* allocate our output buffer */
-            state->stride = state->width*state->ncomp;
+            int real_bpc = state->bpc > 8 ? 16 : state->bpc;
+            state->stride = (state->width * state->ncomp * real_bpc + 7) / 8;
             state->image = malloc(state->stride*state->height);
             if (state->image == NULL) return ERRC;
 
