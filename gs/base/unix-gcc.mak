@@ -454,7 +454,7 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
-include $(GLSRCDIR)/libtiff.mak
+include $(GLSRCDIR)/tiff.mak
 include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/lcms.mak

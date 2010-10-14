@@ -47,7 +47,7 @@ include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/lcms.mak
 include $(GLSRCDIR)/ijs.mak
-include $(GLSRCDIR)/libtiff.mak
+include $(GLSRCDIR)/tiff.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak
