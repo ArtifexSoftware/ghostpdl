@@ -81,6 +81,20 @@ s_jpxd_read_data(unsigned char *pucData,
     return copy_bytes;
 }
 
+static unsigned long
+jp2_get_value(JP2_Decomp_Handle *handle,
+              JP2_Property_Tag tag,
+              short comp,
+              unsigned long def)
+{
+    JP2_Property_Value v;
+
+    if (JP2_Decompress_GetProp(handle, tag, &v, -1, comp) != cJP2_Error_OK)
+        return def;
+
+    return (unsigned long)v;
+}
+
 /* write decompressed data into our image buffer */
 static JP2_Error JP2_Callback_Conv
 s_jpxd_write_data(unsigned char * pucData,
@@ -91,8 +105,7 @@ s_jpxd_write_data(unsigned char * pucData,
                                JP2_Callback_Param param)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) param;
-    unsigned char *p;
-    unsigned long i;
+    int comp = state->clut[sComponent];
 
     /* check input */
     if (ulRow >= state->height) return cJP2_Error_Invalid_Height;
@@ -107,17 +120,90 @@ s_jpxd_write_data(unsigned char * pucData,
     /* todo: handle non-8-bit samples, subsampled components,
         and Y'CrCb colorspace rotation */
 
-    p = state->image + state->stride*ulRow + state->ncomp*ulStart;
     if (state->ncomp == 1)
-        memcpy(p, pucData, ulNum);
-    else if (state->clut[sComponent] >= 0) {
-        p += state->clut[sComponent];
-        for (i = 0; i < ulNum; i++) {
-            *p = pucData[i];
-            p += state->ncomp;
+        memcpy(&state->image[state->stride*ulRow + state->ncomp*ulStart],
+               pucData, ulNum);
+    else if (comp >= 0) {
+        unsigned long cw, ch, i, hstep, vstep, x, y;
+        unsigned char *row;
+
+        /* repeat subsampled pixels */
+        cw = jp2_get_value(state->handle, cJP2_Prop_Width, comp, state->width);
+        ch = jp2_get_value(state->handle, cJP2_Prop_Height, comp, state->height);
+        hstep = state->width / cw;
+        vstep = state->height / ch;
+
+        row = &state->image[state->stride * ulRow * vstep +
+                            state->ncomp * ulStart * hstep + comp];
+        for (y = 0; y < vstep; y++) {
+            unsigned char *p = row;
+            for (i = 0; i < ulNum; i++)
+                for (x = 0; x < hstep; x++) {
+                    if (p < state->image)
+                        dprintf("ups\n");
+                    *p = pucData[i];
+                    p += state->ncomp;
+                }
+            row += state->stride;
         }
     }
     return cJP2_Error_OK;
+}
+
+/* convert state->image from YCrCb to RGBa */
+static int 
+s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
+{
+    int i, y, x;
+    int is_signed[2];  /* Cr, Cb */
+
+    if (state->ncomp != 3)
+        return -1;
+
+    for (i = 0; i < 3; i++) {
+        int comp = state->clut[i];
+        if (comp >= 0) /* Cb or Cr */
+            is_signed[comp] = !jp2_get_value(state->handle,
+                                             cJP2_Prop_Signed_Samples,
+                                             i, 0);
+    }
+
+    for (y = 0; y < state->height; y++) {
+        unsigned char *row = &state->image[y * state->stride];
+
+        for (x = 0; x < state->stride; x += 3) {
+            int p[3], q[3];
+
+            for (i = 0; i < 3; i++)
+                p[i] = (int)row[x + i];
+
+            if (!jp2_get_value(state->handle, cJP2_Prop_Signed_Samples, 1, 0))
+                p[1] -= 0x80;
+            if (!jp2_get_value(state->handle, cJP2_Prop_Signed_Samples, 2, 0))
+                p[2] -= 0x80;
+
+            /* rotate to RGB */
+#ifdef JPX_USE_IRT
+            q[1] = p[0] - ((p[1] + p[2])>>2);
+            q[0] = p[1] + q[1];
+            q[2] = p[2] + q[1];
+#else
+            q[0] = (int)((double)p[0] + 1.402 * p[2]);
+            q[1] = (int)((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
+            q[2] = (int)((double)p[0] + 1.772 * p[1]);
+#endif
+            /* clamp */
+            for (i = 0; i < 3; i++){
+                if (q[i] < 0) q[i] = 0;
+                else if (q[i] > 0xFF) q[i] = 0xFF;
+            }
+            /* write out the pixel */
+            for (i = 0; i < 3; i++)
+                row[x + i] = (unsigned char)q[i];
+        }
+    }
+
+    return 0;
 }
 
 static int
@@ -239,6 +325,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
     JP2_Property_Value result;
     long in_size = pr->limit - pr->ptr;
     long out_size = pw->limit - pw->ptr;
+    JP2_Colorspace image_cs = cJP2_Colorspace_RGBa;
 
     if (in_size > 0) {
         /* buffer available data */
@@ -306,6 +393,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                     dlprintf1("Luratech JP2 error %d decoding colorspace\n", (int)err);
                     return ERRC;
                 }
+                image_cs = (JP2_Colorspace)result;
                 switch (result) {
                     case cJP2_Colorspace_Gray: cspace = "gray"; break;
                     case cJP2_Colorspace_RGBa: cspace = "sRGB"; break;
@@ -415,6 +503,10 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             if (err != cJP2_Error_OK) {
                 dlprintf1("Luratech JP2 error %d decoding image data\n", (int)err);
                 return ERRC; /* parsing error */
+            }
+
+            if (image_cs == cJP2_Colorspace_RGB_YCCa) {
+                s_jpxd_ycc_to_rgb(state);
             }
         }
 
