@@ -40,9 +40,9 @@ include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 include $(GLSRCDIR)/jpeg.mak
-# zlib.mak must precede libpng.mak
+# zlib.mak must precede png.mak
 include $(GLSRCDIR)/zlib.mak
-include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/png.mak
 include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/lcms.mak

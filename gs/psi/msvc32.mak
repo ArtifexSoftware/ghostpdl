@@ -211,7 +211,7 @@ JSRCDIR=jpeg
 # Define the directory where the PNG library sources are stored,
 # and the version of the library that is stored there.
 # You may need to change this if the libpng version changes.
-# See libpng.mak for more information.
+# See png.mak for more information.
 
 !ifndef PNGSRCDIR
 PNGSRCDIR=libpng

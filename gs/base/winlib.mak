@@ -102,9 +102,9 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\freetype.mak
 !include $(GLSRCDIR)\jpeg.mak
-# zlib.mak must precede libpng.mak
+# zlib.mak must precede png.mak
 !include $(GLSRCDIR)\zlib.mak
-!include $(GLSRCDIR)\libpng.mak
+!include $(GLSRCDIR)\png.mak
 !include $(GLSRCDIR)\tiff.mak
 !include $(GLSRCDIR)\jbig2.mak
 !include $(GLSRCDIR)\jasper.mak

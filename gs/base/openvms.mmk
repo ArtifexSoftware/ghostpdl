@@ -116,7 +116,7 @@ JSRCDIR=[.jpeg]
 # Define the directory where the PNG library sources are stored,
 # and the version of the library that is stored there.
 # You may need to change this if the libpng version changes.
-# See libpng.mak for more information.
+# See png.mak for more information.
 
 .ifdef SYSLIB
 PNGSRCDIR=sys$library:
@@ -428,9 +428,9 @@ all : macro [.lib]Fontmap. $(GS_XE)
 .include $(GLSRCDIR)lib.mak
 .include $(PSSRCDIR)int.mak
 .include $(GLSRCDIR)jpeg.mak
-# zlib.mak must precede libpng.mak
+# zlib.mak must precede png.mak
 .include $(GLSRCDIR)zlib.mak
-.include $(GLSRCDIR)libpng.mak
+.include $(GLSRCDIR)png.mak
 JBIG2_EXTRA_OBJS=$(JBIG2OBJDIR)$(D)snprintf.$(OBJ)
 .include $(GLSRCDIR)jbig2.mak
 .include $(GLSRCDIR)icclib.mak

@@ -485,7 +485,7 @@ dnl these are technically optional
 
 AC_MSG_CHECKING([for local zlib source])
 dnl zlib is needed for language level 3, and libpng
-# we must define ZLIBDIR regardless because libpng.mak does a -I$(ZLIBDIR)
+# we must define ZLIBDIR regardless because png.mak does a -I$(ZLIBDIR)
 # this seems a harmless default
 ZLIBDIR=src
 if test -d zlib; then

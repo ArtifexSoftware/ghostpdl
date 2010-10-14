@@ -1484,7 +1484,7 @@ $(DD)pam.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev
 
 ### --------------- Portable Network Graphics file format --------------- ###
 ### Requires libpng 0.81 and zlib 0.95 (or more recent versions).         ###
-### See libpng.mak and zlib.mak for more details.                         ###
+### See png.mak and zlib.mak for more details.                         ###
 
 png__h=$(GLSRC)png_.h $(MAKEFILE)
 

@@ -59,7 +59,7 @@ PZGEN=$(ZGENDIR)$(D)
 PNGCC=$(CC_) $(I_)$(PI_)$(_I) $(PF_) $(D_)PNG_NO_ASSEMBLER_CODE$(_D)
 
 # Define the name of this makefile.
-LIBPNG_MAK=$(GLSRC)libpng.mak
+LIBPNG_MAK=$(GLSRC)png.mak
 
 png.clean : png.config-clean png.clean-not-config-clean
 
