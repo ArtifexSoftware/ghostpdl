@@ -117,7 +117,27 @@ s_jpxd_write_data(unsigned char * pucData,
        from each call in planar buffers and interleave a tile at
        a time into a stipe buffer for output */
 
-    if (state->ncomp == 1) {
+    if (state->colorspace == gs_jpx_cs_indexed && sComponent == 0) {
+        JP2_Palette_Params *pal;
+        JP2_Error err;
+        int i, c;
+        unsigned char *dst = &state->image[state->stride * ulRow +
+                                           state->ncomp * ulStart + comp];
+
+        err = JP2_Decompress_GetPalette(state->handle, &pal);
+        if (err != cJP2_Error_OK)
+            return err;
+
+        if (pal->ulEntries != 256)
+            return cJP2_Error_Invalid_Colorspace;
+
+        for (i = 0; i < ulNum; i++) {
+            unsigned char v = pucData[i];
+            for (c = 0; c < state->ncomp; c++)
+                *dst++ = (unsigned char)pal->ppulPalette[c][v];
+        }
+    }
+    else if (state->ncomp == 1) {
         if (state->bpc <= 8) {
             memcpy(&state->image[state->stride*ulRow + state->ncomp*ulStart],
                    pucData, ulNum);
@@ -423,24 +443,46 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 }
                 image_cs = (JP2_Colorspace)result;
                 switch (result) {
-                    case cJP2_Colorspace_Gray: cspace = "gray"; break;
-                    case cJP2_Colorspace_RGBa: cspace = "sRGB"; break;
+                    case cJP2_Colorspace_Gray:
+                        cspace = "gray";
+                        state->colorspace = gs_jpx_cs_gray;
+                        break;
+                    case cJP2_Colorspace_RGBa:
+                        cspace = "sRGB";
+                        state->colorspace = gs_jpx_cs_rgb;
+                        break;
                     case cJP2_Colorspace_RGB_YCCa:
                         cspace = "sRGB YCrCb"; break;
+                        state->colorspace = gs_jpx_cs_rgb;
+                        break;
                     case cJP2_Colorspace_CIE_LABa:
-                        cspace = "CIE Lab"; break;
+                        cspace = "CIE Lab";
+                        state->colorspace = gs_jpx_cs_rgb;
+                        break;
                     case cJP2_Colorspace_ICCa:
-                        cspace = "ICC profile"; break;
+                        cspace = "ICC profile";
+                        state->colorspace = gs_jpx_cs_rgb;
+                        break;
                     case cJP2_Colorspace_Palette_Gray:
-                        cspace = "indexed gray"; break;
+                        cspace = "indexed gray";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                     case cJP2_Colorspace_Palette_RGBa:
-                        cspace = "indexed sRGB"; break;
+                        cspace = "indexed sRGB";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                     case cJP2_Colorspace_Palette_RGB_YCCa:
-                        cspace = "indexed sRGB YCrCb"; break;
+                        cspace = "indexed sRGB YCrCb";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                     case cJP2_Colorspace_Palette_CIE_LABa:
-                        cspace = "indexed CIE Lab"; break;
+                        cspace = "indexed CIE Lab";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                     case cJP2_Colorspace_Palette_ICCa:
-                        cspace = "indexed with ICC profile"; break;
+                        cspace = "indexed with ICC profile";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                 }
                 if_debug1('w', "[w]jpxd image colorspace is %s\n", cspace);
             }
