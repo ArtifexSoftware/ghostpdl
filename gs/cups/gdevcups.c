@@ -3589,8 +3589,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   dprintf1("DEBUG2: ppd = %p\n", cups->PPD);
   dprintf2("DEBUG2: PageSize = [ %.3f %.3f ]\n",
 	   pdev->MediaSize[0], pdev->MediaSize[1]);
-  dprintf4("DEBUG2: margins = [ %.3f %.3f %.3f %.3f ]\n",
-	   margins[0], margins[1], margins[2], margins[3]);
+  if (size_set)
+    dprintf4("DEBUG2: margins = [ %.3f %.3f %.3f %.3f ]\n",
+	     margins[0], margins[1], margins[2], margins[3]);
   dprintf2("DEBUG2: HWResolution = [ %.3f %.3f ]\n",
 	   pdev->HWResolution[0], pdev->HWResolution[1]);
   dprintf2("DEBUG2: width = %d, height = %d\n",
