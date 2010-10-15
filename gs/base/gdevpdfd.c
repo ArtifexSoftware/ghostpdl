@@ -1392,8 +1392,8 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 	    psmat = &smat;
 	}
 	pprintg4(pdev->strm, "%g %g %g %g re f\n",
-		fixed2float(box1.p.x) * scale, fixed2float(box1.p.y) * scale,
-		fixed2float(box1.q.x - box1.p.x) * scale, fixed2float(box1.q.y - box1.p.y) * scale);
+		fixed2float(box1.p.x) / scale, fixed2float(box1.p.y) / scale,
+		fixed2float(box1.q.x - box1.p.x) / scale, fixed2float(box1.q.y - box1.p.y) / scale);
 	if (psmat)
 	    stream_puts(pdev->strm, "Q\n");
 	return 0;
