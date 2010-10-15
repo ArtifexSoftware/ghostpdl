@@ -1040,6 +1040,15 @@ end
   2 copy getu16 16 bitshift 3 1 roll 2 add getu16 add
 } bind def
 
+/ROMM_RGB_ICC [ /ICCBased
+  mark
+    /N 3
+    /DataSource (ISO22028-2_ROMM-RGB)
+    /Alternate [/DeviceRGB]
+    /Name (ISO22028-2_ROMM-RGB)
+  .dicttomark
+] def
+
 /jp2_csp_dict mark
   12 { /DeviceCMYK }       % CMYK
   14 { /Lab }              % LAB
@@ -1048,10 +1057,17 @@ end
   18 3 index               % YCC is converted to RGB
 % 19                       % CIEJab not supportec by PDF 1.7
 % 20                       % e-sRGB
-% 21                       % ROMMRGB
+  21 { /ISO22028-2_ROMM-RGB /ColorSpace resourcestatus {
+         pop pop
+         /ISO22028-2_ROMM-RGB /ColorSpace findresource
+       } {
+         /ISO22028-2_ROMM-RGB //ROMM_RGB_ICC /ColorSpace defineresource
+       } ifelse
+     } bind
 % 24                       % e-sYCC
 .dicttomark readonly def
- 
+currentdict /ROMM_RGB_ICC undef
+
 % Process jp2 blocks (aka boxes). All procedures have the signature
 % <file> <length> -> ... <file> <flush_length>
 /jp2_tag_dict 10 dict begin
