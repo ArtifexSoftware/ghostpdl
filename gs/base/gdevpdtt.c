@@ -96,6 +96,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 {
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
     gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
+    gs_matrix m;
 
     if (pdev->type3charpath)
 	return gs_text_set_cache(penum->pte_default, pw, control);
@@ -103,7 +104,12 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
     switch (control) {
     case TEXT_SET_CHAR_WIDTH:
     case TEXT_SET_CACHE_DEVICE:
-	gs_distance_transform(pw[0], pw[1], &ctm_only(pte->pis), &pdev->char_width);
+	/* See comments in pdf_text_process. We are using a 100x100 matrix
+	 * NOT the identity, but we want the cache device values to be in
+	 * font co-ordinate space, so we need to undo that scale here.
+	 */
+	gs_matrix_scale(&ctm_only(pte->pis), .01, .01, &m);
+	gs_distance_transform(pw[0], pw[1], &m, &pdev->char_width);
 	break;
     case TEXT_SET_CACHE_DEVICE2:
 	/*
@@ -112,7 +118,12 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	 * width for Widths array. Therefore we don't check 
 	 * gs_rootfont(pgs)->WMode and don't use pw[6:7].
 	 */
-	gs_distance_transform(pw[0], pw[1], &ctm_only(pte->pis), &pdev->char_width);
+	/* See comments in pdf_text_process. We are using a 100x100 matrix
+	 * NOT the identity, but we want the cache device values to be in
+	 * font co-ordinate space, so we need to undo that scale here.
+	 */
+	gs_matrix_scale(&ctm_only(pte->pis), .01, .01, &m);
+	gs_distance_transform(pw[0], pw[1], &m, &pdev->char_width);
 	if (penum->cdevproc_callout) {
 	    memcpy(penum->cdevproc_result, pw, sizeof(penum->cdevproc_result));
 	    return 0;
@@ -178,6 +189,23 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    code = gx_clip_to_rectangle(penum_s->pgs, &clip_box);
 	    if (code < 0)
 		return code;
+
+	    /* See comments in pdf_text_process. We are using a 100x100 matrix
+	     * NOT the identity, but we want the cache device values to be in
+	     * font co-ordinate space, so we need to undo that scale here. We
+	     * can't do it above, where we take any scaling from the BuildChar
+	     * into account, because that would get the clip path wrong, that
+	     * needs to be in the 100x100 space so that it doesn't clip
+	     * out marking operations.
+	     */
+	    gs_matrix_scale(&ctm_only(penum_s->pgs), .01, .01, &m);
+	    for (i = 0; i < narg; i += 2) {
+		gs_point p;
+
+		gs_point_transform(pw[i], pw[i + 1], &m, &p);
+		pw1[i] = p.x;
+		pw1[i + 1] = p.y;
+	    }
 	    code = pdf_set_charproc_attrs(pdev, pte->current_font, 
 			pw1, narg, control, penum->output_char_code);
 	    if (code < 0)
@@ -209,6 +237,17 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	       to go with the default implementation.
 	       Need to restore the correct CTM and add
 	       changes, which the charproc possibly did. */
+	    /* See comments in pdf_text_process. We are using a 100x100 matrix
+	     * NOT the identity,  so we need to undo that scale here.
+	     */
+	    gs_matrix_scale(&ctm_only(penum->pis), .01, .01, (gs_matrix *)&ctm_only(penum->pis));
+	    /* We also scaled the page height and width. Because we
+	     * don't go through the accumulator 'close' in pdf_text_process 
+	     * we must also undo that scale.
+	     */
+	    pdev->width /= 100;
+	    pdev->height /= 100;
+
 	    gs_matrix_multiply((gs_matrix *)&pdev->charproc_ctm, (gs_matrix *)&penum->pis->ctm, &m);
 	    gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
 	    penum->charproc_accum = false;
@@ -2578,6 +2617,11 @@ pdf_text_process(gs_text_enum_t *pte)
 	        stream_puts(pdev->strm, "0 0 0 0 0 0 d1\n");
 	    }
 	    
+	    /* See below, we scaled the device height and width to prevent 
+	     * clipping of the CharProc operations, now we need to undo that.
+	     */
+	    pdev->width /= 100;
+	    pdev->height /= 100;
 	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp, 
 			pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
 	    if (code < 0)
@@ -2609,6 +2653,20 @@ pdf_text_process(gs_text_enum_t *pte)
 		code = pdf_start_charproc_accum(pdev);
 		if (code < 0)
 		    return code;
+
+		/* We need to give FreeType some room for accuracy when 
+		 * retrieving the outline. We will use a scale factor of 100
+		 * (see below). Because this appears to the regular path
+		 * handling code as if it were at the page level, the co-ords
+		 * would be clipped frequently, so we temporarily hack the
+		 * width and height of the device here to ensure it doesn't.
+		 * Note that this requires some careful manipulation of the 
+		 * CTM in various places, which want numbers in the font
+		 * co-ordinate space, not the scaled user space.
+		 */
+		pdev->width *= 100;
+		pdev->height *= 100;
+
 		pdf_viewer_state_from_imager_state(pdev, pte->pis, pte->pdcolor);
 		/* Set line params to unallowed values so that
 		   they'll synchronize with writing them out on the first use. 
@@ -2628,7 +2686,16 @@ pdf_text_process(gs_text_enum_t *pte)
 		   executed gsave, so we are safe to change CTM now.
 		   Note that BuildChar may change CTM before calling setcachedevice. */
 		gs_make_identity(&m);
+		/* See comment above, we actually want to use a scale factor
+		 * of 100 in order to give FreeType some room in the fixed
+		 * precision calculations when retrieing the outline. So in
+		 * fact we don't use the identity CTM, but a 100x100 matrix
+		 * Originally tried 1000, but that was too likely to cause
+		 * clipping or arithmetic overflow.
+		 */
+		gs_matrix_scale(&m, 100, 100, &m);
 		gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+
 		/* Choose a character code to use with the charproc. */
 		code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
 		if (code < 0)

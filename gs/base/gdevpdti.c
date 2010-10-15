@@ -503,6 +503,15 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
 	    (float)pw[3], (float)pw[4], (float)pw[5]);
 	pdfont->u.simple.s.type3.cached[ch >> 3] |= 0x80 >> (ch & 7);
     }
+    /* See comments in pdf_text_process regarding type 3 CharProc accumulation
+     * Initially this matrix was emitted there, at the start of the accumulator
+     * but if we do that then GS incorrectly applied the matrix to the 'd1'
+     * operator. We write the scale matrix here because this is *after* the 
+     * 'd1' has been emitted above, and so does not affect it.
+     */
+    code = stream_puts(pdev->strm, "0.01 0 0 0.01 0 0 cm\n");
+    if (code < 0)
+        return code;
     return 0;
 }
 
