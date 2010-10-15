@@ -340,7 +340,7 @@ map_components(JP2_Channel_Def_Params *chans, int nchans, int alpha, int clut[])
     if (alpha) {
         for (i = 0; i < nchans; i++) {
             if (chans[i].ulType == cJP2_Channel_Type_Opacity) {
-                clut[0] = i;
+                clut[i] = 0;
                 break;
             }
         }
@@ -351,7 +351,7 @@ map_components(JP2_Channel_Def_Params *chans, int nchans, int alpha, int clut[])
             int assoc = chans[i].ulAssociated -1;
             if (assoc >= nchans)
                 return -1;
-            clut[assoc + alpha] = i;
+            clut[i] = assoc + alpha;
             cnt++;
         }
     }
