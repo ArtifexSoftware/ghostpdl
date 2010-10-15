@@ -137,7 +137,7 @@ s_jpxd_write_data(unsigned char * pucData,
                 *dst++ = (unsigned char)pal->ppulPalette[c][v];
         }
     }
-    else if (state->ncomp == 1) {
+    else if (state->ncomp == 1 && comp == 0) {
         if (state->bpc <= 8) {
             memcpy(&state->image[state->stride*ulRow + state->ncomp*ulStart],
                    pucData, ulNum);
