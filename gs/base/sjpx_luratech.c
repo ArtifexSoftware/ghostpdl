@@ -205,15 +205,13 @@ s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
     int i, y, x;
     int is_signed[2];  /* Cr, Cb */
 
-    if (state->ncomp != 3)
+    if (state->ncomp - state->alpha != 3)
         return -1;
 
-    for (i = 0; i < 3; i++) {
-        int comp = state->clut[i];
-        if (comp >= 0) /* Cb or Cr */
-            is_signed[comp] = !jp2_get_value(state->handle,
-                                             cJP2_Prop_Signed_Samples,
-                                             i, 0);
+    for (i = 0; i < 2; i++) {
+        int comp = state->clut[i + state->alpha + 1];  /* skip alpha and Y */
+        is_signed[i] = !jp2_get_value(state->handle,
+                                   cJP2_Prop_Signed_Samples, comp, 0);
     }
 
     for (y = 0; y < state->height; y++) {
@@ -225,9 +223,9 @@ s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
             for (i = 0; i < 3; i++)
                 p[i] = (int)row[x + i];
 
-            if (!jp2_get_value(state->handle, cJP2_Prop_Signed_Samples, 1, 0))
+            if (is_signed[0])
                 p[1] -= 0x80;
-            if (!jp2_get_value(state->handle, cJP2_Prop_Signed_Samples, 2, 0))
+            if (is_signed[1])
                 p[2] -= 0x80;
 
             /* rotate to RGB */
@@ -423,7 +421,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                     dlprintf1("Luratech JP2 error %d reading channel definitions\n", (int)err);
                     return ERRC;
                 }
-                state->clut = malloc(nchans * sizeof(int));
+                state->clut = malloc((nchans + 1) * sizeof(int)); /* +1 for requested but missing alpha */
                 state->ncomp = map_components(chans, nchans, state->alpha, state->clut);
                 if (state->ncomp < 0) {
                     dlprintf("Luratech JP2 error decoding channel definitions\n");
