@@ -430,10 +430,10 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         /* maintain consistency better.  (FT_LOAD_NO_BITMAP) */
         a_fapi_font->char_data = saved_char_data;
         if (!a_fapi_font->is_type1)
-            ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ?  FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP : FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP);
+            ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP);
 	else {
             /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
-            ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ?  FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+            ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
 	    if (ft_error == FT_Err_Invalid_File_Format) 
 		return index+1;
 	}
@@ -444,7 +444,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         /* We want to prevent hinting, even for a "tricky" font - it shouldn't matter for the notdef */
         fflags = ft_face->face_flags;
         ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
-        ft_error = FT_Load_Glyph(ft_face, index, a_bitmap ?  FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+        ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
 
         ft_face->face_flags = fflags;
     }
@@ -462,7 +462,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         fflags = ft_face->face_flags;
         ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
         
-        ft_error_fb = FT_Load_Glyph(ft_face, 0, a_bitmap ?  FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP: FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+        ft_error_fb = FT_Load_Glyph(ft_face, 0, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
         
         ft_face->face_flags = fflags;
         
@@ -479,8 +479,6 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         FT_Long hy;
         FT_Long hadv;
         FT_Long vadv;
-        
-        FT_BBox      cbox;
 
         /* In order to get the metrics in the form we need them, we have to remove the size scaling
          * the resolution scaling, and convert to points.
@@ -514,17 +512,39 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 
     }
 
-    if ((!ft_error || !ft_error_fb) && a_glyph)
-        ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
+    if ((!ft_error || !ft_error_fb) && a_bitmap == true) {
+        
+        FT_BBox      cbox;
+        /* compute the control box, and grid fit it - lifted from ft_raster1_render() */
+        FT_Outline_Get_CBox(&ft_face->glyph->outline,&cbox);
 
-    if (a_bitmap && a_glyph && ft_face->glyph->format == FT_GLYPH_FORMAT_BITMAP) {
-        FT_BitmapGlyph bg = (FT_BitmapGlyph)*a_glyph;
+        /* These round operations are only to preserve behaviour compared to the 9.00 release 
+           which used the bitmap dimensions as calculated by Freetype.
+           But FT_PIX_FLOOR/FT_PIX_CEIL aren't public.
+        */
+        cbox.xMin = ((cbox.xMin) & ~63); /* FT_PIX_FLOOR( cbox.xMin ) */
+        cbox.yMin = ((cbox.yMin) & ~63);
+        cbox.xMax = (((cbox.xMax) + 63) & ~63);
+        cbox.yMax = (((cbox.yMax) + 63) & ~63); /* FT_PIX_CEIL( cbox.yMax ) */
 
-        if (bitmap_raster(bg->bitmap.width) * bg->bitmap.rows > max_bitmap) {
-            FT_Done_Glyph(bg);
-            *a_glyph = NULL;
-            return (e_VMerror);
+        w = (FT_UInt)(( cbox.xMax - cbox.xMin ) >> 6 );
+        h = (FT_UInt)(( cbox.yMax - cbox.yMin ) >> 6 );
+
+        if (ft_face->glyph->format != FT_GLYPH_FORMAT_BITMAP && ft_face->glyph->format != FT_GLYPH_FORMAT_COMPOSITE) {
+            if ((bitmap_raster(w) * h) < max_bitmap) {
+               FT_Render_Mode  mode = FT_RENDER_MODE_MONO;
+               
+               ft_error = FT_Render_Glyph(ft_face->glyph, mode);           
+            }
+            else {
+                (*a_glyph) = NULL;
+                return(e_VMerror);
+            }
         }
+    }
+
+    if ((!ft_error || !ft_error_fb) && a_glyph) {
+        ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
     }
 
     if (ft_error == FT_Err_Too_Many_Hints) {
