@@ -452,6 +452,9 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 	pdev->HaveStrokeColor = true;
     }
     pdev->ParamCompatibilityLevel = cl;
+    if (cl < 1.2) {
+	pdev->HaveCFF = false;
+    }
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
 	goto fail;
