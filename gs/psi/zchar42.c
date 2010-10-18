@@ -186,8 +186,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
     if (pfont42->data.gsub_size) {
 	glyph_index = pfont42->data.substitute_glyph_index_vertical(pfont42, glyph_index,
 		gs_rootfont(igs)->WMode, penum->returned.current_glyph);
-	make_int(&substituted_cid, glyph_index);
-	cnref = &substituted_cid;
+	make_int(op, glyph_index);
     }
     code = zchar42_set_cache(i_ctx_p, pbfont, cnref, glyph_index, cont, &exec_cont);
     if (code >= 0 && exec_cont != 0)
