@@ -146,7 +146,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
     gs_font_type42 *const pfont42 = (gs_font_type42 *) pfont;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     op_proc_t cont = (pbfont->PaintType == 0 ? type42_fill : type42_stroke), exec_cont = 0;
-    ref *cnref, substituted_cid;
+    ref *cnref;
     uint glyph_index;
 
     if (code < 0)
