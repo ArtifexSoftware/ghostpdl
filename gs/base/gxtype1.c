@@ -437,13 +437,16 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 	    }
 	    break;
 	case c2_callgsubr:
-	    /* FIXME
-	     * We should process subr and gsubr routines to see if they contain
-	     * a CFF endchar, and if it is a SEAC (deprecated but possible). Sadly
-	     * we don't have a full type 2 parser, and apparently can't handle gsubr
-	     * routines, so if we find one, assume there is no SEAC.
-	     */
-	    return 0;
+	    c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
+	    code = pdata->procs.subr_data
+	        (pfont, c, true, &ipsp[1].cs_data);
+	    if (code < 0)
+		return_error(code);
+	    --csp;
+	    ipsp->ip = cip, ipsp->dstate = state;
+	    ++ipsp;
+	    cip = ipsp->cs_data.bits.data;
+	    goto call;
 	case c_callsubr:
 	    c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 	    code = pdata->procs.subr_data
