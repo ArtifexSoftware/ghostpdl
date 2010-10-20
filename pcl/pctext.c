@@ -208,6 +208,7 @@ get_next_char(
     gs_char *       pchr,
     gs_char *       porig_char,
     bool *          pis_space,
+    bool *          pprint_undefined,
     bool            literal,
     gs_point *      pwidth,
     bool *          unstyled_substitution
@@ -250,6 +251,11 @@ get_next_char(
                                plfont->font_type == plft_MSL, false);
     *pchr = mapped_chr;
     if (mapped_chr == 0xffff) {
+        if ((plfont->storage != pcds_internal) &&
+            (pl_font_char_width(plfont, (void *)(pcs->pgs), mapped_chr, pwidth) == 0)) {
+            *pprint_undefined = true;
+            return 0;
+        }
         *pis_space = true;
         return 0;
     }
@@ -469,11 +475,11 @@ show_char_background(
  * get the advance width.
  */
  static floatp
-pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale, gs_char chr, bool is_space)
+ pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale, gs_char chr, bool is_space, bool print_undefined)
 {
     pcl_font_selection_t *  pfp = &(pcs->font_selection[pcs->font_selected]);
     floatp width;
-    if (chr != 0xffff) {
+    if (chr != 0xffff || print_undefined) {
         if (!pfp->params.proportional_spacing || is_space)
             width = pcl_hmi(pcs);
         else {
@@ -570,6 +576,7 @@ pcl_show_chars_slow(
     bool                    invisible_pattern = is_invisible_pattern(pcs);
     bool                    wrap = pcs->end_of_line_wrap;
     bool                    is_space = false;
+    bool                    print_undefined = false;
     bool                    use_rmargin = (pcs->cap.x <= rmargin);
     gs_char                 chr, orig_chr;
     int                     code = 0;
@@ -582,14 +589,14 @@ pcl_show_chars_slow(
     cpt.y = pcs->cap.y;
 
     while (get_next_char(pcs, &str, &size, &chr,
-                         &orig_chr, &is_space, literal,
+                         &orig_chr, &is_space, &print_undefined, literal,
                          &advance_vector, &unstyled_substitution) == 0) {
         floatp  tmp_x;
 
         /* check if a character was found */
         buff[0] = chr;
         /* round width to integral pcl current units */
-        width = (pcl_get_width(pcs, &advance_vector, pscale, chr, is_space));
+        width = (pcl_get_width(pcs, &advance_vector, pscale, chr, is_space, print_undefined));
 
         /*
          * Check for transitions of the left margin; this check is
@@ -658,7 +665,7 @@ pcl_show_chars_slow(
         }
         gs_moveto(pgs, tmp_x / pscale->x, cpt.y / pscale->y);
 
-        if (chr != 0xffff) {
+        if (chr != 0xffff || print_undefined) {
             /* if source is opaque, show and opaque background */
             if (source_opaque)
                 code = show_char_background(pcs, buff);
