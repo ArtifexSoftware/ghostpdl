@@ -18,6 +18,8 @@
 #ifndef gsmdebug_INCLUDED
 #  define gsmdebug_INCLUDED
 
+#include "valgrind.h"
+
 /* Define the fill patterns used for debugging the allocator. */
 extern const byte
        gs_alloc_fill_alloc,	/* allocated but not initialized */
@@ -34,11 +36,16 @@ extern const byte
 extern void gs_alloc_memset(void *, int /*byte */ , ulong);
 
 #ifdef DEBUG
-#  define gs_alloc_fill(ptr, fill, len)\
-     BEGIN if ( gs_alloc_debug ) gs_alloc_memset(ptr, fill, (ulong)(len)); END
+#  define gs_alloc_fill(ptr, fill, len)                              \
+     BEGIN                                                           \
+     if ( gs_alloc_debug ) gs_alloc_memset(ptr, fill, (ulong)(len)); \
+     VALGRIND_MAKE_MEM_UNDEFINED(ptr,(ulong)(len));                  \
+     END
 #else
-#  define gs_alloc_fill(ptr, fill, len)\
-     DO_NOTHING
+#  define gs_alloc_fill(ptr, fill, len)                              \
+     BEGIN                                                           \
+     VALGRIND_MAKE_MEM_UNDEFINED(ptr,(ulong)(len));                  \
+     END
 #endif
 
 #endif /* gsmdebug_INCLUDED */
