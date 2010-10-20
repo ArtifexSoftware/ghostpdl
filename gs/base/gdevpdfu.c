@@ -228,7 +228,29 @@ copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
 }
 
 static int
-copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes)
+copy_ps_file(stream *s, const char *fname, bool HaveTrueTypes)
+{
+    stream *f;
+    char buf[1024], *p, *q  = buf;
+    int n, l = 0, m = sizeof(buf) - 1, outl = 0;
+    bool skipping = false;
+
+    f = sfopen(fname, "rb", s->memory);
+    if (f == NULL)
+	return_error(gs_error_undefinedfilename);
+    n = sfread(buf, 1, m, f);
+    buf[n] = 0;
+    do {
+	stream_write(s, buf, m);
+	n = sfread(buf, 1, m, f);
+    } while (n);
+    stream_write(s, "\r", 1);
+    sfclose(f);
+    return 0;
+}
+
+static int
+copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes, bool stripping)
 {
     char fname[gp_file_name_sizeof];
     const byte *p = path->data, *e = path->data + path->size;
@@ -257,7 +279,10 @@ copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes)
 		    }
 		}
 		if (HaveTrueTypes || k < 0) {
-		    code = copy_ps_file_stripping(s, fname, HaveTrueTypes);
+		    if (stripping)
+			code = copy_ps_file_stripping(s, fname, HaveTrueTypes);
+		    else
+			code = copy_ps_file(s, fname, HaveTrueTypes);
 		    if (code < 0)
 			return code;
 		}
@@ -331,7 +356,10 @@ pdf_open_document(gx_device_pdf * pdev)
 		if (code < 0)
 		    return code;
 	    }
-	    code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes);
+	    if (pdev->ProduceDSC)
+		code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, false);
+	    else
+		code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, true);
 	    if (code < 0)
 		return code;
 	    if (!pdev->CompressEntireFile) {
