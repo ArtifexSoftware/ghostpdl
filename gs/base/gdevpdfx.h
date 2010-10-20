@@ -436,6 +436,7 @@ struct gx_device_pdf_s {
     bool ResourcesBeforeUsage; /* PS2WRITE only. */
     bool HavePDFWidths;        /* PS2WRITE only. */
     bool HaveStrokeColor;      /* PS2WRITE only. */
+    bool ProduceDSC;	       /* PS2WRITE only. */
     bool HaveTransparency;
     bool PatternImagemask; /* The target viewer|printer handles imagemask 
 			      with pattern color. */

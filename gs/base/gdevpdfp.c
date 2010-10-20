@@ -84,6 +84,7 @@ static const gs_param_item_t pdf_param_items[] = {
 
 	/* Target viewer capabilities (Ghostscript-specific)  */
  /* pi("ForOPDFRead", gs_param_type_bool, ForOPDFRead),			    pdfwrite-only */
+    pi("ProduceDSC", gs_param_type_bool, ProduceDSC),
     pi("PatternImagemask", gs_param_type_bool, PatternImagemask),
     pi("MaxClipPathSize", gs_param_type_int, MaxClipPathSize),
     pi("MaxShadingBitmapSize", gs_param_type_int, MaxShadingBitmapSize),
@@ -398,6 +399,11 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     }
     if (ecode < 0)
 	goto fail;
+
+    if (pdev->is_ps2write && (code = param_read_bool(plist, "ProduceDSC", &pdev->ProduceDSC)) < 0) {
+	param_signal_error(plist, param_name, code);
+    }
+
     /* PDFA and PDFX are stored in the page device dictionary and therefore
      * set on every setpagedevice. However, if we have encountered a file which
      * can't be made this way, and the PDFACompatibilityPolicy is 1, we want to
