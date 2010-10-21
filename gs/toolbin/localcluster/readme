@@ -60,11 +60,11 @@ How to setup a new computer to run regression jobs on the Artifex Cluster:
     other languages using the same configuration that the cluster uses:
 
     cd ghostpdl/gs
-    ./autogen.sh "CC=gcc -m64" --disable-cups --disable-fontconfig \
+    ./autogen.sh "CC=gcc -m64" --disable-fontconfig \
       --without-system-libtiff --prefix=/tmp/gs
     make
     make install
-    /tmp/gs/bin/gs -o test.ppm -sDEVICE=ppmraw ./examples/tiger.eps 
+    /tmp/gs/bin/gs -o test.ppm -sDEVICE=cups ./examples/tiger.eps 
     cd ../..
 
     cd ghostpdl
