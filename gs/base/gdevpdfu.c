@@ -152,7 +152,7 @@ doit(char *line, bool intact)
 
 
 static int
-copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
+copy_ps_file_stripping_all(stream *s, const char *fname, bool HaveTrueTypes)
 {
     stream *f;
     char buf[1024], *p, *q  = buf;
@@ -228,6 +228,82 @@ copy_ps_file_stripping(stream *s, const char *fname, bool HaveTrueTypes)
 }
 
 static int
+copy_ps_file_strip_comments(stream *s, const char *fname, bool HaveTrueTypes)
+{
+    stream *f;
+    char buf[1024], *p, *q  = buf;
+    int n, l = 0, m = sizeof(buf) - 1, outl = 0;
+    bool skipping = false;
+
+    f = sfopen(fname, "rb", s->memory);
+    if (f == NULL)
+	return_error(gs_error_undefinedfilename);
+    n = sfread(buf, 1, m, f);
+    buf[n] = 0;
+    do {
+	if (*q == '\r' || *q == '\n') {
+	    q++;
+	    continue;
+	}
+	p = strchr(q, '\r');
+	if (p == NULL)
+	    p = strchr(q, '\n');
+	if (p == NULL) {
+	    if (n < m)
+		p = buf + n;
+	    else {
+		strcpy(buf, q);
+		l = strlen(buf);
+		m = sizeof(buf) - 1 - l;
+		if (!m) {
+		    sfclose(f);
+		    emprintf1(s->memory,
+                              "The procset %s contains a too long line.",
+                              fname);
+		    return_error(gs_error_ioerror);
+		}
+		n = sfread(buf + l, 1, m, f);
+		n += l;
+		m += l;
+		buf[n] = 0;
+		q = buf;
+		continue;
+	    }
+	}
+	*p = 0;
+	if (q[0] == '%')
+	    l = 0;
+	else {
+	    q = doit(q, false);
+	    if (q == NULL)
+		l = 0;
+	    else
+		l = strlen(q);
+	}
+	if (l) {
+	    if (!HaveTrueTypes && !strcmp("%%beg TrueType", q))
+		skipping = true;
+	    if (!skipping) {
+		outl += l + 1;
+		if (outl > 100) {
+		    q[l] = '\n';
+		    outl = 0;
+		} else
+		    q[l] = '\n ';
+		stream_write(s, q, l + 1);
+	    }
+	    if (!HaveTrueTypes && !strcmp("%%end TrueType", q))
+		skipping = false;
+	}
+	q = p + 1;
+    } while (n == m || q < buf + n);
+    if (outl)
+	stream_write(s, "\r", 1);
+    sfclose(f);
+    return 0;
+}
+
+static int
 copy_ps_file(stream *s, const char *fname, bool HaveTrueTypes)
 {
     stream *f;
@@ -279,9 +355,9 @@ copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes, bool s
 		}
 		if (HaveTrueTypes || k < 0) {
 		    if (stripping)
-			code = copy_ps_file_stripping(s, fname, HaveTrueTypes);
+			code = copy_ps_file_stripping_all(s, fname, HaveTrueTypes);
 		    else
-			code = copy_ps_file(s, fname, HaveTrueTypes);
+			code = copy_ps_file_strip_comments(s, fname, HaveTrueTypes);
 		    if (code < 0)
 			return code;
 		}
@@ -329,17 +405,20 @@ pdf_open_document(gx_device_pdf * pdev)
 	    int width = (int)(pdev->width * 72.0 / pdev->HWResolution[0] + 0.5);
 	    int height = (int)(pdev->height * 72.0 / pdev->HWResolution[1] + 0.5);
 	    
-	    stream_write(s, (byte *)"%!\r", 3);
-	    sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\r", width, height);
+	    if (pdev->ProduceDSC)
+		stream_write(s, (byte *)"%!PS-Adobe-3.0\n", 15);
+	    else
+		stream_write(s, (byte *)"%!\r", 3);
+	    sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
 	    stream_write(s, (byte *)BBox, strlen(BBox));
-	    if(pdev->SetPageSize)
-		stream_puts(s, "/SetPageSize true def\n");
-	    if(pdev->RotatePages)
-		stream_puts(s, "/RotatePages true def\n");
-	    if(pdev->FitPages)
-		stream_puts(s, "/FitPages true def\n");
-	    if(pdev->CenterPages)
-		stream_puts(s, "/CenterPages true def\n");
+	    if (pdev->ProduceDSC) {
+		sprintf(BBox, "%%%%Pages: (atend)\n");
+		stream_write(s, (byte *)BBox, strlen(BBox));
+		sprintf(BBox, "%%%%EndComments\n");
+		stream_write(s, (byte *)BBox, strlen(BBox));
+		sprintf(BBox, "%%%%BeginProlog\n");
+		stream_write(s, (byte *)BBox, strlen(BBox));
+	    }
 	    if (pdev->params.CompressPages || pdev->CompressEntireFile) {
 		/*  When CompressEntireFile is true and ASCII85EncodePages is false,
 		    the ASCII85Encode filter is applied, rather one may expect the opposite.
@@ -347,7 +426,7 @@ pdf_open_document(gx_device_pdf * pdev)
 		    A right implementation should compute the length of the compressed procset,
 		    write out an invocation of SubFileDecode filter, and write the length to
 		    there assuming the output file is positionable. */
-		stream_write(s, (byte *)"currentfile /ASCII85Decode filter /LZWDecode filter cvx exec\r", 61);
+		stream_write(s, (byte *)"currentfile /ASCII85Decode filter /LZWDecode filter cvx exec\n", 61);
 		code = encode(&s, &s_A85E_template, pdev->pdf_memory);
 		if (code < 0)
 		    return code;
@@ -361,17 +440,32 @@ pdf_open_document(gx_device_pdf * pdev)
 		code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, true);
 	    if (code < 0)
 		return code;
-	    if (!pdev->CompressEntireFile) {
+	    if (!pdev->CompressEntireFile || pdev->ProduceDSC) {
 		status = s_close_filters(&s, pdev->strm);
 		if (status < 0)
 		    return_error(gs_error_ioerror);
 	    } else
 		pdev->strm = s;
+	    if (!pdev->ProduceDSC) {
+		if(pdev->SetPageSize)
+		    stream_puts(s, "/SetPageSize true def\n");
+		if(pdev->RotatePages)
+		    stream_puts(s, "/RotatePages true def\n");
+		if(pdev->FitPages)
+		    stream_puts(s, "/FitPages true def\n");
+		if(pdev->CenterPages)
+		    stream_puts(s, "/CenterPages true def\n");
+	    } else {
+		sprintf(BBox, "%%%%EndProlog\n");
+		stream_write(s, (byte *)BBox, strlen(BBox));
+	    }
 	    pdev->OPDFRead_procset_length = stell(s);
 	}
-	pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
-	if (pdev->binary_ok)
-	    stream_puts(s, "%\307\354\217\242\n");
+	if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
+	    pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
+	    if (pdev->binary_ok)
+		stream_puts(s, "%\307\354\217\242\n");
+	}
     }
     /*
      * Determine the compression method.  Currently this does nothing.

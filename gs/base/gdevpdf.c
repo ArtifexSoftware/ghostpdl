@@ -1124,7 +1124,7 @@ pdf_close(gx_device * dev)
 	Pages_id = pdev->Pages->id, Encrypt_id = 0;
     long Threads_id = 0;
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
-    int code = 0, code1, start_section, end_section;
+    int code = 0, code1, start_section, end_section, pagecount=0;
 
     /*
      * If this is an EPS file, or if the file didn't end with a showpage for
@@ -1144,12 +1144,8 @@ pdf_close(gx_device * dev)
 
     /* Write the page objects. */
 
-    {
-	int i;
-
-	for (i = 1; i <= pdev->next_page; ++i)
-	    pdf_write_page(pdev, i);
-    }
+    for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
+	    pdf_write_page(pdev, pagecount);
 
     if (pdev->PrintStatistics)
 	pdf_print_resource_statistics(pdev);
@@ -1211,121 +1207,123 @@ pdf_close(gx_device * dev)
 	}
 	pprintd1(s, "] /Count %d\n", pdev->next_page);
  
-    /* If the last file was PostScript, its possible that DSC comments might be lying around
-     * and pdf_print_orientation will use that if its present. So make sure we get rid of those
-     * before considering the dominant page direction for the Pages tree.
-     */
-    pdev->doc_dsc_info.viewing_orientation = pdev->doc_dsc_info.orientation = -1;
-    pdev->text_rotation.Rotate = pdf_dominant_rotation(&pdev->text_rotation);
-    pdf_print_orientation(pdev, NULL);
+	/* If the last file was PostScript, its possible that DSC comments might be lying around
+         * and pdf_print_orientation will use that if its present. So make sure we get rid of those
+	 * before considering the dominant page direction for the Pages tree.
+	 */
+	pdev->doc_dsc_info.viewing_orientation = pdev->doc_dsc_info.orientation = -1;
+	pdev->text_rotation.Rotate = pdf_dominant_rotation(&pdev->text_rotation);
+	pdf_print_orientation(pdev, NULL);
 
-    cos_dict_elements_write(pdev->Pages, pdev);
-    stream_puts(s, ">>\n");
-    pdf_end_obj(pdev);
+	cos_dict_elements_write(pdev->Pages, pdev);
+	stream_puts(s, ">>\n");
+	pdf_end_obj(pdev);
 
-    /* Close outlines and articles. */
+	/* Close outlines and articles. */
 
-    if (pdev->outlines_id != 0) {
-	/* depth > 0 is only possible for an incomplete outline tree. */
-	while (pdev->outline_depth > 0) {
-	    code1 = pdfmark_close_outline(pdev);
+	if (pdev->outlines_id != 0) {
+	    /* depth > 0 is only possible for an incomplete outline tree. */
+	    while (pdev->outline_depth > 0) {
+		code1 = pdfmark_close_outline(pdev);
+		if (code >= 0)
+		    code = code1;
+	    }
+	    code = pdfmark_close_outline(pdev);
 	    if (code >= 0)
 		code = code1;
-	}
-	code = pdfmark_close_outline(pdev);
-	if (code >= 0)
-	    code = code1;
-	pdf_open_obj(pdev, pdev->outlines_id);
-	pprintd1(s, "<< /Count %d", pdev->outlines_open);
-	pprintld2(s, " /First %ld 0 R /Last %ld 0 R >>\n",
+	    pdf_open_obj(pdev, pdev->outlines_id);
+	    pprintd1(s, "<< /Count %d", pdev->outlines_open);
+	    pprintld2(s, " /First %ld 0 R /Last %ld 0 R >>\n",
 		  pdev->outline_levels[0].first.id,
 		  pdev->outline_levels[0].last.id);
-	pdf_end_obj(pdev);
-    }
-    if (pdev->articles != 0) {
-	pdf_article_t *part;
-
-	/* Write the remaining information for each article. */
-	for (part = pdev->articles; part != 0; part = part->next)
-	    pdfmark_write_article(pdev, part);
-    }
-
-    /* Write named destinations.  (We can't free them yet.) */
-
-    if (pdev->Dests)
-	COS_WRITE_OBJECT(pdev->Dests, pdev);
-
-    /* Write the PageLabel array */
-    pdfmark_end_pagelabels(pdev);
-    if (pdev->PageLabels) {
-	COS_WRITE_OBJECT(pdev->PageLabels, pdev);
-    }
-
-    /* Write the document metadata. */
-    code1 = pdf_document_metadata(pdev);
-    if (code >= 0)
-	code = code1;
-
-    /* Write the Catalog. */
-
-    /*
-     * The PDF specification requires Threads to be an indirect object.
-     * Write the threads now, if any.
-     */
-    if (pdev->articles != 0) {
-	pdf_article_t *part;
-
-	Threads_id = pdf_begin_obj(pdev);
-	s = pdev->strm;
-	stream_puts(s, "[ ");
-	while ((part = pdev->articles) != 0) {
-	    pdev->articles = part->next;
-	    pprintld1(s, "%ld 0 R\n", part->contents->id);
-	    COS_FREE(part->contents, "pdf_close(article contents)");
-	    gs_free_object(mem, part, "pdf_close(article)");
+	    pdf_end_obj(pdev);
 	}
-	stream_puts(s, "]\n");
-	pdf_end_obj(pdev);
-    }
-    pdf_open_obj(pdev, Catalog_id);
-    s = pdev->strm;
-    stream_puts(s, "<<");
-    pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
-    if (pdev->outlines_id != 0)
-	pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
-    if (Threads_id)
-	pprintld1(s, "/Threads %ld 0 R\n", Threads_id);
-    if (pdev->Dests)
-	pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
-    if (pdev->PageLabels)
-	pprintld1(s, "/PageLabels << /Nums  %ld 0 R >>\n", 
+	if (pdev->articles != 0) {
+	    pdf_article_t *part;
+
+	    /* Write the remaining information for each article. */
+	    for (part = pdev->articles; part != 0; part = part->next)
+		pdfmark_write_article(pdev, part);
+	}
+
+	/* Write named destinations.  (We can't free them yet.) */
+
+	if (pdev->Dests)
+	    COS_WRITE_OBJECT(pdev->Dests, pdev);
+
+	/* Write the PageLabel array */
+	pdfmark_end_pagelabels(pdev);
+	if (pdev->PageLabels) {
+	    COS_WRITE_OBJECT(pdev->PageLabels, pdev);
+	}
+
+	/* Write the document metadata. */
+	code1 = pdf_document_metadata(pdev);
+	if (code >= 0)
+	    code = code1;
+
+	/* Write the Catalog. */
+
+	/*
+	 * The PDF specification requires Threads to be an indirect object.
+	 * Write the threads now, if any.
+	 */
+	if (pdev->articles != 0) {
+	    pdf_article_t *part;
+
+	    Threads_id = pdf_begin_obj(pdev);
+	    s = pdev->strm;
+	    stream_puts(s, "[ ");
+	    while ((part = pdev->articles) != 0) {
+		pdev->articles = part->next;
+		pprintld1(s, "%ld 0 R\n", part->contents->id);
+		COS_FREE(part->contents, "pdf_close(article contents)");
+		gs_free_object(mem, part, "pdf_close(article)");
+	    }
+	    stream_puts(s, "]\n");
+	    pdf_end_obj(pdev);
+	}
+	pdf_open_obj(pdev, Catalog_id);
+	s = pdev->strm;
+	stream_puts(s, "<<");
+	pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
+	if (pdev->outlines_id != 0)
+	    pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
+	if (Threads_id)
+	    pprintld1(s, "/Threads %ld 0 R\n", Threads_id);
+	if (pdev->Dests)
+	    pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
+	if (pdev->PageLabels)
+	    pprintld1(s, "/PageLabels << /Nums  %ld 0 R >>\n", 
                   pdev->PageLabels->id);
-    cos_dict_elements_write(pdev->Catalog, pdev);
-    stream_puts(s, ">>\n");
-    pdf_end_obj(pdev);
-    if (pdev->Dests) {
-	COS_FREE(pdev->Dests, "pdf_close(Dests)");
-	pdev->Dests = 0;
-    }
-    if (pdev->PageLabels) {
-	COS_FREE(pdev->PageLabels, "pdf_close(PageLabels)");
-	pdev->PageLabels = 0;
-        pdev->PageLabels_current_label = 0;
-    }
+	cos_dict_elements_write(pdev->Catalog, pdev);
+	stream_puts(s, ">>\n");
+	pdf_end_obj(pdev);
+	if (pdev->Dests) {
+	    COS_FREE(pdev->Dests, "pdf_close(Dests)");
+	    pdev->Dests = 0;
+	}
+	if (pdev->PageLabels) {
+	    COS_FREE(pdev->PageLabels, "pdf_close(PageLabels)");
+	    pdev->PageLabels = 0;
+	    pdev->PageLabels_current_label = 0;
+	}
 
-    /* Prevent writing special named objects twice. */
+	/* Prevent writing special named objects twice. */
 
-    pdev->Catalog->id = 0;
-    /*pdev->Info->id = 0;*/	/* Info should get written */
-    pdev->Pages->id = 0;
-    {
-	int i;
+	pdev->Catalog->id = 0;
+	/*pdev->Info->id = 0;*/	/* Info should get written */
+	pdev->Pages->id = 0;
+	{
+	    int i;
 
-	for (i = 0; i < pdev->num_pages; ++i)
-	    if (pdev->pages[i].Page)
-		pdev->pages[i].Page->id = 0;
+	    for (i = 0; i < pdev->num_pages; ++i)
+		if (pdev->pages[i].Page)
+		    pdev->pages[i].Page->id = 0;
+	}
+    } else {
+	pdev->Info->id = 0;	/* Don't write Info dict for DSC PostScript */
     }
-}
     /*
      * Write the definitions of the named objects.
      * Note that this includes Form XObjects created by BP/EP, named PS
@@ -1351,64 +1349,64 @@ pdf_close(gx_device * dev)
     }
 
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
-    /* Write Encrypt. */
-    if (pdev->OwnerPassword.size > 0) {
-	Encrypt_id = pdf_obj_ref(pdev);
+	/* Write Encrypt. */
+	if (pdev->OwnerPassword.size > 0) {
+	    Encrypt_id = pdf_obj_ref(pdev);
 
-	pdf_open_obj(pdev, Encrypt_id);
-	s = pdev->strm;
-	stream_puts(s, "<<");
-	stream_puts(s, "/Filter /Standard ");
-	pprintld1(s, "/V %ld ", pdev->EncryptionV);
-	pprintld1(s, "/Length %ld ", pdev->KeyLength);
-	pprintld1(s, "/R %ld ", pdev->EncryptionR);
-	pprintld1(s, "/P %ld ", pdev->Permissions);
-	stream_puts(s, "/O ");
-	pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));
-	stream_puts(s, "\n/U ");
-	pdf_put_string(pdev, pdev->EncryptionU, sizeof(pdev->EncryptionU));
-	stream_puts(s, ">>\n");
-	pdf_end_obj(pdev);
-	s = pdev->strm;
-    }
+	    pdf_open_obj(pdev, Encrypt_id);
+	    s = pdev->strm;
+	    stream_puts(s, "<<");
+	    stream_puts(s, "/Filter /Standard ");
+	    pprintld1(s, "/V %ld ", pdev->EncryptionV);
+	    pprintld1(s, "/Length %ld ", pdev->KeyLength);
+	    pprintld1(s, "/R %ld ", pdev->EncryptionR);
+	    pprintld1(s, "/P %ld ", pdev->Permissions);
+	    stream_puts(s, "/O ");
+	    pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));
+	    stream_puts(s, "\n/U ");
+	    pdf_put_string(pdev, pdev->EncryptionU, sizeof(pdev->EncryptionU));
+	    stream_puts(s, ">>\n");
+	    pdf_end_obj(pdev);
+	    s = pdev->strm;
+	}
 
-    /* Write the cross-reference section. */
+	/* Write the cross-reference section. */
 
-    start_section = pdev->FirstObjectNumber;
-    end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+	start_section = pdev->FirstObjectNumber;
+	end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
 
-    xref = pdf_stell(pdev) - pdev->OPDFRead_procset_length;
-    if (pdev->FirstObjectNumber == 1)
-	pprintld1(s, "xref\n0 %ld\n0000000000 65535 f \n",
+	xref = pdf_stell(pdev) - pdev->OPDFRead_procset_length;
+	if (pdev->FirstObjectNumber == 1)
+	    pprintld1(s, "xref\n0 %ld\n0000000000 65535 f \n",
 		  end_section);
-    else
-	pprintld2(s, "xref\n0 1\n0000000000 65535 f \n%ld %ld\n",
+	else
+	    pprintld2(s, "xref\n0 1\n0000000000 65535 f \n%ld %ld\n",
 		  start_section,
 		  end_section - start_section);
 
-    do {
-	write_xref_section(pdev, tfile, start_section, end_section, resource_pos);
-	if (end_section >= pdev->next_id)
-	    break;
-	start_section = end_section + 1;
-	end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
-	pprintld2(s, "%ld %ld\n", start_section, end_section - start_section);
-    } while (1);
+	do {
+	    write_xref_section(pdev, tfile, start_section, end_section, resource_pos);
+	    if (end_section >= pdev->next_id)
+		break;
+	    start_section = end_section + 1;
+	    end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+	    pprintld2(s, "%ld %ld\n", start_section, end_section - start_section);
+	} while (1);
 
-    /* Write the trailer. */
+	/* Write the trailer. */
 
-    stream_puts(s, "trailer\n");
-    pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
+	stream_puts(s, "trailer\n");
+	pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
 	      pdev->next_id, Catalog_id, Info_id);
-    stream_puts(s, "/ID [");
-    psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
-    psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
-    stream_puts(s, "]\n");
-    if (pdev->OwnerPassword.size > 0) {
-	pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
-    }
-    stream_puts(s, ">>\n");
-    pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
+	stream_puts(s, "/ID [");
+	psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+	psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+	stream_puts(s, "]\n");
+	if (pdev->OwnerPassword.size > 0) {
+	    pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
+	}
+	stream_puts(s, ">>\n");
+	pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
     }
 
     /* Release the resource records. */
@@ -1439,6 +1437,11 @@ pdf_close(gx_device * dev)
     pdev->pages = 0;
     pdev->num_pages = 0;
 
+    if (pdev->ForOPDFRead && pdev->ProduceDSC) {
+	    stream_puts(pdev->strm, "%%Trailer\n");
+	    pprintld1(pdev->strm, "%%Pages: %ld\n", pagecount - 1);
+	    stream_puts(pdev->strm, "%%EOF\n");
+    }
     if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
         /* pdf_open_dcument could set up filters for entire document.
            Removing them now. */
@@ -1452,6 +1455,7 @@ pdf_close(gx_device * dev)
 	if (status < 0 && code == 0)
 	    code = gs_error_ioerror;
     }
+
     code1 = gdev_vector_close_file((gx_device_vector *) pdev);
     if (code >= 0)
 	code = code1;
