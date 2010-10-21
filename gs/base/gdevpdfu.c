@@ -240,7 +240,7 @@ copy_ps_file(stream *s, const char *fname, bool HaveTrueTypes)
     n = sfread(buf, 1, m, f);
     buf[n] = 0;
     do {
-	stream_write(s, buf, m);
+	stream_write(s, buf, n);
 	n = sfread(buf, 1, m, f);
     } while (n);
     stream_write(s, "\r", 1);
