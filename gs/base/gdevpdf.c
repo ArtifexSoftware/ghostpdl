@@ -1196,21 +1196,21 @@ pdf_close(gx_device * dev)
 	code = code1;
 
     /* Create the Pages tree. */
+    if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
+	pdf_open_obj(pdev, Pages_id);
+	s = pdev->strm;
+	stream_puts(s, "<< /Type /Pages /Kids [\n");
+	/* Omit the last page if it was incomplete. */
+	if (partial_page)
+	    --(pdev->next_page);
+	{
+	    int i;
 
-    pdf_open_obj(pdev, Pages_id);
-    s = pdev->strm;
-    stream_puts(s, "<< /Type /Pages /Kids [\n");
-    /* Omit the last page if it was incomplete. */
-    if (partial_page)
-	--(pdev->next_page);
-    {
-	int i;
-
-	for (i = 0; i < pdev->next_page; ++i) 
-	    pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
-    }
-    pprintd1(s, "] /Count %d\n", pdev->next_page);
-
+    	    for (i = 0; i < pdev->next_page; ++i) 
+		pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
+	}
+	pprintd1(s, "] /Count %d\n", pdev->next_page);
+ 
     /* If the last file was PostScript, its possible that DSC comments might be lying around
      * and pdf_print_orientation will use that if its present. So make sure we get rid of those
      * before considering the dominant page direction for the Pages tree.
@@ -1325,7 +1325,7 @@ pdf_close(gx_device * dev)
 	    if (pdev->pages[i].Page)
 		pdev->pages[i].Page->id = 0;
     }
-
+}
     /*
      * Write the definitions of the named objects.
      * Note that this includes Form XObjects created by BP/EP, named PS
@@ -1350,6 +1350,7 @@ pdf_close(gx_device * dev)
 	pdf_copy_data(s, rfile, res_end, NULL);
     }
 
+    if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
     /* Write Encrypt. */
     if (pdev->OwnerPassword.size > 0) {
 	Encrypt_id = pdf_obj_ref(pdev);
@@ -1408,6 +1409,7 @@ pdf_close(gx_device * dev)
     }
     stream_puts(s, ">>\n");
     pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
+    }
 
     /* Release the resource records. */
 
