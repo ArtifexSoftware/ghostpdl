@@ -10,6 +10,8 @@ How to setup a new computer to run regression jobs on the Artifex Cluster:
       libx11-dev
       libxt-dev
       libxext-dev
+      libcups2-dev
+      libcupsimage2-dev
 
 1.  Setup limited access passwordless ssh to the regression server:
 
@@ -97,7 +99,7 @@ How to setup a new computer to run regression jobs on the Artifex Cluster:
     it is assumed that machine is down and it won't be assigned any
     cluster jobs.
 
-    Similarly you can shutdown/reboot your machine without conern that
+    Similarly you can shutdown/reboot your machine without concern that
     it's currently running any cluster tasks since when a machine goes
     down during a cluster run the jobs that it has already completed
     will be assigned to the remaining nodes (under rare circurmstacnes
