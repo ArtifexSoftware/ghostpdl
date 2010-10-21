@@ -231,9 +231,8 @@ static int
 copy_ps_file(stream *s, const char *fname, bool HaveTrueTypes)
 {
     stream *f;
-    char buf[1024], *p, *q  = buf;
-    int n, l = 0, m = sizeof(buf) - 1, outl = 0;
-    bool skipping = false;
+    char buf[1024];
+    int n, m = sizeof(buf) - 1;
 
     f = sfopen(fname, "rb", s->memory);
     if (f == NULL)
