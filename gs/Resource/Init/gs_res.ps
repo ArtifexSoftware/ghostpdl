@@ -926,6 +926,7 @@ userdict /.localcsdefaults false put
 	} ifelse
       } forall dup null eq { pop true exit } if
     } if
+    dup / eq { //false exit } if  % / throws an error from findlibfile
 		% Convert names to strings; give up on other types.
     dup type /nametype eq { .namestring } if
     dup type /stringtype ne { false exit } if
