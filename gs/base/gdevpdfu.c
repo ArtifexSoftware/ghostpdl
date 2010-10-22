@@ -289,7 +289,7 @@ copy_ps_file_strip_comments(stream *s, const char *fname, bool HaveTrueTypes)
 		    q[l] = '\n';
 		    outl = 0;
 		} else
-		    q[l] = '\n ';
+		    q[l] = '\n';
 		stream_write(s, q, l + 1);
 	    }
 	    if (!HaveTrueTypes && !strcmp("%%end TrueType", q))
@@ -299,27 +299,6 @@ copy_ps_file_strip_comments(stream *s, const char *fname, bool HaveTrueTypes)
     } while (n == m || q < buf + n);
     if (outl)
 	stream_write(s, "\r", 1);
-    sfclose(f);
-    return 0;
-}
-
-static int
-copy_ps_file(stream *s, const char *fname, bool HaveTrueTypes)
-{
-    stream *f;
-    char buf[1024];
-    int n, m = sizeof(buf) - 1;
-
-    f = sfopen(fname, "rb", s->memory);
-    if (f == NULL)
-	return_error(gs_error_undefinedfilename);
-    n = sfread(buf, 1, m, f);
-    buf[n] = 0;
-    do {
-	stream_write(s, buf, n);
-	n = sfread(buf, 1, m, f);
-    } while (n);
-    stream_write(s, "\r", 1);
     sfclose(f);
     return 0;
 }
