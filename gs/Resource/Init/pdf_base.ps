@@ -462,18 +462,30 @@ currentdict /token_nofail_dict .undef
 		% PDF linearization, we no longer do this.
   get oforce
 } bind def
+
 /oforce_array { % <array> oforce_array <array>
   [ exch { oforce } forall ]
 } bind def
+
 /oforce_elems { % <array> oforce_elems <first> ... <last>
   { oforce } forall
 } bind def
+
 /oforce_recursive { % <any> oforce_recursive <any>
-  oforce dup type dup /arraytype eq {
-    pop [ exch { oforce_recursive } forall ]
+  dup type /arraytype eq {    
+    dup rcheck {              % protect tint transform functions, etc.
+      oforce                  % but dereference {1 0 R}
+      dup type /arraytype eq {
+        [ exch { oforce_recursive } forall ]
+      } {
+        dup type /dicttype eq {
+          << exch { oforce_recursive exch oforce exch } forall >> 
+        } if
+      } ifelse
+    } if
   } {
-    /dicttype eq {
-     << exch { oforce_recursive exch oforce exch } forall >> 
+    dup type /dicttype eq {
+      << exch { oforce_recursive exch oforce exch } forall >> 
     } if
   } ifelse
 } bind def
