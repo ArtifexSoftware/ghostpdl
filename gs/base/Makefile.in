@@ -554,6 +554,9 @@ distclean : clean config-clean soclean pgclean debugclean
 	-$(RM_) config.log config.status
 	-$(RM_) Makefile
 	@-rmdir $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
+        
+# a debug-clean target for consistency with the ghostpdl builds
+debug-clean : debugclean
 
 maintainer-clean : distclean
 	-$(RM_) configure.ac
