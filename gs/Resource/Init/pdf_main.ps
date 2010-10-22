@@ -1873,7 +1873,12 @@ currentdict /PDF2PS_matrix_key undef
         //false exch
         { {
 	    exch pop oforce dup /Subtype get
-	    dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
+	    dup /Image eq {
+              1 index /SMask oknown { pop pop not exit } if
+              1 index /SMaskInData knownoget {
+                0 ne { pop pop not exit } if
+              } if
+            } if
 	    /Form eq {
 	      3 index exch resourceusestransparency { not exit } if
 	    } {
