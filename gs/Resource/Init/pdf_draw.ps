@@ -1163,7 +1163,62 @@ currentdict end readonly def
 currentdict /jp2_tag_dict .undef
 currentdict /jp2_csp_dict .undef
 
-/makeimagedict {	% <resdict> <newdict> makeimagedict <imagemask>
+% Add a key-value pair to the last /DecodeParms dictionary
+% <resdict> <key> <value> -> <resdict>
+/add-to-last-param {
+  2 index /DecodeParms knownoget {
+    dup {} eq {
+      pop //false
+    } {
+      //true
+    } ifelse
+  } {
+    //false
+  } ifelse {
+    dup type /arraytype eq {
+      [ exch { oforce } forall
+        dup //null eq { pop 1 dict } if
+      ] 
+      dup dup length 1 sub get           % <resdict> <key> <value> []   <<>>
+    } {
+      dup                                % <resdict> <key> <value> <<>> <<>>
+    } ifelse
+    4 2 roll put                         % <resdict> obj
+  } {
+    mark 3 1 roll .dicttomark            % <resdict> obj
+  } ifelse
+  1 index exch
+  /DecodeParms exch put                  % <resdict>
+} bdef
+
+/last-ditch-bpc-csp {
+  currentdict /BitsPerComponent oknown not {
+    (   **** Warning: image has no /BitsPerComponent key; assuming 8 bit.\n)
+    pdfformaterror
+    /BitsPerComponent 8 def
+  } if
+
+  currentdict /ColorSpace knownoget not {
+    dup /ColorSpace knownoget not {
+      (   **** Warning: image has no /ColorSpace key; assuming /DeviceRGB.\n)
+      pdfformaterror
+      /DeviceRGB
+    } if
+  } if
+  resolvecolorspace /ColorSpace exch def
+} bdef
+
+/get-smask-in-data { % <dict> -> <int>
+  /SMaskInData knownoget {
+    dup dup 1 ne exch 2 ne and {
+      pop 0
+    } if
+  } {
+    0
+  } ifelse
+} bdef
+
+/makeimagedict {	% <resdict> <newdict> makeimagedict <imagemask?>
 			% On return, newdict' is currentdict
   begin
   /Width 2 copy oget def
@@ -1173,6 +1228,7 @@ currentdict /jp2_csp_dict .undef
   /Interpolate 2 copy knownoget { def } { pop } ifelse
   makeimagekeys
 } bdef
+
 /makeimagekeys {	% <resdict> makeimagekeys <imagemask>
               	% newdict is currentdict
 		% Assumes Width, Height, BPC, Interpolate already copied.
@@ -1195,95 +1251,102 @@ currentdict /jp2_csp_dict .undef
     //true
   } {
 		% Opaque image
-    dup /ColorSpace oknown 
-    1 index /BitsPerComponent oknown and not {
-      dup /Filter knownoget {
-        dup type /arraytype eq {
-          dup length
-          dup 0 gt {
-            1 sub get oforce
-          } {
-            pop
-          } ifelse
-        } if
-        /JPXDecode eq {
-          % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
-          % keys, in which case the interpreter must retrieve this information
-          % from inside the compressed stream. Here we substitute the most
-          % likely values as a work-around.
-          dup /IDFlag known {
-            (   **** Warning: PDF spec bans inline JPX images.\n) pdfformaterror
-            % Inline stream is not positionable. Cannot get ColorSpace.
-          } {
-            % Drop the last filter (JPXDecode) from the pipeline
-            dup dup length dict copy
-            dup /Filter oget
-            dup type /arraytype eq {
-              dup length 1 gt {
-                dup length 1 sub 0 exch getinterval
-                1 index exch /Filter exch put
+    dup /Filter knownoget {
+      dup type /arraytype eq {
+        dup length
+        dup 0 gt {
+          1 sub get oforce
+        } {
+          pop
+        } ifelse
+      } if
+      /JPXDecode eq
+    } {
+      //false
+    } ifelse { % /JPXDecode tricks
+      dup /ColorSpace oknown 
+      1 index /BitsPerComponent oknown and not {
+        % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
+        % keys, in which case the interpreter must retrieve this information
+        % from inside the compressed stream.
+        dup /IDFlag known {
+          (   **** Warning: PDF spec bans inline JPX images.\n) pdfformaterror
+          % Inline stream is not positionable. Cannot get ColorSpace.
+        } {
+          % Drop the last filter (JPXDecode) from the pipeline
+          dup dup length dict copy
+          dup /Filter oget
+          dup type /arraytype eq {
+            dup length 1 gt {
+              dup length 1 sub 0 exch getinterval
+              1 index exch /Filter exch put
 
-                dup /Params knownoget {
-                  dup type /arraytype eq {
-                    dup length 1 gt {
-                      dup length 1 sub 0 exch getinterval
-                      1 index exch /Params exch put
-                    } {
-                      pop
-                      dup /Params undef
-                    } ifelse
+              dup /DecodeParms knownoget {
+                dup type /arraytype eq {
+                  dup length 1 gt {
+                    dup length 1 sub 0 exch getinterval
+                    1 index exch /DecodeParms exch put
                   } {
                     pop
-                    dup /Params undef
+                    dup /DecodeParms undef
                   } ifelse
-                } if
-              } {
-                pop
-                dup /Filter undef
-                dup /Params undef
-              } ifelse
+                } {
+                  pop
+                  dup /DecodeParms undef
+                } ifelse
+              } if
             } {
               pop
               dup /Filter undef
-              dup /Params undef
+              dup /DecodeParms undef
             } ifelse
-
-            //false resolvestream get_jp2_csp
-
-            currentdict /ColorSpace oknown not {
-              currentdict /JPXICC .knownget {
-                 [ /ICCBased mark
-                     /DataSource 5 -1 roll
-                     /N currentdict /JPXColors .knownget not {
-                       currentdict /JPXComponents get
-                     } if
-                   .dicttomark
-                 ] /ColorSpace exch def
-              } if
-            } if
-
-            { /JPXICC /JPXColors /JPXComponents /JPXOpacity /JPXPremult } {
-              currentdict exch undef
-            } forall
-
+          } {
+            pop
+            dup /Filter undef
+            dup /DecodeParms undef
           } ifelse
-        } if
-      } if
-      currentdict /BitsPerComponent oknown not {
-        (   **** Warning: image has no /BitsPerComponent key; assuming 8 bit.\n)
-        pdfformaterror
-        /BitsPerComponent 8 def
-      } if
-    } if
 
-    currentdict /ColorSpace knownoget not {
-      dup /ColorSpace knownoget not {
-        (   **** Warning: image has no /ColorSpace key; assuming /DeviceRGB.\n)
-        pdfformaterror
-        /DeviceRGB
+          //false resolvestream get_jp2_csp
+
+          currentdict /ColorSpace oknown not {
+            currentdict /JPXICC .knownget {
+               [ /ICCBased mark
+                   /DataSource 5 -1 roll
+                   /N currentdict /JPXColors .knownget not {
+                     currentdict /JPXComponents get
+                   } if
+                 .dicttomark
+               ] /ColorSpace exch def
+            } if
+          } if
+
+          { /JPXICC /JPXColors /JPXComponents /JPXOpacity /JPXPremult } {
+            currentdict exch undef
+          } forall
+
+        } ifelse
+      } if % fi missing csp, bpc
+
+      dup get-smask-in-data dup 0 ne {
+        PDFusingtransparency {
+          /SMaskInData exch def                  % Propagate the flag to imagedict
+          /Alpha //true //add-to-last-param exec % and to the filter.
+        } {
+          pop
+        } ifelse
+      } {
+        pop
+      } ifelse
+
+      //last-ditch-bpc-csp exec
+
+      dup /ColorSpace oknown {
+        % Propagate known color space to the filter
+        /ColorSpace currentdict /ColorSpace get //add-to-last-param exec
       } if
-    } if
-    resolvecolorspace /ColorSpace exch def
+    } { % not JPX image
+      //last-ditch-bpc-csp exec
+    } ifelse % fi JPX tricks
 
 		% Decode is required for the PostScript image operators.
     /Decode 2 copy knownoget not {
@@ -1297,6 +1360,9 @@ currentdict /jp2_csp_dict .undef
     //false
   } ifelse
 } bdef
+
+currentdict /add-to-last-param undef
+currentdict /last-ditch-bpc-csp undef
 
 /DoImage {
   checkaltimage dup length 6 add dict
