@@ -1164,6 +1164,7 @@ currentdict /jp2_tag_dict .undef
 currentdict /jp2_csp_dict .undef
 
 % Add a key-value pair to the last /DecodeParms dictionary
+% Copy the objects to avoid spoiling shared ones.
 % <resdict> <key> <value> -> <resdict>
 /add-to-last-param {
   2 index /DecodeParms knownoget {
@@ -1181,7 +1182,7 @@ currentdict /jp2_csp_dict .undef
       ] 
       dup dup length 1 sub get           % <resdict> <key> <value> []   <<>>
     } {
-      dup                                % <resdict> <key> <value> <<>> <<>>
+      dup length 1 add dict copy dup     % <resdict> <key> <value> <<>> <<>>
     } ifelse
     4 2 roll put                         % <resdict> obj
   } {
@@ -1327,32 +1328,51 @@ currentdict /jp2_csp_dict .undef
         } ifelse
       } if % fi missing csp, bpc
 
-      dup get-smask-in-data dup 0 ne {
-        PDFusingtransparency {
-          /SMaskInData exch def                  % Propagate the flag to imagedict
-          /Alpha //true //add-to-last-param exec % and to the filter.
-        } {
-          pop
-        } ifelse
-      } {
-        pop
-      } ifelse
-
       //last-ditch-bpc-csp exec
 
       dup /ColorSpace oknown {
         % Propagate known color space to the filter
         /ColorSpace currentdict /ColorSpace get //add-to-last-param exec
       } if
+
+      /Decode 2 copy knownoget not {
+        ColorSpace //defaultdecodedict
+        ColorSpace dup type /arraytype eq { 0 get } if get exec
+      } if def
+
+      dup get-smask-in-data dup 0 ne {
+        PDFusingtransparency {
+          currentdict dup length dict copy begin
+          {/Mask/SMask/SMaskInData/Name} { currentdict exch undef } forall
+          2 eq {
+            /Matte [ Decode length 2 idiv { 0 } repeat ] def
+          } if
+          /Decode //01_1 def
+          /ColorSpace /DeviceGray def
+          {/File /FilePosition /Filter /Length /DecodeParms /FFilter /FDecodeParms } {
+            2 copy knownoget {
+              def
+            } {
+              pop
+            } ifelse
+          } forall
+          currentdict /Alpha //true //add-to-last-param exec pop
+          /SMask currentdict end def
+        } {
+          pop
+        } ifelse
+      } {
+        pop
+      } ifelse
     } { % not JPX image
       //last-ditch-bpc-csp exec
+      /Decode 2 copy knownoget not {
+        ColorSpace //defaultdecodedict
+        ColorSpace dup type /arraytype eq { 0 get } if get exec
+      } if def
+
     } ifelse % fi JPX tricks
 
-		% Decode is required for the PostScript image operators.
-    /Decode 2 copy knownoget not {
-      ColorSpace //defaultdecodedict
-      ColorSpace dup type /arraytype eq { 0 get } if get exec
-    } if def
 		% Even though we're going to read data,
 		% pass false to resolvestream so that
 		% it doesn't try to use Length (which may not be present).

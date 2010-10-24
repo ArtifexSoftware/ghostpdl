@@ -165,14 +165,14 @@ dump_jpxd_colorspace(const stream_jpxd_state * state)
 #endif /* DEBUG */
 
 static int
-copy_row_gray(byte *dest, jas_image_t *image,
-        int x, int y, int bytes)
+copy_row_1comp(byte *dest, jas_image_t *image,
+        int x, int y, int bytes, int channel)
 {
     int i, p;
     int v;
     int shift, bits;
 
-    v = jas_image_getcmptbytype(image, JAS_IMAGE_CT_GRAY_Y);
+    v = jas_image_getcmptbytype(image, channel);
     if (v < 0) return 0; /* no matching component */
 
     bits = jas_image_cmptprec(image, v);
@@ -361,8 +361,8 @@ copy_row_default16(byte *dest, jas_image_t *image,
 }
 
 static int
-copy_row_gray16(byte *dest, jas_image_t *image,
-        int x, int y, int bytes, int bits)
+copy_row_1comp16(byte *dest, jas_image_t *image,
+        int x, int y, int bytes, int bits, int channel)
 {
     int count;
     int pixel_width;
@@ -371,7 +371,7 @@ copy_row_gray16(byte *dest, jas_image_t *image,
     int p, v;
     unsigned short value;
 
-    v = jas_image_getcmptbytype(image, JAS_IMAGE_CT_GRAY_Y);
+    v = jas_image_getcmptbytype(image, channel);
     if (v < 0) return 0; /* no matching component */
 
     count = bytes;
@@ -503,7 +503,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
       }
       if (state->image != NULL) {
         jas_image_t *image = state->image;
-        int numcmpts = color_cmpts(image);
+        int numcmpts = (state->alpha ? 1 : color_cmpts(image));
         int bits = jas_image_cmptprec(image, 0);
         int stride, image_size;
         int clrspc = jas_image_clrspc(image);
@@ -531,7 +531,16 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
            This can fail if we get the colorspace wrong. */
         if (usable < numcmpts) return ERRC;
 
-        if (state->colorspace != gs_jpx_cs_unset)
+        if (state->alpha) {
+            if (bits > 8)
+                done = copy_row_1comp16(pw->ptr, image, x, y, usable, bits, JAS_IMAGE_CT_OPACITY);
+            else
+                done = copy_row_1comp(pw->ptr, image, x, y, usable, JAS_IMAGE_CT_OPACITY);
+            if (usable && done == 0) {
+               memset(pw->ptr + 1, 0xff, usable);
+               done = usable;
+            }
+        } else if (state->colorspace != gs_jpx_cs_unset)
           /* An external colorspace from the interpreter overrides */
           switch (state->colorspace) {
             case gs_jpx_cs_gray:
@@ -539,7 +548,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             /* we've passed 'raw' but the palette is the same pixel
                format as a grayscale image. The PDF interpreter will
                know to handle it differently. */
-              done = copy_row_gray(pw->ptr, image, x, y, usable);
+              done = copy_row_1comp(pw->ptr, image, x, y, usable, JAS_IMAGE_CT_GRAY_Y);
               break;
             case gs_jpx_cs_rgb:
               done = copy_row_rgb(pw->ptr, image, x, y, usable);
@@ -553,9 +562,9 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
           switch (jas_clrspc_fam(clrspc)) {
                 case JAS_CLRSPC_FAM_GRAY:
                     if (bits > 8) {
-                        done = copy_row_gray16(pw->ptr, image, x, y, usable, bits);
+                        done = copy_row_1comp16(pw->ptr, image, x, y, usable, bits, JAS_IMAGE_CT_GRAY_Y);
                     } else {
-                        done = copy_row_gray(pw->ptr, image, x, y, usable);
+                        done = copy_row_1comp(pw->ptr, image, x, y, usable, JAS_IMAGE_CT_GRAY_Y);
                     }
                     break;
                 case JAS_CLRSPC_FAM_RGB:
