@@ -24,6 +24,8 @@
 #include "stream.h"
 #include "gsicc.h"
 #include "gserrors.h"
+#include "gsfunc.h"		/* required for colour space function evaluation */
+#include "gsfunc3.h"		/* Required to create a replacement lineat interpolation function */
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfc.h"
@@ -331,6 +333,121 @@ pdf_cspace_init_Device(gs_memory_t *mem, gs_color_space **ppcs,
     return 0;
 }
 
+static int pdf_delete_base_space_function(gx_device_pdf *pdev, gs_function_t *pfn)
+{
+    gs_function_ElIn_params_t *params = (gs_function_ElIn_params_t *)&pfn->params;
+
+    gs_free_object(pdev->memory, (void *)params->Domain, "pdf_delete_function");
+    gs_free_object(pdev->memory, (void *)params->Range, "pdf_delete_function");
+    gs_free_object(pdev->memory, (void *)params->C0, "pdf_delete_function");
+    gs_free_object(pdev->memory, (void *)params->C1, "pdf_delete_function");
+    gs_free_object(pdev->memory, (void *)pfn, "pdf_delete_function");
+    return 0;
+}
+
+static int pdf_make_base_space_function(gx_device_pdf *pdev, gs_function_t **pfn,
+					int ncomp, float *data_low, float *data_high)
+{
+    gs_function_ElIn_params_t params;
+    float *ptr1, *ptr2;
+    int i, code;
+
+    ptr1 = (float *)
+        gs_alloc_byte_array(pdev->memory, 2, sizeof(float), "pdf_make_function(Domain)");
+    if (ptr1 == 0) {
+	return gs_note_error(gs_error_VMerror);
+    }
+    ptr2 = (float *)
+        gs_alloc_byte_array(pdev->memory, 2 * ncomp, sizeof(float), "pdf_make_function(Range)");
+    if (ptr2 == 0) {
+	gs_free_object(pdev->memory, (void *)ptr1, "pdf_make_function(Range)");
+	return gs_note_error(gs_error_VMerror);
+    }
+    params.m = 1;
+    params.n = ncomp;
+    params.N = 1.0f;
+    ptr1[0] = 0.0f;
+    ptr1[1] = 1.0f;
+    for (i=0;i<ncomp;i++) {
+        ptr2[i*2] = 0.0f;
+        ptr2[(i*2) + 1] = 1.0f;
+    }
+    params.Domain = ptr1;
+    params.Range = ptr2;
+
+    ptr1 = (float *)gs_alloc_byte_array(pdev->memory, ncomp, sizeof(float), "pdf_make_function(C0)");
+    if (ptr1 == 0) {
+	gs_free_object(pdev->memory, (void *)params.Domain, "pdf_make_function(C0)");
+	gs_free_object(pdev->memory, (void *)params.Range, "pdf_make_function(C0)");
+	return gs_note_error(gs_error_VMerror);
+    }
+    ptr2 = (float *)gs_alloc_byte_array(pdev->memory, ncomp, sizeof(float), "pdf_make_function(C1)");
+    if (ptr2 == 0) {
+	gs_free_object(pdev->memory, (void *)params.Domain, "pdf_make_function(C1)");
+	gs_free_object(pdev->memory, (void *)params.Range, "pdf_make_function(C1)");
+	gs_free_object(pdev->memory, (void *)ptr1, "pdf_make_function(C1)");
+	return gs_note_error(gs_error_VMerror);
+    }
+
+    for (i=0;i<ncomp;i++) {
+	ptr1[i] = data_low[i];
+	ptr2[i] = data_high[i];
+    }
+    params.C0 = ptr1;
+    params.C1 = ptr2;
+    code = gs_function_ElIn_init(pfn, &params, pdev->memory);
+    if (code < 0) {
+	gs_free_object(pdev->memory, (void *)params.Domain, "pdf_make_function");
+	gs_free_object(pdev->memory, (void *)params.Range, "pdf_make_function");
+	gs_free_object(pdev->memory, (void *)params.C0, "pdf_make_function");
+	gs_free_object(pdev->memory, (void *)params.C1, "pdf_make_function");
+    }
+    return code;
+}
+
+static void pdf_SepRGB_ConvertToCMYK (float *in, float *out)
+{
+    float CMYK[4];
+    int i;
+
+    if (in[0] <= in[1] && in[0] <= in[2]) {
+        CMYK[3] = 1.0 - in[0];
+    } else {
+        if (in[1]<= in[0] && in[1] <= in[2]) {
+    	    CMYK[3] = 1.0 - in[1];
+	} else {
+	    CMYK[3] = 1.0 - in[2];
+	}
+    }
+    CMYK[0] = 1.0 - in[0] - CMYK[3];
+    CMYK[1] = 1.0 - in[1] - CMYK[3];
+    CMYK[2] = 1.0 - in[2] - CMYK[3];
+    for (i=0;i<4;i++)
+        out[i] = CMYK[i];
+}
+
+static void pdf_SepCMYK_ConvertToRGB (float *in, float *out)
+{
+    float RGB[3];
+
+    RGB[0] = in[0] + in[4];
+    RGB[1] = in[1] + in[4];
+    RGB[2] = in[2] + in[4];
+
+    if (RGB[0] > 1)
+	out[0] = 0.0f;
+    else
+	out[0] = 1 - RGB[0];
+    if (RGB[1] > 1)
+	out[1] = 0.0f;
+    else
+	out[1] = 1 - RGB[1];
+    if (RGB[2] > 1)
+	out[2] = 0.0f;
+    else
+	out[2] = 1 - RGB[2];
+}
+
 /* Create a Separation or DeviceN color space (internal). */
 static int
 pdf_separation_color_space(gx_device_pdf *pdev,
@@ -343,7 +460,100 @@ pdf_separation_color_space(gx_device_pdf *pdev,
 {
     cos_value_t v;
     const gs_range_t *ranges;
-    int code;
+    int code, csi;
+
+    /* We need to think about the alternate space. If we are producing 
+     * PDF/X or PDF/A we can't produce some device spaces, and the code in 
+     * pdf_color_space_named always allows device spaces. We could alter
+     * that code, but by then we don't know its an Alternate space, and have
+     * lost the tin transform procedure. So instead we check here.
+     */
+    csi = gs_color_space_get_index(alt_space);
+    /* Note that if csi is ICC, check to see if this was one of 
+       the default substitutes that we introduced for DeviceGray,
+       DeviceRGB or DeviceCMYK.  If it is, then just write
+       the default color.  Depending upon the flavor of PDF,
+       or other options, we may want to actually have all
+       the colors defined by ICC profiles and not do the following
+       substituion of the Device space. */
+    if (csi == gs_color_space_index_ICC) {
+        csi = gsicc_get_default_type(alt_space->cmm_icc_profile_data);
+    }
+    if (csi == gs_color_space_index_DeviceRGB && (pdev->PDFX || 
+	(pdev->PDFA && (pdev->pcm_color_info_index == gs_color_space_index_DeviceCMYK)))) {
+
+	/* We have a DeviceRGB alternate, but are producing either PDF/X or
+	 * PDF/A with a DeviceCMYK process color model. So we need to convert
+	 * the alternate space into CMYK. We do this by evaluating the function
+	 * at each end of the Separation space (0 and 1), convert the resulting
+	 * RGB colours into CMYK and create a new function which linearly 
+	 * interpolates between these points.
+	 */
+	gs_function_t *new_pfn = 0;
+        float in[1] = {0.0f};
+	float out_low[4];
+	float out_high[4];
+
+	code = gs_function_evaluate(pfn, in, out_low);
+	if (code < 0)
+	    return code;
+	pdf_SepRGB_ConvertToCMYK((float *)&out_low, (float *)&out_low);
+
+	in[0] = 1.0f;
+	code = gs_function_evaluate(pfn, in, out_high);
+	if (code < 0)
+	    return code;
+	pdf_SepRGB_ConvertToCMYK((float *)&out_high, (float *)&out_high);
+	
+	code = pdf_make_base_space_function(pdev, &new_pfn, 4, out_low, out_high);
+	if (code < 0)
+	    return code;
+	if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
+	    (code = cos_array_add_no_copy(pca, snames)) < 0 ||
+	    (code = (int)cos_c_string_value(&v, (const char *)pcsn->DeviceCMYK)) < 0 ||
+	    (code = cos_array_add(pca, &v)) < 0 ||
+	    (code = pdf_function_scaled(pdev, new_pfn, 0x00, &v)) < 0 ||
+	    (code = cos_array_add(pca, &v)) < 0 ||
+	    (v_attributes != NULL ? code = cos_array_add(pca, v_attributes) : 0) < 0
+	    ) {}
+	pdf_delete_base_space_function(pdev, new_pfn);
+	return code;
+    }
+    if (csi == gs_color_space_index_DeviceCMYK &&
+	(pdev->PDFA && (pdev->pcm_color_info_index == gs_color_space_index_DeviceRGB))) {
+	/* We have a DeviceCMYK alternate, but are producingPDF/A with a 
+	 * DeviceRGB process color model. See comment above re DviceRGB.
+	 */
+	gs_function_t *new_pfn = 0;
+        float in[1] = {0.0f};
+	float out_low[4];
+	float out_high[4];
+
+	code = gs_function_evaluate(pfn, in, out_low);
+	if (code < 0)
+	    return code;
+	pdf_SepCMYK_ConvertToRGB((float *)&out_low, (float *)&out_low);
+
+        in[0] = 1.0f;
+	code = gs_function_evaluate(pfn, in, out_high);
+	if (code < 0)
+	    return code;
+	pdf_SepCMYK_ConvertToRGB((float *)&out_high, (float *)&out_high);
+
+	code = pdf_make_base_space_function(pdev, &new_pfn, 3, out_low, out_high);
+	if (code < 0)
+	    return code;
+	if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
+	    (code = cos_array_add_no_copy(pca, snames)) < 0 ||
+	    (code = (int)cos_c_string_value(&v, pcsn->DeviceRGB)) < 0 ||
+	    (code = cos_array_add(pca, &v)) < 0 ||
+	    (code = pdf_function_scaled(pdev, new_pfn, 0x00, &v)) < 0 ||
+	    (code = cos_array_add(pca, &v)) < 0 ||
+	    (v_attributes != NULL ? code = cos_array_add(pca, v_attributes) : 0) < 0
+	    ) {}
+	pdf_delete_base_space_function(pdev, new_pfn);
+	return code;
+    }
 
     if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
 	(code = cos_array_add_no_copy(pca, snames)) < 0 ||
@@ -951,6 +1161,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     default:
 	return_error(gs_error_rangecheck);
     }
+
     /*
      * Register the color space as a resource, since it must be referenced
      * by name rather than directly.
