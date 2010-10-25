@@ -117,7 +117,7 @@ s_jpxd_write_data(unsigned char * pucData,
        from each call in planar buffers and interleave a tile at
        a time into a stipe buffer for output */
 
-    if (state->colorspace == gs_jpx_cs_indexed && sComponent == 0) {
+    if (state->colorspace == gs_jpx_cs_indexed && sComponent == 0 && !state->alpha) {
         JP2_Palette_Params *pal;
         JP2_Error err;
         int i, c;
@@ -205,11 +205,11 @@ s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
     int i, y, x;
     int is_signed[2];  /* Cr, Cb */
 
-    if (state->ncomp - state->alpha != 3)
+    if (state->ncomp != 3)
         return -1;
 
     for (i = 0; i < 2; i++) {
-        int comp = state->clut[i + state->alpha + 1];  /* skip alpha and Y */
+        int comp = state->clut[i + 1];  /* skip Y */
         is_signed[i] = !jp2_get_value(state->handle,
                                    cJP2_Prop_Signed_Samples, comp, 0);
     }
@@ -339,8 +339,6 @@ map_components(JP2_Channel_Def_Params *chans, int nchans, int alpha, int clut[])
 {
     int i, cnt = 0;
 
-    alpha = alpha ? 1 : 0;
-
     for (i = 0; i < nchans; i++)
         clut[i] = -1;
 
@@ -349,22 +347,22 @@ map_components(JP2_Channel_Def_Params *chans, int nchans, int alpha, int clut[])
         for (i = 0; i < nchans; i++) {
             if (chans[i].ulType == cJP2_Channel_Type_Opacity) {
                 clut[i] = 0;
+                cnt++;
                 break;
             }
         }
-    }
-
-    for (i = 0; i < nchans; i++) {
-        if (chans[i].ulType == cJP2_Channel_Type_Color) {
-            int assoc = chans[i].ulAssociated -1;
-            if (assoc >= nchans)
-                return -1;
-            clut[i] = assoc + alpha;
-            cnt++;
+    } else {
+        for (i = 0; i < nchans; i++) {
+            if (chans[i].ulType == cJP2_Channel_Type_Color) {
+                int assoc = chans[i].ulAssociated -1;
+                if (assoc >= nchans)
+                    return -1;
+                clut[i] = assoc;
+                cnt++;
+            }
         }
     }
-
-    return cnt + alpha;
+    return cnt;
 }
 
 /* process a secton of the input and return any decoded data.
@@ -429,7 +427,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                     dlprintf1("Luratech JP2 error %d reading channel definitions\n", (int)err);
                     return ERRC;
                 }
-                state->clut = malloc((nchans + 1) * sizeof(int)); /* +1 for requested but missing alpha */
+                state->clut = malloc(nchans * sizeof(int));
                 state->ncomp = map_components(chans, nchans, state->alpha, state->clut);
                 if (state->ncomp < 0) {
                     dlprintf("Luratech JP2 error decoding channel definitions\n");
@@ -557,7 +555,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             /* allocate our output buffer */
             int real_bpc = state->bpc > 8 ? 16 : state->bpc;
             state->stride = (state->width * state->ncomp * real_bpc + 7) / 8;
-            state->image = malloc(state->stride*state->height);
+            state->image = malloc(state->stride*state->height + 1); /* malloc(0) may be 0 */
             if (state->image == NULL) return ERRC;
 
             /* attach our output callback */
