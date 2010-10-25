@@ -751,7 +751,6 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	        dev_proc(ctile->ttrans->pdev14, close_device)((gx_device *)ctile->ttrans->pdev14);
                 temp_device = ctile->ttrans->pdev14;
                 gx_device_retain(temp_device, false);
-                rc_decrement(temp_device,"gx_pattern_cache_free_entry");
                 ctile->ttrans->pdev14 = NULL;  
                 ctile->ttrans->transbytes = NULL;  /* should be ok due to pdf14_close */
                 ctile->ttrans->fill_trans_buffer = NULL; /* This is always freed */
