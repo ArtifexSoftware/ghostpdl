@@ -879,8 +879,8 @@ hpgl_print_char(
                    "insidedness" - this seems to address the dirty
                    page issue in practice. */
                 pcl_mark_page_for_current_pos(pgls);
+                gs_text_release(penum, "hpgl_print_char");
             }
-	    gs_text_release(penum, "hpgl_print_char");
 	    if ( code < 0 )
 		return code;
 	    gs_setmatrix(pgs, &advance_mat);

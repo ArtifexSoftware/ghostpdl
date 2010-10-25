@@ -347,8 +347,9 @@ show_char_foreground(
     code = gs_text_begin(pcs->pgs, &text, pcs->memory, &penum);
     if (code >= 0)
         code = gs_text_process(penum);
-    gs_text_release(penum, "show_char_foreground");
 
+    if (code >= 0)
+        gs_text_release(penum, "show_char_foreground");
     return code;
 }
 
@@ -463,8 +464,8 @@ show_char_background(
             gs_pathbbox(pgs, &bbox);
             gs_rectappend(pgs, &bbox, 1);
             gs_eofill(pgs);
+            gs_text_release(penum, "show_char_background");
         }
-        gs_text_release(penum, "show_char_background");
     }
 
     pcl_grestore(pcs);
