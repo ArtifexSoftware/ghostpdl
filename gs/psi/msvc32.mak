@@ -261,23 +261,6 @@ JBIG2SRCDIR=jbig2dec
 JPX_LIB=jasper
 !endif
 
-!if "$(JPX_LIB)" == "luratech" || "$(JPX_LIB)" == "lwf_jp2"
-# Set defaults for using the Luratech JP2 implementation
-!ifndef JPXSRCDIR
-# CSDK source code location
-JPXSRCDIR=lwf_jp2
-!endif
-!ifndef JPX_CFLAGS
-# required compiler flags
-JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32
-!endif
-!else
-# Use jasper by default. See jasper.mak for more information.
-!ifndef JPXSRCDIR
-JPXSRCDIR=jasper
-!endif
-!endif
-
 # Alternatively, you can build a separate DLL
 # and define SHARE_JPX=1 in src/winlib.mak
 
@@ -656,6 +639,29 @@ CPU_TYPE=486
 
 !ifndef SYNC
 SYNC=winsync
+!endif
+
+# Luratech jp2 flags depend on the compiler version
+#
+!if "$(JPX_LIB)" == "luratech" || "$(JPX_LIB)" == "lwf_jp2"
+# Set defaults for using the Luratech JP2 implementation
+!ifndef JPXSRCDIR
+# CSDK source code location
+JPXSRCDIR=lwf_jp2
+!endif
+!ifndef JPX_CFLAGS
+# required compiler flags
+!if $(MSVC_VERSION) <= 7
+JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32 -DNO_ASSEMBLY
+!else
+JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32
+!endif
+!endif
+!else
+# Use jasper by default. See jasper.mak for more information.
+!ifndef JPXSRCDIR
+JPXSRCDIR=jasper
+!endif
 !endif
 
 # ------ Devices and features ------ #

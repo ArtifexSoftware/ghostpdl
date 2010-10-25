@@ -81,6 +81,20 @@ s_jpxd_read_data(unsigned char *pucData,
     return copy_bytes;
 }
 
+static unsigned long
+jp2_get_value(JP2_Decomp_Handle *handle,
+              JP2_Property_Tag tag,
+              short comp,
+              unsigned long def)
+{
+    JP2_Property_Value v;
+
+    if (JP2_Decompress_GetProp(handle, tag, &v, -1, comp) != cJP2_Error_OK)
+        return def;
+
+    return (unsigned long)v;
+}
+
 /* write decompressed data into our image buffer */
 static JP2_Error JP2_Callback_Conv
 s_jpxd_write_data(unsigned char * pucData,
@@ -91,8 +105,7 @@ s_jpxd_write_data(unsigned char * pucData,
                                JP2_Callback_Param param)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) param;
-    unsigned char *p;
-    unsigned long i;
+    int comp = state->clut[sComponent];
 
     /* check input */
     if (ulRow >= state->height) return cJP2_Error_Invalid_Height;
@@ -104,17 +117,139 @@ s_jpxd_write_data(unsigned char * pucData,
        from each call in planar buffers and interleave a tile at
        a time into a stipe buffer for output */
 
-    /* todo: handle non-8-bit samples, subsampled components,
-        and Y'CrCb colorspace rotation */
+    if (state->colorspace == gs_jpx_cs_indexed && sComponent == 0) {
+        JP2_Palette_Params *pal;
+        JP2_Error err;
+        int i, c;
+        unsigned char *dst = &state->image[state->stride * ulRow +
+                                           state->ncomp * ulStart + comp];
 
-    p = state->image + state->stride*ulRow + state->ncomp*ulStart;
-    if (state->ncomp == 1)
-        memcpy(p, pucData, ulNum);
-    else for (i = 0; i < ulNum; i++) {
-        p[sComponent] = pucData[i];
-        p += state->ncomp;
+        err = JP2_Decompress_GetPalette(state->handle, &pal);
+        if (err != cJP2_Error_OK)
+            return err;
+
+        if (pal->ulEntries != 256)
+            return cJP2_Error_Invalid_Colorspace;
+
+        for (i = 0; i < ulNum; i++) {
+            unsigned char v = pucData[i];
+            for (c = 0; c < state->ncomp; c++)
+                *dst++ = (unsigned char)pal->ppulPalette[c][v];
+        }
+    }
+    else if (state->ncomp == 1 && comp == 0) {
+        if (state->bpc <= 8) {
+            memcpy(&state->image[state->stride*ulRow + state->ncomp*ulStart],
+                   pucData, ulNum);
+        }
+        else {
+            unsigned long i;
+            unsigned short *src = (unsigned short *)pucData;
+            unsigned char *dst = &state->image[state->stride * ulRow + 2 * ulStart];
+            unsigned int shift = 16 - state->bpc;
+            for (i = 0; i < ulNum; i++) {
+                unsigned short v = *src++ << shift;
+                *dst++ = (v >> 8) & 0xff;
+                *dst++ = v & 0xff;
+            }
+        }
+    }
+    else if (comp >= 0) {
+        unsigned long cw, ch, i, hstep, vstep, x, y;
+        unsigned char *row;
+
+        /* repeat subsampled pixels */
+        cw = jp2_get_value(state->handle, cJP2_Prop_Width, comp, state->width);
+        ch = jp2_get_value(state->handle, cJP2_Prop_Height, comp, state->height);
+        hstep = state->width / cw;
+        vstep = state->height / ch;
+
+        if (state->bpc <= 8) {
+            row = &state->image[state->stride * ulRow * vstep +
+                                state->ncomp * ulStart * hstep + comp];
+            for (y = 0; y < vstep; y++) {
+                unsigned char *p = row;
+                for (i = 0; i < ulNum; i++)
+                    for (x = 0; x < hstep; x++) {
+                        *p = pucData[i];
+                        p += state->ncomp;
+                    }
+                row += state->stride;
+            }
+        }
+        else {
+            int shift = 16 - state->bpc;
+            unsigned short *src = (unsigned short *)pucData;
+            row = &state->image[state->stride * ulRow * vstep +
+                                2 * state->ncomp * ulStart * hstep + 2 * comp];
+            for (y = 0; y < vstep; y++) {
+                unsigned char *p = row;
+                for (i = 0; i < ulNum; i++)
+                    for (x = 0; x < hstep; x++) {
+                        unsigned short v = *src++ << shift;
+                        p[0] = (v >> 8) & 0xff;
+                        p[1] = v & 0xff;
+                        p += 2 * state->ncomp;
+                    }
+                row += state->stride;
+            }
+        }
     }
     return cJP2_Error_OK;
+}
+
+/* convert state->image from YCrCb to RGBa */
+static int 
+s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
+{
+    int i, y, x;
+    int is_signed[2];  /* Cr, Cb */
+
+    if (state->ncomp - state->alpha != 3)
+        return -1;
+
+    for (i = 0; i < 2; i++) {
+        int comp = state->clut[i + state->alpha + 1];  /* skip alpha and Y */
+        is_signed[i] = !jp2_get_value(state->handle,
+                                   cJP2_Prop_Signed_Samples, comp, 0);
+    }
+
+    for (y = 0; y < state->height; y++) {
+        unsigned char *row = &state->image[y * state->stride];
+
+        for (x = 0; x < state->stride; x += 3) {
+            int p[3], q[3];
+
+            for (i = 0; i < 3; i++)
+                p[i] = (int)row[x + i];
+
+            if (is_signed[0])
+                p[1] -= 0x80;
+            if (is_signed[1])
+                p[2] -= 0x80;
+
+            /* rotate to RGB */
+#ifdef JPX_USE_IRT
+            q[1] = p[0] - ((p[1] + p[2])>>2);
+            q[0] = p[1] + q[1];
+            q[2] = p[2] + q[1];
+#else
+            q[0] = (int)((double)p[0] + 1.402 * p[2]);
+            q[1] = (int)((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
+            q[2] = (int)((double)p[0] + 1.772 * p[1]);
+#endif
+            /* clamp */
+            for (i = 0; i < 3; i++){
+                if (q[i] < 0) q[i] = 0;
+                else if (q[i] > 0xFF) q[i] = 0xFF;
+            }
+            /* write out the pixel */
+            for (i = 0; i < 3; i++)
+                row[x + i] = (unsigned char)q[i];
+        }
+    }
+
+    return 0;
 }
 
 static int
@@ -176,8 +311,10 @@ s_jpxd_init(stream_state * ss)
     state->inbuf_size = 0;
     state->inbuf_fill = 0;
 
+    state->alpha = false;
     state->ncomp = 0;
     state->bpc = 0;
+    state->clut = NULL;
     state->width = 0;
     state->height = 0;
     state->stride = 0;
@@ -185,6 +322,41 @@ s_jpxd_init(stream_state * ss)
     state->offset = 0;
 
     return 0;
+}
+
+/* write component mapping into 'clut' and return number of used components
+ */
+static int
+map_components(JP2_Channel_Def_Params *chans, int nchans, int alpha, int clut[])
+{
+    int i, cnt = 0;
+
+    alpha = alpha ? 1 : 0;
+
+    for (i = 0; i < nchans; i++)
+        clut[i] = -1;
+
+    /* always write the alpha channel as first component */
+    if (alpha) {
+        for (i = 0; i < nchans; i++) {
+            if (chans[i].ulType == cJP2_Channel_Type_Opacity) {
+                clut[i] = 0;
+                break;
+            }
+        }
+    }
+
+    for (i = 0; i < nchans; i++) {
+        if (chans[i].ulType == cJP2_Channel_Type_Color) {
+            int assoc = chans[i].ulAssociated -1;
+            if (assoc >= nchans)
+                return -1;
+            clut[i] = assoc + alpha;
+            cnt++;
+        }
+    }
+
+    return cnt + alpha;
 }
 
 /* process a secton of the input and return any decoded data.
@@ -199,6 +371,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
     JP2_Property_Value result;
     long in_size = pr->limit - pr->ptr;
     long out_size = pw->limit - pw->ptr;
+    JP2_Colorspace image_cs = cJP2_Colorspace_RGBa;
 
     if (in_size > 0) {
         /* buffer available data */
@@ -209,6 +382,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
         /* we have all the data, decode and return */
 
         if (state->handle == (JP2_Decomp_Handle)NULL) {
+            int ncomp;
             /* initialize decompressor */
             err = JP2_Decompress_Start(&state->handle,
                 /* memory allocator callbacks */
@@ -237,7 +411,23 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 dlprintf1("Luratech JP2 error %d decoding number of image components\n", (int)err);
                 return ERRC;
             }
-            state->ncomp = result;
+            ncomp = result;
+
+            {
+                JP2_Channel_Def_Params *chans = NULL;
+                unsigned long nchans = 0;
+                err = JP2_Decompress_GetChannelDefs(state->handle, &chans, &nchans);
+                if (err != cJP2_Error_OK) {
+                    dlprintf1("Luratech JP2 error %d reading channel definitions\n", (int)err);
+                    return ERRC;
+                }
+                state->clut = malloc((nchans + 1) * sizeof(int)); /* +1 for requested but missing alpha */
+                state->ncomp = map_components(chans, nchans, state->alpha, state->clut);
+                if (state->ncomp < 0) {
+                    dlprintf("Luratech JP2 error decoding channel definitions\n");
+                    return ERRC;
+                }
+            }
 
             if_debug1('w', "[w]jpxd image has %d components\n", state->ncomp);
 
@@ -249,25 +439,48 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                     dlprintf1("Luratech JP2 error %d decoding colorspace\n", (int)err);
                     return ERRC;
                 }
+                image_cs = (JP2_Colorspace)result;
                 switch (result) {
-                    case cJP2_Colorspace_Gray: cspace = "gray"; break;
-                    case cJP2_Colorspace_RGBa: cspace = "sRGB"; break;
+                    case cJP2_Colorspace_Gray:
+                        cspace = "gray";
+                        state->colorspace = gs_jpx_cs_gray;
+                        break;
+                    case cJP2_Colorspace_RGBa:
+                        cspace = "sRGB";
+                        state->colorspace = gs_jpx_cs_rgb;
+                        break;
                     case cJP2_Colorspace_RGB_YCCa:
                         cspace = "sRGB YCrCb"; break;
+                        state->colorspace = gs_jpx_cs_rgb;
+                        break;
                     case cJP2_Colorspace_CIE_LABa:
-                        cspace = "CIE Lab"; break;
+                        cspace = "CIE Lab";
+                        state->colorspace = gs_jpx_cs_rgb;
+                        break;
                     case cJP2_Colorspace_ICCa:
-                        cspace = "ICC profile"; break;
+                        cspace = "ICC profile";
+                        state->colorspace = gs_jpx_cs_rgb;
+                        break;
                     case cJP2_Colorspace_Palette_Gray:
-                        cspace = "indexed gray"; break;
+                        cspace = "indexed gray";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                     case cJP2_Colorspace_Palette_RGBa:
-                        cspace = "indexed sRGB"; break;
+                        cspace = "indexed sRGB";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                     case cJP2_Colorspace_Palette_RGB_YCCa:
-                        cspace = "indexed sRGB YCrCb"; break;
+                        cspace = "indexed sRGB YCrCb";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                     case cJP2_Colorspace_Palette_CIE_LABa:
-                        cspace = "indexed CIE Lab"; break;
+                        cspace = "indexed CIE Lab";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                     case cJP2_Colorspace_Palette_ICCa:
-                        cspace = "indexed with ICC profile"; break;
+                        cspace = "indexed with ICC profile";
+                        state->colorspace = gs_jpx_cs_indexed;
+                        break;
                 }
                 if_debug1('w', "[w]jpxd image colorspace is %s\n", cspace);
             }
@@ -281,7 +494,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 int comp;
                 int width, height;
                 int bits, is_signed;
-                for (comp = 0; comp < state->ncomp; comp++) {
+                for (comp = 0; comp < ncomp; comp++) {
                     err= JP2_Decompress_GetProp(state->handle,
                         cJP2_Prop_Width, &result, -1, (short)comp);
                     if (err != cJP2_Error_OK) {
@@ -328,14 +541,14 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             if_debug3('w', "[w]jpxd decoding image at %ldx%ld"
                 " with %d bits per component\n",
                 state->width, state->height, state->bpc);
-
         }
 
         if (state->handle != (JP2_Decomp_Handle)NULL &&
                 state->image == NULL) {
 
             /* allocate our output buffer */
-            state->stride = state->width*state->ncomp;
+            int real_bpc = state->bpc > 8 ? 16 : state->bpc;
+            state->stride = (state->width * state->ncomp * real_bpc + 7) / 8;
             state->image = malloc(state->stride*state->height);
             if (state->image == NULL) return ERRC;
 
@@ -359,6 +572,10 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             if (err != cJP2_Error_OK) {
                 dlprintf1("Luratech JP2 error %d decoding image data\n", (int)err);
                 return ERRC; /* parsing error */
+            }
+
+            if (image_cs == cJP2_Colorspace_RGB_YCCa) {
+                s_jpxd_ycc_to_rgb(state);
             }
         }
 
@@ -395,6 +612,7 @@ s_jpxd_release(stream_state *ss)
         err = JP2_Decompress_End(state->handle);
         if (state->inbuf) free(state->inbuf);
         if (state->image) free(state->image);
+        if (state->clut) free(state->clut);
     }
 }
 
