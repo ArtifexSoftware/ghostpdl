@@ -311,7 +311,6 @@ s_jpxd_init(stream_state * ss)
     state->inbuf_size = 0;
     state->inbuf_fill = 0;
 
-    state->alpha = false;
     state->ncomp = 0;
     state->bpc = 0;
     state->clut = NULL;
@@ -321,6 +320,15 @@ s_jpxd_init(stream_state * ss)
     state->image = NULL;
     state->offset = 0;
 
+    return 0;
+}
+
+/* Set the defaults */
+static int
+s_jpxd_set_defaults(stream_state * ss) {
+    stream_jpxd_state *const state = (stream_jpxd_state *) ss;
+   
+    state->alpha = false;
     return 0;
 }
 
@@ -623,7 +631,8 @@ const stream_template s_jpxd_template = {
     s_jpxd_process,
     1024, 1024,   /* min in and out buffer sizes we can handle
                      should be ~32k,64k for efficiency? */
-    s_jpxd_release
+    s_jpxd_release,
+    s_jpxd_set_defaults
 };
 
 
