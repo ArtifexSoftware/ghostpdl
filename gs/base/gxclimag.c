@@ -295,19 +295,24 @@ static bool
 image_matrix_ok_to_band(const gs_matrix * pmat)
 {
     double t;
+    /* Detecting a downscale when it's really noscale upsets some
+     * customers code, so we add a fudge factor in here. This may
+     * cause us to allow the use of high level images for some downscales
+     * that are *nearly* noscales, but our code will cope with that. */
+    float one = (float)(1.0 - 1e-5);
 
     /* Don't band if the matrix is (nearly) singular. */
     if (fabs(pmat->xx * pmat->yy - pmat->xy * pmat->yx) < 0.001)
         return false;
     /* If it's portrait, then we encode it if not a downscale */
     if (is_xxyy(pmat))
-        return (fabs(pmat->xx) >= 1) && (fabs(pmat->yy) >= 1);
+        return (fabs(pmat->xx) >= one) && (fabs(pmat->yy) >= one);
     /* If it's landscape, then we encode it if not a downscale */
     if (is_xyyx(pmat))
-        return (fabs(pmat->xy) >= 1) && (fabs(pmat->yx) >= 1);
+        return (fabs(pmat->xy) >= one) && (fabs(pmat->yx) >= one);
     /* Skewed, so do more expensive downscale test */
-    if ((pmat->xx * pmat->xx + pmat->xy * pmat->xy < 1.0) ||
-        (pmat->yx * pmat->yx + pmat->yy * pmat->yy < 1.0))
+    if ((pmat->xx * pmat->xx + pmat->xy * pmat->xy < one) ||
+        (pmat->yx * pmat->yx + pmat->yy * pmat->yy < one))
         return false;
     /* Otherwise only encode it if it doesn't rotate too much */
     t = (fabs(pmat->xx) + fabs(pmat->yy)) /
