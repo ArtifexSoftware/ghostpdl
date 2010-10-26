@@ -47,7 +47,7 @@ dev_proc_put_params(tiff_put_params_downscale);
  */
 TIFF * tiff_from_filep(const char *name, FILE *filep, int big_endian);
 
-int tiff_print_page(gx_device_printer *dev, TIFF *tif);
+int tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size);
 
 int tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor);
 

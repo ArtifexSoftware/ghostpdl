@@ -127,7 +127,7 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
 
     tiff_set_gray_fields(pdev, tfdev->tif, 8, tfdev->Compression, tfdev->MaxStripSize);
 
-    return tiff_print_page(pdev, tfdev->tif);
+    return tiff_print_page(pdev, tfdev->tif, 0);
 }
 
 static int
@@ -229,7 +229,7 @@ tiffcmyk_print_page(gx_device_printer * pdev, FILE * file)
                          tfdev->Compression,
                          tfdev->MaxStripSize);
 
-    return tiff_print_page(pdev, tfdev->tif);
+    return tiff_print_page(pdev, tfdev->tif, 0);
 }
 
 /* ----------  The tiffsep device ------------ */

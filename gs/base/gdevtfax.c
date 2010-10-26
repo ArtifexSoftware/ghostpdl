@@ -223,6 +223,7 @@ const gx_device_tfax gs_tifflzw_device = {
 			0, 0, 0, 0,	/* margins */
 			1, tifflzw_print_page),
     1				/* AdjustWidth, not used */,
+    0                           /* MinFeatureSize */,
     TIFF_DEFAULT_STRIP_SIZE	/* strip size byte count */,
     1                           /* lowest column in the high-order bit, not used */,
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
@@ -236,6 +237,7 @@ const gx_device_tfax gs_tiffpack_device = {
 			0, 0, 0, 0,	/* margins */
 			1, tiffpack_print_page),
     1				/* AdjustWidth, not used */,
+    0                           /* MinFeatureSize */,
     TIFF_DEFAULT_STRIP_SIZE	/* strip size byte count */,
     1                           /* lowest column in the high-order bit, not used */,
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
@@ -271,7 +273,7 @@ tiffcrle_print_page(gx_device_printer * dev, FILE * prn_stream)
 
     tfax_set_fields(tfdev);
 
-    return tiff_print_page(dev, tfdev->tif);
+    return tiff_print_page(dev, tfdev->tif, tfdev->MinFeatureSize);
 }
 
 static int
@@ -285,7 +287,7 @@ tiffg3_print_page(gx_device_printer * dev, FILE * prn_stream)
     if (tfdev->Compression == COMPRESSION_CCITTFAX3)
 	TIFFSetField(tfdev->tif, TIFFTAG_GROUP3OPTIONS, GROUP3OPT_FILLBITS);
 
-    return tiff_print_page(dev, tfdev->tif);
+    return tiff_print_page(dev, tfdev->tif, tfdev->MinFeatureSize);
 }
 
 static int
@@ -299,7 +301,7 @@ tiffg32d_print_page(gx_device_printer * dev, FILE * prn_stream)
     if (tfdev->Compression == COMPRESSION_CCITTFAX3)
 	TIFFSetField(tfdev->tif, TIFFTAG_GROUP3OPTIONS, GROUP3OPT_2DENCODING | GROUP3OPT_FILLBITS);
 
-    return tiff_print_page(dev, tfdev->tif);
+    return tiff_print_page(dev, tfdev->tif, tfdev->MinFeatureSize);
 }
 
 static int
@@ -313,7 +315,7 @@ tiffg4_print_page(gx_device_printer * dev, FILE * prn_stream)
     if (tfdev->Compression == COMPRESSION_CCITTFAX4)
 	TIFFSetField(tfdev->tif, TIFFTAG_GROUP4OPTIONS, 0);
 
-    return tiff_print_page(dev, tfdev->tif);
+    return tiff_print_page(dev, tfdev->tif, tfdev->MinFeatureSize);
 }
 
 /* Print an LZW page. */
@@ -326,7 +328,7 @@ tifflzw_print_page(gx_device_printer * dev, FILE * prn_stream)
     tfax_set_fields(tfdev);
     TIFFSetField(tfdev->tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 
-    return tiff_print_page(dev, tfdev->tif);
+    return tiff_print_page(dev, tfdev->tif, tfdev->MinFeatureSize);
 }
 
 /* Print a PackBits page. */
@@ -339,7 +341,7 @@ tiffpack_print_page(gx_device_printer * dev, FILE * prn_stream)
     tfax_set_fields(tfdev);
     TIFFSetField(tfdev->tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 
-    return tiff_print_page(dev, tfdev->tif);
+    return tiff_print_page(dev, tfdev->tif, tfdev->MinFeatureSize);
 }
 
 /* Begin a TIFF fax page. */

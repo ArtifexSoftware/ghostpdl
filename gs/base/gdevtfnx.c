@@ -171,5 +171,5 @@ tiff_rgb_print_page(gx_device_printer * pdev, FILE * file)
     tiff_set_rgb_fields(tfdev);
 
     /* Write the page data. */
-    return tiff_print_page(pdev, tfdev->tif);
+    return tiff_print_page(pdev, tfdev->tif, 0);
 }

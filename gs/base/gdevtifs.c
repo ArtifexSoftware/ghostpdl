@@ -21,6 +21,7 @@
 #include "gstypes.h"
 #include "gscdefs.h"
 #include "gdevprn.h"
+#include "minftrsz.h"
 
 #include <tiffio.h>
 
@@ -330,7 +331,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 }
 
 int
-tiff_print_page(gx_device_printer *dev, TIFF *tif)
+tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size)
 {
     int code = 0;
     byte *data;
@@ -338,10 +339,22 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif)
     int max_size = max(size, TIFFScanlineSize(tif));
     int row;
     int bpc = dev->color_info.depth / dev->color_info.num_components;
+    void *min_feature_data = NULL;
+    int line_lag = 0;
+    int filtered_count;
 
     data = gs_alloc_bytes(dev->memory, max_size, "tiff_print_page(data)");
     if (data == NULL)
         return_error(gs_error_VMerror);
+    if (bpc != 1)
+        min_feature_size = 1;
+    if (min_feature_size > 1) {
+        code = min_feature_size_init(dev->memory, min_feature_size,
+                                     dev->width, dev->height,
+                                     &min_feature_data);
+        if (code < 0)
+            goto cleanup;
+    }
 
     TIFFCheckpointDirectory(tif);
 
@@ -350,19 +363,34 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif)
         code = gdev_prn_copy_scan_lines(dev, row, data, size);
         if (code < 0)
             break;
+        if (min_feature_size > 1) {
+            filtered_count = min_feature_size_process(data, min_feature_data);
+            if (filtered_count == 0)
+                line_lag++;
+        }
 
+        if (row - line_lag >= 0) {
 #if defined(ARCH_IS_BIG_ENDIAN) && (!ARCH_IS_BIG_ENDIAN)
-        if (bpc == 16)
-            TIFFSwabArrayOfShort((uint16 *)data,
-                                 dev->width * dev->color_info.num_components);
+            if (bpc == 16)
+                TIFFSwabArrayOfShort((uint16 *)data,
+                                     dev->width * dev->color_info.num_components);
 #endif
 
+            TIFFWriteScanline(tif, data, row - line_lag, 0);
+        }
+    }
+    for (row -= line_lag ; row < dev->height; row++)
+    {
+        filtered_count = min_feature_size_process(data, min_feature_data);
         TIFFWriteScanline(tif, data, row, 0);
     }
 
+    TIFFWriteDirectory(tif);
+cleanup:
+    if (min_feature_size > 1)
+        min_feature_size_dnit(min_feature_data);
     gs_free_object(dev->memory, data, "tiff_print_page(data)");
 
-    TIFFWriteDirectory(tif);
     return code;
 }
 

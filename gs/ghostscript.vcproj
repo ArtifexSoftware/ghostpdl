@@ -815,6 +815,10 @@
 					>
 				</File>
 				<File
+					RelativePath="base\minftrsz.c"
+					>
+				</File>
+				<File
 					RelativePath="base\mkromfs.c"
 					>
 				</File>
@@ -4732,6 +4736,10 @@
 				</File>
 				<File
 					RelativePath="base\memory_.h"
+					>
+				</File>
+				<File
+					RelativePath="base\minftrsz.h"
 					>
 				</File>
 				<File

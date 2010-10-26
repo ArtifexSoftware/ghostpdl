@@ -23,7 +23,8 @@
 /* Define the structure for fax devices. */
 /* Precede this by gx_device_common and gx_prn_device_common. */
 #define gx_fax_device_common\
-    int AdjustWidth		/* 0 = no adjust, 1 = adjust to fax values */
+    int AdjustWidth;             /* 0 = no adjust, 1 = adjust to fax values */\
+    int MinFeatureSize           /* < 2 == no darkening */
 typedef struct gx_device_fax_s {
     gx_device_common;
     gx_prn_device_common;
@@ -36,14 +37,15 @@ typedef struct gx_device_fax_s {
 			X_DPI, Y_DPI,\
 			0, 0, 0, 0,	/* margins */\
 			1, print_page),\
-    1				/* AdjustWidth */
+    1,				/* AdjustWidth */\
+    0                           /* MinFeatureSize */
 
 /* Procedures defined in gdevfax.c */
 
 /* Driver procedures */
 dev_proc_open_device(gdev_fax_open);
-dev_proc_get_params(gdev_fax_get_params); /* adds AdjustWidth */
-dev_proc_put_params(gdev_fax_put_params); /* adds AdjustWidth */
+dev_proc_get_params(gdev_fax_get_params); /* adds AdjustWidth, MinFeatureSize */
+dev_proc_put_params(gdev_fax_put_params); /* adds AdjustWidth, MinFeatureSize */
 extern const gx_device_procs gdev_fax_std_procs;
 
 /* Other procedures */

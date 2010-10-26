@@ -529,14 +529,27 @@ composite cmyk file.  It defaults to <code>g4</code> for the
 <code>tiffsep1</code> device.
 
 <p>
-The black-and-white TIFF drivers also provide this parameter:
+The black-and-white TIFF drivers (not including <tt>tiffscaled</tt>) also
+provide the following parameters:
 
 <blockquote><dl>
 <dt><code>-dAdjustWidth=<em>state</em></code> (0 or 1; default = 1)
-<dd>If this option set then if the requested page width is in the range of either
-1680..1736 or 2000..2056 columns, set the page width to A4 (1728 columns)
-or B4 (2048 columns) respectively.
+<dd>If this option is set then if the requested page width is in the range
+of either 1680..1736 or 2000..2056 columns, set the page width to A4
+(1728 columns) or B4 (2048 columns) respectively.
 This behavior is the default. Pass -dAdjustWidth=0 to turn off this behavior.
+
+<dt><code>-dMinFeatureSize=<em>state</em></code> (0 to 4; default = 1)
+<dd>This option allows a minimum feature size to be set; if any output pixel
+appears on its own, or as part of a group of pixels smaller than
+<tt>MinFeatureSize</tt> x <tt>MinFeatureSize</tt>, it will be expanded to
+ensure that it does. This is useful for output devices that are high
+resolution, but that have trouble rendering isolated pixels.
+
+<dd>While this parameter will accept values from 0 to 4, not all are fully
+implemented. 0 and 1 cause no change to the output (as expected). 2 works
+as specified. 3 and 4 currently expand pixels correctly horizontally, but
+only expand vertically to the 2 pixel size.
 
 </dl></blockquote>
 
@@ -562,6 +575,11 @@ described here.
 
 <p>
 The fax devices are <tt>faxg3</tt>, <tt>faxg32d</tt> and <tt>faxg4</tt>.
+</p>
+
+<p>
+The fax devices support the <tt>MinFeatureSize</tt> parameter as defined in
+the TIFF device section.
 </p>
 
 <h3><a name="BMP"></a>BMP</h3>
