@@ -237,7 +237,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
                         {
                             code = gdev_prn_copy_scan_lines(pdev, lnum_in++, in + left, in_size);
                             if (code < 0) {
-                                gs_note_error(code);
+                                code = gs_note_error(code);
                                 goto done;
                             }
                         }
