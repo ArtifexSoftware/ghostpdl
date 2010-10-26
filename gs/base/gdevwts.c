@@ -920,7 +920,7 @@ wtsimdi_contone_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	    g = *src++;
 	    b = *src++;
 	    if (r != r_last || g != g_last || b != b_last) {
-		gx_color_index color = (((r<<8) | g) << 8) | b;
+		gx_color_index color = (((b<<8) | g) << 8) | r;
 
 		r_last = r, g_last = g, b_last = b;
 		wtsimdi_resolve_one(idev, color);
