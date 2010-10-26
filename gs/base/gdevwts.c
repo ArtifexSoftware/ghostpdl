@@ -357,7 +357,7 @@ wts_init_halftones(gx_device_wts *wdev, int n_planes)
               if ((f=fopen(wts_fn,"r"))) {
                 fclose(f);
               } else {
-	        sprintf(wts_fn, "C:/vrhel/Artifex/ghostpdl/wts_plane_%d", i);
+	        sprintf(wts_fn, "/usr/local/lib/ghostscript/wts_plane_%d", i);
               }
             }
 	    code = wts_load_halftone(wdev->memory, &wdev->wcooked[i], wts_fn);
