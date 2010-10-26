@@ -126,7 +126,7 @@ typedef struct gx_device_wtsimdi_s {
     gx_prn_device_common;
     wts_cooked_halftone wcooked[4];
     gsicc_device_cm_t *postrender_cm;
-    gcmmhlink_t icc_link;
+    gsicc_link_t *icc_link;
     cached_color *color_cache;
     cached_color current_color;
 #ifdef DEBUG
@@ -357,7 +357,7 @@ wts_init_halftones(gx_device_wts *wdev, int n_planes)
               if ((f=fopen(wts_fn,"r"))) {
                 fclose(f);
               } else {
-	        sprintf(wts_fn, "/usr/local/lib/ghostscript/wts_plane_%d", i);
+	        sprintf(wts_fn, "C:/vrhel/Artifex/ghostpdl/wts_plane_%d", i);
               }
             }
 	    code = wts_load_halftone(wdev->memory, &wdev->wcooked[i], wts_fn);
@@ -471,6 +471,12 @@ wtsimdi_open_device(gx_device *dev)
             (gsicc_device_cm_t*) gs_malloc(dev->memory->non_gc_memory,
                                             1, sizeof(gsicc_device_cm_t),
                                             "wtsimdi_open_device");
+    idev->icc_link = 
+            (gsicc_link_t*) gs_malloc(dev->memory->non_gc_memory,
+                                            1, sizeof(gsicc_link_t),
+                                            "wtsimdi_open_device");
+
+    idev->postrender_cm->device_link_profile = NULL;  /* not used now. could be later */
     postrender_cm = idev->postrender_cm;
     postrender_cm->memory = dev->memory->non_gc_memory;
     if (postrender_cm == NULL)
@@ -500,9 +506,14 @@ wtsimdi_open_device(gx_device *dev)
     rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
     rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
 
-    idev->icc_link = gscms_get_link(postrender_cm->rgb_profile->profile_handle, 
+    idev->icc_link->link_handle = gscms_get_link(postrender_cm->rgb_profile->profile_handle, 
                     postrender_cm->cmyk_profile->profile_handle, &rendering_params);
-    if (idev->icc_link == NULL)
+    idev->icc_link->is_identity = 0;
+    idev->icc_link->contextptr = NULL;
+    idev->icc_link->icc_link_cache = NULL;
+    idev->icc_link->includes_softproof = false;
+
+    if (idev->icc_link->link_handle == NULL)
         return gs_throw(-1, "Could not create ICC link for WTS device"); 
 
     /* Not sure this is the best way to do this with most CMMs. Since CMM has a cache usually */
@@ -538,6 +549,8 @@ wtsimdi_close_device(gx_device *dev)
     rc_decrement(postrender_cm->cmyk_profile, "wtsimdi_close_device");
 
     gs_free(postrender_cm->memory, postrender_cm, 1, sizeof(gsicc_device_cm_t), 
+             "wtsimidi_close");
+    gs_free(dev->memory->non_gc_memory, idev->icc_link, 1, sizeof(gsicc_link_t), 
              "wtsimidi_close");
     gs_free(dev->memory, idev->color_cache, COLOR_CACHE_SIZE, 
 	sizeof(cached_color), "wtsimdi_close_device(color_cache)");
