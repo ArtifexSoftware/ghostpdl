@@ -554,9 +554,12 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 
             /* allocate our output buffer */
             int real_bpc = state->bpc > 8 ? 16 : state->bpc;
-            state->stride = (state->width * state->ncomp * real_bpc + 7) / 8;
-            state->image = malloc(state->stride*state->height + 1); /* malloc(0) may be 0 */
-            if (state->image == NULL) return ERRC;
+            state->stride = (state->width * max(1, state->ncomp) * real_bpc + 7) / 8;
+            state->image = malloc(state->stride*state->height);
+            if (state->image == NULL) 
+                return ERRC;
+            if (state->ncomp == 0) /* make fully opaque mask */
+                memset(state->image, 255, state->stride*state->height);
 
             /* attach our output callback */
             err = JP2_Decompress_SetProp(state->handle,
