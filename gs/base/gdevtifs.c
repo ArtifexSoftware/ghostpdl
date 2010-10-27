@@ -747,7 +747,6 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
         goto cleanup;
     }
     if (mfs > 1) {
-        mfs = 2;
         mfs_data = (byte *)gs_alloc_bytes(dev->memory,
                                           (awidth+1),
                                           "tiff_print_page(mfs)");
@@ -756,8 +755,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
-    } else
-        mfs = 1;
+    }
 
     TIFFCheckpointDirectory(tif);
 
