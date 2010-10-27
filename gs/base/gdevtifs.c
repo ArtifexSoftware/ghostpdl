@@ -559,6 +559,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor)
     }
     if (n != 0)
     {
+        row--;
         while (n != factor)
         {
             memset(data + max_size * n, 0, max_size);
