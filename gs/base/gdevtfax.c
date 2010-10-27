@@ -246,7 +246,7 @@ const gx_device_tfax gs_tiffpack_device = {
 
 
 /* Forward references */
-static int tfax_begin_page(gx_device_tfax * tfdev, FILE * file, int width);
+static int tfax_begin_page(gx_device_tfax * tfdev, FILE * file);
 
 static void
 tfax_set_fields(gx_device_tfax *tfdev)
@@ -269,9 +269,7 @@ tiffcrle_print_page(gx_device_printer * dev, FILE * prn_stream)
 {
     gx_device_tfax *tfdev = (gx_device_tfax *)dev;
 
-    tfax_begin_page(tfdev, prn_stream,
-                    (tfdev->AdjustWidth > 0 ?
-                     gdev_fax_adjusted_width(dev->width) : dev->width));
+    tfax_begin_page(tfdev, prn_stream);
 
     tfax_set_fields(tfdev);
 
@@ -283,9 +281,7 @@ tiffg3_print_page(gx_device_printer * dev, FILE * prn_stream)
 {
     gx_device_tfax *tfdev = (gx_device_tfax *)dev;
 
-    tfax_begin_page(tfdev, prn_stream,
-                    (tfdev->AdjustWidth > 0 ?
-                     gdev_fax_adjusted_width(dev->width) : dev->width));
+    tfax_begin_page(tfdev, prn_stream);
 
     tfax_set_fields(tfdev);
     if (tfdev->Compression == COMPRESSION_CCITTFAX3)
@@ -299,9 +295,7 @@ tiffg32d_print_page(gx_device_printer * dev, FILE * prn_stream)
 {
     gx_device_tfax *tfdev = (gx_device_tfax *)dev;
 
-    tfax_begin_page(tfdev, prn_stream,
-                    (tfdev->AdjustWidth > 0 ?
-                     gdev_fax_adjusted_width(dev->width) : dev->width));
+    tfax_begin_page(tfdev, prn_stream);
 
     tfax_set_fields(tfdev);
     if (tfdev->Compression == COMPRESSION_CCITTFAX3)
@@ -315,9 +309,7 @@ tiffg4_print_page(gx_device_printer * dev, FILE * prn_stream)
 {
     gx_device_tfax *tfdev = (gx_device_tfax *)dev;
 
-    tfax_begin_page(tfdev, prn_stream,
-                    (tfdev->AdjustWidth > 0 ?
-                     gdev_fax_adjusted_width(dev->width) : dev->width));
+    tfax_begin_page(tfdev, prn_stream);
 
     tfax_set_fields(tfdev);
     if (tfdev->Compression == COMPRESSION_CCITTFAX4)
@@ -332,9 +324,7 @@ tifflzw_print_page(gx_device_printer * dev, FILE * prn_stream)
 {
     gx_device_tfax *const tfdev = (gx_device_tfax *)dev;
 
-    tfax_begin_page(tfdev, prn_stream,
-                    (tfdev->AdjustWidth > 0 ?
-                     gdev_fax_adjusted_width(dev->width) : dev->width));
+    tfax_begin_page(tfdev, prn_stream);
     tfax_set_fields(tfdev);
     TIFFSetField(tfdev->tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 
@@ -347,9 +337,7 @@ tiffpack_print_page(gx_device_printer * dev, FILE * prn_stream)
 {
     gx_device_tfax *const tfdev = (gx_device_tfax *)dev;
 
-    tfax_begin_page(tfdev, prn_stream,
-                    (tfdev->AdjustWidth > 0 ?
-                     gdev_fax_adjusted_width(dev->width) : dev->width));
+    tfax_begin_page(tfdev, prn_stream);
     tfax_set_fields(tfdev);
     TIFFSetField(tfdev->tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 
@@ -358,11 +346,9 @@ tiffpack_print_page(gx_device_printer * dev, FILE * prn_stream)
 
 /* Begin a TIFF fax page. */
 static int
-tfax_begin_page(gx_device_tfax * tfdev, FILE * file, int width)
+tfax_begin_page(gx_device_tfax * tfdev, FILE * file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)tfdev;
-    /* Patch the width to reflect fax page width adjustment. */
-    int save_width = tfdev->width;
     int code;
 
     /* open the TIFF device */
@@ -372,8 +358,6 @@ tfax_begin_page(gx_device_tfax * tfdev, FILE * file, int width)
 	    return_error(gs_error_invalidfileaccess);
     }
 
-    tfdev->width = width;
-    code = tiff_set_fields_for_printer(pdev, tfdev->tif, 1);
-    tfdev->width = save_width;
+    code = tiff_set_fields_for_printer(pdev, tfdev->tif, 1, tfdev->AdjustWidth);
     return code;
 }

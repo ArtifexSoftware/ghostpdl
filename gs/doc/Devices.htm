@@ -531,8 +531,7 @@ composite cmyk file.  It defaults to <code>g4</code> for the
 <code>tiffsep1</code> device.
 
 <p>
-The black-and-white TIFF drivers (not including <tt>tiffscaled</tt>) also
-provide the following parameters:
+The black-and-white TIFF devices also provide the following parameters:
 
 <blockquote><dl>
 <dt><code>-dAdjustWidth=<em>state</em></code> (0 or 1; default = 1)
@@ -540,9 +539,12 @@ provide the following parameters:
 of either 1680..1736 or 2000..2056 columns, set the page width to A4
 (1728 columns) or B4 (2048 columns) respectively.
 This behavior is the default for all the fax based devices (i.e. all the black
-and white devices except <tt>tifflzw</tt> and <tt>tiffpack</tt>). Pass
-<tt>-dAdjustWidth=0</tt> to force this behaviour off, and
-<tt>-dAdjustWidth=1</tt> to force it on.
+and white devices except <tt>tifflzw</tt>, <tt>tiffpack</tt> and
+<tt>tiffscaled</tt>). Pass <tt>-dAdjustWidth=0</tt> to force this behaviour
+off, and <tt>-dAdjustWidth=1</tt> to force it on.
+
+<dd>When using this option with <tt>tiffscaled</tt> it is the downsampled size
+that triggers the adjustment.
 
 <dt><code>-dMinFeatureSize=<em>state</em></code> (0 to 4; default = 1)
 <dd>This option allows a minimum feature size to be set; if any output pixel
@@ -555,6 +557,11 @@ resolution, but that have trouble rendering isolated pixels.
 implemented. 0 and 1 cause no change to the output (as expected). 2 works
 as specified. 3 and 4 currently expand pixels correctly horizontally, but
 only expand vertically to the 2 pixel size.
+
+<dd>The mechanism by which <tt>MinFeatureSize</tt> is implemented for
+<tt>tiffscaled</tt> is different, in that it is done as part of the error
+diffusion. Values of 0 to 2 work as expected, but values 3 and 4 (while
+accepted for compatibility) will behave as for 2.
 
 </dl></blockquote>
 

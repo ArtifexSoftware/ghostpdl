@@ -333,3 +333,18 @@ min_feature_size_process(byte *line, void *min_feature_data)
     }
     return count_out;
 }
+
+int
+fax_adjusted_width(int width)
+{
+    /* Adjust the page width to a legal value for fax systems. */
+    if (width >= 1680 && width <= 1736)
+        /* Adjust width for A4 paper. */
+        return 1728;
+    else if (width >= 2000 && width <= 2056)
+        /* Adjust width for B4 paper. */
+        return 2048;
+    else
+        return width;
+}
+

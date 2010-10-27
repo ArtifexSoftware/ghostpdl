@@ -25,4 +25,6 @@ int min_feature_size_dnit(void *min_feature_data);
 
 int min_feature_size_process(byte *line, void *min_feature_data);
 
+int fax_adjusted_width(int width);
+
 #endif /* minftrsz_INCLUDED */

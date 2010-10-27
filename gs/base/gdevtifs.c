@@ -123,6 +123,10 @@ tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
     }
     if ((code = param_write_long(plist, "MaxStripSize", &tfdev->MaxStripSize)) < 0)
         ecode = code;
+    if ((code = param_write_long(plist, "AdjustWidth", &tfdev->AdjustWidth)) < 0)
+        ecode = code;
+    if ((code = param_write_long(plist, "MinFeatureSize", &tfdev->MinFeatureSize)) < 0)
+        ecode = code;
     return ecode;
 }
 
@@ -150,6 +154,8 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     gs_param_string comprstr;
     long downscale = tfdev->DownScaleFactor;
     long mss = tfdev->MaxStripSize;
+    long aw = tfdev->AdjustWidth;
+    long mfs = tfdev->MinFeatureSize;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &big_endian)) {
@@ -164,7 +170,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
         case 0:
             if ((ecode = tiff_compression_id(&compr, &comprstr)) < 0 ||
-                !tiff_compression_allowed(compr, dev->color_info.depth))
+                !tiff_compression_allowed(compr, (which & 1 ? 1 : dev->color_info.depth)))
                 param_signal_error(plist, param_name, ecode);
             break;
         case 1:
@@ -205,6 +211,28 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
         case 1:
             break;
     }
+    switch (code = param_read_long(plist, (param_name = "AdjustWidth"), &aw)) {
+        case 0:
+            if (aw != 0)
+                aw = 1;
+            break;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            break;
+    }
+    switch (code = param_read_long(plist, (param_name = "MinFeatureSize"), &mfs)) {
+        case 0:
+            if ((mfs >= 0) && (mfs <= 4))
+                break;
+            code = gs_error_rangecheck;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            break;
+    }
 
     if (ecode < 0)
         return ecode;
@@ -216,6 +244,8 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     tfdev->Compression = compr;
     tfdev->MaxStripSize = mss;
     tfdev->DownScaleFactor = downscale;
+    tfdev->AdjustWidth = aw;
+    tfdev->MinFeatureSize = mfs;
     return code;
 }
 
@@ -260,7 +290,8 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
             return_error(gs_error_invalidfileaccess);
     }
 
-    return tiff_set_fields_for_printer(pdev, tfdev->tif, tfdev->DownScaleFactor);
+    return tiff_set_fields_for_printer(pdev, tfdev->tif, tfdev->DownScaleFactor,
+                                       tfdev->AdjustWidth);
 }
 
 int tiff_set_compression(gx_device_printer *pdev,
@@ -286,9 +317,13 @@ int tiff_set_compression(gx_device_printer *pdev,
 
 int tiff_set_fields_for_printer(gx_device_printer *pdev,
                                 TIFF              *tif,
-                                int                factor)
+                                int                factor,
+                                int                adjustWidth)
 {
-    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (pdev->width + factor-1)/factor);
+    int width = (pdev->width + factor-1)/factor;
+    if (adjustWidth)
+        width = fax_adjusted_width(width);
+    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
     TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (pdev->height + factor-1)/factor);
     TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
@@ -399,14 +434,29 @@ cleanup:
  * moving left to right we read from entries 2->width+1 (inclusive), and
  * write to 1->width. When moving right to left we read from width->1 and
  * write to width+1->2.
+ *
+ * Minimum feature size data is stored in the mfs_data block.
+ * We have 1 extra entry at the end to avoid overflow. When moving left to
+ * right we read from entries 1->width (inclusive), and write to 0->width-1.
+ * When moving right to left we read from width-1->0 and write to width->1.
  */
+
+enum {
+    mfs_clear           = 0,
+    mfs_force_off       = 1,
+    mfs_above_is_0      = 2,
+    mfs_above_left_is_0 = 4,
+};
+
 static void down_and_out(TIFF *tif,
                          byte *data,
                          int   max_size,
                          int   factor,
                          int   row,
                          int   width,
-                         int  *errors)
+                         int  *errors,
+                         byte *mfs_data,
+                         int   padWhite)
 {
     int x, xx, y, value;
     byte *outp;
@@ -416,80 +466,225 @@ static void down_and_out(TIFF *tif,
     const int threshold = factor*factor*128;
     const int max_value = factor*factor*255;
 
-    if ((row & 1) == 0)
+    if (padWhite)
     {
-        /* Left to Right pass */
-        const int back = max_size * factor -1;
-        errors += 2;
-        outp = inp;
-        for (x = width; x > 0; x--)
+        outp = data + (width - padWhite)*factor;
+        for (y = factor; y > 0; y--)
         {
-            value = e_forward + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += max_size;
-                }
-                inp -= back;
-            }
-            if (value >= threshold)
-            {
-                *outp++ = 1;
-                value -= max_value;
-            }
-            else
-            {
-                *outp++ = 0;
-            }
-            e_forward  = value * 7/16;
-            e_downleft = value * 3/16;
-            e_down     = value * 5/16;
-            value     -= e_forward + e_downleft + e_down;
-            errors[-2] += e_downleft;
-            errors[-1] += e_down;
-            *errors++   = value;
+            memset(outp, 0xFF, padWhite*factor);
+            outp += max_size;
         }
-        outp -= width;
+    }
+
+    if (mfs_data == NULL)
+    {
+        if ((row & 1) == 0)
+        {
+            /* Left to Right pass (no min feature size) */
+            const int back = max_size * factor -1;
+            errors += 2;
+            outp = inp;
+            for (x = width; x > 0; x--)
+            {
+                value = e_forward + *errors;
+                for (xx = factor; xx > 0; xx--)
+                {
+                    for (y = factor; y > 0; y--)
+                    {
+                        value += *inp;
+                        inp += max_size;
+                    }
+                    inp -= back;
+                }
+                if (value >= threshold)
+                {
+                    *outp++ = 1;
+                    value -= max_value;
+                }
+                else
+                {
+                    *outp++ = 0;
+                }
+                e_forward  = value * 7/16;
+                e_downleft = value * 3/16;
+                e_down     = value * 5/16;
+                value     -= e_forward + e_downleft + e_down;
+                errors[-2] += e_downleft;
+                errors[-1] += e_down;
+                *errors++   = value;
+            }
+            outp -= width;
+        }
+        else
+        {
+            /* Right to Left pass (no min feature size) */
+            const int back = max_size * factor + 1;
+            errors += width;
+            inp += width*factor-1;
+            outp = inp;
+            for (x = width; x > 0; x--)
+            {
+                value = e_forward + *errors;
+                for (xx = factor; xx > 0; xx--)
+                {
+                    for (y = factor; y > 0; y--)
+                    {
+                        value += *inp;
+                        inp += max_size;
+                    }
+                    inp -= back;
+                }
+                if (value >= threshold)
+                {
+                    *outp-- = 1;
+                    value -= max_value;
+                }
+                else
+                {
+                    *outp-- = 0;
+                }
+                e_forward  = value * 7/16;
+                e_downleft = value * 3/16;
+                e_down     = value * 5/16;
+                value     -= e_forward + e_downleft + e_down;
+                errors[2] += e_downleft;
+                errors[1] += e_down;
+                *errors--   = value;
+            }
+            outp++;
+        }
     }
     else
     {
-        /* Right to Left pass */
-        const int back = max_size * factor + 1;
-        errors += width;
-        inp += width*factor-1;
-        outp = inp;
-        for (x = width; x > 0; x--)
+        if ((row & 1) == 0)
         {
-            value = e_forward + *errors;
-            for (xx = factor; xx > 0; xx--)
+            /* Left to Right pass (with min feature size = 2) */
+            const int back = max_size * factor -1;
+            byte mfs, force_forward = 0;
+            errors += 2;
+            outp = inp;
+            *mfs_data++ = mfs_clear;
+            for (x = width; x > 0; x--)
             {
-                for (y = factor; y > 0; y--)
+                value = e_forward + *errors;
+                for (xx = factor; xx > 0; xx--)
                 {
-                    value += *inp;
-                    inp += max_size;
+                    for (y = factor; y > 0; y--)
+                    {
+                        value += *inp;
+                        inp += max_size;
+                    }
+                    inp -= back;
                 }
-                inp -= back;
+                mfs = *mfs_data;
+                *mfs_data++ = mfs_clear;
+                if ((mfs & mfs_force_off) || force_forward)
+                {
+                    /* We are being forced to be 0 */
+                    *outp++ = 0;
+                    force_forward = 0;
+                }
+                else if (value < threshold)
+                {
+                    /* We want to be 0 anyway */
+                    *outp++ = 0;
+                    if ((mfs & (mfs_above_is_0 | mfs_above_left_is_0))
+                            != (mfs_above_is_0 | mfs_above_left_is_0))
+                    {
+                        /* We aren't in a group anyway, so must force other
+                         * pixels. */
+                        mfs_data[-2] |= mfs_force_off;
+                        mfs_data[-1] |= mfs_force_off;
+                        force_forward = 1;
+                    }
+                    else
+                    {
+                        /* No forcing, but we need to tell other pixels that
+                         * we were 0. */
+                        mfs_data[-2] |= mfs_above_is_0;
+                        mfs_data[-1] |= mfs_above_left_is_0;
+                    }
+                }
+                else
+                {
+                    *outp++ = 1;
+                    value -= max_value;
+                }
+                e_forward  = value * 7/16;
+                e_downleft = value * 3/16;
+                e_down     = value * 5/16;
+                value     -= e_forward + e_downleft + e_down;
+                errors[-2] += e_downleft;
+                errors[-1] += e_down;
+                *errors++   = value;
             }
-            if (value >= threshold)
-            {
-                *outp-- = 1;
-                value -= max_value;
-            }
-            else
-            {
-                *outp-- = 0;
-            }
-            e_forward  = value * 7/16;
-            e_downleft = value * 3/16;
-            e_down     = value * 5/16;
-            value     -= e_forward + e_downleft + e_down;
-            errors[2] += e_downleft;
-            errors[1] += e_down;
-            *errors--   = value;
+            outp -= width;
         }
-        outp++;
+        else
+        {
+            /* Right to Left pass (with min feature size = 2) */
+            const int back = max_size * factor + 1;
+            byte mfs, force_forward = 0;
+            errors += width;
+            mfs_data += width;
+            inp += width*factor-1;
+            outp = inp;
+            *mfs_data-- = 0;
+            for (x = width; x > 0; x--)
+            {
+                value = e_forward + *errors;
+                for (xx = factor; xx > 0; xx--)
+                {
+                    for (y = factor; y > 0; y--)
+                    {
+                        value += *inp;
+                        inp += max_size;
+                    }
+                    inp -= back;
+                }
+                mfs = *mfs_data;
+                *mfs_data-- = mfs_clear;
+                if ((mfs & mfs_force_off) || force_forward)
+                {
+                    /* We are being forced to be 0 */
+                    *outp-- = 0;
+                    force_forward = 0;
+                }
+                else if (value < threshold)
+                {
+                    *outp-- = 0;
+                    if ((mfs & (mfs_above_is_0 | mfs_above_left_is_0))
+                            != (mfs_above_is_0 | mfs_above_left_is_0))
+                    {
+                        /* We aren't in a group anyway, so must force other
+                         * pixels. */
+                        mfs_data[1] |= mfs_force_off;
+                        mfs_data[2] |= mfs_force_off;
+                        force_forward = 1;
+                    }
+                    else
+                    {
+                        /* No forcing, but we need to tell other pixels that
+                         * we were 0. */
+                        mfs_data[1] |= mfs_above_is_0;
+                        mfs_data[2] |= mfs_above_left_is_0;
+                    }
+                }
+                else
+                {
+                    *outp-- = 1;
+                    value -= max_value;
+                }
+                e_forward  = value * 7/16;
+                e_downleft = value * 3/16;
+                e_down     = value * 5/16;
+                value     -= e_forward + e_downleft + e_down;
+                errors[2] += e_downleft;
+                errors[1] += e_down;
+                *errors--   = value;
+            }
+            outp++;
+        }
     }
     /* Now pack the data pointed to by outp into byte form */
     data = inp = outp;
@@ -514,16 +709,28 @@ static void down_and_out(TIFF *tif,
 /* Special version, called with 8 bit grey input to be downsampled to 1bpp
  * output. */
 int
-tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor)
+tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
+                              int mfs, int aw)
 {
     int code = 0;
-    byte *data;
-    int *errors;
+    byte *data = NULL;
+    byte *mfs_data = NULL;
+    int *errors = NULL;
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
-    int max_size = max(size, TIFFScanlineSize(tif)) + factor-1;
+    int max_size;
     int row;
     int n;
     int width = (dev->width + factor-1)/factor;
+    int awidth = width;
+    int padWhite;
+
+    if (aw > 0)
+        awidth = fax_adjusted_width(awidth);
+    padWhite = awidth - width;
+    if (padWhite < 0)
+        padWhite = 0;
+
+    max_size = max(size + padWhite*factor, TIFFScanlineSize(tif)) + factor-1;
 
     data = gs_alloc_bytes(dev->memory,
                           max_size * factor,
@@ -532,18 +739,32 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor)
         return_error(gs_error_VMerror);
 
     errors = (int *)gs_alloc_bytes(dev->memory,
-                                   (width+3) * sizeof(int),
+                                   (awidth+3) * sizeof(int),
                                    "tiff_print_page(errors)");
     if (errors == NULL)
     {
-        gs_free_object(dev->memory, data, "tiff_print_page(data)");
-        return_error(gs_error_VMerror);
+        code = gs_note_error(gs_error_VMerror);
+        goto cleanup;
     }
+    if (mfs > 1) {
+        mfs = 2;
+        mfs_data = (byte *)gs_alloc_bytes(dev->memory,
+                                          (awidth+1),
+                                          "tiff_print_page(mfs)");
+        if (mfs_data == NULL)
+        {
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
+        }
+    } else
+        mfs = 1;
 
     TIFFCheckpointDirectory(tif);
 
-    memset(data, 0, max_size * factor);
-    memset(errors, 0, (width+3) * sizeof(int));
+    memset(data, 0xFF, max_size * factor);
+    memset(errors, 0, (awidth+3) * sizeof(int));
+    if (mfs_data)
+        memset(mfs_data, 0, awidth+1);
     n = 0;
     for (row = 0; row < dev->height; row++) {
         code = gdev_prn_copy_scan_lines(dev, row, data + max_size*n, size);
@@ -554,7 +775,8 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor)
         {
             /* Do the downsample */
             n = 0;
-            down_and_out(tif, data, max_size, factor, row/factor, width, errors);
+            down_and_out(tif, data, max_size, factor, row/factor, awidth,
+                         errors, mfs_data, padWhite);
         }
     }
     if (n != 0)
@@ -562,17 +784,20 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor)
         row--;
         while (n != factor)
         {
-            memset(data + max_size * n, 0, max_size);
+            memset(data + max_size * n, 0xFF, max_size);
             n++;
             row++;
         }
-        down_and_out(tif, data, max_size, factor, row/factor, width, errors);
+        down_and_out(tif, data, max_size, factor, row/factor, awidth, errors,
+                     mfs_data, padWhite);
     }
 
+    TIFFWriteDirectory(tif);
+cleanup:
+    gs_free_object(dev->memory, mfs_data, "tiff_print_page(mfs)");
     gs_free_object(dev->memory, errors, "tiff_print_page(errors)");
     gs_free_object(dev->memory, data, "tiff_print_page(data)");
 
-    TIFFWriteDirectory(tif);
     return code;
 }
 

@@ -62,7 +62,9 @@ const gx_device_tiff gs_tiffgray_device = {
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE
+    TIFF_DEFAULT_DOWNSCALE,
+    0, /* Adjust size */
+    1  /* MinFeatureSize */
 };
 
 /* ------ The tiffscaled device ------ */
@@ -92,7 +94,9 @@ const gx_device_tiff gs_tiffscaled_device = {
     arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE
+    TIFF_DEFAULT_DOWNSCALE,
+    0, /* Adjust size */
+    1  /* MinFeatureSize */
 };
 
 
@@ -145,7 +149,10 @@ tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
 
     tiff_set_gray_fields(pdev, tfdev->tif, 1, tfdev->Compression, tfdev->MaxStripSize);
 
-    return tiff_downscale_and_print_page(pdev, tfdev->tif, tfdev->DownScaleFactor);
+    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+                                         tfdev->DownScaleFactor,
+                                         tfdev->MinFeatureSize,
+                                         tfdev->AdjustWidth);
 }
 
 /* ------ The cmyk devices ------ */
@@ -173,7 +180,9 @@ const gx_device_tiff gs_tiff32nc_device = {
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE
+    TIFF_DEFAULT_DOWNSCALE,
+    0, /* Adjust size */
+    1  /* MinFeatureSize */
 };
 
 /* 16-bit-per-plane separated CMYK color. */
@@ -191,7 +200,9 @@ const gx_device_tiff gs_tiff64nc_device = {
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE
+    TIFF_DEFAULT_DOWNSCALE,
+    0, /* Adjust size */
+    1  /* MinFeatureSize */
 };
 
 /* ------ Private functions ------ */
@@ -1423,7 +1434,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         if (!tfdev->tiff_comp)
             return_error(gs_error_invalidfileaccess);
     }
-    code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, 1);
+    code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, 1, 0);
     tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 8, COMPRESSION_NONE, tfdev->MaxStripSize);
     pdev->color_info.depth = save_depth;
     if (code < 0)
@@ -1465,7 +1476,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
             return_error(gs_error_rangecheck);  /* this will overflow max_long */
 
-        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1);
+        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 8, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;
         if (code < 0)
@@ -1638,7 +1649,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
         }
 
         pdev->color_info.depth = 8;     /* Create files for 8 bit gray */
-        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1);
+        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 1, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;
         if (code < 0)

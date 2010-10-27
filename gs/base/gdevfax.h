@@ -49,7 +49,6 @@ dev_proc_put_params(gdev_fax_put_params); /* adds AdjustWidth, MinFeatureSize */
 extern const gx_device_procs gdev_fax_std_procs;
 
 /* Other procedures */
-int gdev_fax_adjusted_width(int width);
 void gdev_fax_init_state(stream_CFE_state *ss, const gx_device_fax *fdev);
 void gdev_fax_init_fax_state(stream_CFE_state *ss,
 			     const gx_device_fax *fdev);
