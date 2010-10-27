@@ -462,6 +462,8 @@ compression modes:
 </dl>
 </blockquote>
 
+<p>See the <tt>AdjustWidth</tt> option documentation below for important
+information about these devices.
 
 <h4>Options</h4>
 
@@ -537,7 +539,10 @@ provide the following parameters:
 <dd>If this option is set then if the requested page width is in the range
 of either 1680..1736 or 2000..2056 columns, set the page width to A4
 (1728 columns) or B4 (2048 columns) respectively.
-This behavior is the default. Pass -dAdjustWidth=0 to turn off this behavior.
+This behavior is the default for all the fax based devices (i.e. all the black
+and white devices except <tt>tifflzw</tt> and <tt>tiffpack</tt>). Pass
+<tt>-dAdjustWidth=0</tt> to force this behaviour off, and
+<tt>-dAdjustWidth=1</tt> to force it on.
 
 <dt><code>-dMinFeatureSize=<em>state</em></code> (0 to 4; default = 1)
 <dd>This option allows a minimum feature size to be set; if any output pixel
