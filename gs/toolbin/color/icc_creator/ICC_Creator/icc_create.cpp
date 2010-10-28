@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2009 Artifex Software, Inc.
+/* Copyright (C) 2001-2010 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -52,6 +52,7 @@ static const float BlackPoint[] = {0, 0, 0};
 /* Names of interest */
 static const char desc_deviceN_name[] = "Artifex DeviceN Profile";
 static const char desc_psgray_name[] = "Artifex PS Gray Profile";
+static const char desc_thresh_gray_name[] = "Artifex Gray Threshold Profile";
 static const char desc_psrgb_name[] = "Artifex PS RGB Profile";
 static const char desc_pscmyk_name[] = "Artifex PS CMYK Profile";
 static const char desc_link_name[] = "Artifex Link Profile";
@@ -421,6 +422,34 @@ add_matrixdata(unsigned char *input_ptr, icS15Fixed16Number matrix_fixed[])
     for (j = 0; j < 9; j++) {
         write_bigendian_4bytes(curr_ptr, matrix_fixed[j]);
         curr_ptr += 4;
+    }
+}
+
+static void
+add_curve(unsigned char *input_ptr, float *curve_data, int num_samples)
+{
+    unsigned char *curr_ptr;
+    unsigned short value;
+    int k;
+
+   /* Signature */
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,icSigCurveType);
+    curr_ptr += 4;
+    /* Reserved */
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+    /* Count */
+    write_bigendian_4bytes(curr_ptr, num_samples);
+    curr_ptr += 4;
+    /* Now the data uInt16 Number 0 to 65535.  For now assume input is 0 to 1.  
+            Need to fix this.  MJV */
+    for (k = 0; k < num_samples; k++) {
+        if (curve_data[k] < 0) curve_data[k] = 0;
+        if (curve_data[k] > 1) curve_data[k] = 1; 
+        value = (unsigned int) (curve_data[k]*65535.0);
+        write_bigendian_2bytes(curr_ptr,value);
+        curr_ptr+=2;
     }
 }
 
@@ -1279,6 +1308,100 @@ int create_psgray_profile(TCHAR FileName[])
     tag_location++;
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     save_profile(buffer,FileName,profile_size);
+    return(0);
+}
+
+
+/* Create a gray threshold profile */
+int create_gray_threshold_profile(TCHAR FileName[], float threshhold)
+{
+    icProfile iccprofile;
+    icHeader  *header = &(iccprofile.header);
+    int profile_size,k;
+    int num_tags;
+    gsicc_tag *tag_list;
+    int tag_offset = 0;
+    unsigned char *curr_ptr;
+    int last_tag;
+    icS15Fixed16Number temp_XYZ[3];
+    int tag_location;
+    int debug_catch = 1;
+    unsigned char *buffer;
+    int numout = 3;              /* Number of output colorants */
+    int num_colors = 1;
+    int num_samples = 2;
+    float encode_gamma;
+    int trc_tag_size;
+    float *table_data;
+    int midpoint;
+
+    /* Create the curve */
+    table_data = (float*) malloc(CURVE_SIZE*sizeof(float));
+    /* init it all to 0 */
+    memset(table_data,0,CURVE_SIZE*sizeof(float));
+    midpoint = (float) CURVE_SIZE * (threshhold / 100.0);
+
+    /* Set the points from midpoint to white to 1.0 */
+    for ( k = midpoint; k < CURVE_SIZE; k++) {
+        table_data[k] = 1.0;
+    }
+    
+    /* Fill in the common stuff */
+    setheader_common(header);
+    header->pcs = icSigXYZData;
+    profile_size = HEADER_SIZE;
+    header->deviceClass = icSigDisplayClass;
+    header->colorSpace = icSigGrayData;
+    num_tags = 5;  /* common (2) ,wtpt bkpt + TRC */   
+    tag_list = (gsicc_tag*) malloc(sizeof(gsicc_tag)*num_tags);
+    /* Let us precompute the sizes of everything and all our offsets */
+    profile_size += TAG_SIZE*num_tags;
+    profile_size += 4; /* number of tags.... */
+    last_tag = -1;
+    init_common_tags(tag_list, num_tags, &last_tag, desc_thresh_gray_name);  
+    init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
+    init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
+    trc_tag_size = 12 + CURVE_SIZE*2;  
+    init_tag(tag_list, &last_tag, icSigGrayTRCTag, trc_tag_size);
+    for(k = 0; k < num_tags; k++) {
+        profile_size += tag_list[k].size;
+    }
+    /* Now we can go ahead and fill our buffer with the data */
+    buffer = (unsigned char*) malloc(profile_size);
+    curr_ptr = buffer;
+
+    /* The header */
+    header->size = profile_size;
+    copy_header(curr_ptr,header);
+    curr_ptr += HEADER_SIZE;
+    /* Tag table */
+    copy_tagtable(curr_ptr,tag_list,num_tags);
+    curr_ptr += TAG_SIZE*num_tags;
+    curr_ptr += 4;
+
+    /* Now the data.  Must be in same order as we created the tag table */
+    /* First the common tags */
+    add_common_tag_data(curr_ptr, tag_list, desc_psgray_name);
+    for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
+        curr_ptr += tag_list[k].size;
+    }
+    tag_location = NUMBER_COMMON_TAGS;
+    /* White and black points */
+    get_XYZ_floatptr(temp_XYZ,(float*) &(D50WhitePoint[0]));
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    get_XYZ_floatptr(temp_XYZ,(float*) &(BlackPoint[0]));
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    /* Now the curve data */
+    add_curve(curr_ptr, table_data, CURVE_SIZE);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    /* Dump the buffer to a file for testing if its a valid ICC profile */
+    save_profile(buffer,FileName,profile_size);
+    free(table_data);
     return(0);
 }
 

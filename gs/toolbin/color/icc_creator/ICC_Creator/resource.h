@@ -20,6 +20,9 @@
 #define IDC_CMYK2GRAY2                  1008
 #define IDC_GRAY2CMYK2                  1009
 #define IDC_PSICC                       1009
+#define IDC_GRAYTHRESH                  1010
+#define IDC_EDIT1                       1011
+#define IDC_EDITTHRESH                  1011
 
 // Next default values for new objects
 // 
@@ -27,7 +30,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1005
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

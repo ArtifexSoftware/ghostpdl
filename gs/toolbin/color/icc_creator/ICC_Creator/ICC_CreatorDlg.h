@@ -15,6 +15,7 @@
 #pragma once
 
 #include "CIELAB.h"
+#include "afxwin.h"
 
 // CICC_CreatorDlg dialog
 class CICC_CreatorDlg : public CDialog
@@ -63,4 +64,8 @@ public:
     afx_msg void OnBnClickedRgb2cmyk();
     afx_msg void OnBnClickedCmyk2gray2();
     afx_msg void OnBnClickedPsicc();
+    afx_msg void OnBnClickedGraythresh();
+    afx_msg void OnEnChangeEditthresh();
+    CEdit m_graythreshold;
+    float m_floatthreshold;
 };

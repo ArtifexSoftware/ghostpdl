@@ -68,7 +68,8 @@ CICC_CreatorDlg::CICC_CreatorDlg(CWnd* pParent /*=NULL*/)
 
 void CICC_CreatorDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialog::DoDataExchange(pDX);
+    CDialog::DoDataExchange(pDX);
+    DDX_Control(pDX, IDC_EDITTHRESH, m_graythreshold);
 }
 
 BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
@@ -85,6 +86,8 @@ BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
         ON_BN_CLICKED(IDC_RGB2CMYK, &CICC_CreatorDlg::OnBnClickedRgb2cmyk)
         ON_BN_CLICKED(IDC_CMYK2GRAY2, &CICC_CreatorDlg::OnBnClickedCmyk2gray2)
         ON_BN_CLICKED(IDC_PSICC, &CICC_CreatorDlg::OnBnClickedPsicc)
+        ON_BN_CLICKED(IDC_GRAYTHRESH, &CICC_CreatorDlg::OnBnClickedGraythresh)
+        ON_EN_CHANGE(IDC_EDITTHRESH, &CICC_CreatorDlg::OnEnChangeEditthresh)
 END_MESSAGE_MAP()
 
 
@@ -125,7 +128,8 @@ BOOL CICC_CreatorDlg::OnInitDialog()
         this->m_cielab = NULL;
         this->m_colorant_names = NULL;  
         this->SetDlgItemText(IDC_STATUS,_T("Ready."));
-
+        this->m_floatthreshold = 50;
+        this->m_graythreshold.SetWindowText(_T("50"));
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -617,4 +621,57 @@ void CICC_CreatorDlg::OnBnClickedPsicc()
     } 
 
 
+}
+
+void CICC_CreatorDlg::OnBnClickedGraythresh()
+{
+
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+    ofn.lpstrTitle	= _T("Save Gray ICC Profile");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+         ok = create_gray_threshold_profile(szFile, this->m_floatthreshold);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Created Gray Threshhold Profile"));
+    } 
+}
+
+void CICC_CreatorDlg::OnEnChangeEditthresh()
+{
+    // TODO:  If this is a RICHEDIT control, the control will not
+    // send this notification unless you override the CDialog::OnInitDialog()
+    // function and call CRichEditCtrl().SetEventMask()
+    // with the ENM_CHANGE flag ORed into the mask.
+
+    // TODO:  Add your control notification handler code here
+	// TODO: If this is a RICHEDIT control, the control will not
+	// send this notification unless you override the CDialog::OnInitDialog()
+	// function and call CRichEditCtrl().SetEventMask()
+	// with the ENM_CHANGE flag ORed into the mask.
+	
+	// TODO: Add your control notification handler code here
+
+	char str[25];
+	int data;
+
+	this->m_graythreshold.GetWindowText(str,24);
+        sscanf(str,"%f",&(this->m_floatthreshold));
+        if (this->m_floatthreshold < 0) {
+            this->m_floatthreshold = 0;
+            this->m_graythreshold.SetWindowText(_T("0"));
+        }
+        if (this->m_floatthreshold > 100) {
+            this->m_floatthreshold = 100;
+            this->m_graythreshold.SetWindowText(_T("100"));
+        }
 }
