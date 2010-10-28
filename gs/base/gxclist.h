@@ -278,12 +278,19 @@ struct clist_writer_cropping_buffer_s {
 
 
 /* Define the state of a band list when writing. */
+typedef struct clist_icc_color_s {
+    int64_t icc_hash;           /* hash code for icc profile */
+    byte icc_num_components;   /* needed to avoid having to read icc data early */
+    bool is_lab;               /* also needed early */
+} clist_icc_color_t;
+
 typedef struct clist_color_space_s {
     byte byte1;			/* see cmd_opv_set_color_space in gxclpath.h */
     gs_id id;			/* space->id for comparisons */
-    int64_t icc_hash;           /* hash code for icc profile */
+    clist_icc_color_t icc_info; /* Data needed to enable delayed icc reading */
     const gs_color_space *space;
 } clist_color_space_t;
+
 struct gx_device_clist_writer_s {
     gx_device_clist_common_members;	/* (must be first) */
     int error_code;		/* error returned by cmd_put_op */

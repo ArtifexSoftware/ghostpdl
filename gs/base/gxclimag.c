@@ -346,6 +346,7 @@ clist_begin_typed_image(gx_device * dev,
     gx_color_index colors_used = 0;
     int code;
     bool mask_use_hl;
+    clist_icc_color_t icc_zero_init = { 0 };
 
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
@@ -457,7 +458,7 @@ clist_begin_typed_image(gx_device * dev,
         pie->uses_color = uses_color;
         if (masked) {
             pie->color_space.byte1 = 0;  /* arbitrary */
-            pie->color_space.icc_hash = 0;
+            pie->color_space.icc_info = icc_zero_init;
             pie->color_space.space = 0;
             pie->color_space.id = gs_no_id;
         } else {
@@ -480,16 +481,26 @@ clist_begin_typed_image(gx_device * dev,
             /* Get the hash code of the ICC space */
             if ( base_index == gs_color_space_index_ICC ) {
                 if (!indexed) {
-                    pie->color_space.icc_hash = pim->ColorSpace->cmm_icc_profile_data->hashcode;
+                    pie->color_space.icc_info.icc_hash = 
+                        pim->ColorSpace->cmm_icc_profile_data->hashcode;
+                    pie->color_space.icc_info.icc_num_components = 
+                        pim->ColorSpace->cmm_icc_profile_data->num_comps;
+                    pie->color_space.icc_info.is_lab = 
+                        pim->ColorSpace->cmm_icc_profile_data->islab;
                     clist_icc_addentry(cdev, pim->ColorSpace->cmm_icc_profile_data->hashcode,
                         pim->ColorSpace->cmm_icc_profile_data);
                 } else {
-                    pie->color_space.icc_hash = pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode;
+                    pie->color_space.icc_info.icc_hash = 
+                        pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode;
+                    pie->color_space.icc_info.icc_num_components = 
+                        pim->ColorSpace->base_space->cmm_icc_profile_data->num_comps;
+                    pie->color_space.icc_info.is_lab = 
+                        pim->ColorSpace->base_space->cmm_icc_profile_data->islab;
                     clist_icc_addentry(cdev, pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode,
                         pim->ColorSpace->base_space->cmm_icc_profile_data);
         }
             } else {
-                pie->color_space.icc_hash = 0;
+                pie->color_space.icc_info = icc_zero_init;
             }
         }
         pie->y = pie->rect.p.y;

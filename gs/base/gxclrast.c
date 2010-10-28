@@ -2482,17 +2482,18 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
     int index = b >> 4;
     gs_color_space *pcs;
     int code = 0;
-    int64_t hash_code;
     cmm_profile_t *picc_profile;
+    clist_icc_color_t icc_information;
 
     if_debug3('L', " %d%s%s\n", index,
               (b & 8 ? " (indexed)" : ""),
               (b & 4 ? "(proc)" : ""));
-    /* They all store a hash code even if it is NULL
-       In the ICC case it is used to look
-       up profile in clist */
-    memcpy(&hash_code, cbp, sizeof(hash_code));
-    cbp = cbp+sizeof(hash_code);
+    /* They all store the ICC information.  Even if it is NULL
+       it is used in the ICC case to avoid reading from the 
+       serialized profile data which is stored elsewhere in the
+       clist.  Hence we avoid jumping around in the file. */
+    memcpy(&icc_information, cbp, sizeof(clist_icc_color_t));
+    cbp = cbp + sizeof(clist_icc_color_t);
     switch (index) {
     case gs_color_space_index_DeviceGray:
         pcs = gs_cspace_new_DeviceGray(mem);
@@ -2506,8 +2507,12 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
     case gs_color_space_index_ICC:
         /* build the color space object */
         code = gs_cspace_build_ICC(&pcs, NULL, mem);
-        /* Get the profile information from the clist */
-        picc_profile = gsicc_read_serial_icc((gx_device *) cdev, hash_code);
+        /* Don't bother getting the ICC stuff from the clist yet */
+        picc_profile = gsicc_profile_new(NULL, cdev->memory, NULL, 0);
+        picc_profile->num_comps = icc_information.icc_num_components;
+        picc_profile->hashcode = icc_information.icc_hash;
+        picc_profile->hash_is_valid = true;
+        picc_profile->islab = icc_information.is_lab;
         if (picc_profile == NULL)
             return gs_rethrow(-1, "Failed to find ICC profile during clist read");
         /* Store the clist reader address in the profile

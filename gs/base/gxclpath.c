@@ -639,17 +639,19 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    }
 	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space,
 				  2 + cmd_sizew(hival) + map_size + 
-                                  sizeof(cldev->color_space.icc_hash));
+                                  sizeof(clist_icc_color_t));
 	    if (code < 0)
 		return code;
-
-            memcpy(dp+2, &(cldev->color_space.icc_hash), sizeof(cldev->color_space.icc_hash));
-	    memcpy(cmd_put_w(hival, dp + 2 + sizeof( cldev->color_space.icc_hash ) ), map_data, map_size);
-
+            /* Save the ICC information */
+            memcpy(dp + 2, &(cldev->color_space.icc_info),
+                   sizeof(clist_icc_color_t));
+	    memcpy(cmd_put_w(hival, dp + 2 + 
+                   sizeof(clist_icc_color_t)), map_data, map_size);
 	} else {
 	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space, 
-                2 + sizeof(cldev->color_space.icc_hash));
-            memcpy(dp+2, &(cldev->color_space.icc_hash), sizeof(cldev->color_space.icc_hash));
+                2 + sizeof(clist_icc_color_t));
+            memcpy(dp + 2, &(cldev->color_space.icc_info),
+                   sizeof(clist_icc_color_t));
 	    if (code < 0)
 		return code;
 	}
