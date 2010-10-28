@@ -320,11 +320,11 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
                                 int                factor,
                                 int                adjustWidth)
 {
-    int width = (pdev->width + factor-1)/factor;
+    int width = pdev->width/factor;
     if (adjustWidth)
         width = fax_adjusted_width(width);
     TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
-    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (pdev->height + factor-1)/factor);
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, pdev->height/factor);
     TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
@@ -720,7 +720,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     int max_size;
     int row;
     int n;
-    int width = (dev->width + factor-1)/factor;
+    int width = dev->width/factor;
     int awidth = width;
     int padWhite;
 
@@ -777,6 +777,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
                          errors, mfs_data, padWhite);
         }
     }
+#if DISABLED_AS_WE_DONT_ROUND_UP_ANY_MORE
     if (n != 0)
     {
         row--;
@@ -789,6 +790,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
         down_and_out(tif, data, max_size, factor, row/factor, awidth, errors,
                      mfs_data, padWhite);
     }
+#endif
 
     TIFFWriteDirectory(tif);
 cleanup:
