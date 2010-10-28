@@ -175,6 +175,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
                     abc_caches, lmn_caches, defg_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEFG;
     pcs->icc_equivalent = *ppcs_icc;
     return(0);
 }
@@ -442,6 +443,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
                     abc_caches, lmn_caches, def_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEF;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
     return(0);
@@ -536,6 +538,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
                     abc_caches, lmn_caches, islab);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_ABC;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
                                 return(0);
@@ -631,6 +634,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory, 
                     a_cache, lmn_caches);
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_A;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
     return(code);

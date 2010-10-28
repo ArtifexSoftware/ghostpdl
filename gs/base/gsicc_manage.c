@@ -428,9 +428,9 @@ gsicc_copy_colorname(const char *cmm_name, gsicc_colorname_t *colorname,
 }
 
 /* If the profile is one of the default types that were set in the iccmanager,
-   then the index for that type is returned.  Otherwise the ICC index
-   is returned.  This is currently used to keep us from writing out 
-   the default profiles for high level devices, if desired. */
+   then the index for that type is returned.  Otherwise the ICC index is returned.  
+   This is currently used to keep us from writing out the default profiles for 
+   high level devices, if desired. */
 gs_color_space_index 
 gsicc_get_default_type(cmm_profile_t *profile_data)
 {
@@ -441,15 +441,21 @@ gsicc_get_default_type(cmm_profile_t *profile_data)
             return(gs_color_space_index_DeviceRGB);
         case DEFAULT_CMYK:
             return(gs_color_space_index_DeviceCMYK);
+        case CIE_A:
+            return(gs_color_space_index_CIEA);
+        case CIE_ABC:
+            return(gs_color_space_index_CIEABC);
+        case CIE_DEF:
+            return(gs_color_space_index_CIEDEF);
+        case CIE_DEFG:
+            return(gs_color_space_index_CIEDEFG);
         default:
             return(gs_color_space_index_ICC);
     }
 }
 
-/*  This computes the hash code for the
-    ICC data and assigns the code
-    and the profile to the appropriate
-    member variable in the ICC manager */
+/*  This computes the hash code for the ICC data and assigns the code and the 
+    profile to the appropriate member variable in the ICC manager */
 int 
 gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen, 
                   gsicc_profile_t defaulttype)
@@ -501,25 +507,21 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             }
             break;
         case DEFAULT_NONE:
+        default:
             return(0);
             break;
     }
-
-    /* If it is not NULL then it has already been set.
-       If it is different than what we already have then
-       we will want to free it.  Since other imager states
-       could have different default profiles, this is done via
-       reference counting.  If it is the same as what we
-       already have then we DONT increment, since that is
-       done when the imager state is duplicated.  It could
-       be the same, due to a resetting of the user params.
-       To avoid recreating the profile data, we compare the 
-       string names. */
-    /* Also, we want to avoid the default blowing away
-       the -s settings for the gray, rgb and cmyk
-       profile following a vmreclaim so test if it is set
-       and if it is one of those default types */
-    if (defaulttype < PROOF_TYPE && (*manager_default_profile) != NULL) {
+    /* If it is not NULL then it has already been set. If it is different than 
+       what we already have then we will want to free it.  Since other imager 
+       states could have different default profiles, this is done via reference 
+       counting.  If it is the same as what we already have then we DONT 
+       increment, since that is done when the imager state is duplicated.  It 
+       could be the same, due to a resetting of the user params. To avoid 
+       recreating the profile data, we compare the string names. Also, we want 
+       to avoid the default blowing away the -s settings for the gray, rgb and 
+       cmyk profile following a vmreclaim so test if it is one of those default 
+       types */
+    if (defaulttype < DEVICEN_TYPE && (*manager_default_profile) != NULL) {
         return 0;
     }
     if ((*manager_default_profile) != NULL) {
@@ -531,8 +533,8 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
         rc_decrement(icc_profile,"gsicc_set_profile");
     }
 
-    /* We need to do a special check for DeviceN since we have
-       a linked list of profiles */
+    /* We need to do a special check for DeviceN since we have a linked list of 
+       profiles and we can have multiple specifications */
     if ( defaulttype == DEVICEN_TYPE ) {
         gsicc_devicen_entry_t *current_entry = icc_manager->device_n->head;
         for ( k = 0; k < icc_manager->device_n->count; k++ ) {
@@ -1116,7 +1118,7 @@ gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
    profile->buffer_size = num_bytes;
    return(0);
 }
-/* Check if the profile is the same as any of the default profiles */
+/* Check if the embedded profile is the same as any of the default profiles */
 static void
 gsicc_set_default_cs_value(cmm_profile_t *picc_profile, gs_imager_state *pis)
 {
@@ -1127,19 +1129,19 @@ gsicc_set_default_cs_value(cmm_profile_t *picc_profile, gs_imager_state *pis)
         switch ( picc_profile->data_cs ) {
             case gsGRAY:
                 if ( hashcode == icc_manager->default_gray->hashcode )
-                    picc_profile->default_match = DEFAULT_GRAY;
+                    picc_profile->default_match = DEFAULT_GRAY_s;
                 break;
             case gsRGB:
                 if ( hashcode == icc_manager->default_rgb->hashcode )
-                    picc_profile->default_match = DEFAULT_RGB;
+                    picc_profile->default_match = DEFAULT_RGB_s;
                 break;
             case gsCMYK:
                 if ( hashcode == icc_manager->default_cmyk->hashcode )
-                    picc_profile->default_match = DEFAULT_CMYK;
+                    picc_profile->default_match = DEFAULT_CMYK_s;
                 break;
             case gsCIELAB:
                 if ( hashcode == icc_manager->lab_profile->hashcode )
-                    picc_profile->default_match = LAB_TYPE;
+                    picc_profile->default_match = LAB_TYPE_s;
                 break;
             case gsCIEXYZ:
                 return;
@@ -1282,7 +1284,14 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size)
                         &(gs_colorspace->params.abc->caches.DecodeABC.caches[0]),
                         &(gs_colorspace->params.abc->common.caches.DecodeLMN[0]),
                         &islab);
-            if (islab) return(icc_manager->lab_profile);
+            if (islab) {
+                /* Destroy the profile */
+                rc_decrement(gs_colorspace->cmm_icc_profile_data,
+                             "gsicc_get_gscs_profile");
+                /* This may be an issue for pdfwrite */
+                return(icc_manager->lab_profile);
+            }
+            gs_colorspace->cmm_icc_profile_data->default_match = CIE_ABC;
             return(gs_colorspace->cmm_icc_profile_data);
             break;
         case gs_color_space_index_CIEA:
@@ -1295,6 +1304,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size)
                             icc_manager->memory,  
                             &(gs_colorspace->params.a->caches.DecodeA),
                             &(gs_colorspace->params.a->common.caches.DecodeLMN[0]));
+            gs_colorspace->cmm_icc_profile_data->default_match = CIE_A;
             return(gs_colorspace->cmm_icc_profile_data);
             break;
         case gs_color_space_index_Separation:
@@ -1338,6 +1348,7 @@ gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager )
             /* TO DO */
             return(NULL);
         case DEFAULT_NONE:
+        default:
             return(NULL);
     }
     return(NULL);

@@ -112,15 +112,26 @@ typedef enum {
 */
 
 typedef enum {
-    DEFAULT_NONE,
-    DEFAULT_GRAY,
-    DEFAULT_RGB,
-    DEFAULT_CMYK,
-    PROOF_TYPE,
-    NAMED_TYPE,
-    LINKED_TYPE,
-    LAB_TYPE,
-    DEVICEN_TYPE
+    DEFAULT_NONE,   /* A profile that was actually embedded in a doc */
+    DEFAULT_GRAY,   /* The default DeviceGray profile */
+    DEFAULT_RGB,    /* The default DeviceRGB profile */
+    DEFAULT_CMYK,   /* The default DeviceCMYK profile */
+    PROOF_TYPE,     /* The proofing profile */
+    NAMED_TYPE,     /* The named color profile */
+    LINKED_TYPE,    /* The linked profile */
+    LAB_TYPE,       /* The CIELAB profile */
+    DEVICEN_TYPE,   /* A special device N profile */
+    DEFAULT_GRAY_s, /* Same as default but a source profile from document */
+    DEFAULT_RGB_s,  /* Same as default but a source profile from document */
+    DEFAULT_CMYK_s, /* Same as default but a source profile from document */
+    LAB_TYPE_s,     /* Same as our default CIELAB but a source profile from doc */
+    CAL_GRAY,       /* Generated from PDF cal gray object */
+    CAL_RGB,        /* Generated from PDF cal rgb object */
+    CIE_A,          /* Generated from PS CIEA definition */
+    CIE_ABC,        /* Generated from PS CIEABC definition */
+    CIE_DEF,        /* Generated from PS CIEDEF definition */
+    CIE_DEFG,       /* Generated from PS CIEDEFG definition */
+    CIE_CRD        /* Generated from PS CRD definition */
 } gsicc_profile_t;
 
 #define gsicc_serial_data\

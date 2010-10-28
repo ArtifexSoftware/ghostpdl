@@ -1546,8 +1546,10 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     result->num_comps = num_colors;
     if (num_colors == 3) {
         result->data_cs = gsRGB;
+        result->default_match = CAL_RGB;
     } else {
         result->data_cs = gsGRAY;
+        result->default_match = CAL_GRAY;
     } 
     /* Set the hash code  */
     gsicc_get_icc_buff_hash(buffer, &(result->hashcode), result->buffer_size);
