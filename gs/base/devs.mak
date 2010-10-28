@@ -1604,10 +1604,10 @@ $(DD)psrgb.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev
 # within files means it is also pulled in for color/cmyk tiff functions
 # too.
 
-minftrsz_h=$(GLSRC)minftrsz.h
+minftrsz_h=$(GLSRC)minftrsz.h $(std_h)
 minftrsz_=$(minftrsz_h) $(GLOBJ)minftrsz.$(OBJ)
 
-$(GLOBJ)minftrsz.$(OBJ) : $(GLSRC)minftrsz.c
+$(GLOBJ)minftrsz.$(OBJ) : $(GLSRC)minftrsz.c $(minftrsz_h)
 	$(GLCC) $(GLO_)minftrsz.$(OBJ) $(C_) $(GLSRC)minftrsz.c
 
 
