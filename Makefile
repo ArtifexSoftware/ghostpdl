@@ -15,10 +15,10 @@ product: pcl
 
 # specific front-end targets
 
-pcl:
+pcl: tiff
 	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product # build PCL and PCLXL. 
 
-pcl-debug: 
+pcl-debug:  tiff
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug GENDIR="./debugobj"
 
 fonts:
@@ -26,7 +26,7 @@ fonts:
 	cp urwfonts/*.ttf /windows/fonts/	# copy the fonts. 
 	touch fonts
 
-pcl-profile:
+pcl-profile: tiff
 	$(MAKE) -C main -f pcl6_gcc.mak GENDIR="./pgobj" pdl-pg
 
 pcl-install:
@@ -42,29 +42,29 @@ pcl-test:
 # might be unexpected on some systems and we don't enumerate the font
 # names here so they could be removed individually.
 
-pcl-clean:
+pcl-clean: tiff_clean
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean
 	rm -f fonts
 
-xps-debug:
+xps-debug: tiff
 	$(MAKE) -C xps -f xps_gcc.mak pdl-debug GENDIR="./debugobj"
 
-xps: 
+xps:  tiff
 	$(MAKE) -C xps -f xps_gcc.mak pdl-product # build XPS
 
-xps-clean:
+xps-clean: tiff_clean
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean
 
 xps-test:
 	./xps/obj/gxps tools/tiger.xps
 
-svg-debug:
+svg-debug: tiff
 	$(MAKE) -C svg -f svg_gcc.mak pdl-debug GENDIR="./debugobj"
 
-svg: 
+svg:  tiff
 	$(MAKE) -C svg -f svg_gcc.mak pdl-product # build SVG
 
-svg-clean:
+svg-clean: tiff_clean
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean
 
 svg-test:
@@ -87,13 +87,25 @@ ufst:
 
 ####  LANGUAGE SWITCHING PRODUCT RULES ####
 
-ls-profile:
+#### Configure the tiff library - this is poor, we shouldn't call a configure
+#### script from a makefile - once ghostpdls get their own configures, do it there.
+
+tiff:
+	cd ./gs/tiff && ./configure
+
+tiff_clean:
+	# equally unpleasant, we have to explicitly delete tif_config.h
+	rm -f gs/tiff/libtiff/tif_config.h gs/tiff/libtiff/tiffconf.h
+
+#### tiff ####
+
+ls-profile: tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak GENDIR="./pgobj" pdl-pg
 
-ls-product:
+ls-product: tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product # build PS/PCL/XL. 
 
-ls-debug: 
+ls-debug:  tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug GENDIR="./debugobj"
 
 ls-fonts:
@@ -118,37 +130,37 @@ check:
 # might be unexpected on some systems and we don't enumerate the font
 # names here so they could be removed individually.
 
-ls-clean:
+ls-clean: tiff_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean
 	rm -f fonts /usr/local/bin/pspcl6
 
 # shortcuts for common build types.
 
-ls-uproduct: ufst
+ls-uproduct: ufst tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
-ls-udebug: ufst
+ls-udebug: ufst tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-debug
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
-ls-uclean:
+ls-uclean: tiff_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
-uproduct: ufst
+uproduct: ufst tiff
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
 	cp *.icc ./main/ufst-obj
 	cp wts_* ./main/ufst-obj
 
-udebug: ufst
+udebug: ufst tiff
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
 	cp *.icc ./main/ufst-debugobj
 	cp wts_* ./main/ufst-debugobj
 
-uclean:
+uclean: tiff_clean
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 

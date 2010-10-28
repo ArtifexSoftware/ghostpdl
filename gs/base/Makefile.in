@@ -554,6 +554,9 @@ distclean : clean config-clean soclean pgclean debugclean
 	-$(RM_) config.log config.status
 	-$(RM_) Makefile
 	@-rmdir $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
+# The following is *very* poor - we shouldn't be creating derived files in
+# the source directory, but for now.....
+	-$(RM_) $(TIFFSRCDIR)$(D)libtiff$(D)tif_config.h $(TIFFSRCDIR)$(D)libtiff$(D)tiffconf.h
         
 # a debug-clean target for consistency with the ghostpdl builds
 debug-clean : debugclean
