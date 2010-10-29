@@ -21,8 +21,10 @@
 #define IDC_GRAY2CMYK2                  1009
 #define IDC_PSICC                       1009
 #define IDC_GRAYTHRESH                  1010
-#define IDC_EDIT1                       1011
 #define IDC_EDITTHRESH                  1011
+#define IDC_RGBTHRESH                   1012
+#define IDC_EDITTHRESH2                 1013
+#define IDC_EDITTHRESHRGB               1013
 
 // Next default values for new objects
 // 

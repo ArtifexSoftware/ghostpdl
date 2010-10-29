@@ -40,11 +40,13 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 #define XYZPT_SIZE 12
 #define DATATYPE_SIZE 8
 #define CURVE_SIZE 512
+#define IDENT_CURVE_SIZE 0
 #define NUMBER_COMMON_TAGS 2 
 #define icMultiUnicodeText 0x6d6c7563    /* 'mluc' v4 text type */
 
 #define icSigColorantTableTag (icTagSignature) 0x636c7274L  /* 'clrt' */
 #define icSigColorantTableType (icTagSignature) 0x636c7274L /* clrt */
+#define icMultiFunctionAtoBType 0x6d414220      /* 'mAB ' v4 lutAtoBtype type */
 
 static const float D50WhitePoint[] = {(float)0.9642, 1, (float)0.8249};
 static const float BlackPoint[] = {0, 0, 0};
@@ -52,10 +54,11 @@ static const float BlackPoint[] = {0, 0, 0};
 /* Names of interest */
 static const char desc_deviceN_name[] = "Artifex DeviceN Profile";
 static const char desc_psgray_name[] = "Artifex PS Gray Profile";
-static const char desc_thresh_gray_name[] = "Artifex Gray Threshold Profile";
 static const char desc_psrgb_name[] = "Artifex PS RGB Profile";
 static const char desc_pscmyk_name[] = "Artifex PS CMYK Profile";
 static const char desc_link_name[] = "Artifex Link Profile";
+static const char desc_thresh_gray_name[] = "Artifex Gray Threshold Profile";
+static const char desc_thresh_rgb_name[] = "Artifex RGB Threshold Profile";
 
 static const char copy_right[] = "Copyright Artifex Software 2010";
 
@@ -68,11 +71,39 @@ typedef struct {
     unsigned char       byte_padding;
 } gsicc_tag;
 
+typedef struct {
+    unsigned short *data_short;
+    unsigned char *data_byte;  /* Used for cases where we can 
+                                   use the table as is */
+    int     clut_dims[4];
+    int     clut_num_input;  
+    int     clut_num_output;
+    int     clut_num_entries;   /* Number of entries */
+    int     clut_word_width;    /* Word width of table, 1 or 2 */
+} gsicc_clut;
+
+
+typedef struct {
+    float   *a_curves;
+    gsicc_clut *clut;
+    float   *m_curves;
+    float *matrix;
+    float   *b_curves;
+    int num_in;
+    int num_out;
+    float *white_point;
+    float *black_point;
+    float *cam;
+} gsicc_lutatob;
+
 static int
 get_padding(int x)
 {
     return( (4 -x%4)%4 ); 
 }
+
+
+
 
 /* Debug dump of internally created ICC profile for testing */
 
@@ -125,6 +156,103 @@ write_bigendian_2bytes(unsigned char *curr_ptr,ushort input)
    *curr_ptr ++= ((0x000000ff) & (input >> 8));
 #endif
 }
+
+static void
+add_ident_curves(unsigned char *input_ptr,int number_of_curves)
+{
+    unsigned char *curr_ptr;
+    int k;
+
+    curr_ptr = input_ptr;
+    for (k = 0; k < number_of_curves; k++) {
+       /* Signature */
+        write_bigendian_4bytes(curr_ptr,icSigCurveType);
+        curr_ptr += 4;
+        /* Reserved */
+        memset(curr_ptr,0,4);
+        curr_ptr += 4;
+        /* Count */
+        write_bigendian_4bytes(curr_ptr, 0);
+        curr_ptr += 4;
+    }
+}
+
+static void
+add_clutAtoB(unsigned char *input_ptr, gsicc_clut *clut)
+{
+    unsigned char *curr_ptr = input_ptr;
+    int k;
+    int num_channels_in = clut->clut_num_input;
+    int number_samples = clut->clut_num_entries;
+
+    /* First write out the dimensions for each channel */
+    for (k = 0; k < num_channels_in; k++) {
+        memset(curr_ptr, clut->clut_dims[k], 1);
+        curr_ptr++;
+    }
+    /* Set the remainder of the dimenensions */
+    memset(curr_ptr, 0, 16-num_channels_in);
+    curr_ptr += (16-num_channels_in);
+    /* word size */
+    memset(curr_ptr, clut->clut_word_width, 1);
+    curr_ptr++;
+    /* padding */
+    memset(curr_ptr, 0, 3);
+    curr_ptr += 3;
+    if (clut->data_byte != NULL) {
+        /* A byte table */
+        memcpy(curr_ptr,clut->data_byte,number_samples*3);
+    } else {
+        /* A float table */
+        for ( k = 0; k < number_samples*3; k++ ) {
+            write_bigendian_2bytes(curr_ptr,clut->data_short[k]);
+            curr_ptr += 2;
+        }
+    }
+}
+
+static icS15Fixed16Number
+double2icS15Fixed16Number(float number_in)
+{
+    short s;
+    unsigned short m;
+    icS15Fixed16Number temp;
+    float number;
+
+    if (number_in < 0) {
+        number = -number_in;
+        s = (short) number;
+        m = (unsigned short) ((number - s) * 65536.0);
+        temp = (icS15Fixed16Number) ((s << 16) | m);
+        temp = -temp;
+        return(temp);
+    } else {
+        s = (short) number_in;
+        m = (unsigned short) ((number_in - s) * 65536.0);
+        return((icS15Fixed16Number) ((s << 16) | m) );
+    }
+}
+
+static void 
+add_matrixwithbias(unsigned char *input_ptr, float *float_ptr_in, bool has_bias)
+{
+    unsigned char *curr_ptr;
+    float *float_ptr = float_ptr_in;
+    int k;
+
+    /* GS Matrix is coming in with data arranged in row ordered form */
+    curr_ptr = input_ptr;
+    for (k = 0; k < 9; k++ ){
+        write_bigendian_4bytes(curr_ptr, double2icS15Fixed16Number(*float_ptr));
+        curr_ptr += 4;
+        float_ptr++;
+    }
+    if (has_bias){
+        memset(curr_ptr,0,4*3);
+    }
+}
+
+
 static void
 setdatetime(icDateTimeNumber *datetime)
 {
@@ -453,6 +581,7 @@ add_curve(unsigned char *input_ptr, float *curve_data, int num_samples)
     }
 }
 
+
 static void
 add_gammadata(unsigned char *input_ptr, unsigned short gamma, 
               icTagTypeSignature curveType)
@@ -618,6 +747,105 @@ add_namesdata(unsigned char *input_ptr, colornames_t *colorant_names, int num_co
         encoded_value = abstar2_16bit(cielab[offset].bstar);
         write_bigendian_2bytes( curr_ptr, encoded_value);
         curr_ptr += 2;
+    }
+}
+
+
+static void
+add_tabledata_withcurves(unsigned char *input_ptr, void *table_data, int num_colors, 
+              int num_samples, int is_link, int numout, bool pcs_is_xyz_btoa,
+              int numin_LUT_entries, void *in_LUTs, int numout_LUT_entries, 
+              void *out_LUTs, bool use_Y_only)
+{
+
+   int gridsize, numin;
+   unsigned char *curr_ptr;
+   icS15Fixed16Number matrix_fixed[9];
+ /*  float scale_matrix[] = {(1 + 32767.0/32768.0), 0, 0, 
+                    0, (1 + 32767.0/32768.0), 0, 
+                    0, 0, (1 + 32767.0/32768.0)}; */
+   /*float scale_matrix[] = {2, 0, 0, 
+                    0, 2, 0, 
+                    0, 0, 2};*/
+   float scale_matrix[] = {65535.0/31595.0, 0, 0, 
+                    0, 65535.0/32767.0, 0, 
+                    0, 0, 65535.0/27030.0};
+   float special_Y_matrix[] = {0, 0, 0, 
+                    0, 65535.0/32767.0, 0, 
+                    0, 0, 0};
+   float ident[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+   int mlut_size;
+   int k;
+   int clut_size, num_entries;
+   unsigned short *curr_clut_ptr;
+   unsigned short *curr_lut_ptr;
+   int j;
+
+   gridsize = num_samples;  /* Sampling points in MLUT */
+   numin = num_colors;      /* Number of input colorants */
+   /* Signature */
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,icSigLut16Type);
+    curr_ptr += 4;
+    /* Reserved */
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+    /* Padded sizes */
+    *curr_ptr++ = numin;
+    *curr_ptr++ = numout;
+    *curr_ptr++ = gridsize;
+    *curr_ptr++ = 0;
+   /* Identity Matrix.  Unless PCS is XYZ AND we are doing BtoA. */
+    if (pcs_is_xyz_btoa) { 
+        if (use_Y_only) {
+            get_matrix_floatptr(matrix_fixed,(float*) &(special_Y_matrix[0]));
+        } else {
+            get_matrix_floatptr(matrix_fixed,(float*) &(scale_matrix[0]));
+        }
+    } else {
+        get_matrix_floatptr(matrix_fixed,(float*) &(ident[0]));
+    }
+    add_matrixdata(curr_ptr,matrix_fixed);
+    curr_ptr += 4*9;
+
+    /* 1-D LUT sizes */
+    write_bigendian_2bytes(curr_ptr, numin_LUT_entries);
+    curr_ptr += 2;
+    write_bigendian_2bytes(curr_ptr, numout_LUT_entries);
+    curr_ptr += 2;
+
+    /* Now the input curve data */
+    curr_lut_ptr = (unsigned short*) in_LUTs;
+    for (k = 0; k < num_colors; k++) {
+        for (j = 0; j < numin_LUT_entries; j++) {
+            write_bigendian_2bytes(curr_ptr, *curr_lut_ptr);
+            curr_ptr += 2;
+            curr_lut_ptr++;
+        }
+    }
+    /* Now the CLUT data */
+    if (is_link) {
+        clut_size = (int) pow((float) num_samples, (int) num_colors);
+        num_entries = clut_size*numout;
+        curr_clut_ptr = (unsigned short*) table_data;
+        for ( k = 0; k < num_entries; k++) {
+            write_bigendian_2bytes(curr_ptr, *curr_clut_ptr);
+            curr_ptr += 2;
+            curr_clut_ptr++;
+        }
+    } else {
+        add_clut_labdata_16bit(curr_ptr, (cielab_t*) table_data, num_colors, num_samples);
+        mlut_size = (int) pow((float) num_samples, (int) num_colors) * 2 * numout;
+        curr_ptr += mlut_size;
+    }
+    /* Now the output curve data */
+    curr_lut_ptr = (unsigned short*) out_LUTs;
+    for (k = 0; k < numout; k++) {
+        for (j = 0; j < numout_LUT_entries; j++) {
+            write_bigendian_2bytes(curr_ptr, *curr_lut_ptr);
+            curr_ptr += 2;
+            curr_lut_ptr++;
+        }
     }
 }
 
@@ -1085,6 +1313,64 @@ create_xyz2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
     }
 }
 
+
+static void
+create_xyz2gray_special(unsigned short *table_data, int num_samples)
+{
+    int x,y,z;
+    float xval,yval,zval;
+    unsigned short *buffptr = table_data;
+    float xyz[3], gray;
+
+    /* Step through the xyz indices */
+    for (x = 0; x < num_samples; x++) {
+        xval = (float) x / (float) (num_samples - 1);
+        for (y = 0; y < num_samples; y++) {
+            yval = (float) y / (float) (num_samples - 1);
+            for (z = 0; z < num_samples; z++) {
+                zval = (float) z / (float) (num_samples - 1);
+                xyz[0] = D50WhitePoint[0]*xval;
+                xyz[1] = D50WhitePoint[1]*yval;
+                xyz[2] = D50WhitePoint[2]*zval;
+                gray = xyz[1];
+                *buffptr ++= ROUND(gray * 65535);
+            }
+        }
+    }
+}
+
+static void
+create_lab2gray_special(unsigned short *table_data, int num_samples)
+{
+    int l,a,b;
+    float lstar,astar,bstar;
+    unsigned short *buffptr = table_data;
+    float rgb_values[3];
+    float xyz[3], lab_value[3], gray_value;
+
+    /* Step through the lab indices, convert to CIEXYZ
+       then to RGB, then to CMYK then encode into 16 bit form */
+    for (l = 0; l < num_samples; l++) {
+        lstar = (float) l / (float) (num_samples -1);
+        for (a = 0; a < num_samples; a++) {
+            astar = (float) a / (float) (num_samples -1);
+            for (b = 0; b < num_samples; b++) {
+                bstar = (float) b / (float) (num_samples -1);
+                /* Use Luminance only */
+                lab_value[0] = lstar*100.0;
+                lab_value[1] = 0;
+                lab_value[2] = 0;
+                /* to CIEXYZ */
+                lab2xyz(xyz,lab_value);
+                gray_value = xyz[1];
+                if (gray_value < 0) gray_value = 0;
+                if (gray_value > 1) gray_value = 1;
+                *buffptr ++= ROUND(gray_value * 65535);
+            }
+        }
+    }
+}
+
 static void
 create_lab2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
 {
@@ -1327,32 +1613,35 @@ int create_gray_threshold_profile(TCHAR FileName[], float threshhold)
     int tag_location;
     int debug_catch = 1;
     unsigned char *buffer;
-    int numout = 3;              /* Number of output colorants */
-    int num_colors = 1;
-    int num_samples = 2;
+    int numout = 3;     /* PCS number... */
+    int num_colors = 1;  /* Gray colors */
+    int num_samples = 2;    /* clut samples */
     float encode_gamma;
-    int trc_tag_size;
-    float *table_data;
+    unsigned short *threshold_table;
     int midpoint;
+    int mlut_size_btoa;
+    unsigned short *table_data_BtoA;
+    unsigned short *in_LUTs, *out_LUTs, *lut_ptr;
+    int tag_size;
 
     /* Create the curve */
-    table_data = (float*) malloc(CURVE_SIZE*sizeof(float));
+    threshold_table = (unsigned short*) malloc(CURVE_SIZE*sizeof(unsigned short));
     /* init it all to 0 */
-    memset(table_data,0,CURVE_SIZE*sizeof(float));
+    memset(threshold_table,0,CURVE_SIZE*sizeof(unsigned short));
     midpoint = (float) CURVE_SIZE * (threshhold / 100.0);
 
     /* Set the points from midpoint to white to 1.0 */
     for ( k = midpoint; k < CURVE_SIZE; k++) {
-        table_data[k] = 1.0;
+        threshold_table[k] = 65535;
     }
     
     /* Fill in the common stuff */
     setheader_common(header);
-    header->pcs = icSigXYZData;
+    header->pcs = icSigLabData;
     profile_size = HEADER_SIZE;
-    header->deviceClass = icSigDisplayClass;
+    header->deviceClass = icSigOutputClass;
     header->colorSpace = icSigGrayData;
-    num_tags = 5;  /* common (2) ,wtpt bkpt + TRC */   
+    num_tags = 5;  /* common (2) + BTOA0,bkpt,wtpt */   
     tag_list = (gsicc_tag*) malloc(sizeof(gsicc_tag)*num_tags);
     /* Let us precompute the sizes of everything and all our offsets */
     profile_size += TAG_SIZE*num_tags;
@@ -1361,8 +1650,12 @@ int create_gray_threshold_profile(TCHAR FileName[], float threshhold)
     init_common_tags(tag_list, num_tags, &last_tag, desc_thresh_gray_name);  
     init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
     init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
-    trc_tag_size = 12 + CURVE_SIZE*2;  
-    init_tag(tag_list, &last_tag, icSigGrayTRCTag, trc_tag_size);
+
+    /* Now the BTOA0 Tag.  numcolors and numout switch! */
+    mlut_size_btoa = (int) pow((float) num_samples, (int) numout);  /* 8 */
+    tag_size = 52+num_colors*2*2+numout*CURVE_SIZE*2+
+        mlut_size_btoa*num_colors*2;
+    init_tag(tag_list, &last_tag, icSigBToA0Tag, tag_size);
     for(k = 0; k < num_tags; k++) {
         profile_size += tag_list[k].size;
     }
@@ -1382,7 +1675,7 @@ int create_gray_threshold_profile(TCHAR FileName[], float threshhold)
     /* Now the data.  Must be in same order as we created the tag table */
     /* First the common tags */
     add_common_tag_data(curr_ptr, tag_list, desc_psgray_name);
-    for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
+    for (k = 0; k < NUMBER_COMMON_TAGS; k++) {
         curr_ptr += tag_list[k].size;
     }
     tag_location = NUMBER_COMMON_TAGS;
@@ -1395,15 +1688,46 @@ int create_gray_threshold_profile(TCHAR FileName[], float threshhold)
     add_xyzdata(curr_ptr,temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
-    /* Now the curve data */
-    add_curve(curr_ptr, table_data, CURVE_SIZE);
+    /* Now the BtoA0 table */
+    table_data_BtoA = (unsigned short*) malloc(mlut_size_btoa *
+                        sizeof(unsigned short) * num_colors);
+    create_lab2gray_special(table_data_BtoA, num_samples);
+
+    in_LUTs = (unsigned short*) malloc(CURVE_SIZE * sizeof(unsigned short) * 3);
+    lut_ptr = in_LUTs;
+    memcpy(lut_ptr,threshold_table,CURVE_SIZE*sizeof(unsigned short));
+    lut_ptr += CURVE_SIZE;
+    memcpy(lut_ptr,threshold_table,CURVE_SIZE*sizeof(unsigned short));
+    lut_ptr += CURVE_SIZE;
+    memcpy(lut_ptr,threshold_table,CURVE_SIZE*sizeof(unsigned short));
+
+    out_LUTs = (unsigned short*) malloc(2 * sizeof(unsigned short));
+    out_LUTs[0] = 0;
+    out_LUTs[1] = 65535;
+
+    /* Now the BTOA0 */
+    add_tabledata_withcurves(curr_ptr, (void*) table_data_BtoA, 3, num_samples, 
+                    1, num_colors, false, CURVE_SIZE, in_LUTs, 2, out_LUTs, true);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
-    /* Dump the buffer to a file for testing if its a valid ICC profile */
+    /* Dump the buffer to a file for testing, if its a valid ICC profile */
     save_profile(buffer,FileName,profile_size);
-    free(table_data);
+    free(threshold_table);
+    free(table_data_BtoA);
+    free(in_LUTs);
+    free(out_LUTs);
     return(0);
 }
+
+/* Create a gray threshold profile */
+int create_rgb_threshold_profile(TCHAR FileName[], float threshhold)
+{
+
+    return(0);
+}
+
+
+
 
 /* Create the ps rgb profile */
 int create_psrgb_profile(TCHAR FileName[])
@@ -1762,4 +2086,259 @@ create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_c
     save_profile(buffer,FileName,profile_size);
     return(0);
 
+}
+
+/* See comments before add_lutAtoBtype about allowable forms, which will 
+    explain much of these size calculations */
+static int
+getsize_lutAtoBtype(gsicc_lutatob *lutatobparts)
+{
+    int data_offset, mlut_size;
+    int numout = lutatobparts->num_out;
+    int numin = lutatobparts->num_in;
+    int pad_bytes;
+
+    data_offset = 32; 
+    /* B curves always present */
+    if (lutatobparts->b_curves != NULL) {
+        data_offset += (numout*(CURVE_SIZE*2+12));
+    } else {
+        data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+    }
+    /* M curves present if Matrix is present */
+    if (lutatobparts->matrix != NULL ) {
+        data_offset += (12*4);
+        /* M curves */
+        if (lutatobparts->m_curves != NULL) {
+            data_offset += (numout*(CURVE_SIZE*2+12));
+        } else {
+            data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+        }
+    } 
+    /* A curves present if clut is present */
+    if (lutatobparts->clut != NULL) {
+        /* We may need to pad the clut to make sure we are on a 4 byte boundary */
+        mlut_size = lutatobparts->clut->clut_num_entries *
+                            lutatobparts->clut->clut_word_width * 3;
+        pad_bytes = (4 - mlut_size%4)%4;
+        data_offset += (mlut_size + pad_bytes + 20);
+        if (lutatobparts->a_curves != NULL) {
+            data_offset += (numin*(CURVE_SIZE*2+12));
+        } else {
+            data_offset += (numin*(IDENT_CURVE_SIZE*2+12));
+        }
+    }
+    return(data_offset);
+}
+
+
+/* Note:  ICC V4 fomat allows ONLY these forms 
+B
+M - Matrix - B
+A - CLUT - B
+A - CLUT - M - Matrix - B
+Other forms are created by making some of these items identity.  In other words 
+the B curves must always be included.  If CLUT is present, A curves must be present.  
+Also, if Matrix is present M curves must be present.  A curves cannot be 
+present if CLUT is not present. */
+static void
+add_lutAtoBtype(unsigned char *input_ptr, gsicc_lutatob *lutatobparts)
+{
+/* We need to figure out all the offsets to the various objects based upon 
+    which ones are actually present */
+    unsigned char *curr_ptr;
+    long mlut_size;
+    int data_offset;
+    int k;
+    int numout = lutatobparts->num_out;
+    int numin = lutatobparts->num_in;
+    int pad_bytes = 0;
+
+    /* Signature */
+    curr_ptr = input_ptr;
+    write_bigendian_4bytes(curr_ptr,icMultiFunctionAtoBType);
+    curr_ptr += 4;
+    /* Reserved */
+    memset(curr_ptr,0,4);
+    curr_ptr += 4;
+    /* Padded sizes */
+    *curr_ptr++ = numin;
+    *curr_ptr++ = numout;
+    memset(curr_ptr,0,2);
+    curr_ptr += 2;
+    /* Note if data offset is zero, element is not present */
+    /* offset to B curves (last curves) */
+    data_offset = 32; 
+    if (lutatobparts->b_curves == NULL) {
+        /* identity curve must be present */
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+    } else {
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        data_offset += (numout*(CURVE_SIZE*2+12));
+    }
+    curr_ptr += 4;
+    /* offset to matrix and M curves */
+    if (lutatobparts->matrix == NULL) {
+        memset(curr_ptr,0,4);  /* Matrix */
+        curr_ptr += 4;
+        memset(curr_ptr,0,4);  /* M curves */
+    } else {
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        data_offset += (12*4);
+        curr_ptr += 4;
+        /* offset to M curves (Matrix curves -- only come with matrix) */
+        if (lutatobparts->m_curves == NULL) {
+            /* identity curve must be present */
+            write_bigendian_4bytes(curr_ptr,data_offset);
+            data_offset += (numout*(IDENT_CURVE_SIZE*2+12));
+        } else {
+            write_bigendian_4bytes(curr_ptr,data_offset);
+            data_offset += (numout*(CURVE_SIZE*2+12));
+        }
+    }
+    curr_ptr += 4;
+    /* offset to CLUT and A curves */
+    if (lutatobparts->clut == NULL) {
+        memset(curr_ptr,0,4); /* CLUT */
+        curr_ptr += 4;
+        memset(curr_ptr,0,4); /* A curves */
+    } else {
+        write_bigendian_4bytes(curr_ptr,data_offset);
+        mlut_size = lutatobparts->clut->clut_num_entries * 
+                    lutatobparts->clut->clut_word_width * 3;
+        pad_bytes = (4 - mlut_size%4)%4;
+        data_offset += (mlut_size + pad_bytes + 20);
+        curr_ptr += 4;
+        /* offset to A curves (first curves) */
+        if (lutatobparts->a_curves == NULL || lutatobparts->clut == NULL) {
+            /* identity curve must be present */
+            write_bigendian_4bytes(curr_ptr,data_offset);
+            data_offset += (numin*(IDENT_CURVE_SIZE*2+12));
+        } else {
+            write_bigendian_4bytes(curr_ptr,data_offset);
+            data_offset += (numin*(CURVE_SIZE*2+12));
+        }    
+    }    
+    curr_ptr += 4;
+    /* Header is completed */
+    /* Now write out the various parts (i.e. curves, matrix and clut) */
+    /* First the B curves */
+    if (lutatobparts->b_curves != NULL) {
+        for (k = 0; k < numout; k++) {
+            add_curve(curr_ptr, (lutatobparts->b_curves)+k*CURVE_SIZE, CURVE_SIZE);
+            curr_ptr += (12 + CURVE_SIZE*2);
+        }
+    } else {
+        add_ident_curves(curr_ptr,numout);
+        curr_ptr += numout*(12 + IDENT_CURVE_SIZE*2);
+    }
+    /* Then the matrix */
+    if (lutatobparts->matrix != NULL) {
+        add_matrixwithbias(curr_ptr,lutatobparts->matrix,true);
+        curr_ptr += (12*4);
+        /* M curves */
+        if (lutatobparts->m_curves != NULL) {
+            for (k = 0; k < numout; k++) {
+                add_curve(curr_ptr, (lutatobparts->m_curves)+k*CURVE_SIZE, CURVE_SIZE);
+                curr_ptr += (12 + CURVE_SIZE*2);
+            }
+        } else {
+            add_ident_curves(curr_ptr,numout);
+            curr_ptr += numout*(12 + IDENT_CURVE_SIZE*2);
+        }
+    }
+    /* Then the clut */
+    if (lutatobparts->clut != NULL) {
+        add_clutAtoB(curr_ptr, lutatobparts->clut);
+        curr_ptr += (20 + mlut_size);
+        memset(curr_ptr,0,pad_bytes); /* 4 byte boundary */
+        curr_ptr += pad_bytes;
+        /* The A curves */
+        if (lutatobparts->a_curves != NULL) {
+            for (k = 0; k < numin; k++) {
+                add_curve(curr_ptr, (lutatobparts->a_curves)+k*CURVE_SIZE, 
+                            CURVE_SIZE);
+                curr_ptr += (12 + CURVE_SIZE*2);
+            }
+        } else {
+            add_ident_curves(curr_ptr,numin);
+            curr_ptr += numin*(12 + IDENT_CURVE_SIZE*2);
+        }
+
+    }
+}
+
+
+
+/* the lutAtoB type */
+static void
+create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header, 
+                      gsicc_lutatob *lutatobparts, char *desc_name )
+{
+    int num_tags = 5;  /* common (2), AToB0Tag,bkpt, wtpt */
+    int k;
+    gsicc_tag *tag_list;
+    int profile_size, last_tag, tag_location, tag_size;
+    unsigned char *buffer,*curr_ptr;
+    icS15Fixed16Number temp_XYZ[3];
+    float d50[3];
+    float *cam;
+    float *temp_matrix[9];
+    float lmn_vector[3],d50_cieA[3];
+
+    profile_size = HEADER_SIZE;
+    tag_list = (gsicc_tag*) malloc(sizeof(gsicc_tag)*num_tags);
+
+    /* Let us precompute the sizes of everything and all our offsets */
+    profile_size += TAG_SIZE*num_tags;
+    profile_size += 4; /* number of tags.... */
+    last_tag = -1;
+    init_common_tags(tag_list, num_tags, &last_tag, desc_name);  
+
+    init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
+    init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
+
+    /* Get the tag size of the A2B0 with the lutAtoBType */
+    /* Compensate for init_tag() adding DATATYPE_SIZE */
+    tag_size = getsize_lutAtoBtype(lutatobparts) - DATATYPE_SIZE;
+    init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
+    /* Add all the tag sizes to get the new profile size */
+    for(k = 0; k < num_tags; k++) {
+        profile_size += tag_list[k].size;
+    }
+    /* End of tag table information */
+    /* Now we can go ahead and fill our buffer with the data.  */
+    buffer = (unsigned char*) malloc(profile_size);
+    curr_ptr = buffer;
+    /* The header */
+    header->size = profile_size;
+    copy_header(curr_ptr,header);
+    curr_ptr += HEADER_SIZE;
+    /* Tag table */
+    copy_tagtable(curr_ptr,tag_list,num_tags);
+    curr_ptr += TAG_SIZE*num_tags;
+    curr_ptr += 4;
+    /* Now the data.  Must be in same order as we created the tag table */
+    /* First the common tags */
+    add_common_tag_data(curr_ptr, tag_list, desc_name);
+    for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
+        curr_ptr += tag_list[k].size;
+    }
+    tag_location = NUMBER_COMMON_TAGS;
+
+    /* White point and black point */
+    get_XYZ_floatptr(temp_XYZ,(float*) &(D50WhitePoint[0]));
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    get_XYZ_floatptr(temp_XYZ,(float*) &(BlackPoint[0]));
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    /* Now the AToB0Tag Data. Here this will include the M curves, the matrix 
+       and the B curves.  */
+    add_lutAtoBtype(curr_ptr, lutatobparts);
+    *pp_buffer_in = buffer;
+    free(tag_list);
 }

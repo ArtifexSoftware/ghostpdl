@@ -70,6 +70,7 @@ void CICC_CreatorDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialog::DoDataExchange(pDX);
     DDX_Control(pDX, IDC_EDITTHRESH, m_graythreshold);
+    DDX_Control(pDX, IDC_EDITTHRESHRGB, m_string_rgb_thresh);
 }
 
 BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
@@ -88,6 +89,8 @@ BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
         ON_BN_CLICKED(IDC_PSICC, &CICC_CreatorDlg::OnBnClickedPsicc)
         ON_BN_CLICKED(IDC_GRAYTHRESH, &CICC_CreatorDlg::OnBnClickedGraythresh)
         ON_EN_CHANGE(IDC_EDITTHRESH, &CICC_CreatorDlg::OnEnChangeEditthresh)
+        ON_EN_CHANGE(IDC_EDITTHRESHRGB, &CICC_CreatorDlg::OnEnChangeEditthreshrgb)
+        ON_BN_CLICKED(IDC_RGBTHRESH, &CICC_CreatorDlg::OnBnClickedRgbthresh)
 END_MESSAGE_MAP()
 
 
@@ -128,10 +131,12 @@ BOOL CICC_CreatorDlg::OnInitDialog()
         this->m_cielab = NULL;
         this->m_colorant_names = NULL;  
         this->SetDlgItemText(IDC_STATUS,_T("Ready."));
-        this->m_floatthreshold = 50;
+        this->m_floatthreshold_gray = 50;
         this->m_graythreshold.SetWindowText(_T("50"));
+        this->m_floatthreshold_rgb = 50;
+        this->m_string_rgb_thresh.SetWindowText(_T("50"));
 
-	return TRUE;  // return TRUE  unless you set the focus to a control
+        return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
 void CICC_CreatorDlg::OnSysCommand(UINT nID, LPARAM lParam)
@@ -640,7 +645,7 @@ void CICC_CreatorDlg::OnBnClickedGraythresh()
     ofn.nMaxFile	= MAX_PATH;
 
     if (IDOK == GetSaveFileName(&ofn)) {
-         ok = create_gray_threshold_profile(szFile, this->m_floatthreshold);
+         ok = create_gray_threshold_profile(szFile, this->m_floatthreshold_gray);
         if (ok == 0)
             this->SetDlgItemText(IDC_STATUS,_T("Created Gray Threshhold Profile"));
     } 
@@ -665,13 +670,61 @@ void CICC_CreatorDlg::OnEnChangeEditthresh()
 	int data;
 
 	this->m_graythreshold.GetWindowText(str,24);
-        sscanf(str,"%f",&(this->m_floatthreshold));
-        if (this->m_floatthreshold < 0) {
-            this->m_floatthreshold = 0;
+        sscanf(str,"%f",&(this->m_floatthreshold_gray));
+        if (this->m_floatthreshold_gray < 0) {
+            this->m_floatthreshold_gray = 0;
             this->m_graythreshold.SetWindowText(_T("0"));
         }
-        if (this->m_floatthreshold > 100) {
-            this->m_floatthreshold = 100;
+        if (this->m_floatthreshold_gray > 100) {
+            this->m_floatthreshold_gray = 100;
             this->m_graythreshold.SetWindowText(_T("100"));
         }
+}
+
+void CICC_CreatorDlg::OnEnChangeEditthreshrgb()
+{
+    // TODO:  If this is a RICHEDIT control, the control will not
+    // send this notification unless you override the CDialog::OnInitDialog()
+    // function and call CRichEditCtrl().SetEventMask()
+    // with the ENM_CHANGE flag ORed into the mask.
+
+    // TODO:  Add your control notification handler code here
+
+    char str[25];
+    int data;
+
+    this->m_string_rgb_thresh.GetWindowText(str,24);
+    sscanf(str,"%f",&(this->m_floatthreshold_rgb));
+    if (this->m_floatthreshold_rgb < 0) {
+        this->m_floatthreshold_rgb = 0;
+        this->m_string_rgb_thresh.SetWindowText(_T("0"));
+    }
+    if (this->m_floatthreshold_rgb > 100) {
+        this->m_floatthreshold_rgb = 100;
+        this->m_string_rgb_thresh.SetWindowText(_T("100"));
+    }
+}
+
+void CICC_CreatorDlg::OnBnClickedRgbthresh()
+{
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+    ofn.lpstrTitle	= _T("Save RGB ICC Profile");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    return;  /* This is disabled for now */
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+         ok = create_rgb_threshold_profile(szFile, this->m_floatthreshold_rgb);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Created RGB Threshhold Profile"));
+    } 
 }

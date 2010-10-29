@@ -67,5 +67,9 @@ public:
     afx_msg void OnBnClickedGraythresh();
     afx_msg void OnEnChangeEditthresh();
     CEdit m_graythreshold;
-    float m_floatthreshold;
+    float m_floatthreshold_gray;
+    float m_floatthreshold_rgb;
+    CEdit m_string_rgb_thresh;
+    afx_msg void OnEnChangeEditthreshrgb();
+    afx_msg void OnBnClickedRgbthresh();
 };
