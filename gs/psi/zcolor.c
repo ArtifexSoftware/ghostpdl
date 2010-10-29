@@ -6584,5 +6584,13 @@ const op_def    zcolor_ext_op_defs[] =
     /* Operators to deal with setting stroking/non-stroking colors
      * individually */
     { "1.swapcolors", zswapcolors },
-    op_def_end(0)
+
+    /* internal operators, entries here only used for error reporting */
+    { "0%setcolorspace_cont", setcolorspace_cont },
+    { "0%setcolor_cont", setcolor_cont },
+    { "0%devicencolorants_cont", devicencolorants_cont },
+    { "0%indexed_cont", indexed_cont },
+    { "0%setdevicecolor_cont", setdevicecolor_cont },
+    { "0%currentbasecolor_cont", currentbasecolor_cont },
+op_def_end(0)
 };

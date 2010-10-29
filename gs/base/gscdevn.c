@@ -471,15 +471,13 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
 {
     const gs_separation_name *names = pcs->params.device_n.names;
     int num_comp = pcs->params.device_n.num_components;
-    int i, j;
+    int i;
     int colorant_number;
     byte * pname;
     uint name_size;
     gs_devicen_color_map * pcolor_component_map
 	= &pgs->color_component_map;
     gx_device * dev = pgs->device;
-    const char none_str[] = "None";
-    const uint none_size = strlen(none_str);
     bool non_match = false;
 
     pcolor_component_map->num_components = num_comp;
@@ -504,39 +502,20 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
 	 */
 	pcs->params.device_n.get_colorname_string(dev->memory, names[i], &pname, &name_size);
 	/*
-         * Postscript does not accept /None as a color component but it is
-         * allowed in PDF so we accept it.  It is also accepted as a
-	 * separation name.
-         */
-	if (name_size == none_size &&
-	        (strncmp(none_str, (const char *)pname, name_size) == 0)) {
-	    pcolor_component_map->color_map[i] = -1;
-	}
-	else {
- 	    /*
-	     * Check for duplicated names.  Except for /None, no components
-	     * are allowed to have duplicated names.
-	     */
-	    for (j = 0; j < i; j++) {
-	        if (names[i] == names[j])
-		    return_error(gs_error_rangecheck);
-            }
-	    /*
-	     * Compare the colorant name to the device's.  If the device's
-	     * compare routine returns GX_DEVICE_COLOR_MAX_COMPONENTS then the
-	     * colorant is in the SeparationNames list but not in the
-	     * SeparationOrder list.
-	     */
-	    colorant_number = (*dev_proc(dev, get_color_comp_index))
+	 * Compare the colorant name to the device's.  If the device's
+	 * compare routine returns GX_DEVICE_COLOR_MAX_COMPONENTS then the
+	 * colorant is in the SeparationNames list but not in the
+	 * SeparationOrder list.
+	 */
+	colorant_number = (*dev_proc(dev, get_color_comp_index))
 		    (dev, (const char *)pname, name_size, SEPARATION_NAME);
-	    if (colorant_number >= 0) {		/* If valid colorant name */
-		pcolor_component_map->color_map[i] =
-		    (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) ? -1
-		    					   : colorant_number;
-	    }
-	    else
-		non_match = true;
-        }	
+	if (colorant_number >= 0) {		/* If valid colorant name */
+	    pcolor_component_map->color_map[i] =
+	    (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) ? -1
+	    					   : colorant_number;
+	}
+	else
+	    non_match = true;
     }
     pcolor_component_map->use_alt_cspace = non_match;
     return 0;
