@@ -276,7 +276,7 @@ struct gx_image_enum_s {
     sample_map map[GS_IMAGE_MAX_COMPONENTS];
     /* Entries 0 and 255 of the following are set at initialization */
     /* for monochrome images; other entries are updated dynamically. */
-    gx_image_clue clues[256];
+    gx_image_clue *clues;
     gx_device_color icolor0_val; /* This is used if clues is not used */
     gx_device_color icolor1_val;
     gx_device_color *icolor0;
@@ -290,8 +290,8 @@ struct gx_image_enum_s {
 #define gx_image_enum_do_ptrs(m)\
   m(0,pis) m(1,pcs) m(2,dev) m(3,buffer) m(4,line)\
   m(5,clip_dev) m(6,rop_dev) m(7,scaler) m(8,icc_link)\
-  m(9,cie_range)
-#define gx_image_enum_num_ptrs 10
+  m(9,cie_range) m(10,clues)
+#define gx_image_enum_num_ptrs 11
 #define private_st_gx_image_enum() /* in gsimage.c */\
   gs_private_st_composite(st_gx_image_enum, gx_image_enum, "gx_image_enum",\
     image_enum_enum_ptrs, image_enum_reloc_ptrs)

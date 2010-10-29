@@ -67,14 +67,20 @@ ENUM_PTRS_WITH(image_enum_enum_ptrs, gx_image_enum *eptr)
     /* the clues may have been cleared by gx_image_free_enum, but not freed in that */
     /* function due to being at a different save level. Only trace if dev_color.type != 0. */
     if (eptr->spp == 1) {
-    if (eptr->clues[(index/st_device_color_max_ptrs) * (255 / ((1 << bps) - 1))].dev_color.type != 0)
-	ret = ENUM_USING(st_device_color,
-		     &eptr->clues[(index / st_device_color_max_ptrs) *
-				  (255 / ((1 << bps) - 1))].dev_color,
-		     sizeof(eptr->clues[0].dev_color),
-		     index % st_device_color_max_ptrs);
-    else
-	ret = 0;
+        if (eptr->clues != NULL) {
+            if (eptr->clues[(index/st_device_color_max_ptrs) * 
+                (255 / ((1 << bps) - 1))].dev_color.type != 0) {
+	        ret = ENUM_USING(st_device_color, 
+                                 &eptr->clues[(index / st_device_color_max_ptrs) *
+				 (255 / ((1 << bps) - 1))].dev_color,
+		                 sizeof(eptr->clues[0].dev_color),
+		                 index % st_device_color_max_ptrs);
+            } else {
+	        ret = 0;
+            }
+        } else {
+            ret = 0;
+        }
     } else {
         ret = 0;
     }
@@ -220,6 +226,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     bool device_color = true;
     gs_fixed_rect obox, cbox;
 
+    penum->clues = NULL;
     penum->icc_setup.has_transfer = false;
     penum->icc_setup.is_lab = false;
     penum->icc_setup.must_halftone = false;
@@ -304,6 +311,11 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
        1spp or an imagemask, otherwise image clues is not used and 
        we have these values point to other member variables */
     if (masked || cs_num_components(pcs) == 1) {
+        /* Go ahead and allocate now if not already done.  For a mask
+           we really should only do 2 values. For now, the goal is to
+           eliminate the 256 bytes for the >8bpp image enumerator */
+        penum->clues = (gx_image_clue*) gs_alloc_bytes(mem, sizeof(gx_image_clue)*256,
+			     "gx_image_enum_begin");
         penum->icolor0 = &(penum->clues[0].dev_color);
         penum->icolor1 = &(penum->clues[255].dev_color);
     } else {

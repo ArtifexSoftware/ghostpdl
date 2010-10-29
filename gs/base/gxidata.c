@@ -466,6 +466,9 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     if (penum->icc_link != NULL) {
         gsicc_release_link(penum->icc_link);
     }
+    if (penum->clues != NULL) {
+        gs_free_object(mem,penum->clues, "image clues");
+    }
     gs_free_object(mem, penum->line, "image line");
     gs_free_object(mem, penum->buffer, "image buffer");
     gx_image_free_enum(&info);
