@@ -767,49 +767,54 @@ currentdict /no_debug_dict undef
   /obj { pop pop endobj exit } bind
 .dicttomark readonly def
 
-/resolveR {		% <object#> <generation#> resolveR <object>
+/resolveR {             % <object#> <generation#> resolveR <object>
   PDFDEBUG {
     PDFSTEPcount 1 le {
       (%Resolving: ) print 2 copy 2 array astore //== exec
     } if
   } if
-  1 index resolved? {		% If object has already been resolved ...
-    exch pop exch pop		% then clear stack and return object
-  } {				% Else if not resolved ...
-    PDFfile fileposition 3 1 roll	% Save current file position
-    1 index Objects exch lget		% Get location of object from xref
-    3 1 roll checkgeneration {		% Verify the generation number
-			% Stack: savepos objpos obj#
-       ObjectStream 1 index lget dup 0 eq { % Check if obj in not an objstream
-	 pop exch PDFoffset add PDFfile exch setfileposition
-	 PDFfile token pop 2 copy ne
-	  { (   **** Unrecoverable error in xref!\n) pdfformaterror
-	    /resolveR cvx /rangecheck signalerror
-	  }
-	 if pop PDFfile token pop
-	 PDFfile token pop /obj ne
-	  { (   **** Unrecoverable error in xref!\n) pdfformaterror
-	    /resolveR cvx /rangecheck signalerror
-	  }
-	 if
-	 pdf_run_resolve	% PDFfile resolveopdict .pdfrun
-      } {			% Else the object is in an ObjectStream
-	      	% Process an objectstream object.  We are going to resolve all
-	      	% of the objects in sthe stream and place them into the Objects
-	      	% array.
-		% Stack: savepos objpos obj# objectstream#
-	resolveobjectstream
-        resolved? {		% If object has already been resolved ...
-	  exch pop		% Remove object pos from stack.
-	} {
-	  pop pop null		% Pop objpos and obj#, put null for object
-	} ifelse
-      } ifelse
-    } {				% Else the generation number is wrong
-	    % Don't cache if the generation # is wrong.
-	pop pop null		% Pop objpos and obj#, put null for object
-    } ifelse			% ifelse generation number is correct
-    exch PDFfile exch setfileposition	% Return to original file position
+  1 index 0 lt {
+    (   **** Considering object with a negative number as null.\n) pdfformaterror
+    pop pop //null 
+  } {
+    1 index resolved? {           % If object has already been resolved ...
+      exch pop exch pop           % then clear stack and return object
+    } {                           % Else if not resolved ...
+      PDFfile fileposition 3 1 roll       % Save current file position
+      1 index Objects exch lget           % Get location of object from xref
+      3 1 roll checkgeneration {          % Verify the generation number
+                        % Stack: savepos objpos obj#
+         ObjectStream 1 index lget dup 0 eq { % Check if obj in not an objstream
+           pop exch PDFoffset add PDFfile exch setfileposition
+           PDFfile token pop 2 copy ne
+            { (   **** Unrecoverable error in xref!\n) pdfformaterror
+              /resolveR cvx /rangecheck signalerror
+            }
+           if pop PDFfile token pop
+           PDFfile token pop /obj ne
+            { (   **** Unrecoverable error in xref!\n) pdfformaterror
+              /resolveR cvx /rangecheck signalerror
+            }
+           if
+           pdf_run_resolve        % PDFfile resolveopdict .pdfrun
+        } {                       % Else the object is in an ObjectStream
+                  % Process an objectstream object.  We are going to resolve all
+                  % of the objects in sthe stream and place them into the Objects
+                  % array.
+                  % Stack: savepos objpos obj# objectstream#
+          resolveobjectstream
+          resolved? {             % If object has already been resolved ...
+            exch pop              % Remove object pos from stack.
+          } {
+            pop pop null          % Pop objpos and obj#, put null for object
+          } ifelse
+        } ifelse
+      } {                         % Else the generation number is wrong
+              % Don't cache if the generation # is wrong.
+          pop pop null            % Pop objpos and obj#, put null for object
+      } ifelse                    % ifelse generation number is correct
+      exch PDFfile exch setfileposition   % Return to original file position
+    } ifelse
   } ifelse
 } bind def      
 
