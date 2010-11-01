@@ -88,7 +88,7 @@ typedef struct gsicc_bufferdesc_s {
 
 /* Enumerate the ICC rendering intents */
 typedef enum {
-    gsPERCEPTUAL,
+    gsPERCEPTUAL = 0,
     gsRELATIVECOLORIMETRIC,
     gsSATURATION,
     gsABSOLUTECOLORIMETRIC
@@ -99,7 +99,7 @@ typedef enum {
  */
 
 typedef enum {
-    BP_ON,
+    BP_ON = 0,
     BP_OFF,
 } gsicc_black_point_comp_t;
 

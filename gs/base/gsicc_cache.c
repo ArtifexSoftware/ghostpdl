@@ -83,6 +83,14 @@ gs_private_st_ptrs3(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache
 		    icc_linkcache_enum_ptrs, icc_linkcache_reloc_ptrs,
 		    head, lock, wait);
 
+
+/* These are used to construct a hash for the ICC link based upon the
+   render parameters */
+
+#define BP_SHIFT 0
+#define REND_SHIFT 8
+#define TYPE_SHIFT 16
+
 /**
  * gsicc_cache_new: Allocate a new ICC cache manager
  * Return value: Pointer to allocated manager, or NULL on failure.
@@ -281,9 +289,10 @@ gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
     gsicc_get_cspace_hash(icc_manager, dev, input_profile, &(hash->src_hash));
     gsicc_get_cspace_hash(icc_manager, dev, output_profile, &(hash->des_hash));
 
-    /* now for the rendering paramaters */
-    gsicc_get_buff_hash((unsigned char *) rendering_params, &(hash->rend_hash),
-			sizeof(gsicc_rendering_param_t));
+    /* now for the rendering paramaters, just use the word itself */
+    hash->rend_hash = ((rendering_params->black_point_comp) << BP_SHIFT) +
+                      ((rendering_params->rendering_intent) << REND_SHIFT) +
+                      ((rendering_params->object_type) << TYPE_SHIFT); 
 
    /* for now, mash all of these into a link hash */
    gsicc_mash_hash(hash);
