@@ -92,10 +92,12 @@ ufst:
 
 tiff:
 	cd ./gs/tiff && ./configure
+	touch tiff
 
 tiff_clean:
 	# equally unpleasant, we have to explicitly delete tif_config.h
 	rm -f gs/tiff/libtiff/tif_config.h gs/tiff/libtiff/tiffconf.h
+	rm tiff
 
 #### tiff ####
 
