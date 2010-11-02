@@ -29,4 +29,9 @@ void pxpcl_pagestatereset(void);
 /* release the passthrough state */
 void pxpcl_release(void);
 
+/* set variables in pcl's state that are special to pass through mode,
+   these override the default pcl state variables when pcl is
+   entered. */
+void pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs);
+
 #endif                /* pxpthr_INCLUDED */

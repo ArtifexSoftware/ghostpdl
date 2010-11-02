@@ -71,7 +71,7 @@ pcl_end_page_noop(pcl_state_t *pcs, int num_copies, int flush)
     return pxPassThrough;
 }
 
-/* set variables other that setting the page device that do not
+/* set variables other than setting the page device that do not
    default to pcl reset values */
 void
 pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
@@ -168,7 +168,7 @@ pxPassthrough_init(px_state_t *pxs)
     return 0;
 }
 
-void
+static void
 pxPassthrough_setpagestate(px_state_t *pxs)
 {
     /* by definition we are in "snippet mode" if pxl has dirtied
@@ -204,7 +204,6 @@ pxPassthrough_setpagestate(px_state_t *pxs)
 int
 pxPassthrough(px_args_t *par, px_state_t *pxs)
 {
-
     stream_cursor_read r;
     int code = 0;
     uint used;
