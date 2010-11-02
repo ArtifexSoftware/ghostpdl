@@ -274,9 +274,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
       when we use the transformation. */
     src_data_type = (COLORSPACE_SH(lcms_src_color_space)|
                         CHANNELS_SH(src_nChannels)|BYTES_SH(2));
-#if arch_is_big_endian
-    src_data_type = src_data_type | ENDIAN16_SH(1);
-#endif
+
     if (lcms_deshandle != NULL) {
         des_color_space  = cmsGetColorSpace(lcms_deshandle);
     } else {
@@ -288,10 +286,6 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     des_nChannels = _cmsChannelsOf(des_color_space);
     des_data_type = (COLORSPACE_SH(lcms_des_color_space)|
                         CHANNELS_SH(des_nChannels)|BYTES_SH(2));
-    /* endian */
-#if arch_is_big_endian
-    des_data_type = des_data_type | ENDIAN16_SH(1);
-#endif
 /* Create the link */
     return(cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle, 
                         des_data_type, rendering_params->rendering_intent, 

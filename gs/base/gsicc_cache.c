@@ -937,11 +937,8 @@ gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsig
     buffer_desc->num_rows = num_rows;
     buffer_desc->pixels_per_row = pixels_per_row; 
 
-#if arch_is_big_endian
-    buffer_desc->little_endian = false;
-#else
+    /* sample endianess is consistent across platforms */
     buffer_desc->little_endian = true;
-#endif
 
 }
 
