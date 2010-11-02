@@ -490,10 +490,6 @@ end
     
     Label origin 9 differs slightly.
 
-1772:
-  
-    Rotated character is clipped, low impact.
-
 1950-1967:
 
     Our interpreter does not exactly emulate the HP when using HPGL/2
