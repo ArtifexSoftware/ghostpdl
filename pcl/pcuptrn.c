@@ -529,18 +529,19 @@ upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)
 {	
     int i;
-    /* copy back any patterns created during macro invocation.  NB
-       this should be incorporated in a built in pattern reset and
-       copy function in pcbiptrn.c along with
-       pcl_pattern_clear_bi_patterns() below */
-    for(i = 0; i < countof(pcs->bi_pattern_array); i++)
-	psaved->bi_pattern_array[i] = pcs->bi_pattern_array[i];
-    psaved->gl_patterns = pcs->gl_patterns;
-    psaved->pcl_patterns = pcs->pcl_patterns;
-    psaved->last_pcl_uptrn_id = pcs->last_pcl_uptrn_id;
-    psaved->plast_pcl_uptrn = pcs->plast_pcl_uptrn;
-    psaved->last_gl2_RF_indx = pcs->last_gl2_RF_indx;
-    psaved->plast_gl2_uptrn = pcs->plast_gl2_uptrn;
+    /* copy back any patterns created during macro invocation. */
+    if ((operation & pcl_copy_after) != 0) {
+        for(i = 0; i < countof(pcs->bi_pattern_array); i++)
+            psaved->bi_pattern_array[i] = pcs->bi_pattern_array[i];
+        psaved->gl_patterns = pcs->gl_patterns;
+        psaved->pcl_patterns = pcs->pcl_patterns;
+        psaved->last_pcl_uptrn_id = pcs->last_pcl_uptrn_id;
+        psaved->plast_pcl_uptrn = pcs->plast_pcl_uptrn;
+        psaved->last_gl2_RF_indx = pcs->last_gl2_RF_indx;
+        psaved->plast_gl2_uptrn = pcs->plast_gl2_uptrn;
+        psaved->punsolid_pattern = pcs->punsolid_pattern;
+        psaved->psolid_pattern = pcs->psolid_pattern;
+    }
     return 0;
 }
 
