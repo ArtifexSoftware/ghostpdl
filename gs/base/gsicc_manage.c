@@ -757,8 +757,8 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
             /* Check that we are OK in our setting of the profile.  If not,
                then we go ahead and grab the proper default rather than 
                render wrong or even worst crash */
-            if (dev->device_icc_profile->num_comps != 
-                dev->color_info.num_components || code < 0) {
+            if (code < 0 || dev->device_icc_profile->num_comps != 
+                dev->color_info.num_components) {
                 if (pgs->icc_manager->profiledir != NULL) {
                     strcpy(dev->color_info.icc_profile, pgs->icc_manager->profiledir);
                 } else {
