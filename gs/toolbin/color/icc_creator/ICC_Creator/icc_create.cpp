@@ -39,7 +39,7 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 #define TAG_SIZE 12
 #define XYZPT_SIZE 12
 #define DATATYPE_SIZE 8
-#define CURVE_SIZE 512
+#define CURVE_SIZE 4096
 #define IDENT_CURVE_SIZE 0
 #define NUMBER_COMMON_TAGS 2 
 #define icMultiUnicodeText 0x6d6c7563    /* 'mluc' v4 text type */
