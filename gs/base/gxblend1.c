@@ -353,7 +353,8 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 if (tos_has_tag) {
                     if (pix_alpha == 255) {
                         nos_ptr[x + nos_tag_offset] = tos_ptr[x + tos_tag_offset];     
-                    } else if (tos_ptr[x + tos_tag_offset] != GS_UNTOUCHED_TAG) {  
+                    } else if (pix_alpha != 0 && tos_ptr[x + tos_tag_offset] != 
+                               GS_UNTOUCHED_TAG) {  
                         nos_ptr[x + nos_tag_offset] = 
                             (nos_ptr[x + nos_tag_offset] | 
                             tos_ptr[x + tos_tag_offset]) &
