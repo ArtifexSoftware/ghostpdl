@@ -1994,13 +1994,11 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     op_proc_t exec_cont = 0;
     int code;
     bool align_to_pixels = gs_currentaligntopixels(pbfont->dir);
-    bool switch_back;
     enum {
         SBW_DONE,
         SBW_SCALE,
         SBW_FROM_RENDERER
     } sbw_state = SBW_SCALE;
-    gs_in_cache_device_t in_cachedevice;
     
     I->use_outline = false;
     
@@ -2035,13 +2033,19 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
         return_error(e_undefined);
 
     I->use_outline = produce_outline_char(i_ctx_p, penum_s, pbfont, alpha_bits, &log2_scale);
+    if (I->use_outline) {
+        I->max_bitmap = 0;
+    }
+    else {
     /* FIX ME: It can be a very bad thing, right now, for the FAPI code to decide unilaterally to
      * produce an outline, when the rest of GS expects a bitmap, so we give ourselves a
      * 50% leeway on the maximum cache bitmap, just to be sure. Or the same maximum bitmap size
      * used in gxchar.c
      */
-    I->max_bitmap = pbfont->dir->ccache.upper + (pbfont->dir->ccache.upper >> 1) < MAX_TEMP_BITMAP_BITS ? 
+        I->max_bitmap = pbfont->dir->ccache.upper + (pbfont->dir->ccache.upper >> 1) < MAX_TEMP_BITMAP_BITS ? 
                       pbfont->dir->ccache.upper + (pbfont->dir->ccache.upper >> 1) : MAX_TEMP_BITMAP_BITS;
+    }
+    
     /* Compute the scale : */
     if (!SHOW_IS(penum, TEXT_DO_NONE) && !I->use_outline) {
         gs_currentcharmatrix(igs, NULL, 1); /* make char_tm valid */
@@ -2647,9 +2651,7 @@ retry_oversampling:
      * to the native GS font renderer without a deep analyzis.
      */
     
-    in_cachedevice = igs->in_cachedevice;
-    switch_back = false;
-    if (in_cachedevice == CACHE_DEVICE_CACHING) {
+    if (igs->in_cachedevice == CACHE_DEVICE_CACHING) {
         sbwp = sbw;
     }
     else {
@@ -2665,7 +2667,6 @@ retry_oversampling:
             * we need to prevent it being made again....
             */
             igs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
-            switch_back = true;
         }
     }
     
@@ -2677,9 +2678,7 @@ retry_oversampling:
         code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
                            NULL, sbw + 2, &char_bbox,
                            fapi_finish_render, &exec_cont, sbwp);
-    
-    if (switch_back) igs->in_cachedevice = in_cachedevice;
-    
+        
     if (code >= 0 && exec_cont != 0)
         code = (*exec_cont)(i_ctx_p);
     if (code != 0) {
