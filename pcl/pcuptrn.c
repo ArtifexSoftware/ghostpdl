@@ -251,16 +251,22 @@ delete_all_pcl_ptrns(
     pcl_pattern_t * pptrn;
     pl_dict_enum_t  denum;
     gs_const_string plkey;
+    pl_dict_t *     pdict[2];
+    int             i;
 
-    pl_dict_enum_begin(&pcs->pcl_patterns, &denum);
-    while (pl_dict_enum_next(&denum, &plkey, (void **)&pptrn)) {
-        if (!tmp_only || (pptrn->ppat_data->storage == pcds_temporary)) {
-            pcl_id_t    key;
+    pdict[0] = &pcs->pcl_patterns; 
+    pdict[1] = &pcs->gl_patterns;
 
-            id_set_key(key, plkey.data);
-            define_pcl_ptrn(pcs, id_value(key), NULL);
-        } else if (renderings)
-            free_pattern_rendering(pcs->memory, pptrn);
+    for (i = 0; i < 2; i++) {
+        pl_dict_enum_begin(pdict[i], &denum);
+        while (pl_dict_enum_next(&denum, &plkey, (void **)&pptrn)) {
+            if (!tmp_only || (pptrn->ppat_data->storage == pcds_temporary)) {
+                pcl_id_t    key;
+                id_set_key(key, plkey.data);
+                define_pcl_ptrn(pcs, id_value(key), NULL);
+            } else if (renderings)
+                free_pattern_rendering(pcs->memory, pptrn);
+        }
     }
 }
 
