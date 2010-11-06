@@ -2509,7 +2509,7 @@ $(GLOBJ)gsicc_manage.$(OBJ) : $(GLSRC)gsicc_manage.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
  $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(gsicc_profilecache_h) $(gserrors_h) $(string__h) $(gxclist_h) $(gxcldev_h)\
- $(gzstate_h) $(gsicc_create_h)
+ $(gzstate_h) $(gsicc_create_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gsicc_manage.$(OBJ) $(C_) $(GLSRC)gsicc_manage.c
 
 $(GLOBJ)gsicc_cache.$(OBJ) : $(GLSRC)gsicc_cache.c $(GX) $(stdpre_h)\

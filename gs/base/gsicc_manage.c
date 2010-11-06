@@ -32,6 +32,7 @@
 #include "gxcldev.h"
 #include "gzstate.h"
 #include "gsicc_create.h"
+#include "gpmisc.h"
 
 #define ICC_HEADER_SIZE 128
 
@@ -716,6 +717,7 @@ int
 gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
 {
     int code;
+    char *pname;
 
     /* See if the device has a profile */
     if (dev->color_info.icc_profile[0] == '\0') {
@@ -746,6 +748,29 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
         code = gsicc_set_device_profile(pgs->icc_manager, dev, pgs->memory);
         return(code);
     } else {
+        /* It is possible that the profile name has not yet been prepended
+           by the ICC directory path when we specify a directory and an output
+           ICC profile.  This (the full path name) is needed later for c-list 
+           processing.  Check and make sure that this is the case.  If not, then
+           prepend it now if there is room. */
+        if (!gp_file_name_is_absolute(dev->color_info.icc_profile,
+            strlen(dev->color_info.icc_profile))) { 
+            if (pgs->icc_manager->profiledir != NULL) {
+                if (strncmp(pgs->icc_manager->profiledir,dev->color_info.icc_profile,
+                    strlen(pgs->icc_manager->profiledir)) != 0) {
+                    if ((strlen(pgs->icc_manager->profiledir) + 
+                        strlen(dev->color_info.icc_profile)) < gp_file_name_sizeof) {
+                        pname = (char *)gs_alloc_bytes(pgs->memory, 
+                                                    strlen(dev->color_info.icc_profile)+1,
+   		                                "gsicc_init_device_profile");
+                        strcpy(pname,dev->color_info.icc_profile);
+                        strcpy(dev->color_info.icc_profile,pgs->icc_manager->profiledir);
+                        strcat(dev->color_info.icc_profile,pname);
+                        gs_free_object(pgs->memory, pname, "gsicc_init_device_profile");
+                    }
+                }
+            }
+        }
         /* Check for cases where the color model has changed */
         if (dev->device_icc_profile->num_comps != 
             dev->color_info.num_components || 

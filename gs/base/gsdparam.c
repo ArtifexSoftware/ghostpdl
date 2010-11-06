@@ -628,18 +628,16 @@ nce:
 	    break;
     }
     }
-
     if (param_read_string(plist, "OutputICCProfile", &icc_pro) != 1) {
-
-        if (icc_pro.size <= gp_file_name_sizeof) {
-            
+        if (icc_pro.size < gp_file_name_sizeof) {
             /* Copy device ICC profile name in the device */
-  	    if (&(dev->color_info.icc_profile[0]) != (char *)(icc_pro.data))
-  	        memcpy(&(dev->color_info.icc_profile[0]), icc_pro.data, icc_pro.size);        
+            if (&(dev->color_info.icc_profile[0]) != (char *)(icc_pro.data)) {
+  	        memcpy(&(dev->color_info.icc_profile[0]), icc_pro.data, icc_pro.size);
+                /* Set last position to NULL. In case of profile reset */
+                dev->color_info.icc_profile[icc_pro.size] = 0;
+            }
         } 
-
     }
-
     if ((code = param_read_bool(plist, (param_name = "UseCIEColor"), &ucc)) < 0) {
 	ecode = code;
 	param_signal_error(plist, param_name, ecode);
