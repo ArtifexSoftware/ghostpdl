@@ -220,20 +220,26 @@ pcl_pattern_get_pcl_uptrn( pcl_state_t *pcs, int id )
 define_pcl_ptrn(
     pcl_state_t *   pcs,
     int             id,
-    pcl_pattern_t * pptrn
+    pcl_pattern_t * pptrn,
+    bool            gl2
 )
 {
     pcl_id_t        key;
+    pl_dict_t *     pd = (gl2 ? &pcs->gl_patterns : &pcs->pcl_patterns);
 
     id_set_value(key, id);
     if (pptrn == 0)
-        pl_dict_undef(&pcs->pcl_patterns, id_key(key), 2);
-    else if (pl_dict_put(&pcs->pcl_patterns, id_key(key), 2, pptrn) < 0)
+        pl_dict_undef(pd, id_key(key), 2);
+    else if (pl_dict_put(pd, id_key(key), 2, pptrn) < 0)
         return e_Memory;
 
-    if (pcs->last_pcl_uptrn_id == id)
-        pcs->plast_pcl_uptrn = pptrn;
-
+    if (gl2) {
+        if (pcs->last_gl2_RF_indx == id)
+            pcs->plast_gl2_uptrn = pptrn;
+    } else { /* pcl pattern */
+        if (pcs->last_pcl_uptrn_id == id)
+            pcs->plast_pcl_uptrn = pptrn;
+    }
     return 0;
 }
 
@@ -263,7 +269,9 @@ delete_all_pcl_ptrns(
             if (!tmp_only || (pptrn->ppat_data->storage == pcds_temporary)) {
                 pcl_id_t    key;
                 id_set_key(key, plkey.data);
-                define_pcl_ptrn(pcs, id_value(key), NULL);
+                define_pcl_ptrn(pcs, id_value(key), NULL, (pdict[i] == &pcs->gl_patterns));
+                /* NB this should be checked - if instead of
+                   else-if? */
             } else if (renderings)
                 free_pattern_rendering(pcs->memory, pptrn);
         }
@@ -405,7 +413,6 @@ download_pcl_pattern(
     int                     xres = 300, yres = 300;
     pcl_pattern_t *         pptrn = 0;
     int                     code = 0;
-    int                     i;
 
     if (count < 8)
 	return e_Range;
@@ -467,7 +474,7 @@ download_pcl_pattern(
 
     /* place the pattern into the pattern dictionary */
     if ( (code < 0)                                            ||
-         ((code = define_pcl_ptrn(pcs, pcs->pattern_id, pptrn)) < 0)  ) {
+         ((code = define_pcl_ptrn(pcs, pcs->pattern_id, pptrn, false)) < 0)  ) {
         if (pptrn != 0)
             pcl_pattern_free_pattern(pcs->memory, pptrn, "download PCL pattern");
         else
@@ -507,7 +514,7 @@ pattern_control(
 
         /* delete last specified pattern */
       case 2:
-        define_pcl_ptrn(pcs, pcs->pattern_id, NULL);
+        define_pcl_ptrn(pcs, pcs->pattern_id, NULL, false);
 
         /* make last specified pattern temporary */
       case 4:
