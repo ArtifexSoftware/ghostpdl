@@ -9,7 +9,7 @@
 MAKEFILE+= ../main/pcl6_gcc.mak
 
 # Pick (uncomment) one font system technology ufst or afs (gs native)
-#PL_SCALER?=ufst
+# PL_SCALER?=ufst
 PL_SCALER?=afs
 
 # define if this is a cygwin system.
@@ -33,7 +33,7 @@ COMMONDIR?=../common
 MAINSRCDIR?=../main
 PSSRCDIR?=../gs/psi
 
-# specify the location of zlib.  We use zlib for bandlist compression.
+# Specify the location of zlib.  We use zlib for bandlist compression.
 ZSRCDIR?=../gs/zlib
 ZGENDIR?=$(GENDIR)
 ZOBJDIR?=$(GENDIR)
@@ -49,14 +49,18 @@ SHARE_LCMS?=0
 
 IMDISRCDIR?=../gs/imdi
 
-# PCL_INCLUDED means pcl + pcl xl
+# PCL_INCLUDED means PCL + PCL XL
 PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED
 
-# Choose COMPILE_INITS=1 for init files and fonts in ROM (otherwise =0)
-COMPILE_INITS?=1
+# Embed the fonts in the executable.
+BUNDLE_FONTS?=1
 
-# PLPLATFORM indicates should be set to 'ps' for language switch
-# builds and null otherwise.
+# This is constant in PCL, XPS and SVG, do not change it.  A ROM file
+# system is always needed for the icc profiles.
+COMPILE_INITS=1
+
+# PLPLATFORM should be set to 'ps' for language switch builds and null
+# otherwise.
 PLPLATFORM?=
 
 # specify the location and setup of the jpeg library.
@@ -75,7 +79,6 @@ AK?=
 
 # specify if banding should be memory or file based, and choose a
 # compression method.
-
 BAND_LIST_STORAGE=memory
 BAND_LIST_COMPRESSOR=zlib
 
@@ -119,56 +122,49 @@ PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
 TOP_OBJ?=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
-# note agfa gives its libraries incompatible names so they cannot be
-# properly found by the linker.  Change the library names to reflect the
-# following (i.e. the if library should be named libif.a
-# NB - this should all be done automatically by choosing the device
-# but it ain't.
-
-# The user is responsible for building the agfa or freetype libs.  We
-# don't overload the makefile with nonsense to build these libraries
-# on the fly. If the artifex font scaler is chosen the makefiles will
-# build the scaler automatically.
-
-# PCL and XL do not need to use the same scaler, but it is necessary to
-# tinker/hack the makefiles to get it to work properly.
-
+# In theory XL and PCL could be built with different font scalers so
+# we provide 2 font scaler variables.
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
-# to compile in the fonts uncomment the following (this option only
-# works with the artifex scaler on a unix platform)
-
 # flags for UFST scaler.
 ifeq ($(PL_SCALER), ufst)
-UFST_ROOT?=../ufst
-UFST_BRIDGE?=1
-UFST_LIB_EXT?=.a
-UFST_LIB?=$(UFST_ROOT)/rts/lib/
-UFST_CFLAGS?=-DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
-UFST_INCLUDES?=-I$(UFST_ROOT)/rts/inc/ -I$(UFST_ROOT)/sys/inc/ -I$(UFST_ROOT)/rts/fco/ -I$(UFST_ROOT)/rts/gray/ -I$(UFST_ROOT)/rts/tt/ -DAGFA_FONT_TABLE
-# fco's are binary (-b), the following is only used if COMPILE_INITS=1
-UFST_ROMFS_ARGS?=-b \
--P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
--P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
--c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+  LONG_BITS := $(shell getconf LONG_BIT)
+  ifeq ($(LONG_BITS), 64)
+       GCCCONF=-DGCCx86_64
+  else
+       GCCCONF=-DGCCx86
+  endif
+  UFST_ROOT?=../ufst
+  UFST_BRIDGE?=1
+  UFST_LIB_EXT?=.a
+  UFST_LIB?=$(UFST_ROOT)/rts/lib/
+  UFST_CFLAGS?=-DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
+  UFST_INCLUDES?=-I$(UFST_ROOT)/rts/inc/ -I$(UFST_ROOT)/sys/inc/ -I$(UFST_ROOT)/rts/fco/ \
+                 -I$(UFST_ROOT)/rts/gray/ -I$(UFST_ROOT)/rts/tt/ -DAGFA_FONT_TABLE
+  # fco's are always bundled in the executable
+  ifeq ($(BUNDLE_FONTS), 1)
+    UFST_ROMFS_ARGS?=-b \
+                     -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+                     -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+                     -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+    UFSTFONTDIR?=%rom%fontdata/
+  else
+    UFSTFONTDIR?=/usr/local/fontdata5.0/
+  endif
+  EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
+endif # PL_SCALER
 
-EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
-ifeq ($(COMPILE_INITS), 0)
-UFSTFONTDIR?=/usr/local/fontdata5.0/
-else
-UFSTFONTDIR?=%rom%fontdata/
-endif
-endif # PL_SCALER = ufst
-
-# flags for artifex scaler
+# Flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
-UFST_BRIDGE?=
-# The mkromfs arguments for including the PCL fonts if COMPILE_INITS=1
-PCLXL_ROMFS_ARGS?= -c -P ../urwfonts -d ttfonts /*.ttf
-XLDFLAGS=
-EXTRALIBS=
-UFST_OBJ=
+  # The mkromfs arguments for including the PCL fonts if BUNDLE_FONTS=1
+  ifeq ($(BUNDLE_FONTS), 1)
+    PCLXL_ROMFS_ARGS?= -c -P ../urwfonts -d ttfonts /*.ttf
+  endif # BUNDLE_FONTS
+
+  XLDFLAGS=
+  EXTRALIBS=
+  UFST_OBJ=
 endif # PL_SCALER = afs
 
 # a 64 bit type is needed for devicen color space/model support but
@@ -225,17 +221,15 @@ FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 # cygwin does not have threads at this time, so we don't include the
 # thread library
 ifeq ($(CYGWIN), TRUE)
-SYNC=nosync
-CFLAGS+=-DHAVE_STDINT_H
-STDLIBS=-lm
-DEVICE_DEVS?=$(DEVICES_DEVS)
-
+  SYNC=nosync
+  CFLAGS+=-DHAVE_STDINT_H
+  STDLIBS=-lm
+  DEVICE_DEVS?=$(DEVICES_DEVS)
 else
-
-SYNC=posync
-# some systems may need -ldl as well as pthread
-STDLIBS=-lm -lpthread -ldl
-DEVICE_DEVS?=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
+  SYNC=posync
+  # some systems may need -ldl as well as pthread
+  STDLIBS=-lm -lpthread -ldl
+  DEVICE_DEVS?=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
 endif
 
 #miscellaneous
