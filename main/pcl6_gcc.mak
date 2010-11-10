@@ -8,11 +8,19 @@
 # Define the name of this makefile.
 MAKEFILE+= ../main/pcl6_gcc.mak
 
+# configuration options freqeuently changed follow.
+
 # Pick (uncomment) one font system technology ufst or afs (gs native)
 # PL_SCALER?=ufst
 PL_SCALER?=afs
 
-# define if this is a cygwin system.
+# if 1 this will build the x11 devices.
+WANT_X11?=1
+
+# Embed the fonts in the executable.
+BUNDLE_FONTS?=1
+
+# define if this is a cygwin system, we should get rid of this.
 CYGWIN?=
 
 # extra cflags
@@ -52,8 +60,6 @@ IMDISRCDIR?=../gs/imdi
 # PCL_INCLUDED means PCL + PCL XL
 PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED
 
-# Embed the fonts in the executable.
-BUNDLE_FONTS?=1
 
 # This is constant in PCL, XPS and SVG, do not change it.  A ROM file
 # system is always needed for the icc profiles.
@@ -206,17 +212,17 @@ DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev
    $(DD)bmpmono.dev $(DD)bmp16m.dev $(DD)bmpsep8.dev \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev \
    $(DD)png16m.dev $(DD)pngmono.dev $(DD)jpeg.dev\
-   $(DD)wtscmyk.dev $(DD)wtsimdi.dev $(DD)imdi.dev\
+   $(DD)wtscmyk.dev $(DD)wtsimdi.dev\
    $(DD)romfs$(COMPILE_INITS).dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
 	     $(DD)gxfapiu$(UFST_BRIDGE).dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
-	     $(DD)gsnogc.dev $(DD)sdctd.dev $(DD)libpng_$(SHARE_LIBPNG).dev\
+	     $(DD)sdctd.dev $(DD)libpng_$(SHARE_LIBPNG).dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev $(DD)psl2lib.dev\
 	     $(DD)cidlib.dev $(DD)psf0lib.dev $(DD)psf1lib.dev $(DD)psf2lib.dev\
-	     $(DD)lzwd.dev
+	     $(DD)lzwd.dev $(DD)sicclib.dev
 
 # cygwin does not have threads at this time, so we don't include the
 # thread library
@@ -224,12 +230,16 @@ ifeq ($(CYGWIN), TRUE)
   SYNC=nosync
   CFLAGS+=-DHAVE_STDINT_H
   STDLIBS=-lm
-  DEVICE_DEVS?=$(DEVICES_DEVS)
 else
   SYNC=posync
   # some systems may need -ldl as well as pthread
   STDLIBS=-lm -lpthread -ldl
+endif
+
+ifeq ($(WANT_X11), 1)
   DEVICE_DEVS?=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
+else
+  DEVICE_DEVS?=$(DEVICES_DEVS)
 endif
 
 #miscellaneous
