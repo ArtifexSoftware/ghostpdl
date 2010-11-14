@@ -596,7 +596,7 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 static void
 current_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    static const char *const rfs = "%rom%iccprofiles/";   /* as good as any other */
+    static const char *const rfs = DEFAULT_DIR_ICC;   /* as good as any other */
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)( (pis->icc_manager->profiledir == NULL) ?

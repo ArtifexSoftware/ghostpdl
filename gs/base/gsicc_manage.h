@@ -29,6 +29,7 @@
 #define SMASK_GRAY_ICC    "ps_gray.icc"
 #define SMASK_RGB_ICC     "ps_rgb.icc"
 #define SMASK_CMYK_ICC    "ps_cmyk.icc"
+#define DEFAULT_DIR_ICC   "%rom%iccprofiles/"
 
 /* Key names for special common canned profiles.
    These are found in some image file formats as

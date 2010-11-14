@@ -700,8 +700,8 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
 
     /* If that fails, try %rom% */
     buffer = (char *) gs_alloc_bytes(mem_gc, 1 + namelen + 
-                        strlen("%rom%iccprofiles/"),"gsicc_open_search");
-    strcpy(buffer, "%rom%iccprofiles/");
+                        strlen(DEFAULT_DIR_ICC),"gsicc_open_search");
+    strcpy(buffer, DEFAULT_DIR_ICC);
     strcat(buffer, pname);
     str = sfopen(buffer, "rb", mem_gc);
     gs_free_object(mem_gc, buffer, "gsicc_open_search");
