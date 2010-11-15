@@ -972,7 +972,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
         int dy;
         int bpp = dev->color_info.depth;
         uint raster = bitmap_raster(width * bpp);
-        unsigned short *psrc_cm, *psrc_cm_start;
+        unsigned short *psrc_cm, *psrc_cm_start = NULL;
         int spp = pss->params.Colors;
         int spp_cm;
         gsicc_bufferdesc_t input_buff_desc;
@@ -984,6 +984,22 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             dy = 1;
         else
             dy = -1, yo--;
+
+        spp_cm = dev->device_icc_profile->num_comps;
+
+        if (!penum->icc_link->is_identity) {
+            psrc_cm_start = (unsigned short *) gs_alloc_bytes(pis->memory,
+                sizeof(unsigned short) * width * spp_cm,
+                "image_render_interpolate_icc");
+            /* Set up the buffer descriptors. */
+            gsicc_init_buffer(&input_buff_desc, spp, 2,
+                          false, false, false, 0, width*spp,
+                          1, width);
+            gsicc_init_buffer(&output_buff_desc, spp_cm, 2,
+                          false, false, false, 0, width * spp_cm,
+                          1, width);
+        }
+
         for (;;) {
             int ry = yo + penum->line_xy * dy;
             int x;
@@ -1007,23 +1023,12 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 if_debug1('B', "[B]Interpolated row %d:\n[B]",
                           penum->line_xy);
                 /* Take care of CM on the entire interpolated row */
-                spp_cm = dev->device_icc_profile->num_comps;
                 if (penum->icc_link->is_identity) {
                     /* Fastest case. No CM needed */
                     psrc_cm = (unsigned short *) psrc;
                 } else {
-                    psrc_cm = (unsigned short *) gs_alloc_bytes(pis->memory,
-                        sizeof(unsigned short) * width * spp_cm,
-                        "image_render_interpolate_icc");
-                    psrc_cm_start = psrc_cm;
-                    /* Set up the buffer descriptors. */
-                    gsicc_init_buffer(&input_buff_desc, spp, 2,
-                                  false, false, false, 0, width*spp,
-                                  1, width);
-                    gsicc_init_buffer(&output_buff_desc, spp_cm, 2,
-                                  false, false, false, 0, width * spp_cm,
-                                  1, width);
                     /* Transform */
+                    psrc_cm = (unsigned short *) psrc_cm_start;
                     gscms_transform_color_buffer(penum->icc_link, &input_buff_desc,
                                                 &output_buff_desc, (void*) psrc,
                                                 (void*) psrc_cm);
