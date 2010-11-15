@@ -47,6 +47,24 @@ intersect_with_positive_quadrant(
     }
 }
 
+/* Presentation mode 3 appears to have the wrong origin, 1 device pixel
+   different than the predicted value, and we have come across files
+   that require the HP bug to work properly.  NB we depend upon the X
+   resolution in this adjustment which might introduce a difficulty
+   with assymetric resolutions. */
+static inline coord
+adjust_pres_mode(pcl_state_t *pcs)
+{
+
+    pcl_xfm_state_t *       pxfmst = &(pcs->xfm_state);
+    pcl_raster_state_t *    prstate = &(pcs->raster_state);
+    floatp                  fcoord = 0.0;
+
+    if (prstate->pres_mode_3 && (pxfmst->lp_orient & 1))
+        fcoord = 1.0 * 7200.0/gs_currentdevice(pcs->pgs)->HWResolution[0];
+    return (coord)(fcoord + 0.5);
+}
+
 /*
  * Get the effective printing region in raster space
  */
@@ -200,7 +218,7 @@ pcl_enter_graphics_mode(
     pcl_invert_mtx(&rst2lp, &lp2rst);
 
     /* convert the current point to raster space */
-    cur_pt.x = (double)pcs->cap.x;
+    cur_pt.x = (double)pcs->cap.x + adjust_pres_mode(pcs);
     cur_pt.y = (double)pcs->cap.y;
     pcl_xfm_to_logical_page_space(pcs, &cur_pt);
     gs_point_transform(cur_pt.x, cur_pt.y, &lp2rst, &cur_pt);
@@ -354,7 +372,7 @@ pcl_end_graphics_mode(
     /* transform the new point back to "pseudo print direction" space */
     pcl_invert_mtx(&(pcs->xfm_state.pd2dev_mtx), &dev2pd);
     gs_point_transform(cur_pt.x, cur_pt.y, &dev2pd, &cur_pt);
-    pcl_set_cap_x(pcs, (coord)(cur_pt.x + 0.5), false, false);
+    pcl_set_cap_x(pcs, (coord)(cur_pt.x + 0.5) - adjust_pres_mode(pcs), false, false);
     return pcl_set_cap_y( pcs,
                           (coord)(cur_pt.y + 0.5) - pcs->margins.top,
                           false,
