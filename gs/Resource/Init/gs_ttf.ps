@@ -1709,13 +1709,25 @@ currentdict /postalias undef
   cmaparray
   dup length 1 add dict begin
   [ 64 { /.notdef /.notdef /.notdef /.notdef } repeat ]
-  exch { % char glyph
-    exch 255 and                    % glyph char
-    dup 16 (01234567) cvrs cvn      % glyph char /char
-    3 1 roll                        % /char glyph char
-    3 index exch                    % /char glyph [] char
-    3 index put                     % /char glyph
-    def                             % -
+  exch {                              % [] char glyph
+    exch
+    dup 255 gt {
+      255 and
+      2 index 1 index get /.notdef ne {
+        pop pop
+        //false
+      } {
+        //true
+      } ifelse
+    } {
+      //true
+    } ifelse {
+      dup 16 (01234567) cvrs cvn      % glyph char /char
+      3 1 roll                        % /char glyph char
+      3 index exch                    % /char glyph [] char
+      3 index put                     % /char glyph
+      def                             % -
+    } if
   } forall
   /.notdef 0 def
   /Encoding exch
