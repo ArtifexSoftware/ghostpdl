@@ -28,6 +28,7 @@
 #include "gdevplnx.h"
 #include "gsmemory.h"
 #include "gsmchunk.h"
+#include "gsmemlok.h"
 #include "gxclthrd.h"
 
 /* Forward reference prototypes */
@@ -43,6 +44,8 @@ clist_setup_render_threads(gx_device *dev, int y)
     gx_device_clist_common *cdev = (gx_device_clist_common *)cldev;
     gx_device_clist_reader *crdev = &cldev->reader;
     gs_memory_t *mem = cdev->bandlist_memory;
+    gs_memory_t *chunk_base_mem = mem;
+    gs_memory_status_t mem_status;
     gx_device *protodev;
     gs_c_param_list paramlist;
     int i, code, band;
@@ -104,6 +107,16 @@ clist_setup_render_threads(gx_device *dev, int y)
                   code);
 	return code;
     }
+ 
+    /* If the 'mem' is not thread safe, we need to wrap it in a locking memory */
+    gs_memory_status(mem, &mem_status);
+    if (mem_status.is_thread_safe == false) {
+        chunk_base_mem = (gs_memory_t *)gs_alloc_bytes(mem, sizeof(gs_memory_locked_t),
+				"clist_setup_render_threads(locked allocator)");
+	if (chunk_base_mem == NULL ||
+		(code = gs_memory_locked_init((gs_memory_locked_t *)chunk_base_mem, mem)) < 0)
+	    return_error(gs_error_VMerror);
+    }
 
     /* Loop creating the devices and semaphores for each thread, then start them */
     for (i=0; (i < crdev->num_render_threads) && (band >= 0) && (band < band_count);
@@ -117,7 +130,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 	 * with the 'base' allocator which has 'mutex' (locking) protection. 
 	 * This improves performance of the threads.
 	 */
-	if ((code = gs_memory_chunk_wrap(&(thread->memory), mem )) < 0) {
+	if ((code = gs_memory_chunk_wrap(&(thread->memory), chunk_base_mem )) < 0) {
 	    emprintf1(mem, "chunk_wrap returned error code: %d\n", code);
 	    break;
 	}
@@ -203,8 +216,14 @@ clist_setup_render_threads(gx_device *dev, int y)
     /* Although a single thread isn't any more efficient, the	*/
     /* machinery still works, so that's OK.			*/
     if (i == 0) {
-	if (crdev->render_threads[0].memory != NULL)
+	if (crdev->render_threads[0].memory != NULL) {
 	    gs_memory_chunk_release(crdev->render_threads[0].memory); 
+	    /* free up the locking wrapper if we allocated one */
+	    if (chunk_base_mem != mem) {
+		gs_memory_locked_release((gs_memory_locked_t *)chunk_base_mem);
+		gs_free_object(mem, chunk_base_mem, "clist_setup_render_threads(locked allocator)");
+	    }
+	}
 	gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
 	crdev->render_threads = NULL;
 	/* restore the file pointers */
@@ -238,7 +257,7 @@ clist_teardown_render_threads(gx_device *dev)
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     gx_device_clist_reader *crdev = &cldev->reader;
-    gs_memory_t *mem = cdev->bandlist_memory;
+    gs_memory_t *mem = cdev->bandlist_memory, *chunk_base_mem;
     int i;
 
     if (crdev->render_threads != NULL) {
@@ -278,6 +297,11 @@ clist_teardown_render_threads(gx_device *dev)
 #endif
 
 	    gs_memory_chunk_release(thread->memory); 
+	}
+	/* free up the locking wrapper if we allocated one */
+	if ((chunk_base_mem = gs_memory_chunk_target(crdev->render_threads[0].memory)) !=  mem) {
+	    gs_memory_locked_release((gs_memory_locked_t *)chunk_base_mem);
+	    gs_free_object(mem, chunk_base_mem, "clist_teardown_render_threads(locked allocator)");
 	}
 	cdev->data = crdev->main_thread_data;	/* restore the pointer for writing */
 	gs_free_object(mem, crdev->render_threads, "clist_teardown_render_threads");

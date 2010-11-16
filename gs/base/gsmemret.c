@@ -349,6 +349,10 @@ static void
 gs_forward_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     DO_FORWARD(target->procs.status(target, pstat));
+    /* Report NOT thread safe even though it _might_ be thread safe if the underlying */
+    /* allocator is thread safe AND the 'recover' proc is thread safe, but we don't   */
+    /* have any info on the recover proc's thread safety.                             */
+    pstat->is_thread_safe = false;
 }
 static void
 gs_forward_enable_free(gs_memory_t * mem, bool enable)

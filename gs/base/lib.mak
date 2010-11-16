@@ -1691,7 +1691,7 @@ clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
 # gxclrect.c requires rop_proc_table, so we need gsroptab here.
 clbase4_=$(GLOBJ)gsroptab.$(OBJ) $(GLOBJ)stream.$(OBJ)
 clpath_=$(GLOBJ)gxclimag.$(OBJ) $(GLOBJ)gxclpath.$(OBJ) $(GLOBJ)gxdhtserial.$(OBJ)
-clthread_=$(GLOBJ)gxclthrd.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ)
+clthread_=$(GLOBJ)gxclthrd.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ)
 clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_) $(clthread_)
 
 # The old code selected one of clmemory, clfile depending on BAND_LIST_STORAGE.

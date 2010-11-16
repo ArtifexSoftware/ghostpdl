@@ -77,9 +77,8 @@ static const gs_memory_procs_t chunk_procs =
 
 typedef struct chunk_obj_node_s {
     struct chunk_obj_node_s *next;
-    uint size;			/* objlist: client size */
-    	/* if freelist: size of block (obj header and client area must fit in block) */
     gs_memory_type_ptr_t type;
+    uint size;			/* objlist: client size */
 #ifdef DEBUG
     unsigned long sequence;
 #endif
@@ -91,7 +90,8 @@ typedef struct chunk_obj_node_s {
  */
 typedef struct chunk_mem_node_s {
     uint size;
-    uint largest_free;		/* quick check when allocating */
+    uint largest_free;			/* quick check when allocating */
+    bool is_multiple_object_chunk;	/* tells us which list this chunk is on */
     struct chunk_mem_node_s *next;
     chunk_obj_node_t *objlist;	/* head of objects in this chunk (no order) */
     chunk_obj_node_t *freelist;		/* free list (ordered) */
@@ -101,10 +101,11 @@ typedef struct chunk_mem_node_s {
 typedef struct gs_memory_chunk_s {
     gs_memory_common;		/* interface outside world sees */
     gs_memory_t *target;	/* base allocator */
-    chunk_mem_node_t *head_chunk;
+    chunk_mem_node_t *head_mo_chunk;	/* head of multiple object chunks */
+    chunk_mem_node_t *head_so_chunk;	/* head of single object chunks */
+    unsigned long used;
 #ifdef DEBUG
     unsigned long sequence_counter;
-    unsigned long used;
     unsigned long max_used;
 #endif
 } gs_memory_chunk_t;
@@ -131,10 +132,11 @@ gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
     cmem->gs_lib_ctx = non_gc_target->gs_lib_ctx;
     cmem->non_gc_memory = (gs_memory_t *)cmem;	/* and are not subject to GC */
     cmem->target = non_gc_target;
-    cmem->head_chunk = NULL;
+    cmem->head_mo_chunk = NULL;
+    cmem->head_so_chunk = NULL;
+    cmem->used = 0;
 #ifdef DEBUG
     cmem->sequence_counter = 0;
-    cmem->used = 0;
     cmem->max_used = 0;
 #endif
 
@@ -168,22 +170,26 @@ void
 gs_memory_chunk_dump_memory(const gs_memory_t *mem)
 {
     gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
-    chunk_mem_node_t *head = cmem->head_chunk;
+    chunk_mem_node_t *head = cmem->head_mo_chunk;	/* dump multiple object chunks first */
     chunk_mem_node_t *current;
     chunk_mem_node_t *next;
+    int i;
 
     dprintf2("chunk_dump_memory: current used=%d, max_used=%d\n", cmem->used, cmem->max_used);
-    current = head;
-    while ( current != NULL ) { 
-	if (current->objlist != NULL) {
-	    chunk_obj_node_t *obj;
+    for (i=0; i<2; i++) {
+	current = head;
+	while ( current != NULL ) { 
+	    if (current->objlist != NULL) {
+		chunk_obj_node_t *obj;
 
-	    for (obj= current->objlist; obj != NULL; obj=obj->next) 
-		dprintf4("chunk_mem leak, obj=0x%lx, size=%d, type=%s, sequence#=%ld\n",
-			(ulong)obj, obj->size, obj->type->sname, obj->sequence);
+		for (obj= current->objlist; obj != NULL; obj=obj->next) 
+		    dprintf4("chunk_mem leak, obj=0x%lx, size=%d, type=%s, sequence#=%ld\n",
+			    (ulong)obj, obj->size, obj->type->sname, obj->sequence);
+	    }
+	    next = current->next; 
+	    current = next;
 	}
-	next = current->next; 
-	current = next;
+	head = cmem->head_so_chunk;	/* switch to single object chunk list */
     }
 }
 #endif
@@ -199,18 +205,23 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
 static void
 chunk_mem_node_free_all_remaining(gs_memory_chunk_t *cmem)
 {
-    chunk_mem_node_t *head = cmem->head_chunk;
+    chunk_mem_node_t *head = cmem->head_so_chunk;	/* Free multiple object chunk nodes first */
     gs_memory_t * const target = cmem->target;
     chunk_mem_node_t *current;
     chunk_mem_node_t *next;
+    int i;
 
-    current = head;
-    while ( current != NULL ) { 
-	next = current->next; 
-	gs_free_object(target, current, "chunk_mem_node_remove");
-	current = next;
+    for (i=0; i<2; i++) {
+	current = head;
+	while ( current != NULL ) { 
+	    next = current->next; 
+	    gs_free_object(target, current, "chunk_mem_node_remove");
+	    current = next;
+	}
+	cmem->head_mo_chunk = NULL;
+	head = cmem->head_so_chunk;	/* switch to single object chunk list */
     }
-    cmem->head_chunk = NULL;
+    cmem->head_so_chunk = NULL;
 }
 
 static void
@@ -255,26 +266,27 @@ round_up_to_align(uint size)
 
 /* return -1 on error, 0 on success */
 static int 
-chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, chunk_mem_node_t **newchunk)
+chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_object_chunk,
+			chunk_mem_node_t **newchunk)
 {
-    chunk_mem_node_t *node, *prev_node;
+    chunk_mem_node_t *node;
     gs_memory_t *target = cmem->target;
     /* Allocate enough for the chunk header, and the size_needed */
     /* The size needed already includes the object header from caller */
     /* and is already rounded up to the obj_node_t sized elements */
     uint chunk_size = size_needed + sizeof(chunk_mem_node_t);
-    bool is_multiple_object_node = false;
 
-    /* Objects > half the default chunk size get their own chunk */
-    if ( ! IS_SINGLE_OBJ_SIZE(chunk_size)) {
+    /* caller tells us whether or not to use a single object chunk */
+    if (is_multiple_object_chunk && (chunk_size < MULTIPLE_OBJ_CHUNK_SIZE)) {
 	chunk_size = MULTIPLE_OBJ_CHUNK_SIZE;	/* the size for collections of objects */
-	is_multiple_object_node = true;
-    }
+	is_multiple_object_chunk = true;
+    } else
+	is_multiple_object_chunk = false;
 
     *newchunk = NULL;
     node = (chunk_mem_node_t *)gs_alloc_bytes_immovable(target, chunk_size, "chunk_mem_node_add");
-#ifdef DEBUG
     cmem->used += chunk_size;
+#ifdef DEBUG
     if (cmem->used > cmem->max_used)
 	cmem->max_used = cmem->used;
 #endif
@@ -282,34 +294,30 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, chunk_mem_node_t *
         return -1;
     node->size = chunk_size;	/* how much we allocated */
     node->largest_free = chunk_size - sizeof(chunk_mem_node_t);
+    node->is_multiple_object_chunk = is_multiple_object_chunk;
     node->objlist = NULL;
     node->freelist = (chunk_obj_node_t *)((byte *)(node) + sizeof(chunk_mem_node_t));
     node->freelist->next = NULL;
     node->freelist->size = node->largest_free;
 
-    prev_node = NULL;
-    if (!is_multiple_object_node) {
-        chunk_mem_node_t *scan_node;
-
-	/* Scan past chunks that are collections of smaller chunks */
-	/* This allows the most frequently accessed chunks to be near the head */
-	for (scan_node = cmem->head_chunk; scan_node != NULL; scan_node = scan_node->next) {
-	    if (scan_node->size != MULTIPLE_OBJ_CHUNK_SIZE)
-		break;
-	    prev_node = scan_node;
-	}
-    }
-    if (prev_node == NULL) {
-	if (cmem->head_chunk == NULL) {
-	    cmem->head_chunk = node;
+    /* Put the node at the head of the list (so=single object, mo=multiple object) */
+    /* only multiple objects will be have any room in them */
+    if (is_multiple_object_chunk) {
+	if (cmem->head_mo_chunk == NULL) {
+	    cmem->head_mo_chunk = node;
 	    node->next = NULL;
 	} else {
-	    node->next = cmem->head_chunk;
-	    cmem->head_chunk = node;
+	    node->next = cmem->head_mo_chunk;
+	    cmem->head_mo_chunk = node;
 	}
     } else {
-	node->next = prev_node->next;
-	prev_node->next = node;
+	if (cmem->head_so_chunk == NULL) {
+	    cmem->head_so_chunk = node;
+ 	    node->next = NULL;
+	} else {
+	    node->next = cmem->head_so_chunk;
+	    cmem->head_so_chunk = node;
+	}
     }
 
     *newchunk = node;	    /* return the chunk we just allocated */
@@ -319,19 +327,22 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, chunk_mem_node_t *
 static int        
 chunk_mem_node_remove(gs_memory_chunk_t *cmem, chunk_mem_node_t *addr)
 {
-    chunk_mem_node_t *head = cmem->head_chunk;
+    chunk_mem_node_t **p_head = addr->is_multiple_object_chunk ?
+		&(cmem->head_mo_chunk) : &(cmem->head_so_chunk);
+    chunk_mem_node_t *head = *p_head;
     gs_memory_t * const target = cmem->target;
+ 
+    cmem->used -= addr->size;
+#ifdef DEBUG
+#endif
 
     /* check the head first */
     if (head == NULL) {
         dprintf("FAIL - no nodes to be removed\n" );
         return -1;
     }
-#ifdef DEBUG
-    cmem->used -= addr->size;
-#endif
     if (head == addr) {
-        cmem->head_chunk = head->next;
+        *p_head = head->next;
 	gs_free_object(target, head, "chunk_mem_node_remove");
     } else {
 	chunk_mem_node_t *current;
@@ -359,23 +370,27 @@ static byte *
 chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t cname)
 {
     gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
-    chunk_mem_node_t *head = cmem->head_chunk;
+    chunk_mem_node_t *head = cmem->head_mo_chunk;	/* we only scan chunks with space in them */
     uint newsize, free_size;
     chunk_obj_node_t *newobj = NULL;
     chunk_obj_node_t *free_obj, *prev_free, *new_free;
-    chunk_mem_node_t *current;
-    bool rescan_free_list;
+    chunk_mem_node_t *current = NULL;
+    bool rescan_free_list = false;
+    bool is_multiple_object_size;
 
     newsize = round_up_to_align(size + sizeof(chunk_obj_node_t));	/* space we will need */
+    is_multiple_object_size = ! IS_SINGLE_OBJ_SIZE(newsize);
     
-    /* Search the chunks for one with a large enough free area */
-    for (current = head; current != NULL; current = current->next) {
-	if ( current->largest_free >= newsize) 
-	    break;
+    if ( is_multiple_object_size ) {
+	/* Search the multiple object chunks for one with a large enough free area */
+	for (current = head; current != NULL; current = current->next) {
+	    if ( current->largest_free >= newsize) 
+		break;
+	}
     }
     if (current == NULL) {
-	/* No chunks with enough space, allocate one */
-	if (chunk_mem_node_add(cmem, newsize, &current) < 0) {
+	/* No chunks with enough space or size makes this a single object, allocate one */
+	if (chunk_mem_node_add(cmem, newsize, is_multiple_object_size, &current) < 0) {
 #ifdef DEBUG
 	if (gs_debug_c('a'))
 	    dlprintf1("[a+]chunk_obj_alloc(chunk_mem_node_add)(%u) Failed.\n", size);
@@ -399,7 +414,7 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     }
 
     /* If this free object's size == largest_free, we'll have to re-scan */
-    rescan_free_list = free_obj->size == current->largest_free;
+    rescan_free_list = current->is_multiple_object_chunk && free_obj->size == current->largest_free;
 
     /* Make an object in the free_obj we found above, reducing it's size */
     /* and adjusting the free list preserving alignment	*/
@@ -552,14 +567,45 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	if ( finalize != NULL )
 	    finalize(ptr);
 
+	/* finalize may change the head_**_chunk doing free of stuff */
+	current = IS_SINGLE_OBJ_SIZE(freed_size) ?
+					cmem->head_so_chunk : cmem->head_mo_chunk;
 	/* Find the chunk containing this object */
-	for (current = cmem->head_chunk; current != NULL; current = current->next) {
+	for ( ; current != NULL; current = current->next) {
 	    if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size))
 		break;
 	}
 	if (current == NULL) {
-	    /* Object not found in any chunk */
-	    dprintf1("chunk_free_obj failed, object 0x%lx not in any chunk\n", ((ulong)obj));
+	    /* We _may_have searched the wrong list -- if so find out. */
+	    current = cmem->head_so_chunk;
+	    /* Find the chunk containing this object */
+	    for ( ; current != NULL; current = current->next) {
+		if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size)) {
+		    dprintf1("chunk_free_obj: OOPS! found it on the single_object list, size=%d\n",
+				obj->size);
+		    break;
+		}
+	    }
+	    if (current == NULL) {
+		current = cmem->head_mo_chunk;
+		/* Find the chunk containing this object */
+		for ( ; current != NULL; current = current->next) {
+		    if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size)) {
+			dprintf1("chunk_free_obj: OOPS! found it on the multiple_object list, size=%d\n",
+				obj->size);
+			break;
+		    }
+		}
+	    }
+	    if (current == NULL) {
+		/* Object not found in any chunk */
+		dprintf2("chunk_free_obj failed, object 0x%lx not in any chunk, size=%d\n", ((ulong)obj), obj->size);
+		return;
+	    }
+	}
+	/* For large objects, they were given their own chunk -- just remove the node */
+	if (IS_SINGLE_OBJ_SIZE(freed_size)) {
+	    chunk_mem_node_remove(cmem, current);
 	    return;
 	}
 
@@ -679,6 +725,21 @@ chunk_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 static void
 chunk_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
+    gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
+    chunk_mem_node_t *current = cmem->head_mo_chunk;	/* we only scan chunks with space in them */
+    chunk_obj_node_t *free_obj;		/* free list object node */
+    int tot_free = 0;
+
+    pstat->allocated = cmem->used;
+    /* Scan all chunks for free space to calculate the actual amount 'used' */
+    for ( ; current != NULL; current = current->next) {
+	for (free_obj = current->freelist; free_obj != NULL; free_obj=free_obj->next) 
+	    tot_free += free_obj->size;
+    }
+    pstat->used = cmem->used - tot_free;
+
+    pstat->is_thread_safe = false;	/* this allocator does not have an internal mutex */
+
 }
 
 static gs_memory_t *

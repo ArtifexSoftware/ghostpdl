@@ -416,6 +416,7 @@ gs_heap_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 
     pstat->allocated = mmem->used + heap_available();
     pstat->used = mmem->used;
+    pstat->is_thread_safe = true;	/* this allocator has a mutex (monitor) and IS thread safe */
 }
 static void
 gs_heap_enable_free(gs_memory_t * mem, bool enable)

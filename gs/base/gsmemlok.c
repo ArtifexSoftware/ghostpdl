@@ -381,6 +381,7 @@ gs_locked_status(gs_memory_t * mem, gs_memory_status_t * pstat)
     DO_MONITORED(
 		 (*lmem->target->procs.status)(lmem->target, pstat)
 		 );
+    pstat->is_thread_safe = true;	/* the monitor (mutex) makes this thread safe */
 }
 static void
 gs_locked_enable_free(gs_memory_t * mem, bool enable)
