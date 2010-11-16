@@ -1150,13 +1150,12 @@ void _cmsComputePrelinearizationTablesFromXFORM(cmsHTRANSFORM h[], int nTransfor
         if (!HasProperEndpoints(Trans[t]))
                     lIsSuitable = FALSE;
 
-        /*
+        
         // Exclude if transfer function is not smooth enough
         // to be modelled as a gamma function, or the gamma is reversed
-        
-        if (cmsEstimateGamma(Trans[t]) < 1.0)
+        if (cmsEstimateGamma(Trans[t]) == -1.0)
                     lIsSuitable = FALSE;
-        */
+        
               
     }
 

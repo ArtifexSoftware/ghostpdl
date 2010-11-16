@@ -47,6 +47,7 @@
 void gsicc_profile_reference(cmm_profile_t *icc_profile, int delta);
 int gsicc_getsrc_channel_count(cmm_profile_t *icc_profile);
 int gsicc_init_iccmanager(gs_state * pgs);
+int gsicc_init_gs_colors(gs_state *pgs);
 void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data, 
                               cmm_profile_t *iccprofile);
 int gsicc_init_device_profile(const gs_state *pgs, gx_device * dev);

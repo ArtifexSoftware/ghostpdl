@@ -579,6 +579,13 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
     gs_memory_t *mem = pis->memory;
+    bool not_initialized;
+
+    /* Detect if this is our first time in here.  If so, then we need to 
+       reset up the default gray color spaces that are in the graphic state
+       to be ICC based.  It was not possible to do it until after we get
+       the profile */
+    not_initialized = (pis->icc_manager->default_gray == NULL);
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
 	   		     "set_default_gray_icc");
@@ -590,7 +597,14 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
         "set_default_gray_icc");
     if (code < 0)
         return gs_rethrow(code, "cannot find default gray icc profile");
-    return(code);
+    /* if this is our first time in here then we need to properly install the
+       color spaces that were initialized in the graphic state at this time */
+    if (not_initialized) {
+        code = gsicc_init_gs_colors((gs_state*) pis);
+    }
+    if (code < 0)
+        return gs_rethrow(code, "error initializing gstate color spaces to icc");
+    return code;
 }
 
 static void

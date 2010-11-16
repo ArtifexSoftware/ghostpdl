@@ -991,6 +991,36 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     }
 }
 
+/* We are just starting up.  We need to set the initial color space in the
+   graphic state at this time */
+int
+gsicc_init_gs_colors(gs_state *pgs)
+{
+    int             code = 0;
+    gs_color_space  *cs_old;
+    gs_color_space  *cs_new;
+    int k;
+
+    if (pgs->in_cachedevice)
+	return_error(gs_error_undefined);
+    
+    for (k = 0; k < 2; k++) {
+        /* First do color space 0 */
+        cs_old = pgs->color[k].color_space;
+        cs_new = gs_cspace_new_DeviceGray(pgs->memory);
+        rc_increment_cs(cs_new);
+        pgs->color[k].color_space = cs_new;
+        if ( (code = cs_new->type->install_cspace(cs_new, pgs)) < 0 ) {
+            pgs->color[k].color_space = cs_old;
+            rc_decrement_only_cs(cs_new, "gsicc_init_gs_colors");
+            return code;
+        } else {
+            rc_decrement_only_cs(cs_old, "gsicc_init_gs_colors");
+        }
+    }
+    return code;
+}
+
 int
 gsicc_init_iccmanager(gs_state * pgs)
 {
@@ -1007,7 +1037,7 @@ gsicc_init_iccmanager(gs_state * pgs)
         if (code < 0)
             return gs_rethrow(code, "cannot find default icc profile");
     }
-    return(0);
+    return 0;
 }
 
 gsicc_manager_t *
