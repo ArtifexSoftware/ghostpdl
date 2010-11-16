@@ -27,6 +27,7 @@
 #include "gdevpdtw.h"
 #include "gdevpdtt.h"
 #include "gdevpdfo.h"
+#include "gxchar.h"	/* For gs_show_enum */
 
 /* ---------------- Private ---------------- */
 
@@ -266,7 +267,7 @@ pdf_attach_charproc(gx_device_pdf * pdev, pdf_font_resource_t *pdfont, pdf_char_
     }
     if (!pdfont->u.simple.s.type3.bitmap_font) {
 	for (pcpo = pdfont->u.simple.s.type3.char_procs; pcpo != NULL; pcpo = pcpo->char_next) {
-	    if (!bytes_compare(pcpo->char_name.data, pcpo->char_name.size, gnstr->data, gnstr->size)) {
+	    if (gnstr && pcpo->char_name.size && !bytes_compare(pcpo->char_name.data, pcpo->char_name.size, gnstr->data, gnstr->size)) {
 		duplicate_char_name = true;
 		break;
 	    }
@@ -306,14 +307,78 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
     pdf_resource_t *pres;
     pdf_char_proc_t *pcp;
     int code;
+    gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
+    pdf_encoding_element_t *pet = 0;
+    uint operation = show_enum->text.operation;
+    int regular_op;
 
-    char_code = assign_char_code(pdev, pdev->pte);
-    font = pbfs->open_font; /* Type 3 */
+    /* This code added to store PCL bitmap glyphs in type 3 fonts where possible
+     * Since this is for text searching, its only useful if the character code
+     * lies in an ASCII range, so we only handle some kinds of text layout.
+     */
+    regular_op = (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES));
+    /* Check to see the current font is a type 3. We can get here if pdfwrite decides
+     * it can't handle a font type, and renders to a bitmap instead. If that's the
+     * case then we can't add the glyph to the existing font and must fall back
+     * to holding it in our fallback type 3 font.
+     */
+    if (show_enum->current_font->FontType == ft_user_defined && regular_op) {
+	pdf_char_proc_ownership_t *pcpo;
+	gs_glyph glyph;
+
+	gs_font_base *base = (gs_font_base *)show_enum->current_font;
+	code = pdf_attached_font_resource(pdev, show_enum->current_font, &font, NULL, NULL, NULL, NULL);
+
+	show_enum->index--;
+	code = gs_default_next_char_glyph((gs_text_enum_t *)show_enum, (gs_char *)&char_code, &glyph);
+	pet = &font->u.simple.Encoding[char_code];
+	/* We need a glyph name for the type 3 font's Encoding, if we haven't got one
+	 * then we need to give up.
+	 */
+	if (pet->glyph != GS_NO_GLYPH && !(pet->str.size == 7 && !strncmp((const char *)pet->str.data, ".notdef", 7))) {
+	    if (char_code < font->u.simple.FirstChar)
+		font->u.simple.FirstChar = char_code;
+	    if (char_code > font->u.simple.LastChar)
+		font->u.simple.LastChar = char_code;
+	    font->Widths[char_code] = w;
+	    base->FontBBox.q.x = max(base->FontBBox.q.x, w);
+	    base->FontBBox.q.y = max(base->FontBBox.q.y, y_offset + h);
+	    /* Check to see if we *already* have this glyph in this font. If 
+	     * we do it means the glyph cache was flushed, and the glyph re-used
+	     * afterwards. In this case we don't need to create a new CharProc
+	     * we can just use the existing one.
+	     */
+	    for (pcpo = font->u.simple.s.type3.char_procs; pcpo != NULL; pcpo = pcpo->char_next) {
+		if (pcpo->glyph == pet->glyph && pcpo->char_code == char_code) {
+		    /* If we do have a match, return the owner as the CharProc so
+		     * that other routines cna use it.
+		     */
+		    *ppcp = (pdf_char_proc_t *)pcpo;
+		    return 1;
+		}
+	    }
+	    if (show_enum->index < show_enum->text.size)
+		show_enum->index++;
+	} else {
+	    char_code = assign_char_code(pdev, pdev->pte);
+	    font = pbfs->open_font; /* Type 3 */
+	}
+    } else {
+	char_code = assign_char_code(pdev, pdev->pte);
+	font = pbfs->open_font; /* Type 3 */
+    }
     code = pdf_begin_resource(pdev, resourceCharProc, id, &pres);
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *) pres;
-    code = pdf_attach_charproc(pdev, font, pcp, GS_NO_GLYPH, char_code, NULL);
+    if (show_enum->current_font->FontType == 3 && regular_op) {
+	code = pdf_attach_charproc(pdev, font, pcp, pet->glyph, char_code, (const gs_const_string *)&pet->str);
+	if (!pcp->owner_fonts) {
+	    pdf_end_resource(pdev);
+	}
+    } else {
+	code = pdf_attach_charproc(pdev, font, pcp, GS_NO_GLYPH, char_code, NULL);
+    }
     if (code < 0)
 	return code;
     pres->object->written = true;
@@ -395,15 +460,30 @@ pdf_mark_glyph_names(const pdf_font_resource_t *pdfont, const gs_memory_t *memor
 /* Put out a reference to an image as a character in a synthesized font. */
 int
 pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
-		  const gs_matrix * pimat)
+		  const gs_matrix * pimat, int was_skipping)
 {
     /* We need to choose a font, which use the charproc.
        In most cases it is the last font, which the charproc is attached to.
        If the charproc is substituted, it causes a font change. */
-    const pdf_char_proc_ownership_t * pcpo = pcp->owner_fonts;
-    pdf_font_resource_t *pdfont = pcpo->font;
-    byte ch = pcpo->char_code;
+    const pdf_char_proc_ownership_t * pcpo = 0;
+    pdf_font_resource_t *pdfont;
+    byte ch;
     pdf_text_state_values_t values;
+
+    /* was_skipping is set if the CharProc already existed. If this happens
+     * then pcp is actually set to pcpo (the pointer to the existing CharProc
+     * 'owner') in pdf_begin_char_proc, this just straightens out the assignment.
+     */
+    if (was_skipping)
+	pcpo = (pdf_char_proc_ownership_t *)pcp;
+    else
+	pcpo = pcp->owner_fonts;
+
+    /* These two assignments have been deferred until after we figure out the
+     * CharProc owner above.
+     */
+    pdfont = pcpo->font;
+    ch = pcpo->char_code;
 
     values.character_spacing = 0;
     values.pdfont = pdfont;

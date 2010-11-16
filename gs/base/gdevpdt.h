@@ -96,6 +96,6 @@ int pdf_end_char_proc(gx_device_pdf * pdev,
 
 /* Put out a reference to an image as a character in an embedded font. */
 int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
-		      const gs_matrix * pimat);	/* gdevpdti.h */
+		      const gs_matrix * pimat, int was_skipping);	/* gdevpdti.h */
 
 #endif /* gdevpdt_INCLUDED */

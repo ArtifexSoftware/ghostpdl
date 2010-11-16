@@ -139,6 +139,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
 		double width;
 		int x_offset, y_offset;
+    int was_cached = 0;
 
     /* Update clipping. */
     if (pdf_must_put_clip_path(pdev, pcpath)) {
@@ -179,6 +180,17 @@ pdf_copy_mono(gx_device_pdf *pdev,
 					   &pcp, &ipos);
 		if (code < 0)
 		    return code;
+		pres = (pdf_resource_t *) pcp;
+		/* Bitmap glyphs can be flushed from the cache and reused. If
+		 * that happens we get called again. If we already have a copy
+		 * of the bitmap we don't want another one, so we skip the
+		 * creation of the CharProc and just use the stored glyph.
+		 */
+		if (code > 0) {
+		    was_cached = 1;
+		    goto rx;
+		}
+
 		y_offset = -y_offset;
 		width = psdf_round(pdev->char_width.x, 100, 10); /* See 
 			pdf_write_Widths about rounding. We need to provide 
@@ -191,7 +203,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true);
 		if (code < 0)
 		    return code;
-		pres = (pdf_resource_t *) pcp;
 		goto wr;
 	    } else if (pdev->pte) {
 		/* We're under pdf_text_process. It set a high level color. */
@@ -347,7 +358,10 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	imat.xy /= h;
 	imat.yx /= w;
 	imat.yy /= h;
-	return pdf_do_char_image(pdev, (const pdf_char_proc_t *)pres, &imat);
+	/* If we had cached the glyph previously, pdf_do_char_image needs to treat
+	 * the CharProc as the CharProc owner. So we need to pass that in here.
+	 */
+	return pdf_do_char_image(pdev, (const pdf_char_proc_t *)pres, &imat, was_cached);
     }
 }
 int
