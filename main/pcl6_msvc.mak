@@ -4,6 +4,26 @@
 # Define the name of this makefile.
 MAKEFILE=$(MAKEFILE) ..\main\pcl6_msvc.mak
 
+# Frequently changed configuration options follow:
+
+# Pick (uncomment) one font system technology
+# ufst - Agfa universal font scaler.
+# afs  - Artifex font scaler (gs native).
+!ifndef PL_SCALER
+#PL_SCALER=ufst
+PL_SCALER=afs
+!endif
+
+# Embed the fonts in the executable by default
+!ifndef BUNDLE_FONTS
+BUNDLE_FONTS=1
+!endif
+
+# extra cflags
+!ifndef XCFLAGS
+XCFLAGS=
+!endif
+
 # The build process will put all of its output in this directory:
 !ifndef GENDIR
 !if "$(DEBUG)"=="1"
@@ -17,11 +37,11 @@ GENDIR=.\obj
 !ifndef GLSRCDIR
 GLSRCDIR=..\gs\base
 !endif
-!ifndef PLSRCDIR
-PLSRCDIR=..\pl
-!endif
 !ifndef PCLSRCDIR
 PCLSRCDIR=..\pcl
+!endif
+!ifndef PLSRCDIR
+PLSRCDIR=..\pl
 !endif
 !ifndef PXLSRCDIR
 PXLSRCDIR=..\pxl
@@ -32,55 +52,91 @@ ICCSRCDIR=..\gs\icclib
 !ifndef COMMONDIR
 COMMONDIR=..\common
 !endif
-!ifndef JSRCDIR
-JSRCDIR=..\gs\jpeg
+
+# Specify the location of zlib.  We use zlib for bandlist compression.
+!ifndef ZSRCDIR
+ZSRCDIR=..\gs\zlib
 !endif
+!ifndef ZGENDIR
+ZGENDIR=$(GENDIR)
+!endif
+!ifndef ZOBJDIR
+ZOBJDIR=$(GENDIR)
+!endif
+!ifndef SHARE_ZLIB
+SHARE_ZLIB=0
+!endif
+
+# Specify the location of libpng.
 !ifndef PNGSRCDIR
 PNGSRCDIR=..\gs\libpng
 !endif
+!ifndef PNGCCFLAGS
+PNGCCFLAGS=-DPNG_USER_MEM_SUPPORTED
+!endif
+!ifndef SHARE_LIBPNG
+SHARE_LIBPNG=0
+!endif
+
+# Specify the location of lcms
+!ifndef LCMSSRCDIR
+LCMSSRCDIR=..\gs\lcms
+!endif
+
+# Specify the location of imdi
+!ifndef IMDISRCDIR
+IMDISRCDIR=..\gs\imdi
+!endif
+
+# PCL_INCLUDED means pcl + pcl xl
+!ifndef PDL_INCLUDE_FLAGS
+PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
+!endif
+
+# This is constant in PCL, XPS and SVG, do not change it. A ROM file
+# system us always needed for the icc profiles.
+COMPILE_INITS=1
+
+# PLPLATFORM should be set to 'ps' for language switch builds and null
+# otherwise.
+!ifndef PLPLATFORM
+PLPLATFORM=
+!endif
+
+# specify the location and setup of the jpeg library.
+!ifndef JSRCDIR
+JSRCDIR=..\gs\jpeg
+!endif
+!ifndef JGENDIR
+JGENDIR=$(GENDIR)
+!endif
+!ifndef JOBJDIR
+JOBJDIR=$(GENDIR)
+!endif
+
+# specify the location and setup of the tiff library
 !ifndef TIFFSRCDIR
 TIFFSRCDIR=..\gs\tiff
 TIFFCONFIG_SUFFIX=.vc
 TIFFPLATFORM=win32
 !endif
-!ifndef ZSRCDIR
-ZSRCDIR=..\gs\zlib
+
+# specify if banding should be memory or file based, and choose a
+# compression method
+!ifndef BAND_LIST_STORAGE
+BAND_LIST_STORAGE=memory
 !endif
-!ifndef ICCSRCDIR
-ICCSRCDIR=..\gs\icclib
+!ifndef BAND_LIST_COMPRESSOR
+BAND_LIST_COMPRESSOR=zlib
 !endif
 
-!ifndef SHARE_ZLIB
-SHARE_ZLIB=0
-!endif
-
-!ifndef SHARE_LIBPNG
-SHARE_LIBPNG=0
-!endif
-
-!ifndef IMDISRCDIR
-IMDISRCDIR=..\gs\imdi
-!endif
-
-!ifndef LCMSSRCDIR
-LCMSSRCDIR=..\gs\lcms
-!endif
-
-!ifndef COMPILE_INITS
-COMPILE_INITS=1
-!endif
-
-# PLPLATFORM indicates should be set to 'ps' for language switch
-# builds and null otherwise.
-!ifndef PLPLATFORM
-PLPLATFORM=
-!endif
 
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
 !ifndef GLGENDIR
 GLGENDIR=$(GENDIR)
 !endif
+
 !ifndef GLOBJDIR
 GLOBJDIR=$(GENDIR)
 !endif
@@ -109,22 +165,6 @@ PXLGENDIR=$(GENDIR)
 PXLOBJDIR=$(GENDIR)
 !endif
 
-!ifndef JGENDIR
-JGENDIR=$(GENDIR)
-!endif
-
-!ifndef JOBJDIR
-JOBJDIR=$(GENDIR)
-!endif
-
-!ifndef ZGENDIR
-ZGENDIR=$(GENDIR)
-!endif
-
-!ifndef ZOBJDIR
-ZOBJDIR=$(GENDIR)
-!endif
-
 !ifndef DD
 DD=$(GLGENDIR)
 !endif
@@ -149,47 +189,15 @@ SVGOBJDIR=$(GENDIR)
 SBRDIR=$(GENDIR)
 !endif
 
+# Language and configuration.  These are actually platform-independent,
+# but we define them here just to keep all parameters in one place.
+!ifndef TARGET_DEVS
+TARGET_DEVS=$(PXLOBJDIR)\pjl.dev $(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
+!endif
+
 # Executable path\name w/o the .EXE extension
 !ifndef TARGET_XE
 TARGET_XE=$(GENDIR)\pcl6
-!endif
-
-# Debugging options
-!ifndef DEBUG
-DEBUG=0
-!endif
-!ifndef TDEBUG
-TDEBUG=0
-!endif
-!ifndef DEBUGSYM
-DEBUGSYM=0
-!endif
-
-!ifndef NOPRIVATE
-NOPRIVATE=0
-!endif
-
-# Banding options
-!ifndef BAND_LIST_STORAGE
-BAND_LIST_STORAGE=memory
-!endif
-!ifndef BAND_LIST_COMPRESSOR
-BAND_LIST_COMPRESSOR=zlib
-!endif
-
-# Target options
-!ifndef CPU_TYPE
-CPU_TYPE=586
-!endif
-
-# Default major version of MSVC to use;
-# this should generally be the latest version.
-!ifndef MSVC_VERSION
-MSVC_VERSION=9
-!endif
-
-!ifndef D
-D=\\
 !endif
 
 # Main file's name
@@ -210,49 +218,12 @@ PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
 !ifndef PSI_TOP_OBJ
 PSI_TOP_OBJ=
 !endif
-
-# PCL_INCLUDED means pcl + pcl xl
-!ifndef PDL_INCLUDE_FLAGS
-PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
-!endif
-
-!ifdef XPS_INCLUDED
-!ifndef XPS_TOP_OBJ
-XPS_TOP_OBJ=$(XPSOBJDIR)/xpstop.$(OBJ)
-XCFLAGS=/DXPS_INCLUDED
-!endif
-!endif
-
-!ifdef SVG_INCLUDED
-!ifndef SVG_TOP_OBJ
-SVG_TOP_OBJ=$(SVGOBJDIR)/svgtop.$(OBJ)
-XCFLAGS=$(XCFLAGS) /DSVG_INCLUDED
-!endif
-!endif
-
-!ifdef WIN64
-XCFLAGS=$(XCFLAGS) /DWIN64
-!endif
-
-XCFLAGS=$(XCFLAGS) $(PDL_INCLUDE_FLAGS)
-
 !ifndef TOP_OBJ
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(SVG_TOP_OBJ)
 !endif
 
-!ifdef SBR
-SBRFLAGS="/FR$(SBRDIR)\ "
-!endif
-
-# Pick a font system technology.  PCL and XL do not need to use the
-# same scaler, but it is necessary to tinker with pl.mak to get it
-# to work properly.
-# ufst - Agfa universal font scaler.
-# afs  - Artifex font scaler.
-!ifndef PL_SCALER
-PL_SCALER=afs
-#PL_SCALER=ufst
-!endif
+# In theory XL and PCL could be build with different font scalers so
+# we provide two different font scaler variables
 !ifndef PCL_FONT_SCALER
 PCL_FONT_SCALER=$(PL_SCALER)
 !endif
@@ -260,40 +231,53 @@ PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 !endif
 
-# specify agfa library locations and includes.  This is ignored
-# if the current scaler is not the AGFA ufst.
+# flags for UFST scaler.
+!if "$(PL_SCALER)" == "ufst"
+
 !ifndef UFST_ROOT
 UFST_ROOT=..\ufst
 !endif
-!ifndef UFST_LIB
-UFST_LIB=$(UFST_ROOT)\rts\lib
+
+UFST_BRIDGE=1
+
+!ifndef UFST_LIB_EXT
+UFST_LIB_EXT=.lib
 !endif
 
-!if "$(PL_SCALER)" == "ufst"
-# fco's are binary (-b), the following is only used if COMPILE_INITS=1
+!ifndef UFST_LIB
+UFST_LIB=$(UFST_ROOT)\rts\lib\
+!endif
+
+!ifndef UFST_CFLAGS
+UFST_CFLAGS= -DUFST_BRIDGE=$(UFST_BRIDGE) -DUFST_LIB_EXT=$(UFST_LIB_EXT) -DMSVC -DUFST_ROOT=$(UFST_ROOT)
+!endif
+
+!ifndef UFST_INCLUDES
+UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DAGFA_FONT_TABLE
+!endif
+
+!if "$(BUNDLE_FONTS)" == "1"
+
 !ifndef UFST_ROMFS_ARGS
 UFST_ROMFS_ARGS=-b \
 -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
 -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
 -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
 !endif
-
-UFST_BRIDGE=1
-
-!ifndef UFST_INCLUDES
-UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DAGFA_FONT_TABLE
+!ifndef UFSTFONTDIR
+UFSTFONTDIR=%rom%fontdata/
 !endif
 
-!ifndef UFST_CFLAGS
-UFST_CFLAGS= -DUFST_BRIDGE=$(UFST_BRIDGE) -DUFST_LIB_EXT=.lib -DMSVC -DUFST_ROOT=$(UFST_ROOT)
+!else
+
+!ifndef UFSTFONTDIR
+UFSTFONTDIR=/usr/local/fontdata5.0/
+!endif
+
 !endif
 
 !ifndef EXTRALIBS
 EXTRALIBS= $(UFST_LIB)if_lib.lib $(UFST_LIB)fco_lib.lib $(UFST_LIB)tt_lib.lib $(UFST_LIB)if_lib.lib
-!endif
-
-!ifndef UFSTFONTDIR
-UFSTFONTDIR=/usr/local/fontdata5.0/
 !endif
 
 !endif
@@ -316,14 +300,58 @@ PCLXL_ROMFS_ARGS= -c -P ../urwfonts -d ttfonts /*.ttf
 GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long"
 !endif
 
-!ifdef XPS_INCLUDED
-EXTRALIBS=$(EXPATLIB)
+# Debugging options
+!ifndef DEBUG
+DEBUG=0
+!endif
+!ifndef TDEBUG
+TDEBUG=0
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=0
 !endif
 
-# Language and configuration.  These are actually platform-independent,
-# but we define them here just to keep all parameters in one place.
-!ifndef TARGET_DEVS
-TARGET_DEVS=$(PXLOBJDIR)\pjl.dev $(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
+!ifndef NOPRIVATE
+NOPRIVATE=0
+!endif
+
+# Target options
+!ifndef CPU_TYPE
+CPU_TYPE=586
+!endif
+
+# Default major version of MSVC to use;
+# this should generally be the latest version.
+!ifndef MSVC_VERSION
+MSVC_VERSION=9
+!endif
+
+!ifndef D
+D=\\
+!endif
+
+!ifdef XPS_INCLUDED
+!ifndef XPS_TOP_OBJ
+XPS_TOP_OBJ=$(XPSOBJDIR)/xpstop.$(OBJ)
+XCFLAGS=$(XCFLAGS) /DXPS_INCLUDED
+!endif
+!endif
+
+!ifdef SVG_INCLUDED
+!ifndef SVG_TOP_OBJ
+SVG_TOP_OBJ=$(SVGOBJDIR)/svgtop.$(OBJ)
+XCFLAGS=$(XCFLAGS) /DSVG_INCLUDED
+!endif
+!endif
+
+!ifdef WIN64
+XCFLAGS=$(XCFLAGS) /DWIN64
+!endif
+
+XCFLAGS=$(XCFLAGS) $(PDL_INCLUDE_FLAGS)
+
+!ifdef SBR
+SBRFLAGS="/FR$(SBRDIR)\ "
 !endif
 
 !ifdef XPS_INCLUDED
@@ -342,11 +370,11 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
  $(DD)\pbmraw.dev $(DD)\pgmraw.dev $(DD)\ppmraw.dev $(DD)\pkmraw.dev\
  $(DD)\pxlmono.dev $(DD)\pxlcolor.dev\
  $(DD)\tiffcrle.dev $(DD)\tiffg3.dev $(DD)\tiffg32d.dev $(DD)\tiffg4.dev\
- $(DD)\tifflzw.dev $(DD)\tiffpack.dev\
+ $(DD)\tifflzw.dev $(DD)\tiffpack.dev $(DD)\tiffgray.dev $(DD)\tiffscaled.dev \
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev $(DD)\tiffscaled.dev \
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\jpeg.dev \
  $(DD)\pswrite.dev $(DD)\pdfwrite.dev \
- $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev $(DD)\imdi.dev
+ $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev
 !endif
 
 # GS options
@@ -374,8 +402,8 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
 		  $(DD)\psf0lib.dev   \
                   $(DD)\sdctd.dev     \
                   $(DD)\psf2lib.dev   \
-	          $(DD)\lzwd.dev \
-	          $(DD)\gsnogc.dev
+	          $(DD)\lzwd.dev      \
+	          $(DD)\sicclib.dev
 !endif
 
 

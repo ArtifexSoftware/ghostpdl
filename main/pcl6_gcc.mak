@@ -8,9 +8,11 @@
 # Define the name of this makefile.
 MAKEFILE+= ../main/pcl6_gcc.mak
 
-# configuration options freqeuently changed follow.
+# Frequently changed configuration options follow:
 
-# Pick (uncomment) one font system technology ufst or afs (gs native)
+# Pick (uncomment) one font system technology
+# ufst - Agfa universal font scaler.
+# afs  - Artifex font scaler (gs native).
 # PL_SCALER?=ufst
 PL_SCALER?=afs
 
@@ -29,13 +31,12 @@ XCFLAGS?=
 # The build process will put all of its output in this directory:
 GENDIR?=./obj
 PGGENDIR?=./pgobj
+
 # The sources are taken from these directories:
 GLSRCDIR?=../gs/base
 PCLSRCDIR?=../pcl
 PLSRCDIR?=../pl
 PXLSRCDIR?=../pxl
-XPSSRCDIR?=../xps
-SVGSRCDIR?=../svg
 ICCSRCDIR?=../gs/icclib
 COMMONDIR?=../common
 MAINSRCDIR?=../main
@@ -46,20 +47,22 @@ ZSRCDIR?=../gs/zlib
 ZGENDIR?=$(GENDIR)
 ZOBJDIR?=$(GENDIR)
 SHARE_ZLIB?=0
-SHARE_LIBPNG?=0
 
+# Specify the location of libpng.
 PNGSRCDIR?=../gs/libpng
 # only relevant if not shared
 PNGCCFLAGS?=-DPNG_USER_MEM_SUPPORTED
+SHARE_LIBPNG?=0
 
+# Specify the location of lcms
 LCMSSRCDIR?=../gs/lcms
 SHARE_LCMS?=0
 
+# Specify the location of imdi
 IMDISRCDIR?=../gs/imdi
 
 # PCL_INCLUDED means PCL + PCL XL
 PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED
-
 
 # This is constant in PCL, XPS and SVG, do not change it.  A ROM file
 # system is always needed for the icc profiles.
@@ -112,15 +115,15 @@ GLOBJDIR?=$(GENDIR)
 PLGENDIR?=$(GENDIR)
 PLOBJDIR?=$(GENDIR)
 PXLGENDIR?=$(GENDIR)
-PCLGENDIR?=$(GENDIR)
-XPSGENDIR?=$(GENDIR)
-SVGGENDIR?=$(GENDIR)
 PXLOBJDIR?=$(GENDIR)
+PCLGENDIR?=$(GENDIR)
 PCLOBJDIR?=$(GENDIR)
+XPSGENDIR?=$(GENDIR)
 XPSOBJDIR?=$(GENDIR)
+SVGGENDIR?=$(GENDIR)
 SVGOBJDIR?=$(GENDIR)
 
-TARGET_DEVS?=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev 
+TARGET_DEVS?=$(PXLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev 
 TARGET_XE?=$(GENDIR)/pcl6
 TARGET_LIB?=$(GENDIR)/pcl6.a
 MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
