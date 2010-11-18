@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $previousValues=50;
 
-my $verbose=1;
+my $verbose=0;
 
 my %current;
 my %archiveCache;

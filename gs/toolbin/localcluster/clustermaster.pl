@@ -25,10 +25,14 @@ my $jobsPerRequest=250;
 
 my %machines;
 
+#these are the machines that have a known version of gcc and are therefore one that can run the warnings check job
+my %gccMachines=('i7'=>1,'x6'=>1,'miles'=>1,'kilometers'=>1);
+
 
 my $footer="";
 
 open (LOG,">>clustermaster.log");
+open (DBG,">>clustermaster.dbg");
 
 sub mylog($) {
   my $d=`date`;
@@ -36,7 +40,17 @@ sub mylog($) {
   my $s=shift;
   chomp $s;
   print LOG "$d: $s\n";
+  print DBG "$d: $s\n";
 }
+
+sub mydbg($) {
+  my $d=`date`;
+  chomp $d;
+  my $s=shift;
+  chomp $s;
+  print DBG "$d: $s\n";
+}
+
 
 sub updateStatus($) {
   my $s=shift;
@@ -56,7 +70,7 @@ sub updateNodeStatus($$) {
 }
 
 sub removeQueue {
-  mylog "removing top element from queue\n";
+  mydbg "removing top element from queue\n";
   open(LOCK,">$lock") || die "can't write to $lock";
   flock(LOCK,LOCK_EX);
   if (open(F,"<$queue")) {
@@ -83,7 +97,7 @@ sub abortAll ($) {
 mylog "aborting all machines: $reason\n";
   my $startTime=time;
   foreach my $m (keys %machines) {
-mylog "touching $m.abort\n";
+mydbg "touching $m.abort\n";
     `touch $m.abort`;
     updateNodeStatus($m,"Aborting run");
   }
@@ -95,7 +109,7 @@ mylog "touching $m.abort\n";
       if (-e "$m.abort") {
         $done=0;
       } else {
-        mylog "$m.abort removed\n" if (!exists $doneTable{$m});
+        mydbg "$m.abort removed\n" if (!exists $doneTable{$m});
         $doneTable{$m}=1;
       }
     }
@@ -112,7 +126,7 @@ mylog "touching $m.abort\n";
 
 sub checkAbort {
   if (-e "abort.job") {
-mylog "abort.job found\n";
+mydbg "abort.job found\n";
     alarm 0;
     unlink "abort.job";
     updateStatus "Aborting current job";
@@ -123,6 +137,7 @@ mylog "abort.job found\n";
     updateStatus "Last job aborted";
     unlink $runningSemaphore;
     close LOG;
+    close DBG;
     exit;
   }
 }
@@ -153,12 +168,14 @@ sub checkPID {
   sleep 300;
   unlink $runningSemaphore;
   close LOG;
+  close DBG;
   exit;
 }
 
     my %lastTransfer;
     my %sent;
     my $doneCount=0;
+    my %pauseSent;
     my @jobs;
     my $abort=0;
     my $tempDone=0;
@@ -168,6 +185,7 @@ sub checkProblem {
       foreach my $m (keys %machines) {
         if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxTouchTime) {
           mylog "machine $m hasn't updated $m.up in $maxTouchTime seconds, assuming it went down\n";
+          %pauseSent=();
           delete $lastTransfer{$m} if (exists $lastTransfer{$m});
           delete $machines{$m} if (exists $machines{$m});
           if (scalar keys %lastTransfer) {
@@ -175,14 +193,14 @@ sub checkProblem {
             unlink "$m.start";  # so it does connect later and try to run jobs
             updateNodeStatus($m,"went down, re-running jobs on remaining nodes");
             if (exists $sent{$m}) {
-              mylog "1: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
-              @jobs=(@jobs,@{$sent{$m}});
+              mydbg "1: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
+              @jobs=(@{$sent{$m}},@jobs);
             } else {
-              mylog "1: $m queue empty, nothing to add back in\n";
+              mydbg "1: $m queue empty, nothing to add back in\n";
             }
           } else {
             $doneCount=scalar keys %machines;
-            mylog "1: setting doneCount to $doneCount\n";
+            mydbg "1: setting doneCount to $doneCount\n";
             $abort=1;
           }
         }
@@ -190,6 +208,7 @@ sub checkProblem {
       foreach my $m (keys %lastTransfer) {
         if (time-$lastTransfer{$m}>=$maxTransferTime) {
           mylog "machine $m hasn't connected in ".(time-$lastTransfer{$m})." seconds, assuming it went down\n";
+          %pauseSent=();
           unlink "$m.start";  # so it does connect later and try to run jobs
           delete $lastTransfer{$m} if (exists $lastTransfer{$m});
           delete $machines{$m} if (exists $machines{$m});
@@ -197,14 +216,14 @@ sub checkProblem {
             `touch $m.abort`;
             updateNodeStatus($m,"went down, re-running jobs on remaining nodes");
             if (exists $sent{$m}) {
-              mylog "2: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
-              @jobs=(@jobs,@{$sent{$m}});
+              mydbg "2: adding jobs from $m back into queue: ".scalar(@{$sent{$m}})."\n";
+              @jobs=(@{$sent{$m}},@jobs);
             } else {
-              mylog "2: $m queue empty, nothing to add back in\n";
+              mydbg "2: $m queue empty, nothing to add back in\n";
             }
           } else {
             $doneCount=scalar keys %machines;
-            mylog "2: setting doneCount to $doneCount\n";
+            mydbg "2: setting doneCount to $doneCount\n";
             unlink "$m.up";
             $abort=1;
           }
@@ -216,7 +235,7 @@ sub checkProblem {
         if (-e "$m.done" && exists $lastTransfer{$m}) {
           unlink "$m.start";  # so it does connect later and try to run jobs
           if (-e "$m.fail") {
-            mylog "both $m.done and $m.fail are set, ignoring $m.done\n";
+            mydbg "both $m.done and $m.fail are set, ignoring $m.done\n";
           } else {
             mylog "$m is reporting done even though it should not be done\n";
             delete $lastTransfer{$m} if (exists $lastTransfer{$m});
@@ -226,7 +245,7 @@ sub checkProblem {
           }
         }
         if (-e "$m.fail") {
-          mylog "$m.fail is set\n";
+          mydbg "$m.fail is set\n";
           $failOccured=1;
         }
       }
@@ -262,7 +281,7 @@ sub checkProblem {
     chomp $t;
 #   print "grep '$s' returned: $t\n";
     if (length($t)==0) {
-      mylog "  grep '$s' returns no match, adding to queue\n";
+      mydbg "  grep '$s' returns no match, adding to queue\n";
       open(F,">>$queue");
       print F "$s\n";
       close(F);
@@ -292,7 +311,7 @@ if (0) {
     chomp $t;
 #   print "grep '$s' returned: $t\n";
     if (length($t)==0) {
-      mylog "grep '$s' returns no match, adding to queue\n";
+      mydbg "grep '$s' returns no match, adding to queue\n";
       open(F,">>$queue");
       print F "$s\n";
       close(F);
@@ -315,7 +334,7 @@ if (0) {
     chomp $t;
 #   print "grep '$s' returned: $t\n";
     if (length($t)==0) {
-      mylog "grep '$s' returns no match, adding to queue\n";
+      mydbg "grep '$s' returns no match, adding to queue\n";
       open(F,">>$queue");
       print F "$s\n";
       close(F);
@@ -359,7 +378,7 @@ if (0) {
     $options="" if (!$options);
     if ($product) {
       $product =~ s/ +$//;
-      mylog "  user $product\n";
+      mydbg "  user $product\n";
       open(LOCK,">$lock") || die "can't write to $lock";
       flock(LOCK,LOCK_EX);
       if ($product =~  m/abort$/) {
@@ -375,7 +394,7 @@ mylog "  abort for user $user\n";
                 push @a,$_ 
               } else {
                 if ($first) {
-mylog "  setting 'abort.job'\n";
+mydbg "  setting 'abort.job'\n";
                   `touch abort.job`;
                 }
               }
@@ -393,17 +412,17 @@ mylog "  setting 'abort.job'\n";
         my $s="user $product";
         my $t=`grep "$s" $queue`;
         chomp $t;
-        mylog "  grep '$s' returned: $t\n";
+        mydbg "  grep '$s' returned: $t\n";
         if (length($t)==0) {
-          mylog "  grep '$s' returns no match, adding to queue\n";
+          mydbg "  grep '$s' returns no match, adding to queue\n";
           open(F,">>$queue");
           print F "$s $options\n";
           close(F);
-          mylog "  running: find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u\n";
+          mydbg "  running: find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u\n";
           `find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u`;
-          mylog "  running: find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u\n";
+          mydbg "  running: find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u\n";
           `find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u`;
-          mylog "  running: chmod -R +xr $usersDir/$user/ghostpdl\n";
+          mydbg "  running: chmod -R +xr $usersDir/$user/ghostpdl\n";
           `chmod -R +xr $usersDir/$user/ghostpdl`;
         }
         close(LOCK);
@@ -423,6 +442,7 @@ if (open(F,"<$runningSemaphore")) {
     sleep 300;
     unlink $runningSemaphore;
     close LOG;
+    close DBG;
     exit;
   }
   my $fileTime = stat($runningSemaphore)->mtime;
@@ -436,12 +456,14 @@ if (open(F,"<$runningSemaphore")) {
     sleep 300;
     unlink $runningSemaphore;
     close LOG;
+    close DBG;
     exit;   # we pause and then exit here since we have to wait until the current clustermaster realizes we've removed the semaphore
   }
   chomp $pid;
   my $running=`ps -p $pid`;
   if ($running =~ m/clustermaster/) {
     close LOG;
+    close DBG;
     exit;
   } else {
     mylog "process $pid no longer running, removing semaphore\n";
@@ -452,6 +474,7 @@ if (open(F,"<$runningSemaphore")) {
     sleep 300;
     unlink $runningSemaphore;
     close LOG;
+    close DBG;
     exit;
   }
 }
@@ -549,6 +572,7 @@ if (!$regression) {
   checkPID();
   unlink $runningSemaphore;
   close LOG;
+  close DBG;
   exit;
 }
 
@@ -562,7 +586,8 @@ my $userName="";
 my $rev;
 
 if ($regression =~ m/svn (\d+)/) {
-  mylog "found svn regression in queue: $regression\n";
+  print DBG "\n";
+  mydbg "found svn regression in queue: $regression";
   $normalRegression=1;
   $rev=$1;
 
@@ -573,8 +598,12 @@ if ($regression =~ m/svn (\d+)/) {
 
   my $a=`svn update ghostpdl -r$rev --ignore-externals`;
   my $b=`svn update ghostpdl/gs -r$rev`;
-  mylog "svn update ghostpdl -r$rev --ignore-externals\n" if ($verbose);
-  mylog "svn update ghostpdl/gs -r$rev\n" if ($verbose);
+  mydbg "svn update ghostpdl -r$rev --ignore-externals\n" if ($verbose);
+  mydbg "svn update ghostpdl/gs -r$rev\n" if ($verbose);
+
+  $footer.="------------------------------------------------------------------------\n";
+  $footer.=`svn log ghostpdl -r$rev | tail -n +2`;
+  $footer.=`svn log ghostpdl/gs -r$rev | tail -n +2`;
 
   $footer.="\nChanged files:\n";
   $a.=$b;
@@ -593,19 +622,20 @@ if ($regression =~ m/svn (\d+)/) {
         my $t=$1;
         $t="gs/$1" if ($t =~ m|gs/(.+?)/|);
         if (exists $rules{$t}) {
-          mylog "$s: $rules{$t}\n";
+          mydbg "$s: $rules{$t}\n";
           $set|=$rules{$t};
         } else {
-          mylog "$s ($t): missing, testing all\n";
+          mydbg "$s ($t): missing, testing all\n";
           $set|=$allTests;
         }
       } else {
-        mylog "unknown commit: testing all\n";
+        mydbg "unknown commit: testing all\n";
         $set|=$allTests;
       }
     }
   }
   $set|=$tests{'ls'} if ($set>0);  # we test the language_switch build if anything has changed
+
 
 # print "$set\n";
   foreach my $i (sort keys %tests) {
@@ -616,7 +646,7 @@ if ($regression =~ m/svn (\d+)/) {
   $product =~ s/  / /g; # get rid of extra space left by previous line
   # $product="gs pcl xps svg ls";
 
-  mylog "products: $product\n";
+  mydbg "products: $product\n";
 
   $footer.="\nProducts tested: $product\n\n";
 
@@ -624,24 +654,27 @@ if ($regression =~ m/svn (\d+)/) {
 # un-update the source so that if the regression fails were are back to the where we started
     `svn update ghostpdl -r$currentRev1 --ignore-externals`;
     `svn update ghostpdl/gs -r$currentRev2`;
-    mylog "svn update ghostpdl -r$currentRev1 --ignore-externals\n";
-    mylog "svn update ghostpdl/gs -r$currentRev2\n";
+    mydbg "svn update ghostpdl -r$currentRev1 --ignore-externals\n";
+    mydbg "svn update ghostpdl/gs -r$currentRev2\n";
   } else {
-    mylog "no interesting files changed, skipping regression\n";
+    mydbg "no interesting files changed, skipping regression\n";
     $normalRegression=0;
   }
 
 } elsif ($regression=~/user (.+)/) {
-  mylog "found user regression in queue: $regression\n";
+  print DBG "\n";
+  mydbg "found user regression in queue: $regression";
   $userRegression=$1;
 } elsif (0 && $regression=~/svn-icc_work (.+)/) {
-  mylog "found icc_work regression in queue: $regression\n";
+  print DBG "\n";
+  mydbg "found icc_work regression in queue: $regression";
   $icc_workRegression=1;
   $rev=$1;
   $product="gs pcl xps ls";
   $footer.="icc_work regression: $rev\n\nProducts tested: $product\n\n";
 } elsif ($regression=~/mupdf/) {
-  mylog "found mupdf entry in $queue\n";
+  print DBG "\n";
+  mydbg "found mupdf entry in $queue";
   my $cmd="touch mupdf.tar.gz ; rm mupdf.tar.gz ; tar cvf mupdf.tar --exclude=_darcs mupdf ; gzip mupdf.tar";
   `$cmd`;
   $cmd="cd mupdf ; darcs changes --count";
@@ -650,10 +683,12 @@ if ($regression =~ m/svn (\d+)/) {
 $mupdfRegression=1;
   $product="mupdf";
 } elsif ($regression=~/updatebaseline/) {
-  mylog "found updatebaseline in regression: $regression\n";
+  print DBG "\n";
+  mydbg "found updatebaseline in regression: $regression";
   $updateBaseline=1;
 } else {
-  mylog "found unknown entry in $queue, removing.\n";
+  print DBG "\n";
+  mydbg "found unknown entry in $queue, removing";
 }
 
 $product =~ s/\s+$//;
@@ -662,7 +697,7 @@ $userRegression =~ s/\s+$//;
 if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $updateBaseline==1 || $icc_workRegression==1) {
 
   if ($userRegression ne "") {
-    mylog "running: $userRegression\n" if ($verbose);
+    mydbg "running: $userRegression\n" if ($verbose);
   }
 
   if ($normalRegression) {
@@ -684,11 +719,11 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
   }
 
   if ($updateBaseline) {
-    mylog "running: updateBaseline\n" if ($verbose);
+    mydbg "running: updateBaseline\n" if ($verbose);
   }
 
   my @machines = <*.up>;
-  mylog "@machines\n" if ($verbose);
+  mydbg "@machines\n" if ($verbose);
   foreach (@machines) {
 #   print "$_\n";
 #   my $t=time-stat("$_")->ctime;
@@ -704,10 +739,10 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
     delete $machines{$_} if (stat("$_.down"));
   }
 
-# mylog Dumper(\%machines) if ($verbose);
+# mydbg Dumper(\%machines) if ($verbose);
   if ($verbose) {
     foreach (sort keys %machines) {
-      mylog("  $_\n");
+      mydbg("  $_\n");
     }
   }
 
@@ -719,7 +754,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
   $abort=0;
   do {
 
-    mylog "running with ".(scalar keys %machines)." machines\n" if ($verbose);
+    mydbg "running with ".(scalar keys %machines)." machines\n" if ($verbose);
 
     if (scalar keys %machines<=2) {
       sleep 600;
@@ -745,7 +780,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
         $options="" if (!$options);
 #       print "userName=$userName product=$product options=$options\n"; exit;
       }
-      mylog "userName=$userName product=$product options=$options\n" if ($verbose);
+      mydbg "userName=$userName product=$product options=$options\n" if ($verbose);
       my $t=`date +\"%D %H:%M:%S\"`;
       chomp $t;
       $footer="\n\nUser regression: user $userName  options $product $options start $t\n";
@@ -760,6 +795,7 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       mylog "build.pl $product failed\n";
       unlink $runningSemaphore;
       close LOG;
+      close DBG;
       exit;
     }
 
@@ -787,16 +823,16 @@ if ($bmpcmp) {
           close(F2);
           $product=$gs.$pcl.$xps.$ls;
         }
-mylog "done checking jobs, product=$product\n";
+mydbg "done checking jobs, product=$product\n";
         `touch bmpcmp.tmp ; rm -fr bmpcmp.tmp ; mv bmpcmp bmpcmp.tmp ; mkdir bmpcmp ; rm -fr bmpcmp.tmp &`;
 }
 
     checkPID();
     foreach (keys %machines) {
-      mylog "unlinking $_.done\n" if ($verbose);
-      mylog "unlinking $_.fail\n" if ($verbose);
-      mylog "unlinking $_.abort\n" if ($verbose);
-      mylog "writing $_.start\n" if ($verbose);
+      mydbg "unlinking $_.done\n" if ($verbose);
+      mydbg "unlinking $_.fail\n" if ($verbose);
+      mydbg "unlinking $_.abort\n" if ($verbose);
+      mydbg "writing $_.start\n" if ($verbose);
       unlink("$_.done");
       unlink("$_.fail");
       unlink("$_.abort");
@@ -809,6 +845,7 @@ mylog "done checking jobs, product=$product\n";
             abortAll("found $_.start");
             unlink $runningSemaphore;
             close LOG;
+            close DBG;
             exit;
       }
       open(F,">$_.start");
@@ -847,11 +884,11 @@ mylog "done checking jobs, product=$product\n";
     %doneTime=();
     $abort=0;
     $startTime=time;
-    mylog "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
-#   mylog Dumper(\%machines) if ($verbose);
+    mydbg "".(scalar(keys %doneTime))." ".(scalar (keys %machines))."\n" if ($verbose);
+#   mydbg Dumper(\%machines) if ($verbose);
     if ($verbose) {
       foreach (sort keys %machines) {
-        mylog("  $_\n");
+        mydbg("  $_\n");
       }
     }
 
@@ -915,7 +952,13 @@ mylog "done checking jobs, product=$product\n";
           my $t=<$client>;
           chomp $t;
           if (!exists $lastTransfer{$t}) {
-            mylog "received connection from unexpected client $t (".($client->peerhost)."); sending done\n";
+            if ($client->peerhost) {
+              $client->peerhost =~ s/\r/ - /g;
+              $client->peerhost =~ s/\n/ - /g;
+              mylog "received connection from unexpected client $t (".($client->peerhost)."); sending done\n";
+            } else {
+              mylog "received connection from unexpected client $t; sending done\n";
+            }
             print $client "done\n";
             unlink "$t.start";
           } elsif (-e "$t.start") {
@@ -931,31 +974,48 @@ mylog "done checking jobs, product=$product\n";
             sleep 300;
             unlink $runningSemaphore;
             close LOG;
+            close DBG;
             exit;
           } else {
-          mylog "Connect from $t (".$client->peerhost.") (".(time-$lastTransfer{$t})." seconds); jobs remaining ".scalar(@jobs)."\n";
+          mydbg "Connect from $t (".$client->peerhost.") (".(time-$lastTransfer{$t})." seconds); jobs remaining ".scalar(@jobs)."\n";
           $lastTransfer{$t}=time;
-          if (scalar(@jobs)==0) {
+          if (scalar(@jobs)==0 && scalar keys %pauseSent<scalar keys %machines) {
+            $pauseSent{$t}=1;
+            print $client "pause\n" if (scalar keys %pauseSent<scalar keys %machines);
+            mydbg "sending pause: ".(scalar keys %pauseSent)." out of ".(scalar keys %machines)."\n";
+            mydbg "sending pause skipped\n" if (!(scalar keys %pauseSent<scalar keys %machines));
+          } 
+          if (scalar(@jobs)==0 && scalar keys %pauseSent==scalar keys %machines) {
             print $client "done\n";
             $doneCount++;
             delete $lastTransfer{$t};
-            mylog "sending done: $doneCount\n";
+            mydbg "sending done: $doneCount\n";
             if ($doneCount==scalar keys %machines) {
               $tempDone=1 ;
-              mylog "setting tempDone to 1\n";
+              mydbg "setting tempDone to 1\n";
+            }
+          } else {
+            $jobsPerRequest=250;
+            $jobsPerRequest= 50 if (scalar(@jobs)<2000);
+            $jobsPerRequest= 10 if ($bmpcmp);
+            my $gccJob;
+            for (my $i=0;  $i<$jobsPerRequest && scalar(@jobs);  $i++) {
+              my $a=shift @jobs;
+              if ($a =~ m/gs_build/ && !exists $gccMachines{$t}) {
+                mydbg "machine $t requested jobs but was not sent gs_build\n";
+                $gccJob=$a;
+                $i--;
+              } else {
+                mydbg "machine $t sent gs_build\n" if ($a =~ m/gs_build/);
+                print $client $a;
+                push @{$sent{$t}},$a;
+              }
+            }
+            unshift @jobs,$gccJob if ($gccJob && scalar(@jobs)>0);  # put gccjob back into the queue if it didn't get sent and there are some jobs remaining in the queue (if it's the only job remaining it's likely there aren't any machines available to process the job, so just skip it)
             }
           }
-          $jobsPerRequest=250;
-          $jobsPerRequest= 50 if (scalar(@jobs)<2000);
-          $jobsPerRequest= 10 if ($bmpcmp);
-          for (my $i=0;  $i<$jobsPerRequest && scalar(@jobs);  $i++) {
-            my $a=shift @jobs;
-            print $client $a;
-            push @{$sent{$t}},$a;
-          }
-          }
-          mylog "Connect finished; jobs remaining ".scalar(@jobs)."\n";
-          mylog "not connectecd\n" if (!$client->connected);
+          mydbg "Connect finished; jobs remaining ".scalar(@jobs)."\n";
+          mydbg "not connected\n" if (!$client->connected);
           close $client;
 
           my $percentage=int(($totalJobs-scalar(@jobs))/$totalJobs*100+0.5);
@@ -980,20 +1040,20 @@ mylog "done checking jobs, product=$product\n";
       alarm 0;  # avoid race condition
 
       if ($@) {
-        mylog "no connections, checking done status\n";
+        mydbg "no connections, checking done status\n";
       }
       checkProblem;
       checkPID();
 
       if ($doneCount==scalar keys %machines) {
         $tempDone=1 ;
-        mylog "all machines are done, setting tempDone to 1\n";
+        mydbg "all machines are done, setting tempDone to 1\n";
       }
 
       if ($failOccured) {
         $tempDone=1;
         $abort=0;
-        mylog "fail occured, setting tempDone to 1 and abort to 0\n";
+        mydbg "fail occured, setting tempDone to 1 and abort to 0\n";
         my $startTime=time;
         my $count=0;
         my %tempMachines=%machines;
@@ -1017,7 +1077,7 @@ mylog "done checking jobs, product=$product\n";
 
     }
 
-    mylog "all machines sent done, some machine went down, or one or more failed\n";
+    mydbg "all machines sent done, some machine went down, or one or more failed\n";
     if ($abort) {
       abortAll("all machines sent done, some machine went down, or one or more failed");
     }
@@ -1026,6 +1086,9 @@ mylog "done checking jobs, product=$product\n";
 
     while(!$abort && scalar(keys %doneTime) < scalar(keys %machines)) {
       checkPID();
+      if (((time-$machineSentDoneTime) % 10)==0) {
+        mydbg "time: ".(time)."  machineSentDoneTime: $machineSentDoneTime  diff: ".(time-$machineSentDoneTime)."  maxTransferTime: $maxTransferTime\n";
+      }
       if (time-$machineSentDoneTime>=$maxTransferTime) {
         foreach my $m (keys %machines) {
           if (!exists $doneTime{$m}) {
@@ -1035,24 +1098,24 @@ mylog "done checking jobs, product=$product\n";
         }
       }
       foreach my $m (keys %machines) {
-        if (open(F,"<$m.done")) {
-          close(F);
-          if ($verbose) {
-            mylog "$m is reporting done\n" if (!exists $doneTime{$m});
+        if (!exists $doneTime{$m}) {
+          if (open(F,"<$m.done")) {
+            close(F);
+            mydbg "$m is reporting done\n";
+            $doneTime{$m}=time;
           }
-          $doneTime{$m}=time if (!exists $doneTime{$m});
-        }
-        if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxTouchTime) {
-          mylog "$m is down\n" if ($verbose);
-          $abort=1;
-          %doneTime=();  # avoids a race condition where the machine we just aborted reports done
-          abortAll("$m.up is missin or hasn't been updated in a long time");
-          delete $machines{$m};
+          if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxTouchTime) {
+            mylog "$m is down\n" if ($verbose);
+            $abort=1;
+            %doneTime=();  # avoids a race condition where the machine we just aborted reports done
+            abortAll("$m.up is missing or hasn't been updated in a long time");
+            delete $machines{$m};
+          }
         }
       }
       sleep(1);
     }
-    mylog "abort=$abort\n" if ($verbose);
+    mydbg "abort=$abort\n" if ($verbose);
   } while ($abort && !$failOccured);
 
   if (!$failOccured) {
@@ -1061,7 +1124,7 @@ mylog "done checking jobs, product=$product\n";
       if (exists $sent{$m}) {
         $t=scalar @{$sent{$m}};
       }
-      mylog "$m completed $t jobs\n";
+      mydbg "$m completed $t jobs\n";
     }
   }
 
@@ -1093,7 +1156,7 @@ mylog "done checking jobs, product=$product\n";
 
   foreach (keys %machines) {
     if (-e "$_.log.gz" && -e "$_.out.gz") {
-      mylog "reading log for $_\n";
+      mydbg "reading log for $_\n";
       `touch $_.log $_.out`;
       `rm -f $_.log $_.out`;
       `gunzip $_.log.gz $_.out.gz`;
@@ -1103,12 +1166,13 @@ mylog "done checking jobs, product=$product\n";
         unlink $runningSemaphore;  # force checkPID() to fail
         checkPID();
         close LOG;
+        close DBG;
         exit;  # unecessary, checkPID() won't return
       }
       my $a=`./readlog.pl $_.log $_.tab $_ $_.out`;
       if ($a ne "") {
         chomp $a;
-        mylog "$_: $a\n" if ($verbose);
+        mydbg "$_: $a\n" if ($verbose);
         $buildFail=1;
         $failMessage.="$_ reports: $a\n";
         $buildFail{$_}=1;
@@ -1117,13 +1181,14 @@ mylog "done checking jobs, product=$product\n";
       $tabs.=" $_.tab";
     } else {
       if ($failOccured) {
-        mylog "Warning: $_.log or $_.out missing (ignoring because failOccured is true)\n";
+        mydbg "Warning: $_.log or $_.out missing (ignoring because failOccured is true)\n";
       } else {
-        mylog "ERROR: $_.log or $_.out missing\n";
+        mydbg "ERROR: $_.log or $_.out missing\n";
 my $a=`ls -ls *log* *out*`;
-mylog "ls:\n$a";
+mydbg "ls:\n$a";
         unlink $runningSemaphore;
         close LOG;
+        close DBG;
         exit;
       }
     }
@@ -1156,7 +1221,7 @@ mylog "ls:\n$a";
         $filter.=" | grep -v \"\t$_ pdfwrite\t\"";
       }
       $filter.=">t.tab";
-      mylog "$filter\n" if ($verbose);
+      mydbg "$filter\n" if ($verbose);
       `$filter`;
 #     my $oldCount=`wc -l t.tab | awk ' { print $1 } '`;
 
@@ -1167,16 +1232,30 @@ mylog "ls:\n$a";
       #  `cat $logs >log`;
       #  `./readlog.pl log current.tab`;
 
+      if (-e "gccwarnings" && $product =~ /gs/) {
       checkPID();
-mylog "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCount false \"$product\"\n";
+      open(F,">>email.txt");
+      print F "New warnings:\n\n";
+      close(F);
+      `./compareWarningsGCC.pl gs_build.old gs_build.log | uniq -u >>email.txt`;
+      open(F,">>email.txt");
+      print F "\n";
+      close(F);
+      `cp gs_build.log gs_build.old`;
+      }
+
+      checkPID();
+mydbg "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCount false \"$product\"\n";
       `./compare.pl current.tab previous.tab $elapsedTime $machineCount false \"$product\" >>email.txt`;
      #  `mail marcos.woehrmann\@artifex.com -s \"\`cat revision.gs\`\" <email.txt`;
+
 
       checkPID();
       `touch archive/$rev`;
       `rm -fr archive/$rev`;
       `mkdir archive/$rev`;
       `mv $logs archive/$rev/.`;
+      `mv gs_build.log archive/$rev/.`;
       `gzip archive/$rev/*log`;
       `cp -p email.txt archive/$rev/.`;
       `cp -p current.tab archive/$rev/current.tab`;
@@ -1193,7 +1272,7 @@ mylog "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
       `rm $tabs`;
 
       checkPID();
-mylog "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elapsedTime $machineCount false \"$product\"\n";
+mydbg "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elapsedTime $machineCount false \"$product\"\n";
       `./compare.pl icc_work_current.tab icc_work_previous.tab $elapsedTime $machineCount false \"$product\" >>email.txt`;
 
       checkPID();
@@ -1213,7 +1292,7 @@ mylog "now running ./compare.pl icc_work_current.tab icc_work_previous.tab $elap
       `rm $tabs`;
 
       checkPID();
-mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTime $machineCount false \"$product\"\n";
+mydbg "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTime $machineCount false \"$product\"\n";
       `./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTime $machineCount false \"$product\" >>email.txt`;
 
       checkPID();
@@ -1229,6 +1308,7 @@ mylog "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
 
     } elsif ($updateBaseline) {
     } elsif ($bmpcmp) {
+if (0) {
 open(F9,">bmpcmp/fuzzy.txt");
 my @logs=split ' ',$logs;
 foreach my $i (@logs) {
@@ -1245,6 +1325,7 @@ foreach my $i (@logs) {
   }
 }
 close(F9);
+}
     } else {
       my @a=split ' ',$product;
       my $filter="cat current.tab";
@@ -1253,7 +1334,7 @@ close(F9);
         $filter.=" | grep -v \"\t$_ pdfwrite\t\"";
       }
       $filter.=">t.tab";
-      mylog "$filter\n" if ($verbose);
+      mydbg "$filter\n" if ($verbose);
       `$filter`;
 #     my $oldCount=`wc -l t.tab | awk ' { print $1 } '`;
 
@@ -1262,24 +1343,36 @@ close(F9);
 
       checkPID();
 
+      if (-e "gccwarnings" && $product =~ /gs/) {
+      open(F,">>$userName.txt");
+      print F "New warnings:\n\n";
+      close(F);
+      `./compareWarningsGCC.pl gs_build.old gs_build.log | uniq -u >>$userName.txt`;
+      open(F,">>$userName.txt");
+      print F "\n";
+      close(F);
+      }
+
       if ($userName eq "mvrhel-disabled") {
         open(F,">>$userName.txt");
         print F "\nComparison made to current icc_work branch md5sums\n\n";
         close(F);
-        mylog "now running ./compare.pl temp.tab icc_work_current.tab $elapsedTime $machineCount true \"$product\"\n";
+        mydbg "now running ./compare.pl temp.tab icc_work_current.tab $elapsedTime $machineCount true \"$product\"\n";
         `./compare.pl temp.tab icc_work_current.tab $elapsedTime $machineCount true \"$product\" >>$userName.txt`;
       } else {
-      mylog "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\"\n";
-      `./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\" >>$userName.txt`;
+        mydbg "now running ./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\"\n";
+        `./compare.pl temp.tab current.tab $elapsedTime $machineCount true \"$product\" >>$userName.txt`;
       }
 
       open(F,">>$userName.txt");
       print F "\n\nDifferences from previous clusterpush:\n\n";
       close(F);
-      mylog "now running ./compare.pl temp.tab $usersDir/$userName/temp.tab $elapsedTime $machineCount true \"$product\"\n";
+      mydbg "now running ./compare.pl temp.tab $usersDir/$userName/temp.tab $elapsedTime $machineCount true \"$product\"\n";
       `./compare.pl temp.tab $usersDir/$userName/temp.tab 1 1 true \"$product\" >>$userName.txt`;
 
+
       `mv $logs $usersDir/$userName/.`;
+      `mv gs_build.log $usersDir/$userName/.`;
       `cp -p $userName.txt $usersDir/$userName/.`;
       `cp -p $userName.txt results/.`;
       `mv    $usersDir/$userName/temp.tab $usersDir/$userName/previousTemp.tab`;
@@ -1330,26 +1423,26 @@ close(F9);
     `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat revision.gs\`\" <email.txt`;
 #   `mail marcos.woehrmann\@artifex.com -s \"\`cat revision.gs\`\" <email.txt`;
 
-    mylog "test complete, performing final svn update\n";
-    mylog "svn update ghostpdl -r$rev --ignore-externals\nsvn update ghostpdl/gs -r$rev\n";
+    mydbg "test complete, performing final svn update\n";
+    mydbg "svn update ghostpdl -r$rev --ignore-externals\nsvn update ghostpdl/gs -r$rev\n";
     `svn update ghostpdl -r$rev --ignore-externals`;
     `svn update ghostpdl/gs -r$rev`;
 
     `./cp.all.sh`;
-mylog("calling cachearchive.pl");
+mydbg("calling cachearchive.pl");
     `./cachearchive.pl >md5sum.cache`;
-mylog("finished cachearchive.pl");
+mydbg("finished cachearchive.pl");
   } elsif ($icc_workRegression) {
     `mail -a \"From: marcos.woehrmann\@artifex.com\" gs-regression\@ghostscript.com -s \"\`cat icc_workRevision.gs\`\" <email.txt`;
 #   `mail -a \"From: marcos.woehrmann\@artifex.com\" marcos\@ghostscript.com -s \"\`cat icc_workRevision.gs\`\" <email.txt`;
 
-    mylog "test complete, performing final svn update\n";
-    mylog "svn update icc_work -r$rev\n";
+    mydbg "test complete, performing final svn update\n";
+    mydbg "svn update icc_work -r$rev\n";
     `svn update icc_work -r$rev`;
 
-mylog("calling cachearchive.pl");
+mydbg("calling cachearchive.pl");
     `./cachearchive.pl >md5sum.cache`;
-mylog("finished cachearchive.pl");
+mydbg("finished cachearchive.pl");
 
   } elsif ($mupdfRegression) {
   } elsif ($updateBaseline) {
@@ -1359,7 +1452,7 @@ mylog("finished cachearchive.pl");
       `echo >>bmpcmpResults.txt`;
       `echo http://www.ghostscript.com/~regression/$userName >>bmpcmpResults.txt`;
       `echo >>bmpcmpResults.txt`;
-      `cat bmpcmp/fuzzy.txt >>bmpcmpResults.txt`;
+#     `cat bmpcmp/fuzzy.txt >>bmpcmpResults.txt`;
       `mail $emails{$userName} -s \"bmpcmp finished\" <bmpcmpResults.txt`;
       `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <bmpcmpResults.txt`;
     }
@@ -1397,7 +1490,7 @@ checkPID();
 removeQueue();
 
 checkPID();
-mylog("removing $runningSemaphore");
+mydbg("removing $runningSemaphore");
 unlink $runningSemaphore;
 
 if ($bmpcmp) {
@@ -1407,6 +1500,6 @@ if ($bmpcmp) {
   `chmod 777 ../public_html/$userName`;
   `cd ../public_html/$userName; ln -s compare.html index.html`;
   `./pngs2html.pl bmpcmp ../public_html/$userName`;
-  `cp bmpcmp/fuzzy.txt ../public_html/$userName/.`;
+# `cp bmpcmp/fuzzy.txt ../public_html/$userName/.`;
 }
 

@@ -239,12 +239,22 @@ $framenum = 0;
 mkdir $baseoutdir;
 openhtml();
 
+# What is the cluster giving us to work with?
+#open(INDEX, "ls $indir/*|");
+#print $html "List of input files:<br>";
+#while (<INDEX>)
+#{
+#    print $html $_."<br>";
+#}
+#close INDEX;
+
 # Open the index
 open(INDEX, "ls $indir/*.meta| sed s/\.\[0-9]\*\.meta// | sort -u |");
 
 # Now run through the list of files
 while (<INDEX>)
 {
+#    print $html $_."<br>";
     chomp;
 
     # Keep everything after the last

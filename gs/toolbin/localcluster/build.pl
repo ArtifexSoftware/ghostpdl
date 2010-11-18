@@ -704,6 +704,10 @@ foreach my $testfile (sort keys %testfiles) {
 }
 }
 
+if (-e "gccwarnings" && !$bmpcmp && (scalar keys %products==0 || exists $products{'gs'})) {
+  print "gs_build\tcd __gsSource__ ; make clean >/dev/null 2>&1 ; make -j 1 >__temp__/gs_build.log 2>&1\n";
+}
+
 while (scalar(@slowCommands)) {
   my $n=rand(scalar @slowCommands);
   my $filename=$slowFilenames[$n];  splice(@slowFilenames,$n,1);

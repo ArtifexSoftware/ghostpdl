@@ -15,7 +15,7 @@ my $debug=0;
 my $verbose=0;
 
 my $wordSize="64";
-my $timeOut=300;
+my $timeOut=450;
 my $maxTimeout=20;  # starting value, is adjusted by value below based on jobs completed
 my $maxTimeoutPercentage=1.0;
 
@@ -211,20 +211,20 @@ my $desiredRev;
 
 my $baseDirectory=`pwd`;
 chomp $baseDirectory;
-my $usersDir="/home/regression/cluster/users";
 
-my $temp="./temp";
-my $temp2="./temp.tmp";
-#my $raster="./temp/raster";
-my $bmpcmpOutput="./temp/bmpcmp";
-my $baselineRaster="./baselineraster";
-my $baselineRaster2="./baselineraster.tmp";
+my $temp=$baseDirectory."/temp";
+my $temp2=$baseDirectory."/temp.tmp";
+my $bmpcmpOutput=$baseDirectory."/temp/bmpcmp";
+my $baselineRaster=$baseDirectory."/baselineraster";       # local only
+my $baselineRaster2=$baseDirectory."/baselineraster.tmp";  # local only
 
 my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
 my $gsBin=$baseDirectory."/gs";
 my $icc_workSource=$baseDirectory."/icc_work";
 my $icc_workGsSource=$icc_workSource."/gs";
+
+my $usersDirRemote="/home/regression/cluster/users";
 
 my $abort=0;
 unlink ("$machine.abort");
@@ -366,15 +366,17 @@ sub spawn($$) {
       } else {
         my $t=0;
         my $status;
+        select(undef, undef, undef, 0.5);
         do {
           select(undef, undef, undef, 0.1);
           $status=waitpid($pid,WNOHANG);
           $t++;
-          } while($status>=0 && $t<abs($timeout*10));
+        } while($status>=0 && $t<abs($timeout*10));
         $done=1 if ($timeout<0);
         if ($status>=0) {
-          mylog ("killing (spawn) $pid\n");
+          mylog ("killing (spawn timeout) $pid\n");
           kill 9, $pid;
+          mylog ("retrying spawn\n");
         } else {
           $done=1;
         }
@@ -478,7 +480,7 @@ if (!$local) {
       mkdir "users/$user";
       mkdir "users/$user/ghostpdl";
       mkdir "users/$user/ghostpdl/gs";
-      $cmd="cd users/$user          ; rsync -cvlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDir/$user/ghostpdl    .";
+      $cmd="cd users/$user          ; rsync -cvlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDirRemote/$user/ghostpdl    .";
       systemWithRetry($cmd);
 
       $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
@@ -529,7 +531,9 @@ if (!$local) {
 
 #`cc -o bmpcmp ghostpdl/gs/toolbin/bmpcmp.c`;
 `svn update $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c`;
-`cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
+#`cc -I$baseDirectory/ghostpdl/gs/libpng -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c -lm -lz`;
+ `cc -I$baseDirectory/ghostpdl/gs/libpng -I$baseDirectory/ghostpdl/gs/zlib -o bmpcmp -DHAVE_LIBPNG $baseDirectory/ghostpdl/gs/toolbin/bmpcmp.c $baseDirectory/ghostpdl/gs/libpng/png.c $baseDirectory/ghostpdl/gs/libpng/pngerror.c $baseDirectory/ghostpdl/gs/libpng/pnggccrd.c $baseDirectory/ghostpdl/gs/libpng/pngget.c $baseDirectory/ghostpdl/gs/libpng/pngmem.c $baseDirectory/ghostpdl/gs/libpng/pngpread.c $baseDirectory/ghostpdl/gs/libpng/pngread.c $baseDirectory/ghostpdl/gs/libpng/pngrio.c $baseDirectory/ghostpdl/gs/libpng/pngrtran.c $baseDirectory/ghostpdl/gs/libpng/pngrutil.c $baseDirectory/ghostpdl/gs/libpng/pngset.c $baseDirectory/ghostpdl/gs/libpng/pngtrans.c $baseDirectory/ghostpdl/gs/libpng/pngvcrd.c $baseDirectory/ghostpdl/gs/libpng/pngwio.c $baseDirectory/ghostpdl/gs/libpng/pngwrite.c $baseDirectory/ghostpdl/gs/libpng/pngwtran.c $baseDirectory/ghostpdl/gs/libpng/pngwutil.c $baseDirectory/ghostpdl/gs/zlib/adler32.c $baseDirectory/ghostpdl/gs/zlib/crc32.c $baseDirectory/ghostpdl/gs/zlib/infback.c $baseDirectory/ghostpdl/gs/zlib/inflate.c $baseDirectory/ghostpdl/gs/zlib/uncompr.c $baseDirectory/ghostpdl/gs/zlib/compress.c $baseDirectory/ghostpdl/gs/zlib/deflate.c $baseDirectory/ghostpdl/gs/zlib/gzio.c $baseDirectory/ghostpdl/gs/zlib/inffast.c $baseDirectory/ghostpdl/gs/zlib/inftrees.c $baseDirectory/ghostpdl/gs/zlib/trees.c $baseDirectory/ghostpdl/gs/zlib/zutil.c -lm`;
+
 #`svn update $baseDirectory/ghostpdl/gs/toolbin/tests/fuzzy.c`;
 #`cc -o fuzzy $baseDirectory/ghostpdl/gs/toolbin/tests/fuzzy.c -lm`;
 
@@ -755,12 +759,12 @@ if (-e '../bin/time') {
 if ($md5sumFail ne "") {
   updateStatus('md5sum fail');
   mylog("setting $machine.fail on casper\n");
-  spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+  spawn(100,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
   @commands=();
 } elsif ($compileFail ne "") {
   updateStatus('Compile fail');
   mylog("setting $machine.fail on casper\n");
-  spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");  # mhw2
+  spawn(100,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");  # mhw2
   @commands=();
 } else {
   updateStatus('Starting jobs');
@@ -772,6 +776,7 @@ my $jobs=0;
 open(F4,">$machine.log");
 
 my $startTime=time;
+my $pauseCount=0;
 
 while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mhw2
 #while (($poll==1 || scalar(@commands)) && !$abort) {  # mhw2
@@ -867,9 +872,17 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
       $totalJobs=scalar(@commands);
       mylog("received ".scalar(@commands)." commands\n");
       mylog("commands[0] eq 'done'\n") if ((scalar @commands==0) || $commands[0] eq "done");
+      mylog("commands[0] eq 'pause'\n") if ($commands[0] eq "pause");
       if ((scalar @commands==0) || $commands[0] eq "done") {
         $poll=0;
         @commands=();
+      }
+      if ($commands[0] eq "pause") {
+        $pauseCount++;
+        updateStatus("Pausing - $pauseCount");
+        @commands=();
+        $abort=checkAbort();
+        sleep 10;
       }
     }
   }
@@ -912,7 +925,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
       if ($count>=$maxTimeout) {
         $timeoutFail="too many timeouts";
         mylog("setting $machine.fail on casper\n");
-        spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+        spawn(100,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
         updateStatus('Timeout fail');
         @commands=();
         $maxCount=0;
@@ -941,9 +954,13 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
   if (scalar(@commands)>0 && $count<$maxCount && !$clusterRegressionRunning) {
     my $n=rand(scalar @commands);
     my @a=split '\t',$commands[$n];
+    my $longJob=0;
     splice(@commands,$n,1);
     my $filename=$a[0];
     my $cmd=$a[1];
+    $longJob=1 if ($cmd =~ m/__gsSource__/);
+    $cmd =~ s/__gsSource__/$gsSource/;
+    $cmd =~ s/__temp__/$temp/;
 
 #$maxCount=8  if ($cmd =~ m| ./bmpcmp |);
 #$timeOut=600 if ($cmd =~ m| ./bmpcmp |);
@@ -972,8 +989,6 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
         mylog("checkAbort() done");
         $startTime=time;
 
-#       my @files = <$raster/*>;
-#       my $count = @files;
         my $count2=scalar (keys %timeOuts);
         mylog("timeOuts=$count2 maxTimeout=$maxTimeout");
 
@@ -990,6 +1005,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
       exit(0);
     } else {
       $pids{$pid}{'time'}=time;
+      $pids{$pid}{'time'}+=$timeOut if ($longJob);
       $pids{$pid}{'filename'}=$filename;
     }
   } else {
@@ -1071,7 +1087,7 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {  # mhw2
         if ($count>=$maxTimeout) {
           $timeoutFail="too many timeouts";
           mylog("setting $machine.fail on casper\n");
-          spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
+          spawn(100,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
           updateStatus('Timeout fail');
           @commands=();
           $maxCount=0;
@@ -1242,7 +1258,7 @@ if ($abort) {
 
 if (!$local) {
   mylog("setting $machine.done on casper\n");
-  spawn(300,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
+  spawn(100,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
   mylog("removing $machine.abort on casper\n");
   spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
 }

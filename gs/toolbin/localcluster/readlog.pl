@@ -38,6 +38,16 @@ while(<F>) {
     print "$_\n";
     exit;
   }
+  if (m/===gs_build===/) {
+    open (F2,">gs_build.log");
+    while(<F>) {
+      chomp;
+      close(F2) if (m/^===(.+)===$/);
+      last if (m/^===(.+)===$/);
+      print F2 "$_\n";
+    }
+  }
+  if ($_) {
 
   if ((m/===(.+).log===/ || m/===(.+)===/) && !m/=====/) {
     $file=$1;
@@ -101,6 +111,7 @@ while(<F>) {
     $results{$file}{"time3"}=$t3;
     $results{$file}{"time4"}=0;
   }
+  }
 }
 
 close(F);
@@ -124,6 +135,7 @@ if ($input2) {
   close(F);
 }
 
+delete $results{"gs_build"} if (exists $results{"gs_build"});
 
 open(F,">$output") || die "file $output can't be written to";
 foreach (sort keys %results) {

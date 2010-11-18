@@ -5,7 +5,7 @@ use warnings;
 
 use Data::Dumper;
 
-my $verbose=1;
+my $verbose=0;
 my $reportAllErrors=0;  # possibly changed below
 my $previousValues=50;
 
