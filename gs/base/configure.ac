@@ -427,6 +427,7 @@ if test x"$enable_freetype" != xno; then
 		FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
 		FT_LIBS="`$PKGCONFIG --libs freetype2`"
 		FT_BRIDGE=1
+		SHARE_FT=1
 	    else
 		AC_MSG_RESULT(no)
 		AC_MSG_WARN([freetype library source not found...using native rasterizer])
