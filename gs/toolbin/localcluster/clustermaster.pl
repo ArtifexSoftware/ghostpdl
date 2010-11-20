@@ -31,6 +31,12 @@ my %gccMachines=('i7'=>1,'x6'=>1,'miles'=>1,'kilometers'=>1);
 
 my $footer="";
 
+my $filesize = -s "clustermaster.dbg";
+if ($filesize>10000000) {
+  `mv clustermaster.dbg clustermaster.old`;
+}
+
+
 open (LOG,">>clustermaster.log");
 open (DBG,">>clustermaster.dbg");
 
@@ -175,7 +181,7 @@ sub checkPID {
     my %lastTransfer;
     my %sent;
     my $doneCount=0;
-    my %pauseSent;
+    my %standbySent;
     my @jobs;
     my $abort=0;
     my $tempDone=0;
@@ -185,7 +191,6 @@ sub checkProblem {
       foreach my $m (keys %machines) {
         if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxTouchTime) {
           mylog "machine $m hasn't updated $m.up in $maxTouchTime seconds, assuming it went down\n";
-          %pauseSent=();
           delete $lastTransfer{$m} if (exists $lastTransfer{$m});
           delete $machines{$m} if (exists $machines{$m});
           if (scalar keys %lastTransfer) {
@@ -208,7 +213,6 @@ sub checkProblem {
       foreach my $m (keys %lastTransfer) {
         if (time-$lastTransfer{$m}>=$maxTransferTime) {
           mylog "machine $m hasn't connected in ".(time-$lastTransfer{$m})." seconds, assuming it went down\n";
-          %pauseSent=();
           unlink "$m.start";  # so it does connect later and try to run jobs
           delete $lastTransfer{$m} if (exists $lastTransfer{$m});
           delete $machines{$m} if (exists $machines{$m});
@@ -979,13 +983,12 @@ mydbg "done checking jobs, product=$product\n";
           } else {
           mydbg "Connect from $t (".$client->peerhost.") (".(time-$lastTransfer{$t})." seconds); jobs remaining ".scalar(@jobs)."\n";
           $lastTransfer{$t}=time;
-          if (scalar(@jobs)==0 && scalar keys %pauseSent<scalar keys %machines) {
-            $pauseSent{$t}=1;
-            print $client "pause\n" if (scalar keys %pauseSent<scalar keys %machines);
-            mydbg "sending pause: ".(scalar keys %pauseSent)." out of ".(scalar keys %machines)."\n";
-            mydbg "sending pause skipped\n" if (!(scalar keys %pauseSent<scalar keys %machines));
-          } 
-          if (scalar(@jobs)==0 && scalar keys %pauseSent==scalar keys %machines) {
+          if (scalar(@jobs)==0 && scalar keys %standbySent<scalar keys %machines) {
+            $standbySent{$t}=1;
+            print $client "standby\n"; # if (scalar keys %standbySent<scalar keys %machines);
+            mydbg "sending standby: ".(scalar keys %standbySent)." out of ".(scalar keys %machines)."\n";
+#           mydbg "sending standby skipped\n" if (!(scalar keys %standbySent<scalar keys %machines));
+          } elsif (scalar(@jobs)==0 && scalar keys %standbySent==scalar keys %machines) {
             print $client "done\n";
             $doneCount++;
             delete $lastTransfer{$t};
@@ -995,7 +998,9 @@ mydbg "done checking jobs, product=$product\n";
               mydbg "setting tempDone to 1\n";
             }
           } else {
+            %standbySent=() if (scalar(@jobs)>0);  # if we are sending jobs we must have had a machine go down
             $jobsPerRequest=250;
+            $jobsPerRequest=125 if (scalar(@jobs)<4000);
             $jobsPerRequest= 50 if (scalar(@jobs)<2000);
             $jobsPerRequest= 10 if ($bmpcmp);
             my $gccJob;

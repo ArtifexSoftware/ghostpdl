@@ -50,6 +50,10 @@ if (open(F,"<weekly.cfg")) {
 }
 
 if (!$local) {
+  my $filesize = -s "$machine.dbg";
+  if ($filesize>10000000) {
+    `mv $machine.dbg $machine.old`;
+  }
   open (LOG,">>$machine.dbg");
   print LOG "\n\n";
 }
@@ -422,7 +426,7 @@ sub systemWithRetry($) {
     mylog "error with: $cmd; a=$a count=$count\n" if ($a!=0);
     $count++;
     sleep 10 if ($a!=0);
-    } while ($a!=0 && $count<5);
+  } while ($a!=0 && $count<5);
   if ($a!=0) {
     unlink $runningSemaphore;
   }
@@ -770,19 +774,20 @@ if ($md5sumFail ne "") {
   updateStatus('Starting jobs');
 }
 
-my $totalJobs=scalar(@commands);
 my $jobs=0;
 
 open(F4,">$machine.log");
 
 my $startTime=time;
-my $pauseCount=0;
+my $lastCount=-1;
+my $lastReceivedCount=-1;
 
 while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mhw2
-#while (($poll==1 || scalar(@commands)) && !$abort) {  # mhw2
+#while (($poll==1 || scalar(@commands)) && !$abort)   # mhw2
   my $count=0;
 
-  if ($poll==1 && scalar(@commands)==0) {
+  if (scalar(@commands)==0 && (scalar keys %pids==0 || $lastReceivedCount!=0)) {
+mylog "requesting more jobs: scalar key pids=".(scalar keys %pids)." and lastReceivedCount= $lastReceivedCount\n";
 
     use IO::Socket;
     my ($host, $port, $handle, $line);
@@ -833,7 +838,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
           $n=sysread($handle,$line,4096);
           $s.=$line;
           # print STDOUT "$line";
-          } until (!defined($n) || $n==0);
+        } until (!defined($n) || $n==0);
         alarm 0;
         };
       alarm 0;  # avoid race condition
@@ -869,24 +874,25 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
       }
 
       @commands = split '\n',$s;
-      $totalJobs=scalar(@commands);
+      $lastReceivedCount=scalar @commands;
       mylog("received ".scalar(@commands)." commands\n");
       mylog("commands[0] eq 'done'\n") if ((scalar @commands==0) || $commands[0] eq "done");
-      mylog("commands[0] eq 'pause'\n") if ($commands[0] eq "pause");
+      mylog("commands[0] eq 'standby'\n") if ($commands[0] eq "standby");
       if ((scalar @commands==0) || $commands[0] eq "done") {
         $poll=0;
         @commands=();
+        $lastReceivedCount=0;
       }
-      if ($commands[0] eq "pause") {
-        $pauseCount++;
-        updateStatus("Pausing - $pauseCount");
+      if ($commands[0] eq "standby") {
         @commands=();
-        $abort=checkAbort();
-        sleep 10;
+        $lastReceivedCount=0;
+        $abort=checkAbort() if (scalar keys %pids==0);
+        updateStatus("Standing by") if (scalar keys %pids==0);
+        sleep 5 if (scalar keys %pids==0);
       }
     }
   }
-# mylog("end of loop: scalar(commands)=".scalar(@commands)." poll=$poll abort=$abort\n") if (scalar(@commands)==0 || $poll==0 || $abort!=0);
+# mylog("end of loop: scalar(commands)=".scalar(@commands)." scalar(pids)=".(scalar keys %pids)." lastReceivedCount=$lastReceivedCount poll=$poll abort=$abort\n");
 
   my $a=`ps -ef`;
   my @a=split '\n',$a;
@@ -946,10 +952,30 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
       }
     }
   }
+  if (scalar(@commands)==0 && $lastReceivedCount==0) {
+    my $tempCount=scalar keys %pids;
+    if ($tempCount != $lastCount && $tempCount>0) {
+      my $message=("Waiting for $tempCount jobs to finish");
+      if ($tempCount<=3) {
+        if ($tempCount==1) {
+          $message="Waiting for $tempCount job to finish";
+        }
+        $message.=":";
+        foreach my $pid (keys %pids) {
+          $pids{$pid}{'filename'} =~ m/.+__(.+)$/;
+          $message.= ' '.$1;
+        }
+      }
+      updateStatus($message);
+      $lastCount=$tempCount;
+    }
+  }
 
   my $clusterRegressionRunning=0;
-  $clusterRegressionRunning=1 if ($local && -e "/home/marcos/cluster/$runningSemaphore");  # hack: directory name shouldn't be hard coded
-  sleep 5 if ($clusterRegressionRunning);
+  if ($local) {
+    $clusterRegressionRunning=1 if (-e "/home/marcos/cluster/$runningSemaphore");  # hack: directory name shouldn't be hard coded
+    sleep 5 if ($clusterRegressionRunning);
+  }
 
   if (scalar(@commands)>0 && $count<$maxCount && !$clusterRegressionRunning) {
     my $n=rand(scalar @commands);
@@ -968,18 +994,6 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
     $jobs++;
     my $t=int($jobs*$maxTimeoutPercentage/100+0.5);
     $maxTimeout=$t if ($maxTimeout<$t);
-    {
-      sub convertTime($) {
-        my $t=shift;
-        my $seconds=$t % 60;
-        $t=($t-$seconds)/60;
-        my $minutes=$t % 60;
-        $t=($t-$minutes)/60;
-
-        my $s=sprintf("%2d:%02d:%02d",$t,$minutes,$seconds);
-        return($s);
-      }
-
       my $elapsedTime=time-$startTime;
       if ($elapsedTime>=30) {
         my $t=sprintf "%d tests completed",$jobs;
@@ -994,7 +1008,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
 
       }
 #     printf "\n$t1 $t2 $t3  %5d %5d  %3d",$jobs,$totalJobs, $percentage if ($debug);
-    }
+
     my $pid = fork();
     if (not defined $pid) {
       mylog "fork() failed";
@@ -1023,95 +1037,7 @@ while (($poll==1 || scalar(@commands)) && !$abort && $compileFail eq "") {  # mh
 if (!$abort || $compileFail ne "" || $timeoutFail ne "") {  # mhw2
 #if (!$abort || $timeoutFail ne "") {  # mhw2
 
-  print "\n" if ($debug);
-  my $count;
-  my $startTime=time;
-  my $lastCount=-1;
-  do {
-    my $tempCount=scalar keys %pids;
-    if ($tempCount != $lastCount && $tempCount>0) {
-      my $message=("Waiting for $tempCount jobs to finish");
-      if ($tempCount<=3) {
-        if ($tempCount==1) {
-          $message="Waiting for $tempCount job to finish";
-        }
-        $message.=":";
-        foreach my $pid (keys %pids) {
-          $pids{$pid}{'filename'} =~ m/.+__(.+)$/;
-          $message.= ' '.$1;
-        }
-      }
-      updateStatus($message);
-      $lastCount=$tempCount;
-    }
 
-    if (time-$startTime>60) {
-      $abort=checkAbort;
-      $startTime=time;
-    }
-    $count=0;
-
-    my $a=`ps -ef`;
-    my @a=split '\n',$a;
-    my %children;
-    my %name;
-    foreach (@a) {
-      if (m/\S+ +(\d+) +(\d+) .+ \d+:\d\d.\d\d (.+)$/ && !m/<defunct>/ && !m/\(sh\)/) {
-        $children{$2}=$1;
-        $name{$1}=$3;
-      }
-    }
-
-    foreach my $pid (keys %pids) {
-      if (time-$pids{$pid}{'time'} >= $timeOut) {
-        $name{$pid}='missing' if (!exists $name{$pid});
-        mylog ("killing (timeout 2) $pid $name{$pid}\n");
-        kill 1, $pid;
-        kill 9, $pid;
-        my $p=$pid;
-        while (exists $children{$p}) {
-#         mylog "$p->$children{$p}\n"; # mhw
-          $p=$children{$p};
-          $name{$p}='missing' if (!exists $name{$p});
-          mylog ("killing (timeout 2) $p $name{$p}\n");
-          kill 1, $p;
-          kill 9, $p;
-        }
-        $timeOuts{$pids{$pid}{'filename'}}=1;
-        addToLog($pids{$pid}{'filename'});
-        my $count=scalar (keys %timeOuts);
-        delete $pids{$pid};
-
-#       mylog "killed:  $p ($pid) $pids{$pid}{'filename'}  total $count\n";  # mhw
-#       mylog "killed:  $pids{$pid}{'filename'}\n";  # mhw
-        if ($count>=$maxTimeout) {
-          $timeoutFail="too many timeouts";
-          mylog("setting $machine.fail on casper\n");
-          spawn(100,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.fail\"");
-          updateStatus('Timeout fail');
-          @commands=();
-          $maxCount=0;
-          killAll();
-          checkAbort();
-          $poll=0;
-          $abort=1;
-        }
-      } else {
-#       print "\n$pids{$pid}{'filename'} ".(time-$pids{$pid}{'time'}) if ((time-$pids{$pid}{'time'})>20);
-        my $s;
-        $s=waitpid($pid,WNOHANG);
-        if ($s<0) {
-          addToLog($pids{$pid}{'filename'});
-          delete $pids{$pid};
-        } else {
-          $count++;
-        }
-
-      }
-    }
-    print "$count " if ($debug);
-    select(undef, undef, undef, 1.00);
-    } while ($count>0 && !$abort);
   print "\n" if ($debug);
 
 # if (!$abort) {
