@@ -59,9 +59,6 @@ px_operator_proc(pxSetPageDefaultCTM);
     {ms_enum, mstr, width * 300 / (res), height * 300 / (res), m_default},
 static px_media_t known_media[] = {
   px_enumerate_media(m_data)
-  /* The list ends with a comma, so add a dummy entry */
-  /* that can't be matched because its key is a duplicate. */
-  {eLetterPaper}
 };
 #undef m_data
 #undef m_default
@@ -375,10 +372,13 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 		pxs->pm = px_get_default_media(pxs);
 	    }
 	    else {
+                bool found_media = false;
 	        for ( pxs->pm = known_media, i = 0; i < countof(known_media); ++pxs->pm, ++i )
-		    if ( pxs->pm->ms_enum == ms_enum )
-		       break;
-		if ( i == countof(known_media) ) { /* No match, select default media. */
+		    if ( pxs->pm->ms_enum == ms_enum ) {
+                        found_media = true;
+                        break;
+                    }
+		if ( !found_media ) { /* No match, select default media. */
 		   pxs->pm = px_get_default_media(pxs);
 		   px_record_warning("IllegalMediaSize", false, pxs);
 		}
