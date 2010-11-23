@@ -189,6 +189,8 @@ unshare_indexed_cspace(
     pnew->original_cspace = pindexed->original_cspace;
     pnew->num_entries = pindexed->num_entries;
     pnew->palette.size = pindexed->palette.size;
+    pnew->pcspace->params.indexed.hival = pindexed->pcspace->params.indexed.hival;
+    pnew->pcspace->params.indexed.n_comps = pindexed->pcspace->params.indexed.n_comps;
     memcpy(pnew->palette.data, pindexed->palette.data, pindexed->palette.size);
     memcpy(pnew->pen_widths, pindexed->pen_widths, num_entries * sizeof(float));
     memcpy(pnew->norm, pindexed->norm, 3 * sizeof(pindexed->norm[0]));
@@ -1091,6 +1093,11 @@ pcl_cs_indexed_build_special(
         pindexed->palette.data[i] = 255;
         pindexed->palette.data[i + 3] = pcolor1[i];
     }
+
+    /* alloc_indexed_cspace allocates space for 256 entries. We only use 2.
+     * To avoid accessing off the end of the data later on, reset the hi_val.
+     */
+    pindexed->pcspace->params.indexed.hival = 1;
 
     /* the latter are not strictly necessary */
     pindexed->pen_widths[0] = dflt_pen_width;
