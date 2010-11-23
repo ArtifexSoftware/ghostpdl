@@ -302,7 +302,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 /* ---------------- Radial shading ---------------- */
 
 static int 
-R_tensor_annulus(patch_fill_state_t *pfs, const gs_rect *rect,
+R_tensor_annulus(patch_fill_state_t *pfs, /*@unused@*/const gs_rect *rect0,
     double x0, double y0, double r0, double t0,
     double x1, double y1, double r1, double t1)
 {   
@@ -568,6 +568,52 @@ R_tensor_cone_apex(patch_fill_state_t *pfs, const gs_rect *rect,
 }
 
 
+/*
+ * A map of this code:
+ *
+ * R_extensions
+ * |-> (R_rect_radius)
+ * |-> (R_outer_circle)
+ * |-> R_obtuse_cone
+ * |   |-> R_fill_triangle_new
+ * |   |   '-> mesh_triangle
+ * |   |       '-> mesh_triangle_rec <--.
+ * |   |           |--------------------'
+ * |   |           |-> small_mesh_triangle
+ * |   |           |   '-> fill_triangle
+ * |   |           |       '-> triangle_by_4 <--.
+ * |   |           |           |----------------'
+ * |   |           |           |-> constant_color_triangle
+ * |   |           |           |-> make_wedge_median (etc)
+ * |   |           '-----------+--------------------.
+ * |   '-------------------.                        |
+ * |-> R_tensor_cone_apex  |                        |
+ * |   '-------------------+                        |
+ * '-> R_tensor_annulus <--'                       \|/
+ *     |-> (make_quadrant_arc)                      |
+ *     '-> patch_fill                               |
+ *         |-> fill_patch <--.                      |
+ *         |   |-------------'                      |
+ *         |   |------------------------------------+
+ *         |   '-> fill_stripe                      |
+ *         |       |-----------------------.        |
+ *         |      \|/                      |        |
+ *         |-> fill_wedges                 |        |
+ *             '-> fill_wedges_aux <--.    |        |
+ *                 |------------------'   \|/       |
+ *                 |----------------> mesh_padding  '
+ *                 |                  '----------------------------------.
+ *                 '-> wedge_by_triangles <--.      .                    |
+ *                     |---------------------'      |                    |
+ *                     '-> fill_triangle_wedge <----'                    |
+ *                         '-> fill_triangle_wedge_aux                   |
+ *                             '-> fill_wedge_trap                       |
+ *                                 '-> wedge_trap_decompose              |
+ *                                     '-> linear_color_trapezoid        | 
+ *                                         '-> decompose_linear_color <--|
+ *                                             |-------------------------'
+ *                                             '-> constant_color_trapezoid
+ */
 static int
 R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *rect, 
 	double t0, double t1, bool Extend0, bool Extend1)
