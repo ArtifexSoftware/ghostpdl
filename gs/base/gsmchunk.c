@@ -205,7 +205,7 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
 static void
 chunk_mem_node_free_all_remaining(gs_memory_chunk_t *cmem)
 {
-    chunk_mem_node_t *head = cmem->head_so_chunk;	/* Free multiple object chunk nodes first */
+    chunk_mem_node_t *head = cmem->head_mo_chunk;	/* Free multiple object chunk nodes first */
     gs_memory_t * const target = cmem->target;
     chunk_mem_node_t *current;
     chunk_mem_node_t *next;
