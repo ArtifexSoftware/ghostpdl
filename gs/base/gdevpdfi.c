@@ -32,14 +32,7 @@
 #include "gxpcolor.h"
 #include "gxcolor2.h"
 #include "gxhldevc.h"
-#include "gzstate.h"	    /* for gs_state */
-#include "gxchar.h"	    /* for gs_show_enum */
 
-#include "gdevpdtx.h"
-#include "gdevpdtf.h"		/* for pdfont->FontType */
-#include "gdevpdts.h"
-#include "gdevpdtt.h"
-#include "gdevpdti.h"
 
 /* Forward references */
 static image_enum_proc_plane_data(pdf_image_plane_data);
@@ -76,14 +69,10 @@ static const gx_image_enum_procs_t pdf_image_cvd_enum_procs = {
 typedef struct pdf_image_enum_s {
     gx_image_enum_common;
     int width;
-    int height;
     int bits_per_pixel;		/* bits per pixel (per plane) */
     int rows_left;
     pdf_image_writer writer;
     gs_matrix mat;
-    int IsCharProc;		/* Used if this image results from a rendered glyph */
-    pdf_char_proc_t *pcp;       /* too large to be cached. */
-    pdf_stream_position_t ipos; /* ditto */
 } pdf_image_enum;
 gs_private_st_composite(st_pdf_image_enum, pdf_image_enum, "pdf_image_enum",
   pdf_image_enum_enum_ptrs, pdf_image_enum_reloc_ptrs);
@@ -347,7 +336,6 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
     gs_color_space *pcs_device = NULL;
     gs_color_space *pcs_orig = NULL;
     pdf_lcvd_t *cvd = NULL;
-    gs_state *pgs = (gs_state *)gx_hld_get_gstate_ptr(pis);
 
     /*
      * Pop the image name from the NI stack.  We must do this, to keep the
@@ -560,6 +548,26 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
     pcs = pim->ColorSpace;
     num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
 
+    if (pdf_must_put_clip_path(pdev, pcpath))
+	code = pdf_unclip(pdev);
+    else 
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (code < 0)
+	return code;
+    if (context == PDF_IMAGE_TYPE3_MASK) {
+	/*
+	 * The soft mask for an ImageType 3x image uses a DevicePixel
+	 * color space, which pdf_color_space() can't handle.  Patch it
+	 * to DeviceGray here.
+	 */
+	/* {csrc} make sure this gets freed */
+	pcs = gs_cspace_new_DeviceGray(pdev->memory);
+    } else if (is_mask)
+	code = pdf_prepare_imagemask(pdev, pis, pdcolor);
+    else
+	code = pdf_prepare_image(pdev, pis);
+    if (code < 0)
+	goto nyi;
     if (prect)
 	rect = *prect;
     else {
@@ -587,7 +595,6 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
     width = rect.q.x - rect.p.x;
     pie->width = width;
     height = rect.q.y - rect.p.y;
-    pie->height = height;
     pie->bits_per_pixel =
 	pim->BitsPerComponent * num_components / pie->num_planes;
     pie->rows_left = height;
@@ -598,6 +605,14 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    pie->num_planes * pie->rows_left;
 	
 	in_line &= (nbytes < pdev->MaxInlineImageSize);
+    }
+    if (rect.p.x != 0 || rect.p.y != 0 ||
+	rect.q.x != pim->Width || rect.q.y != pim->Height ||
+	(is_mask && pim->CombineWithColor)
+	/* Color space setup used to be done here: see SRZB comment below. */
+	) {
+	gs_free_object(mem, pie, "pdf_begin_image");
+	goto nyi;
     }
     if (pmat == 0)
 	pmat = &ctm_only(pis);
@@ -621,129 +636,9 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    goto nyi;
 	}
     }
-    /* This block tests to see if the image we are getting might be the result of
-     * rendering a glyph to a bitmap. If it is, and the current font is a type
-     * 3 font, then it would be better to store the bitmap as a bitmap in the
-     * type 3 font. However, PDF recommends a maximum size of 4Kb for inline
-     * images, and the image *must* be inline in a CharProc.
-     */
-    pie->IsCharProc = 0;
-    /* Is our current gstate a 'show' ? */
-    if (pgs && pgs->show_gstate) {
-	gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
-	/* Is the current font a type 3, and is the btimap small enough ? */
-	if (show_enum && show_enum->current_font->FontType == ft_user_defined
-	    && ((pie->width * pie->height) / 8) <= 4096) {
-	    gs_matrix mat;
-	    double w;
-
-	    gs_matrix_multiply (pmat, &pim->ImageMatrix, &mat);
-	    mat.tx = pie->mat.tx;
-	    mat.ty = pie->mat.ty;
-	    pie->mat = mat;
-	    pie->IsCharProc = 1;
-
-	    if (show_enum->use_wxy_float)
-		pdev->char_width.x = show_enum->wxy_float.x;
-	    else
-		pdev->char_width.x = fixed2float(show_enum->wxy.x);
-	    if (pdev->char_width.x == 0)
-		pdev->char_width.x = width;
-
-            if (pdf_must_put_clip_path(pdev, pcpath))
-	        code = pdf_unclip(pdev);
-	    else 
-		code = pdf_open_page(pdev, PDF_IN_STREAM);
-	    if (code < 0) {
-		gs_free_object(mem, pie, "pdf_begin_image");
-		return code;
-	    }
-#if 0
-	    if (context == PDF_IMAGE_TYPE3_MASK) {
-		/*
-		 * The soft mask for an ImageType 3x image uses a DevicePixel
-		 * color space, which pdf_color_space() can't handle.  Patch it
-		 * to DeviceGray here.
-		 */
-    		/* {csrc} make sure this gets freed */
-		pcs = gs_cspace_new_DeviceGray(pdev->memory);
-	    } else if (is_mask)
-#endif
-		code = pdf_prepare_imagemask(pdev, pis, pdcolor);
-#if 0
-	    else
-		code = pdf_prepare_image(pdev, pis);
-#endif
-	    if (code < 0) {
-		gs_free_object(mem, pie, "pdf_begin_image");
-		goto nyi;
-	    }
-	    code = pdf_put_clip_path(pdev, pcpath);
-	    if (code < 0) {
-		gs_free_object(mem, pie, "pdf_begin_image");
-		return code;
-	    }
-	    code = pdf_begin_char_proc(pdev, pie->width, pie->height, 0, 0, 0, 0,
-					   &pie->pcp, &pie->ipos);
-	    if (code < 0)
-		return code;
-	    pie->skipping = code;
-	    if (!pie->skipping) {
-	    w = psdf_round(pdev->char_width.x, 100, 10); /* See 
-		pdf_write_Widths about rounding. We need to provide 
-		a compatible data for Tj. */
-	    pprintg1(pdev->strm, "%g ", w);
-	    pprintd4(pdev->strm, "0 %d %d %d %d d1\n",  0, pie->height, pie->width, 0);
-	    pprintd4(pdev->strm, "%d 0 0 %d %d %d cm\n", pie->width, -pie->height, 0,
-		pie->height);
-	    in_line = 1;
-	    }
-	    else
-		return 0;
-	}
-    } 
-    /* If we don't have a bitmap glyph in a type 3 font, then carry on 
-     * doing setup for an image (glyph setup is handled above)
-     */
-    if (pie->IsCharProc == 0) {
-        if (pdf_must_put_clip_path(pdev, pcpath))
-	    code = pdf_unclip(pdev);
-	else 
-	    code = pdf_open_page(pdev, PDF_IN_STREAM);
-	if (code < 0) {
-	    gs_free_object(mem, pie, "pdf_begin_image");
-	    return code;
-	}
-	if (context == PDF_IMAGE_TYPE3_MASK) {
-	    /*
-	     * The soft mask for an ImageType 3x image uses a DevicePixel
-	     * color space, which pdf_color_space() can't handle.  Patch it
-	     * to DeviceGray here.
-	     */
-    	    /* {csrc} make sure this gets freed */
-	    pcs = gs_cspace_new_DeviceGray(pdev->memory);
-	} else if (is_mask)
-	    code = pdf_prepare_imagemask(pdev, pis, pdcolor);
-	else
-	    code = pdf_prepare_image(pdev, pis);
-	if (code < 0) {
-	    gs_free_object(mem, pie, "pdf_begin_image");
-	    goto nyi;
-	}
-	code = pdf_put_clip_path(pdev, pcpath);
-	if (code < 0) {
-	    gs_free_object(mem, pie, "pdf_begin_image");
-	    return code;
-	}
-    }
-    if (rect.p.x != 0 || rect.p.y != 0 ||
-	rect.q.x != pim->Width || rect.q.y != pim->Height ||
-	(is_mask && pim->CombineWithColor)
-	/* Color space setup used to be done here: see SRZB comment below. */
-	) {
-	gs_free_object(mem, pie, "pdf_begin_image");
-	goto nyi;
-    }
+    code = pdf_put_clip_path(pdev, pcpath);
+    if (code < 0)
+	return code;
     pdf_image_writer_init(&pie->writer);
     pie->writer.alt_writer_count = (in_line || 
 				    (pim->Width <= 64 && pim->Height <= 64) ||
@@ -832,22 +727,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
      * this piece of code.
      */
     rc_increment_cs(image[0].pixel.ColorSpace);
-
-    /* Special setup for images which are actually glyphs and are being
-     * stored in a type 3 font (specific image compression type).
-     */
-    if (pie->IsCharProc ){
-	code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
-		    height, pnamed, true);
-	pie->writer.end_string = "";
-	if (code < 0) {
-	    if (image[0].pixel.ColorSpace == pim->ColorSpace)
-		rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
-	    goto fail;
-	}
-	psdf_CFE_binary(&pie->writer.binary[0], pie->width, pie->height, true);
-    } else {
-	if ((pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
+    if ((pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 		    height, pnamed, in_line)) < 0 ||
 	/*
 	 * Some regrettable PostScript code (such as LanguageLevel 1 output
@@ -866,10 +746,9 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 					  &pie->writer.binary[0], &image[0].pixel,
 					  pmat, pis, true, in_line))) < 0
 	) {
-	    if (image[0].pixel.ColorSpace == pim->ColorSpace)
-	        rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
-	    goto fail;
-	}
+	if (image[0].pixel.ColorSpace == pim->ColorSpace)
+	    rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
+	goto fail;
     }
     if (image[0].pixel.ColorSpace == pim->ColorSpace)
         rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
@@ -1095,15 +974,6 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 {
     pdf_image_enum *pie = (pdf_image_enum *) info;
     int i;
-
-    /* If a glyph was flushed from the cache and later reused then it gets
-     * rendered again, but we don't want a duplicate, so we use the existing
-     * one. In that case we don't want to write any of the bitmap data, so
-     * we just jump out here without writing the image data.
-     */
-    if (pie->IsCharProc && pie->skipping)
-	return 1;
-
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
         int code = pdf_image_plane_data_alt(info, planes, height, rows_used, i);
         if (code)
@@ -1242,8 +1112,7 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 
     if (pie->writer.pres)
 	((pdf_x_object_t *)pie->writer.pres)->data_height = data_height;
-    else if (data_height > 0 && ! pie->IsCharProc)
-	/* If this is a type 3 CharProc the matrix is already handled, don't do it here */
+    else if (data_height > 0)
 	pdf_put_image_matrix(pdev, &pie->mat, (double)data_height / height);
     if (data_height > 0) {
 	code = pdf_complete_image_data(pdev, &pie->writer, data_height,
@@ -1275,39 +1144,6 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 	} else
 	    code = pdf_end_and_do_image(pdev, &pie->writer, &pie->mat, info->id, do_image);
 	pie->writer.alt_writer_count--; /* For GC. */
-    }
-
-    /* This code handles the case where a bitmap glyph is rendered uncached
-     * because its too large for the cache. We've finished the imagem, so 
-     * now we need to close the CharProc (if required) and actually put the
-     * text in the PDF page stream.
-     */
-    if (pie->IsCharProc)
-    {
-	gs_matrix imat;
-	gs_point point, save;
-
-	/* skipping is set if we already had a copy of the glyph. In this case
-	 * we didn't make a new CharProc, so we don't need to close it. We 
-	 * simply need to set up the text matrix and show the character code
-	 */
-	if (!pie->skipping) {
-	    code = pdf_end_char_proc(pdev, &pie->ipos);
-	    if (code < 0)
-		return code;
-	}
-
-	/* This sets up the text matrix for the character */
-	save.x = pie->mat.tx;
-	save.y = pie->mat.ty;
-	gs_make_identity(&imat);
-	gs_matrix_multiply(&imat, &pie->mat, &imat);
-	gs_distance_transform(0, pie->height, &imat, &point);
-	imat.tx = save.x - point.x;
-	imat.ty = save.y - point.y;// + pie->height;
-
-	/* And here we emit it into the page content stream */
-	code = pdf_do_char_image(pdev, pie->pcp, &imat, pie->skipping);
     }
     gx_image_free_enum(&info);
     return code;
