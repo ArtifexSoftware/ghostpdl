@@ -27,6 +27,7 @@
 #include "gdevpdtw.h"
 #include "gdevpdtt.h"
 #include "gdevpdfo.h"
+#include "gxchar.h"	/* For gs_show_enum */
 
 /* ---------------- Private ---------------- */
 
@@ -300,20 +301,101 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 		    int y_offset, int x_offset, gs_id id, pdf_char_proc_t ** ppcp,
 		    pdf_stream_position_t * ppos)
 {
-    int char_code = 0;
+    gs_char char_code = 0;
     pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts; 
     pdf_font_resource_t *font;
     pdf_resource_t *pres;
     pdf_char_proc_t *pcp;
     int code;
+    /* This code added to store PCL bitmap glyphs in type 3 fonts where possible */
+    gs_glyph glyph = GS_NO_GLYPH;
+    gs_const_string *str = NULL;
+    gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
+    pdf_encoding_element_t *pet = 0;
+    /* Since this is for text searching, its only useful if the character code
+     * lies in an ASCII range, so we only handle some kinds of text layout.
+     */
+    int allowed_op = (show_enum->text.operation & 
+	(TEXT_FROM_STRING | TEXT_FROM_BYTES | TEXT_FROM_CHARS | TEXT_FROM_SINGLE_CHAR));
 
-    char_code = assign_char_code(pdev, pdev->pte);
-    font = pbfs->open_font; /* Type 3 */
+    /* Check to see the current font is a type 3. We can get here if pdfwrite decides
+     * it can't handle a font type, and renders to a bitmap instead. If that's the
+     * case then we can't add the bitmap to the existing font (its not a type 3 font) 
+     * and must fall back to holding it in our fallback type 3 font 'collection'.
+     */
+    /* Because the bitmaps are stored directly in the cache they already have any 
+     * effects caused by non-identity FontMatrix entries applied. So if the type 3
+     * font we created has a non-identity FontMatrix we can't use it and must 
+     * go back to collecting the bitmap into our fallback font.
+     */
+    if (show_enum->current_font->FontType == ft_user_defined && allowed_op && 
+	show_enum->current_font->FontMatrix.xx == 1 && show_enum->current_font->FontMatrix.xy == 0 &&
+	show_enum->current_font->FontMatrix.yx == 0 && show_enum->current_font->FontMatrix.yy == 1) {
+	pdf_char_proc_ownership_t *pcpo;
+
+	gs_font_base *base = (gs_font_base *)show_enum->current_font;
+	code = pdf_attached_font_resource(pdev, show_enum->current_font, &font, NULL, NULL, NULL, NULL);
+	if (code < 0)
+	    return code;
+	/* The text processing will have run past the glyph, so we need to 'back up'
+	 * by one and get it again in order to get the character code and glyph, and update
+	 * the pointer correctly.
+	 */
+	show_enum->index--;
+	code = gs_default_next_char_glyph((gs_text_enum_t *)show_enum, (gs_char *)&char_code, &glyph);
+	if (code < 0)
+	    return code;
+
+	/* If the returned character code is outside the possible Encoding for 
+	 * a type 3 font, then set pet to NULL, this means we will fall back to
+	 * the 'collection' font, as pet is checked below.
+	 */
+	if (char_code >= 0 && char_code <= 255) {
+	    pet = &font->u.simple.Encoding[char_code];
+	    if (pet) {
+		/* Check to see if we *already* have this glyph in this font. If 
+		 * we do then we can't add it to this font. Setting pet to 0
+		 * falls back to the collection method.
+		 */
+		for (pcpo = font->u.simple.s.type3.char_procs; pcpo != NULL; pcpo = pcpo->char_next) {
+		    if (pcpo->glyph == pet->glyph && pcpo->char_code == char_code) {
+			pet = 0x00;
+			break;
+		    }
+		}
+	    }
+	}
+	else
+	    pet = 0x00;
+
+	/* We need a glyph name for the type 3 font's Encoding, if we haven't got one
+	 * then we need to give up, something about the font or text is not acceptable
+	 * (see various comments above).
+	 */
+	if (pet && pet->glyph != GS_NO_GLYPH && !(pet->str.size == 7 && 
+	    !strncmp((const char *)pet->str.data, ".notdef", 7))) {
+	    if (char_code < font->u.simple.FirstChar)
+		font->u.simple.FirstChar = char_code;
+	    if (char_code > font->u.simple.LastChar)
+		font->u.simple.LastChar = char_code;
+	    base->FontBBox.q.x = max(base->FontBBox.q.x, w);
+	    base->FontBBox.q.y = max(base->FontBBox.q.y, y_offset + h);
+	    str = &pet->str;
+	    glyph = pet->glyph;
+	} else {
+	    char_code = assign_char_code(pdev, pdev->pte);
+	    font = pbfs->open_font; /* Type 3 */
+	}
+    } else {
+	char_code = assign_char_code(pdev, pdev->pte);
+	font = pbfs->open_font; /* Type 3 */
+    }
+
     code = pdf_begin_resource(pdev, resourceCharProc, id, &pres);
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *) pres;
-    code = pdf_attach_charproc(pdev, font, pcp, GS_NO_GLYPH, char_code, NULL);
+    code = pdf_attach_charproc(pdev, font, pcp, glyph, char_code, str);
     if (code < 0)
 	return code;
     pres->object->written = true;
