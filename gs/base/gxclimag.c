@@ -943,6 +943,7 @@ clist_create_compositor(gx_device * dev,
     int last_band = (cdev->height + band_height - 1) / band_height;
     int first_band = 0, no_of_bands = last_band + 1;
     int code = pcte->type->procs.write(pcte, 0, &size, cdev);
+    int temp_cropping_min, temp_cropping_max;
 
     /* determine the amount of space required */
     if (code < 0 && code != gs_error_rangecheck)
@@ -961,8 +962,8 @@ clist_create_compositor(gx_device * dev,
         return code;
 
     cropping_op = code;
-
-    if (cropping_op == 1) {
+   
+    if (cropping_op == 1 || cropping_op == 4) {
         first_band = ry / band_height;
         last_band = (ry + rheight + band_height - 1) / band_height;
     } else if (cropping_op > 1) {
@@ -1020,12 +1021,21 @@ clist_create_compositor(gx_device * dev,
         if (code < 0)
             return code;
     }
-    if (cdev->cropping_min < cdev->cropping_max) {
+    if (cropping_op == 4) {
+        /* Set the range even though it is not pushed until the group occurs
+           This occurs only when we had blend changes with a group push */
+        temp_cropping_min = max(cdev->cropping_min, ry);
+        temp_cropping_max = min(cdev->cropping_max, ry + rheight);
+    } else {
+        temp_cropping_min = cdev->cropping_min;
+        temp_cropping_max = cdev->cropping_max;
+    }
+    if (temp_cropping_min < temp_cropping_max) {
         /* The pdf14 compositor could be applied
            only to bands covered by the pcte->params.bbox. */
         cmd_rects_enum_t re;
 
-        RECT_ENUM_INIT(re, cdev->cropping_min, cdev->cropping_max - cdev->cropping_min);
+        RECT_ENUM_INIT(re, temp_cropping_min, temp_cropping_max - temp_cropping_min);
         do {
             RECT_STEP_INIT(re);
             re.pcls->band_complexity.nontrivial_rops = true;

@@ -1170,6 +1170,22 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
     }
 }
 
+/* A very simple case.  Knockout isolated group going to a parent that is not
+   a knockout.  Simply copy over everwhere where we have a non-zero alpha value */
+void
+art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan)
+{
+    int i;
+    byte src_alpha;	
+
+    src_alpha = src[n_chan];
+    if (src_alpha == 0)
+        return;
+    for (i = 0; i <= n_chan >> 2; i++) {
+        ((bits32 *) dst)[i] = ((const bits32 *)src)[i];
+    }
+}
+
 void
 art_pdf_composite_knockout_simple_8(byte *dst,
 				    byte *dst_shape,
@@ -1415,7 +1431,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
    /* clist_band_count is incremented at every pdf14putimage */
    /* Useful for catching this thing and only dumping */
    /* during a particular band if we have a large file */
-   /* if (clist_band_count != 0) return; */
+   // if (clist_band_count != 1) return; 
     buff_ptr = Buffer;
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,max_bands);

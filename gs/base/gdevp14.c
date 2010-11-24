@@ -72,7 +72,10 @@ static pdf14_mask_t *pdf14_mask_element_new(gs_memory_t *memory);
 static void pdf14_free_smask_color(pdf14_device * pdev); 
 static	int compute_group_device_int_rect(pdf14_device *pdev, gs_int_rect *rect, 
                               const gs_rect *pbbox, gs_imager_state *pis);
-
+static	int pdf14_clist_update_params(pdf14_clist_device * pdev, 
+                                      const gs_imager_state * pis, 
+                                      bool crop_blend_params, 
+                                      gs_pdf14trans_params_t *group_params);
 
 /* Functions for dealing with soft mask color */
 static int pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev);
@@ -3772,14 +3775,14 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     if (buf->data == NULL)
 	return 0;
 
-    if (sizeof(color) <= sizeof(ulong))
+ /*   if (sizeof(color) <= sizeof(ulong))
 	if_debug6('v', "[v]pdf14_mark_fill_rectangle_ko_simple, (%d, %d), %d x %d color = %lx, nc %d,\n", 
 		    x, y, w, h, (ulong)color, num_chan);
     else
 	if_debug7('v', "[v]pdf14_mark_fill_rectangle_ko_simple, (%d, %d), %d x %d color = %8lx%08lx, nc %d,\n", 
 		    x, y, w, h, 
 		    (ulong)(color >> 8*(sizeof(color) - sizeof(ulong))), (ulong)color, 
-		    num_chan);
+		    num_chan);  */
 
     /*
      * Unpack the gx_color_index values.  Complement the components for subtractive
@@ -3821,10 +3824,14 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
 		    dst[k] = 255 - dst_ptr[k * planestride];
 		dst[num_comp] = dst_ptr[num_comp * planestride];
 	    }
-	    art_pdf_composite_knockout_simple_8(dst,
-		has_shape ? dst_ptr + shape_off : NULL, 
-                has_tags ? dst_ptr + tag_off : NULL,     
-                src, curr_tag, num_comp, 255);
+            if (has_shape) {
+	        art_pdf_composite_knockout_simple_8(dst,
+		    has_shape ? dst_ptr + shape_off : NULL, 
+                    has_tags ? dst_ptr + tag_off : NULL,     
+                    src, curr_tag, num_comp, 255);
+            } else {
+                art_pdf_knockoutisolated_group_8(dst, src, num_comp);
+            }
             /* ToDo:  Review use of shape and opacity above.   */ 
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {
@@ -5872,11 +5879,11 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
 	    case PDF14_BEGIN_TRANS_GROUP:
 		/*
 		 * Keep track of any changes made in the blending parameters.
-		 */
-		pdev->text_knockout = pdf14pct->params.Knockout;
-		pdev->blend_mode = pdf14pct->params.blend_mode;
-		pdev->opacity = pdf14pct->params.opacity.alpha;
-		pdev->shape = pdf14pct->params.shape.alpha;
+		   These need to be written out in the same bands as the group
+                   information is written.  Hence the passing of the dimensions
+                   for the group. */
+                code = pdf14_clist_update_params(pdev, pis, true, 
+                                                    &(pdf14pct->params));
 		if (pdf14pct->params.Background_components != 0 && 
 		    pdf14pct->params.Background_components != pdev->color_info.num_components)
 		    return_error(gs_error_rangecheck);
@@ -6014,12 +6021,16 @@ pdf14_clist_forward_create_compositor(gx_device	* dev, gx_device * * pcdev,
  * need to send them to the PDF 1.4 compositor on the output side of the clist.
  */
 static	int
-pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_imager_state * pis)
+pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_imager_state * pis,
+                          bool crop_blend_params, 
+                          gs_pdf14trans_params_t *group_params)
 {
     gs_pdf14trans_params_t params = { 0 };
     gx_device * pcdev;
     int changed = 0;
     int code = 0;
+
+    params.crop_blend_params = crop_blend_params;
 
     params.pdf14_op = PDF14_SET_BLEND_PARAMS;
     if (pis->blend_mode != pdev->blend_mode) {
@@ -6056,6 +6067,10 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_imager_state * pis
      * the imager state.
      */
     if (changed != 0) {
+        if (crop_blend_params) {
+            params.ctm = group_params->ctm;
+            params.bbox = group_params->bbox;
+        }
 	params.changed = changed;
 	code = send_pdf14trans((gs_imager_state *)pis, (gx_device *)pdev,
 					&pcdev, &params, pis->memory);
@@ -6085,7 +6100,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
      * do not have access to the imager state.  Thus we have to pass any
      * changes explictly.
      */
-    code = pdf14_clist_update_params(pdev, pis);
+    code = pdf14_clist_update_params(pdev, pis, false, NULL);
     if (code < 0)
 	return code;
     /* If we are doing a shading fill and we are in a tranparency
@@ -6137,7 +6152,7 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_imager_state *pis,
      * do not have access to the imager state.  Thus we have to pass any
      * changes explictly.
      */
-    code = pdf14_clist_update_params(pdev, pis);
+    code = pdf14_clist_update_params(pdev, pis, false, NULL);
     if (code < 0)
 	return code;
     /* If we are doing a shading stroke and we are in a tranparency
@@ -6187,7 +6202,7 @@ pdf14_clist_text_begin(gx_device * dev,	gs_imager_state	* pis,
      * do not have access to the imager state.  Thus we have to pass any
      * changes explictly.
      */
-    code = pdf14_clist_update_params(pdev, pis);
+    code = pdf14_clist_update_params(pdev, pis, false, NULL);
     if (code < 0)
 	return code;
     /* Pass text_begin to the target */
@@ -6216,7 +6231,7 @@ pdf14_clist_begin_image(gx_device * dev,
      * do not have access to the imager state.  Thus we have to pass any
      * changes explictly.
      */
-    code = pdf14_clist_update_params(pdev, pis);
+    code = pdf14_clist_update_params(pdev, pis, false, NULL);
     if (code < 0)
 	return code;
     /* Pass image to the target */
@@ -6251,7 +6266,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_imager_state * pis,
      * do not have access to the imager state.  Thus we have to pass any
      * changes explictly.
      */
-    code = pdf14_clist_update_params(pdev, pis);
+    code = pdf14_clist_update_params(pdev, pis, false, NULL);
     if (code < 0)
 	return code;
     /* Pass image to the target */
@@ -6649,7 +6664,25 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight, int
         case PDF14_PUSH_TRANS_STATE: return 3;
         case PDF14_POP_TRANS_STATE: return 3;
 
-	case PDF14_SET_BLEND_PARAMS: return 3;
+        case PDF14_SET_BLEND_PARAMS: 
+ 	    {	gs_int_rect rect;
+		int code;
+
+                if (pdf14pct->params.crop_blend_params) {
+		    code = pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm, 
+                                                &pdf14pct->params.bbox, &rect);
+
+                    /* We have to crop this by the parent object.   */
+
+                    *ry = max(rect.p.y, cropping_min);
+                    *rheight = min(rect.q.y, cropping_max) - *ry;
+                    return 4; /* A special case were we write out to the same
+                                 bands as the last group, but we will not 
+                                 push a cropping onto the cropping statck */
+                } else {
+                    return 3;
+                }
+               }
 	case PDF14_PUSH_SMASK_COLOR: return 2; /* Pop cropping. */
 	case PDF14_POP_SMASK_COLOR: return 2;   /* Pop the cropping */ 
 

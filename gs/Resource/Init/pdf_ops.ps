@@ -459,8 +459,23 @@ end def
 
 /B {
   OFFlevels length 0 eq {
-    gsave setfillstate fill grestore
-    setstrokestate .swapcolors /stroke fsexec .swapcolors
+	 PDFusingtransparency {
+		% knockout trans group around the filled and stroked object
+		mark
+		/Isolated true /Knockout true
+		.dicttomark
+		% strokepath will return empty path (no currentpoint) if nothing is stroked
+		gsave { strokepath pathbbox } stopped grestore not {
+            1 .setopacityalpha 
+			.begintransparencygroup
+			gsave setfillstate fill grestore
+			setstrokestate .swapcolors /stroke fsexec .swapcolors
+			.endtransparencygroup
+		} { newpath pop } ifelse
+	 } {
+		gsave setfillstate fill grestore
+		setstrokestate .swapcolors /stroke fsexec .swapcolors	
+	} ifelse
   } {
     newpath
   } ifelse
@@ -470,8 +485,23 @@ end def
 
 /B* {
   OFFlevels length 0 eq {
-    gsave setfillstate eofill grestore
-    setstrokestate .swapcolors /stroke fsexec .swapcolors
+	 PDFusingtransparency {
+		% knockout trans group around the filled and stroked object
+		mark
+		/Isolated true /Knockout true
+		.dicttomark
+		% strokepath will return empty path (no currentpoint) if nothing is stroked
+		gsave { strokepath pathbbox } stopped grestore not {
+            1 .setopacityalpha
+			.begintransparencygroup
+			gsave setfillstate eofill grestore
+			setstrokestate .swapcolors /stroke fsexec .swapcolors
+			.endtransparencygroup
+		} { newpath pop } ifelse
+	 } {
+		gsave setfillstate eofill grestore
+		setstrokestate .swapcolors /stroke fsexec .swapcolors	
+	} ifelse
   } {
     newpath
   } ifelse

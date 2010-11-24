@@ -114,6 +114,8 @@ struct gs_pdf14trans_params_s {
     gs_transparency_color_t group_color;
     int64_t icc_hash;
     cmm_profile_t *iccprofile;               /* The profile  */
+    bool crop_blend_params;  /* This is used when the blend params are updated
+                                during a transparency group push */
 
 };
 

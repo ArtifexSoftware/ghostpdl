@@ -287,6 +287,20 @@ art_pdf_composite_knockout_simple_8(byte *dst,
 				    const byte *src, byte tag,
 				    int n_chan, byte opacity);
 
+
+
+/**
+ * art_pdf_knockoutisolated_group_8: Knockout for isolated group.
+ * @dst: Destination pixel. 
+ * @src: Source pixel.
+ * @n_chan: Number of channels.
+ *
+ * This function handles the simple case with an isolated knockout group.
+ **/
+void
+art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan);
+
+
 /**
  * art_pdf_composite_knockout_isolated_8: Simple knockout compositing.
  * @dst: Destination pixel. 
