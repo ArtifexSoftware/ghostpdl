@@ -137,8 +137,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     byte invert = 0;
     bool in_line = false;
     gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
-		double width;
-		int x_offset, y_offset;
+    int x_offset, y_offset;
 
     /* Update clipping. */
     if (pdf_must_put_clip_path(pdev, pcpath)) {
