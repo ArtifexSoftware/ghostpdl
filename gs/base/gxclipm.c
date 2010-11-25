@@ -279,7 +279,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
 		prev.q.y = ty + 1;
 	    else {
 		if (prev.q.y > prev.p.y) {
-		    code = (*process)(pccd, tx1, ty, tx, ty + 1);
+		    code = (*process)(pccd, prev.p.x, prev.p.y, prev.q.x, prev.q.y);
 		    if (code < 0)
 			return code;
 		}
