@@ -125,7 +125,7 @@ xps_true_callback_decode_glyph(gs_font *pfont, gs_glyph glyph)
 static int
 xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
 {
-    /* This funciton is copied verbatim from plfont.c */
+    /* This function is copied verbatim from plfont.c */
 
     int table_length;
     int table_offset;
@@ -175,7 +175,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     if ( format != 0x20000 )
     {
         /* Invent a name if we don't know the table format. */
-        char buf[16];
+        char buf[32];
         sprintf(buf, "glyph%d", (int)glyph);
         pstr->data = (byte*)buf;
         pstr->size = strlen((char*)pstr->data);
