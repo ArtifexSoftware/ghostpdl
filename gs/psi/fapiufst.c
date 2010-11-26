@@ -980,20 +980,20 @@ static int export_outline(fapi_ufst_server *r, PIFOUTLINE pol, FAPI_path *p)
         for(j=0; j<num_segmts; j++) {
 
             if(*segment == 0x00) {
-             	if ((p->gs_error = p->moveto(p, points->x, points->y)) != 0)
+             	if ((p->gs_error = p->moveto(p, ((int64_t)points->x) << 16, ((int64_t)points->y) << 16)) != 0)
 		    return p->gs_error;
                 points++;
             } else if (*segment == 0x01) {
-		if ((p->gs_error = p->lineto(p, points->x, points->y)) != 0)
+		if ((p->gs_error = p->lineto(p, ((int64_t)points->x) << 16, ((int64_t)points->y) << 16)) != 0)
 		    return p->gs_error;
                 points++;
             } else if (*segment == 0x02) {
                 points+=2;
                 return e_invalidfont; /* This must not happen */
             } else if (*segment == 0x03) {
-		if ((p->gs_error = p->curveto(p, points[0].x, points[0].y,
-					points[1].x, points[1].y,
-					points[2].x, points[2].y)) < 0)
+		if ((p->gs_error = p->curveto(p, ((int64_t)points[0].x) << 16, ((int64_t)points[0].y) << 16,
+					((int64_t)points[1].x) << 16, ((int64_t)points[1].y) << 16,
+					((int64_t)points[2].x) << 16, ((int64_t)points[2].y)<< 16) < 0))
 		    return p->gs_error;
                 points+=3;
             } else
