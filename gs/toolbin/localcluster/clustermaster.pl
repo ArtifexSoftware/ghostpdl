@@ -181,7 +181,8 @@ sub checkPID {
     my %lastTransfer;
     my %sent;
     my $doneCount=0;
-    my %standbySent;
+    my %standbySent1;
+    my %standbySent2;
     my @jobs;
     my $abort=0;
     my $tempDone=0;
@@ -983,12 +984,13 @@ mydbg "done checking jobs, product=$product\n";
           } else {
           mydbg "Connect from $t (".$client->peerhost.") (".(time-$lastTransfer{$t})." seconds); jobs remaining ".scalar(@jobs)."\n";
           $lastTransfer{$t}=time;
-          if (scalar(@jobs)==0 && scalar keys %standbySent<scalar keys %machines) {
-            $standbySent{$t}=1;
-            print $client "standby\n"; # if (scalar keys %standbySent<scalar keys %machines);
-            mydbg "sending standby: ".(scalar keys %standbySent)." out of ".(scalar keys %machines)."\n";
+          if (scalar(@jobs)==0 && (scalar keys %standbySent1<scalar keys %machines || scalar keys %standbySent2<scalar keys %machines)) {
+            $standbySent2{$t}=1 if (exists $standbySent1{$t});
+            $standbySent1{$t}=1;
+            print $client "standby\n"; # if (scalar keys %standbySent1<scalar keys %machines);
+            mydbg "sending standby: ".(scalar keys %standbySent1)." and ".(scalar keys %standbySent2)." out of ".(scalar keys %machines)."\n";
 #           mydbg "sending standby skipped\n" if (!(scalar keys %standbySent<scalar keys %machines));
-          } elsif (scalar(@jobs)==0 && scalar keys %standbySent==scalar keys %machines) {
+          } elsif (scalar(@jobs)==0 && scalar keys %standbySent2==scalar keys %machines) {
             print $client "done\n";
             $doneCount++;
             delete $lastTransfer{$t};
@@ -998,7 +1000,8 @@ mydbg "done checking jobs, product=$product\n";
               mydbg "setting tempDone to 1\n";
             }
           } else {
-            %standbySent=() if (scalar(@jobs)>0);  # if we are sending jobs we must have had a machine go down
+            %standbySent1=() if (scalar(@jobs)>0);  # if we are sending jobs we must have had a machine go down
+            %standbySent2=() if (scalar(@jobs)>0);  # if we are sending jobs we must have had a machine go down
             $jobsPerRequest=250;
             $jobsPerRequest=125 if (scalar(@jobs)<4000);
             $jobsPerRequest= 50 if (scalar(@jobs)<2000);
@@ -1260,7 +1263,9 @@ mydbg "now running ./compare.pl current.tab previous.tab $elapsedTime $machineCo
       `rm -fr archive/$rev`;
       `mkdir archive/$rev`;
       `mv $logs archive/$rev/.`;
-      `mv gs_build.log archive/$rev/.`;
+       if ($product =~ /gs/) {
+        `mv gs_build.log archive/$rev/.`;
+       }
       `gzip archive/$rev/*log`;
       `cp -p email.txt archive/$rev/.`;
       `cp -p current.tab archive/$rev/current.tab`;
@@ -1377,7 +1382,9 @@ close(F9);
 
 
       `mv $logs $usersDir/$userName/.`;
-      `mv gs_build.log $usersDir/$userName/.`;
+      if ($product =~ /gs/) {
+        `mv gs_build.log $usersDir/$userName/.`;
+      }
       `cp -p $userName.txt $usersDir/$userName/.`;
       `cp -p $userName.txt results/.`;
       `mv    $usersDir/$userName/temp.tab $usersDir/$userName/previousTemp.tab`;

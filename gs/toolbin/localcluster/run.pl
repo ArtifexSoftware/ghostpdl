@@ -886,9 +886,14 @@ mylog "requesting more jobs: scalar key pids=".(scalar keys %pids)." and lastRec
       if ($commands[0] eq "standby") {
         @commands=();
         $lastReceivedCount=0;
-        $abort=checkAbort() if (scalar keys %pids==0);
-        updateStatus("Standing by") if (scalar keys %pids==0);
-        sleep 5 if (scalar keys %pids==0);
+        updateStatus("Standby") if (scalar keys %pids==0);
+        my $elapsedTime=time-$startTime;
+        if ($elapsedTime>=30) {
+          $abort=checkAbort;
+          $startTime=time;
+        } else {
+          sleep 5 if (scalar keys %pids==0);
+        }
       }
     }
   }
@@ -968,6 +973,11 @@ mylog "requesting more jobs: scalar key pids=".(scalar keys %pids)." and lastRec
       }
       updateStatus($message);
       $lastCount=$tempCount;
+    }
+    my $elapsedTime=time-$startTime;
+    if ($elapsedTime>=30) {
+      $abort=checkAbort;
+      $startTime=time;
     }
   }
 
@@ -1187,6 +1197,7 @@ if (!$local) {
   spawn(100,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");
   mylog("removing $machine.abort on casper\n");
   spawn(70,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"rm /home/regression/cluster/$machine.abort\"");
+  spawn(100,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com \"touch /home/regression/cluster/$machine.done\"");  # stoopid hack, but sometimes these fail with no error indication
 }
 
 unlink $runningSemaphore;
