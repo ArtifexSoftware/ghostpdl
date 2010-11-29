@@ -2578,6 +2578,7 @@ pdf_text_process(gs_text_enum_t *pte)
     if (penum->current_font->FontType == ft_user_defined && (penum->text.operation & TEXT_DO_ANY_CHARPATH)
 	&& !pdev->type3charpath) {
 	pdev->type3charpath = true;
+	if (!penum->charproc_accum)
 	goto default_impl;
     }
 
@@ -2632,7 +2633,10 @@ pdf_text_process(gs_text_enum_t *pte)
 		return code;
 	    gs_text_release(pte_default, "pdf_text_process");
 	    penum->pte_default = 0;
-	    goto top;
+	    if (!pdev->type3charpath)
+		goto top;
+	    else
+		goto default_impl;
 	}
 	pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
 	code = gs_text_process(pte_default);
