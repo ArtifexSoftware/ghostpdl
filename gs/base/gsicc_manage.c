@@ -718,6 +718,7 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
 {
     int code;
     char *pname;
+    stream *str;
 
     /* See if the device has a profile */
     if (dev->color_info.icc_profile[0] == '\0') {
@@ -752,28 +753,37 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
            by the ICC directory path when we specify a directory and an output
            ICC profile.  This (the full path name) is needed later for c-list 
            processing.  Check and make sure that this is the case.  If not, then
-           prepend it now if there is room. */
+           prepend it now if there is room.  But FIRST check if the path is ok 
+           as it is. If path is absolute then we are done..*/
         if (!gp_file_name_is_absolute(dev->color_info.icc_profile,
-            strlen(dev->color_info.icc_profile))) { 
+            strlen(dev->color_info.icc_profile))) {
             if (pgs->icc_manager->profiledir != NULL) {
                 if (strncmp(pgs->icc_manager->profiledir,dev->color_info.icc_profile,
                     strlen(pgs->icc_manager->profiledir)) != 0) {
                     if ((strlen(pgs->icc_manager->profiledir) + 
                         strlen(dev->color_info.icc_profile)) < gp_file_name_sizeof) {
-                        pname = (char *)gs_alloc_bytes(pgs->memory, 
-                                                    strlen(dev->color_info.icc_profile)+1,
-   		                                "gsicc_init_device_profile");
-                        strcpy(pname,dev->color_info.icc_profile);
-                        strcpy(dev->color_info.icc_profile,pgs->icc_manager->profiledir);
-                        strcat(dev->color_info.icc_profile,pname);
-                        gs_free_object(pgs->memory, pname, "gsicc_init_device_profile");
+                        str = sfopen(dev->color_info.icc_profile, "rb", pgs->memory);
+                        if (str == NULL) { 
+                            /* Prepend the icc directory */
+                            pname = (char *)gs_alloc_bytes(pgs->memory, 
+                                                        strlen(dev->color_info.icc_profile)+1,
+   		                                    "gsicc_init_device_profile");
+                            strcpy(pname,dev->color_info.icc_profile);
+                            strcpy(dev->color_info.icc_profile,pgs->icc_manager->profiledir);
+                            strcat(dev->color_info.icc_profile,pname);
+                            gs_free_object(pgs->memory, pname, "gsicc_init_device_profile");
+                        } else {
+                            /* Path is all OK */
+                            sfclose(str);
+                        }
                     }
                 }
             }
         }
-        /* Check for cases where the color model has changed */
-        if (dev->device_icc_profile->num_comps != 
-            dev->color_info.num_components || 
+        /* Check for cases where the color model has changed.  However ignore
+           sep device mismatches */
+        if ((dev->device_icc_profile->num_comps != 
+            dev->color_info.num_components && dev->color_info.num_components < 5)  || 
             strncmp(dev->device_icc_profile->name,dev->color_info.icc_profile,
             dev->device_icc_profile->name_length) != 0 ) {
             /* First go ahead and try to use the profile path that is already 

@@ -639,26 +639,33 @@ currentuserparams /WaitTimeout known
 % defined by ICC profiles
 
 //systemdict /ICCProfilesDir .knownget {
+  % Set the directory sepcified by the command line option
   mark exch /ICCProfilesDir exch .dicttomark .setuserparams
 } {
-  % Search for valid (iccprofiles) directory as a sibling to (Resource)
-  % and set it as a default if found.
-  LIBPATH { 
-    (Resource) search {
-      exch pop exch pop (iccprofiles) concatstrings
-      .file_name_separator concatstrings
-      dup (default_gray.icc) concatstrings status {
-        pop pop pop pop
-        mark exch /ICCProfilesDir exch .dicttomark .setuserparams
-        exit
+  % First see if the current value is valid so we don't have to guess
+  mark .currentuserparams .dicttomark /ICCProfilesDir get
+  (default_gray.icc) concatstrings status {
+    pop pop pop pop		% current value was OK. Just clean up stack
+  } { 
+    % Search for valid (iccprofiles) directory as a sibling to (Resource)
+    % and set it as a default if found.
+    LIBPATH { 
+      (Resource) search {
+        exch pop exch pop (iccprofiles) concatstrings
+        .file_name_separator concatstrings
+        dup (default_gray.icc) concatstrings status {
+          pop pop pop pop
+          mark exch /ICCProfilesDir exch .dicttomark .setuserparams
+          exit
+        } {
+          pop
+        } ifelse
       } {
         pop
       } ifelse
-    } {
-      pop
-    } ifelse
-  } forall
-} ifelse
+    } forall
+  } ifelse 	% if currentuserparams ICCProfilesDir
+} ifelse      % ICCProfilesDir set in systemdict (command line option)
 
 //systemdict /DefaultRGBProfile .knownget{
 mark exch /DefaultRGBProfile exch .dicttomark
