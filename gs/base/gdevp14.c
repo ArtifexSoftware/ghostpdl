@@ -540,7 +540,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->parent_color_info_procs->parent_color_comp_index = NULL;
     result->parent_color_info_procs->icc_profile = NULL;
     result->parent_color_info_procs->previous = NULL;
-    if (height <= 0 || idle) {
+    if (height <= 0) {
 	/* Empty clipping - will skip all drawings. */
 	result->planestride = 0;
 	result->data = 0;
