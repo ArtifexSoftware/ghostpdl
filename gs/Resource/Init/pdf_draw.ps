@@ -27,6 +27,34 @@ pdfdict begin
 % PDF graphics operations, even though this is too liberal.
 /drawopdict 100 dict def
 
+/SetGroupExtGStateDict
+<<
+  /AlphaIsShape //AIS
+  /FillConstantAlpha //ca
+  % We don't have to worry about the enumeration order, even
+  % with the color/space settings, since we only store, not
+  % not set them.
+  /FillColor //sc1
+  /FillColorSpace { /FillColorSpace gput } bind
+  /FillOverprint //op
+  /SoftMask //SMask
+  /StrokeConstantAlpha //CA
+  /StrokeColor //SC1
+  /StrokeColorSpace { /StrokeColorSpace gput } bind
+  /StrokeOverprint //OP
+  /TextSpacing //Tc
+  % We can't use //Tz as we've stored the value we actually use,
+  % not value * 100 (see /Tz in pdf_ops.ps)
+  /TextHScaling { /TextHScaling gput } bind
+  /Leading //TD
+  /TextFont { /TextFont gput} bind
+  /TextLineMatrix { /TextLineMatrix gput } bind
+  /TextMatrix { /TextMatrix gput } bind
+  /TextRise { /TextRise gput } bind
+  /TextRenderingMode { /TextRenderingMode gput } bind
+  /WordSpacing //Tw
+>> def
+
 % ================================ Graphics ================================ %
 
 % ---------------- Functions ---------------- %
@@ -438,8 +466,27 @@ end
       } ifelse
     } if    
     dup /G oget dup /BBox oget /BBox exch 4 2 roll
+    % Because we don't execute the group form stream until we find
+    % out whether we're actually going to draw through it, we need
+    % to save the current gstate with the other parameters, so
+    % we can subsequently execute it in the correct graphics state.
+    /GroupGState gstate currentgstate 6 2 roll
+    /GroupMat matrix currentmatrix 8 2 roll
+    /GroupExtGState 1 dict
+    //SetGroupExtGStateDict
+    {
+      exch dup where
+      {
+        exch get 2 index 3 1 roll put
+      }
+      {
+        pop pop
+      } ifelse
+    } forall
+    10 2 roll
     /.execmaskgroup cvx 2 packedarray cvx /Draw exch 3 2 roll
-    pop .dicttomark
+    pop
+    .dicttomark
   } ifelse SMask
 } bdef
 
@@ -463,8 +510,22 @@ def
     % a soft mask with .begintransparencygroup because high level devices
     % need to modify the graphic state by storing the soft mask ID.
     % Save the ExtGState (//nodict begin) BEFORE changing the colorspace
+  //nodict begin
+  matrix currentmatrix 4 1 roll
   mark currentcolor counttomark dup 4 add exch roll pop
-  currentcolorspace 4 1 roll .getuseciecolor 4 1 roll //nodict begin
+  currentcolorspace 4 1 roll .getuseciecolor 4 1 roll
+
+  % We can't simply set the group's gstate here because
+  % we can't use gsave/grestore. So we actually set it
+  % in .execgroup. But the matrix needs set here for 
+  % .begintransparencymaskgroup to correctly work.
+  % It might seem we should also set the colorspace
+  % in case the group doesn't have one, *but* empirical
+  % suggests that is not the case - fts_26_2600.pdf and
+  % fts_26_2603.pdf render incorrectly if we set the
+  % colrospace
+  1 index /GroupMat .knownget { setmatrix } if
+
   PDFfile fileposition 4 1 roll
 	% We have to select the group's color space so that the
 	% background color will be interpreted correctly.
@@ -480,19 +541,38 @@ def
     forceDefaultCS currentcolorspace 0 get .knownget { exec } if
     //false		% no defined colorspace
   } ifelse
-  3 -1 roll dup /BBox get aload pop .begintransparencymaskgroup {
-    dup /Resources knownoget { oforce } { 0 dict } ifelse
+  3 -1 roll dup
+  dup 4 1 roll /BBox get aload pop .begintransparencymaskgroup {
+    exch dup /Resources knownoget { oforce } { 2 dict } ifelse
+    3 -1 roll dup /GroupGState .knownget { 2 index /GroupGState 3 -1 roll put} if
+    /GroupExtGState .knownget { 1 index /GroupExtGState 3 -1 roll put} if
     exch false resolvestream
     .execgroup .endtransparencymask
   } stopped {
     .discardtransparencymask stop
   } if
   PDFfile exch setfileposition 
-  .setuseciecolor setcolorspace setcolor end	% restore colorspace, color and ExtGState (end)
+  .setuseciecolor setcolorspace setcolor
+  setmatrix
+  end	% restore colorspace, color and ExtGState (end)
 } bdef
+
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
   gsave //nodict begin
+  
+  % We have to set the gstate correctly for lazy evaluation of a softmask group.
+  % we also must preserve the color(space) as setup in .execmaskgroup.
+  % This stuff must be done here, as .execmaskgroup can't use gsave/grestore to
+  % manipulate the gstates, due to the requirements of .begintransparencymaskgroup.
+  % We also must set the ExtGState values.
+  % It may seem redundant to do the color(space) twice (once here and once in
+  % .execmaskgroup) but we have to set it in .execmaskgroup for the background
+  % color and set it here once in the correct gstate.
+  mark currentcolor currentcolorspace counttomark 2 add index dup
+  /GroupGState .knownget { setgstate } if
+  /GroupExtGState .knownget { {exch exec} forall } if
+  setcolorspace setcolor pop
   newpath null SMask
   1 .setopacityalpha 1 .setshapealpha
   1 CA 1 ca
@@ -1527,7 +1607,7 @@ currentdict /last-ditch-bpc-csp undef
     true % pdfwrite doesn't need the workaround explained above,
          % and cannot work with it. 
   } ifelse
-  and {
+ and {
     currentdict /SMask knownoget
   } {
     false
