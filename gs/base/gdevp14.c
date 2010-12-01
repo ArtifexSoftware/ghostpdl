@@ -1137,6 +1137,14 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                        tos->rect.q.x - tos->rect.p.x, 
                        tos->rowstride, 
                        (tos->data)+tos->planestride, new_data_buf);
+#if RAW_DUMP
+            /* Dump the current buffer to see what we have. */
+            dump_raw_buffer(tos->rect.q.y-tos->rect.p.y, 
+                        tos->rowstride, tos->n_planes,
+                        tos->planestride, tos->rowstride, 
+                        "SMask_Pop_Alpha(Mask_Plane1)",tos->data);
+            global_index++;
+#endif
         } else {
             if ( icc_match == 1 || tos->n_chan == 2) {
                 /* There is no need to convert.  Data is already gray scale.
@@ -1144,7 +1152,15 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                 smask_copy(tos->rect.q.y - tos->rect.p.y,
                            tos->rect.q.x - tos->rect.p.x, 
                            tos->rowstride, tos->data, new_data_buf);
-            } else {
+#if RAW_DUMP
+            /* Dump the current buffer to see what we have. */
+            dump_raw_buffer(tos->rect.q.y-tos->rect.p.y, 
+                        tos->rowstride, tos->n_planes,
+                        tos->planestride, tos->rowstride, 
+                        "SMask_Pop_Lum(Mask_Plane0)",tos->data);
+            global_index++;
+#endif            
+               } else {
                 if ( icc_match == -1 ) {
                     /* The slow old fashioned way */
                     smask_luminosity_mapping(tos->rect.q.y - tos->rect.p.y ,
