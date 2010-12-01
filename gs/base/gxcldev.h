@@ -757,4 +757,14 @@ typedef enum {
 
 } psuedoband_offset;
 
+/* Enumeration of compositor actions for band cropping. */
+
+typedef enum {
+    ALLBANDS = 0,
+    PUSHCROP,
+    POPCROP,
+    CURRBANDS,
+    SAMEAS_PUSHCROP_BUTNOPUSH
+} cl_crop_action;
+
 #endif /* gxcldev_INCLUDED */

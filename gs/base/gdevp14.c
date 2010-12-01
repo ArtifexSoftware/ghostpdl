@@ -4785,9 +4785,9 @@ find_opening_op(int opening_op, gs_composite_t **ppcte, int return_code)
  * Find an opening compositor op.
  */
 static int
-find_same_op(const gs_composite_t *this, int my_op, gs_composite_t **ppcte)
+find_same_op(const gs_composite_t *composite_action, int my_op, gs_composite_t **ppcte)
 {
-    const gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
+    const gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)composite_action;
     gs_composite_t *pct = *ppcte;
 
     for (;;) {
@@ -4797,8 +4797,16 @@ find_same_op(const gs_composite_t *this, int my_op, gs_composite_t **ppcte)
 	    *ppcte = pct;
 	    if (pct_pdf14->params.pdf14_op != my_op)
 		return 0;
-	    if (pct_pdf14->params.csel == pct0->params.csel)
-		return 4;
+	    if (pct_pdf14->params.csel == pct0->params.csel) {
+                /* If the new parameters completely replace the old ones
+                   then remove the old one from the queu */
+                if ((pct_pdf14->params.changed & pct0->params.changed) ==
+                    pct_pdf14->params.changed) {
+		    return 4;
+                } else {
+                    return 0;
+                }
+            }
 	} else
 	    return 0;
 	pct = pct->prev;
@@ -4811,10 +4819,10 @@ find_same_op(const gs_composite_t *this, int my_op, gs_composite_t **ppcte)
  * Check for closing compositor.
  */
 static int
-c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte, 
+c_pdf14trans_is_closing(const gs_composite_t * composite_action, gs_composite_t ** ppcte, 
                         gx_device *dev)
 {
-    gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
+    gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)composite_action;
     int op0 = pct0->params.pdf14_op;
 
     switch (op0) {
@@ -4857,7 +4865,7 @@ c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte,
 	    if (*ppcte == NULL)
 		return 0;
 	    /* hack : ignore csel - here it is always zero : */
-	    return find_same_op(this, PDF14_SET_BLEND_PARAMS, ppcte);
+            return find_same_op(composite_action, PDF14_SET_BLEND_PARAMS, ppcte);
     }
 }
 
@@ -4865,9 +4873,9 @@ c_pdf14trans_is_closing(const gs_composite_t * this, gs_composite_t ** ppcte,
  * Check whether a next operation is friendly to the compositor.
  */
 static bool
-c_pdf14trans_is_friendly(const gs_composite_t * this, byte cmd0, byte cmd1)
+c_pdf14trans_is_friendly(const gs_composite_t * composite_action, byte cmd0, byte cmd1)
 {
-    gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)this;
+    gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)composite_action;
     int op0 = pct0->params.pdf14_op;
 
     if (op0 == PDF14_PUSH_DEVICE || op0 == PDF14_END_TRANS_GROUP) {
@@ -6573,8 +6581,8 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
 {
     gs_pdf14trans_t * pdf14pct = (gs_pdf14trans_t *) pcte;
     switch (pdf14pct->params.pdf14_op) {
-	case PDF14_PUSH_DEVICE: return 0; /* Applies to all bands. */
-	case PDF14_POP_DEVICE:  return 0; /* Applies to all bands. */
+	case PDF14_PUSH_DEVICE: return ALLBANDS; /* Applies to all bands. */
+	case PDF14_POP_DEVICE:  return ALLBANDS; /* Applies to all bands. */
 
 	case PDF14_BEGIN_TRANS_GROUP:
 	    {	gs_int_rect rect;
@@ -6585,7 +6593,7 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
                 /* We have to crop this by the parent object.   */
                 *ry = max(rect.p.y, cropping_min);
                 *rheight = min(rect.q.y, cropping_max) - *ry;
-                return 1; /* Push cropping. */
+                return PUSHCROP; /* Push cropping. */
             }
         case PDF14_BEGIN_TRANS_MASK:
 	    {	gs_int_rect rect;
@@ -6602,21 +6610,21 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
                        the bounding box.  This is NOT the default or common case. */
                     *ry = max(rect.p.y, cropping_min);
 		    *rheight = min(rect.q.y, cropping_max) - *ry;
-		    return 1; /* Push cropping. */
+		    return PUSHCROP; /* Push cropping. */
                 }  else {
                     /* We need to make the soft mask range as large as the parent 
                        due to the fact that the background color can have an impact 
                        OUTSIDE the bounding box of the soft mask */
                     *ry = cropping_min;
 		    *rheight = cropping_max - cropping_min;
-		    return 1; /* Push cropping. */
+		    return PUSHCROP; /* Push cropping. */
                 }
 	    }
-	case PDF14_END_TRANS_GROUP: return 2; /* Pop cropping. */
-	case PDF14_END_TRANS_MASK: return 2;   /* Pop the cropping */ 
+	case PDF14_END_TRANS_GROUP: return POPCROP; /* Pop cropping. */
+	case PDF14_END_TRANS_MASK: return POPCROP;   /* Pop the cropping */ 
 
-        case PDF14_PUSH_TRANS_STATE: return 3;
-        case PDF14_POP_TRANS_STATE: return 3;
+        case PDF14_PUSH_TRANS_STATE: return CURRBANDS;
+        case PDF14_POP_TRANS_STATE: return CURRBANDS;
 
         case PDF14_SET_BLEND_PARAMS: 
  	    {	gs_int_rect rect;
@@ -6628,17 +6636,18 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
                     /* We have to crop this by the parent object.   */
                     *ry = max(rect.p.y, cropping_min);
                     *rheight = min(rect.q.y, cropping_max) - *ry;
-                    return 4; /* A special case were we write out to the same
-                                 bands as the last group, but we will not 
-                                 push a cropping onto the cropping statck */
+                    return SAMEAS_PUSHCROP_BUTNOPUSH; 
+                    /* A special case were we write out to the same bands as the 
+                       last group, but we will not push a cropping onto the 
+                       cropping statck */
                 } else {
-                    return 3;
+                    return CURRBANDS;
                 }
                }
-	case PDF14_PUSH_SMASK_COLOR: return 2; /* Pop cropping. */
-	case PDF14_POP_SMASK_COLOR: return 2;   /* Pop the cropping */ 
+	case PDF14_PUSH_SMASK_COLOR: return POPCROP; /* Pop cropping. */
+	case PDF14_POP_SMASK_COLOR: return POPCROP;   /* Pop the cropping */ 
     }
-    return 0;
+    return ALLBANDS;
 }
 
 /*

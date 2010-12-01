@@ -963,17 +963,17 @@ clist_create_compositor(gx_device * dev,
 
     cropping_op = code;
    
-    if (cropping_op == 1 || cropping_op == 4) {
+    if (cropping_op == PUSHCROP || cropping_op == SAMEAS_PUSHCROP_BUTNOPUSH) {
         first_band = ry / band_height;
         last_band = (ry + rheight + band_height - 1) / band_height;
-    } else if (cropping_op > 1) {
+    } else if (cropping_op == POPCROP || cropping_op == CURRBANDS) {
         first_band = cdev->cropping_min / band_height;
         last_band = (cdev->cropping_max + band_height - 1) / band_height;
     }
 
     if (last_band - first_band > no_of_bands * 2 / 3) {
         /* Covering many bands, so write "all bands" command for shorter clist. */
-        cropping_op = 0;
+        cropping_op = ALLBANDS;
     }
 
     /* Using 'v' here instead of 'L' since this is used almost exclusively with
@@ -997,7 +997,7 @@ clist_create_compositor(gx_device * dev,
 
     }
 
-    if (cropping_op == 0) {
+    if (cropping_op == ALLBANDS) {
         /* overprint applies to all bands */
         size_dummy = size;
         code = set_cmd_put_all_op( dp,
@@ -1016,12 +1016,12 @@ clist_create_compositor(gx_device * dev,
             ((gx_device_clist_writer *)dev)->cnext = dp;
         return code;
     }
-    if (cropping_op == 1) {
+    if (cropping_op == PUSHCROP) {
         code = clist_writer_push_cropping(cdev, ry, rheight);
         if (code < 0)
             return code;
     }
-    if (cropping_op == 4) {
+    if (cropping_op == SAMEAS_PUSHCROP_BUTNOPUSH) {
         /* Set the range even though it is not pushed until the group occurs
            This occurs only when we had blend changes with a group push */
         temp_cropping_min = max(cdev->cropping_min, ry);
@@ -1058,7 +1058,7 @@ clist_create_compositor(gx_device * dev,
                 return re.band_code;
         } while (re.y < re.yend);
     }
-    if (cropping_op == 2) {
+    if (cropping_op == POPCROP) {
         code = clist_writer_pop_cropping(cdev);
         if (code < 0)
             return code;
