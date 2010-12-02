@@ -802,7 +802,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    code = gs_closedevice(pdev);
 	    if (code < 0)
 		emprintf2(pdev->memory,
-                          "ERROR %d closing %s device. See gs/src/ierrors.h for code explanation.\n",
+                          "ERROR %d closing %s device. See gs/psi/ierrors.h for code explanation.\n",
                           code,
                           dname);
 	    rc_decrement(pdev, "gs_main_finit");		/* device might be freed */
@@ -830,7 +830,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         code = alloc_restore_all(idmemory);
 	if (code < 0)
 	    emprintf1(mem_raw,
-                      "ERROR %d while the final restore. See gs/src/ierrors.h for code explanation.\n",
+                      "ERROR %d while the final restore. See gs/psi/ierrors.h for code explanation.\n",
                       code);
         i_plugin_finit(mem_raw, h);
     }
