@@ -159,7 +159,7 @@ smask_blend(byte *src, int width, int height, int rowstride,
     int x, y;
     int position;
     byte comp, a;
-    int tmp, comp_num;
+    int tmp;
     byte bg = 0;
 
     for (y = 0; y < height; y++) {
