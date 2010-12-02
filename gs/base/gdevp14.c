@@ -644,6 +644,8 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
     result->memory = memory;
     result->rect = *rect;
     result->additive = additive;
+    result->smask_depth = 0;
+    result->smask_blend = false;
     return result;
 }
 
@@ -946,12 +948,13 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     }
 exit:
     ctx->stack = nos;
-    {	/* If this group is one for an image with soft mask,
-	   the containing group's mask was saved in maskbuf->maskbuf.
-	   Set up it now to the transparensy context as undiong 
-	   the save action done in pdf14_push_transparency_mask
-	   when replacing==false; */
-	/* ctx->maskbuf = (maskbuf != NULL ? maskbuf->maskbuf : NULL); */
+    /* We want to detect the cases where we have luminosity soft masks embedded
+       within one another.  The "alpha" channel really needs to be merged into 
+       the luminosity channel in this case.  This will occur during the mask pop */
+    if (ctx->smask_depth > 0 && maskbuf != NULL) {
+        /* Set the trigger so that we will blend if not alpha. Since
+           we have softmasks embedded in softmasks */
+        ctx->smask_blend = true;
     }
     if_debug1('v', "[v]pop buf, idle=%d\n", tos->idle);
     pdf14_buf_free(tos, ctx->memory);
@@ -978,6 +981,8 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", 
                     idle, replacing);
+    ctx->smask_depth+=1;
+
 #if 0
     if (replacing && ctx->maskbuf != NULL) {
 	if (ctx->maskbuf->maskbuf != NULL) {
@@ -1073,6 +1078,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
 
+    ctx->smask_depth-=1;
     /* icc_match == -1 means old non-icc code.
        icc_match == 0 means use icc code 
        icc_match == 1 mean no conversion needed */
@@ -1115,6 +1121,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
             ctx->maskbuf = pdf14_mask_element_new(ctx->memory);
             ctx->maskbuf->rc_mask->mask_buf = tos;
         }
+        ctx->smask_blend = false;  /* just in case */
     } else {
         /* If we are already in the source space then there is no reason 
            to do the transformation */
@@ -1133,6 +1140,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
         /* If the subtype was alpha, then just grab the alpha channel now
            and we are all done */
         if (tos->SMask_SubType == TRANSPARENCY_MASK_Alpha) {
+            ctx->smask_blend = false;  /* not used in this case */
             smask_copy(tos->rect.q.y - tos->rect.p.y,
                        tos->rect.q.x - tos->rect.p.x, 
                        tos->rowstride, 
@@ -1147,19 +1155,36 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
 #endif
         } else {
             if ( icc_match == 1 || tos->n_chan == 2) {
+#if RAW_DUMP
+                /* Dump the current buffer to see what we have. */
+                dump_raw_buffer(tos->rect.q.y-tos->rect.p.y, 
+                            tos->rowstride, tos->n_planes,
+                            tos->planestride, tos->rowstride, 
+                            "SMask_Pop_Lum(Mask_Plane0)",tos->data);
+                global_index++;
+#endif            
                 /* There is no need to convert.  Data is already gray scale.
-                   We just need to copy the gray plane */
+                   We just need to copy the gray plane.  However it is 
+                   possible that the soft mask could have a soft mask which 
+                   would end us up with some alpha blending information 
+                   (Bug691803). */
+                if (ctx->smask_blend) {
+                    smask_blend(tos->data, tos->rect.q.x - tos->rect.p.x, 
+                                tos->rect.q.y - tos->rect.p.y, tos->rowstride, 
+                                tos->planestride);
+                    ctx->smask_blend = false;
+#if RAW_DUMP
+                    /* Dump the current buffer to see what we have. */
+                    dump_raw_buffer(tos->rect.q.y-tos->rect.p.y, 
+                                tos->rowstride, tos->n_planes,
+                                tos->planestride, tos->rowstride, 
+                                "SMask_Pop_Lum_Post_Blend",tos->data);
+                    global_index++;
+#endif            
+                } 
                 smask_copy(tos->rect.q.y - tos->rect.p.y,
                            tos->rect.q.x - tos->rect.p.x, 
                            tos->rowstride, tos->data, new_data_buf);
-#if RAW_DUMP
-            /* Dump the current buffer to see what we have. */
-            dump_raw_buffer(tos->rect.q.y-tos->rect.p.y, 
-                        tos->rowstride, tos->n_planes,
-                        tos->planestride, tos->rowstride, 
-                        "SMask_Pop_Lum(Mask_Plane0)",tos->data);
-            global_index++;
-#endif            
                } else {
                 if ( icc_match == -1 ) {
                     /* The slow old fashioned way */

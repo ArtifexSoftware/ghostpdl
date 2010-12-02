@@ -148,6 +148,38 @@ smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
     }
 }
 
+/* soft mask gray buffer should be blended with its transparency planar data
+   during the pop for a luminosity case if we have a soft mask within a soft
+   mask.  This situation is detected in the code so that we only do this 
+   blending in those rare situations */
+void
+smask_blend(byte *src, int width, int height, int rowstride, 
+                      int planestride)
+{
+    int x, y;
+    int position;
+    byte comp, a;
+    int tmp, comp_num;
+    byte bg = 0;
+
+    for (y = 0; y < height; y++) {
+        position = y * rowstride;
+        for (x = 0; x < width; x++) {
+            a = src[position + planestride];
+            if ((a + 1) & 0xfe) {
+                a ^= 0xff;
+                comp  = src[position];
+                tmp = ((bg - comp) * a) + 0x80;
+                comp += (tmp + (tmp >> 8)) >> 8;
+                src[position] = comp;
+            } else if (a == 0) {
+                src[position] = 0;
+            }
+            position+=1;
+        }
+    }
+}
+
 void smask_copy(int num_rows, int num_cols, int row_stride, 
                         byte *src, const byte *dst)
 {

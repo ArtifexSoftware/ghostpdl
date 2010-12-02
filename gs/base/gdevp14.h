@@ -175,6 +175,8 @@ struct pdf14_ctx_s {
     gs_int_rect rect;
     bool additive;
     int n_chan;
+    int smask_depth;  /* used to catch smasks embedded in smasks.  bug691803 */
+    bool smask_blend; 
 };
 
 #ifndef gs_devn_params_DEFINED
