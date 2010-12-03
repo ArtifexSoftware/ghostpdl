@@ -376,12 +376,18 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 	    !strncmp((const char *)pet->str.data, ".notdef", 7))) {
 	    if (char_code < font->u.simple.FirstChar)
 		font->u.simple.FirstChar = char_code;
-	    if (char_code > font->u.simple.LastChar)
+	    if ((int)char_code > font->u.simple.LastChar)
 		font->u.simple.LastChar = char_code;
 	    base->FontBBox.q.x = max(base->FontBBox.q.x, w);
 	    base->FontBBox.q.y = max(base->FontBBox.q.y, y_offset + h);
 	    str = &pet->str;
 	    glyph = pet->glyph;
+	    /* This is to work around a weird Acrobat bug. If the Encoding of a type 3 
+	     * (possibly other types) is simply a standard encoding (eg WinAnsiEncoding)
+	     * then Acrobat 4 & 8 just ignore the glyphs altogether. This forces us to write
+	     * all the used glyphs as /Differencess, and that makes it work <sigh>
+	     */
+	    pet->is_difference = 1;
 	} else {
 	    char_code = assign_char_code(pdev, pdev->pte);
 	    font = pbfs->open_font; /* Type 3 */
