@@ -1102,6 +1102,53 @@ static const gs_copied_font_procs_t copied_procs_type1 = {
     copied_encode_char, gs_type1_glyph_info, copied_type1_glyph_outline
 };
 
+static bool 
+same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont, 
+		 bool global)
+{
+    gs_glyph_data_t gdata0, gdata1;
+    int i, code = 0;
+    bool exit = false;
+
+    gdata0.memory = cfont->memory;
+    gdata1.memory = ofont->memory;
+    /* Scan the font to determine the size of the subrs. */
+    for (i = 0; !exit; i++) {
+	int code0 = cfont->data.procs.subr_data((gs_font_type1 *)cfont, 
+						i, global, &gdata0);
+	int code1 = ofont->data.procs.subr_data((gs_font_type1 *)ofont, 
+						i, global, &gdata1);
+	bool missing0, missing1;
+	
+	if (code0 == gs_error_rangecheck && code1 == gs_error_rangecheck)
+	    return 1; /* Both arrays exceeded. */
+	/*  Some fonts use null for skiping elements in subrs array. 
+	    This gives typecheck.
+	*/
+	missing0 = (code0 == gs_error_rangecheck || code0 == gs_error_typecheck);
+	missing1 = (code1 == gs_error_rangecheck || code1 == gs_error_typecheck);
+	if (missing0 && missing1)
+	    continue;
+	if (missing0 && !missing1)
+	    return 0; /* The copy has insufficient subrs. */
+	if (missing1)
+	    continue;
+	if (code0 < 0)
+	    code = code0, exit = true;
+	else if (code1 < 0)
+	    code = code1, exit = true;
+	else if (gdata0.bits.size != gdata1.bits.size)
+	    exit = true;
+	else if (memcmp(gdata0.bits.data, gdata1.bits.data, gdata0.bits.size))
+	    exit = true;
+	if (code0 > 0)
+	    gs_glyph_data_free(&gdata0, "same_type1_subrs");
+	if (code1 > 0)
+	    gs_glyph_data_free(&gdata1, "same_type1_subrs");
+    }
+    return code;
+}
+
 static void hash_subrs(gs_font_type1 *pfont)
 {
     gs_type1_data *d0 = &pfont->data;
@@ -1111,30 +1158,55 @@ static void hash_subrs(gs_font_type1 *pfont)
 
     gs_md5_init(&md5);
     gdata0.memory = pfont->memory;
-    /* Scan the font to determine the size of the subrs. */
+    /* Scan the font to hash the global subrs. */
     for (i = 0; !exit; i++) {
 	int code0 = pfont->data.procs.subr_data((gs_font_type1 *)pfont, 
 						i, true, &gdata0);
-	if (code0 < 0)
+	if (code0 == gs_error_rangecheck)
+	    /* rangecheck means we ran out of /Subrs */
 	    exit = true;
+	if (code0 == gs_error_typecheck)
+	    /* typecheck means that we may have encoutnered a null object
+	     * for a Subr, we ignore this subr, but carry on hashing, as there
+	     * may be more Subrs.
+	     */
+	    continue;
+	if (code0 < 0)
+	    break;
 	else {
 	    gs_md5_append(&md5, gdata0.bits.data, gdata0.bits.size);
 	    gs_glyph_data_free(&gdata0, "hash_type1_subrs");
 	}
     }
+    /* For a 'belt and braces' approach, we also record the number of local
+     * and global /Subrs, and compare these below as well. Shifting the global
+     * subrs up means that we can avoid an accidental co-incidence where simply
+     * summing the two sets together might give the same result for different fonts.
+     */
+    d0->num_subrs = i << 16;
     exit = 0;
-    /* Scan the font to determine the size of the subrs. */
+    /* Scan the font to hash the local subrs. */
     for (i = 0; !exit; i++) {
 	int code0 = pfont->data.procs.subr_data((gs_font_type1 *)pfont, 
 						i, false, &gdata0);
-	if (code0 < 0)
+	if (code0 == gs_error_rangecheck)
+	    /* rangecheck means we ran out of /Subrs */
 	    exit = true;
+	if (code0 == gs_error_typecheck)
+	    /* typecheck means that we may have encoutnered a null object
+	     * for a Subr, we ignore this subr, but carry on hashing, as there
+	     * may be more Subrs.
+	     */
+	    continue;
+	if (code0 < 0)
+	    break;
 	else {
 	    gs_md5_append(&md5, gdata0.bits.data, gdata0.bits.size);
 	    gs_glyph_data_free(&gdata0, "hash_type1_subrs");
 	}
     }
     gs_md5_finish(&md5, d0->hash_subrs);
+    d0->num_subrs += i;
 }
 
 static bool 
@@ -1143,6 +1215,7 @@ same_type1_hinting(const gs_font_type1 *cfont, const gs_font_type1 *ofont)
     const gs_type1_data *d0 = &cfont->data, *d1 = &ofont->data;
     int *hash0 = (int *)&d0->hash_subrs;
     int *hash1 = (int *)&d1->hash_subrs;
+    int samenew, sameold;
 
     if (d0->lenIV != d1->lenIV)
 	return false;
@@ -1184,8 +1257,9 @@ same_type1_hinting(const gs_font_type1 *cfont, const gs_font_type1 *ofont)
 	hash_subrs((gs_font_type1 *)cfont);
     if (hash1[0] == 0x00 && hash1[1] == 0x00 && hash1[2] == 0x00 && hash1[3] == 0x00)
 	hash_subrs((gs_font_type1 *)ofont);
-    if (memcmp(d0->hash_subrs, d1->hash_subrs, 16) != 0)
+    if (memcmp(d0->hash_subrs, d1->hash_subrs, 16) != 0 || d0->num_subrs != d1->num_subrs)
 	return false;
+
     /*
      *	We ignore differences in OtherSubrs because pdfwrite
      *	must build without PS interpreter and therefore copied font
