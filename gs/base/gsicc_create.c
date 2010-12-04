@@ -1837,17 +1837,11 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
         merge_abc_lmn_curves(abc_caches, lmn_caches);
         has_lmn_procs = false;
     }
-    if (has_abc_procs) {
-        atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
-                        3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
-        curr_pos = atob_parts->m_curves;
-        memcpy(curr_pos,&(abc_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
-        curr_pos += CURVE_SIZE;
-        memcpy(curr_pos,&(abc_caches[1].floats.values[0]),CURVE_SIZE*sizeof(float));
-        curr_pos += CURVE_SIZE;
-        memcpy(curr_pos,&(abc_caches[2].floats.values[0]),CURVE_SIZE*sizeof(float));
-    }
-    if (has_lmn_procs) {
+    /* Figure out what curves get mapped to where.  The only time
+       we will use the b curves is if matrixABC is not the identity and we have
+       lmn procs */
+    if ( !(matrixABC->is_identity) && has_lmn_procs) {
+        /* A matrix followed by a curve */
         atob_parts->b_curves = (float*) gs_alloc_bytes(memory,
                             3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
         curr_pos = atob_parts->b_curves;
@@ -1856,6 +1850,39 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
         memcpy(curr_pos,&(lmn_caches[1].floats.values[0]),CURVE_SIZE*sizeof(float));
         curr_pos += CURVE_SIZE;
         memcpy(curr_pos,&(lmn_caches[2].floats.values[0]),CURVE_SIZE*sizeof(float));
+        if (has_abc_procs) {
+            /* Also a curve before the matrix */
+            atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
+                            3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+            curr_pos = atob_parts->m_curves;
+            memcpy(curr_pos,&(abc_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&(abc_caches[1].floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&(abc_caches[2].floats.values[0]),CURVE_SIZE*sizeof(float));
+        }
+    } else {
+        /* Only one set of curves before a matrix */
+        if (has_abc_procs) {
+            atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
+                            3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+            curr_pos = atob_parts->m_curves;
+            memcpy(curr_pos,&(abc_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&(abc_caches[1].floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&(abc_caches[2].floats.values[0]),CURVE_SIZE*sizeof(float));
+        }
+        if (has_lmn_procs) {
+            atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
+                                3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+            curr_pos = atob_parts->m_curves;
+            memcpy(curr_pos,&(lmn_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&(lmn_caches[1].floats.values[0]),CURVE_SIZE*sizeof(float));
+            curr_pos += CURVE_SIZE;
+            memcpy(curr_pos,&(lmn_caches[2].floats.values[0]),CURVE_SIZE*sizeof(float));
+        }
     }
     /* Note that if the b_curves are null and we have a matrix we need to scale 
        the matrix values by 2. Otherwise an input value of 50% gray, which is 

@@ -20,10 +20,16 @@ currentglobal true setglobal
 
 /DefaultRGB
 [ /CIEBasedABC
-  3 dict begin
-     /WhitePoint [ 0.9505 1.0 1.089 ] def
-     /DecodeLMN  [ { 1.8 exp } bind dup dup ] def
-     /MatrixLMN  [ 0.4439 0.2522 0.0436 0.3341 0.6371 0.1387 0.1725 0.1107 0.9067 ] def
+	3 dict begin
+    /DecodeLMN [ {
+      dup 0.03928 le { 12.92321 div } { 0.055 add 1.055 div 2.4 exp } ifelse
+    } bind dup dup ] def
+    /MatrixLMN [
+      0.4360 0.2225 0.0139
+      0.3851 0.7169 0.09710
+      0.1431 0.0606 0.7139
+    ] def
+    /WhitePoint [0.9642 1.0 0.8249] def
   currentdict end
 ]
 /ColorSpace defineresource pop
