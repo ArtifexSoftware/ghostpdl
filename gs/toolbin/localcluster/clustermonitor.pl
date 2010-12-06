@@ -73,7 +73,7 @@ while(1) {
     chomp $s0;
     my $down="";
     my $downTime=0;
-    $down="--DOWN--" if (!stat("/home/regression/cluster/$machine.up") || ($downTime=(time-stat("/home/regression/cluster/$machine.up")->ctime))>300);
+    $down="--DOWN--" if (!stat("/home/regression/cluster/$machine.up") || ($downTime=(time-stat("/home/regression/cluster/$machine.up")->mtime))>300);
     if (!exists $status{$machine}{"status"} || $status{$machine}{"status"} ne $s0 || $status{$machine}{"down"} ne $down) {
       $status{$machine}{"status"}=$s0;
       $status{$machine}{"down"}=$down;

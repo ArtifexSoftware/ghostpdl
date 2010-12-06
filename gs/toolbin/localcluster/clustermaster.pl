@@ -190,7 +190,7 @@ sub checkPID {
 
 sub checkProblem {
       foreach my $m (keys %machines) {
-        if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxTouchTime) {
+        if (!stat("$m.up") || (time-stat("$m.up")->mtime)>=$maxTouchTime) {
           mylog "machine $m hasn't updated $m.up in $maxTouchTime seconds, assuming it went down\n";
           delete $lastTransfer{$m} if (exists $lastTransfer{$m});
           delete $machines{$m} if (exists $machines{$m});
@@ -731,9 +731,9 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
   mydbg "@machines\n" if ($verbose);
   foreach (@machines) {
 #   print "$_\n";
-#   my $t=time-stat("$_")->ctime;
+#   my $t=time-stat("$_")->mtime;
 #   print "$_ $t\n";
-    $machines{$_}=1 if (stat("$_") && (time-stat("$_")->ctime)<$maxTouchTime);
+    $machines{$_}=1 if (stat("$_") && (time-stat("$_")->mtime)<$maxTouchTime);
   }
   foreach (keys %machines) {
     delete $machines{$_};
@@ -805,8 +805,8 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
     }
 
 if ($bmpcmp) {
-  $maxTouchTime*=3;
-  $maxTransferTime*=3;
+# $maxTouchTime*=3;
+# $maxTransferTime*=3;
 
 `head -1000 jobs >jobs.tmp ; mv jobs.tmp jobs`;
         my $gs="";
@@ -1112,7 +1112,7 @@ mydbg "done checking jobs, product=$product\n";
             mydbg "$m is reporting done\n";
             $doneTime{$m}=time;
           }
-          if (!stat("$m.up") || (time-stat("$m.up")->ctime)>=$maxTouchTime) {
+          if (!stat("$m.up") || (time-stat("$m.up")->mtime)>=$maxTouchTime) {
             mylog "$m is down\n" if ($verbose);
             $abort=1;
             %doneTime=();  # avoids a race condition where the machine we just aborted reports done

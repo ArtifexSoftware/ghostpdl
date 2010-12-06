@@ -50,6 +50,11 @@ if (open(F,"<weekly.cfg")) {
 }
 
 if (!$local) {
+  unlink("checkSize.log");
+  `scp -i ~/.ssh/cluster_key -q regression\@casper.ghostscript.com:/home/regression/cluster/checkSize.pl .`;
+}
+
+if (!$local) {
   my $filesize = -s "$machine.dbg";
   if ($filesize>10000000) {
     `mv $machine.dbg $machine.old`;
@@ -998,7 +1003,7 @@ mylog "requesting more jobs: scalar key pids=".(scalar keys %pids)." and lastRec
     $cmd =~ s/__gsSource__/$gsSource/;
     $cmd =~ s/__temp__/$temp/;
 
-#$maxCount=8  if ($cmd =~ m| ./bmpcmp |);
+$maxCount=8  if ($cmd =~ m| ./bmpcmp |);
 #$timeOut=600 if ($cmd =~ m| ./bmpcmp |);
 
     $jobs++;
