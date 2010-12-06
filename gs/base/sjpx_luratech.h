@@ -46,6 +46,8 @@ typedef struct stream_jpxd_state_s
     unsigned long inbuf_fill;
     gs_jpx_cs colorspace;	/* requested output colorspace */
     bool alpha; /* return opacity channel */
+    bool image_is_indexed;      /* image is indexed, needs decoding */
+                                /*  if colorspace != gs_jpx_cs_indexed */
     int ncomp;			/* number of image components */
     int bpc;			/* sample bits per component */
     int *clut;			/* channel indices */

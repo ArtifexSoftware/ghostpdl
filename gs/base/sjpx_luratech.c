@@ -117,32 +117,39 @@ s_jpxd_write_data(unsigned char * pucData,
        from each call in planar buffers and interleave a tile at
        a time into a stipe buffer for output */
 
-    if (state->colorspace == gs_jpx_cs_indexed && sComponent == 0 && !state->alpha) {
+    if (state->image_is_indexed && sComponent == 0 && !state->alpha) {
         JP2_Palette_Params *pal;
         JP2_Error err;
         int i, c;
-        unsigned char *dst = &state->image[state->stride * ulRow +
-                                           state->ncomp * ulStart + comp];
+        unsigned char *dst;
 
         err = JP2_Decompress_GetPalette(state->handle, &pal);
         if (err != cJP2_Error_OK)
             return err;
 
-        if (pal->ulEntries != 256)
-            return cJP2_Error_Invalid_Colorspace;
+        if (state->colorspace != gs_jpx_cs_indexed) {
+            dst = &state->image[state->stride * ulRow +
+                            state->ncomp * ulStart + comp];
+            /* expand the data */
+            for (i = 0; i < ulNum; i++) {
+                unsigned char v = pucData[i];
 
-        for (i = 0; i < ulNum; i++) {
-            unsigned char v = pucData[i];
-            for (c = 0; c < state->ncomp; c++)
-                *dst++ = (unsigned char)pal->ppulPalette[c][v];
+                if (v >= pal->ulEntries)
+                    return cJP2_Error_Invalid_Colorspace;
+
+                for (c = 0; c < state->ncomp; c++)
+                    *dst++ = (unsigned char)pal->ppulPalette[c][v];
+            }
+        } else {
+            /* copy indexes */
+            dst = &state->image[state->stride * ulRow + ulStart + comp];
+            memcpy(dst, pucData, ulNum);
         }
-    }
-    else if (state->ncomp == 1 && comp == 0) {
-        if (state->bpc <= 8) {
+    } else if (state->ncomp == 1 && comp == 0) {
+        if (state->bpc == 8) {
             memcpy(&state->image[state->stride*ulRow + state->ncomp*ulStart],
                    pucData, ulNum);
-        }
-        else {
+        }  else if (state->bpc > 8) {
             unsigned long i;
             unsigned short *src = (unsigned short *)pucData;
             unsigned char *dst = &state->image[state->stride * ulRow + 2 * ulStart];
@@ -152,7 +159,14 @@ s_jpxd_write_data(unsigned char * pucData,
                 *dst++ = (v >> 8) & 0xff;
                 *dst++ = v & 0xff;
             }
-        }
+        } else if (state->bpc == 4) {
+            int i;
+            unsigned char *dst = &state->image[state->stride * ulRow + ulStart/2];
+            
+            for (i = 0; i < ulNum; i+=2) 
+                *dst++ = pucData[i] << 4 | pucData[i+1];
+        } else
+            return cJP2_Error_Not_Yet_Supported;
     }
     else if (comp >= 0) {
         unsigned long cw, ch, i, hstep, vstep, x, y;
@@ -164,7 +178,7 @@ s_jpxd_write_data(unsigned char * pucData,
         hstep = state->width / cw;
         vstep = state->height / ch;
 
-        if (state->bpc <= 8) {
+        if (state->bpc == 8) {
             row = &state->image[state->stride * ulRow * vstep +
                                 state->ncomp * ulStart * hstep + comp];
             for (y = 0; y < vstep; y++) {
@@ -176,8 +190,7 @@ s_jpxd_write_data(unsigned char * pucData,
                     }
                 row += state->stride;
             }
-        }
-        else {
+        } else if (state->bpc > 8) {
             int shift = 16 - state->bpc;
             unsigned short *src = (unsigned short *)pucData;
             row = &state->image[state->stride * ulRow * vstep +
@@ -193,7 +206,8 @@ s_jpxd_write_data(unsigned char * pucData,
                     }
                 row += state->stride;
             }
-        }
+        } else
+            return cJP2_Error_Not_Yet_Supported;
     }
     return cJP2_Error_OK;
 }
@@ -329,6 +343,7 @@ s_jpxd_set_defaults(stream_state * ss) {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
    
     state->alpha = false;
+    state->image_is_indexed = false;
     return 0;
 }
 
@@ -469,23 +484,31 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                         break;
                     case cJP2_Colorspace_Palette_Gray:
                         cspace = "indexed gray";
-                        state->colorspace = gs_jpx_cs_indexed;
+                        state->image_is_indexed = true;
                         break;
                     case cJP2_Colorspace_Palette_RGBa:
                         cspace = "indexed sRGB";
-                        state->colorspace = gs_jpx_cs_indexed;
+                        state->image_is_indexed = true;
                         break;
                     case cJP2_Colorspace_Palette_RGB_YCCa:
                         cspace = "indexed sRGB YCrCb";
-                        state->colorspace = gs_jpx_cs_indexed;
+                        state->image_is_indexed = true;
                         break;
                     case cJP2_Colorspace_Palette_CIE_LABa:
                         cspace = "indexed CIE Lab";
-                        state->colorspace = gs_jpx_cs_indexed;
+                        state->image_is_indexed = true;
                         break;
                     case cJP2_Colorspace_Palette_ICCa:
                         cspace = "indexed with ICC profile";
-                        state->colorspace = gs_jpx_cs_indexed;
+                        state->image_is_indexed = true;
+                        break;
+                    case cJP2_Colorspace_CMYKa:
+                        cspace = "CMYK";
+                        state->colorspace = gs_jpx_cs_cmyk;
+                        break;
+                    case cJP2_Colorspace_Palette_CMYKa:
+                        cspace = "indexed CMYK";
+                        state->image_is_indexed = true;
                         break;
                 }
                 if_debug1('w', "[w]jpxd image colorspace is %s\n", cspace);
@@ -554,8 +577,14 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 
             /* allocate our output buffer */
             int real_bpc = state->bpc > 8 ? 16 : state->bpc;
-            state->stride = (state->width * max(1, state->ncomp) * real_bpc + 7) / 8;
-            state->image = malloc(state->stride*state->height);
+            if (state->image_is_indexed && state->colorspace == gs_jpx_cs_indexed) {
+                /* Don't expand indexed color space */
+                state->stride = (state->width * 8 + 7) / 8;
+                state->image = malloc(state->stride*state->height);
+            } else {
+                state->stride = (state->width * max(1, state->ncomp) * real_bpc + 7) / 8;
+                state->image = malloc(state->stride*state->height);
+            }
             if (state->image == NULL) 
                 return ERRC;
             if (state->ncomp == 0) /* make fully opaque mask */
