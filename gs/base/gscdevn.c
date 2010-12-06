@@ -386,6 +386,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
     gs_client_color cc;
     const gs_color_space *pacs = pcs->base_space;
     gs_device_n_map *map = pcs->params.device_n.map;
+    bool is_lab;
 
 #ifdef DEBUG
     /* 
@@ -423,9 +424,22 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 	     pis, pcs->params.device_n.map->tint_transform_data);
         if (tcode < 0)
 	    return tcode;
-
-	code = cs_concretize_color(&cc, pacs, pconc, pis, dev);
-
+        /* First check if this was PS based. */
+        if (gs_color_space_is_PSCIE(pacs)) {
+            /* If we have not yet create the profile do that now */
+            if (pacs->icc_equivalent == NULL) {
+                gs_colorspace_set_icc_equivalent(pacs, &(is_lab), pis->memory);
+            }
+            /* Use the ICC equivalent color space */
+            pacs = pacs->icc_equivalent;
+        }
+        if (pacs->cmm_icc_profile_data->data_cs == gsCIELAB) {
+            /* Get the data in a form that is concrete for the CMM */
+            cc.paint.values[0] /= 100.0;
+            cc.paint.values[1] = (cc.paint.values[1]+128)/255.0;
+            cc.paint.values[2] = (cc.paint.values[2]+128)/255.0;
+        } 
+        code = cs_concretize_color(&cc, pacs, pconc, pis, dev);
     }
     else {
 	int i;

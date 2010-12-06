@@ -341,8 +341,8 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     } else {
         for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
             psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
-}
-}
+        }
+    }
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
     icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory, false);
     if (icc_link->is_identity) {

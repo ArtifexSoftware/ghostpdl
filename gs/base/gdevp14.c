@@ -981,7 +981,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     
     if_debug2('v', "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n", 
                     idle, replacing);
-    ctx->smask_depth+=1;
+    ctx->smask_depth += 1;
 
 #if 0
     if (replacing && ctx->maskbuf != NULL) {
@@ -1078,7 +1078,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
 
-    ctx->smask_depth-=1;
+    ctx->smask_depth -= 1;
     /* icc_match == -1 means old non-icc code.
        icc_match == 0 means use icc code 
        icc_match == 1 mean no conversion needed */
