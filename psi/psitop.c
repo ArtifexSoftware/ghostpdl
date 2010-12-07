@@ -231,6 +231,10 @@ ps_impl_allocate_interp_instance(
 	if ((code = gs_main_run_string_begin(psi->minst, 0, &exit_code, &psi->minst->error_object)) < 0)
 	    return exit_code;
 
+        {    
+            gs_state *pgs = psi->minst->i_ctx_p->pgs;
+            gsicc_init_iccmanager(pgs);
+        }
         /* inialize fresh job to false so that we can check for a pdf
            file next job. */
         psi->fresh_job = true;
@@ -293,6 +297,10 @@ ps_impl_set_device(
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     gs_state *pgs = psi->minst->i_ctx_p->pgs;
 
+    /* Initialize device ICC profile  */
+    code = gsicc_init_device_profile(pgs, device);
+    if (code < 0)
+        return code;
     /* Set the device into the gstate */
     code = gs_setdevice_no_erase(pgs, device);
     if (code >= 0 )
