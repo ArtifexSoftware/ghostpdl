@@ -162,8 +162,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
 
     if (head)
     {
-        head->base_uri = xps_alloc(ctx, strlen(base_uri) + 1);
-        xps_strlcpy(head->base_uri, base_uri, sizeof head->base_uri);
+        head->base_uri = xps_strdup(ctx, base_uri);
     }
 
     *dictp = head;
