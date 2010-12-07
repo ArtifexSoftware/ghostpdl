@@ -1144,8 +1144,10 @@ pdf_close(gx_device * dev)
 
     /* Write the page objects. */
 
+    if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
     for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
 	    pdf_write_page(pdev, pagecount);
+    }
 
     if (pdev->PrintStatistics)
 	pdf_print_resource_statistics(pdev);
@@ -1178,6 +1180,7 @@ pdf_close(gx_device * dev)
     code1 = pdf_free_resource_objects(pdev, resourceCMap);
     if (code >= 0)
 	code = code1;
+    if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
     if (pdev->ResourcesBeforeUsage)
 	pdf_reverse_resource_chain(pdev, resourcePage);
     code1 = pdf_write_resource_objects(pdev, resourcePage);
@@ -1186,6 +1189,7 @@ pdf_close(gx_device * dev)
     code1 = pdf_free_resource_objects(pdev, resourcePage);
     if (code >= 0)
 	code = code1;
+    }
 
     code1 = pdf_free_resource_objects(pdev, resourceOther);
     if (code >= 0)
@@ -1346,6 +1350,34 @@ pdf_close(gx_device * dev)
 
 	fseek(rfile, 0L, SEEK_SET);
 	pdf_copy_data(s, rfile, res_end, NULL);
+    }
+
+    if (pdev->ForOPDFRead && pdev->ProduceDSC) {
+	int j, code = 0;
+	
+	pagecount = 1;
+
+	if (pdev->ResourcesBeforeUsage)
+	    pdf_reverse_resource_chain(pdev, resourcePage);
+	for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+	    pdf_resource_t *pres = pdev->resources[resourcePage].chains[j];
+
+	    for (; pres != 0; pres = pres->next)
+		if ((!pres->named || pdev->ForOPDFRead) 
+		    && !pres->object->written) {
+
+		    pprintd2(pdev->strm, "%%%%Page: %d %d\n", pagecount, pagecount);
+		    pdf_write_page(pdev, pagecount++);
+		    pprintld1(pdev->strm, "%ld 0 obj\n", pres->object->id);
+		    code = cos_write(pres->object, pdev, pres->object->id);
+		    stream_puts(pdev->strm, "endobj\n");
+		    pres->object->written = true;
+		    stream_puts(pdev->strm, "%%PageTrailer\n");
+		}
+	}
+	code1 = pdf_free_resource_objects(pdev, resourcePage);
+	if (code >= 0)
+	    code = code1;
     }
 
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {

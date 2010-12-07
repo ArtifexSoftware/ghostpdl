@@ -1239,6 +1239,25 @@ pdf_end_resource(gx_device_pdf * pdev)
     return pdf_end_aside(pdev);
 }
 
+int
+opdfread_pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
+{
+    int j, code = 0;
+
+    for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
+
+	for (; pres != 0; pres = pres->next)
+	    if ((!pres->named || pdev->ForOPDFRead) 
+		&& !pres->object->written) {
+
+		    stream_puts(pdev->strm, "%%BeginResource:");
+		    code = cos_write_object(pres->object, pdev);
+		    stream_puts(pdev->strm, "%%EndResource");
+	    }
+    }
+    return code;
+}
 /*
  * Write the Cos objects for resources local to a content stream.  Formerly,
  * this procedure also freed such objects, but this doesn't work, because
@@ -1254,9 +1273,9 @@ pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 
 	for (; pres != 0; pres = pres->next)
 	    if ((!pres->named || pdev->ForOPDFRead) 
-		&& !pres->object->written)
-		code = cos_write_object(pres->object, pdev);
-
+		&& !pres->object->written) {
+		    code = cos_write_object(pres->object, pdev);
+	    }
     }
     return code;
 }
