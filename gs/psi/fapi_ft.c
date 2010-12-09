@@ -79,16 +79,16 @@ typedef struct FF_face_s
  */
 typedef struct FT_IncrementalRec_
 {
-    FAPI_font *fapi_font;		/* The font. */
+    FAPI_font *fapi_font;                /* The font. */
 
     /* If it is already in use glyph data is allocated on the heap. */
-    unsigned char *glyph_data;		/* A one-shot buffer for glyph data. */
-    size_t glyph_data_length;		/* Length in bytes of glyph_data. */
-    bool glyph_data_in_use;		/* True if glyph_data is already in use. */
+    unsigned char *glyph_data;                /* A one-shot buffer for glyph data. */
+    size_t glyph_data_length;                /* Length in bytes of glyph_data. */
+    bool glyph_data_in_use;                /* True if glyph_data is already in use. */
 
     FT_Incremental_MetricsRec glyph_metrics; /* Incremental glyph metrics supplied by Ghostscript. */
-    unsigned long glyph_metrics_index;	/* contains data for this glyph index unless it is 0xFFFFFFFF. */
-    FAPI_metrics_type metrics_type;	/* determines whether metrics are replaced, added, etc. */
+    unsigned long glyph_metrics_index;        /* contains data for this glyph index unless it is 0xFFFFFFFF. */
+    FAPI_metrics_type metrics_type;        /* determines whether metrics are replaced, added, etc. */
 } FT_IncrementalRec;
 
 
@@ -202,18 +202,18 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
      */
     if (a_info->glyph_data_in_use)
     {
-	unsigned char *buffer = NULL;
-	length = ff->get_glyph(ff, a_index, NULL, 0);
-	if (length == 65535)
-	    return FT_Err_Invalid_Glyph_Index;
-	buffer = gs_malloc ((gs_memory_t *)a_info->fapi_font->memory, length, 1, "get_fapi_glyph_data");
-	if (!buffer)
-	    return FT_Err_Out_Of_Memory;
-	if (ff->get_glyph(ff, a_index, buffer, length) == 65535) {
-	    gs_free ((gs_memory_t *)a_info->fapi_font->memory, buffer, 0, 0, "get_fapi_glyph_data");
-	    return FT_Err_Invalid_Glyph_Index;
-	}
-	a_data->pointer = buffer;
+        unsigned char *buffer = NULL;
+        length = ff->get_glyph(ff, a_index, NULL, 0);
+        if (length == 65535)
+            return FT_Err_Invalid_Glyph_Index;
+        buffer = gs_malloc ((gs_memory_t *)a_info->fapi_font->memory, length, 1, "get_fapi_glyph_data");
+        if (!buffer)
+            return FT_Err_Out_Of_Memory;
+        if (ff->get_glyph(ff, a_index, buffer, length) == 65535) {
+            gs_free ((gs_memory_t *)a_info->fapi_font->memory, buffer, 0, 0, "get_fapi_glyph_data");
+            return FT_Err_Invalid_Glyph_Index;
+        }
+        a_data->pointer = buffer;
     }
     else
     {
@@ -226,8 +226,8 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
        /* Get as much of the glyph data as possible into the buffer */
        length = ff->get_glyph(ff, a_index, a_info->glyph_data, (ushort)a_info->glyph_data_length);
        if (length == -1) {
-	   ff->char_data = saved_char_data;
-	   return FT_Err_Invalid_File_Format;
+           ff->char_data = saved_char_data;
+           return FT_Err_Invalid_File_Format;
        }
 
        /* If the buffer was too small enlarge it and try again. */
@@ -245,7 +245,7 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
             a_info->glyph_data_length = length;
             ff->char_data = saved_char_data;
             if ((ff->get_glyph(ff, a_index, a_info->glyph_data, length)) == -1)
-		return FT_Err_Invalid_File_Format;
+                return FT_Err_Invalid_File_Format;
         }
 
         /* Set the returned pointer and length. */
@@ -269,34 +269,34 @@ free_fapi_glyph_data(FT_Incremental a_info, FT_Data *a_data)
 
 static FT_Error
 get_fapi_glyph_metrics(FT_Incremental a_info, FT_UInt a_glyph_index,
-	FT_Bool bVertical, FT_Incremental_MetricsRec *a_metrics)
+        FT_Bool bVertical, FT_Incremental_MetricsRec *a_metrics)
 {
     /* FreeType will create synthetic vertical metrics, including a vertical
      * advance, if none is present. We don't want this, so if the font uses Truetype outlines
      * and the WMode is not 1 (vertical) we ignore the advance by setting it to 0
      */
     if (bVertical && !a_info->fapi_font->is_type1)
-	a_metrics->advance = 0;
+        a_metrics->advance = 0;
 
     if (a_info->glyph_metrics_index == a_glyph_index)
     {
-	switch (a_info->metrics_type)
-	{
-	    case FAPI_METRICS_ADD:
-		a_metrics->advance += a_info->glyph_metrics.advance;
-		break;
-	    case FAPI_METRICS_REPLACE_WIDTH:
-		a_metrics->advance = a_info->glyph_metrics.advance;
-		break;
-	    case FAPI_METRICS_REPLACE:
-		*a_metrics = a_info->glyph_metrics;
-		/* We are replacing the horizontal metrics, so the vertical must be 0 */
-		a_metrics->advance_v = 0;
-		break;
-	    default:
-		/* This can't happen. */
-		return FT_Err_Invalid_Argument;
-	}
+        switch (a_info->metrics_type)
+        {
+            case FAPI_METRICS_ADD:
+                a_metrics->advance += a_info->glyph_metrics.advance;
+                break;
+            case FAPI_METRICS_REPLACE_WIDTH:
+                a_metrics->advance = a_info->glyph_metrics.advance;
+                break;
+            case FAPI_METRICS_REPLACE:
+                *a_metrics = a_info->glyph_metrics;
+                /* We are replacing the horizontal metrics, so the vertical must be 0 */
+                a_metrics->advance_v = 0;
+                break;
+            default:
+                /* This can't happen. */
+                return FT_Err_Invalid_Argument;
+        }
     }
     return 0;
 }
@@ -315,7 +315,7 @@ new_inc_int(FAPI_server *a_server, FAPI_font *a_fapi_font)
     FF_server *s = (FF_server*)a_server;
 
     FT_Incremental_InterfaceRec *i =
-	(FT_Incremental_InterfaceRec*) FF_alloc(s->ftmemory, sizeof(FT_Incremental_InterfaceRec));
+        (FT_Incremental_InterfaceRec*) FF_alloc(s->ftmemory, sizeof(FT_Incremental_InterfaceRec));
     if (i)
     {
         i->object = (FT_Incremental)new_inc_int_info(a_server, a_fapi_font);
@@ -348,10 +348,10 @@ ft_to_gs_error(FT_Error a_error)
 {
     if (a_error)
     {
-	if (a_error == FT_Err_Out_Of_Memory)
-	    return e_VMerror;
-	else
-	    return e_unknownerror;
+        if (a_error == FT_Err_Out_Of_Memory)
+            return e_VMerror;
+        else
+            return e_unknownerror;
     }
     return 0;
 }
@@ -361,7 +361,7 @@ ft_to_gs_error(FT_Error a_error)
  */
 static FAPI_retcode
 load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
-	FAPI_metrics *a_metrics, FT_Glyph *a_glyph, bool a_bitmap, int max_bitmap)
+        FAPI_metrics *a_metrics, FT_Glyph *a_glyph, bool a_bitmap, int max_bitmap)
 {
     FT_Error ft_error = 0;
     FT_Error ft_error_fb = 1;
@@ -371,7 +371,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     FT_Long w;
     FT_Long h;
     FT_Long fflags;
-
+    
     /* Save a_fapi_font->char_data, which is set to null by FAPI_FF_get_glyph as part of a hack to
      * make the deprecated Type 2 endchar ('seac') work, so that it can be restored
      * after the first call to FT_Load_Glyph.
@@ -381,47 +381,47 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 
     if (!a_char_ref->is_glyph_index)
     {
-	if (ft_face->num_charmaps)
-	    index = FT_Get_Char_Index(ft_face, index);
-	else
-	{
-	    /* If there are no character maps and no glyph index, loading the glyph will still work
-	     * properly if both glyph data and metrics are supplied by the incremental interface.
-	     * In that case we use a dummy glyph index which will be passed
-	     * back to FAPI_FF_get_glyph by get_fapi_glyph_data.
-	     *
-	     * Type 1 fonts don't use the code and can appear to FreeType to have only one glyph,
-	     * so we have to set the index to 0.
-	     *
-	     * For other font types, FAPI_FF_get_glyph requires the character code
-	     * when getting data.
-	     */
-	    if (a_fapi_font->is_type1)
-		index = 0;
-	    else
-		index = a_char_ref->char_code;
-	}
+        if (ft_face->num_charmaps)
+            index = FT_Get_Char_Index(ft_face, index);
+        else
+        {
+            /* If there are no character maps and no glyph index, loading the glyph will still work
+             * properly if both glyph data and metrics are supplied by the incremental interface.
+             * In that case we use a dummy glyph index which will be passed
+             * back to FAPI_FF_get_glyph by get_fapi_glyph_data.
+             *
+             * Type 1 fonts don't use the code and can appear to FreeType to have only one glyph,
+             * so we have to set the index to 0.
+             *
+             * For other font types, FAPI_FF_get_glyph requires the character code
+             * when getting data.
+             */
+            if (a_fapi_font->is_type1)
+                index = 0;
+            else
+                index = a_char_ref->char_code;
+        }
     }
 
     /* Refresh the pointer to the FAPI_font held by the incremental interface. */
     if (face->ft_inc_int)
-	face->ft_inc_int->object->fapi_font = a_fapi_font;
+        face->ft_inc_int->object->fapi_font = a_fapi_font;
 
     /* Store the overriding metrics if they have been supplied. */
     if (face->ft_inc_int && a_char_ref->metrics_type != FAPI_METRICS_NOTDEF)
     {
-	FT_Incremental_MetricsRec *m = &face->ft_inc_int->object->glyph_metrics;
-	m->bearing_x = a_char_ref->sb_x >> 16;
-	m->bearing_y = a_char_ref->sb_y >> 16;
-	m->advance = a_char_ref->aw_x >> 16;
-	face->ft_inc_int->object->glyph_metrics_index = index;
-	face->ft_inc_int->object->metrics_type = a_char_ref->metrics_type;
+        FT_Incremental_MetricsRec *m = &face->ft_inc_int->object->glyph_metrics;
+        m->bearing_x = a_char_ref->sb_x >> 16;
+        m->bearing_y = a_char_ref->sb_y >> 16;
+        m->advance = a_char_ref->aw_x >> 16;
+        face->ft_inc_int->object->glyph_metrics_index = index;
+        face->ft_inc_int->object->metrics_type = a_char_ref->metrics_type;
     }
     else
-	if (face->ft_inc_int)
-	    /* Make sure we don't leave this set to the last value, as we may then use inappropriate metrics values */
-	    face->ft_inc_int->object->glyph_metrics_index = 0xFFFFFFFF;
-    
+        if (face->ft_inc_int)
+            /* Make sure we don't leave this set to the last value, as we may then use inappropriate metrics values */
+            face->ft_inc_int->object->glyph_metrics_index = 0xFFFFFFFF;
+
     /* We have to load the glyph, scale it correctly, and render it if we need a bitmap. */
     if (!ft_error)
     {
@@ -430,13 +430,13 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         /* maintain consistency better.  (FT_LOAD_NO_BITMAP) */
         a_fapi_font->char_data = saved_char_data;
         if (!a_fapi_font->is_type1)
-            ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP);
-	else {
+            ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
+        else {
             /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
-            ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
-	    if (ft_error == FT_Err_Invalid_File_Format) 
-		return index+1;
-	}
+            ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
+            if (ft_error == FT_Err_Invalid_File_Format) 
+                return index+1;
+        }
     }
 
     if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index) {
@@ -444,7 +444,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         /* We want to prevent hinting, even for a "tricky" font - it shouldn't matter for the notdef */
         fflags = ft_face->face_flags;
         ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
-        ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+        ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
 
         ft_face->face_flags = fflags;
     }
@@ -462,7 +462,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         fflags = ft_face->face_flags;
         ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
         
-        ft_error_fb = FT_Load_Glyph(ft_face, 0, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP);
+        ft_error_fb = FT_Load_Glyph(ft_face, 0, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
         
         ft_face->face_flags = fflags;
         
@@ -477,7 +477,6 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     {
         FT_Long hx;
         FT_Long hy;
-        FT_Long hadv;
         FT_Long vadv;
 
         /* In order to get the metrics in the form we need them, we have to remove the size scaling
@@ -489,27 +488,24 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         w = (FT_Long)((((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72);
         h = (FT_Long)((((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72);
 
-        hadv = (FT_Long)((((double)ft_face->glyph->metrics.horiAdvance * ft_face->units_per_EM / face->width) / face->horz_res) * 72);
-
-	/* Ugly. FreeType creates verticla metrics for TT fonts, normally we override them in the 
-	 * metrics callbacks, but those only work for incremental interface fonts, and TrueType fonts
-	 * loaded as CIDFont replacements are not incrementally handled. So here, if its a CIDFont, and
-	 * its not type 1 outlines, and its not a vertical mode fotn, ignore the advance.
-	 */
-	if(!a_fapi_font->is_type1 && a_fapi_font->is_cid && !a_fapi_font->is_vertical)
-	    vadv = 0;
-	else
-	    vadv = (FT_Long)((((double)ft_face->glyph->metrics.vertAdvance * ft_face->units_per_EM / face->height) / face->vert_res) * 72);
+        /* Ugly. FreeType creates verticla metrics for TT fonts, normally we override them in the 
+         * metrics callbacks, but those only work for incremental interface fonts, and TrueType fonts
+         * loaded as CIDFont replacements are not incrementally handled. So here, if its a CIDFont, and
+         * its not type 1 outlines, and its not a vertical mode fotn, ignore the advance.
+         */
+         if(!a_fapi_font->is_type1 && a_fapi_font->is_cid && !a_fapi_font->is_vertical)
+             vadv = 0;
+         else
+             vadv = ft_face->glyph->linearVertAdvance;
         
         a_metrics->bbox_x0 = hx;
         a_metrics->bbox_y0 = hy - h;
         a_metrics->bbox_x1 = a_metrics->bbox_x0 + w;
         a_metrics->bbox_y1 = a_metrics->bbox_y0 + h;
-        a_metrics->escapement = hadv;
+        a_metrics->escapement = ft_face->glyph->linearHoriAdvance;
         a_metrics->v_escapement = vadv;
         a_metrics->em_x = ft_face->units_per_EM;
         a_metrics->em_y = ft_face->units_per_EM;
-
     }
 
     if ((!ft_error || !ft_error_fb) && a_bitmap == true) {
@@ -549,7 +545,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 
     if (ft_error == FT_Err_Too_Many_Hints) {
 #ifdef DEBUG
-	if (gs_debug_c('1')) {
+        if (gs_debug_c('1')) {
             emprintf1(a_fapi_font->memory,
                       "TrueType glyph %d uses more instructions than the declared maximum in the font.",
                       a_char_ref->char_code);
@@ -563,8 +559,8 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     }
     if (ft_error == FT_Err_Invalid_Argument) {
 #ifdef DEBUG
-	if (gs_debug_c('1')) {
-	    emprintf1(a_fapi_font->memory,
+        if (gs_debug_c('1')) {
+            emprintf1(a_fapi_font->memory,
                       "TrueType parsing error in glyph %d in the font.",
                       a_char_ref->char_code);
             
@@ -577,8 +573,8 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     }
     if (ft_error == FT_Err_Too_Many_Function_Defs) {
 #ifdef DEBUG
-	if (gs_debug_c('1')) {
-	    emprintf1(a_fapi_font->memory,
+        if (gs_debug_c('1')) {
+            emprintf1(a_fapi_font->memory,
                       "TrueType instruction error in glyph %d in the font.",
                       a_char_ref->char_code);
             
@@ -591,8 +587,8 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     }
     if (ft_error == FT_Err_Invalid_Glyph_Index) {
 #ifdef DEBUG
-	if (gs_debug_c('1')) {
-	    emprintf1(a_fapi_font->memory,
+        if (gs_debug_c('1')) {
+            emprintf1(a_fapi_font->memory,
                       "FreeType is unable to find the glyph %d in the font.",
                       a_char_ref->char_code);
             
@@ -640,8 +636,8 @@ ensure_open(FAPI_server *a_server, const byte *server_param, int server_param_si
             FT_Add_Default_Modules(s->freetype_library);
         }
 
-	if (ft_error)
-	    return ft_to_gs_error(ft_error);
+        if (ft_error)
+            return ft_to_gs_error(ft_error);
     }
     return 0;
 }
@@ -662,9 +658,9 @@ make_rotation(FT_Matrix *a_transform, const FT_Vector *a_vector)
     FT_Fixed length, cos, sin;
     if (a_vector->x >= 0 && a_vector->y == 0)
     {
-	a_transform->xx = a_transform->yy = 65536;
-	a_transform->xy = a_transform->yx = 0;
-	return;
+        a_transform->xx = a_transform->yy = 65536;
+        a_transform->xy = a_transform->yx = 0;
+        return;
     }
 
     length = FT_Vector_Length((FT_Vector*)a_vector);
@@ -711,11 +707,11 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
     if (scalex > scaley)
     {
         if (scaley < 10.0)
-	{
-	    fact = 10.016 / scaley;
-	    scaley = scaley * fact;
-	    scalex = scalex * fact;
-	}
+        {
+            fact = 10.016 / scaley;
+            scaley = scaley * fact;
+            scalex = scalex * fact;
+        }
         
         /* These seemingly arbitrary numbers are derived from a) using 64ths of a unit
            and b) the calculations done in FT_Request_Metrics() to derive the ppem.
@@ -748,11 +744,11 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
     else
     {
         if (scalex < 10.0)
-	{
-	    fact = 10.016 / scalex;
-	    scalex = scalex * fact;
-	    scaley = scaley * fact;
-	}
+        {
+            fact = 10.016 / scalex;
+            scalex = scalex * fact;
+            scaley = scaley * fact;
+        }
         
         /* see above */
         if ((scalex * 64 * xres) < 2268.0)
@@ -793,9 +789,9 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
  */
 static FAPI_retcode
 get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
-	const FAPI_font_scale *a_font_scale,
-	const char *a_map,
-	FAPI_descendant_code a_descendant_code)
+        const FAPI_font_scale *a_font_scale,
+        const char *a_map,
+        FAPI_descendant_code a_descendant_code)
 {
     FF_server *s = (FF_server*)a_server;
     FF_face *face = (FF_face*)a_font->server_font_data;
@@ -819,119 +815,119 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
      * passed in individually.
      */
     if (a_font->is_cid && a_font->is_type1 && a_font->font_file_path == NULL &&
-	    (a_descendant_code == FAPI_TOPLEVEL_BEGIN ||
-	     a_descendant_code == FAPI_TOPLEVEL_COMPLETE))
+            (a_descendant_code == FAPI_TOPLEVEL_BEGIN ||
+             a_descendant_code == FAPI_TOPLEVEL_COMPLETE))
     {
-	/* dpf("get_scaled_font return 0\n"); */
-	return 0;
+        /* dpf("get_scaled_font return 0\n"); */
+        return 0;
     }
 
     /* Create the face if it doesn't already exist. */
     if (!face)
     {
-	FT_Face ft_face = NULL;
-	FT_Parameter ft_param;
-	FT_Incremental_InterfaceRec *ft_inc_int = NULL;
-	unsigned char *own_font_data = NULL;
+        FT_Face ft_face = NULL;
+        FT_Parameter ft_param;
+        FT_Incremental_InterfaceRec *ft_inc_int = NULL;
+        unsigned char *own_font_data = NULL;
 
-	/* dpf("get_scaled_font creating face\n"); */
+        /* dpf("get_scaled_font creating face\n"); */
 
-	/* Load a typeface from a file. */
-	if (a_font->font_file_path)
-	{
-	    ft_error = FT_New_Face(s->freetype_library, a_font->font_file_path, a_font->subfont, &ft_face);
-	    if (!ft_error && ft_face)
-		ft_error = FT_Select_Charmap(ft_face, ft_encoding_unicode);
-	}
+        /* Load a typeface from a file. */
+        if (a_font->font_file_path)
+        {
+            ft_error = FT_New_Face(s->freetype_library, a_font->font_file_path, a_font->subfont, &ft_face);
+            if (!ft_error && ft_face)
+                ft_error = FT_Select_Charmap(ft_face, ft_encoding_unicode);
+        }
 
-	/* Load a typeface from a representation in GhostScript's memory. */
-	else
-	{
-	    FT_Open_Args open_args;
-	    open_args.flags = FT_OPEN_MEMORY;
+        /* Load a typeface from a representation in GhostScript's memory. */
+        else
+        {
+            FT_Open_Args open_args;
+            open_args.flags = FT_OPEN_MEMORY;
 
-	    if (a_font->is_type1)
-	    {
-		long length;
-		int type = a_font->get_word(a_font, FAPI_FONT_FEATURE_FontType, 0);
+            if (a_font->is_type1)
+            {
+                long length;
+                int type = a_font->get_word(a_font, FAPI_FONT_FEATURE_FontType, 0);
 
-		/* Tell the FAPI interface that we need to decrypt the /Subrs data. */
-		a_font->need_decrypt = true;
+                /* Tell the FAPI interface that we need to decrypt the /Subrs data. */
+                a_font->need_decrypt = true;
 
-		/*
-		   Serialise a type 1 font in PostScript source form, or
-		   a Type 2 font in binary form, so that FreeType can read it.
-		 */
-		if (type == 1)
-		    length = FF_serialize_type1_font(a_font, NULL, 0);
-		else
-		    length = FF_serialize_type2_font(a_font, NULL, 0);
-		open_args.memory_base = own_font_data = FF_alloc(s->ftmemory, length);
-		if (!open_args.memory_base)
-		    return e_VMerror;
-		if (type == 1)
-		    open_args.memory_size = FF_serialize_type1_font(a_font, own_font_data, length);
-		else
-		    open_args.memory_size = FF_serialize_type2_font(a_font, own_font_data, length);
-		if (open_args.memory_size != length)
-		    return_error(e_unregistered); /* Must not happen. */
-		ft_inc_int = new_inc_int(a_server, a_font);
-		if (!ft_inc_int)
-		{
-		    FF_free (s->ftmemory, own_font_data);
-		    return e_VMerror;
-		}
-	    }
+                /*
+                   Serialise a type 1 font in PostScript source form, or
+                   a Type 2 font in binary form, so that FreeType can read it.
+                 */
+                if (type == 1)
+                    length = FF_serialize_type1_font(a_font, NULL, 0);
+                else
+                    length = FF_serialize_type2_font(a_font, NULL, 0);
+                open_args.memory_base = own_font_data = FF_alloc(s->ftmemory, length);
+                if (!open_args.memory_base)
+                    return e_VMerror;
+                if (type == 1)
+                    open_args.memory_size = FF_serialize_type1_font(a_font, own_font_data, length);
+                else
+                    open_args.memory_size = FF_serialize_type2_font(a_font, own_font_data, length);
+                if (open_args.memory_size != length)
+                    return_error(e_unregistered); /* Must not happen. */
+                ft_inc_int = new_inc_int(a_server, a_font);
+                if (!ft_inc_int)
+                {
+                    FF_free (s->ftmemory, own_font_data);
+                    return e_VMerror;
+                }
+            }
 
-	    /* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
-	    else 
-	    {
-		/* Get the length of the TrueType data. */
-		open_args.memory_size = a_font->get_long(a_font, FAPI_FONT_FEATURE_TT_size, 0);
-		if (open_args.memory_size == 0)
-		    return e_invalidfont;
+            /* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
+            else 
+            {
+                /* Get the length of the TrueType data. */
+                open_args.memory_size = a_font->get_long(a_font, FAPI_FONT_FEATURE_TT_size, 0);
+                if (open_args.memory_size == 0)
+                    return e_invalidfont;
 
-		/* Load the TrueType data into a single buffer. */
-		open_args.memory_base = own_font_data = FF_alloc(s->ftmemory, open_args.memory_size);
-		if (!own_font_data)
-		    return e_VMerror;
-		if (a_font->serialize_tt_font(a_font, own_font_data, open_args.memory_size))
-		    return e_invalidfont;
+                /* Load the TrueType data into a single buffer. */
+                open_args.memory_base = own_font_data = FF_alloc(s->ftmemory, open_args.memory_size);
+                if (!own_font_data)
+                    return e_VMerror;
+                if (a_font->serialize_tt_font(a_font, own_font_data, open_args.memory_size))
+                    return e_invalidfont;
 
-		/* We always load incrementally. */
-		ft_inc_int = new_inc_int(a_server, a_font);
-		if (!ft_inc_int)
-		{
-		    FF_free(s->ftmemory, own_font_data);
-		    return e_VMerror;
-		}
-	    }
+                /* We always load incrementally. */
+                ft_inc_int = new_inc_int(a_server, a_font);
+                if (!ft_inc_int)
+                {
+                    FF_free(s->ftmemory, own_font_data);
+                    return e_VMerror;
+                }
+            }
 
-	    if (ft_inc_int)
-	    {
-		open_args.flags = (FT_UInt)(open_args.flags | FT_OPEN_PARAMS);
-		ft_param.tag = FT_PARAM_TAG_INCREMENTAL;
-		ft_param.data = ft_inc_int;
-		open_args.num_params = 1;
-		open_args.params = &ft_param;
-	    }
-	    ft_error = FT_Open_Face(s->freetype_library, &open_args, a_font->subfont, &ft_face);
-	}
+            if (ft_inc_int)
+            {
+                open_args.flags = (FT_UInt)(open_args.flags | FT_OPEN_PARAMS);
+                ft_param.tag = FT_PARAM_TAG_INCREMENTAL;
+                ft_param.data = ft_inc_int;
+                open_args.num_params = 1;
+                open_args.params = &ft_param;
+            }
+            ft_error = FT_Open_Face(s->freetype_library, &open_args, a_font->subfont, &ft_face);
+        }
 
-	if (ft_face)
-	{
-	    face = new_face(a_server, ft_face, ft_inc_int, own_font_data);
-	    if (!face)
-	    {
-		FF_free(s->ftmemory, own_font_data);
-		FT_Done_Face(ft_face);
-		delete_inc_int(a_server, ft_inc_int);
-		return e_VMerror;
-	    }
-	    a_font->server_font_data = face;
-	}
-	else
-	    a_font->server_font_data = NULL;	
+        if (ft_face)
+        {
+            face = new_face(a_server, ft_face, ft_inc_int, own_font_data);
+            if (!face)
+            {
+                FF_free(s->ftmemory, own_font_data);
+                FT_Done_Face(ft_face);
+                delete_inc_int(a_server, ft_inc_int);
+                return e_VMerror;
+            }
+            a_font->server_font_data = face;
+        }
+        else
+            a_font->server_font_data = NULL;        
     }
 
     /* Set the point size and transformation.
@@ -971,12 +967,12 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
             return ft_to_gs_error(ft_error);
         }
 
-	/* Concatenate the transform to a reflection around (y=0) so that it
-	 * produces a glyph that is upside down in FreeType terms, with its
-	 * first row at the bottom. That is what GhostScript needs.
-	 */
+        /* Concatenate the transform to a reflection around (y=0) so that it
+         * produces a glyph that is upside down in FreeType terms, with its
+         * first row at the bottom. That is what GhostScript needs.
+         */
 
-	FT_Set_Transform(face->ft_face, &face->ft_transform, NULL);
+        FT_Set_Transform(face->ft_face, &face->ft_transform, NULL);
     }
 
     /* dpf("get_scaled_font return %d\n", a_font->server_font_data ? 0 : -1); */
@@ -1034,15 +1030,15 @@ can_retrieve_char_by_name(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_re
     char name[128];
     if (FT_HAS_GLYPH_NAMES(face->ft_face) && a_char_ref->char_name_length < sizeof(name))
     {
-	memcpy(name, a_char_ref->char_name, a_char_ref->char_name_length);
-	name[a_char_ref->char_name_length] = 0;
-	a_char_ref->char_code = FT_Get_Name_Index(face->ft_face, name);
-	*a_result = a_char_ref->char_code != 0;
-	if (*a_result)
-	    a_char_ref->is_glyph_index = true;
+        memcpy(name, a_char_ref->char_name, a_char_ref->char_name_length);
+        name[a_char_ref->char_name_length] = 0;
+        a_char_ref->char_code = FT_Get_Name_Index(face->ft_face, name);
+        *a_result = a_char_ref->char_code != 0;
+        if (*a_result)
+            a_char_ref->is_glyph_index = true;
     }
     else
-	*a_result = false;
+        *a_result = false;
     return 0;
 }
 
@@ -1086,7 +1082,7 @@ static FAPI_retcode get_fontmatrix(FAPI_server *server, gs_matrix *m)
  */
 static FAPI_retcode
 get_char_raster_metrics(FAPI_server *a_server, FAPI_font *a_font,
-	FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
+        FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
     FAPI_retcode error = load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->bitmap_glyph, true, a_server->max_bitmap);
@@ -1101,7 +1097,7 @@ get_char_raster(FAPI_server *a_server, FAPI_raster *a_raster)
 {
     FF_server *s = (FF_server*)a_server;
     if (!s->bitmap_glyph)
-	return_error(e_unregistered); /* Must not happen. */
+        return_error(e_unregistered); /* Must not happen. */
     a_raster->p = s->bitmap_glyph->bitmap.buffer;
     a_raster->width = s->bitmap_glyph->bitmap.width;
     a_raster->height = s->bitmap_glyph->bitmap.rows;
@@ -1119,7 +1115,7 @@ get_char_raster(FAPI_server *a_server, FAPI_raster *a_raster)
  */
 static FAPI_retcode
 get_char_outline_metrics(FAPI_server *a_server, FAPI_font *a_font,
-	FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
+        FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
     return load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->outline_glyph, false, a_server->max_bitmap);
@@ -1199,10 +1195,10 @@ static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObje
     Control2y = ((int64_t)float2fixed((y + Controly * 2) / 3)) << 24;
 
     return p->path->curveto(p->path, Control1x,
-	    Control1y,
-	    Control2x,
-	    Control2y,
-	    p->x, p->y) ? -1 : 0;
+            Control1y,
+            Control2x,
+            Control2y,
+            p->x, p->y) ? -1 : 0;
 }
 
 static int cubic_to(const FT_Vector *aControl1, const FT_Vector *aControl2, const FT_Vector *aTo, void *aObject)
@@ -1323,7 +1319,7 @@ int gs_fapi_ft_instantiate( i_plugin_client_memory *a_memory, i_plugin_instance 
 {
     FF_server *server = (FF_server*) a_memory->alloc(a_memory, sizeof (FF_server), "FF_server");
     if (!server)
-	return e_VMerror;
+        return e_VMerror;
     memset(server, 0, sizeof(*server));
     server->mem = a_memory->client_data;
     server->fapi_server = TheFreeTypeServer;
