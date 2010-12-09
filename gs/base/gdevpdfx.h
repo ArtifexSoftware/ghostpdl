@@ -99,7 +99,10 @@ typedef enum {
     resourcePattern,
     resourceShading,
     resourceXObject,
-    resourceOther, /* Anything else that needs to be stored for a time. */
+    resourceOther, /* Anything else that needs to be stored for a time. 
+		    * Can be any of the types defined below NUM_RESOURCE_TYPES
+		    * but this is the type used to identify the object.
+		    */
     resourceFont,
     /*
      * Internally used (pseudo-)resources.
@@ -112,7 +115,31 @@ typedef enum {
     resourceSoftMaskDict,
     resourceFunction,
     resourcePage,
-    NUM_RESOURCE_TYPES
+    NUM_RESOURCE_TYPES,
+    /* These resource types were 'resourceOther', but we want to track them
+     * for ps2write. They are not stored in the pdf device structure, unlike
+     * the reource types above.
+     */
+    resourceEncoding,
+    resourceCIDSystemInfo,
+    resourceHalftone,
+    resourceLength,
+    resourceStream,
+    resourceOutline,
+    resourceArticle,
+    resourceDests,
+    resourceLabels,
+    resourceThread,
+    resourceCatalog,
+    resourceEncrypt,
+    resourcePagesTree,
+    resourceMetadata,
+    resourceICC,
+    resourceAnnotation,
+    resourceNone	/* Special, used when this isn't a resource at all 
+			 * eg when we execute a resource we've just written, such as
+			 * a Pattern.
+			 */
 } pdf_resource_type_t;
 
 #define PDF_RESOURCE_TYPE_NAMES\
@@ -778,11 +805,11 @@ long pdf_obj_ref(gx_device_pdf * pdev);
 long pdf_stell(gx_device_pdf * pdev);
 
 /* Begin an object, optionally allocating an ID. */
-long pdf_open_obj(gx_device_pdf * pdev, long id);
-long pdf_begin_obj(gx_device_pdf * pdev);
+long pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type);
+long pdf_begin_obj(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /* End an object. */
-int pdf_end_obj(gx_device_pdf * pdev);
+int pdf_end_obj(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /* ------ Page contents ------ */
 
@@ -807,8 +834,8 @@ extern const gs_memory_struct_type_t *const pdf_resource_type_structs[];
 
 /* Begin an object logically separate from the contents. */
 /* (I.e., an object in the resource file.) */
-long pdf_open_separate(gx_device_pdf * pdev, long id);
-long pdf_begin_separate(gx_device_pdf * pdev);
+long pdf_open_separate(gx_device_pdf * pdev, long id, pdf_resource_type_t type);
+long pdf_begin_separate(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /* Reserve object id. */
 void pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *ppres, long id);
@@ -820,7 +847,7 @@ int pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
 /* Begin an aside (resource, annotation, ...). */
 int pdf_begin_aside(gx_device_pdf * pdev, pdf_resource_t **plist,
 		    const gs_memory_struct_type_t * pst,
-		    pdf_resource_t **ppres);
+		    pdf_resource_t **ppres, pdf_resource_type_t type);
 
 /* Begin a resource of a given type. */
 int pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype,
@@ -874,13 +901,13 @@ int pdf_substitute_resource(gx_device_pdf *pdev, pdf_resource_t **ppres,
 long pdf_resource_id(const pdf_resource_t *pres);
 
 /* End a separate object. */
-int pdf_end_separate(gx_device_pdf * pdev);
+int pdf_end_separate(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /* End an aside. */
-int pdf_end_aside(gx_device_pdf * pdev);
+int pdf_end_aside(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /* End a resource. */
-int pdf_end_resource(gx_device_pdf * pdev);
+int pdf_end_resource(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /*
  * Write the Cos objects for resources local to a content stream.

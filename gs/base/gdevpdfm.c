@@ -357,7 +357,7 @@ pdfmark_bind_named_object(gx_device_pdf *pdev, const gs_const_string *objname,
 		} else if (!v->contents.object->written) {
 		    /* We can't know whether the old object was referred or not.
 		       Write it out for a consistent result in any case. */
-		    code = cos_write_object(v->contents.object, pdev);
+		    code = cos_write_object(v->contents.object, pdev, resourceOther);
 
 		    if (code < 0)
 			return code;
@@ -787,7 +787,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     }
     if (!objname) {
 	/* Write the annotation now. */
-	COS_WRITE_OBJECT(pcd, pdev);
+	COS_WRITE_OBJECT(pcd, pdev, resourceAnnotation);
 	COS_RELEASE(pcd, "pdfmark_annot");
     }
     return cos_array_add(annots,
@@ -818,7 +818,7 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
     stream *s;
     int code = 0;
 
-    pdf_open_separate(pdev, pnode->id);
+    pdf_open_separate(pdev, pnode->id, resourceOutline);
     if (pnode->action != NULL)
 	pnode->action->id = pnode->id;
     else {
@@ -842,7 +842,7 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
 	pprintld2(s, "/First %ld 0 R /Last %ld 0 R\n",
 		  pnode->first_id, pnode->last_id);
     stream_puts(s, ">>\n");
-    pdf_end_separate(pdev);
+    pdf_end_separate(pdev, resourceOutline);
     if (pnode->action != NULL)
 	COS_FREE(pnode->action, "pdfmark_write_outline");
     pnode->action = 0;
@@ -970,7 +970,7 @@ pdfmark_write_bead(gx_device_pdf * pdev, const pdf_bead_t * pbead)
     stream *s;
     char rstr[MAX_RECT_STRING];
 
-    pdf_open_separate(pdev, pbead->id);
+    pdf_open_separate(pdev, pbead->id, resourceArticle);
     s = pdev->strm;
     pprintld3(s, "<</T %ld 0 R/V %ld 0 R/N %ld 0 R",
 	      pbead->article_id, pbead->prev_id, pbead->next_id);
@@ -978,7 +978,7 @@ pdfmark_write_bead(gx_device_pdf * pdev, const pdf_bead_t * pbead)
 	pprintld1(s, "/P %ld 0 R", pbead->page_id);
     pdfmark_make_rect(rstr, &pbead->rect);
     pprints1(s, "/R%s>>\n", rstr);
-    return pdf_end_separate(pdev);
+    return pdf_end_separate(pdev, resourceArticle);
 }
 
 /* Finish writing an article, and release its data. */
@@ -999,12 +999,12 @@ pdfmark_write_article(gx_device_pdf * pdev, const pdf_article_t * part)
 	pdfmark_write_bead(pdev, &art.last);
     }
     pdfmark_write_bead(pdev, &art.first);
-    pdf_open_separate(pdev, art.contents->id);
+    pdf_open_separate(pdev, art.contents->id, resourceArticle);
     s = pdev->strm;
     pprintld1(s, "<</F %ld 0 R/I<<", art.first.id);
     cos_dict_elements_write(art.contents, pdev);
     stream_puts(s, ">> >>\n");
-    return pdf_end_separate(pdev);
+    return pdf_end_separate(pdev, resourceArticle);
 }
 
 /* ARTICLE pdfmark */
@@ -1263,7 +1263,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    code = pdf_exit_substream(pdev);
 	    if (code < 0)
 		return code;
-	    code = cos_write_object(pres->object, pdev);
+	    code = cos_write_object(pres->object, pdev, resourceOther);
 	    if (code < 0)
 		return code;
 	    level1_id = pres->object->id;

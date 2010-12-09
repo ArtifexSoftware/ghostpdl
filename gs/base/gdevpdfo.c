@@ -219,15 +219,15 @@ cos_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 
 /* Write a cos object as a PDF object. */
 int
-cos_write_object(cos_object_t *pco, gx_device_pdf *pdev)
+cos_write_object(cos_object_t *pco, gx_device_pdf *pdev, pdf_resource_type_t type)
 {
     int code;
 
     if (pco->id == 0 || pco->written)
 	return_error(gs_error_Fatal);
-    pdf_open_separate(pdev, pco->id);
+    pdf_open_separate(pdev, pco->id, type);
     code = cos_write(pco, pdev, pco->id);
-    pdf_end_separate(pdev);
+    pdf_end_separate(pdev, type);
     pco->written = true;
     return code;
 }
@@ -871,7 +871,7 @@ cos_dict_objects_write(const cos_dict_t *pcd, gx_device_pdf *pdev)
 	if (COS_VALUE_IS_OBJECT(&pcde->value) &&
 	    pcde->value.contents.object->id  &&
 	    !pcde->value.contents.object->written /* ForOPDFRead only. */)
-	    cos_write_object(pcde->value.contents.object, pdev);
+	    cos_write_object(pcde->value.contents.object, pdev, resourceOther);
     return 0;
 }
 int
