@@ -1359,7 +1359,7 @@ pdf_close(gx_device * dev)
 	pagecount = 1;
 
 	/* All resources and procsets written, end the prolog */
-	stream_puts(pdev->strm, "%%%%EndProlog\n");
+	stream_puts(pdev->strm, "%%EndProlog\n");
 
 	if (pdev->ResourcesBeforeUsage)
 	    pdf_reverse_resource_chain(pdev, resourcePage);
