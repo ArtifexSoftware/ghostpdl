@@ -163,7 +163,7 @@ write_FontDescriptor_common(gx_device_pdf *pdev,
     printer_param_list_t rlist;
     gs_param_list *const plist = (gs_param_list *)&rlist;
 
-    pdf_open_separate(pdev, pdf_font_descriptor_common_id(pfd), resourceFontDescriptor);
+    pdf_open_separate(pdev, pdf_font_descriptor_common_id(pfd));
     s = pdev->strm;
     stream_puts(s, "<</Type/FontDescriptor/FontName");
     pdf_put_name(pdev, pfd->values.FontName.data, pfd->values.FontName.size);
@@ -676,11 +676,11 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
 	COS_WRITE(pfd->cid.FD, pdev);
     }
     stream_puts(s, ">>\n");
-    pdf_end_separate(pdev, resourceFontDescriptor);
+    pdf_end_separate(pdev);
     pfd->common.object->written = true;
     {	const cos_object_t *pco = (const cos_object_t *)pdf_get_FontFile_object(pfd->base_font);
 	if (pco != NULL) {
-	    code = COS_WRITE_OBJECT(pco, pdev, resourceNone);
+	    code = COS_WRITE_OBJECT(pco, pdev);
 	    if (code < 0)
 		return code;
 	}

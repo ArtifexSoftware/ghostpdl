@@ -434,6 +434,9 @@ pdf_open_document(gx_device_pdf * pdev)
 		    stream_puts(s, "/FitPages true def\n");
 		if(pdev->CenterPages)
 		    stream_puts(s, "/CenterPages true def\n");
+	    } else {
+		sprintf(BBox, "%%%%EndProlog\n");
+		stream_write(s, (byte *)BBox, strlen(BBox));
 	    }
 	    pdev->OPDFRead_procset_length = stell(s);
 	}
@@ -522,7 +525,7 @@ pdf_obj_ref(gx_device_pdf * pdev)
 
 /* Begin an object, optionally allocating an ID. */
 long
-pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
+pdf_open_obj(gx_device_pdf * pdev, long id)
 {
     stream *s = pdev->strm;
 
@@ -538,144 +541,20 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
 	fwrite(&pos, sizeof(pos), 1, tfile);
 	fseek(tfile, tpos, SEEK_SET);
     }
-    if (pdev->ForOPDFRead && pdev->ProduceDSC) {
-	switch(type) {
-	    case resourceNone:
-		/* Used when outputting usage of a previously defined resource
-		 * Does not want comments around its use
-		 */
-		break;
-	    case resourcePage:
-		/* We *don't* want resource comments around pages */
-		break;
-	    case resourceColorSpace:
-		pprintld1(s, "%%%%BeginResource: file (PDF Color Space obj_%ld)\n", id);
-		break;
-	    case resourceExtGState:
-		pprintld1(s, "%%%%BeginResource: file (PDF Extended Graphics State obj_%ld)\n", id);
-		break;
-	    case resourcePattern:
-		pprintld1(s, "%%%%BeginResource: pattern (PDF Pattern obj_%ld)\n", id);
-		break;
-	    case resourceShading:
-		pprintld1(s, "%%%%BeginResource: file (PDF Shading obj_%ld)\n", id);
-		break;
-	    case resourceCIDFont:
-	    case resourceFont:
-		/* Ought to write the font name here */
-		pprintld1(s, "%%%%BeginResource: font (PDF Font obj_%ld)\n", id);
-		break;
-	    case resourceCharProc:
-		pprintld1(s, "%%%%BeginResource: file (PDF CharProc obj_%ld)\n", id);
-		break;
-	    case resourceCMap:
-		pprintld1(s, "%%%%BeginResource: file (PDF CMap obj_%ld)\n", id);
-		break;
-	    case resourceFontDescriptor:
-		pprintld1(s, "%%%%BeginResource: file (PDF FontDescriptor obj_%ld)\n", id);
-		break;
-	    case resourceGroup:
-		pprintld1(s, "%%%%BeginResource: file (PDF Group obj_%ld)\n", id);
-		break;
-	    case resourceFunction:
-		pprintld1(s, "%%%%BeginResource: file (PDF Function obj_%ld)\n", id);
-		break;
-	    case resourceEncoding:
-		pprintld1(s, "%%%%BeginResource: encoding (PDF Encoding obj_%ld)\n", id);
-		break;
-	    case resourceCIDSystemInfo:
-		pprintld1(s, "%%%%BeginResource: file (PDF CIDSystemInfo obj_%ld)\n", id);
-		break;
-	    case resourceHalftone:
-		pprintld1(s, "%%%%BeginResource: file (PDF Halftone obj_%ld)\n", id);
-		break;
-	    case resourceLength:
-		pprintld1(s, "%%%%BeginResource: file (PDF Length obj_%ld)\n", id);
-		break;
-	    case resourceSoftMaskDict:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF SoftMask obj_%ld)\n", id);
-		break;
-	    case resourceXObject:
-		/* This should not be possible, we write these inline */
-		pprintld1(s, "%%%%BeginResource: file (PDF XObject obj_%ld)\n", id);
-		break;
-	    case resourceStream:
-		/* Possibly we should not add comments to this type */
-		pprintld1(s, "%%%%BeginResource: file (PDF stream obj_%ld)\n", id);
-		break;
-	    case resourceOutline:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Outline obj_%ld)\n", id);
-		break;
-	    case resourceArticle:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Article obj_%ld)\n", id);
-		break;
-	    case resourceDests:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Dests obj_%ld)\n", id);
-		break;
-	    case resourceLabels:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Page Labels obj_%ld)\n", id);
-		break;
-	    case resourceThread:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Thread obj_%ld)\n", id);
-		break;
-	    case resourceCatalog:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Catalog obj_%ld)\n", id);
-		break;
-	    case resourceEncrypt:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Encryption obj_%ld)\n", id);
-		break;
-	    case resourcePagesTree:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Pages Tree obj_%ld)\n", id);
-		break;
-	    case resourceMetadata:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Metadata obj_%ld)\n", id);
-		break;
-	    case resourceICC:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF ICC Profile obj_%ld)\n", id);
-		break;
-	    case resourceAnnotation:
-		/* This should not be possible, not valid in PostScript */
-		pprintld1(s, "%%%%BeginResource: file (PDF Annotation obj_%ld)\n", id);
-		break;
-	    default:
-		pprintld1(s, "%%%%BeginResource: file (PDF object obj_%ld)\n", id);
-		break;
-	}
-    }
     pprintld1(s, "%ld 0 obj\n", id);
     return id;
 }
 long
-pdf_begin_obj(gx_device_pdf * pdev, pdf_resource_type_t type)
+pdf_begin_obj(gx_device_pdf * pdev)
 {
-    return pdf_open_obj(pdev, 0L, type);
+    return pdf_open_obj(pdev, 0L);
 }
 
 /* End an object. */
 int
-pdf_end_obj(gx_device_pdf * pdev, pdf_resource_type_t type)
+pdf_end_obj(gx_device_pdf * pdev)
 {
     stream_puts(pdev->strm, "endobj\n");
-    if (pdev->ForOPDFRead && pdev->ProduceDSC) {
-	switch(type) {
-	    case resourcePage:
-		break;
-	    default:
-	    stream_puts(pdev->strm, "%%EndResource\n");
-	    break;
-	}
-    }
     return 0;
 }
 
@@ -791,7 +670,7 @@ none_to_stream(gx_device_pdf * pdev)
 	pdev->contents_pos = -1; /* inapplicable */
 	s = pdev->strm;
     } else {
-    	pdev->contents_id = pdf_begin_obj(pdev, resourceStream);
+    	pdev->contents_id = pdf_begin_obj(pdev);
 	pdev->contents_length_id = pdf_obj_ref(pdev);
 	s = pdev->strm;
 	pprintld1(s, "<</Length %ld 0 R", pdev->contents_length_id);
@@ -955,10 +834,10 @@ stream_to_none(gx_device_pdf * pdev)
 	if (pdev->PDFA)
 	    stream_puts(s, "\n");
 	stream_puts(s, "endstream\n");
-	pdf_end_obj(pdev, resourceStream);
-	pdf_open_obj(pdev, pdev->contents_length_id, resourceLength);
+	pdf_end_obj(pdev);
+	pdf_open_obj(pdev, pdev->contents_length_id);
 	pprintld1(s, "%ld\n", length);
-	pdf_end_obj(pdev, resourceLength);
+	pdf_end_obj(pdev);
     }
     return PDF_IN_NONE;
 }
@@ -1014,8 +893,8 @@ pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_typ
     /* fixme : remove *pres from resource chain. */
     pres->where_used = 0;
     pres->object->written = true;
-    if (rtype == resourceXObject || rtype == resourceCharProc || rtype == resourceOther 
-	|| rtype > NUM_RESOURCE_TYPES) {
+    if (rtype == resourceXObject || rtype == resourceCharProc || rtype == resourceOther
+	) {
 	int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
 
 	if (code < 0)
@@ -1081,7 +960,7 @@ pdf_substitute_resource(gx_device_pdf *pdev, pdf_resource_t **ppres,
     } else {
 	pdf_reserve_object_id(pdev, pres1, gs_no_id);
 	if (write) {
-	    code = cos_write_object(pres1->object, pdev, rtype);
+	    code = cos_write_object(pres1->object, pdev);
 	    if (code < 0)
 		return code;
 	    pres1->object->written = 1;
@@ -1220,7 +1099,7 @@ pdf_print_resource_statistics(gx_device_pdf * pdev)
 
 /* Begin an object logically separate from the contents. */
 long
-pdf_open_separate(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
+pdf_open_separate(gx_device_pdf * pdev, long id)
 {
     int code;
     code = pdf_open_document(pdev);
@@ -1228,12 +1107,12 @@ pdf_open_separate(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
 	return code;
     pdev->asides.save_strm = pdev->strm;
     pdev->strm = pdev->asides.strm;
-    return pdf_open_obj(pdev, id, type);
+    return pdf_open_obj(pdev, id);
 }
 long
-pdf_begin_separate(gx_device_pdf * pdev, pdf_resource_type_t type)
+pdf_begin_separate(gx_device_pdf * pdev)
 {
-    return pdf_open_separate(pdev, 0L, type);
+    return pdf_open_separate(pdev, 0L);
 }
 
 void
@@ -1281,10 +1160,9 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
 }
 int
 pdf_begin_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
-		const gs_memory_struct_type_t * pst, pdf_resource_t ** ppres,
-		pdf_resource_type_t type)
+		const gs_memory_struct_type_t * pst, pdf_resource_t ** ppres)
 {
-    long id = pdf_begin_separate(pdev, type);
+    long id = pdf_begin_separate(pdev);
 
     if (id < 0)
 	return (int)id;
@@ -1297,7 +1175,7 @@ pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 			gs_id rid, pdf_resource_t ** ppres)
 {
     int code = pdf_begin_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
-			       pdf_resource_type_structs[rtype], ppres, rtype);
+			       pdf_resource_type_structs[rtype], ppres);
 
     if (code >= 0)
 	(*ppres)->rid = rid;
@@ -1340,28 +1218,46 @@ pdf_resource_id(const pdf_resource_t *pres)
 
 /* End an aside or other separate object. */
 int
-pdf_end_separate(gx_device_pdf * pdev, pdf_resource_type_t type)
+pdf_end_separate(gx_device_pdf * pdev)
 {
-    int code = pdf_end_obj(pdev, type);
+    int code = pdf_end_obj(pdev);
 
     pdev->strm = pdev->asides.save_strm;
     pdev->asides.save_strm = 0;
     return code;
 }
 int
-pdf_end_aside(gx_device_pdf * pdev, pdf_resource_type_t type)
+pdf_end_aside(gx_device_pdf * pdev)
 {
-    return pdf_end_separate(pdev, type);
+    return pdf_end_separate(pdev);
 }
 
 /* End a resource. */
 int
-pdf_end_resource(gx_device_pdf * pdev, pdf_resource_type_t type)
+pdf_end_resource(gx_device_pdf * pdev)
 {
-    return pdf_end_aside(pdev, type);
+    return pdf_end_aside(pdev);
 }
 
+int
+opdfread_pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
+{
+    int j, code = 0;
 
+    for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
+
+	for (; pres != 0; pres = pres->next)
+	    if ((!pres->named || pdev->ForOPDFRead) 
+		&& !pres->object->written) {
+
+		    stream_puts(pdev->strm, "%%BeginResource:");
+		    code = cos_write_object(pres->object, pdev);
+		    stream_puts(pdev->strm, "%%EndResource");
+	    }
+    }
+    return code;
+}
 /*
  * Write the Cos objects for resources local to a content stream.  Formerly,
  * this procedure also freed such objects, but this doesn't work, because
@@ -1378,7 +1274,7 @@ pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 	for (; pres != 0; pres = pres->next)
 	    if ((!pres->named || pdev->ForOPDFRead) 
 		&& !pres->object->written) {
-		    code = cos_write_object(pres->object, pdev, rtype);
+		    code = cos_write_object(pres->object, pdev);
 	    }
     }
     return code;
@@ -1476,7 +1372,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 	stream *s = 0;
 	int j;
 
-	if (i == resourceOther || i > NUM_RESOURCE_TYPES)
+	if (i == resourceOther)
 	    continue;
 	page->resource_ids[i] = 0;
 	for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
@@ -1489,7 +1385,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 		    if (id == -1L)
 			continue;
 		    if (s == 0) {
-			page->resource_ids[i] = pdf_begin_separate(pdev, i);
+			page->resource_ids[i] = pdf_begin_separate(pdev);
 			s = pdev->strm;
 			stream_puts(s, "<<");
 		    }
@@ -1502,7 +1398,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 	}
 	if (s) {
 	    stream_puts(s, ">>\n");
-	    pdf_end_separate(pdev, i);
+	    pdf_end_separate(pdev);
 	    if (i != resourceFont)
 		pdf_write_resource_objects(pdev, i);
 	}
@@ -2110,7 +2006,7 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     pdw->binary.target = pdev->strm;
     pdw->binary.dev = (gx_device_psdf *)pdev;
     pdw->binary.strm = 0;		/* for GC in case of failure */
-    code = pdf_open_aside(pdev, resourceNone, gs_no_id, &pdw->pres, !object_id, 
+    code = pdf_open_aside(pdev, resourceOther, gs_no_id, &pdw->pres, !object_id, 
 		options);
     if (object_id != 0)
 	pdf_reserve_object_id(pdev, pdw->pres, object_id);
@@ -2126,7 +2022,7 @@ pdf_end_data(pdf_data_writer_t *pdw)
     code = pdf_close_aside(pdw->pdev);
     if (code < 0)
 	return code;
-    code = COS_WRITE_OBJECT(pdw->pres->object, pdw->pdev, resourceNone);
+    code = COS_WRITE_OBJECT(pdw->pres->object, pdw->pdev);
     if (code < 0)
 	return code;
     return 0;

@@ -453,7 +453,7 @@ pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
     if (pdev->PDFA)
 	stream_puts(s, "\n");
     stream_puts(s, "endstream\n");
-    pdf_end_separate(pdev, resourceCharProc);
+    pdf_end_separate(pdev);
     return 0;
 }
 
@@ -516,7 +516,7 @@ pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev)
 	stream *s;
 	int i;
 
-	pdf_open_separate(pdev, pbfs->bitmap_encoding_id, resourceEncoding);
+	pdf_open_separate(pdev, pbfs->bitmap_encoding_id);
 	s = pdev->strm;
 	/*
 	 * Even though the PDF reference documentation says that a
@@ -532,7 +532,7 @@ pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev)
 	    pprintd1(s, "/a%d", i);
 	}
 	stream_puts(s, "\n] >>\n");
-	pdf_end_separate(pdev, resourceEncoding);
+	pdf_end_separate(pdev);
 	pbfs->bitmap_encoding_id = 0;
     }
     return 0;

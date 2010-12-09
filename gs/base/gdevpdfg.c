@@ -935,7 +935,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
 	if (code < 0) 
 	    return code;
     }	
-    *pid = pdf_begin_separate(pdev, resourceHalftone);
+    *pid = pdf_begin_separate(pdev);
     s = pdev->strm;
     /* Use the original, requested frequency and angle. */
     pprintg2(s, "<</Type/Halftone/HalftoneType 1/Frequency %g/Angle %g",
@@ -948,7 +948,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
     if (psht->accurate_screens)
 	stream_puts(s, "/AccurateScreens true");
     stream_puts(s, ">>\n");
-    return pdf_end_separate(pdev, resourceHalftone);
+    return pdf_end_separate(pdev);
 }
 static int
 pdf_write_screen_halftone(gx_device_pdf *pdev, const gs_screen_halftone *psht,
@@ -978,7 +978,7 @@ pdf_write_colorscreen_halftone(gx_device_pdf *pdev,
 	if (code < 0)
 	    return code;
     }
-    *pid = pdf_begin_separate(pdev, resourceHalftone);
+    *pid = pdf_begin_separate(pdev);
     s = pdev->strm;
     /* Use Black, Gray as the Default unless we are in RGB colormodel */
     /* (num_comp < 4) in which case we use Green (arbitrarily) */
@@ -990,7 +990,7 @@ pdf_write_colorscreen_halftone(gx_device_pdf *pdev,
     if (pdht->num_comp > 3)
     pprintld2(s, "/Gray %ld 0 R/Black %ld 0 R", ht_ids[3], ht_ids[3]);
     stream_puts(s, ">>\n");
-    return pdf_end_separate(pdev, resourceHalftone);
+    return pdf_end_separate(pdev);
 }
 
 #define CHECK(expr)\
@@ -1144,7 +1144,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
 	    return code;
 	}
     }
-    *pid = pdf_begin_separate(pdev, resourceHalftone);
+    *pid = pdf_begin_separate(pdev);
     s = pdev->strm;
     stream_puts(s, "<</Type/Halftone/HalftoneType 5\n");
     done_Default = false;
@@ -1184,7 +1184,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
     }
     stream_puts(s, ">>\n");
     gs_free_object(mem, ids, "pdf_write_multiple_halftone");
-    return pdf_end_separate(pdev, resourceHalftone);
+    return pdf_end_separate(pdev);
 }
 
 /*
