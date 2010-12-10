@@ -780,7 +780,7 @@ pdf_document_metadata(gx_device_pdf *pdev)
 	s_MD5C_get_digest(pdev->strm, digest, sizeof(digest));
 	if (pdev->EncryptMetadata)
 	    options |= DATA_STREAM_ENCRYPT;
-	code = pdf_open_aside(pdev, resourceOther, gs_no_id, &pres, true, options);
+	code = pdf_open_aside(pdev, resourceMetadata, gs_no_id, &pres, true, options);
 	if (code < 0)
 	    return code;
 	code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Type", (const byte *)"/Metadata", 9);
@@ -795,7 +795,7 @@ pdf_document_metadata(gx_device_pdf *pdev)
 	code = pdf_close_aside(pdev);
 	if (code < 0)
 	    return code;
-	code = COS_WRITE_OBJECT(pres->object, pdev);
+	code = COS_WRITE_OBJECT(pres->object, pdev, resourceNone);
 	if (code < 0)
 	    return code;
 	sprintf(buf, "%ld 0 R", pres->object->id);

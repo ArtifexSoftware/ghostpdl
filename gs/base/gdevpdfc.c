@@ -1211,7 +1211,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pca->id = pres->object->id;
 	COS_FREE(pres->object, "pdf_color_space");
 	pres->object = (cos_object_t *)pca;
-	cos_write_object(COS_OBJECT(pca), pdev);
+	cos_write_object(COS_OBJECT(pca), pdev, resourceColorSpace);
     }
  ret:
     if (by_name) {
@@ -1244,7 +1244,7 @@ pdf_pattern_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	if (code < 0)
 	    return code;
 	pprints1(pdev->strm, "%s\n", cs_name);
-	pdf_end_resource(pdev);
+	pdf_end_resource(pdev, resourceColorSpace);
 	(*ppres)->object->written = true; /* don't write at end */
 	((pdf_color_space_t *)*ppres)->ranges = 0;
 	((pdf_color_space_t *)*ppres)->serialized = 0;

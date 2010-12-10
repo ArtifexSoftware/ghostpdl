@@ -351,7 +351,7 @@ pdf_finish_iccbased(cos_stream_t *pcstrm)
     gx_device_pdf *pdev = pcstrm->pdev;
 
     pcstrm->id = pdf_obj_ref(pdev);
-    return cos_write_object(COS_OBJECT(pcstrm), pdev);
+    return cos_write_object(COS_OBJECT(pcstrm), pdev, resourceICC);
 }
 
 /*

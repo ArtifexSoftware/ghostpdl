@@ -141,7 +141,7 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
     const int sl = strlen(gx_extendeg_glyph_name_separator);
     int prev = 256, code, cnt = 0;
 
-    pdf_open_separate(pdev, id);
+    pdf_open_separate(pdev, id, resourceEncoding);
     s = pdev->strm;
     stream_puts(s, "<</Type/Encoding");
     if (base_encoding < 0 && pdev->ForOPDFRead)
@@ -183,7 +183,7 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
 	}
     }
     stream_puts(s, "]>>\n");
-    pdf_end_separate(pdev);
+    pdf_end_separate(pdev, resourceEncoding);
     return 0;
 }
 
@@ -222,7 +222,7 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
     pprints1(s, "/Subtype/%s>>\n",
 	     (pdfont->FontType == ft_TrueType ? "TrueType" :
 	      pdfont->u.simple.s.type1.is_MM_instance ? "MMType1" : "Type1"));
-    pdf_end_separate(pdev);
+    pdf_end_separate(pdev, resourceFont);
     if (diff_id) {
 	mark_font_descriptor_symbolic(pdfont);
 	code = pdf_write_encoding(pdev, pdfont, diff_id, ch);
@@ -415,7 +415,7 @@ pdf_write_contents_type0(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     pprintld1(s, "/DescendantFonts[%ld 0 R]",
 	      pdf_font_id(pdfont->u.type0.DescendantFont));
     stream_puts(s, "/Subtype/Type0>>\n");
-    pdf_end_separate(pdev);
+    pdf_end_separate(pdev, resourceFont);
     return 0;
 }
 
@@ -433,7 +433,7 @@ pdf_finish_write_contents_type3(gx_device_pdf *pdev,
     pdf_write_Widths(pdev, pdfont->u.simple.FirstChar, 
 		    pdfont->u.simple.LastChar, pdfont->Widths);
     stream_puts(s, "/Subtype/Type3>>\n");
-    pdf_end_separate(pdev);
+    pdf_end_separate(pdev, resourceFont);
     return 0;
 }
 
@@ -480,7 +480,7 @@ write_contents_cid_common(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 	pprintld1(s, "/CIDSystemInfo %ld 0 R",
 		  pdfont->u.cidfont.CIDSystemInfo_id);
     pprintd1(s, "/Subtype/CIDFontType%d>>\n", subtype);
-    pdf_end_separate(pdev);
+    pdf_end_separate(pdev, resourceFont);
     return 0;
 }
 int
@@ -571,13 +571,13 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 
 	pcd_Resources = pdfont->u.simple.s.type3.Resources;
 	pcd_Resources->id = pdf_obj_ref(pdev);
-	pdf_open_separate(pdev, pcd_Resources->id);
+	pdf_open_separate(pdev, pcd_Resources->id, resourceFont);
 	code = COS_WRITE(pcd_Resources, pdev);
 	if (code < 0)
 	    return code;
-	pdf_end_separate(pdev);
+	pdf_end_separate(pdev, resourceFont);
     }
-    pdf_open_separate(pdev, pdf_font_id(pdfont));
+    pdf_open_separate(pdev, pdf_font_id(pdfont), resourceFont);
     s = pdev->strm;
     stream_puts(s, "<<");
     if (pdfont->BaseFont.size > 0) {
@@ -724,9 +724,9 @@ pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev, const gs_cid_system_info_
 {   
     int code;
 
-    *id = pdf_begin_separate(pdev);
+    *id = pdf_begin_separate(pdev, resourceCIDSystemInfo);
     code = pdf_write_cid_system_info(pdev, pcidsi, *id);
-    pdf_end_separate(pdev);
+    pdf_end_separate(pdev, resourceCIDSystemInfo);
     return code;
 }
 

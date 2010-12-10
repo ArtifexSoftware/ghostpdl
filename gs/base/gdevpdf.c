@@ -932,7 +932,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 
     mediabox[2] = round_box_coord(page->MediaBox.x);
     mediabox[3] = round_box_coord(page->MediaBox.y);
-    pdf_open_obj(pdev, page_id);
+    pdf_open_obj(pdev, page_id, resourcePage);
     s = pdev->strm;
     pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
 		mediabox[2], mediabox[3]);
@@ -1044,7 +1044,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     cos_dict_elements_write(page->Page, pdev);
 
     stream_puts(s, ">>\n");
-    pdf_end_obj(pdev);
+    pdf_end_obj(pdev, resourcePage);
     return 0;
 }
 
@@ -1197,7 +1197,7 @@ pdf_close(gx_device * dev)
 
     /* Create the Pages tree. */
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
-	pdf_open_obj(pdev, Pages_id);
+	pdf_open_obj(pdev, Pages_id, resourcePagesTree);
 	s = pdev->strm;
 	stream_puts(s, "<< /Type /Pages /Kids [\n");
 	/* Omit the last page if it was incomplete. */
@@ -1221,7 +1221,7 @@ pdf_close(gx_device * dev)
 
 	cos_dict_elements_write(pdev->Pages, pdev);
 	stream_puts(s, ">>\n");
-	pdf_end_obj(pdev);
+	pdf_end_obj(pdev, resourcePagesTree);
 
 	/* Close outlines and articles. */
 
@@ -1235,12 +1235,12 @@ pdf_close(gx_device * dev)
 	    code = pdfmark_close_outline(pdev);
 	    if (code >= 0)
 		code = code1;
-	    pdf_open_obj(pdev, pdev->outlines_id);
+	    pdf_open_obj(pdev, pdev->outlines_id, resourceOutline);
 	    pprintd1(s, "<< /Count %d", pdev->outlines_open);
 	    pprintld2(s, " /First %ld 0 R /Last %ld 0 R >>\n",
 		  pdev->outline_levels[0].first.id,
 		  pdev->outline_levels[0].last.id);
-	    pdf_end_obj(pdev);
+	    pdf_end_obj(pdev, resourceOutline);
 	}
 	if (pdev->articles != 0) {
 	    pdf_article_t *part;
@@ -1253,12 +1253,12 @@ pdf_close(gx_device * dev)
 	/* Write named destinations.  (We can't free them yet.) */
 
 	if (pdev->Dests)
-	    COS_WRITE_OBJECT(pdev->Dests, pdev);
+	    COS_WRITE_OBJECT(pdev->Dests, pdev, resourceDests);
 
 	/* Write the PageLabel array */
 	pdfmark_end_pagelabels(pdev);
 	if (pdev->PageLabels) {
-	    COS_WRITE_OBJECT(pdev->PageLabels, pdev);
+	    COS_WRITE_OBJECT(pdev->PageLabels, pdev, resourceLabels);
 	}
 
 	/* Write the document metadata. */
@@ -1275,7 +1275,7 @@ pdf_close(gx_device * dev)
 	if (pdev->articles != 0) {
 	    pdf_article_t *part;
 
-	    Threads_id = pdf_begin_obj(pdev);
+	    Threads_id = pdf_begin_obj(pdev, resourceThread);
 	    s = pdev->strm;
 	    stream_puts(s, "[ ");
 	    while ((part = pdev->articles) != 0) {
@@ -1285,9 +1285,9 @@ pdf_close(gx_device * dev)
 		gs_free_object(mem, part, "pdf_close(article)");
 	    }
 	    stream_puts(s, "]\n");
-	    pdf_end_obj(pdev);
+	    pdf_end_obj(pdev, resourceThread);
 	}
-	pdf_open_obj(pdev, Catalog_id);
+	pdf_open_obj(pdev, Catalog_id, resourceCatalog);
 	s = pdev->strm;
 	stream_puts(s, "<<");
 	pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
@@ -1302,7 +1302,7 @@ pdf_close(gx_device * dev)
                   pdev->PageLabels->id);
 	cos_dict_elements_write(pdev->Catalog, pdev);
 	stream_puts(s, ">>\n");
-	pdf_end_obj(pdev);
+	pdf_end_obj(pdev, resourceCatalog);
 	if (pdev->Dests) {
 	    COS_FREE(pdev->Dests, "pdf_close(Dests)");
 	    pdev->Dests = 0;
@@ -1353,9 +1353,13 @@ pdf_close(gx_device * dev)
     }
 
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
-	int j, code = 0;
+	int j;
 	
+	code = 0;
 	pagecount = 1;
+
+	/* All resources and procsets written, end the prolog */
+	stream_puts(pdev->strm, "%%EndProlog\n");
 
 	if (pdev->ResourcesBeforeUsage)
 	    pdf_reverse_resource_chain(pdev, resourcePage);
@@ -1366,13 +1370,14 @@ pdf_close(gx_device * dev)
 		if ((!pres->named || pdev->ForOPDFRead) 
 		    && !pres->object->written) {
 
-		    pprintd2(pdev->strm, "%%%%Page: %d %d\n", pagecount, pagecount);
+		    pprintd2(pdev->strm, "%%%%Page: %d %d\n/pagesave save def\n",
+			pagecount, pagecount);
 		    pdf_write_page(pdev, pagecount++);
 		    pprintld1(pdev->strm, "%ld 0 obj\n", pres->object->id);
 		    code = cos_write(pres->object, pdev, pres->object->id);
 		    stream_puts(pdev->strm, "endobj\n");
 		    pres->object->written = true;
-		    stream_puts(pdev->strm, "%%PageTrailer\n");
+		    stream_puts(pdev->strm, "pagesave restore\n%%PageTrailer\n");
 		}
 	}
 	code1 = pdf_free_resource_objects(pdev, resourcePage);
@@ -1385,7 +1390,7 @@ pdf_close(gx_device * dev)
 	if (pdev->OwnerPassword.size > 0) {
 	    Encrypt_id = pdf_obj_ref(pdev);
 
-	    pdf_open_obj(pdev, Encrypt_id);
+	    pdf_open_obj(pdev, Encrypt_id, resourceEncrypt);
 	    s = pdev->strm;
 	    stream_puts(s, "<<");
 	    stream_puts(s, "/Filter /Standard ");
@@ -1398,7 +1403,7 @@ pdf_close(gx_device * dev)
 	    stream_puts(s, "\n/U ");
 	    pdf_put_string(pdev, pdev->EncryptionU, sizeof(pdev->EncryptionU));
 	    stream_puts(s, ">>\n");
-	    pdf_end_obj(pdev);
+	    pdf_end_obj(pdev, resourceEncrypt);
 	    s = pdev->strm;
 	}
 
@@ -1471,7 +1476,7 @@ pdf_close(gx_device * dev)
 
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
 	    stream_puts(pdev->strm, "%%Trailer\n");
-	    pprintld1(pdev->strm, "%%Pages: %ld\n", pagecount - 1);
+	    pprintld1(pdev->strm, "%%%%Pages: %ld\n", pagecount - 1);
 	    stream_puts(pdev->strm, "%%EOF\n");
     }
     if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {

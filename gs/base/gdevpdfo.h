@@ -323,8 +323,8 @@ int cos_dict_objects_write(const cos_dict_t *, gx_device_pdf *);
 int cos_dict_objects_delete(cos_dict_t *);
 
 /* Write a cos object as a PDF object. */
-int cos_write_object(cos_object_t *pco, gx_device_pdf *pdev);
-#define COS_WRITE_OBJECT(pc, pdev) cos_write_object(COS_OBJECT(pc), pdev)
+int cos_write_object(cos_object_t *pco, gx_device_pdf *pdev, pdf_resource_type_t type);
+#define COS_WRITE_OBJECT(pc, pdev, type) cos_write_object(COS_OBJECT(pc), pdev, type)
 
 /* Free a Cos value owned by a Cos object. */
 void cos_value_free(const cos_value_t *, const cos_object_t *, client_name_t);

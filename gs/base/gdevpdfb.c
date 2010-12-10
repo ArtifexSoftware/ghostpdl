@@ -584,7 +584,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 		pprints1(s, "%s\nendstream\n", buf);
 	    else
 		pprints1(s, "%sendstream\n", buf);
-	    pdf_end_resource(pdev);
+	    pdf_end_resource(pdev, resourcePattern);
 	} else {
 	    length_id = pdf_obj_ref(pdev);
 	    pprintld1(s, "%ld 0 R>>stream\n", length_id);
@@ -601,10 +601,10 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    }
 	    end = pdf_stell(pdev);
 	    stream_puts(s, "\nendstream\n");
-	    pdf_end_resource(pdev);
-	    pdf_open_separate(pdev, length_id);
+	    pdf_end_resource(pdev, resourcePattern);
+	    pdf_open_separate(pdev, length_id, resourceNone);
 	    pprintld1(pdev->strm, "%ld\n", end - start);
-	    pdf_end_separate(pdev);
+	    pdf_end_separate(pdev, resourceNone);
 	}
 	pres->object->written = true; /* don't write at end of page */
     }
