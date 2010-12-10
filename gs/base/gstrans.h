@@ -109,7 +109,6 @@ struct gs_pdf14trans_params_s {
 	bool overprint_mode;
     bool idle; /* For clist reader.*/
     uint mask_id; /* For clist reader.*/
-    bool SMask_is_CIE;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
     int64_t icc_hash;

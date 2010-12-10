@@ -98,7 +98,7 @@ typedef pdf14_parent_cs_params_s pdf14_parent_cs_params_t;
 /* This function is used for mapping Smask CMYK or RGB data to a monochrome alpha buffer */
 void smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride, 
                          int plane_stride, byte *src, const byte *des, bool isadditive,
-                            bool SMask_is_CIE, gs_transparency_mask_subtype_t SMask_SubType);
+                            gs_transparency_mask_subtype_t SMask_SubType);
 void smask_blend(byte *src, int width, int height, int rowstride, 
                  int planestride);
 

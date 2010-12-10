@@ -121,7 +121,6 @@ typedef struct gs_transparency_mask_params_s {
 /* The post clist version of transparency mask parameters */
 typedef struct gx_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
-    bool SMask_is_CIE;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
     int Background_components;

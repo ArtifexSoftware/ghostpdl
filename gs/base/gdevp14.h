@@ -154,7 +154,6 @@ struct pdf14_buf_s {
     pdf14_mask_t *maskbuf;
     bool idle;
 
-    bool SMask_is_CIE;
     gs_transparency_mask_subtype_t SMask_SubType;
 
     uint mask_id;

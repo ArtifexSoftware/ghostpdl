@@ -39,7 +39,7 @@ extern unsigned int clist_band_count;
 void 
 smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride, 
                          int plane_stride, byte *src, const byte *dst, bool isadditive,
-                         bool SMask_is_CIE, gs_transparency_mask_subtype_t SMask_SubType)
+                         gs_transparency_mask_subtype_t SMask_SubType)
 {
     int x,y;
     int mask_alpha_offset,mask_C_offset,mask_M_offset,mask_Y_offset,mask_K_offset;
@@ -54,8 +54,8 @@ smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
     global_index++;
 #endif
     dstptr = dst;
-    /* If we are CIE AND subtype is Luminosity then we should just grab the Y channel */
-    if ( SMask_is_CIE && SMask_SubType == TRANSPARENCY_MASK_Luminosity ){
+    /* If subtype is Luminosity then we should just grab the Y channel */
+    if ( SMask_SubType == TRANSPARENCY_MASK_Luminosity ){
         memcpy(dst, &(src[plane_stride]), plane_stride);
         return;
     }

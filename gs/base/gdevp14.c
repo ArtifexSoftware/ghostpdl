@@ -971,8 +971,7 @@ static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 			     byte *transfer_fn, bool idle, bool replacing,
 			     uint mask_id, gs_transparency_mask_subtype_t subtype, 
-                             bool SMask_is_CIE, int numcomps,
-                             int Background_components,
+                             int numcomps, int Background_components,
                              const float Background[],
                              const float GrayBackground)
 {
@@ -1041,7 +1040,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     ctx->stack = buf;
     /* Soft Mask related information so we know how to 
        compute luminosity when we pop the soft mask */
-    buf->SMask_is_CIE = SMask_is_CIE;
     buf->SMask_SubType = subtype;
     if (buf->data != NULL){
         /* We need to initialize it to the BC if it existed */
@@ -1193,8 +1191,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                     smask_luminosity_mapping(tos->rect.q.y - tos->rect.p.y ,
                         tos->rect.q.x - tos->rect.p.x,tos->n_chan, 
                         tos->rowstride, tos->planestride, 
-                        tos->data,  new_data_buf, ctx->additive,
-                tos->SMask_is_CIE, tos->SMask_SubType); 
+                        tos->data,  new_data_buf, ctx->additive, tos->SMask_SubType); 
                 } else {
                     /* ICC case where we use the CMM */
                     /* Request the ICC link for the transform that we will need to use */
@@ -3590,8 +3587,9 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
 					transfer_fn, ptmp->idle, ptmp->replacing,
 					ptmp->mask_id, ptmp->subtype, 
-                                        ptmp->SMask_is_CIE, group_color_numcomps,
-                                        ptmp->Background_components, ptmp->Background,
+                                        group_color_numcomps, 
+                                        ptmp->Background_components, 
+                                        ptmp->Background,
                                         ptmp->GrayBackground);
 }
 

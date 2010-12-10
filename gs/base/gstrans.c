@@ -508,8 +508,6 @@ gx_push_transparency_state(gs_imager_state * pis, gx_device * pdev)
 	return 0;
 }
 
-
-
 /*
  * Handler for identity mask transfer functions.
  */
@@ -541,11 +539,9 @@ gs_begin_transparency_mask(gs_state * pgs,
     gs_pdf14trans_params_t params = { 0 };
     gs_pdf14trans_params_t params_color = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
-    int i;
+    int i, num_components, code;
     gs_color_space *blend_color_space;
-    int num_components;
     gsicc_manager_t *icc_manager = pgs->icc_manager;
-    int code;
 
     if (check_for_nontrans_pattern(pgs,
                   (unsigned char *)"gs_pop_transparency_state")) {
@@ -554,7 +550,6 @@ gs_begin_transparency_mask(gs_state * pgs,
     params.pdf14_op = PDF14_BEGIN_TRANS_MASK;
     params.bbox = *pbbox;
     params.subtype = ptmp->subtype;
-    params.SMask_is_CIE = false; 
     params.Background_components = ptmp->Background_components;
     memcpy(params.Background, ptmp->Background, l);
     params.GrayBackground = ptmp->GrayBackground;
@@ -601,9 +596,8 @@ gs_begin_transparency_mask(gs_state * pgs,
     }
     /* Note:  This function is called during the c-list writer side. */ 
     if ( blend_color_space->cmm_icc_profile_data != NULL ) {
-    /* Blending space is ICC based.  If we 
-       are doing c-list rendering we will need
-       to write this color space into the clist. */
+    /* Blending space is ICC based.  If we are doing c-list rendering we will 
+       need to write this color space into the clist. */
         params.group_color = ICC;
         params.group_color_numcomps = 
                 blend_color_space->cmm_icc_profile_data->num_comps;
@@ -612,28 +606,8 @@ gs_begin_transparency_mask(gs_state * pgs,
         params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
         rc_increment(params.iccprofile);
     } else {
-        num_components = cs_num_components(blend_color_space);
-        switch (any_abs(num_components)) {
-            case 1:				
-                params.group_color = GRAY_SCALE;       
-                params.group_color_numcomps = 1;  /* Need to check */
-                break;
-            case 3:				
-                params.group_color = DEVICE_RGB;       
-                params.group_color_numcomps = 3; 
-                break;
-            case 4:				
-                params.group_color = DEVICE_CMYK;       
-                params.group_color_numcomps = 4; 
-            break;
-            default:
-                /* Transparency soft mask spot
-                   colors are NEVER available. 
-                   We must use the alternate tint
-                   transform */
-            return_error(gs_error_rangecheck);
-            break;
-         }    
+        params.group_color = GRAY_SCALE;       
+        params.group_color_numcomps = 1;  /* Need to check */
     }
     rc_decrement_only_cs(blend_color_space, "gs_begin_transparency_mask");
     return gs_state_update_pdf14trans(pgs, &params);
@@ -650,7 +624,6 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 
     tmp.group_color = pparams->group_color;
     tmp.subtype = pparams->subtype;
-    tmp.SMask_is_CIE = pparams->SMask_is_CIE;
     tmp.group_color_numcomps = pparams->group_color_numcomps;
     tmp.Background_components = pparams->Background_components;
     memcpy(tmp.Background, pparams->Background, l);
