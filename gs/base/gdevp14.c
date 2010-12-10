@@ -1163,29 +1163,31 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                             "SMask_Pop_Lum(Mask_Plane0)",tos->data);
                 global_index++;
 #endif            
-                /* There is no need to convert.  Data is already gray scale.
+                /* There is no need to color convert.  Data is already gray scale.
                    We just need to copy the gray plane.  However it is 
                    possible that the soft mask could have a soft mask which 
                    would end us up with some alpha blending information 
-                   (Bug691803). */
-                if (ctx->smask_blend) {
-                    smask_blend(tos->data, tos->rect.q.x - tos->rect.p.x, 
-                                tos->rect.q.y - tos->rect.p.y, tos->rowstride, 
-                                tos->planestride);
-                    ctx->smask_blend = false;
+                   (Bug691803). In fact, according to the spec, the alpha
+                   blending has to occur.  See FTS test fts_26_2601.pdf 
+                   for an example of this.  Softmask buffer is intialized
+                   with BG values.  It would be nice to keep track if buffer
+                   ever has a alpha value not 1 so that we could detect and
+                   avoid this blend if not needed. */
+                smask_blend(tos->data, tos->rect.q.x - tos->rect.p.x, 
+                            tos->rect.q.y - tos->rect.p.y, tos->rowstride, 
+                            tos->planestride);
 #if RAW_DUMP
-                    /* Dump the current buffer to see what we have. */
-                    dump_raw_buffer(tos->rect.q.y-tos->rect.p.y, 
-                                tos->rowstride, tos->n_planes,
-                                tos->planestride, tos->rowstride, 
-                                "SMask_Pop_Lum_Post_Blend",tos->data);
-                    global_index++;
+                /* Dump the current buffer to see what we have. */
+                dump_raw_buffer(tos->rect.q.y-tos->rect.p.y, 
+                            tos->rowstride, tos->n_planes,
+                            tos->planestride, tos->rowstride, 
+                            "SMask_Pop_Lum_Post_Blend",tos->data);
+                global_index++;
 #endif            
-                } 
                 smask_copy(tos->rect.q.y - tos->rect.p.y,
                            tos->rect.q.x - tos->rect.p.x, 
                            tos->rowstride, tos->data, new_data_buf);
-               } else {
+            } else {
                 if ( icc_match == -1 ) {
                     /* The slow old fashioned way */
                     smask_luminosity_mapping(tos->rect.q.y - tos->rect.p.y ,
