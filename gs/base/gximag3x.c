@@ -241,7 +241,9 @@ gx_begin_image3x_generic(gx_device * dev,
 	    const gs_image3x_mask_t *pixm =
 		(i == 0 ? &pim->Opacity : &pim->Shape);
 
-	    *(gs_data_image_t *)&mask[i].image = pixm->MaskDict;
+            /* Use memcpy because direct assignment breaks ANSI aliasing */
+            /* rules and causes SEGV with gcc 4.5.1 */
+            memcpy(&mask[i].image, &pixm->MaskDict, sizeof(pixm->MaskDict));
 	    mask[i].image.type = type1;
 	    mask[i].image.BitsPerComponent = pixm->MaskDict.BitsPerComponent;
 	}
