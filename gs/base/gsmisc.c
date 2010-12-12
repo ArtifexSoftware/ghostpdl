@@ -881,7 +881,7 @@ static const int isincos[5] =
  * This doesn't happen when the numeral is replaced with a non-const variable.
  * So we define the variable to work around the GCC problem.
  */
-static double const_90_degrees = 90.;
+double const_90_degrees = 90.;
 
 double
 gs_sin_degrees(double ang)
