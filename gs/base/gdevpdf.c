@@ -1369,10 +1369,15 @@ pdf_close(gx_device * dev)
 	    for (; pres != 0; pres = pres->next)
 		if ((!pres->named || pdev->ForOPDFRead) 
 		    && !pres->object->written) {
+		    pdf_page_t *page = &pdev->pages[pagecount - 1];
 
-		    pprintd2(pdev->strm, "%%%%Page: %d %d\n/pagesave save def\n",
+		    pprintd2(pdev->strm, "%%%%Page: %d %d\n",
 			pagecount, pagecount);
+		    pprintd2(pdev->strm, "%%PageBoundingBox: 0 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
+		    stream_puts(pdev->strm, "%%BeginPageSetup\n");
+		    stream_puts(pdev->strm, "/pagesave save def\n");
 		    pdf_write_page(pdev, pagecount++);
+		    stream_puts(pdev->strm, "%%EndPageSetup\n");
 		    pprintld1(pdev->strm, "%ld 0 obj\n", pres->object->id);
 		    code = cos_write(pres->object, pdev, pres->object->id);
 		    stream_puts(pdev->strm, "endobj\n");

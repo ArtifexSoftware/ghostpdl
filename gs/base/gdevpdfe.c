@@ -256,7 +256,7 @@ pdf_xmp_convert_time(char *dt, int dtl, char *buf, int bufl)
     return 25;
 }
 	
-static int
+int
 pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_length)
 {
     const cos_value_t *v = cos_dict_find(pdev->Info, (const byte *)key, strlen(key));

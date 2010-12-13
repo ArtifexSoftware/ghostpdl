@@ -391,6 +391,14 @@ pdf_open_document(gx_device_pdf * pdev)
 	    sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
 	    stream_write(s, (byte *)BBox, strlen(BBox));
 	    if (pdev->ProduceDSC) {
+		char cre_date_time[40];
+		pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
+		sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, (long)gs_revision,
+		    pdev->dname);
+		stream_write(s, (byte *)BBox, strlen(BBox));
+		stream_puts(s, "%%LanguageLevel: 2\n");
+		sprintf(BBox, "%%%%CreationDate: %s\n", cre_date_time);
+		stream_write(s, (byte *)BBox, strlen(BBox));
 		sprintf(BBox, "%%%%Pages: (atend)\n");
 		stream_write(s, (byte *)BBox, strlen(BBox));
 		sprintf(BBox, "%%%%EndComments\n");

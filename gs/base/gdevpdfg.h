@@ -341,3 +341,5 @@ int pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 
 /* Write metadata */
 int pdf_document_metadata(gx_device_pdf *pdev);
+int pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_length);
+
