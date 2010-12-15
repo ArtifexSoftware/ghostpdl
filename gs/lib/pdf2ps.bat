@@ -5,7 +5,7 @@
 if %1/==/ goto usage
 if %2/==/ goto usage
 call "%~dp0gssetgs.bat"
-echo -dNOPAUSE -dBATCH -P- -dSAFER -sDEVICE#pswrite >"%TEMP%\_.at"
+echo -dNOPAUSE -dBATCH -P- -dSAFER -sDEVICE#ps2write >"%TEMP%\_.at"
 :cp
 if %3/==/ goto doit
 echo %1 >>"%TEMP%\_.at"

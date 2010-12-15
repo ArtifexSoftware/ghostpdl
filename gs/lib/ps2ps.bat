@@ -14,7 +14,7 @@ goto cp
 
 :doit
 rem Watcom C deletes = signs, so use # instead.
-%GSC% -q -sDEVICE#pswrite -sOutputFile#%2 @"%TEMP%\_.at" %1
+%GSC% -q -sDEVICE#ps2write -sOutputFile#%2 @"%TEMP%\_.at" %1
 if exist "%TEMP%\_.at" erase "%TEMP%\_.at"
 goto end
 

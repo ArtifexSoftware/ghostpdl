@@ -75,15 +75,15 @@ ps2ps2</code> <em>[options] input.{ps|eps|pdf} output.ps</em>
 
 <p>
 The <em>options</em> given on the command line may include any switches 
-that may be used with Ghostscript's PostScript and PDF interpreter (see 
+valid for use with Ghostscript's PostScript and PDF interpreter (see 
 <a href="Use.htm#Switches">here</a> for a complete list).
 
 <p>
 Since <code>ps2write</code> makes use of some printer 
-parameters while converting high level objects into Level 2 objects,
-we strongly recommend to set those values in accordance with the
+parameters when converting high level objects into Level 2 objects,
+we strongly recommend setting those values appropriately for the
 target printer or other output device.
-In particular, it is important for
+In particular, it is important that
 <a  href="Use.htm#Output_resolution">Output resolution</a>,
 <a href="Use.htm#FIXEDMEDIA"><code>-dFIXEDMEDIA</code></a>, and
 <code>ProcessColorModel</code> to be set correctly.
@@ -91,15 +91,16 @@ In particular, it is important for
 <p>
 <em>
 <b>Important :</b>
-If the target printer can't handle some font type,
-ps2write converts such fonts into bitmap fonts,
+If the target printer can't handle a particular font type,
+ps2write converts the fonts into a bitmap fonts representation,
 using the resolution specified when ps2write is invoked.
-Particularly this always happen with CID fonts, which are not Postscript Level 2 objects.
+In particular this can happen with CID fonts, which are not Postscript Level 2 objects.
+In general these are converted to multiple instances of other font types)
 Therefore the page device parameter <code>PageSize</code>
-must match the target printer, and we recommend to set
+must match the target printer, and we recommend setting
 the <code>PageSize</code> entry of the <b><tt>Policies</tt></b>
-dictionary to 3, in order to provide a proper page scaling
-in the Postscript interpreter while ps2write is invoked.
+dictionary to 3, in order to provide correct page scaling
+in the Postscript interpreter when ps2write is invoked.
 </em>
 
 <p>
@@ -131,11 +132,11 @@ The following options may be important for <code>ps2ps2</code> due to the target
 See <a href="Ps2pdf.htm#Options">PostScript-to-PDF converter</a> for details.
 
 The option <code>-dMaxInlineImageSize=</code><em>integer</em>
-Must not be used with <code>ps2ps2</code>.
+must not be used with <code>ps2ps2</code>.
 
 
 <p>
-This set includes of the Acrobat Distiller 5 parameters
+This set includes all of the Acrobat Distiller 5 parameters
 defined in the DistillerParameters document included in the 
 <a href="http://partners.adobe.com/public/developer/acrobat/sdk/index.html">Acrobat SDK</a>.
 
@@ -153,19 +154,27 @@ with these exceptions:
 </dl>
 
 <p>
-The following ps2write specific option control the output file compression :
+There are also the  following ps2write specific options :
 <p>
+
+<dl>
+<dt>
+<code>-dProduceDSC=</code><em>boolean</em>
+<dd> Default value is true. When this value is true the output PostScript file will be constructed in a way which is compatible with the Adobe Document Structuring Convention, and will include a set of comments appropriate for use by document managers which enables features such as page extraction, N-up printing and so on to be performed. When set to false, the output file will no be DSC-compliant, but will contain a valid PDF file wrapped up in a PostScript header. This is a change as of version 9.01 of Ghostscript, previously there was no DSC-compliant output from ps2write, and the behviour was as the case when <code>ProduceDSC</code> is false.
+</dl>
 
 <dl>
 <dt>
 <code>-dCompressEntireFile=</code><em>boolean</em>
 <dd>When this parameter is true, the <code>LZWEncode</code>
-and <code>ASCII85Encode</code> filters are being applied to entire output file.
-In this case <code>CompressPages</code> should be false to exclude a dual compression.
-When this parameter is false, those filters applies to the initial procset only,
+and <code>ASCII85Encode</code> filters will be applied to the entire output file.
+In this case <code>CompressPages</code> should be false to prevent a dual compression.
+When this parameter is false, these filters will be applied to the initial procset only,
 if <code>CompressPages</code> is true.
 Default value is <code>false</code>.
 </dl>
+<p>
+Note: It is not possible to set <code>CompressEntireFile</code> when <code>ProduceDSC</code> is true as a single compressed object cannot conform to the DSC. It is possible to set <code>CompressPages</code> which will also compress the ps2write ProcSet.
 
 
 <h2><a name="PPD"></a>Ghostscript PS2 Printer Description</h2>
@@ -177,7 +186,7 @@ Not implemented yet.
 
 <p>
 A few options can be used to control the behavior of the printer or 
-program that reads the result of ps2ps2.
+program that reads the result of ps2ps2. These options cannot be used if <code>ProduceDSC</code> is true, as they break the page-independence required for DSC files.
 
 <dl>
 <dt><code>-dRotatePages=</code><em>boolean</em>. 
@@ -233,14 +242,13 @@ the features of the specific printer as described in
 <a href="#Options">Options</a> while generating a printer job.
 
 <p>
-<code>ps2ps2</code> does not generate DSC comments.
 
 
 <p>
-<code>ps2ps2</code> provides simplified interface to Ghostscript
+<code>ps2ps2</code> provides a simplified interface to the Ghostscript
 command line. It is not possible to use <code>-c</code> option or pass
-multiple source files. For the unrestricted access to the command line
-parameters, use Ghostscript directly.
+multiple source files. For unrestricted access to the command line
+parameters, use Ghostscript directly. E.g. :
 
 <blockquote><code>
 gs -q -dSAFER -dNOPAUSE -dBATCH -sOutputFile=file.ps </code><em>[more options]</em><code> \<br>
