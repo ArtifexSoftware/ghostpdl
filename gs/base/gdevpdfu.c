@@ -369,6 +369,61 @@ encode(stream **s, const stream_template *t, gs_memory_t *mem)
 
 /* ------ Document ------ */
 
+int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
+{
+    stream *s = pdev->strm;
+
+    if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
+        char cre_date_time[40];
+	int code, status;
+	char BBox[256];
+	int width = (int)(pdev->width * 72.0 / pdev->HWResolution[0] + 0.5);
+	int height = (int)(pdev->height * 72.0 / pdev->HWResolution[1] + 0.5);
+	    
+	stream_write(s, (byte *)"%!PS-Adobe-3.0\n", 15);
+	sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
+	stream_write(s, (byte *)BBox, strlen(BBox));
+	pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
+	sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, gs_revision,
+	        pdev->dname);
+	stream_write(s, (byte *)BBox, strlen(BBox));
+	stream_puts(s, "%%LanguageLevel: 2\n");
+	sprintf(BBox, "%%%%CreationDate: %s\n", cre_date_time);
+	stream_write(s, (byte *)BBox, strlen(BBox));
+	sprintf(BBox, "%%%%Pages: %d\n", pages);
+	stream_write(s, (byte *)BBox, strlen(BBox));
+	sprintf(BBox, "%%%%EndComments\n");
+	stream_write(s, (byte *)BBox, strlen(BBox));
+	sprintf(BBox, "%%%%BeginProlog\n");
+	stream_write(s, (byte *)BBox, strlen(BBox));
+	if (pdev->params.CompressPages) {
+	    /*  When CompressEntireFile is true and ASCII85EncodePages is false,
+		the ASCII85Encode filter is applied, rather one may expect the opposite.
+		Keeping it so due to no demand for this mode.
+		A right implementation should compute the length of the compressed procset,
+		write out an invocation of SubFileDecode filter, and write the length to
+		there assuming the output file is positionable. */
+	    stream_write(s, (byte *)"currentfile /ASCII85Decode filter /LZWDecode filter cvx exec\n", 61);
+	    code = encode(&s, &s_A85E_template, pdev->pdf_memory);
+	    if (code < 0)
+		return code;
+	    code = encode(&s, &s_LZWE_template, pdev->pdf_memory);
+	    if (code < 0)
+		return code;
+	}
+	stream_puts(s, "/DSC_OPDFREAD true def\n");
+
+	code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, false);
+	if (code < 0)
+	    return code;
+	status = s_close_filters(&s, pdev->strm);
+	if (status < 0)
+	    return_error(gs_error_ioerror);
+	pdev->OPDFRead_procset_length = stell(s);
+    }
+    return 0;
+}
+
 /* Open the document if necessary. */
 int
 pdf_open_document(gx_device_pdf * pdev)
@@ -385,55 +440,36 @@ pdf_open_document(gx_device_pdf * pdev)
 	    int height = (int)(pdev->height * 72.0 / pdev->HWResolution[1] + 0.5);
 	    
 	    if (pdev->ProduceDSC)
-		stream_write(s, (byte *)"%!PS-Adobe-3.0\n", 15);
-	    else
+		pdev->CompressEntireFile = 0;
+	    else {
 		stream_write(s, (byte *)"%!\r", 3);
-	    sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
-	    stream_write(s, (byte *)BBox, strlen(BBox));
-	    if (pdev->ProduceDSC) {
-		char cre_date_time[40];
-		pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
-		sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, (long)gs_revision,
-		    pdev->dname);
+		sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
 		stream_write(s, (byte *)BBox, strlen(BBox));
-		stream_puts(s, "%%LanguageLevel: 2\n");
-		sprintf(BBox, "%%%%CreationDate: %s\n", cre_date_time);
-		stream_write(s, (byte *)BBox, strlen(BBox));
-		sprintf(BBox, "%%%%Pages: (atend)\n");
-		stream_write(s, (byte *)BBox, strlen(BBox));
-		sprintf(BBox, "%%%%EndComments\n");
-		stream_write(s, (byte *)BBox, strlen(BBox));
-		sprintf(BBox, "%%%%BeginProlog\n");
-		stream_write(s, (byte *)BBox, strlen(BBox));
-	    }
-	    if (pdev->params.CompressPages || pdev->CompressEntireFile) {
-		/*  When CompressEntireFile is true and ASCII85EncodePages is false,
-		    the ASCII85Encode filter is applied, rather one may expect the opposite.
-		    Keeping it so due to no demand for this mode.
-		    A right implementation should compute the length of the compressed procset,
-		    write out an invocation of SubFileDecode filter, and write the length to
-		    there assuming the output file is positionable. */
-		stream_write(s, (byte *)"currentfile /ASCII85Decode filter /LZWDecode filter cvx exec\n", 61);
-		code = encode(&s, &s_A85E_template, pdev->pdf_memory);
-		if (code < 0)
-		    return code;
-		code = encode(&s, &s_LZWE_template, pdev->pdf_memory);
-		if (code < 0)
-		    return code;
-	    }
-	    if (pdev->ProduceDSC)
-		code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, false);
-	    else
+		if (pdev->params.CompressPages || pdev->CompressEntireFile) {
+		    /*  When CompressEntireFile is true and ASCII85EncodePages is false,
+			the ASCII85Encode filter is applied, rather one may expect the opposite.
+			Keeping it so due to no demand for this mode.
+			A right implementation should compute the length of the compressed procset,
+			write out an invocation of SubFileDecode filter, and write the length to
+			there assuming the output file is positionable. */
+		    stream_write(s, (byte *)"currentfile /ASCII85Decode filter /LZWDecode filter cvx exec\n", 61);
+		    code = encode(&s, &s_A85E_template, pdev->pdf_memory);
+		    if (code < 0)
+			return code;
+		    code = encode(&s, &s_LZWE_template, pdev->pdf_memory);
+		    if (code < 0)
+			return code;
+		}
+		stream_puts(s, "/DSC_OPDFREAD false def\n");
 		code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, true);
-	    if (code < 0)
-		return code;
-	    if (!pdev->CompressEntireFile || pdev->ProduceDSC) {
-		status = s_close_filters(&s, pdev->strm);
-		if (status < 0)
-		    return_error(gs_error_ioerror);
-	    } else
-		pdev->strm = s;
-	    if (!pdev->ProduceDSC) {
+		if (code < 0)
+		    return code;
+		if (!pdev->CompressEntireFile) {
+		    status = s_close_filters(&s, pdev->strm);
+		    if (status < 0)
+			return_error(gs_error_ioerror);
+		} else
+		    pdev->strm = s;
 		if(pdev->SetPageSize)
 		    stream_puts(s, "/SetPageSize true def\n");
 		if(pdev->RotatePages)
@@ -442,10 +478,10 @@ pdf_open_document(gx_device_pdf * pdev)
 		    stream_puts(s, "/FitPages true def\n");
 		if(pdev->CenterPages)
 		    stream_puts(s, "/CenterPages true def\n");
+		pdev->OPDFRead_procset_length = stell(s);
 	    }
-	    pdev->OPDFRead_procset_length = stell(s);
 	}
-	if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
+	if (!(pdev->ForOPDFRead)) {
 	    pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
 	    if (pdev->binary_ok)
 		stream_puts(s, "%\307\354\217\242\n");

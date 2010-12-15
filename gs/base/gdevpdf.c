@@ -1145,7 +1145,7 @@ pdf_close(gx_device * dev)
     /* Write the page objects. */
 
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
-    for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
+	for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
 	    pdf_write_page(pdev, pagecount);
     }
 
@@ -1181,14 +1181,14 @@ pdf_close(gx_device * dev)
     if (code >= 0)
 	code = code1;
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
-    if (pdev->ResourcesBeforeUsage)
-	pdf_reverse_resource_chain(pdev, resourcePage);
-    code1 = pdf_write_resource_objects(pdev, resourcePage);
-    if (code >= 0)
-	code = code1;
-    code1 = pdf_free_resource_objects(pdev, resourcePage);
-    if (code >= 0)
-	code = code1;
+	if (pdev->ResourcesBeforeUsage)
+	    pdf_reverse_resource_chain(pdev, resourcePage);
+	code1 = pdf_write_resource_objects(pdev, resourcePage);
+	if (code >= 0)
+	    code = code1;
+	code1 = pdf_free_resource_objects(pdev, resourcePage);
+	if (code >= 0)
+	    code = code1;
     }
 
     code1 = pdf_free_resource_objects(pdev, resourceOther);
@@ -1339,6 +1339,15 @@ pdf_close(gx_device * dev)
     } while (pdf_pop_namespace(pdev) >= 0);
     cos_dict_objects_write(pdev->global_named_objects, pdev);
 
+    if (pdev->ForOPDFRead && pdev->ProduceDSC) {
+	int pages;
+
+	for (pages = 0; pages <= pdev->next_page; ++pages)
+	    ;
+
+	code = ps2write_dsc_header(pdev, pages - 1);
+    }
+
     /* Copy the resources into the main file. */
 
     s = pdev->strm;
@@ -1373,7 +1382,7 @@ pdf_close(gx_device * dev)
 
 		    pprintd2(pdev->strm, "%%%%Page: %d %d\n",
 			pagecount, pagecount);
-		    pprintd2(pdev->strm, "%%PageBoundingBox: 0 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
+		    pprintd2(pdev->strm, "%%%%PageBoundingBox: 0 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
 		    stream_puts(pdev->strm, "%%BeginPageSetup\n");
 		    stream_puts(pdev->strm, "/pagesave save def\n");
 		    pdf_write_page(pdev, pagecount++);
@@ -1388,6 +1397,8 @@ pdf_close(gx_device * dev)
 	code1 = pdf_free_resource_objects(pdev, resourcePage);
 	if (code >= 0)
 	    code = code1;
+	stream_puts(pdev->strm, "%%Trailer\n");
+	stream_puts(pdev->strm, "%%EOF\n");
     }
 
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
@@ -1479,11 +1490,6 @@ pdf_close(gx_device * dev)
     pdev->pages = 0;
     pdev->num_pages = 0;
 
-    if (pdev->ForOPDFRead && pdev->ProduceDSC) {
-	    stream_puts(pdev->strm, "%%Trailer\n");
-	    pprintld1(pdev->strm, "%%%%Pages: %ld\n", pagecount - 1);
-	    stream_puts(pdev->strm, "%%EOF\n");
-    }
     if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
         /* pdf_open_dcument could set up filters for entire document.
            Removing them now. */

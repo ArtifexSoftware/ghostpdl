@@ -791,6 +791,9 @@ void pdf_reset_text(gx_device_pdf *pdev);
 
 /* ------ Document ------ */
 
+/* Write a DSC compliant header to the file */
+int ps2write_dsc_header(gx_device_pdf * pdev, int pages);
+
 /* Open the document if necessary. */
 int pdf_open_document(gx_device_pdf * pdev);
 

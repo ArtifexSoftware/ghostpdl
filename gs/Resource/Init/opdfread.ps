@@ -46,7 +46,25 @@
 % ====================== Error handler =======================
 % A general error handler prints an error to page.
 
+%
+% See if our notification from ps2write is present. If it is
+% then pick it up. Otherwise define it as false. Used to prevent
+% use of setmatrix at start of each page. The DSC-compliant 
+% output from ps2write wraps pages in a save/restore, so we don't
+% need the setmatrix, and it breaks use of psnup with the output.
+%
+currentdict /DSC_OPDFREAD known {
+  currentdict /DSC_OPDFREAD get
+}{
+  false
+} ifelse
+
 10 dict begin % A dictionary for local binding
+
+% This switch used to control paeg independent values, like
+% whether to use InitialMatrix in SetupPageView
+%
+/DSC_OPDFREAD exch def
 
 /this currentdict def
 /y 720 def
@@ -823,7 +841,9 @@ currentdict end readonly def
   //PDFR_DEBUG {
     (SetupPageView beg) =
   } if
+//DSC_OPDFREAD not {
   //GraphicState /InitialMatrix get setmatrix
+} if
   /MediaBox get aload pop                               % bx0 by0 bx1 by1
   3 index neg 3 index neg translate % Temporary move to origin
   3 -1 roll sub 3 1 roll exch sub exch                  % bw bh
