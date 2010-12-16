@@ -128,7 +128,7 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	   gx_path_type_t type)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)vdev;
-    fixed xmax = int2fixed(vdev->width), ymax = int2fixed(vdev->height);
+    fixed xmax = int2fixed(32766), ymax = int2fixed(32766);
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
     fixed xmin = (pdev->sbstack_depth > bottom ? -xmax : 0);
     fixed ymin = (pdev->sbstack_depth > bottom ? -ymax : 0);
