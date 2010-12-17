@@ -33,14 +33,6 @@ static void s_jpxd_set_defaults(stream_state *ss);
 private_st_jpxd_state(); /* creates a gc object for our state,
                             defined in sjpx.h */
 
-/* error reporting callback for the jpx library */
-static void
-s_jpx_jas_error_cb(jas_error_t err, char *msg)
-{
-  dprintf2("jasper (code %d) %s", (int)err, msg);
-}
-
-
 /* initialize the steam.
    this involves allocating the stream and image structures, and
    initializing the decoder.
@@ -56,7 +48,6 @@ s_jpxd_init(stream_state * ss)
     }
 
     status = jas_init();
-    jas_set_error_cb(s_jpx_jas_error_cb);
 #ifdef JPX_DEBUG
     /* raise the error reporting threshold from the default (0) */
     jas_setdbglevel(1);
