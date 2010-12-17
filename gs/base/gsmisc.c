@@ -260,7 +260,7 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
     va_list ap;
 
     va_start(ap, fmt);
-    vsprintf(msg, fmt, ap);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
     msg[sizeof(msg) - 1] = 0;
     va_end(ap);
 
