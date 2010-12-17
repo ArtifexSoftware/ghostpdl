@@ -185,6 +185,12 @@ golfer.eps grayalph.ps snowflak.ps tiger.eps vasarely.ps waterfal.ps \
 ridt91.eps ;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(DESTDIR)$(exdir) ;\
 	done
+	-mkdir -p $(DESTDIR)$(exdir)/cjk
+	for f in \
+all_ac1.ps all_aj1.ps all_ak1.ps gscjk_ac.ps gscjk_aj.ps iso2022.ps \
+all_ag1.ps all_aj2.ps article9.ps gscjk_ag.ps gscjk_ak.ps iso2022v.ps ;\
+	do $(INSTALL_DATA) $(PSEXDIR)/cjk/$$f $(DESTDIR)$(exdir)/cjk ;\
+	done
 
 install-shared: $(GS_SHARED_OBJS)
 	-mkdir -p $(DESTDIR)$(gssharedir)
