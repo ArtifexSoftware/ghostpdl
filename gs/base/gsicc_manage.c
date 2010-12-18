@@ -720,6 +720,11 @@ gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
     char *pname;
     stream *str;
 
+    if (!pgs) {
+        dprintf("pgs is NULL in gsicc_init_device_profile\n");
+	return 0;
+    }
+
     /* See if the device has a profile */
     if (dev->color_info.icc_profile[0] == '\0') {
         /* Grab a default one and prepend the icc directory to 
