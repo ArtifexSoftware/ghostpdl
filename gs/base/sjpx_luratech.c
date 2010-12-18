@@ -142,8 +142,17 @@ s_jpxd_write_data(unsigned char * pucData,
             }
         } else {
             /* copy indexes */
-            dst = &state->image[state->stride * ulRow + ulStart + comp];
-            memcpy(dst, pucData, ulNum);
+            if (state->bpc == 4) {
+                int even = ulNum & ~1;
+                dst = &state->image[state->stride * ulRow + ulStart/2];
+                for (i = 0; i < even; i += 2) 
+                    *dst++ = pucData[i] << 4 | pucData[i+1];
+                if (ulNum & 1)
+                    *dst++ = pucData[ulNum - 1] << 4;
+            } else {
+                dst = &state->image[state->stride * ulRow + ulStart + comp];
+                memcpy(dst, pucData, ulNum);
+            }
         }
     } else if (state->ncomp == 1 && comp == 0) {
         if (state->bpc == 8) {
@@ -162,9 +171,12 @@ s_jpxd_write_data(unsigned char * pucData,
         } else if (state->bpc == 4) {
             int i;
             unsigned char *dst = &state->image[state->stride * ulRow + ulStart/2];
+            int even = ulNum & ~1;
             
-            for (i = 0; i < ulNum; i+=2) 
+            for (i = 0; i < even; i+=2) 
                 *dst++ = pucData[i] << 4 | pucData[i+1];
+                if (ulNum & 1)
+                    *dst++ = pucData[ulNum - 1] << 4;
         } else
             return cJP2_Error_Not_Yet_Supported;
     }
@@ -579,7 +591,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             int real_bpc = state->bpc > 8 ? 16 : state->bpc;
             if (state->image_is_indexed && state->colorspace == gs_jpx_cs_indexed) {
                 /* Don't expand indexed color space */
-                state->stride = (state->width * 8 + 7) / 8;
+                state->stride = (state->width * real_bpc + 7) / 8;
                 state->image = malloc(state->stride*state->height);
             } else {
                 state->stride = (state->width * max(1, state->ncomp) * real_bpc + 7) / 8;
