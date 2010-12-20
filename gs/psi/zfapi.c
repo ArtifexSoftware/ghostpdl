@@ -2298,7 +2298,23 @@ retry_oversampling:
         ref *CharStrings, *glyph_index;
         if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0 || !r_has_type(CharStrings, t_dictionary))
             return_error(e_invalidfont);
-        if (dict_find(CharStrings, &char_name, &glyph_index) < 0) {
+        if ((dict_find(CharStrings, &char_name, &glyph_index) < 0) || r_has_type(glyph_index, t_null)) {
+#ifdef DEBUG
+            ref *pvalue;
+            if (gs_debug_c('1') && (dict_find_string(systemdict,"QUIET", &pvalue)) > 0 &&
+               (r_has_type(pvalue, t_boolean) && pvalue->value.boolval == false)) {
+                char *glyphn;
+                
+                name_string_ref (imemory, &char_name, &char_name);
+                
+                glyphn = ref_to_string(&char_name, imemory, "FAPI_do_char");
+                if (glyphn) {
+                    dprintf2(" Substituting .notdef for %s in the font %s \n", glyphn, pbfont->font_name.chars);
+                    gs_free_string(imemory, (byte *)glyphn, strlen(glyphn) + 1, "FAPI_do_char");
+                }
+            }
+#endif
+            
             cr.char_codes[0] = 0; /* .notdef */
             if ((code = name_ref(imemory, (const byte *)".notdef", 7, &char_name, -1)) < 0)
                 return code;
