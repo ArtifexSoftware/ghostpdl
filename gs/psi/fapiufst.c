@@ -37,6 +37,25 @@
 #undef  DOES_ANYONE_USE_THIS_STRUCTURE
 #include "gxfapiu.h"
 
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#define false FALSE
+#define true TRUE
+#define UNICODE UFST_UNICODE
+#endif
+
+/* Prior to 6.2, prototypes had empty parameter lists, causing problems
+ * when passing 64 bit pointers into the UFST functions.
+ * Prototype "properly" here.
+ */
+#if UFST_VERSION_MAJOR < 6
+#if defined (ANSI_DEFS)
+UW16 CGENTRY CGIFFfont (FSP PFONTCONTEXT fc);
+#else
+UW16 CGENTRY CGIFFfont (fc);
+    PFONTCONTEXT  fc;
+#endif /* ANSI_DEFS */
+#endif
+
 typedef struct fapi_ufst_server_s fapi_ufst_server;
 
 #if UFST_REENTRANT
@@ -180,6 +199,11 @@ static FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int
     if (code < 0)
 	return code;
     r->ufst_is_singleton = (code == 1);
+
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+    CGIFfont_access (FSA DISK_ACCESS);
+#endif
+
     if (bPlugIn) {
 	if ((code = gx_UFST_open_static_fco(sPlugIn, &fcHandle)) != 0)
 	    return code;
@@ -1023,8 +1047,24 @@ static FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref *
     ufst_common_font_data *d = (ufst_common_font_data *)ff->server_font_data;
     SW16 design_escapement;
     SW16 du_emx, du_emy;
+    int length = 0;
+    bool need_decrypt = ff->need_decrypt;
     FSA_FROM_SERVER;
 
+    if (ff->is_type1) {
+        /* If a charstring in a Type 1 has been replaced with a PS procedure
+         * get_glyph will return -1. We can then return char_code + 1 which
+         * tells the FAPI code we might be dealing with a procedure, and to
+         * try executing it as such.
+         */
+        ff->need_decrypt = false;
+        length = ff->get_glyph(ff, c->char_code, NULL, 0);
+        ff->need_decrypt = need_decrypt;
+        if (length == -1) {
+            return(c->char_code + 1);
+        }
+    }
+    
     memset(metrics, 0, sizeof(*metrics));
     metrics->bbox_x1 = -1;
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);

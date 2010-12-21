@@ -28,6 +28,11 @@
 /* GS includes : */
 #include "gxfapiu.h"
 
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#define false FALSE
+#define true TRUE
+#endif
+
 #define MAX_STATIC_FCO_COUNT 4
 
 /* Slightly nasty: UFST doesn't provide for data to be
@@ -161,7 +166,13 @@ int FAPIU_read (void *s, void *ptr, int count)
 
 int FAPIU_lseek (void *s, int offset, int whence)
 {
-    return(sfseek((stream *)(s), offset, whence));
+    int pos = sfseek (s, offset, whence);
+    
+    if (pos >= 0)
+    {
+        pos = sftell(s);
+    }
+    return(pos);
 }
 #endif
 
@@ -338,3 +349,28 @@ void gx_UFST_close_static_fcos()
 	gx_UFST_close_static_fco(static_fco_list[0].fcHandle);
 #endif
 }
+
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#if GRAYSCALING
+/* ------------------------------- BLACKPIX --------------------------------
+ * Description: Called by UFST gichar function.
+ * Returns:     VOID
+ * Notes:       This is a stub implementation for graymap.
+ */
+GLOBAL VOID BLACKPIX(FSP SW16 x, SW16 y )
+{
+	return;
+}
+
+
+/* -------------------------------- GRAYPIX --------------------------------
+ * Description: Called by UFST gichar function.
+ * Returns:     VOID
+ * Notes:       This is a stub implementation for graymap.
+ */
+GLOBAL VOID GRAYPIX(FSP SW16 x, SW16 y, SW16 v )
+{
+	return;
+}
+#endif	/* GRAYSCALING */
+#endif
