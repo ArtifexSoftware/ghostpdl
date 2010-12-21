@@ -62,16 +62,21 @@ languagelevel 2 .setlanguagelevel
 
 /Config
 <<
-  % Setup the default FAPIConfig values to default to FreeType
-  %
-  /FontPath             (/Fonts)       % A default directory for FAPI-handled font files
-						   % path in FAPIfontmap.
-  /CIDFontPath          (/CIDFonts)    % A default directory for FAPI-handled CIDfont 							   % files path in FAPIcidfmap.
-  /HookDiskFonts        [1 2 9 11 42]  % FontType values for disk PS fonts to be
-						   % redirected to FAPI.
-  /HookEmbeddedFonts    [1 2 9 11 42]  % FontType values for embedded PS fonts to be
-						   % redirected to FAPI.
-  systemdict /FAPIconfig known {/FAPIconfig .systemvar} {(FAPIconfig)} ifelse .runlibfile
+  % If we've got a FAPIConfig, run it now.
+  systemdict /FAPIconfig known 
+  {
+    /FAPIconfig .systemvar .runlibfile
+  } if
+  
+  % Now setup defaults for any entries not set above - these defaults are correct
+  % for FAPI/Freeetype
+  currentdict /FontPath known not { /FontPath (/Fonts)} if			% A default directory for FAPI-handled font files
+									% path in FAPIfontmap.
+  currentdict /CIDFontPath known not { /CIDFontPath (/CIDFonts)} if		% A default directory for FAPI-handled CIDfont 							   % files path in FAPIcidfmap.
+  currentdict /HookDiskFonts known not { /HookDiskFonts [1 2 9 11 42] } if		% FontType values for disk PS fonts to be
+									% redirected to FAPI.
+  currentdict /HookEmbeddedFonts known not { /HookEmbeddedFonts [1 2 9 11 42]} if	% FontType values for embedded PS fonts to be
+									% redirected to FAPI.
   /ServerOptions 2 dict
 >> def
 systemdict /.FAPIconfig //Config put
@@ -194,7 +199,31 @@ currentdict end def
              pop pop
            } if
            /Encoding  counttomark 2 add -1 roll
-        >> % dup { exch //== exec = } forall
+
+           /FontInfo
+           <<
+             /UnderlineThickness 50
+             /Weight (Regular)
+             /version (0.00)
+             /ItalicAngle 0
+             /UnderlinePosition -100
+             /FamilyName ()
+             /Notice ()
+             /FullName ()
+           >>
+           % although we pretend this is a Type 1, the FAPI interface currently
+           % needs an identity FontMatrix
+           /FontMatrix [1.0 0.0 0.0 1.0 0.0 0.0]
+           % we need a fake CharStrings dictionary to placate certain jobs
+           % which try to look inside it
+           /CharStrings
+           <<
+             /.notdef ( )
+             StandardEncoding { (     ) } forall 
+           >>
+           % FontBBox will get replaced with valid numbers pulled from the rendering engine
+           /FontBBox [-128 -128 1024 1024] cvx
+        >> % dup { exch == = } forall
       } ifelse
     } {
       pop
@@ -329,7 +358,7 @@ bind def
 % ------------------ Redefine .buildfont* with FAPI : -----------------------
 
 /.buildfont1
-{ //.buildfont1 exec //FAPIhook exec
+{ //.buildfont1 exec exec //FAPIhook exec
 } bind % 'odef' is below.
 
 /.buildfont2

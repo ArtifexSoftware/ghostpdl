@@ -64,9 +64,12 @@ systemdict exch /.xlatmap exch put
 
   1
   { /FontMatrix [0.001 0 0 0.001 0 0] def
-    /FontBBox [-128 -128 1024 1024] def % zfapi.ps refines it.
+    /FontBBox [-128 -128 1024 1024] cvx def % zfapi.ps refines it.
     /Private 0 dict def
-    /CharStrings << /.notdef () >> def
+    % if we're using the FAPI/UFST code for Microtype fonts,
+    % then we've already created a "fake" CharStrings, so don't replace it.
+    % See gs_fapi.ps
+    currentdict /CharStrings known not {/CharStrings << /.notdef () >> def} if
     //FontCommon exec
   } bind def
 
