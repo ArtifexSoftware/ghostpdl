@@ -53,6 +53,45 @@ while ($t=shift) {
   }
 }
 
+my $additionalOptions="";
+my $additionalOptions_gs="";
+my $additionalOptions_pcl="";
+my $additionalOptions_pdfwrite_step1="";
+my $additionalOptions_pdfwrite_step2="";
+my $additionalOptions_gs_pdfwrite_step1="";
+my $additionalOptions_gs_pdfwrite_step2="";
+if (open(F,"<weekly.cfg")) {
+  while(<F>) {
+    chomp;
+    my @a=split ' ',$_,2;
+    if ($a[0] eq "runoption") {
+      $additionalOptions.=' ' if (length($additionalOptions));
+      $additionalOptions.=$a[1];
+    }
+    if ($a[0] eq "gs_runoption") {
+      $additionalOptions_gs.=' ' if (length($additionalOptions_gs));
+      $additionalOptions_gs.=$a[1];
+    }
+    if ($a[0] eq "runoption_pdfwrite_step1") {
+      $additionalOptions_pdfwrite_step1.=' ' if (length($additionalOptions_pdfwrite_step1));
+      $additionalOptions_pdfwrite_step1.=$a[1];
+    }
+    if ($a[0] eq "runoption_pdfwrite_step2") {
+      $additionalOptions_pdfwrite_step2.=' ' if (length($additionalOptions_pdfwrite_step2));
+      $additionalOptions_pdfwrite_step2.=$a[1];
+    }
+    if ($a[0] eq "gs_runoption_pdfwrite_step1") {
+      $additionalOptions_gs_pdfwrite_step1.=' ' if (length($additionalOptions_gs_pdfwrite_step1));
+      $additionalOptions_gs_pdfwrite_step1.=$a[1];
+    }
+    if ($a[0] eq "gs_runoption_pdfwrite_step2") {
+      $additionalOptions_gs_pdfwrite_step2.=' ' if (length($additionalOptions_gs_pdfwrite_step2));
+      $additionalOptions_gs_pdfwrite_step2.=$a[1];
+    }
+  }
+  close(F);
+}
+
 my $updateTestFiles=1;
 my $verbose=0;
 
@@ -61,6 +100,15 @@ my %md5sum;
 my %skip;
 
 if ($rerunIfMd5sumDifferences) {
+  if ($local) {
+  open(F,"<baseline.tab") || die "file baseline.tab not found";
+  while(<F>) {
+    chomp;
+    my @a=split '\t';
+    $md5sum{$a[0]}=$a[6];
+  }
+  close(F);
+  } else {
   open(F,"<current.tab") || die "file current.tab not found";
   while(<F>) {
     chomp;
@@ -83,6 +131,7 @@ if ($rerunIfMd5sumDifferences) {
       $skip{$_}=1;
     }
     close(F);
+  }
   }
 }
 
@@ -432,8 +481,10 @@ sub build($$$$$) {
     }
     $cmd1b.=" -sOutputFile=$outputFilename";
     $cmd1c.=" -sDEVICE=pdfwrite";
+    $cmd1c.=" ".$additionalOptions_pdfwrite_step1;
+    $cmd1c.=" ".$additionalOptions_gs_pdfwrite_step1 if ($product eq 'gs');
     $cmd1c.=" -r".$a[2];
-    #   $cmd1.=" -q" if ($product eq 'gs');
+#   $cmd1.=" -q" if ($product eq 'gs');
     $cmd1c.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd1c.=" -dNOPAUSE -dBATCH";  # -Z:
 #   $cmd1c.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
@@ -445,7 +496,7 @@ sub build($$$$$) {
     $cmd1c.=" - < " if (!($filename =~ m/.pdf$/i || $filename =~ m/.ai$/i) && $product eq 'gs');
 
     $cmd1c.=" $inputFilename";
-    #   $cmd.=" 2>&1";
+#   $cmd.=" 2>&1";
 
     if ($bmpcmp) {
       $cmd.=" ; $preCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
@@ -476,8 +527,17 @@ sub build($$$$$) {
     } elsif ($md5sumOnly) {
       $cmd2b.=" -sOutputFile='|md5sum >>$md5Filename'";
     } else {
-      $cmd2b.=" -sOutputFile='|gzip -1 -n >$outputFilename.gz'";
-      #$cmd2b.=" -sOutputFile='|gzip -1 -n | md5sum >>$md5Filename'";
+      if ($local) {
+#       $cmd2b.=" -sOutputFile='|gzip -1 -n >$outputFilename.gz'";
+        if ($rerunIfMd5sumDifferences) {
+          $cmd2b.=" -sOutputFile='|md5sum >>$md5Filename'";
+        } else {
+          $cmd2b.=" -sOutputFile='|lzop -f -o $outputFilename.lzo'";
+        }
+      } else {
+        $cmd2b.=" -sOutputFile='|gzip -1 -n >$outputFilename.gz'";
+      }
+#     $cmd2b.=" -sOutputFile='|gzip -1 -n | md5sum >>$md5Filename'";
     }
 
     $cmd2c.=" -dMaxBitmap=30000000" if ($a[3]==0);
@@ -486,8 +546,10 @@ sub build($$$$$) {
     $cmd2c.=" -sDEVICE=".$a[1];
     $cmd2c.=" -dGrayValues=256" if ($a[0] eq 'bitrgb');
     $cmd2c.=" -dcupsColorSpace=0" if ($a[0] eq 'cups');
+    $cmd2c.=" ".$additionalOptions_pdfwrite_step2;
+    $cmd2c.=" ".$additionalOptions_gs_pdfwrite_step2 if ($product eq 'gs');
     $cmd2c.=" -r".$a[2];
-    #   $cmd2c.=" -q"
+#   $cmd2c.=" -q"
     $cmd2c.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd2c.=" -dNOPAUSE -dBATCH -K1000000";  # -Z:
 #   $cmd2c.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
@@ -514,16 +576,20 @@ sub build($$$$$) {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
       $cmd.=" ; $preCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
       if ($local) {
-        $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
+#       $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
+        if ($rerunIfMd5sumDifferences) {
+        } else {
+          $cmd.=" ; sleep 0 ; lzop -c -d $outputFilename.lzo | md5sum >$md5Filename";
+        }
 #       $cmd.=" ; md5sum $outputFilename.gz >$md5Filename";
       }
    }
 
     if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2} && !exists $skip{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp $bmpcmpOptions <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\" ; gzip $bmpcmpFilename.* ; fi";
+      $cmd.=" ; sleep 0 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" ]; then $cmd2a -sOutputFile='| lzop -f -o $rasterFilename.lzo' $cmd2c >>/dev/null 2>&1 ; fi";
     }
 
-    #   $cmd.=" ; gzip -f $inputFilename >>$logFilename 2>&1";
+#   $cmd.=" ; gzip -f $inputFilename >>$logFilename 2>&1";
     $outputFilenames.="$inputFilename ";
 
   } else {
@@ -565,8 +631,17 @@ sub build($$$$$) {
     } elsif ($md5sumOnly) {
       $cmd2b.=" -sOutputFile='|md5sum >>$md5Filename'";
     } else {
-      $cmd2b.=" -sOutputFile='|gzip -1 -n >$outputFilename.gz'";
-      #$cmd2b.=" -sOutputFile='|gzip -1 -n | md5sum >>$md5Filename'";
+      if ($local) {
+#       $cmd2b.=" -sOutputFile='|gzip -1 -n >$outputFilename.gz'";
+        if ($rerunIfMd5sumDifferences) {
+          $cmd2b.=" -sOutputFile='|md5sum >>$md5Filename'";
+        } else {
+          $cmd2b.=" -sOutputFile='|lzop -f -o $outputFilename.lzo'";
+        }
+      } else {
+        $cmd2b.=" -sOutputFile='|gzip -1 -n >$outputFilename.gz'";
+      }
+#     $cmd2b.=" -sOutputFile='|gzip -1 -n | md5sum >>$md5Filename'";
     }
 
     $cmd2c.=" -dMaxBitmap=30000000" if ($a[2]==0);
@@ -575,8 +650,10 @@ sub build($$$$$) {
     $cmd2c.=" -sDEVICE=".$a[0];
     $cmd2c.=" -dGrayValues=256" if ($a[0] eq 'bitrgb');
     $cmd2c.=" -dcupsColorSpace=0" if ($a[0] eq 'cups');
+    $cmd2c.=" ".$additionalOptions;
+    $cmd2c.=" ".$additionalOptions_gs if ($product eq 'gs');
     $cmd2c.=" -r".$a[1];
-    #   $cmd2c.=" -q" if ($product eq 'gs');
+#   $cmd2c.=" -q" if ($product eq 'gs');
     $cmd2c.=" -sDEFAULTPAPERSIZE=letter" if ($product eq 'gs');
     $cmd2c.=" -dNOPAUSE -dBATCH -K1000000";  # -Z:
 #   $cmd2c.=" -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f" if ($product eq 'gs');
@@ -605,13 +682,17 @@ sub build($$$$$) {
       $cmd.=" ; echo \"$cmd2a $cmd2b $cmd2c\" >>$logFilename ";
       $cmd.=" ; $preCommand $cmd2a $cmd2b $cmd2c >>$logFilename 2>&1";
       if ($local) {
-        $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
+#       $cmd.=" ; zcat $outputFilename.gz | md5sum >$md5Filename";
+        if ($rerunIfMd5sumDifferences) {
+        } else {
+          $cmd.=" ; sleep 0 ; lzop -c -d $outputFilename.lzo | md5sum >$md5Filename";
+        }
 #       $cmd.=" ; md5sum $outputFilename.gz >$md5Filename";
       }
    }
 
     if ($rerunIfMd5sumDifferences && exists $md5sum{$filename2} && !exists $skip{$filename2}) {
-      $cmd.=" ; sleep 1 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" -a -e raster.yes ]; then $cmd2a -sOutputFile='|gzip -1 -n >$rasterFilename.gz' $cmd2c >>/dev/null 2>&1; bash -c \"./bmpcmp $bmpcmpOptions <(gunzip -c $rasterFilename.gz) <(gunzip -c $baselineFilename.gz) $bmpcmpFilename 0 100\" ; gzip $bmpcmpFilename.* ; fi";
+      $cmd.=" ; sleep 0 ; grep -q -E \"".$md5sum{$filename2}."\" $md5Filename; a=\$? ;  if [ \"\$a\" -eq \"1\" ]; then $cmd2a -sOutputFile='| lzop -f -c $rasterFilename.lzo' $cmd2c >>/dev/null 2>&1 ; fi";
     }
 
 
@@ -706,7 +787,7 @@ foreach my $testfile (sort keys %testfiles) {
 }
 }
 
-if (-e "gccwarnings" && !$bmpcmp && (scalar keys %products==0 || exists $products{'gs'})) {
+if (-e "gccwarnings" && !$bmpcmp && !$local && (scalar keys %products==0 || exists $products{'gs'})) {
   print "gs_build\tcd __gsSource__ ; make clean >/dev/null 2>&1 ; make -j 1 >__temp__/gs_build.log 2>&1\n";
 }
 

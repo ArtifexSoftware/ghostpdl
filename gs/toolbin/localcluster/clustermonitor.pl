@@ -52,6 +52,7 @@ while(1) {
     print chr(0x1b)."[1;1H";  # clear screen
     print chr(0x1b)."[J";
     %status={};   # force refresh
+    $b="";
   }
 
     my $status=`cat /home/regression/cluster/status`;

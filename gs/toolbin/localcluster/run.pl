@@ -19,6 +19,11 @@ my $timeOut=450;
 my $maxTimeout=20;  # starting value, is adjusted by value below based on jobs completed
 my $maxTimeoutPercentage=1.0;
 
+my $makeOption="";
+my $configOption="";
+my $beforeMake;
+my $afterMake;
+
 my $maxCount=12;
 $maxCount=16;
 
@@ -42,6 +47,18 @@ if (open(F,"<weekly.cfg")) {
     my @a=split ' ',$_,2;
     if ($a[0] eq "wordsize") {
       $wordSize=$a[1];
+    }
+    if ($a[0] eq "makeoption") {
+      $makeOption=$a[1];
+    }
+    if ($a[0] eq "configoption") {
+      $configOption=$a[1];
+    }
+    if ($a[0] eq "before_make") {
+      $beforeMake=$a[1];
+    }
+    if ($a[0] eq "after_make") {
+      $afterMake=$a[1];
     }
   }
   close(F);
@@ -81,11 +98,13 @@ mkdir("icc_work/bin");
 mkdir("./head/");
 mkdir("./head/bin");
 
+if (0) {
 `rm *Raw*raw`;
 `rm *Device*raw`;
 `rm *Image*raw`;
 `rm *Composed*raw`;
 `rm *_*x*raw`;
+}
 
 
 my $user;
@@ -102,6 +121,7 @@ my $runningSemaphore="./run.pid";
 sub spawn;
 
 sub watchdog {
+  mylog "touching $machine.up on casper\n";
   spawn(0,"ssh -i ~/.ssh/cluster_key regression\@casper.ghostscript.com touch /home/regression/cluster/$machine.up");
 }
 
@@ -224,8 +244,6 @@ chomp $baseDirectory;
 my $temp=$baseDirectory."/temp";
 my $temp2=$baseDirectory."/temp.tmp";
 my $bmpcmpOutput=$baseDirectory."/temp/bmpcmp";
-my $baselineRaster=$baseDirectory."/baselineraster";       # local only
-my $baselineRaster2=$baseDirectory."/baselineraster.tmp";  # local only
 
 my $gpdlSource=$baseDirectory."/ghostpdl";
 my $gsSource=$gpdlSource."/gs";
@@ -549,11 +567,7 @@ if (!$local) {
 mkdir("$gsBin");
 mkdir("$gsBin/bin");
 
-$cmd="touch $baselineRaster2 ; rm -fr $baselineRaster2 ; mv $baselineRaster $baselineRaster2 ; mkdir $baselineRaster ; rm -fr $baselineRaster2 &";
-print "$cmd\n" if ($verbose);
-`$cmd`;
-
-$cmd="touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; mkdir $bmpcmpOutput ; rm -fr $temp2 &";
+$cmd="touch $temp ; touch $temp2 ; rm -fr $temp2 ; mv $temp $temp2 ; mkdir $temp ; mkdir $bmpcmpOutput ; rm -fr $temp2 &";
 print "$cmd\n" if ($verbose);
 `$cmd`;
 
@@ -626,15 +640,31 @@ if (!$abort) {
       updateStatus('Building Ghostscript');
 
       # build ghostscript
-#     $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-cups --disable-fontconfig --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; echo >>makegs.out ; nice make >>makegs.out 2>&1";
-      $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" --disable-fontconfig --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1 ; nice make -j 12 >>makegs.out 2>&1 ; echo >>makegs.out ; nice make >>makegs.out 2>&1";
+      $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" $configOption --disable-fontconfig --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1";
       print "$cmd\n" if ($verbose);
       `$cmd`;
+      if ($beforeMake) {
+        $cmd="cd $gsSource ; ../../$beforeMake";
+        print "$cmd\n" if ($verbose);
+        `$cmd`;
+      }
+      $cmd="cd $gsSource ; nice make -j 12 $makeOption >>makegs.out 2>&1 ; echo >>makegs.out ; nice make $makeOption >>makegs.out 2>&1";
+      print "$cmd\n" if ($verbose);
+      `$cmd`;
+      if ($afterMake) {
+        $cmd="cd $gsSource ; ../../$afterMake";
+        print "$cmd\n" if ($verbose);
+        `$cmd`;
+      }
 
       updateStatus('Installing Ghostscript');
 
       # install ghostscript
-      $cmd="rm -fr $gsBin ; cd $gsSource ; nice make install";
+      if ($makeOption eq "debug") {
+        $cmd="touch $gsBin ; rm -fr $gsBin ; mkdir $gsBin ; mkdir $gsBin/bin ; cp $gsSource/debugobj/gs $gsBin/bin/. ";
+      } else {
+        $cmd="touch $gsBin ; rm -fr $gsBin ; cd $gsSource ; nice make install";
+      }
       print "$cmd\n" if ($verbose);
       `$cmd`;
 
@@ -729,6 +759,11 @@ $abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'ls'} && !$abort) {
     updateStatus('Building LanguageSwitch');
+#   $cmd="rm -fr $gpdlSource/language_switch/obj";
+#   `$cmd`;
+#   if (-e "gpdlSource/language_switch/obj") {
+#     $compileFail.="pspcl6 ";
+#   }
     $cmd="cd $gpdlSource ; nice make ls-clean ; touch makels.out ; rm -f makels.out ; nice make ls-product \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makels.out 2>&1 -j 12; echo >>makels.out ; nice make ls-product \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makels.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -882,13 +917,13 @@ mylog "requesting more jobs: scalar key pids=".(scalar keys %pids)." and lastRec
       $lastReceivedCount=scalar @commands;
       mylog("received ".scalar(@commands)." commands\n");
       mylog("commands[0] eq 'done'\n") if ((scalar @commands==0) || $commands[0] eq "done");
-      mylog("commands[0] eq 'standby'\n") if ($commands[0] eq "standby");
+      mylog("commands[0] eq 'standby'\n") if ((scalar @commands==1) && $commands[0] eq "standby");
       if ((scalar @commands==0) || $commands[0] eq "done") {
         $poll=0;
         @commands=();
         $lastReceivedCount=0;
       }
-      if ($commands[0] eq "standby") {
+      if ((scalar @commands==1) && $commands[0] eq "standby") {
         @commands=();
         $lastReceivedCount=0;
         updateStatus("Standby") if (scalar keys %pids==0);
@@ -1130,33 +1165,6 @@ if (!$abort || $compileFail ne "" || $timeoutFail ne "") {  # mhw2
   close(F4);
 
   if (!$local) {
-  if (0) {
-    my @files = <$temp/*.gz>;
-    if (scalar(@files)>0) {
-      updateStatus('Running fuzzy on '.scalar(@files).' file(s).');
-      foreach my $i (@files) {
-if (1) {
-        $i =~ m|.+/(.+).gz|;
-        $i = $1;
-        $cmd="echo \"fuzzy $i\" >>$machine.log";
-        `$cmd`;
-        $cmd="bash -c \" fuzzy <(gunzip -c $temp/$i.gz) <(gunzip -c $baselineRaster/$i.gz) >>$machine.log\"";
-        mylog "$cmd";
-        `$cmd`;
-} else {
-        $i =~ m|.+/(.+).gz|;
-        $i = $1;
-        $cmd="gunzip $temp/$i $baselineRaster/$i";
-        mylog "$cmd";
-        `$cmd`;
-        $cmd="./fuzzy $temp/$i $baselineRaster/$i >>$machine.log";
-        mylog "$cmd";
-        `$cmd`;
-}
-      }
-    }
-    }
-
     updateStatus('Uploading log files');
     unlink "$machine.log.gz";
     unlink "$machine.out.gz";
