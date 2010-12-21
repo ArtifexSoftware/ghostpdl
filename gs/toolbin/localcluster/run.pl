@@ -638,6 +638,11 @@ if (!$abort) {
     if ($products{'gs'}) {
 
       updateStatus('Building Ghostscript');
+      `touch $gsSource/obj $gsSource/bin >& /dev/null`;
+      `rm -fr $gsSource/obj $gsSource/bin >& makegs.out`;
+      if (-e "$gsSource/obj" || -e "$gsSource/bin") {
+        $compileFail.="gs ";
+      } else {
 
       # build ghostscript
       $cmd="cd $gsSource ; touch makegs.out ; rm -f makegs.out ; nice make distclean >makedistclean.out 2>&1 ; nice ./autogen.sh \"CC=gcc -m$wordSize\" $configOption --disable-fontconfig --without-system-libtiff --prefix=$gsBin >makegs.out 2>&1";
@@ -679,6 +684,7 @@ if (!$abort) {
       } else {
         $compileFail.="gs ";
       }
+      }
     }
   }
 }
@@ -687,6 +693,12 @@ $abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'pcl'} && !$abort) {
     updateStatus('Building GhostPCL');
+    mkdir "$gpdlSource/main/";
+    `touch $gpdlSource/main/obj >& /dev/null`;
+    `rm -fr $gpdlSource/main/obj >& makepcl.out`;
+    if (-e "$gpdlSource/main/obj") {
+      $compileFail.="pcl6 ";
+    } else {
     $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; echo >>makepcl.out ;  nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -703,6 +715,7 @@ if (!$dontBuild) {
     } else {
       $compileFail.="pcl6 ";
     }
+    }
   }
 }
 
@@ -710,6 +723,12 @@ $abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'xps'} && !$abort) {
     updateStatus('Building GhostXPS');
+    mkdir "$gpdlSource/xps/";
+    `touch $gpdlSource/xps/obj >& /dev/null`;
+    `rm -fr $gpdlSource/xps/obj >& makexps.out`;
+    if (-e "$gpdlSource/xps/obj") {
+      $compileFail.="gxps ";
+    } else {
     $cmd="cd $gpdlSource ; nice make xps-clean ; touch makexps.out ; rm -f makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makexps.out 2>&1 -j 12; echo >>makexps.out ; nice make xps \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makexps.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -728,6 +747,7 @@ if (!$dontBuild) {
     } else {
       $compileFail.="gxps ";
     }
+    }
   }
 }
 
@@ -735,6 +755,12 @@ $abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'svg'} && !$abort) {
     updateStatus('Building GhostSVG');
+    mkdir "$gpdlSource/svg/";
+    `touch $gpdlSource/svg/obj >& /dev/null`;
+    `rm -fr $gpdlSource/svg/obj >& makesvg.out`;
+    if (-e "$gpdlSource/svg/obj") {
+      $compileFail.="gsvg ";
+    } else {
     $cmd="cd $gpdlSource ; nice make svg-clean ; touch makesvg.out ; rm -f makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makesvg.out 2>&1 -j 12; echo >>makesvg.out ; nice make svg \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makesvg.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -751,6 +777,7 @@ if (!$dontBuild) {
     } else {
       $compileFail.="gsvg ";
     }
+    }
   }
 }
 
@@ -759,11 +786,12 @@ $abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'ls'} && !$abort) {
     updateStatus('Building LanguageSwitch');
-#   $cmd="rm -fr $gpdlSource/language_switch/obj";
-#   `$cmd`;
-#   if (-e "gpdlSource/language_switch/obj") {
-#     $compileFail.="pspcl6 ";
-#   }
+    mkdir "$gpdlSource/language_switch/";
+    `touch $gpdlSource/language_switch/obj >& /dev/null`;
+    `rm -fr $gpdlSource/language_switch/obj >& makels.out`;
+    if (-e "$gpdlSource/language_switch/obj") {
+      $compileFail.="pspcl6 ";
+    } else {
     $cmd="cd $gpdlSource ; nice make ls-clean ; touch makels.out ; rm -f makels.out ; nice make ls-product \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makels.out 2>&1 -j 12; echo >>makels.out ; nice make ls-product \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makels.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
@@ -782,6 +810,7 @@ if (!$dontBuild) {
     } else {
       $compileFail.="pspcl6 ";
     }
+  }
   }
 }
 
