@@ -638,9 +638,9 @@ if (!$abort) {
     if ($products{'gs'}) {
 
       updateStatus('Building Ghostscript');
-      `touch $gsSource/obj $gsSource/bin >& /dev/null`;
-      `rm -fr $gsSource/obj $gsSource/bin >& makegs.out`;
-      if (-e "$gsSource/obj" || -e "$gsSource/bin") {
+      `touch $gsSource/obj $gsSource/bin  > /dev/null  2>&1`;
+      `rm -fr $gsSource/obj $gsSource/bin > $gsSource/makegs.out 2>&1`;
+      if ((-e "$gsSource/obj") || (-e "$gsSource/bin")) {
         $compileFail.="gs ";
       } else {
 
@@ -694,8 +694,8 @@ if (!$dontBuild) {
   if ($products{'pcl'} && !$abort) {
     updateStatus('Building GhostPCL');
     mkdir "$gpdlSource/main/";
-    `touch $gpdlSource/main/obj >& /dev/null`;
-    `rm -fr $gpdlSource/main/obj >& makepcl.out`;
+    `touch $gpdlSource/main/obj > /dev/null 2>&1 `;
+    `rm -fr $gpdlSource/main/obj > $gpdlSource/makepcl.out 2>&1`;
     if (-e "$gpdlSource/main/obj") {
       $compileFail.="pcl6 ";
     } else {
@@ -724,8 +724,8 @@ if (!$dontBuild) {
   if ($products{'xps'} && !$abort) {
     updateStatus('Building GhostXPS');
     mkdir "$gpdlSource/xps/";
-    `touch $gpdlSource/xps/obj >& /dev/null`;
-    `rm -fr $gpdlSource/xps/obj >& makexps.out`;
+    `touch $gpdlSource/xps/obj > /dev/null 2>&1 `;
+    `rm -fr $gpdlSource/xps/obj > $gpdlSource/makexps.out 2>&1`;
     if (-e "$gpdlSource/xps/obj") {
       $compileFail.="gxps ";
     } else {
@@ -756,8 +756,8 @@ if (!$dontBuild) {
   if ($products{'svg'} && !$abort) {
     updateStatus('Building GhostSVG');
     mkdir "$gpdlSource/svg/";
-    `touch $gpdlSource/svg/obj >& /dev/null`;
-    `rm -fr $gpdlSource/svg/obj >& makesvg.out`;
+    `touch $gpdlSource/svg/obj > /dev/null 2>&1 `;
+    `rm -fr $gpdlSource/svg/obj > $gpdlSource/makesvg.out 2>&1`;
     if (-e "$gpdlSource/svg/obj") {
       $compileFail.="gsvg ";
     } else {
@@ -787,8 +787,8 @@ if (!$dontBuild) {
   if ($products{'ls'} && !$abort) {
     updateStatus('Building LanguageSwitch');
     mkdir "$gpdlSource/language_switch/";
-    `touch $gpdlSource/language_switch/obj >& /dev/null`;
-    `rm -fr $gpdlSource/language_switch/obj >& makels.out`;
+    `touch $gpdlSource/language_switch/obj > /dev/null 2>&1 `;
+    `rm -fr $gpdlSource/language_switch/obj > $gpdlSource/makels.out 2>&1`;
     if (-e "$gpdlSource/language_switch/obj") {
       $compileFail.="pspcl6 ";
     } else {
