@@ -185,7 +185,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
 			a compatible data for Tj. */
 		pprintg1(pdev->strm, "%g ", width);
 		pprintd4(pdev->strm, "0 %d %d %d %d d1\n",  x_offset, -h + y_offset, w + x_offset, y_offset);
-/*		pprintd4(pdev->strm, "0 0 %d %d %d %d d1\n",  x_offset, -h + y_offset, w + x_offset, y_offset);*/
 		pprintd4(pdev->strm, "%d 0 0 %d %d %d cm\n", w, h, x_offset,
 			 -h + y_offset);
 		pdf_image_writer_init(&writer);
