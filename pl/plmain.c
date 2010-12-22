@@ -1302,11 +1302,3 @@ pl_main_cursor_close(
         pl_top_cursor_dnit(cursor);
         fclose(cursor->strm);
 }
-
-#ifndef NO_MAIN
-/* ----------- Command-line driver for pl_interp's  ------ */
-int
-main(int argc, char **argv) {
-    return pl_main(argc, argv);
-}
-#endif /* !defined(NO_MAIN) */

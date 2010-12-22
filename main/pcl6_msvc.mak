@@ -209,6 +209,9 @@ MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ) $(PLOBJDIR)\dwtrace
  $(PLOBJDIR)\dwimg.$(OBJ) $(PLOBJDIR)\dwreg.$(OBJ)
 !endif
 !endif
+!ifndef REALMAIN_OBJ
+REALMAIN_OBJ=$(PLOBJDIR)\realmain.$(OBJ)
+!endif
 !ifndef PCL_TOP_OBJ
 PCL_TOP_OBJ=$(PCLOBJDIR)\pctop.$(OBJ)
 !endif

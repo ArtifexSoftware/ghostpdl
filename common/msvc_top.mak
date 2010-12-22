@@ -15,7 +15,7 @@
 
 # The product-specific top-level makefile defines the following:
 #	MAKEFILE, COMMONDIR, CONFIG, DEBUG, DEVICE_DEVS, GSDIR, MAIN_OBJ,
-#	NOPRIVATE, TDEBUG, TARGET_DEVS, TARGET_XE, MSVC_VERSION
+#	REALMAIN_OBJ, NOPRIVATE, TDEBUG, TARGET_DEVS, TARGET_XE, MSVC_VERSION
 # It also must include the product-specific *.mak.
 
 # XE isn't defined yet.
@@ -218,12 +218,12 @@ $(FONTLIB): $(MAKEFILE)
 	echo $(UFST_LIB)\if_lib.lib >>$(FONTLIB)
 	echo $(UFST_LIB)\tt_lib.lib >>$(FONTLIB)
 
-$(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR) $(FONTLIB)
+$(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR) $(FONTLIB)
 	$(LINK_SETUP)
-	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(GENDIR)\lib32.rsp @$(LIBCTR) @$(FONTLIB)
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(GENDIR)\lib32.rsp @$(LIBCTR) @$(FONTLIB)
 
 !ELSE
-$(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR)
+$(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR)
 	$(LINK_SETUP)
-	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(GENDIR)\lib32.rsp @$(LIBCTR)
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(GENDIR)\lib32.rsp @$(LIBCTR)
 !ENDIF

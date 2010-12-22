@@ -1,5 +1,7 @@
 all: pcl xps svg ls-product
 
+all-lib: pcl-lib xps-lib svg-lib ls-lib
+
 debug: pcl-debug xps-debug svg-debug ls-debug
 
 clean: pcl-clean xps-clean svg-clean ls-clean
@@ -17,6 +19,9 @@ product: pcl
 
 pcl: tiff
 	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product # build PCL and PCLXL. 
+
+pcl-lib: tiff
+	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product-lib # build PCL and PCLXL lib
 
 pcl-debug:  tiff
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug GENDIR="./debugobj"
@@ -52,6 +57,9 @@ xps-debug: tiff
 xps:  tiff
 	$(MAKE) -C xps -f xps_gcc.mak pdl-product # build XPS
 
+xps-lib:  tiff
+	$(MAKE) -C xps -f xps_gcc.mak pdl-product-lib # build XPS lib
+
 xps-clean: tiff_clean
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean
 
@@ -63,6 +71,9 @@ svg-debug: tiff
 
 svg:  tiff
 	$(MAKE) -C svg -f svg_gcc.mak pdl-product # build SVG
+
+svg-lib:  tiff
+	$(MAKE) -C svg -f svg_gcc.mak pdl-product-lib # build SVG lib
 
 svg-clean: tiff_clean
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean
@@ -97,7 +108,7 @@ tiff:
 tiff_clean:
 	# equally unpleasant, we have to explicitly delete tif_config.h
 	rm -f gs/tiff/libtiff/tif_config.h gs/tiff/libtiff/tiffconf.h
-	rm tiff
+	rm -f tiff
 
 #### tiff ####
 
@@ -106,6 +117,9 @@ ls-profile: tiff
 
 ls-product: tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product # build PS/PCL/XL. 
+
+ls-lib: tiff
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product-lib # build PS/PCL/XL lib.
 
 ls-debug:  tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug GENDIR="./debugobj"

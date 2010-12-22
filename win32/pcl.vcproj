@@ -602,6 +602,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pl\realmain.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pl\plmain.c"
 				>
 			</File>
