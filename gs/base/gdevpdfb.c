@@ -138,6 +138,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     bool in_line = false;
     gs_show_enum *show_enum = (gs_show_enum *)pdev->pte;
     int x_offset, y_offset;
+    double width;
 
     /* Update clipping. */
     if (pdf_must_put_clip_path(pdev, pcpath)) {
@@ -179,7 +180,12 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		if (code < 0)
 		    return code;
 		y_offset = -y_offset;
-		pprintd4(pdev->strm, "0 0 %d %d %d %d d1\n",  x_offset, -h + y_offset, w + x_offset, y_offset);
+		width = psdf_round(pdev->char_width.x, 100, 10); /* See 
+			pdf_write_Widths about rounding. We need to provide 
+			a compatible data for Tj. */
+		pprintg1(pdev->strm, "%g ", width);
+		pprintd4(pdev->strm, "0 %d %d %d %d d1\n",  x_offset, -h + y_offset, w + x_offset, y_offset);
+/*		pprintd4(pdev->strm, "0 0 %d %d %d %d d1\n",  x_offset, -h + y_offset, w + x_offset, y_offset);*/
 		pprintd4(pdev->strm, "%d 0 0 %d %d %d cm\n", w, h, x_offset,
 			 -h + y_offset);
 		pdf_image_writer_init(&writer);

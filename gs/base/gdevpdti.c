@@ -388,6 +388,9 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 	     * all the used glyphs as /Differencess, and that makes it work <sigh>
 	     */
 	    pet->is_difference = 1;
+	    font->Widths[char_code] = psdf_round(pdev->char_width.x, 100, 10); /* See 
+			pdf_write_Widths about rounding. We need to provide 
+			a compatible data for Tj. */
 	} else {
 	    char_code = assign_char_code(pdev, pdev->pte);
 	    font = pbfs->open_font; /* Type 3 */
