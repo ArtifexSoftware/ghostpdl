@@ -412,6 +412,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
 		return code;
 	}
 	stream_puts(s, "/DSC_OPDFREAD true def\n");
+	stream_puts(s, "/SetPageSize true def\n");
 
 	code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, false);
 	if (code < 0)
