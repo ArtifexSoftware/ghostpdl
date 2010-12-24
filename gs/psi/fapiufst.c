@@ -640,6 +640,9 @@ static FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_pa
     *return_data = 0;
     r->fc.ttc_index = ff->subfont;
     if (ff->font_file_path == NULL) {
+#if UFST_VERSION_MAJOR < 6
+        return(e_invalidaccess);
+#else
         area_length += PCLETTOFONTHDRSIZE;
         if (ff->is_type1) {
             int subrs_count  = ff->get_word(ff, FAPI_FONT_FEATURE_Subrs_count, 0);
@@ -652,8 +655,21 @@ static FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_pa
                 return e_invalidfont;
             area_length += tt_size + (use_XL_format ? 6 : 4) + 4 + 2;
         }
-    } else
+#endif
+    } else {
+#if UFST_VERSION_MAJOR < 6
+        int sind = strlen(font_file_path) - 1;
+        
+        
+        if ((font_file_path[sind] != 'o' || font_file_path[sind] != 'O') &&
+            (font_file_path[sind - 1] != 'c' || font_file_path[sind - 1] != 'C') &&
+            (font_file_path[sind - 2] != 'f' || font_file_path[sind - 2] != 'F') &&
+            font_file_path[sind - 3] != '.') {
+            return(e_invalidaccess);
+        }
+#endif
         area_length += strlen(font_file_path) + 1;
+    }
     buf = r->client_mem.alloc(&r->client_mem, area_length, "ufst font data");
     if (buf == 0)
         return e_VMerror;
