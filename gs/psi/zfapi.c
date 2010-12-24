@@ -895,7 +895,7 @@ static ushort FAPI_FF_get_charstring(FAPI_font *ff, int index, byte *buf, ushort
 static bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index, ulong *offset0)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
-    int glyf_elem_size = (2 << pfont42->data.indexToLocFormat);
+    int glyf_elem_size = (pfont42->data.indexToLocFormat) ? 4 : 2;
 
     sfnts_reader_init(&r, pdr);
     r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
