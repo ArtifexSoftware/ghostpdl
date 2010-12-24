@@ -1148,7 +1148,12 @@ case `uname` in
 	Linux*|GNU*)
 	DYNAMIC_CFLAGS="-fPIC"
 	DYNAMIC_LDFLAGS="-fPIC -shared"
-	DYNAMIC_LIBS="-rdynamic -ldl"
+        if test $ac_cv_prog_gcc = yes; then
+            # GCC high level flag
+	    DYNAMIC_LIBS="-rdynamic -ldl"
+        else
+            DYNAMIC_LIBS=""
+        fi
 	;;
 	*BSD)
 	DYNAMIC_CFLAGS="-fPIC"
