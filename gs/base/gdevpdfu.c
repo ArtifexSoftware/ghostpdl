@@ -374,8 +374,8 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
     stream *s = pdev->strm;
 
     if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
-        char cre_date_time[40];
-	int code, status;
+        char cre_date_time[41];
+	int code, status, cre_date_time_len;
 	char BBox[256];
 	int width = (int)(pdev->width * 72.0 / pdev->HWResolution[0] + 0.5);
 	int height = (int)(pdev->height * 72.0 / pdev->HWResolution[1] + 0.5);
@@ -383,8 +383,9 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
 	stream_write(s, (byte *)"%!PS-Adobe-3.0\n", 15);
 	sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
 	stream_write(s, (byte *)BBox, strlen(BBox));
-	pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
-	sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, (int)gs_revision,
+	cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time) - 1);
+	cre_date_time[cre_date_time_len] = 0;
+        sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, (int)gs_revision,
 	        pdev->dname);
 	stream_write(s, (byte *)BBox, strlen(BBox));
 	stream_puts(s, "%%LanguageLevel: 2\n");
