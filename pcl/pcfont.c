@@ -628,6 +628,9 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	
     if ((type & pcl_reset_initial) != 0) {
 	pcs->font_dir = gs_font_dir_alloc(pcs->memory);
+        /* disable hinting at high res */
+        if (gs_currentdevice(pcs->pgs)->HWResolution[0] >= 300)
+            gs_setgridfittt(pcs->font_dir, 0);
 	pcs->font = 0;
 	pcs->font_selection[0].font =
 		pcs->font_selection[1].font = 0;
