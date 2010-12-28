@@ -1864,7 +1864,7 @@ DEFINE_KEYS(
 )
 #undef DEFINE_KEYS
 
-typedef enum { \
+typedef enum {
     k_topdict = 0, k_fontinfodict = 0x10000, k_privatedict = 0x20000, k_sid = 0x40000,
     k_array = 0x80000, k_delta = 0x100000, k_int = 0x200000, k_bool=0x400000
 } font_flags_dummy_t;
@@ -1872,8 +1872,9 @@ typedef enum { \
 #define CONTROL(id, n_op, flags) ((flags) | (n_op) | ((k_##id) << 8))
 
 
-typedef enum { \
-  k_0, k_1, k_2, k_7, k_50, k_neg_100, k_8720, k_0_039625, k_0_06, k_false, k_box, k_matrix, k_emptydict
+typedef enum {
+  k_0, k_1, k_2, k_7, k_50, k_neg_100, k_8720, k_0_039625, k_0_06, k_false, k_box,
+  k_matrix, k_matrix_1, k_emptydict
 } font_defaults_dummy_t;
 
 typedef struct tag_font_defaults {
@@ -1888,7 +1889,7 @@ static const font_defaults_t fontinfo_font_defaults[] = {
     { k_UnderlineThickness, k_50 }
 };
 
-static const font_defaults_t top_font_defaults[] = {
+static const font_defaults_t simple_font_defaults[] = {
     { k_PaintType,          k_0 },
     { k_CharstringType,     k_2 },
     { k_FontMatrix,         k_matrix }, /*  0.001 0 0 0.001 0 0 */
@@ -1908,6 +1909,10 @@ static const font_defaults_t fd_font_defaults[] = {
     { k_PaintType,          k_0      },  /* gs needs this */
     { k_FontType,           k_2      },  /* gs needs this */
     { k_Private,            k_emptydict} /* following gs implementation */
+};
+
+static const font_defaults_t set_unit_matrix[] = {
+    { k_FontMatrix,         k_matrix_1 }   /* 1 0 0 1 0 0 */
 };
 
 static const font_defaults_t private_font_defaults[] = {
@@ -1930,6 +1935,7 @@ set_defaults(i_ctx_t *i_ctx_p, ref *dest, const font_defaults_t *def, int count)
     for (i = 0; i < count; i++) {
         ref name, *dummy, value;
         int code;
+        float xx;
 
         if ((code = name_ref(imemory, (const unsigned char *)font_keys[def[i].key],
                                              font_keys_sz[def[i].key], &name, 0)) < 0)
@@ -1974,9 +1980,14 @@ set_defaults(i_ctx_t *i_ctx_p, ref *dest, const font_defaults_t *def, int count)
                    value.value.refs[1] = value.value.refs[2] = value.value.refs[3] = value.value.refs[0];
                    break;
                case k_matrix:
+                   xx = (float)0.001;
+                   goto make_matrix;
+               case k_matrix_1:
+                   xx = (float)1.;
+                 make_matrix:;
                    if ((code = ialloc_ref_array(&value, a_readonly, 6, "parsecff.default_bbox")) < 0)
                         return code;
-                   make_real(&value.value.refs[0], (float)0.001);
+                   make_real(&value.value.refs[0], xx);
                    value.value.refs[3] = value.value.refs[0];
                    make_real(&value.value.refs[1], (float)0.);
                    value.value.refs[2] = value.value.refs[4] = value.value.refs[5] = value.value.refs[1];
@@ -2395,6 +2406,8 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
         unsigned int fdselect_off = offsets.fdselect_off;
         unsigned int fdselect_code;
         int (*fdselect_proc)(const cff_data_t *, unsigned p, unsigned pe, unsigned int i);
+        ref *array_FontMatrix, name_FontMatrix;
+        bool top_has_FontMatrix;
 
         if (offsets.fdarray_off == 0 || fdselect_off == 0)
             return_error(e_invalidfont);
@@ -2408,6 +2421,10 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             return code;
         if ((code = idict_put_c_name(i_ctx_p, topdict, STR2MEM("GlyphDirectory"), &glyph_directory_ref)) < 0)
             return code;
+        if ((code = name_ref(imemory, (const unsigned char *)font_keys[k_FontMatrix], font_keys_sz[k_FontMatrix], &name_FontMatrix, 0)) < 0)
+            return code;
+        top_has_FontMatrix = dict_find(topdict, &name_FontMatrix, &array_FontMatrix) > 0;
+
         for (i = 0; i < fdarray.count; i++) {
             unsigned int len;
             unsigned doff;
@@ -2443,6 +2460,33 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             if (global_subrs) {
                 if ((code = idict_put_c_name(i_ctx_p, fdprivate, STR2MEM("GlobalSubrs"), global_subrs)) < 0)
                     return code;
+            }
+           /* There is no explicit description what to do with FontMatrix of CFF CIDFont in
+            * Adobe tech note #5176 (CFF Spec), Ken and Masaki have figured out this is what
+            * it should be:
+            *
+            * 1) If both Top DICT and Font DICT does _not_ have FontMatrix, then Top DICT =
+            * [0.001 0 0 0.001 0 0], Font DICT= [1 0 0 1 0 0].  (Or, Top DICT = (absent),
+            * Font DICT = [0.001 0 0 0.001 0 0] then let '/CIDFont defineresource' 
+            * make Top DICT = [0.001 0 0 0.001 0 0], Font DICT = [1 0 0 1 0 0].)
+            *
+            * 2) If Top DICT has FontMatrix and Font DICT doesn't, then Top DICT = (supplied
+            * matrix), Font DICT = [1 0 0 1 0 0].
+            *
+            * 3) If Top DICT does not have FontMatrix but Font DICT does, then Top DICT = [1
+            * 0 0 1 0 0], Font DICT = (supplied matrix).  (Or, Top DICT = (absent), 
+            * Font DICT = (supplied matrix) then let '/CIDFont defineresource' 
+            * make Top DICT = [0.001 0 0 0.001 0 0], Font DICT = (supplied matrix 1000 times
+            * larger).)
+            *
+            * 4) If both Top DICT and Font DICT _does_ have FontMatrix, then Top DICT =
+            * (supplied matrix), Font DICT = (supplied matrix).
+            */
+            if (top_has_FontMatrix) {
+                if (dict_find(fdfont, &name_FontMatrix, &array_FontMatrix) <= 0) {
+                    if ((code = set_defaults(i_ctx_p, fdfont, set_unit_matrix, count_of(set_unit_matrix))) < 0)
+                        return code;
+                }
             }
             if ((code = set_defaults(i_ctx_p, fdfont, fd_font_defaults, count_of(fd_font_defaults))) < 0)
                 return code;
@@ -2646,7 +2690,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             return code;
         if ((code = set_defaults(i_ctx_p, privatedict, private_font_defaults, count_of(private_font_defaults))) < 0)
             return code;
-        if ((code = set_defaults(i_ctx_p, topdict, top_font_defaults, count_of(top_font_defaults))) < 0)
+        if ((code = set_defaults(i_ctx_p, topdict, simple_font_defaults, count_of(simple_font_defaults))) < 0)
             return code;
     }
     return 0;
