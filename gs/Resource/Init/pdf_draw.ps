@@ -440,9 +440,10 @@ end
 % ------ Transparency support ------ %
 
 /gssmask {
-  dup /None eq 1 index //null eq or PDFusingtransparency not or {
-    pop null
-  } {
+  {
+    dup /None eq 1 index //null eq or PDFusingtransparency not or {
+      pop //null exit
+    } if
 	% Preprocess the SMask value into a parameter dictionary for
 	% .begintransparencymaskgroup, with added /BBox and /Draw keys.
     mark exch		% Stack: mark smaskdict
@@ -450,8 +451,13 @@ end
 			% Stack: mark ... smaskdict
     dup /BC knownoget {
       dup /Background exch 4 2 roll
+      1 index /G oget /Group knownoget not {
+        (   **** Warning: Droping transparency group XObject without /Group attribute.\n)
+        pdfformaterror
+        cleartomark //null exit
+      } if
       gsave //nodict begin
-        1 index /G oget /Group oget /CS knownoget {
+        /CS knownoget {
 	  resolvecolorspace dup setgcolorspace csput
 	} if
         aload pop setcolor [ currentgray ]
@@ -487,7 +493,9 @@ end
     /.execmaskgroup cvx 2 packedarray cvx /Draw exch 3 2 roll
     pop
     .dicttomark
-  } ifelse SMask
+    exit
+  } loop
+  SMask
 } bdef
 
 % Functions specific to the Device* colorspaces to force the switch to
