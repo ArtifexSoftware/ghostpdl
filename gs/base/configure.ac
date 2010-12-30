@@ -1165,7 +1165,11 @@ case `uname` in
 	DYNAMIC_LIBS=""
 	;;
 	SunOS)
-	DYNAMIC_CFLAGS="-KPIC"
+	if test $ac_cv_prog_gcc = yes; then
+	    DYNAMIC_CFLAGS="-fPIC"
+	else
+	    DYNAMIC_CFLAGS="-KPIC"
+	fi
 	DYNAMIC_LDFLAGS="-G"
 	DYNAMIC_LIBS=""
 	;;
