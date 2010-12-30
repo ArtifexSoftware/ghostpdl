@@ -69,6 +69,18 @@ make_other_poles(patch_curve_t curve[4])
     }
 }
 
+/* Transform a point with a fixed-point result. */
+static void
+gs_point_transform2fixed_clamped(const gs_matrix_fixed * pmat,
+			 floatp x, floatp y, gs_fixed_point * ppt)
+{
+    gs_point fpt;
+
+    gs_point_transform(x, y, (const gs_matrix *)pmat, &fpt);
+    ppt->x = clamp_coord(fpt.x);
+    ppt->y = clamp_coord(fpt.y);
+}
+
 static int
 Fb_fill_region(Fb_fill_state_t * pfs, const gs_fixed_rect *rect)
 {
@@ -361,18 +373,14 @@ R_tensor_annulus(patch_fill_state_t *pfs, /*@unused@*/const gs_rect *rect0,
 	for (j = 0; j < 4; j++) {
 	    int jj = (j + inside) % 4;
 
-	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
-			p[j * 3 + 0].x, p[j * 3 + 0].y, &curve[jj].vertex.p);
-	    if (code < 0)
-		return code;
-	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
-			p[j * 3 + 1].x, p[j * 3 + 1].y, &curve[jj].control[0]);
-	    if (code < 0)
-		return code;
-	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
-			p[j * 3 + 2].x, p[j * 3 + 2].y, &curve[jj].control[1]);
-	    if (code < 0)
-		return code;
+	    if (gs_point_transform2fixed(&pfs->pis->ctm,         p[j*3 + 0].x, p[j*3 + 0].y, &curve[jj].vertex.p) < 0)
+                gs_point_transform2fixed_clamped(&pfs->pis->ctm, p[j*3 + 0].x, p[j*3 + 0].y, &curve[jj].vertex.p);
+	    
+            if (gs_point_transform2fixed(&pfs->pis->ctm,         p[j*3 + 1].x, p[j*3 + 1].y, &curve[jj].control[0]) < 0)
+                gs_point_transform2fixed_clamped(&pfs->pis->ctm, p[j*3 + 1].x, p[j*3 + 1].y, &curve[jj].control[0]);
+	    
+            if (gs_point_transform2fixed(&pfs->pis->ctm,         p[j*3 + 2].x, p[j*3 + 2].y, &curve[jj].control[1]) < 0)
+                gs_point_transform2fixed_clamped(&pfs->pis->ctm, p[j*3 + 2].x, p[j*3 + 2].y, &curve[jj].control[1]);
 	    curve[j].straight = (((j + inside) & 1) != 0);
 	}
 	curve[(0 + inside) % 4].vertex.cc[0] = t0;

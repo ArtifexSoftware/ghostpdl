@@ -20,6 +20,18 @@
 
 #include "gspenum.h"
 
+/*
+ * Define clamped values for out-of-range coordinates.
+ * Currently the path drawing routines can't handle values
+ * close to the edge of the representable space.
+ */
+#define max_coord_fixed (max_fixed - int2fixed(1000))	/* arbitrary */
+#define min_coord_fixed (-max_coord_fixed)
+#define clamp_coord(xy)\
+    (xy > fixed2float(max_coord_fixed) ? max_coord_fixed :\
+     xy < fixed2float(min_coord_fixed) ? min_coord_fixed :\
+     float2fixed(xy))
+
 /* Path constructors */
 int gs_newpath(gs_state *),
     gs_moveto(gs_state *, floatp, floatp),

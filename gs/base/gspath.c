@@ -79,23 +79,11 @@ gx_current_path(const gs_state * pgs)
 
 /* ------ Points and lines ------ */
 
-/*
- * Define clamped values for out-of-range coordinates.
- * Currently the path drawing routines can't handle values
- * close to the edge of the representable space.
- */
-#define max_coord_fixed (max_fixed - int2fixed(1000))	/* arbitrary */
-#define min_coord_fixed (-max_coord_fixed)
 static inline void
 clamp_point(gs_fixed_point * ppt, floatp x, floatp y)
 {
-#define clamp_coord(xy)\
-  ppt->xy = (xy > fixed2float(max_coord_fixed) ? max_coord_fixed :\
-	     xy < fixed2float(min_coord_fixed) ? min_coord_fixed :\
-	     float2fixed(xy))
-    clamp_coord(x);
-    clamp_coord(y);
-#undef clamp_coord
+    ppt->x = clamp_coord(x);
+    ppt->y = clamp_coord(y);
 }
 
 int
