@@ -1829,8 +1829,21 @@ currentdict /bndef undef
 	    /no_stream                    % /key res res desc stream unknown_tag
           } ifelse    
 	} if		
-	      
-	//font_tag_dict exch get exec
+	//font_tag_dict exch get          % /key res res desc stream {proc}
+        { stopped } 0 get                 % /key res res desc stream {proc} --stopped--
+        count                             % /key res res desc stream {proc} --stopped-- #
+        countdictstack                    % /key res res desc stream {proc} --stopped-- # ##
+        PDFfile fileposition              % /key res res desc stream {proc} --stopped-- # ## ###
+        5 array astore cvx                % /key res res desc stream {{proc} --stopped-- # ## ###}
+        exec
+        4 -1 roll {
+          PDFfile exch setfileposition
+          countdictstack exch sub 0 .max { end } repeat
+          count 4 add exch sub 0 .max { pop } repeat
+          //null
+        } {
+          pop pop pop
+        } ifelse
         dup //null eq {
           pop
           (   **** Warning: can't process font stream, loading font by the name.\n)
