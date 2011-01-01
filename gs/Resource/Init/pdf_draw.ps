@@ -336,10 +336,10 @@ drawopdict begin
       } bdef
 
   /i { 1 .min setflat } bdef
-  /J /setlinecap load def
-  /d /setdash load def
-  /j /setlinejoin load def
-  /w /setlinewidth load def
+  /J { setlinecap } bind 0 get def
+  /d { setdash } bind 0 get def
+  /j { setlinejoin } bind 0 get def
+  /w { setlinewidth } bind 0 get def
   /M { 1 .max setmiterlimit } bdef
   /gs { gs } def
 end
@@ -1024,16 +1024,16 @@ currentdict /ignore_color_op undef
 
 drawopdict begin
 			% Path construction
-  /m /moveto load def
-  /l /lineto load def
-  /c /curveto load def
+  /m { moveto } bind 0 get def
+  /l { lineto } bind 0 get def
+  /c { curveto } bind 0 get def
   /v { currentpoint 6 2 roll curveto } bdef
   /y { 2 copy curveto } bdef
   /re {
    4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
    closepath
   } bdef
-  /h /closepath load def
+  /h { closepath } bind 0 get def
 			% Path painting and clipping
   /n { n } def
   /S { S } def
