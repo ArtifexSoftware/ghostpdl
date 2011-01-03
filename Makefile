@@ -91,10 +91,13 @@ mupdf-clean:
 	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-clean
 
 
+ufst_built:
+	$(MAKE) -C ufst/rts/lib -f makefile.artifex
+	touch ufst_built	
+
 ####  UFST LIBRARY DEPENDENCY RULES ####
 
-ufst:
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex
+ufst: ufst_built
 
 ####  LANGUAGE SWITCHING PRODUCT RULES ####
 
@@ -165,6 +168,7 @@ ls-udebug: ufst tiff
 ls-uclean: tiff_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
+	rm -f ufst_built
 
 uproduct: ufst tiff
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
@@ -179,6 +183,7 @@ udebug: ufst tiff
 uclean: tiff_clean
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
+	rm -f ufst_built
 
 all-debug: pcl-debug udebug ls-debug ls-udebug xps-debug
 
