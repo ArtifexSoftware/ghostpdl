@@ -546,7 +546,7 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
     /* Check for the one special case we care about. */
     if (((options & (GB_COLORS_RGB | GB_ALPHA_FIRST | GB_ALPHA_LAST))
 	   == GB_COLORS_RGB) &&
-	dev_proc(dev, map_color_rgb) == cmyk_1bit_map_color_rgb) {
+	dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color) {
 	gx_get_bits_copy_cmyk_1bit(dest_line, raster,
 				   src_line, dev_raster,
 				   src_bit_offset & 7, w, h);
