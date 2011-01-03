@@ -567,6 +567,8 @@ def
 
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
+  pdfemptycount 3 1 roll
+  /pdfemptycount count 3 sub store
   gsave //nodict begin
   
   % We have to set the gstate correctly for lazy evaluation of a softmask group.
@@ -579,15 +581,16 @@ def
   % color and set it here once in the correct gstate.
   mark currentcolor currentcolorspace counttomark 2 add index dup
   /GroupGState .knownget { setgstate } if
-  /GroupExtGState .knownget { {exch exec} forall } if
+  /GroupExtGState .knownget { { exch exec } forall } if
   setcolorspace setcolor pop
-  newpath null SMask
+  newpath //null SMask
   1 .setopacityalpha 1 .setshapealpha
   1 CA 1 ca
   /Compatible .setblendmode
 	% Execute the body of the Form, similar to DoForm.
   pdfopdict .pdfruncontext
   end grestore
+  /pdfemptycount exch store
 } bdef
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
