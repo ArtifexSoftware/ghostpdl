@@ -285,13 +285,13 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
 
     *newchunk = NULL;
     node = (chunk_mem_node_t *)gs_alloc_bytes_immovable(target, chunk_size, "chunk_mem_node_add");
+    if (node == NULL)
+        return -1;
     cmem->used += chunk_size;
 #ifdef DEBUG
     if (cmem->used > cmem->max_used)
 	cmem->max_used = cmem->used;
 #endif
-    if ( node == NULL )
-        return -1;
     node->size = chunk_size;	/* how much we allocated */
     node->largest_free = chunk_size - sizeof(chunk_mem_node_t);
     node->is_multiple_object_chunk = is_multiple_object_chunk;
