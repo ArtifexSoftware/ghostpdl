@@ -77,7 +77,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
 
 #define USE_SET_GRAY_FUNCTION 0
 /* Temporary function to make it easier to debug the uber-macro below */
-static int
+static inline int
 image_set_gray(byte sample_value, const bool masked, uint mask_base,
                 uint mask_limit, gx_device_color **ppdevc, gs_client_color *cc,
                 const gs_color_space *pcs, const gs_imager_state *pis, 
@@ -96,7 +96,7 @@ image_set_gray(byte sample_value, const bool masked, uint mask_base,
             switch ( penum->map[0].decoding )
             {
             case sd_none:
-            cc->paint.values[0] = (sample_value) * (1.0 / 255.0);  /* faster than / */
+            cc->paint.values[0] = (sample_value) * (1.0f / 255.0f);  /* faster than / */
             break;
             case sd_lookup:	/* <= 4 significant bits */
             cc->paint.values[0] =

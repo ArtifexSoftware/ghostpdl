@@ -75,7 +75,7 @@ struct sample_map_s {
      * an 8-bit (unsigned) integer or a frac.
      */
 
-    double decode_factor;
+    float decode_factor;
 
     sample_decoding decoding;
 
@@ -100,7 +100,7 @@ typedef struct sample_map_s sample_map;
   switch ( penum->map[i].decoding )\
   {\
   case sd_none:\
-    cc.paint.values[i] = (sample_value) * (1.0 / 255.0);  /* faster than / */\
+    cc.paint.values[i] = (sample_value) * (1.0f / 255.0f);  /* faster than / */\
     break;\
   case sd_lookup:	/* <= 4 significant bits */\
     cc.paint.values[i] =\
