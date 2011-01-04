@@ -1870,6 +1870,53 @@ pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs
     } else
 	return pdf_encrypt_encoded_string(pdev, str, size, object_id);
 }
+/* Write an encoded string with possible encryption. */
+static int
+pdf_put_encoded_string_as_hex(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
+{
+    if (!pdev->KeyLength || object_id == (gs_id)-1) {
+	int i, oct, width = 0;
+	char hex[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+
+	if (pdev->ForOPDFRead && pdev->ProduceDSC)
+	    stream_write(pdev->strm, "\n", 1);
+	stream_write(pdev->strm, "<", 1);
+	width++;
+	for (i = 1; i < size - 1; i++) {
+	    if (str[i] == '\\') {
+		if (str[i + 1] >= '0' && str[i + 1] <= '9') {
+		    oct = (str[i+1] - 0x30) * 64;
+		    oct += (str[i+2] - 0x30) *8;
+		    oct += str[i+3] - 0x30;
+		    i+=3;
+		} else {
+		    oct = str[++i];
+		}
+		if (width > 252 && pdev->ForOPDFRead && pdev->ProduceDSC) {
+		    stream_write(pdev->strm, "\n", 1);
+		    width = 0;
+		}
+		stream_write(pdev->strm, &hex[(oct & 0xf0) >> 4], 1);
+		stream_write(pdev->strm, &hex[oct & 0x0f], 1);
+		width += 2;
+	    } else {
+		if (width > 252 && pdev->ForOPDFRead && pdev->ProduceDSC) {
+		    stream_write(pdev->strm, "\n", 1);
+		    width = 0;
+		}
+		stream_write(pdev->strm, &hex[(str[i] & 0xf0) >> 4], 1);
+		stream_write(pdev->strm, &hex[str[i] & 0x0f], 1);
+		width += 2;
+	    }
+	}
+	stream_write(pdev->strm, ">", 1);
+	if (pdev->ForOPDFRead && pdev->ProduceDSC)
+	    stream_write(pdev->strm, "\n", 1);
+        return 0;
+    } else
+	return pdf_encrypt_encoded_string(pdev, str, size, object_id);
+}
+
 /* Write an encoded hexadecimal string with possible encryption. */
 static int
 pdf_put_encoded_hex_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
@@ -1953,8 +2000,12 @@ pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id 
 	return pdf_put_composite(pdev, vstr, size, object_id);
     else if (size > 2 && vstr[0] == '<' && vstr[1] == '<')
 	return pdf_put_composite(pdev, vstr, size, object_id);
-    else if (size > 1 && vstr[0] == '(')
-	return pdf_put_encoded_string(pdev, vstr, size, object_id);
+    else if (size > 1 && vstr[0] == '(') {
+	if (pdev->ForOPDFRead)
+	    return pdf_put_encoded_string_as_hex(pdev, vstr, size, object_id);
+	else
+	    return pdf_put_encoded_string(pdev, vstr, size, object_id);
+    }
     else if (size > 1 && vstr[0] == '<')
 	return pdf_put_encoded_hex_string(pdev, vstr, size, object_id);
     stream_write(pdev->strm, vstr, size);
