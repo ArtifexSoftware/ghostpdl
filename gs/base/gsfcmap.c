@@ -481,7 +481,6 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
     uint index = penum->index[1], i, j;
     uchar c0, c1, c2;
 
-    /* Warning : this hardcodes gs_cmap_ToUnicode_num_code_bytes = 2 */
     for (i = index; i < num_codes; i++)
 	if (map[i + i + 0] != 0 || map[i + i + 1] != 0)
 	    break;
@@ -500,10 +499,15 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
 	    break;
     }
     penum->index[1] = j;
-    penum->entry.key[0][0] = (uchar)(i >> 8);
-    penum->entry.key[0][cmap->key_size - 1] = (uchar)(i & 0xFF);
-    penum->entry.key[1][0] = (uchar)(j >> 8);
-    penum->entry.key[1][cmap->key_size - 1] = (uchar)((j - 1) & 0xFF);
+    if (cmap->key_size > 1) {
+	penum->entry.key[0][0] = (uchar)(i >> 8);
+	penum->entry.key[0][cmap->key_size - 1] = (uchar)(i & 0xFF);
+	penum->entry.key[1][0] = (uchar)(j >> 8);
+	penum->entry.key[1][cmap->key_size - 1] = (uchar)((j - 1) & 0xFF);
+    } else {
+	penum->entry.key[0][0] = (uchar)(i);
+	penum->entry.key[1][0] = (uchar)(j - 1);
+    }
     memcpy(penum->temp_value, map + i * gs_cmap_ToUnicode_code_bytes, 
 	gs_cmap_ToUnicode_code_bytes);
     return 0;

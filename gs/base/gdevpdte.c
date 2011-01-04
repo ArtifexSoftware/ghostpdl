@@ -98,13 +98,21 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 	     * Technical Note 5411, 'ToUnicode Mapping File Tutorial'
 	     * page 3.
 	     */
-	    uint num_codes = 256, key_size = 2;
+	    /* Unfortunately, the above is not true. See the PDF Reference (version 1.7
+	     * p 472 'ToUnicode CMaps'. Even that documentation is incorrect as it
+	     * describes codespaceranges, in fact for Acrobat this is irrelevant,
+	     * but the bfranges must be one byte for simple fonts. By altering the
+	     * key size for CID fonts we can write both consistently correct.
+	     */
+	    uint num_codes = 256, key_size = 1;
 	    
 	    if (font->FontType == ft_CID_encrypted) {
 		gs_font_cid0 *pfcid = (gs_font_cid0 *)font;
 
 		num_codes = pfcid->cidata.common.CIDCount;
+		key_size = 2;
 	    } else if (font->FontType == ft_CID_TrueType) {
+		key_size = 2;
 #if 0
 		gs_font_cid2 *pfcid = (gs_font_cid2 *)font;
 
