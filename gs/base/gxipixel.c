@@ -36,6 +36,8 @@
 #include "gxiparam.h"
 #include "gdevmrop.h"
 #include "gscspace.h"
+#include "gxpcolor.h"
+#include "gsptype2.h"
 
 /* Structure descriptors */
 private_st_gx_image_enum();
@@ -121,6 +123,10 @@ RELOC_PTRS_END
 /* Forward declarations */
 static int color_draws_b_w(gx_device * dev,
 			    const gx_drawing_color * pdcolor);
+static int src_color_draws_b_w(gx_device * dev, 
+                               const gx_drawing_color * pdcolor, 
+                               const gs_color_space * pcs,
+                               const gs_imager_state * pis);
 static void image_init_map(byte * map, int map_size, const float *decode);
 static void image_init_colors(gx_image_enum * penum, int bps, int spp,
 			       gs_image_format_t format,
@@ -365,7 +371,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         if (pcs->cmm_icc_profile_data != NULL) {
             device_color = false;
         } else {
-	device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
+	    device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
         }
 
 	image_init_colors(penum, bps, spp, format, decode, pis, dev,
@@ -390,14 +396,16 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	/* that we implement less expensively. */
 	if (!pim->CombineWithColor)
 	    lop = rop3_know_T_0(lop) & ~lop_T_transparent;
-        else if ((rop3_uses_T(lop) && color_draws_b_w(dev, pdcolor) == 0))
+        else if ((rop3_uses_T(lop) && 
+                  src_color_draws_b_w(dev, pdcolor, pcs , pis) == 0))
             lop = rop3_know_T_0(lop);
 
 	if (lop != rop3_S &&	/* if best case, no more work needed */
 	    !rop3_uses_T(lop) && bps == 1 && spp == 1 &&
 	    (b_w_color =
-	     color_draws_b_w(dev, penum->icolor0)) >= 0 &&
-	    color_draws_b_w(dev, penum->icolor1) == (b_w_color ^ 1)
+	     src_color_draws_b_w(dev, penum->icolor0, pcs, pis)) >= 0 &&
+	     src_color_draws_b_w(dev, penum->icolor1, pcs, pis) == 
+                                                                (b_w_color ^ 1)
 	    ) {
 	    if (b_w_color) {	/* Swap the colors and invert the RasterOp source. */
 		gx_device_color dcolor;
@@ -720,6 +728,57 @@ color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor)
 	if (!(rgb[0] | rgb[1] | rgb[2]))
 	    return 0;
 	if ((rgb[0] & rgb[1] & rgb[2]) == gx_max_color_value)
+	    return 1;
+    }
+    return -1;
+}
+
+static bool
+dc_not_pattern(const gx_drawing_color *pdcolor)
+{    
+    if (pdcolor->type == gx_dc_type_pattern  || 
+        pdcolor->type == &gx_dc_pure_masked  || 
+        pdcolor->type == gx_dc_type_pattern2) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+/* If a source color is black or white return 0 or 1 respectively, 
+   otherwise return -1.  This acts upon the device color object, which
+   stores the original source value.  Color is mapped to rgb to detect 
+   black or white for ROPs optimization.  This should work with all source 
+   color spaces except for patterns */ 
+static int
+src_color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor, 
+                    const gs_color_space * pcs, const gs_imager_state * pis)
+{
+    frac conc[3];
+    int code;
+    cmm_profile_t *device_profile;
+    const gs_color_space *pbcs;
+    int pcs_index = gs_color_space_get_index(pcs);
+ 
+    if (pcs_index != gs_color_space_index_Pattern &&
+        pis->icc_manager != NULL && pis->icc_manager->default_rgb != NULL &&
+        dc_not_pattern(pdcolor)) {
+        /* Make the device look like a rgb device as far as ICC CM is 
+           concerned.  Note that for index pcs, the base color values are
+           what got stored in pdcolor->ccolor */
+        if (pcs_index == gs_color_space_index_Indexed) {
+            pbcs = pcs->base_space;
+        } else {
+            pbcs = pcs;
+        }
+        device_profile = dev->device_icc_profile;
+        dev->device_icc_profile = pis->icc_manager->default_rgb;
+        code = (*pbcs->type->concretize_color)(&(pdcolor->ccolor), pbcs, conc, 
+                                              pis, dev);
+        dev->device_icc_profile = device_profile;
+	if (!(conc[0] | conc[1] | conc[2]))
+	    return 0;
+	if ((conc[0] & conc[1] & conc[2]) == frac_1)
 	    return 1;
     }
     return -1;

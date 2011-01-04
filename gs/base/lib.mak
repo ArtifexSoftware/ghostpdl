@@ -697,7 +697,8 @@ $(GLOBJ)gxipixel.$(OBJ) : $(GLSRC)gxipixel.c $(GXERR) $(math__h) $(memory__h)\
  $(gsccolor_h) $(gscdefs_h) $(gspaint_h) $(gsstruct_h) $(gsutil_h)\
  $(gxfixed_h) $(gxfrac_h) $(gxarith_h) $(gxiparam_h) $(gxmatrix_h)\
  $(gxdevice_h) $(gzpath_h) $(gzstate_h)\
- $(gzcpath_h) $(gxdevmem_h) $(gximage_h) $(gdevmrop_h)
+ $(gzcpath_h) $(gxdevmem_h) $(gximage_h) $(gdevmrop_h)\
+ $(gxpcolor_h) $(gsptype2_h)
 	$(GLCC) $(GLO_)gxipixel.$(OBJ) $(C_) $(GLSRC)gxipixel.c
 
 $(GLOBJ)gxi12bit.$(OBJ) : $(GLSRC)gxi12bit.c $(GXERR)\
