@@ -425,7 +425,7 @@ STDIO_IMPLEMENTATION=c
 
 # List of default devices, in order of priority. They need not be 
 # present in the actual build.
-GS_DEV_DEFAULT="x11alpha x11 bbox"
+GS_DEV_DEFAULT="x11 bbox"
 
 # Fallback default device.  This is set to 'display' by 
 # unix-dll.mak when building a shared object.
