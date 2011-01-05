@@ -1957,7 +1957,7 @@ pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_i
 {
     if (!pdev->KeyLength || object_id == (gs_id)-1) {
 	if (pdev->ForOPDFRead && pdev->ProduceDSC) {
-	    stream_putc(pdev->strm, "\n");
+	    stream_putc(pdev->strm, (byte)'\n');
 	    if (size > 255) {
 		const byte *start, *p, *end, *save;
 		int width = 0;
@@ -1976,14 +1976,14 @@ pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_i
 			while (p > start) {
 			    if (*p == '/' || *p == '[' || *p == '{' || *p == '(' || *p == ' ') {
 				stream_write(pdev->strm, start, p - start);
-				stream_putc(pdev->strm, "\n");
+				stream_putc(pdev->strm, (byte)'\n');
 				start = p;
 			    }
 			    else p--;
 			}
 			if (p == start) {
 			    stream_write(pdev->strm, start, save - start);
-			    stream_putc(pdev->strm, "\n");
+			    stream_putc(pdev->strm, (byte)'\n');
 			    start = save;
 			}
 		    } else {
