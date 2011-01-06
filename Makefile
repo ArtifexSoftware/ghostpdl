@@ -6,6 +6,8 @@ debug: pcl-debug xps-debug svg-debug ls-debug
 
 clean: pcl-clean xps-clean svg-clean ls-clean
 
+debug-clean: pcl-debug-clean xps-debug-clean svg-debug-clean ls-debug-clean
+
 test: pcl-test ls-test xps-test svg-test
 
 # only pcl has an install target at this point
@@ -51,6 +53,10 @@ pcl-clean: tiff_clean
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean
 	rm -f fonts
 
+pcl-debug-clean: tiff_clean
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean GENDIR="./debugobj"
+	rm -f fonts
+
 xps-debug: tiff
 	$(MAKE) -C xps -f xps_gcc.mak pdl-debug GENDIR="./debugobj"
 
@@ -62,6 +68,9 @@ xps-lib:  tiff
 
 xps-clean: tiff_clean
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean
+
+xps-debug-clean: tiff_clean
+	$(MAKE) -C xps -f xps_gcc.mak pdl-clean GENDIR="./debugobj"
 
 xps-test:
 	./xps/obj/gxps tools/tiger.xps
@@ -78,6 +87,9 @@ svg-lib:  tiff
 svg-clean: tiff_clean
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean
 
+svg-debug-clean: tiff_clean
+	$(MAKE) -C svg -f svg_gcc.mak pdl-clean GENDIR="./debugobj"
+
 svg-test:
 	./svg/obj/gsvg tools/tiger.svg
 
@@ -89,6 +101,9 @@ mupdf:
 
 mupdf-clean:
 	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-clean
+
+mupdf-debug-clean:
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-clean GENDIR="./debugobj"
 
 
 ufst_built:
@@ -151,7 +166,10 @@ check:
 
 ls-clean: tiff_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean
-	rm -f fonts /usr/local/bin/pspcl6
+	#rm -f fonts /usr/local/bin/pspcl6
+
+ls-debug-clean: tiff_clean
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean GENDIR="./debugobj"
 
 # shortcuts for common build types.
 
@@ -161,13 +179,18 @@ ls-uproduct: ufst tiff
 	cp wts_* ./language_switch/ufst-obj
 
 ls-udebug: ufst tiff
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-debug
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
 ls-uclean: tiff_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
+	rm -f ufst_built
+
+ls-udebug-clean: tiff_clean
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
+	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean
 	rm -f ufst_built
 
 uproduct: ufst tiff
@@ -185,9 +208,14 @@ uclean: tiff_clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 	rm -f ufst_built
 
+udebug-clean: tiff_clean
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-clean
+	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
+	rm -f ufst_built
+
 all-debug: pcl-debug udebug ls-debug ls-udebug xps-debug
 
-all-clean: clean uclean ls-uclean ls-clean
+all-clean: clean clean-debug ls-clean ls-debug-clean uclean udebug-clean ls-uclean ls-udebug-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
-.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-test pcl-install pcl-uninstall pcl-clean xps xps-debug svg svg-debug ls-clean ls-test ls-install ls-product ls-profile ls-udebug udebug ufst mupdf
+.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-test pcl-install pcl-uninstall pcl-clean pcl-debug-clean xps xps-debug svg svg-debug ls-clean ls-debug-clean ls-test ls-install ls-product ls-profile ls-udebug udebug ufst mupdf
