@@ -1495,7 +1495,8 @@ pdf_close(gx_device * dev)
            Removing them now. */
 	int status;
     
-	stream_putc(s, 0x04);
+	if (!pdev->ProduceDSC)
+	    stream_putc(s, 0x04);
 	while (s->strm) {
 	    s = s->strm;
 	}
