@@ -228,9 +228,9 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
     }
     if ((code = gs_jpeg_set_defaults(pdct)) < 0)
 	return code;
-    if ((code = s_DCT_put_huffman_tables(plist, pdct, false)) < 0)
+    if ((code = s_DCT_put_huffman_tables(plist, pdct, true)) < 0)
 	return code;
-    switch ((code = s_DCT_put_quantization_tables(plist, pdct, false))) {
+    switch ((code = s_DCT_put_quantization_tables(plist, pdct, true))) {
 	case 0:
 	    break;
 	default:
