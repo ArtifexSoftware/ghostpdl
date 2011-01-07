@@ -3405,13 +3405,13 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     * does not keep track of the margins in the bitmap size...
     */
 
-    /* We set the old dimensions to -1 if we have a color depth change, so
+    /* We set the old dimensions to 1 if we have a color depth change, so
        that memory reallocation gets forced. This is perhaps not the correct
-       approach to preven crashes like in bug 690435. We keep it for the
+       approach to prevent crashes like in bug 690435. We keep it for the
        time being until we decide finally */
     if (color_set) {
-      width_old = -1;
-      height_old = -1;
+      width_old = 1;
+      height_old = 1;
     } else {
       width_old = pdev->width;
       height_old = pdev->height;
