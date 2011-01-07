@@ -3082,9 +3082,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   stringoption(cupsPageSizeName, "cupsPageSizeName");
 #endif /* CUPS_RASTER_SYNCv1 */
 
-  if ((code = param_read_string(plist, "cups->Profile", &stringval)) < 0)
+  if ((code = param_read_string(plist, "cupsProfile", &stringval)) < 0)
   {
-    param_signal_error(plist, "cups->Profile", code);
+    param_signal_error(plist, "cupsProfile", code);
     return (code);
   }
   else if (code == 0)
