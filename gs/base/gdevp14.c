@@ -900,7 +900,11 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                         nos->parent_color_info_procs->num_components, 1,
                                   false, false, true, tos->planestride, 
                                   tos->rowstride, num_rows, num_cols);
-                    /* Transform the data */
+                    /* Transform the data. Since the pdf14 device should be
+                       using RGB, CMYK or Gray buffers, this transform 
+                       does not need to worry about the cmap procs of 
+                       the target device.  Those are handled when we do
+                       the pdf14 put image operation */
                     gscms_transform_color_buffer(icc_link, &input_buff_desc, 
                                         &output_buff_desc, tos->data, 
                                         new_data_buf);

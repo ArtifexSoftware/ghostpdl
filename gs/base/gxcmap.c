@@ -31,6 +31,7 @@
 #include "gsicc_manage.h"
 #include "gdevdevn.h"
 #include "gsicc_cache.h"
+#include "gscms.h"
 
 /* Structure descriptor */
 public_st_device_color();
@@ -1743,4 +1744,38 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
             color_set_pure(pdc, color);
 
     }
+}
+
+bool
+gx_device_uses_std_cmap_procs(gx_device * dev) 
+{
+    const gx_cm_color_map_procs *pprocs;
+
+    if (dev->device_icc_profile != NULL) {
+        pprocs = dev_proc(dev, get_color_mapping_procs)(dev);
+        /* Check if they are forwarding procs */
+        if (fwd_uses_fwd_cmap_procs(dev)) {
+            pprocs = fwd_get_target_cmap_procs(dev);
+        } 
+        switch(dev->device_icc_profile->data_cs) {
+            case gsGRAY:
+                if (pprocs == &DeviceGray_procs) {
+                    return true;
+                }
+                break;
+            case gsRGB:	
+                if (pprocs == &DeviceRGB_procs) {
+                    return true;
+                }
+                break;
+            case gsCMYK:
+                if (pprocs == &DeviceCMYK_procs) {
+                    return true;
+                }
+                break;
+            default:
+                break;
+        }
+    } 
+    return false;
 }

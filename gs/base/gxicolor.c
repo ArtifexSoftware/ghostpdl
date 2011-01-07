@@ -97,6 +97,8 @@ get_cie_range( const gs_color_space * pcs )
 irender_proc_t
 gs_image_class_4_color(gx_image_enum * penum)
 {
+    bool std_cmap_procs;
+
     if (penum->use_mask_color) {
 	/*
 	 * Scale the mask colors to match the scaling of each sample to
@@ -128,8 +130,14 @@ gs_image_class_4_color(gx_image_enum * penum)
 	penum->mask_color.mask = 0;
 	penum->mask_color.test = ~0;
     }
+    /* If the device has some unique color mapping procs due to its color space,
+       then we will need to use those and go through pixel by pixel instead
+       of blasting through buffers.  This is true for example with many of 
+       the color spaces for CUPs */
+    std_cmap_procs = gx_device_uses_std_cmap_procs(penum->dev);
     if ( (gs_color_space_get_index(penum->pcs) == gs_color_space_index_DeviceN &&
-        penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ) {
+        penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ||
+        !std_cmap_procs) {
         return &image_render_color_DeviceN;
     } else {
         /* Set up the link now */

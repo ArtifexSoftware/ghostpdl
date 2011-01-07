@@ -284,5 +284,11 @@ dev_proc_decode_color(gx_default_decode_color);
  * [0,1]
  */
 frac gx_unit_frac(float fvalue);
+/* Determine if the device is using the standard color mapping procs.  In
+   such a case, we can make use of the faster icc color conversions for 
+   images */
+bool gx_device_uses_std_cmap_procs(gx_device * dev);
+bool fwd_uses_fwd_cmap_procs(gx_device * dev);
+const gx_cm_color_map_procs* fwd_get_target_cmap_procs(gx_device * dev);
 
 #endif /* gxcmap_INCLUDED */

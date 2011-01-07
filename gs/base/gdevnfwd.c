@@ -1117,3 +1117,29 @@ null_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 {
     return 0;
 }
+
+bool
+fwd_uses_fwd_cmap_procs(gx_device * dev) 
+{
+    const gx_cm_color_map_procs *pprocs;
+
+    pprocs = dev_proc(dev, get_color_mapping_procs)(dev);
+    if (pprocs == &FwdDevice_cm_map_procs) {
+        return true;
+    }
+    return false;
+}
+
+const gx_cm_color_map_procs*
+fwd_get_target_cmap_procs(gx_device * dev)
+{
+    const gx_cm_color_map_procs *pprocs;
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device * const tdev = fdev->target;
+
+    pprocs = dev_proc(tdev, get_color_mapping_procs(tdev));
+    while (pprocs == &FwdDevice_cm_map_procs) {
+        pprocs = fwd_get_target_cmap_procs(tdev);
+    }
+    return pprocs;
+}
