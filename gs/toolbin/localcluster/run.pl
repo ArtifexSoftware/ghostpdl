@@ -98,17 +98,21 @@ mkdir("icc_work/bin");
 mkdir("./head/");
 mkdir("./head/bin");
 
-if (0) {
-`rm *Raw*raw`;
-`rm *Device*raw`;
-`rm *Image*raw`;
-`rm *Composed*raw`;
-`rm *_*x*raw`;
+if (1) {
+  `rm *Raw*raw`;
+  `rm *Device*raw`;
+  `rm *Image*raw`;
+  `rm *Composed*raw`;
+  `rm *_*x*raw`;
+   for  (my $i=0;  $i<=9;  $i++) {
+    `rm $i*PATTERN*raw`;
+  }
 }
 
 
 my $user;
 my $revs;
+my $bmpcmp=0;
 my $icc_work;
 my $mupdf;
 #my $product;
@@ -211,6 +215,7 @@ if (!$local) {
       } elsif ($a[0] eq "user") {
         $user=$a[1];
         $products=$a[2];
+        $bmpcmp=1 if (exists $a[3] && $a[3] eq 'bmpcmp');
       } else {
         unlink $runningSemaphore;
         mylog "oops 3: t=$t";
@@ -485,6 +490,7 @@ sub addToLog($) {
 
 if (!$local) {
 ###if (!$user) {
+  if (!$bmpcmp) {
   updateStatus('Updating test files');
 
   #update the regression file source directory
@@ -495,6 +501,7 @@ if (!$local) {
       systemWithRetry($cmd);
     }
 
+  }
   }
 ###}
 
@@ -509,7 +516,6 @@ if (!$local) {
       mkdir "users/$user/ghostpdl/gs";
       $cmd="cd users/$user          ; rsync -cvlogDtprxe.iLsz --delete -e \"ssh -l regression -i \$HOME/.ssh/cluster_key\" regression\@$host:$usersDirRemote/$user/ghostpdl    .";
       systemWithRetry($cmd);
-
       $gpdlSource=$baseDirectory."/users/$user/ghostpdl";
       $gsSource=$gpdlSource."/gs";
     } elsif ($mupdf) {
@@ -686,10 +692,10 @@ if (!$abort) {
       }
       }
     }
+    $abort=checkAbort;
   }
 }
 
-$abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'pcl'} && !$abort) {
     updateStatus('Building GhostPCL');
@@ -717,9 +723,9 @@ if (!$dontBuild) {
     }
     }
   }
+  $abort=checkAbort;
 }
 
-$abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'xps'} && !$abort) {
     updateStatus('Building GhostXPS');
@@ -748,10 +754,10 @@ if (!$dontBuild) {
       $compileFail.="gxps ";
     }
     }
+    $abort=checkAbort;
   }
 }
 
-$abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'svg'} && !$abort) {
     updateStatus('Building GhostSVG');
@@ -778,11 +784,11 @@ if (!$dontBuild) {
       $compileFail.="gsvg ";
     }
     }
+    $abort=checkAbort;
   }
 }
 
 
-$abort=checkAbort;
 if (!$dontBuild) {
   if ($products{'ls'} && !$abort) {
     updateStatus('Building LanguageSwitch');
@@ -811,6 +817,7 @@ if (!$dontBuild) {
       $compileFail.="pspcl6 ";
     }
   }
+  $abort=checkAbort;
   }
 }
 
@@ -1067,8 +1074,8 @@ mylog "requesting more jobs: scalar key pids=".(scalar keys %pids)." and lastRec
     $cmd =~ s/__gsSource__/$gsSource/;
     $cmd =~ s/__temp__/$temp/;
 
-$maxCount=8  if ($cmd =~ m| ./bmpcmp |);
-#$timeOut=600 if ($cmd =~ m| ./bmpcmp |);
+$maxCount=8  if ($bmpcmp);
+#$timeOut=600 if ($bmpcmp);
 
     $jobs++;
     my $t=int($jobs*$maxTimeoutPercentage/100+0.5);

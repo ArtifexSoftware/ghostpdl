@@ -12,14 +12,14 @@ my $previousValues=50;
 my @errorDescription=(
 "none",
 "Error_reading_input_file",
-"Error_reading_Ghostscript_produced_PDF_file",
+"Error_reading_Ghostscript_produced_PDF/PS_file",
 "Timeout_reading_input_file",
-"Timeout_reading_Ghostscript_produced_PDF_File",
+"Timeout_reading_Ghostscript_produced_PDF/PS_File",
 "Input_file_missing",
-"Ghostscript_generated_PDF_file_missing",
+"Ghostscript_generated_PDF/PS_file_missing",
 "Seg_Fault_during_pdfwrite",
 "Seg_Fault",
-"Seg_Fault_reading_Ghostscript_produced_PDF_File",
+"Seg_Fault_reading_Ghostscript_produced_PDF/PS_File",
 "Internal_error");
 
 my $current=shift;
@@ -71,6 +71,7 @@ my @brokePrevious;
 my @repairedPrevious;
 my @differencePrevious;
 my @differencePreviousPdfwrite;
+my @differencePreviousPs2write;
 my @archiveMatch;
 
 my @baselineUpdateNeeded;
@@ -250,7 +251,9 @@ foreach my $t (sort keys %previous) {
           if (!$match) {
 	    if ($currentProduct{$t} =~ m/pdfwrite/) {
               push @differencePreviousPdfwrite,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
-	    } else {
+	    } elsif ($currentProduct{$t} =~ m/ps2write/) {
+              push @differencePreviousPs2write,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
+            } else {
               push @differencePrevious,"$t $previousProduct{$t} $previousMachine{$t} $currentMachine{$t}";
 	    }
           }
@@ -278,6 +281,7 @@ foreach my $t (sort keys %previous) {
 #print Dumper(\@archiveMatch);
 
 my $pdfwriteTestCount=0;
+my $ps2writeTestCount=0;
 my $notPdfwriteTestCount=0;
 
 foreach my $t (sort keys %current) {
@@ -290,9 +294,12 @@ foreach my $t (sort keys %current) {
   }
   my $p=$currentProduct{$t};
   $p =~ s/ pdfwrite//;
+  $p =~ s/ ps2write//;
   if ($products =~ m/$p/) {
     if ($currentProduct{$t} =~ m/pdfwrite/) {
       $pdfwriteTestCount++;
+    } elsif ($currentProduct{$t} =~ m/ps2write/) {
+      $ps2writeTestCount++;
     } else {
       $notPdfwriteTestCount++;
     }
@@ -301,18 +308,18 @@ foreach my $t (sort keys %current) {
 
 if ($elapsedTime==0 || $elapsedTime==1) {
 } else {
-  print "ran ".($pdfwriteTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
+  print "ran ".($pdfwriteTestCount+$ps2writeTestCount+$notPdfwriteTestCount)." tests in $elapsedTime seconds on $machineCount nodes\n\n";
 }
 
 if (@differencePrevious) {
-  print "Differences in ".scalar(@differencePrevious)." of $notPdfwriteTestCount non-pdfwrite test(s):\n";
+  print "Differences in ".scalar(@differencePrevious)." of $notPdfwriteTestCount non-pdfwrite/ps2write test(s):\n";
   while(my $t=shift @differencePrevious) {
     print "$t\n";
     push @baselineUpdateNeeded,$t;
   }
   print "\n";
 } else {
-  print "No differences in $notPdfwriteTestCount non-pdfwrite tests\n\n";
+  print "No differences in $notPdfwriteTestCount non-pdfwrite/ps2write tests\n\n";
 }
 
 if (@differencePreviousPdfwrite) {
@@ -325,6 +332,19 @@ if (@differencePreviousPdfwrite) {
 } else {
   print "No differences in $pdfwriteTestCount pdfwrite tests\n\n";
 }
+
+if (@differencePreviousPs2write) {
+  print "Differences in ".scalar(@differencePreviousPs2write)." of $ps2writeTestCount ps2write test(s):\n";
+  while(my $t=shift @differencePreviousPs2write) {
+    print "$t\n";
+    push @baselineUpdateNeeded,$t;
+  }
+  print "\n";
+} else {
+  print "No differences in $ps2writeTestCount ps2write tests\n\n";
+}
+
+
 
 if (@brokePrevious) {
   print "The following ".scalar(@brokePrevious)." regression file(s) have started producing errors:\n";

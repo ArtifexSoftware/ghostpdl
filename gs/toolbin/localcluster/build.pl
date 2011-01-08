@@ -238,7 +238,9 @@ my %tests=(
     "pdf.ppmraw.72.0",
     "pdf.ppmraw.300.0",
     "pdf.pkmraw.300.0",
-    "ps.ppmraw.72.0"
+    "ps.ppmraw.72.0",
+    "ps.ppmraw.300.0",
+    "ps.pkmraw.300.0"
    ],
   'pcl' => [
     "pbmraw.75.0",
@@ -260,7 +262,9 @@ my %tests=(
 ##"psdcmyk.600.0",
 ##"psdcmyk.600.1",
     "pdf.ppmraw.75.0",
-    "pdf.ppmraw.600.0"
+    "pdf.ppmraw.600.0",
+    "ps.ppmraw.75.0",
+    "ps.ppmraw.600.0"
 #   "pdf.pkmraw.600.0"
     ],
   'xps' => [
@@ -283,6 +287,7 @@ my %tests=(
 ###"psdcmyk.300.0",
 ###"psdcmyk.300.1",
     "pdf.ppmraw.72.0",
+    "ps.ppmraw.72.0",
 ##"pdf.ppmraw.300.0",
 ##"pdf.pkmraw.300.0"
     ],
@@ -306,6 +311,7 @@ my %tests=(
     #"psdcmyk.300.0",
     #"psdcmyk.300.1",
 #   "pdf.ppmraw.72.0",
+#   "ps.ppmraw.72.0",
     #"pdf.ppmraw.300.0",
     #"pdf.pkmraw.300.0"
     ],
@@ -329,6 +335,7 @@ my %tests=(
     #"psdcmyk.300.0",
     #"psdcmyk.300.1",
 #   "pdf.ppmraw.72.0",
+#   "ps.ppmraw.72.0",
     #"pdf.ppmraw.300.0",
     #"pdf.pkmraw.300.0"
     ],

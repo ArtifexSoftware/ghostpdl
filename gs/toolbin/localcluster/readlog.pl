@@ -23,6 +23,20 @@ my $machine=shift;
 my $input2=shift;
 my $rev=shift;
 
+# from compare.pl:
+# 0: "none",
+# 1: "Error_reading_input_file",
+# 2: "Error_reading_Ghostscript_produced_PDF/PS_file",
+# 3: "Timeout_reading_input_file",
+# 4: "Timeout_reading_Ghostscript_produced_PDF/PS_File",
+# 5: "Input_file_missing",
+# 6: "Ghostscript_generated_PDF/PS_file_missing",
+# 7: "Seg_Fault_during_pdfwrite",
+# 8: "Seg_Fault",
+# 9: "Seg_Fault_reading_Ghostscript_produced_PDF/PS_File",
+# 10: "Internal_error"
+
+
 $rev=0 if (!$rev);
 
 ($machine) || die "usage: readlog.pl input.log output machine [input.out] [rev]";
@@ -123,6 +137,7 @@ if ($input2) {
       my $file=$1;
       my $pdfwrite=0;
       $pdfwrite=1 if (m/pdfwrite/);
+      $pdfwrite=1 if (m/ps2write/);
 #     print "$pdfwrite $file\n";
       if (exists $results{$file}{"error"}) {
         $results{$file}{"error"}=7 if ($pdfwrite==1);

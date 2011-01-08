@@ -544,8 +544,8 @@ my %rules=(
   'gs/base' => 15,
   'gs/Resource' => 15,
   'gs/doc' => 0,
-  'gs/toolbin' => 0,
-# 'gs/toolbin' => 15,  # used to force a run of all test files
+# 'gs/toolbin' => 0,
+  'gs/toolbin' => 15,  # used to force a run of all test files
   'gs/examples' => 0,
   'gs/lib' => 0,
   'gs/freetype' => 15,
@@ -863,7 +863,7 @@ mydbg "done checking jobs, product=$product\n";
       } elsif ($updateBaseline) {
         print F "svn\thead\t$product";
       } elsif ($bmpcmp) {
-        print F "user\t$userName\t$product\n";
+        print F "user\t$userName\t$product\tbmpcmp\n";
       } else {
         print F "user\t$userName\t$product\n";
       }
@@ -1227,6 +1227,7 @@ mydbg "ls:\n$a";
       foreach (@a) {
         $filter.=" | grep -v \"\t$_\t\"";
         $filter.=" | grep -v \"\t$_ pdfwrite\t\"";
+        $filter.=" | grep -v \"\t$_ ps2write\t\"";
       }
       $filter.=">t.tab";
       mydbg "$filter\n" if ($verbose);
@@ -1342,6 +1343,7 @@ close(F9);
       foreach (@a) {
         $filter.=" | grep -v \"\t$_\t\"";
         $filter.=" | grep -v \"\t$_ pdfwrite\t\"";
+        $filter.=" | grep -v \"\t$_ ps2write\t\"";
       }
       $filter.=">t.tab";
       mydbg "$filter\n" if ($verbose);
