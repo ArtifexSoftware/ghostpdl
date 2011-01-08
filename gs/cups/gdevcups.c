@@ -3007,6 +3007,14 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   margins_set = param_read_float_array(plist, "Margins", &arrayval) == 0;
   color_set   = param_read_int(plist, "cupsColorSpace", &intval) == 0 ||
                 param_read_int(plist, "cupsBitsPerColor", &intval) == 0;
+  /* We set the old dimensions to 1 if we have a color depth change, so
+     that memory reallocation gets forced. This is perhaps not the correct
+     approach to preven crashes like in bug 690435. We keep it for the
+     time being until we decide finally */
+  if (color_set) {
+    width_old = 1;
+    height_old = 1;
+  }
   /* We also recompute page size and margins if we simply get onto a new
      page without necessarily having a page size change in the PostScript
      code, as for some printers margins have to be flipped on the back sides of
@@ -3410,14 +3418,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     * does not keep track of the margins in the bitmap size...
     */
 
-    /* We set the old dimensions to -1 if we have a color depth change, so
-       that memory reallocation gets forced. This is perhaps not the correct
-       approach to preven crashes like in bug 690435. We keep it for the
-       time being until we decide finally */
-    if (color_set) {
-      width_old = 1;
-      height_old = 1;
-    }
     if (cups->landscape)
     {
       width  = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3]) *
