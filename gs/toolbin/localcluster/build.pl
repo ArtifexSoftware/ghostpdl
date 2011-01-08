@@ -237,8 +237,9 @@ my %tests=(
 ##"psdcmyk.300.1",
     "pdf.ppmraw.72.0",
     "pdf.ppmraw.300.0",
-    "pdf.pkmraw.300.0"
-    ],
+    "pdf.pkmraw.300.0",
+    "ps.ppmraw.72.0"
+   ],
   'pcl' => [
     "pbmraw.75.0",
 #   "pbmraw.600.0",
@@ -462,10 +463,16 @@ sub build($$$$$) {
   $cmd  .= "; touch $md5Filename" if (!$updateBaseline && !$bmpcmp);
 
 
-  if ($a[0] eq 'pdf') {
-    $cmd .= " ; echo \"$product pdfwrite\" >>$logFilename ";
+  if ($a[0] eq 'pdf' || $a[0] eq 'ps') {
 
-    $outputFilename="$temp/$tempname.$options.pdf";
+    if ($a[0] eq 'pdf') {
+      $cmd .= " ; echo \"$product pdfwrite\" >>$logFilename ";
+      $outputFilename="$temp/$tempname.$options.pdf";
+    } else {
+      $cmd .= " ; echo \"$product ps2write\" >>$logFilename ";
+      $outputFilename="$temp/$tempname.$options.ps";
+    }
+
     if ($product eq 'gs') {
       $cmd1a.="$gsBin";
     } elsif ($product eq 'pcl') {
@@ -480,7 +487,11 @@ sub build($$$$$) {
       die "unexpected product: $product";
     }
     $cmd1b.=" -sOutputFile=$outputFilename";
-    $cmd1c.=" -sDEVICE=pdfwrite";
+    if ($a[0] eq 'pdf') {
+      $cmd1c.=" -sDEVICE=pdfwrite";
+    } else {
+      $cmd1c.=" -sDEVICE=ps2write";
+    }
     $cmd1c.=" ".$additionalOptions_pdfwrite_step1;
     $cmd1c.=" ".$additionalOptions_gs_pdfwrite_step1 if ($product eq 'gs');
     $cmd1c.=" -r".$a[2];
