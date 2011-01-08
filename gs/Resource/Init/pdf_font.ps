@@ -158,8 +158,9 @@ currentdict /known_symbolic_fonts undef
 /getfontencoding {	% <font-resource> <font> getfontencoding
 			%   <font-resource> <font> <Encoding|null>
   % Ignore encoding when TrueType is requested
-  % and loaded. All other cases are left unchanged.
-  dup /FontType get 42 eq
+  % and loaded from an embedded stream.
+  % All other cases are left unchanged.
+  dup /FontType get 42 eq 1 index /PathLoad known not and
   2 index /Subtype get /TrueType eq and { 
     //null
   } {
