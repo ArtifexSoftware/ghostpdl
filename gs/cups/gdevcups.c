@@ -2899,11 +2899,12 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   int			margins_set;	/* Were the margins set? */
   int			size_set;	/* Was the size set? */
   int			color_set;	/* Were the color attrs set? */
-  gdev_prn_space_params	sp;		/* Space parameter data */
+  gdev_prn_space_params	sp_old;	        /* Space parameter data */
   int			width,		/* New width of page */
                         height,		/* New height of page */
                         width_old = 0,  /* Previous width of page */
                         height_old = 0; /* Previous height of page */
+  bool                  transp_old = 0; /* Previous transparency usage state */
   ppd_attr_t            *backside = NULL,
                         *backsiderequiresflippedmargins = NULL;
   float                 swap;
@@ -2997,6 +2998,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     } \
   }
 
+  sp_old = ((gx_device_printer *)pdev)->space_params;
+  width_old = pdev->width;
+  height_old = pdev->height;
+  transp_old = cups->page_uses_transparency;
   size_set    = param_read_float_array(plist, ".MediaSize", &arrayval) == 0 ||
                 param_read_float_array(plist, "PageSize", &arrayval) == 0;
   margins_set = param_read_float_array(plist, "Margins", &arrayval) == 0;
@@ -3097,7 +3102,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
   cups_set_color_info(pdev);
 
- /*
+  /*
   * Then process standard page device options...
   */
 
@@ -3405,16 +3410,13 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     * does not keep track of the margins in the bitmap size...
     */
 
-    /* We set the old dimensions to 1 if we have a color depth change, so
+    /* We set the old dimensions to -1 if we have a color depth change, so
        that memory reallocation gets forced. This is perhaps not the correct
-       approach to prevent crashes like in bug 690435. We keep it for the
+       approach to preven crashes like in bug 690435. We keep it for the
        time being until we decide finally */
     if (color_set) {
       width_old = 1;
       height_old = 1;
-    } else {
-      width_old = pdev->width;
-      height_old = pdev->height;
     }
     if (cups->landscape)
     {
@@ -3458,11 +3460,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	       pdev->MediaSize[0], pdev->MediaSize[1], width, height);
 #endif /* DEBUG */
 
-      sp = ((gx_device_printer *)pdev)->space_params;
-
-      if ((code = gdev_prn_maybe_realloc_memory((gx_device_printer *)pdev, &sp, 
+      if ((code = gdev_prn_maybe_realloc_memory((gx_device_printer *)pdev,
+                                                &sp_old, 
 						width_old, height_old,
-						cups->page_uses_transparency))
+						transp_old))
 	  < 0)
 	return (code);
 #ifdef DEBUG
@@ -3644,6 +3645,10 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
         cups->header.cupsBitsPerPixel   = cups->header.cupsBitsPerColor;
         cups->color_info.depth          = cups->header.cupsBitsPerPixel;
         cups->color_info.num_components = 1;
+        cups->color_info.dither_grays = 1L << cups->header.cupsBitsPerColor;
+        cups->color_info.dither_colors = 1L << cups->header.cupsBitsPerColor;
+        cups->color_info.max_gray = cups->color_info.dither_grays - 1;
+        cups->color_info.max_color = cups->color_info.dither_grays - 1;
         break;
 
     case CUPS_CSPACE_CMY :
