@@ -1319,15 +1319,14 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size)
 	case gs_color_space_index_DeviceCMYK:
             return(icc_manager->default_cmyk);
             break;
-            /* Not sure yet what our response to 
+            /* Only used in 3x types */
 	case gs_color_space_index_DevicePixel:
-               this should be */
-            return(0);
+            return 0;
             break;
        case gs_color_space_index_DeviceN:
             /* If we made it to here, then we will need to use the 
                alternate colorspace */
-            return(0);
+            return 0;
             break;
        case gs_color_space_index_CIEDEFG:
            /* For now just use default CMYK to avoid segfault.  MJV to fix */

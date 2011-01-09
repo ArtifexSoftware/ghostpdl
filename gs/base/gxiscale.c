@@ -44,10 +44,6 @@
 #include "gsicc_cache.h"
 #include "gsicc_manage.h"
 
-extern void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
-     const gs_imager_state * pis, gx_device * dev, bool has_transfer,
-     bool has_halftone, gs_color_select_t select);
-
 static void
 decode_sample_frac_to_float(gx_image_enum *penum, frac sample_value, gs_client_color *cc, int i);
 

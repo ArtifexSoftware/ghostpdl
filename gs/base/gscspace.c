@@ -30,6 +30,7 @@
 #include "stream.h"
 #include "gsnamecl.h"  /* Custom color call back define */
 #include "gsicc.h"
+#include "gsicc_manage.h"
 
 static cs_proc_install_cspace(gx_install_DeviceGray);
 static cs_proc_install_cspace(gx_install_DeviceRGB);

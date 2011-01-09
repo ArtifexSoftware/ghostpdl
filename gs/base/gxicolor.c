@@ -47,10 +47,6 @@ typedef union {
     bits32 all[BITS32_PER_COLOR_SAMPLES];	/* for fast comparison */
 } color_samples;
 
-extern void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
-     const gs_imager_state * pis, gx_device * dev, bool has_transfer,
-     bool has_halftone, gs_color_select_t select);
-
 /* ------ Strategy procedure ------ */
 
 /* Check the prototype. */

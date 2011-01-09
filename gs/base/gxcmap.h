@@ -290,5 +290,8 @@ frac gx_unit_frac(float fvalue);
 bool gx_device_uses_std_cmap_procs(gx_device * dev);
 bool fwd_uses_fwd_cmap_procs(gx_device * dev);
 const gx_cm_color_map_procs* fwd_get_target_cmap_procs(gx_device * dev);
+void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
+     const gs_imager_state * pis, gx_device * dev, bool has_transfer,
+     bool has_halftone, gs_color_select_t select);
 
 #endif /* gxcmap_INCLUDED */
