@@ -1,0 +1,207 @@
+# DO NOT DELETE
+
+image-bmp.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-bmp.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-bmp.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-bmp.o: ../cups/string.h ../config.h
+image-colorspace.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-colorspace.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-colorspace.o: ../cups/http.h ../cups/ppd.h ../cups/array.h
+image-colorspace.o: ../cups/language.h ../cups/debug.h ../cups/string.h
+image-colorspace.o: ../config.h
+image-gif.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-gif.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-gif.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-gif.o: ../cups/string.h ../config.h
+image-jpeg.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-jpeg.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-jpeg.o: ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-jpeg.o: ../cups/debug.h ../cups/string.h ../config.h
+image-photocd.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-photocd.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-photocd.o: ../cups/http.h ../cups/ppd.h ../cups/array.h
+image-photocd.o: ../cups/language.h ../cups/debug.h ../cups/string.h
+image-photocd.o: ../config.h
+image-pix.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-pix.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-pix.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-pix.o: ../cups/string.h ../config.h
+image-png.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-png.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-png.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-png.o: ../cups/string.h ../config.h
+image-pnm.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-pnm.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-pnm.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-pnm.o: ../cups/string.h ../config.h
+image-sgi.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-sgi.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-sgi.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-sgi.o: ../cups/string.h ../config.h image-sgi.h
+image-sgilib.o: image-sgi.h
+image-sun.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-sun.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-sun.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-sun.o: ../cups/string.h ../config.h
+image-tiff.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-tiff.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-tiff.o: ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-tiff.o: ../cups/debug.h ../cups/string.h ../config.h
+image-zoom.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-zoom.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-zoom.o: ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-zoom.o: ../cups/debug.h ../cups/string.h ../config.h
+image.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+image.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image.o: ../cups/string.h ../config.h
+error.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+error.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+error.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+error.o: ../cups/string.h ../config.h
+interpret.o: ../cups/string.h ../config.h image-private.h image.h
+interpret.o: ../cups/raster.h ../cups/cups.h ../cups/file.h
+interpret.o: ../cups/versioning.h ../cups/ipp.h ../cups/http.h ../cups/ppd.h
+interpret.o: ../cups/array.h ../cups/language.h ../cups/debug.h
+raster.o: image-private.h image.h ../cups/raster.h ../cups/cups.h
+raster.o: ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+raster.o: ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+raster.o: ../cups/string.h ../config.h
+# DO NOT DELETE
+
+image-bmp.32.o: image-bmp.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-bmp.32.o: image-bmp.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-bmp.32.o: image-bmp.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-bmp.32.o: image-bmp.c  ../cups/string.h ../config.h
+image-colorspace.32.o: image-colorspace.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-colorspace.32.o: image-colorspace.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-colorspace.32.o: image-colorspace.c  ../cups/http.h ../cups/ppd.h ../cups/array.h
+image-colorspace.32.o: image-colorspace.c  ../cups/language.h ../cups/debug.h ../cups/string.h
+image-colorspace.32.o: image-colorspace.c  ../config.h
+image-gif.32.o: image-gif.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-gif.32.o: image-gif.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-gif.32.o: image-gif.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-gif.32.o: image-gif.c  ../cups/string.h ../config.h
+image-jpeg.32.o: image-jpeg.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-jpeg.32.o: image-jpeg.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-jpeg.32.o: image-jpeg.c  ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-jpeg.32.o: image-jpeg.c  ../cups/debug.h ../cups/string.h ../config.h
+image-photocd.32.o: image-photocd.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-photocd.32.o: image-photocd.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-photocd.32.o: image-photocd.c  ../cups/http.h ../cups/ppd.h ../cups/array.h
+image-photocd.32.o: image-photocd.c  ../cups/language.h ../cups/debug.h ../cups/string.h
+image-photocd.32.o: image-photocd.c  ../config.h
+image-pix.32.o: image-pix.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-pix.32.o: image-pix.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-pix.32.o: image-pix.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-pix.32.o: image-pix.c  ../cups/string.h ../config.h
+image-png.32.o: image-png.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-png.32.o: image-png.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-png.32.o: image-png.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-png.32.o: image-png.c  ../cups/string.h ../config.h
+image-pnm.32.o: image-pnm.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-pnm.32.o: image-pnm.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-pnm.32.o: image-pnm.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-pnm.32.o: image-pnm.c  ../cups/string.h ../config.h
+image-sgi.32.o: image-sgi.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-sgi.32.o: image-sgi.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-sgi.32.o: image-sgi.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-sgi.32.o: image-sgi.c  ../cups/string.h ../config.h image-sgi.h
+image-sgilib.32.o: image-sgilib.c  image-sgi.h
+image-sun.32.o: image-sun.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-sun.32.o: image-sun.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-sun.32.o: image-sun.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-sun.32.o: image-sun.c  ../cups/string.h ../config.h
+image-tiff.32.o: image-tiff.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-tiff.32.o: image-tiff.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-tiff.32.o: image-tiff.c  ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-tiff.32.o: image-tiff.c  ../cups/debug.h ../cups/string.h ../config.h
+image-zoom.32.o: image-zoom.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-zoom.32.o: image-zoom.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-zoom.32.o: image-zoom.c  ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-zoom.32.o: image-zoom.c  ../cups/debug.h ../cups/string.h ../config.h
+image.32.o: image.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image.32.o: image.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image.32.o: image.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image.32.o: image.c  ../cups/string.h ../config.h
+error.32.o: error.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+error.32.o: error.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+error.32.o: error.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+error.32.o: error.c  ../cups/string.h ../config.h
+interpret.32.o: interpret.c  ../cups/string.h ../config.h image-private.h image.h
+interpret.32.o: interpret.c  ../cups/raster.h ../cups/cups.h ../cups/file.h
+interpret.32.o: interpret.c  ../cups/versioning.h ../cups/ipp.h ../cups/http.h ../cups/ppd.h
+interpret.32.o: interpret.c  ../cups/array.h ../cups/language.h ../cups/debug.h
+raster.32.o: raster.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+raster.32.o: raster.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+raster.32.o: raster.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+raster.32.o: raster.c  ../cups/string.h ../config.h
+# DO NOT DELETE
+
+image-bmp.64.o: image-bmp.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-bmp.64.o: image-bmp.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-bmp.64.o: image-bmp.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-bmp.64.o: image-bmp.c  ../cups/string.h ../config.h
+image-colorspace.64.o: image-colorspace.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-colorspace.64.o: image-colorspace.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-colorspace.64.o: image-colorspace.c  ../cups/http.h ../cups/ppd.h ../cups/array.h
+image-colorspace.64.o: image-colorspace.c  ../cups/language.h ../cups/debug.h ../cups/string.h
+image-colorspace.64.o: image-colorspace.c  ../config.h
+image-gif.64.o: image-gif.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-gif.64.o: image-gif.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-gif.64.o: image-gif.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-gif.64.o: image-gif.c  ../cups/string.h ../config.h
+image-jpeg.64.o: image-jpeg.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-jpeg.64.o: image-jpeg.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-jpeg.64.o: image-jpeg.c  ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-jpeg.64.o: image-jpeg.c  ../cups/debug.h ../cups/string.h ../config.h
+image-photocd.64.o: image-photocd.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-photocd.64.o: image-photocd.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-photocd.64.o: image-photocd.c  ../cups/http.h ../cups/ppd.h ../cups/array.h
+image-photocd.64.o: image-photocd.c  ../cups/language.h ../cups/debug.h ../cups/string.h
+image-photocd.64.o: image-photocd.c  ../config.h
+image-pix.64.o: image-pix.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-pix.64.o: image-pix.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-pix.64.o: image-pix.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-pix.64.o: image-pix.c  ../cups/string.h ../config.h
+image-png.64.o: image-png.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-png.64.o: image-png.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-png.64.o: image-png.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-png.64.o: image-png.c  ../cups/string.h ../config.h
+image-pnm.64.o: image-pnm.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-pnm.64.o: image-pnm.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-pnm.64.o: image-pnm.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-pnm.64.o: image-pnm.c  ../cups/string.h ../config.h
+image-sgi.64.o: image-sgi.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-sgi.64.o: image-sgi.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-sgi.64.o: image-sgi.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-sgi.64.o: image-sgi.c  ../cups/string.h ../config.h image-sgi.h
+image-sgilib.64.o: image-sgilib.c  image-sgi.h
+image-sun.64.o: image-sun.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-sun.64.o: image-sun.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image-sun.64.o: image-sun.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image-sun.64.o: image-sun.c  ../cups/string.h ../config.h
+image-tiff.64.o: image-tiff.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-tiff.64.o: image-tiff.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-tiff.64.o: image-tiff.c  ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-tiff.64.o: image-tiff.c  ../cups/debug.h ../cups/string.h ../config.h
+image-zoom.64.o: image-zoom.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image-zoom.64.o: image-zoom.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h
+image-zoom.64.o: image-zoom.c  ../cups/http.h ../cups/ppd.h ../cups/array.h ../cups/language.h
+image-zoom.64.o: image-zoom.c  ../cups/debug.h ../cups/string.h ../config.h
+image.64.o: image.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+image.64.o: image.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+image.64.o: image.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+image.64.o: image.c  ../cups/string.h ../config.h
+error.64.o: error.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+error.64.o: error.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+error.64.o: error.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+error.64.o: error.c  ../cups/string.h ../config.h
+interpret.64.o: interpret.c  ../cups/string.h ../config.h image-private.h image.h
+interpret.64.o: interpret.c  ../cups/raster.h ../cups/cups.h ../cups/file.h
+interpret.64.o: interpret.c  ../cups/versioning.h ../cups/ipp.h ../cups/http.h ../cups/ppd.h
+interpret.64.o: interpret.c  ../cups/array.h ../cups/language.h ../cups/debug.h
+raster.64.o: raster.c  image-private.h image.h ../cups/raster.h ../cups/cups.h
+raster.64.o: raster.c  ../cups/file.h ../cups/versioning.h ../cups/ipp.h ../cups/http.h
+raster.64.o: raster.c  ../cups/ppd.h ../cups/array.h ../cups/language.h ../cups/debug.h
+raster.64.o: raster.c  ../cups/string.h ../config.h

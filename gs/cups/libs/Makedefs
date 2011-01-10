@@ -1,0 +1,293 @@
+#
+# "$Id: Makedefs.in 9120 2010-04-23 18:56:34Z mike $"
+#
+#   Common makefile definitions for CUPS.
+#
+#   Copyright 2007-2010 by Apple Inc.
+#   Copyright 1997-2007 by Easy Software Products, all rights reserved.
+#
+#   These coded instructions, statements, and computer programs are the
+#   property of Apple Inc. and are protected by Federal copyright
+#   law.  Distribution and use rights are outlined in the file "LICENSE.txt"
+#   which should have been included with this file.  If this file is
+#   file is missing or damaged, see the license at "http://www.cups.org/".
+#
+
+#
+# Programs...
+#
+
+AR		=	/usr/bin/ar
+AWK		=	gawk
+CC		=	 gcc
+CHMOD		=	/bin/chmod
+CXX		=	 g++
+DSO		=	$(CC)
+DSOXX		=	$(CXX)
+HTMLDOC		=	
+INSTALL		=	/home/till/ubuntu/cups/bzr/tmp/cups-1.4.5/install-sh
+LD		=	/usr/bin/ld
+LIBTOOL		=	
+LN		=	/bin/ln -sf
+MV		=	/bin/mv
+PHPCONFIG	=	
+RANLIB		=	ranlib
+RM		=	/bin/rm -f
+RMDIR		=	/bin/rmdir
+SED		=	/bin/sed
+SHELL		=	/bin/sh
+
+#
+# Installation programs...
+#
+
+INSTALL_BIN	=	$(LIBTOOL) $(INSTALL) -c -m 555 -s
+INSTALL_CONFIG	=	$(INSTALL) -c -m 640
+INSTALL_DATA	=	$(INSTALL) -c -m 444
+INSTALL_DIR	=	$(INSTALL) -d
+INSTALL_LIB	=	$(LIBTOOL) $(INSTALL) -c -m 555 -s
+INSTALL_MAN	=	$(INSTALL) -c -m 444
+INSTALL_SCRIPT	=	$(INSTALL) -c -m 555
+
+#
+# Default user, group, and system groups for the scheduler...
+#
+
+CUPS_USER	=	lp
+CUPS_GROUP	=	lp
+CUPS_SYSTEM_GROUPS =	lpadmin sys root
+CUPS_PRIMARY_SYSTEM_GROUP =	lpadmin
+
+#
+# Default permissions...
+#
+
+CUPS_CONFIG_FILE_PERM = 640
+CUPS_LOG_FILE_PERM = 644
+
+#
+# Languages to install...
+#
+
+LANGUAGES	=	da de es eu fi fr id it ja ko nl no pl pt pt_BR ru sv zh zh_TW 
+INSTALL_LANGUAGES =	install-languages
+UNINSTALL_LANGUAGES =	uninstall-languages
+
+#
+# Libraries...
+#
+
+LIBCUPS		=	libcups.so.2
+LIBCUPSCGI	=	libcupscgi.so.1
+LIBCUPSDRIVER	=	libcupsdriver.so.1
+LIBCUPSIMAGE	=	libcupsimage.so.2
+LIBCUPSMIME	=	libcupsmime.so.1
+LIBCUPSPPDC	=	libcupsppdc.so.1
+LIBJPEG		=	-ljpeg
+LIBLDAP		=	
+LIBMALLOC	=	
+LIBPAPER	=	
+LIBPNG		=	-lpng
+LIBSLP		=	
+LIBGSSAPI	=	
+LIBTIFF		=	-ltiff
+LIBUSB		=	-lusb
+LIBWRAP		=	
+LIBZ		=	-lz
+
+#
+# Install static libraries?
+#
+
+INSTALLSTATIC	=	installstatic
+
+#
+# Program options...
+#
+# ARCHFLAGS     Defines the default architecture build options.
+# ARCH32FLAGS   Defines the 32-bit architecture build options, used
+#               when compiling separate 32/64-bit libraries.
+# ARCH64FLAGS   Defines the 64-bit architecture build options, used
+#               when compiling separate 32/64-bit libraries.
+# OPTIM         Defines the common compiler optimization/debugging options
+#               for all architectures.
+# OPTIONS       Defines other compile-time options (currently only -DDEBUG
+#               for extra debug info)
+#
+
+ALL_CFLAGS	=	-I.. -D_CUPS_SOURCE $(CFLAGS) $(SSLFLAGS) \
+			-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_THREAD_SAFE -D_REENTRANT $(OPTIONS)
+ALL_CXXFLAGS	=	-I.. -D_CUPS_SOURCE $(CXXFLAGS) $(SSLFLAGS) \
+			-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_THREAD_SAFE -D_REENTRANT $(OPTIONS)
+ARCHFLAGS	=	
+ARFLAGS		=	crvs
+BACKLIBS	=	
+BANNERTOPS	=	bannertops
+CFLAGS		=	 
+COMMONLIBS	=	-lpthread -lm -lcrypt 
+CUPSDLIBS	=	 
+CXXFLAGS	=	 
+CXXLIBS		=	
+DBUS_NOTIFIER	=	
+DBUS_NOTIFIERLIBS =	
+DNSSD_BACKEND	=	
+DSOFLAGS	=	-L../cups  -Wl,-soname,`basename $@` -shared $(OPTIM)
+DSOLIBS		=	$(LIBTIFF) $(LIBPNG) $(LIBJPEG) $(LIBZ) $(COMMONLIBS)
+DNSSDLIBS	=	
+FONTS		=	fonts
+IMGLIBS		=	
+IMGFILTERS	=	imagetops imagetoraster
+LAUNCHDLIBS	=	
+LDFLAGS		=	-L../cgi-bin -L../cups -L../filter -L../ppdc \
+			-L../scheduler  \
+			  -pie -fPIE $(OPTIM)
+LEGACY_BACKENDS	=	parallel scsi
+LIBCUPSORDER	=	libcups.order
+LIBCUPSIMAGEORDER =	libcupsimage.order
+LINKCUPS	=	-lcups $(SSLLIBS) $(DNSSDLIBS)
+LINKCUPSIMAGE	=	-lcupsimage
+LIBS		=	$(LINKCUPS) $(COMMONLIBS)
+OPTIM		=	-Wall -Wno-format-y2k -fPIC -Os -g -fstack-protector -D_GNU_SOURCE
+OPTIONS		=
+PAMLIBS		=	
+PAP		=	
+PDFTOPS		=	pdftops
+PHPDIR		=	
+PHPOPTIONS	=	 -I../.. `$(PHPCONFIG) --includes`
+SSLFLAGS	=	
+SSLLIBS		=	
+TEXTTOPS	=	texttops
+UNITTESTS	=	
+
+
+#
+# Separate 32/64-bit library support...
+#
+
+ARCH32FLAGS	=	
+DSO32FLAGS	=	 -Wl,-soname,`basename $@` -shared $(OPTIM)
+INSTALL32	=	
+LIB32CUPS	=	
+LIB32CUPSIMAGE	=	
+LIB32DIR	=	$(BUILDROOT)
+UNINSTALL32	=	
+
+ARCH64FLAGS	=	
+DSO64FLAGS	=	 -Wl,-soname,`basename $@` -shared $(OPTIM)
+INSTALL64	=	
+LIB64CUPS	=	
+LIB64CUPSIMAGE	=	
+LIB64DIR	=	$(BUILDROOT)
+UNINSTALL64	=	
+
+#
+# Directories...
+#
+# The first section uses the GNU names (which are *extremely*
+# difficult to find in a makefile because they are lowercase...)
+# We have to define these first because autoconf uses ${prefix}
+# and ${exec_prefix} for most of the other directories...
+#
+# The "datarootdir" variable may not get defined if you are using
+# a version of autoconf prior to 2.60.
+#
+# This is immediately followed by definition in ALL CAPS for the
+# needed directories...
+#
+
+bindir		=	/usr/bin
+datadir		=	/usr/share
+datarootdir	=	/usr/share
+exec_prefix	=	/usr
+includedir	=	/usr/include
+infodir		=	${datarootdir}/info
+libdir		=	/usr/lib64
+libexecdir	=	${exec_prefix}/libexec
+localstatedir	=	/var
+mandir		=	/usr/share/man
+oldincludedir	=	/usr/include
+prefix		=	/
+sbindir		=	/usr/sbin
+sharedstatedir	=	/usr/com
+srcdir		=	.
+sysconfdir	=	/etc
+top_srcdir	=	.
+
+BUILDROOT	=	$(DSTROOT)
+
+AMANDIR		=	$(BUILDROOT)/usr/share/man
+BINDIR		=	$(BUILDROOT)/usr/bin
+CACHEDIR	=	$(BUILDROOT)/var/cache/cups
+DATADIR		=	$(BUILDROOT)/usr/share/cups
+DOCDIR		=	$(BUILDROOT)/usr/share/doc/cups
+ICONDIR		=	/usr/share/icons
+INCLUDEDIR	=	$(BUILDROOT)$(includedir)
+INITDIR		=	/etc
+INITDDIR	=	
+LIBDIR		=	$(BUILDROOT)$(libdir)
+LOCALEDIR	= 	$(BUILDROOT)/usr/share/locale
+LOGDIR		= 	$(BUILDROOT)/var/log/cups
+MANDIR		=	$(BUILDROOT)/usr/share/man
+MENUDIR		=	/usr/share/applications
+PMANDIR		=	$(BUILDROOT)/usr/share/man
+RCLEVELS	=	2 3 5
+RCSTART		=	81
+RCSTOP		=	36
+REQUESTS	= 	$(BUILDROOT)/var/spool/cups
+SBINDIR		=	$(BUILDROOT)/usr/sbin
+SERVERBIN	= 	$(BUILDROOT)/usr/lib/cups
+SERVERROOT	= 	$(BUILDROOT)/etc/cups
+SMFMANIFESTDIR	= 	
+STATEDIR	=	$(BUILDROOT)/var/run/cups
+XINETD		=	
+
+MAN1EXT		=	1.gz
+MAN5EXT		=	5.gz
+MAN7EXT		=	7.gz
+MAN8EXT		=	8.gz
+MAN8DIR		=	8
+
+PAMDIR		=	
+PAMFILE		=	pam.std
+
+DEFAULT_LAUNCHD_CONF =	
+DBUSDIR		=	/etc/dbus-1
+
+
+#
+# Rules...
+#
+
+.SILENT:
+.SUFFIXES:	.1 .1.gz .1m .1m.gz .3 .3.gz .5 .5.gz .7 .7.gz .8 .8.gz .a .c .cxx .h .man .o .32.o .64.o .gz
+
+.c.o:
+	echo Compiling $<...
+	$(CC) $(ARCHFLAGS) $(OPTIM) $(ALL_CFLAGS) -c -o $@ $<
+
+.c.32.o:
+	echo Compiling 32-bit $<...
+	$(CC) $(ARCH32FLAGS) $(OPTIM) $(ALL_CFLAGS) -c -o $@ $<
+
+.c.64.o:
+	echo Compiling 64-bit $<...
+	$(CC) $(ARCH64FLAGS) $(OPTIM) $(ALL_CFLAGS) -c -o $@ $<
+
+.cxx.o:
+	echo Compiling $<...
+	$(CXX) $(ARCHFLAGS) $(OPTIM) $(ALL_CXXFLAGS) -c -o $@ $<
+
+.man.1 .man.1m .man.3 .man.5 .man.7 .man.8:
+	echo Linking $<...
+	$(RM) $@
+	$(LN) $< $@
+
+.man.1.gz .man.1m.gz .man.3.gz .man.5.gz .man.7.gz .man.8.gz .man.gz:
+	echo -n Compressing $<...
+	$(RM) $@
+	gzip -v9 <$< >$@
+
+
+#
+# End of "$Id: Makedefs.in 9120 2010-04-23 18:56:34Z mike $"
+#
