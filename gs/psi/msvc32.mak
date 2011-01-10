@@ -377,6 +377,9 @@ MSVC_VERSION=9
 !if "$(_NMAKE_VER)" == "9.00.30729.01"
 MSVC_VERSION=9
 !endif
+!if "$(_NMAKE_VER)" == "10.00.30319.01"
+MSVC_VERSION=10
+!endif
 !endif
 
 !ifndef MSVC_VERSION
@@ -495,6 +498,39 @@ SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
 COMPDIR64=$(COMPBASE)\bin\amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 10
+! ifndef DEVSTUDIO
+!ifdef WIN64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 10.0
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 10.0
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+! ifdef MSSDK
+RCDIR=$(MSSDK)\bin
+! else
+!ifdef WIN64
+RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin
+!else
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin
+!endif
+! endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+COMPDIR64=$(COMPBASE)\bin\amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"   
 !endif
 !endif
 !endif
