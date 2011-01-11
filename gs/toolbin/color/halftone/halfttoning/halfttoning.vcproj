@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="halfttoning"
+	Name="halftoning"
 	ProjectGUID="{1B4597C2-DFF0-486D-8912-DECB44D25085}"
 	RootNamespace="halfttoning"
 	TargetFrameworkVersion="196613"
