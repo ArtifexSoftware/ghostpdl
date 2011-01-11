@@ -631,8 +631,8 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
 	    psrc += spp;
         /* Check for transparent color. */
 	    if ((next.all[0] & mask) == test &&
-            penum->mask_color.exact || 
-            mask_color_matches(next.v, penum, spp)) {
+            (penum->mask_color.exact || 
+            mask_color_matches(next.v, penum, spp))) {
 		color_set_null(pdevc_next);
 		goto mapped;
 	    }
