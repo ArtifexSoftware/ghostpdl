@@ -57,6 +57,12 @@ typedef struct htsc_dither_pos_s {
     int *locations;
 } htsc_dither_pos_t;
 
+typedef enum {
+   OUTPUT_BIN = 0,
+   OUTPUT_PS = 1,
+   OUTPUT_PPM = 2
+} output_format_type;
+
 #define RAW_SCREEN_DUMP 0
 
 int htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y);
@@ -85,7 +91,7 @@ void htsc_create_dither_mask(htsc_dig_grid_t super_cell,
                              int num_levels, int y, int x, double vert_dpi,
                              double horiz_dpi, int N, double gamma,
                              htsc_dig_grid_t dot_grid, htsc_point_t one_index);
-void htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S);
+void htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S, output_format_type output_format);
 
 int htsc_gcd(int a, int b);
 int  htsc_lcm(int a, int b);
@@ -103,6 +109,7 @@ void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
 int usage (void) {
     printf ("Usage: halftone [-r resolution] [-l target_lpi] [-q target_quantization_levels] \n");
     printf ("                [-a target_angle] [-n no_dithering] [-s size_of_supercell]\n");
+    printf ("                [-ps | -ppm]\n");
     return 1;
 }
 
@@ -149,6 +156,7 @@ main (int argc, char **argv)
     bool use = false;
     double x_use,y_use;
     bool target_size_specified = false;
+    output_format_type output_format = OUTPUT_BIN;
 
     horiz_dpi = 300;  /* Default values */
     vert_dpi = 300;  
@@ -163,24 +171,25 @@ main (int argc, char **argv)
       const char *arg = argv[i];
       if (arg[0] == '-') {
 	  switch (arg[1]) {
-	    case 'r':
-	      horiz_dpi = atoi(get_arg(argc, argv, &i, arg + 2));
-              vert_dpi = horiz_dpi; 
-	      break;
-	    case 'l':
-	      target_lpi = atoi(get_arg(argc, argv, &i, arg + 2));
-	      break;
-	    case 'q':
-	      target_quantization = atoi(get_arg(argc, argv, &i, arg + 2));
-	      break;
 	    case 'a':
 	      target_screen_angle = atoi(get_arg(argc, argv, &i, arg + 2));
               target_screen_angle = target_screen_angle % 90;
               screen_angle = target_screen_angle;
 	      break;
-            case 'n':
-                use_dither_grid = false;
-                break;
+	    case 'l':
+	      target_lpi = atoi(get_arg(argc, argv, &i, arg + 2));
+	      break;
+	    case 'p':
+	      output_format = (arg[2] == 's') ? OUTPUT_PS : 
+				(arg[2] == 'p' ? OUTPUT_PPM : OUTPUT_BIN);
+	      break;
+	    case 'q':
+	      target_quantization = atoi(get_arg(argc, argv, &i, arg + 2));
+	      break;
+	    case 'r':
+	      horiz_dpi = atoi(get_arg(argc, argv, &i, arg + 2));
+              vert_dpi = horiz_dpi; 
+	      break;
             case 's':
                 target_size = atoi(get_arg(argc, argv, &i, arg + 2));
                 target_size_specified = true;
@@ -474,12 +483,12 @@ main (int argc, char **argv)
 #endif        /* If we are using the Holladay grid (non dithered) then we are done */
     if (use_holladay_grid) {
         htsc_create_holladay_mask(super_cell, H, L, gamma, &final_mask);
-        htsc_save_mask(final_mask, use_holladay_grid, S);
+        htsc_save_mask(final_mask, use_holladay_grid, S, output_format);
     } else {
         htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x, 
                                 vert_dpi, horiz_dpi, N, gamma, dot_grid,
                                 one_index);
-        htsc_save_mask(final_mask, use_holladay_grid, S);
+        htsc_save_mask(final_mask, use_holladay_grid, S, output_format);
     }
     if (dot_grid.data != NULL) free(dot_grid.data);
     if (super_cell.data != NULL) free(super_cell.data);
@@ -1423,7 +1432,7 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
 }
 
 void 
-htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S)
+htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S, output_format_type output_format)
 {
     char full_file_name[50];
     FILE *fid;
@@ -1432,20 +1441,54 @@ htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S)
     int width = final_mask.width;
     int height = final_mask.height;
     byte data;
-
+    char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
+			((output_format == OUTPUT_PPM) ? "ppm" : "raw");
+    
     if (use_holladay_grid) {
-        sprintf(full_file_name,"Screen_Holladay_Shift%d_%dx%d.raw",S,width,height);
+        sprintf(full_file_name,"Screen_Holladay_Shift%d_%dx%d.%s",S,width,height, output_extension);
     } else {
-        sprintf(full_file_name,"Screen_Dithered_%dx%d.raw",width,height);
+        sprintf(full_file_name,"Screen_Dithered_%dx%d.%s",width,height, output_extension);
     }
     fid = fopen(full_file_name,"wb");
 
-    for (y = 0; y < height; y++) {
-        for ( x = 0; x < width; x++ ) {
-            data = (byte) *buff_ptr; 
-            fwrite(&data,sizeof(byte),1,fid);
-            buff_ptr++;
-        }
+    if (output_format == OUTPUT_PPM)
+	fprintf(fid, "P5\n"
+		"# Halftone threshold array, %s, [%d, %d], S=%d\n"
+		"%d\n"
+		"255\n",
+		use_holladay_grid ? "Holladay_Shift" : "Dithered", width, height, S, width);
+
+    if (output_format != OUTPUT_PS) {
+	/* Both BIN and PPM format write the same binary data */
+	for (y = 0; y < height; y++) {
+	    for ( x = 0; x < width; x++ ) {
+		data = (byte) *buff_ptr; 
+		fwrite(&data,sizeof(byte),1,fid);
+		buff_ptr++;
+	    }
+	}
+    } else {
+	/* Output PS HalftoneType 3 dictionary */
+	fprintf(fid, "%%!PS\n"
+		"<< /HalftoneType 3\n"
+		"   /Width  %d\n"
+		"   /Height %d\n"
+		"   /Thresholds <\n",
+		width, height);
+	
+	for (y = 0; y < height; y++) {
+	    for ( x = 0; x < width; x++ ) {
+		data = (byte) *buff_ptr; 
+		fprintf(fid, "%02x", data);
+		buff_ptr++;
+		if ((x & 0x1f) == 0x1f && (x != (width - 1)))
+		    fprintf(fid, "\n");
+	    }
+	    fprintf(fid, "\n");
+	}
+	fprintf(fid, "   >\n"
+		">>\n"
+		);
     }
     fclose(fid);
 }
