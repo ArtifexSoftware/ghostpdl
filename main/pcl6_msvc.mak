@@ -376,7 +376,7 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
  $(DD)\tifflzw.dev $(DD)\tiffpack.dev $(DD)\tiffgray.dev $(DD)\tiffscaled.dev \
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev $(DD)\tiffscaled.dev \
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\jpeg.dev \
- $(DD)\pswrite.dev $(DD)\pdfwrite.dev \
+ $(DD)\pdfwrite.dev $(DD)\pswrite.dev $(DD)\ps2write.dev \
  $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev
 !endif
 
