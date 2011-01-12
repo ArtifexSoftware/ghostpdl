@@ -171,7 +171,12 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
         case 0:
             if ((ecode = tiff_compression_id(&compr, &comprstr)) < 0 ||
                 !tiff_compression_allowed(compr, (which & 1 ? 1 : dev->color_info.depth)))
+            {
+                errprintf(tfdev->memory,
+                          (ecode < 0 ? "Unknown compression setting\n" :
+                           "Invalid compression setting for this bitdepth\n"));
                 param_signal_error(plist, param_name, ecode);
+            }
             break;
         case 1:
             break;
@@ -391,10 +396,10 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size)
             goto cleanup;
     }
 
-    TIFFCheckpointDirectory(tif);
+    code = TIFFCheckpointDirectory(tif);
 
     memset(data, 0, max_size);
-    for (row = 0; row < dev->height; row++) {
+    for (row = 0; row < dev->height && code >= 0; row++) {
         code = gdev_prn_copy_scan_lines(dev, row, data, size);
         if (code < 0)
             break;
@@ -411,16 +416,17 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size)
                                      dev->width * dev->color_info.num_components);
 #endif
 
-            TIFFWriteScanline(tif, data, row - line_lag, 0);
+            code = TIFFWriteScanline(tif, data, row - line_lag, 0);
         }
     }
-    for (row -= line_lag ; row < dev->height; row++)
+    for (row -= line_lag ; row < dev->height && code >= 0; row++)
     {
         filtered_count = min_feature_size_process(data, min_feature_data);
-        TIFFWriteScanline(tif, data, row, 0);
+        code = TIFFWriteScanline(tif, data, row, 0);
     }
 
-    TIFFWriteDirectory(tif);
+    if (code >= 0)
+        code = TIFFWriteDirectory(tif);
 cleanup:
     if (min_feature_size > 1)
         min_feature_size_dnit(min_feature_data);
@@ -448,15 +454,15 @@ enum {
     mfs_above_left_is_0 = 4,
 };
 
-static void down_and_out(TIFF *tif,
-                         byte *data,
-                         int   max_size,
-                         int   factor,
-                         int   row,
-                         int   width,
-                         int  *errors,
-                         byte *mfs_data,
-                         int   padWhite)
+static int down_and_out(TIFF *tif,
+                        byte *data,
+                        int   max_size,
+                        int   factor,
+                        int   row,
+                        int   width,
+                        int  *errors,
+                        byte *mfs_data,
+                        int   padWhite)
 {
     int x, xx, y, value;
     byte *outp;
@@ -703,7 +709,7 @@ static void down_and_out(TIFF *tif,
         mask >>= 1;
     }
 
-    TIFFWriteScanline(tif, data, row, 0);
+    return TIFFWriteScanline(tif, data, row, 0);
 }
 
 /* Special version, called with 8 bit grey input to be downsampled to 1bpp
@@ -757,14 +763,14 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
         }
     }
 
-    TIFFCheckpointDirectory(tif);
+    code = TIFFCheckpointDirectory(tif);
 
     memset(data, 0xFF, max_size * factor);
     memset(errors, 0, (awidth+3) * sizeof(int));
     if (mfs_data)
         memset(mfs_data, 0, awidth+1);
     n = 0;
-    for (row = 0; row < dev->height; row++) {
+    for (row = 0; row < dev->height && code >= 0; row++) {
         code = gdev_prn_copy_scan_lines(dev, row, data + max_size*n, size);
         if (code < 0)
             break;
@@ -773,12 +779,12 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
         {
             /* Do the downsample */
             n = 0;
-            down_and_out(tif, data, max_size, factor, row/factor, awidth,
-                         errors, mfs_data, padWhite);
+            code = down_and_out(tif, data, max_size, factor, row/factor, awidth,
+                                errors, mfs_data, padWhite);
         }
     }
 #if DISABLED_AS_WE_DONT_ROUND_UP_ANY_MORE
-    if (n != 0)
+    if (n != 0 && code >= 0)
     {
         row--;
         while (n != factor)
@@ -787,12 +793,13 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
             n++;
             row++;
         }
-        down_and_out(tif, data, max_size, factor, row/factor, awidth, errors,
-                     mfs_data, padWhite);
+        code = down_and_out(tif, data, max_size, factor, row/factor, awidth,
+                            errors, mfs_data, padWhite);
     }
 #endif
 
-    TIFFWriteDirectory(tif);
+    if (code >= 0)
+        code = TIFFWriteDirectory(tif);
 cleanup:
     gs_free_object(dev->memory, mfs_data, "tiff_print_page(mfs)");
     gs_free_object(dev->memory, errors, "tiff_print_page(errors)");
