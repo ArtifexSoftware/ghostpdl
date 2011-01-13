@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -18,51 +18,51 @@
 #include "string_.h"
 #include "ghost.h"
 #include "gp.h"
-#include "gscdefs.h"		/* for gs_init_file */
+#include "gscdefs.h"            /* for gs_init_file */
 #include "gslib.h"
-#include "gsmatrix.h"		/* for gxdevice.h */
-#include "gsutil.h"		/* for bytes_compare */
+#include "gsmatrix.h"           /* for gxdevice.h */
+#include "gsutil.h"             /* for bytes_compare */
 #include "gxdevice.h"
 #include "gxalloc.h"
-#include "gxiodev.h"		/* for iodev struct */
+#include "gxiodev.h"            /* for iodev struct */
 #include "gzstate.h"
 #include "ierrors.h"
 #include "oper.h"
-#include "iconf.h"		/* for gs_init_* imports */
+#include "iconf.h"              /* for gs_init_* imports */
 #include "idebug.h"
 #include "idict.h"
-#include "iname.h"		/* for name_init */
+#include "iname.h"              /* for name_init */
 #include "dstack.h"
 #include "estack.h"
-#include "ostack.h"		/* put here for files.h */
-#include "stream.h"		/* for files.h */
+#include "ostack.h"             /* put here for files.h */
+#include "stream.h"             /* for files.h */
 #include "files.h"
 #include "ialloc.h"
 #include "iinit.h"
-#include "strimpl.h"		/* for sfilter.h */
-#include "sfilter.h"		/* for iscan.h */
+#include "strimpl.h"            /* for sfilter.h */
+#include "sfilter.h"            /* for iscan.h */
 #include "iscan.h"
 #include "main.h"
 #include "store.h"
-#include "isave.h"		/* for prototypes */
+#include "isave.h"              /* for prototypes */
 #include "interp.h"
 #include "ivmspace.h"
-#include "idisp.h"		/* for setting display device callback */
+#include "idisp.h"              /* for setting display device callback */
 #include "iplugin.h"
 
 /* ------ Exported data ------ */
 
-/** using backpointers retrieve minst from any memory pointer 
- * 
+/** using backpointers retrieve minst from any memory pointer
+ *
  */
-gs_main_instance* 
+gs_main_instance*
 get_minst_from_memory(const gs_memory_t *mem)
 {
 #ifdef PSI_INCLUDED
     extern gs_main_instance *ps_impl_get_minst( const gs_memory_t *mem );
     return ps_impl_get_minst(mem);
 #else
-    return (gs_main_instance*)mem->gs_lib_ctx->top_of_system;  
+    return (gs_main_instance*)mem->gs_lib_ctx->top_of_system;
 #endif
 }
 
@@ -74,14 +74,14 @@ gs_main_alloc_instance(gs_memory_t *mem)
     if (mem == NULL)
         return NULL;
 
-    minst = (gs_main_instance *)gs_alloc_bytes_immovable(mem, 
+    minst = (gs_main_instance *)gs_alloc_bytes_immovable(mem,
                                                          sizeof(gs_main_instance),
                                                          "init_main_instance");
     if (minst == NULL)
         return NULL;
     memcpy(minst, &gs_main_instance_init_values, sizeof(gs_main_instance_init_values));
     minst->heap = mem;
-	
+
 #   ifndef PSI_INCLUDED
     mem->gs_lib_ctx->top_of_system = minst;
     /* else top of system is pl_universe */
@@ -116,14 +116,14 @@ get_local_op_array(const gs_memory_t *mem)
 
 static int gs_run_init_file(gs_main_instance *, int *, ref *);
 void print_resource_usage(const gs_main_instance *,
-				  gs_dual_memory_t *, const char *);
+                                  gs_dual_memory_t *, const char *);
 
 /* ------ Initialization ------ */
 
 /* Initialization to be done before anything else. */
 int
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
-	      int max_lib_paths)
+              int max_lib_paths)
 {
     ref *paths;
 
@@ -133,11 +133,11 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     /* on incompatible processors. */
     gp_init();
 
-    /* Initialize the imager. */     
+    /* Initialize the imager. */
 #   ifndef PSI_INCLUDED
        /* Reset debugging flags */
        memset(gs_debug, 0, 128);
-       gs_log_errors = 0;  /* gs_debug['#'] = 0 */ 
+       gs_log_errors = 0;  /* gs_debug['#'] = 0 */
 #   else
        /* plmain settings remain in effect */
 #   endif
@@ -145,16 +145,16 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 
     /* Initialize the file search paths. */
     paths = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
-					"lib_path array");
+                                        "lib_path array");
     if (paths == 0) {
-	gs_lib_finit(1, e_VMerror, minst->heap);
-	return_error(e_VMerror);
+        gs_lib_finit(1, e_VMerror, minst->heap);
+        return_error(e_VMerror);
     }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
-	       (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
-					   "lib_path array"));
+               (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
+                                           "lib_path array"));
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
-	       minst->lib_path.container.value.refs);
+               minst->lib_path.container.value.refs);
     minst->lib_path.env = 0;
     minst->lib_path.final = 0;
     minst->lib_path.count = 0;
@@ -171,42 +171,42 @@ gs_main_init1(gs_main_instance * minst)
     extern init_proc(gs_iodev_init);
 
     if (minst->init_done < 1) {
-	gs_dual_memory_t idmem;
-	int code =
-	    ialloc_init(&idmem, minst->heap,
-			minst->memory_chunk_size, gs_have_level2());
+        gs_dual_memory_t idmem;
+        int code =
+            ialloc_init(&idmem, minst->heap,
+                        minst->memory_chunk_size, gs_have_level2());
 
-	if (code < 0)
-	    return code;
-	code = gs_lib_init1((gs_memory_t *)idmem.space_system);
-	if (code < 0)
-	    return code;
-	alloc_save_init(&idmem);
-	{
-	    gs_memory_t *mem = (gs_memory_t *)idmem.space_system;
-	    name_table *nt = names_init(minst->name_table_size,
-					idmem.space_system);
+        if (code < 0)
+            return code;
+        code = gs_lib_init1((gs_memory_t *)idmem.space_system);
+        if (code < 0)
+            return code;
+        alloc_save_init(&idmem);
+        {
+            gs_memory_t *mem = (gs_memory_t *)idmem.space_system;
+            name_table *nt = names_init(minst->name_table_size,
+                                        idmem.space_system);
 
-	    if (nt == 0)
-		return_error(e_VMerror);
-	    mem->gs_lib_ctx->gs_name_table = nt;
-	    code = gs_register_struct_root(mem, NULL,
-					   (void **)&mem->gs_lib_ctx->gs_name_table,
-					   "the_gs_name_table");
-	    if (code < 0)
-		return code;
-	}
-	code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
-	if (code < 0)
-	    return code;
+            if (nt == 0)
+                return_error(e_VMerror);
+            mem->gs_lib_ctx->gs_name_table = nt;
+            code = gs_register_struct_root(mem, NULL,
+                                           (void **)&mem->gs_lib_ctx->gs_name_table,
+                                           "the_gs_name_table");
+            if (code < 0)
+                return code;
+        }
+        code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
+        if (code < 0)
+            return code;
         code = i_plugin_init(minst->i_ctx_p);
-	if (code < 0)
-	    return code;
-	i_ctx_p = minst->i_ctx_p;
-	code = gs_iodev_init(imemory);
-	if (code < 0)
-	    return code;
-	minst->init_done = 1;
+        if (code < 0)
+            return code;
+        i_ctx_p = minst->i_ctx_p;
+        code = gs_iodev_init(imemory);
+        if (code < 0)
+            return code;
+        minst->init_done = 1;
     }
     return 0;
 }
@@ -220,7 +220,7 @@ init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
 
     for (; ifp->value.bytes != 0; ifp++);
     make_tasv(&ifa, t_array, a_readonly | avm_foreign,
-	      ifp - srefs, const_refs, srefs);
+              ifp - srefs, const_refs, srefs);
     initial_enter_name(aname, &ifa);
 }
 
@@ -229,16 +229,16 @@ init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
  * callouts were handled here instead of in the stream processing.
  */
 static int
-gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors, 
-	int *pexit_code, ref * perror_object)
+gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
+        int *pexit_code, ref * perror_object)
 {
     int code;
 
     /* set interpreter pointer to lib_path */
     minst->i_ctx_p->lib_path = &minst->lib_path;
 
-    code = gs_interpret(&minst->i_ctx_p, pref, 
-		user_errors, pexit_code, perror_object);
+    code = gs_interpret(&minst->i_ctx_p, pref,
+                user_errors, pexit_code, perror_object);
     return code;
 }
 
@@ -249,53 +249,53 @@ gs_main_init2(gs_main_instance * minst)
     int code = gs_main_init1(minst);
 
     if (code < 0)
-	return code;
+        return code;
     i_ctx_p = minst->i_ctx_p;
     if (minst->init_done < 2) {
-	int code, exit_code;
-	ref error_object;
+        int code, exit_code;
+        ref error_object;
 
-	code = zop_init(i_ctx_p);
-	if (code < 0)
-	    return code;
-	code = op_init(i_ctx_p);	/* requires obj_init */
-	if (code < 0)
-	    return code;
+        code = zop_init(i_ctx_p);
+        if (code < 0)
+            return code;
+        code = op_init(i_ctx_p);        /* requires obj_init */
+        if (code < 0)
+            return code;
 
-	/* Set up the array of additional initialization files. */
-	init2_make_string_array(i_ctx_p, gs_init_file_array, "INITFILES");
-	/* Set up the array of emulator names. */
-	init2_make_string_array(i_ctx_p, gs_emulator_name_array, "EMULATORS");
-	/* Pass the search path. */
-	code = initial_enter_name("LIBPATH", &minst->lib_path.list);
-	if (code < 0)
-	    return code;
+        /* Set up the array of additional initialization files. */
+        init2_make_string_array(i_ctx_p, gs_init_file_array, "INITFILES");
+        /* Set up the array of emulator names. */
+        init2_make_string_array(i_ctx_p, gs_emulator_name_array, "EMULATORS");
+        /* Pass the search path. */
+        code = initial_enter_name("LIBPATH", &minst->lib_path.list);
+        if (code < 0)
+            return code;
 
-	/* Execute the standard initialization file. */
-	code = gs_run_init_file(minst, &exit_code, &error_object);
-	if (code < 0)
-	    return code;
-	minst->init_done = 2;
-	i_ctx_p = minst->i_ctx_p; /* init file may change it */
-	/* NB this is to be done with device parameters
-	 * both minst->display and  display_set_callback() are going away
-	*/
-	if (minst->display)
-	if ((code = display_set_callback(minst, minst->display)) < 0)
-	    return code;
+        /* Execute the standard initialization file. */
+        code = gs_run_init_file(minst, &exit_code, &error_object);
+        if (code < 0)
+            return code;
+        minst->init_done = 2;
+        i_ctx_p = minst->i_ctx_p; /* init file may change it */
+        /* NB this is to be done with device parameters
+         * both minst->display and  display_set_callback() are going away
+        */
+        if (minst->display)
+        if ((code = display_set_callback(minst, minst->display)) < 0)
+            return code;
 
 #ifndef PSI_INCLUDED
-	if ((code = gs_main_run_string(minst, 
-		"JOBSERVER "
-		" { false 0 .startnewjob } "
-		" { NOOUTERSAVE not { save pop } if } "
-		"ifelse", 0, &exit_code, 
-		&error_object)) < 0)
-	   return code;
+        if ((code = gs_main_run_string(minst,
+                "JOBSERVER "
+                " { false 0 .startnewjob } "
+                " { NOOUTERSAVE not { save pop } if } "
+                "ifelse", 0, &exit_code,
+                &error_object)) < 0)
+           return code;
 #endif /* PSI_INCLUDED */
     }
     if (gs_debug_c(':'))
-	print_resource_usage(minst, &gs_imemory, "Start");
+        print_resource_usage(minst, &gs_imemory, "Start");
     gp_readline_init(&minst->readline_data, imemory_system);
     return 0;
 }
@@ -311,23 +311,23 @@ file_path_add(gs_file_path * pfp, const char *dirs)
     const char *dpath = dirs;
 
     if (dirs == 0)
-	return 0;
-    for (;;) {			/* Find the end of the next directory name. */
-	const char *npath = dpath;
+        return 0;
+    for (;;) {                  /* Find the end of the next directory name. */
+        const char *npath = dpath;
 
-	while (*npath != 0 && *npath != gp_file_name_list_separator)
-	    npath++;
-	if (npath > dpath) {
-	    if (len == r_size(&pfp->container))
-		return_error(e_limitcheck);
-	    make_const_string(&pfp->container.value.refs[len],
-			      avm_foreign | a_readonly,
-			      npath - dpath, (const byte *)dpath);
-	    ++len;
-	}
-	if (!*npath)
-	    break;
-	dpath = npath + 1;
+        while (*npath != 0 && *npath != gp_file_name_list_separator)
+            npath++;
+        if (npath > dpath) {
+            if (len == r_size(&pfp->container))
+                return_error(e_limitcheck);
+            make_const_string(&pfp->container.value.refs[len],
+                              avm_foreign | a_readonly,
+                              npath - dpath, (const byte *)dpath);
+            ++len;
+        }
+        if (!*npath)
+            break;
+        dpath = npath + 1;
     }
     r_set_size(&pfp->list, len);
     return 0;
@@ -340,17 +340,17 @@ gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
     /* Account for the possibility that the first element */
     /* is gp_current_directory name added by set_lib_paths. */
     int first_is_here =
-	(r_size(&minst->lib_path.list) != 0 &&
-	 minst->lib_path.container.value.refs[0].value.bytes ==
-	 (const byte *)gp_current_directory_name ? 1 : 0);
+        (r_size(&minst->lib_path.list) != 0 &&
+         minst->lib_path.container.value.refs[0].value.bytes ==
+         (const byte *)gp_current_directory_name ? 1 : 0);
     int code;
 
     r_set_size(&minst->lib_path.list, minst->lib_path.count +
-	       first_is_here);
+               first_is_here);
     code = file_path_add(&minst->lib_path, lpath);
     minst->lib_path.count = r_size(&minst->lib_path.list) - first_is_here;
     if (code < 0)
-	return code;
+        return code;
     return gs_main_set_lib_paths(minst);
 }
 
@@ -366,49 +366,49 @@ gs_main_set_lib_paths(gs_main_instance * minst)
 {
     ref *paths = minst->lib_path.container.value.refs;
     int first_is_here =
-	(r_size(&minst->lib_path.list) != 0 &&
-	 paths[0].value.bytes == (const byte *)gp_current_directory_name ? 1 : 0);
+        (r_size(&minst->lib_path.list) != 0 &&
+         paths[0].value.bytes == (const byte *)gp_current_directory_name ? 1 : 0);
     int code = 0;
     int count = minst->lib_path.count;
     int i, have_rom_device = 0;
 
     if (minst->search_here_first) {
-	if (!(first_is_here ||
-	      (r_size(&minst->lib_path.list) != 0 &&
-	       !bytes_compare((const byte *)gp_current_directory_name,
-			      strlen(gp_current_directory_name),
-			      paths[0].value.bytes,
-			      r_size(&paths[0]))))
-	    ) {
-	    memmove(paths + 1, paths, count * sizeof(*paths));
-	    make_const_string(paths, avm_foreign | a_readonly,
-			      strlen(gp_current_directory_name),
-			      (const byte *)gp_current_directory_name);
-	}
+        if (!(first_is_here ||
+              (r_size(&minst->lib_path.list) != 0 &&
+               !bytes_compare((const byte *)gp_current_directory_name,
+                              strlen(gp_current_directory_name),
+                              paths[0].value.bytes,
+                              r_size(&paths[0]))))
+            ) {
+            memmove(paths + 1, paths, count * sizeof(*paths));
+            make_const_string(paths, avm_foreign | a_readonly,
+                              strlen(gp_current_directory_name),
+                              (const byte *)gp_current_directory_name);
+        }
     } else {
-	if (first_is_here)
-	    memmove(paths, paths + 1, count * sizeof(*paths));
+        if (first_is_here)
+            memmove(paths, paths + 1, count * sizeof(*paths));
     }
     r_set_size(&minst->lib_path.list,
-	       count + (minst->search_here_first ? 1 : 0));
+               count + (minst->search_here_first ? 1 : 0));
     if (minst->lib_path.env != 0)
-	code = file_path_add(&minst->lib_path, minst->lib_path.env);
+        code = file_path_add(&minst->lib_path, minst->lib_path.env);
     /* now put the %rom%lib/ device path before the gs_lib_default_path on the list */
     for (i = 0; i < gx_io_device_table_count; i++) {
-	const gx_io_device *iodev = gx_io_device_table[i];
-	const char *dname = iodev->dname;
+        const gx_io_device *iodev = gx_io_device_table[i];
+        const char *dname = iodev->dname;
 
-	if (dname && strlen(dname) == 5 && !memcmp("%rom%", dname, 5)) {
-	    have_rom_device = 1;
-	    break;
-	}
+        if (dname && strlen(dname) == 5 && !memcmp("%rom%", dname, 5)) {
+            have_rom_device = 1;
+            break;
+        }
     }
     if (have_rom_device && code >= 0) {
-	code = file_path_add(&minst->lib_path, "%rom%Resource/Init/");
-	code = file_path_add(&minst->lib_path, "%rom%lib/");
+        code = file_path_add(&minst->lib_path, "%rom%Resource/Init/");
+        code = file_path_add(&minst->lib_path, "%rom%lib/");
     }
     if (minst->lib_path.final != 0 && code >= 0)
-	code = file_path_add(&minst->lib_path, minst->lib_path.final);
+        code = file_path_add(&minst->lib_path, minst->lib_path.final);
     return code;
 }
 
@@ -424,9 +424,9 @@ gs_main_lib_open(gs_main_instance * minst, const char *file_name, ref * pfile)
     uint len;
 
     return lib_file_open(&minst->lib_path, imemory,
-			 NULL, /* Don't check permissions here, because permlist 
-				  isn't ready running init files. */
-			  file_name, strlen(file_name), fn, maxfn, &len, pfile);
+                         NULL, /* Don't check permissions here, because permlist
+                                  isn't ready running init files. */
+                          file_name, strlen(file_name), fn, maxfn, &len, pfile);
 }
 
 /* Open and execute a file. */
@@ -437,19 +437,19 @@ gs_main_run_file(gs_main_instance * minst, const char *file_name, int user_error
     int code = gs_main_run_file_open(minst, file_name, &initial_file);
 
     if (code < 0)
-	return code;
+        return code;
     return gs_main_interpret(minst, &initial_file, user_errors,
-			pexit_code, perror_object);
+                        pexit_code, perror_object);
 }
 int
 gs_main_run_file_open(gs_main_instance * minst, const char *file_name, ref * pfref)
 {
     gs_main_set_lib_paths(minst);
     if (gs_main_lib_open(minst, file_name, pfref) < 0) {
-	emprintf1(minst->heap,
+        emprintf1(minst->heap,
                   "Can't find initialization file %s.\n",
                   file_name);
-	return_error(e_Fatal);
+        return_error(e_Fatal);
     }
     r_set_attrs(pfref, a_execute + a_executable);
     return 0;
@@ -468,57 +468,57 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     gs_main_set_lib_paths(minst);
     code = gs_main_run_file_open(minst, gs_init_file, &ifile);
     if (code < 0) {
-	*pexit_code = 255;
-	return code;
+        *pexit_code = 255;
+        return code;
     }
     /* Check to make sure the first token is an integer */
     /* (for the version number check.) */
-    scanner_init(&state, &ifile);
-    code = scan_token(i_ctx_p, &first_token, &state);
+    gs_scanner_init(&state, &ifile);
+    code = gs_scan_token(i_ctx_p, &first_token, &state);
     if (code != 0 || !r_has_type(&first_token, t_integer)) {
-	emprintf1(minst->heap,
+        emprintf1(minst->heap,
                   "Initialization file %s does not begin with an integer.\n",
                   gs_init_file);
-	*pexit_code = 255;
-	return_error(e_Fatal);
+        *pexit_code = 255;
+        return_error(e_Fatal);
     }
     *++osp = first_token;
     r_set_attrs(&ifile, a_executable);
     return gs_main_interpret(minst, &ifile, minst->user_errors,
-			pexit_code, perror_object);
+                        pexit_code, perror_object);
 }
 
 /* Run a string. */
 int
 gs_main_run_string(gs_main_instance * minst, const char *str, int user_errors,
-		   int *pexit_code, ref * perror_object)
+                   int *pexit_code, ref * perror_object)
 {
     return gs_main_run_string_with_length(minst, str, (uint) strlen(str),
-					  user_errors,
-					  pexit_code, perror_object);
+                                          user_errors,
+                                          pexit_code, perror_object);
 }
 int
 gs_main_run_string_with_length(gs_main_instance * minst, const char *str,
-	 uint length, int user_errors, int *pexit_code, ref * perror_object)
+         uint length, int user_errors, int *pexit_code, ref * perror_object)
 {
     int code;
 
     code = gs_main_run_string_begin(minst, user_errors,
-				    pexit_code, perror_object);
+                                    pexit_code, perror_object);
     if (code < 0)
-	return code;
+        return code;
     code = gs_main_run_string_continue(minst, str, length, user_errors,
-				       pexit_code, perror_object);
+                                       pexit_code, perror_object);
     if (code != e_NeedInput)
-	return code;
+        return code;
     return gs_main_run_string_end(minst, user_errors,
-				  pexit_code, perror_object);
+                                  pexit_code, perror_object);
 }
 
 /* Set up for a suspendable run_string. */
 int
 gs_main_run_string_begin(gs_main_instance * minst, int user_errors,
-			 int *pexit_code, ref * perror_object)
+                         int *pexit_code, ref * perror_object)
 {
     const char *setup = ".runstringbegin";
     ref rstr;
@@ -526,35 +526,35 @@ gs_main_run_string_begin(gs_main_instance * minst, int user_errors,
 
     gs_main_set_lib_paths(minst);
     make_const_string(&rstr, avm_foreign | a_readonly | a_executable,
-		      strlen(setup), (const byte *)setup);
+                      strlen(setup), (const byte *)setup);
     code = gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-			perror_object);
+                        perror_object);
     return (code == e_NeedInput ? 0 : code == 0 ? e_Fatal : code);
 }
 /* Continue running a string with the option of suspending. */
 int
 gs_main_run_string_continue(gs_main_instance * minst, const char *str,
-	 uint length, int user_errors, int *pexit_code, ref * perror_object)
+         uint length, int user_errors, int *pexit_code, ref * perror_object)
 {
     ref rstr;
 
     if (length == 0)
-	return 0;		/* empty string signals EOF */
+        return 0;               /* empty string signals EOF */
     make_const_string(&rstr, avm_foreign | a_readonly, length,
-		      (const byte *)str);
+                      (const byte *)str);
     return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-			perror_object);
+                        perror_object);
 }
 /* Signal EOF when suspended. */
 int
 gs_main_run_string_end(gs_main_instance * minst, int user_errors,
-		       int *pexit_code, ref * perror_object)
+                       int *pexit_code, ref * perror_object)
 {
     ref rstr;
 
     make_empty_const_string(&rstr, avm_foreign | a_readonly);
     return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-			perror_object);
+                        perror_object);
 }
 
 /* ------ Operand stack access ------ */
@@ -568,7 +568,7 @@ push_value(gs_main_instance *minst, ref * pvalue)
     int code = ref_stack_push(&o_stack, 1);
 
     if (code < 0)
-	return code;
+        return code;
     *ref_stack_index(&o_stack, 0L) = *pvalue;
     return 0;
 }
@@ -602,12 +602,12 @@ gs_push_real(gs_main_instance * minst, floatp value)
 
 int
 gs_push_string(gs_main_instance * minst, byte * chars, uint length,
-	       bool read_only)
+               bool read_only)
 {
     ref vref;
 
     make_string(&vref, avm_foreign | (read_only ? a_readonly : a_all),
-		length, (byte *) chars);
+                length, (byte *) chars);
     return push_value(minst, &vref);
 }
 
@@ -615,7 +615,7 @@ static int
 pop_value(i_ctx_t *i_ctx_p, ref * pvalue)
 {
     if (!ref_stack_count(&o_stack))
-	return_error(e_stackunderflow);
+        return_error(e_stackunderflow);
     *pvalue = *ref_stack_index(&o_stack, 0L);
     return 0;
 }
@@ -628,7 +628,7 @@ gs_pop_boolean(gs_main_instance * minst, bool * result)
     int code = pop_value(i_ctx_p, &vref);
 
     if (code < 0)
-	return code;
+        return code;
     check_type_only(vref, t_boolean);
     *result = vref.value.boolval;
     ref_stack_pop(&o_stack, 1);
@@ -643,7 +643,7 @@ gs_pop_integer(gs_main_instance * minst, long *result)
     int code = pop_value(i_ctx_p, &vref);
 
     if (code < 0)
-	return code;
+        return code;
     check_type_only(vref, t_integer);
     *result = vref.value.intval;
     ref_stack_pop(&o_stack, 1);
@@ -658,16 +658,16 @@ gs_pop_real(gs_main_instance * minst, float *result)
     int code = pop_value(i_ctx_p, &vref);
 
     if (code < 0)
-	return code;
+        return code;
     switch (r_type(&vref)) {
-	case t_real:
-	    *result = vref.value.realval;
-	    break;
-	case t_integer:
-	    *result = (float)(vref.value.intval);
-	    break;
-	default:
-	    return_error(e_typecheck);
+        case t_real:
+            *result = vref.value.realval;
+            break;
+        case t_integer:
+            *result = (float)(vref.value.intval);
+            break;
+        default:
+            return_error(e_typecheck);
     }
     ref_stack_pop(&o_stack, 1);
     return 0;
@@ -681,19 +681,19 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
     int code = pop_value(i_ctx_p, &vref);
 
     if (code < 0)
-	return code;
+        return code;
     switch (r_type(&vref)) {
-	case t_name:
-	    name_string_ref(minst->heap, &vref, &vref);
-	    code = 1;
-	    goto rstr;
-	case t_string:
-	    code = (r_has_attr(&vref, a_write) ? 0 : 1);
-	  rstr:result->data = vref.value.bytes;
-	    result->size = r_size(&vref);
-	    break;
-	default:
-	    return_error(e_typecheck);
+        case t_name:
+            name_string_ref(minst->heap, &vref, &vref);
+            code = 1;
+            goto rstr;
+        case t_string:
+            code = (r_has_attr(&vref, a_write) ? 0 : 1);
+          rstr:result->data = vref.value.bytes;
+            result->size = r_size(&vref);
+            break;
+        default:
+            return_error(e_typecheck);
     }
     ref_stack_pop(&o_stack, 1);
     return code;
@@ -702,10 +702,10 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 /* ------ Termination ------ */
 
 /* Get the names of temporary files.
- * Each name is null terminated, and the last name is 
+ * Each name is null terminated, and the last name is
  * terminated by a double null.
  * We retrieve the names of temporary files just before
- * the interpreter finishes, and then delete the files 
+ * the interpreter finishes, and then delete the files
  * after the interpreter has closed all files.
  */
 static char *gs_main_tempnames(gs_main_instance *minst)
@@ -713,7 +713,7 @@ static char *gs_main_tempnames(gs_main_instance *minst)
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
     ref *SAFETY;
     ref *tempfiles;
-    ref keyval[2];	/* for key and value */
+    ref keyval[2];      /* for key and value */
     char *tempnames = NULL;
     int i;
     int idict;
@@ -722,29 +722,29 @@ static char *gs_main_tempnames(gs_main_instance *minst)
     uint size;
     if (minst->init_done >= 2) {
         if (dict_find_string(systemdict, "SAFETY", &SAFETY) <= 0 ||
-	    dict_find_string(SAFETY, "tempfiles", &tempfiles) <= 0)
-	    return NULL;
-	/* get lengths of temporary filenames */
-	idict = dict_first(tempfiles);
-	while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
-	    if (obj_string_data(minst->heap, &keyval[0], &data, &size) >= 0)
-		len += size + 1;
-	}
-	if (len != 0)
-	    tempnames = (char *)malloc(len+1);
-	if (tempnames) {
-	    memset(tempnames, 0, len+1);
-	    /* copy temporary filenames */
-	    idict = dict_first(tempfiles);
-	    i = 0;
-	    while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
-	        if (obj_string_data(minst->heap, &keyval[0], &data, &size) >= 0) {
-		    memcpy(tempnames+i, (const char *)data, size);
-		    i+= size;
-		    tempnames[i++] = '\0';
-		}
-	    }
-	}
+            dict_find_string(SAFETY, "tempfiles", &tempfiles) <= 0)
+            return NULL;
+        /* get lengths of temporary filenames */
+        idict = dict_first(tempfiles);
+        while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
+            if (obj_string_data(minst->heap, &keyval[0], &data, &size) >= 0)
+                len += size + 1;
+        }
+        if (len != 0)
+            tempnames = (char *)malloc(len+1);
+        if (tempnames) {
+            memset(tempnames, 0, len+1);
+            /* copy temporary filenames */
+            idict = dict_first(tempfiles);
+            i = 0;
+            while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
+                if (obj_string_data(minst->heap, &keyval[0], &data, &size) >= 0) {
+                    memcpy(tempnames+i, (const char *)data, size);
+                    i+= size;
+                    tempnames[i++] = '\0';
+                }
+            }
+        }
     }
     return tempnames;
 }
@@ -768,59 +768,59 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * alloc_restore_all will close dynamically allocated devices.
      */
     tempnames = gs_main_tempnames(minst);
-    /* 
+    /*
      * Close the "main" device, because it may need to write out
      * data before destruction. pdfwrite needs so.
      */
     if (minst->init_done >= 1) {
-	int code = 0;
+        int code = 0;
 
-	if (idmemory->reclaim != 0) {
-	    code = interp_reclaim(&minst->i_ctx_p, avm_global);
+        if (idmemory->reclaim != 0) {
+            code = interp_reclaim(&minst->i_ctx_p, avm_global);
 
-	    if (code < 0) {
-		emprintf1(minst->heap,
+            if (code < 0) {
+                emprintf1(minst->heap,
                           "ERROR %d reclaiming the memory while the interpreter finalization.\n",
                           code);
-		return e_Fatal;
-	    }
-	    i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
-	}
+                return e_Fatal;
+            }
+            i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
+        }
 #ifndef PSI_INCLUDED
-	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
-	    gx_device *pdev = i_ctx_p->pgs->device;
-	    const char * dname = pdev->dname;
+        if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
+            gx_device *pdev = i_ctx_p->pgs->device;
+            const char * dname = pdev->dname;
 
-	    /* make sure device doesn't isn't freed by .uninstalldevice */
-	    rc_adjust(pdev, 1, "gs_main_finit");	
-	    /* deactivate the device just before we close it for the last time */
-	    gs_main_run_string(minst, 
-		/* we need to do the 'quit' so we don't loop for input (double quit) */
-		".uninstallpagedevice "
-		"serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
-		0 , &exit_code, &error_object);
-	    code = gs_closedevice(pdev);
-	    if (code < 0)
-		emprintf2(pdev->memory,
+            /* make sure device doesn't isn't freed by .uninstalldevice */
+            rc_adjust(pdev, 1, "gs_main_finit");
+            /* deactivate the device just before we close it for the last time */
+            gs_main_run_string(minst,
+                /* we need to do the 'quit' so we don't loop for input (double quit) */
+                ".uninstallpagedevice "
+                "serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
+                0 , &exit_code, &error_object);
+            code = gs_closedevice(pdev);
+            if (code < 0)
+                emprintf2(pdev->memory,
                           "ERROR %d closing %s device. See gs/psi/ierrors.h for code explanation.\n",
                           code,
                           dname);
-	    rc_decrement(pdev, "gs_main_finit");		/* device might be freed */
-	    if (exit_status == 0 || exit_status == e_Quit)
-		exit_status = code;
-	}
+            rc_decrement(pdev, "gs_main_finit");                /* device might be freed */
+            if (exit_status == 0 || exit_status == e_Quit)
+                exit_status = code;
+        }
 #endif
     }
     /* Flush stdout and stderr */
     if (minst->init_done >= 2)
-      gs_main_run_string(minst, 
-	"(%stdout) (w) file closefile (%stderr) (w) file closefile "
+      gs_main_run_string(minst,
+        "(%stdout) (w) file closefile (%stderr) (w) file closefile "
         "serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
-	0 , &exit_code, &error_object);
+        0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
     if (gs_debug_c(':')) {
-	print_resource_usage(minst, &gs_imemory, "Final");
-	dprintf1("%% Exiting instance 0x%p\n", minst);
+        print_resource_usage(minst, &gs_imemory, "Final");
+        dprintf1("%% Exiting instance 0x%p\n", minst);
     }
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */
@@ -828,31 +828,31 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
         i_plugin_holder *h = i_ctx_p->plugin_list;
         code = alloc_restore_all(idmemory);
-	if (code < 0)
-	    emprintf1(mem_raw,
+        if (code < 0)
+            emprintf1(mem_raw,
                       "ERROR %d while the final restore. See gs/psi/ierrors.h for code explanation.\n",
                       code);
         i_plugin_finit(mem_raw, h);
     }
 #ifndef PSI_INCLUDED
     /* clean up redirected stdout */
-    if (minst->heap->gs_lib_ctx->fstdout2 
-	&& (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
-	&& (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstderr)) {
-	fclose(minst->heap->gs_lib_ctx->fstdout2);
-	minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
+    if (minst->heap->gs_lib_ctx->fstdout2
+        && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
+        && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstderr)) {
+        fclose(minst->heap->gs_lib_ctx->fstdout2);
+        minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
     }
 #endif
     minst->heap->gs_lib_ctx->stdout_is_redirected = 0;
     minst->heap->gs_lib_ctx->stdout_to_stderr = 0;
     /* remove any temporary files, after ghostscript has closed files */
     if (tempnames) {
-	char *p = tempnames;
-	while (*p) {
-	    unlink(p);
-	    p += strlen(p) + 1;
-	}
-	free(tempnames);
+        char *p = tempnames;
+        while (*p) {
+            unlink(p);
+            p += strlen(p) + 1;
+        }
+        free(tempnames);
     }
 #ifndef PSI_INCLUDED
     gs_lib_finit(exit_status, code, minst->heap);
@@ -876,7 +876,7 @@ gs_abort(const gs_memory_t *mem)
      * but more often than not, that will trip another abort and create
      * an infinite recursion. So just abort without trying to cleanup.
      */
-    gp_do_exit(1);	
+    gp_do_exit(1);
 }
 
 /* ------ Debugging ------ */
@@ -884,38 +884,38 @@ gs_abort(const gs_memory_t *mem)
 /* Print resource usage statistics. */
 void
 print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
-		     const char *msg)
+                     const char *msg)
 {
     ulong allocated = 0, used = 0;
     long utime[2];
 
     gp_get_realtime(utime);
     {
-	int i;
+        int i;
 
-	for (i = 0; i < countof(dmem->spaces_indexed); ++i) {
-	    gs_ref_memory_t *mem = dmem->spaces_indexed[i];
+        for (i = 0; i < countof(dmem->spaces_indexed); ++i) {
+            gs_ref_memory_t *mem = dmem->spaces_indexed[i];
 
-	    if (mem != 0 && (i == 0 || mem != dmem->spaces_indexed[i - 1])) {
-		gs_memory_status_t status;
-		gs_ref_memory_t *mem_stable =
-		    (gs_ref_memory_t *)gs_memory_stable((gs_memory_t *)mem);
+            if (mem != 0 && (i == 0 || mem != dmem->spaces_indexed[i - 1])) {
+                gs_memory_status_t status;
+                gs_ref_memory_t *mem_stable =
+                    (gs_ref_memory_t *)gs_memory_stable((gs_memory_t *)mem);
 
-		gs_memory_status((gs_memory_t *)mem, &status);
-		allocated += status.allocated;
-		used += status.used;
-		if (mem_stable != mem) {
-		    gs_memory_status((gs_memory_t *)mem_stable, &status);
-		    allocated += status.allocated;
-		    used += status.used;
-		}
-	    }
-	}
+                gs_memory_status((gs_memory_t *)mem, &status);
+                allocated += status.allocated;
+                used += status.used;
+                if (mem_stable != mem) {
+                    gs_memory_status((gs_memory_t *)mem_stable, &status);
+                    allocated += status.allocated;
+                    used += status.used;
+                }
+            }
+        }
     }
     dprintf4("%% %s time = %g, memory allocated = %lu, used = %lu\n",
-	     msg, utime[0] - minst->base_time[0] +
-	     (utime[1] - minst->base_time[1]) / 1000000000.0,
-	     allocated, used);
+             msg, utime[0] - minst->base_time[0] +
+             (utime[1] - minst->base_time[1]) / 1000000000.0,
+             allocated, used);
 }
 
 /* Dump the stacks after interpretation */
@@ -924,12 +924,12 @@ gs_main_dump_stack(gs_main_instance *minst, int code, ref * perror_object)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
 
-    zflush(i_ctx_p);		/* force out buffered output */
+    zflush(i_ctx_p);            /* force out buffered output */
     dprintf1("\nUnexpected interpreter error %d.\n", code);
     if (perror_object != 0) {
-	dputs("Error object: ");
-	debug_print_ref(minst->heap, perror_object);
-	dputc('\n');
+        dputs("Error object: ");
+        debug_print_ref(minst->heap, perror_object);
+        dputc('\n');
     }
     debug_dump_stack(minst->heap, &o_stack, "Operand stack");
     debug_dump_stack(minst->heap, &e_stack, "Execution stack");

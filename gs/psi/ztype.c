@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,15 +19,15 @@
 #include "gsexit.h"
 #include "ghost.h"
 #include "oper.h"
-#include "imemory.h"		/* for register_ref_root */
+#include "imemory.h"            /* for register_ref_root */
 #include "idict.h"
 #include "iname.h"
-#include "stream.h"		/* for iscan.h */
-#include "strimpl.h"		/* for sfilter.h for picky compilers */
-#include "sfilter.h"		/* ditto */
+#include "stream.h"             /* for iscan.h */
+#include "strimpl.h"            /* for sfilter.h for picky compilers */
+#include "sfilter.h"            /* ditto */
 #include "iscan.h"
 #include "iutil.h"
-#include "dstack.h"		/* for dict_set_top */
+#include "dstack.h"             /* for dict_set_top */
 #include "store.h"
 
 /*
@@ -69,23 +69,23 @@ ztype(i_ctx_t *i_ctx_p)
     int code = array_get(imemory, op, (long)r_btype(op - 1), &tnref);
 
     if (code < 0)
-	return code;
+        return code;
     if (!r_has_type(&tnref, t_name)) {
-	/* Must be either a stack underflow or a t_[a]struct. */
-	check_op(2);
-	{			/* Get the type name from the structure. */
-	    const char *sname =
-		gs_struct_type_name_string(gs_object_type(imemory,
-							  op[-1].value.pstruct));
-	    int code = name_ref(imemory, (const byte *)sname, strlen(sname),
-				(ref *) (op - 1), 0);
+        /* Must be either a stack underflow or a t_[a]struct. */
+        check_op(2);
+        {                       /* Get the type name from the structure. */
+            const char *sname =
+                gs_struct_type_name_string(gs_object_type(imemory,
+                                                          op[-1].value.pstruct));
+            int code = name_ref(imemory, (const byte *)sname, strlen(sname),
+                                (ref *) (op - 1), 0);
 
-	    if (code < 0)
-		return code;
-	}
-	r_set_attrs(op - 1, a_executable);
+            if (code < 0)
+                return code;
+        }
+        r_set_attrs(op - 1, a_executable);
     } else {
-	ref_assign(op - 1, &tnref);
+        ref_assign(op - 1, &tnref);
     }
     pop(1);
     return 0;
@@ -101,17 +101,17 @@ ztypenames(i_ctx_t *i_ctx_p)
 
     check_ostack(t_next_index);
     for (i = 0; i < t_next_index; i++) {
-	ref *const rtnp = op + 1 + i;
+        ref *const rtnp = op + 1 + i;
 
-	if (i >= countof(tnames) || tnames[i] == 0)
-	    make_null(rtnp);
-	else {
-	    int code = name_enter_string(imemory, tnames[i], rtnp);
+        if (i >= countof(tnames) || tnames[i] == 0)
+            make_null(rtnp);
+        else {
+            int code = name_enter_string(imemory, tnames[i], rtnp);
 
-	    if (code < 0)
-		return code;
-	    r_set_attrs(rtnp, a_executable);
-	}
+            if (code < 0)
+                return code;
+            r_set_attrs(rtnp, a_executable);
+        }
     }
     osp += t_next_index;
     return 0;
@@ -144,10 +144,10 @@ zcvx(i_ctx_t *i_ctx_p)
      * exist in executable form anywhere outside the e-stack.
      */
     if (r_has_type(op, t_operator) &&
-	((opidx = op_index(op)) == 0 ||
-	 op_def_is_internal(op_index_def(opidx)))
-	)
-	return_error(e_rangecheck);
+        ((opidx = op_index(op)) == 0 ||
+         op_def_is_internal(op_index_def(opidx)))
+        )
+        return_error(e_rangecheck);
     aop = ACCESS_REF(op);
     r_set_attrs(aop, a_executable);
     return 0;
@@ -172,7 +172,7 @@ zexecuteonly(i_ctx_t *i_ctx_p)
 
     check_op(1);
     if (r_has_type(op, t_dictionary))
-	return_error(e_typecheck);
+        return_error(e_typecheck);
     return access_check(i_ctx_p, a_execute, true);
 }
 
@@ -184,20 +184,20 @@ znoaccess(i_ctx_t *i_ctx_p)
 
     check_op(1);
     if (r_has_type(op, t_dictionary)) {
-	ref *aop = dict_access_ref(op);
-	
-	/* CPSI throws invalidaccess when seting noaccess to a readonly dictionary (CET 13-13-6) : */
-	if (!r_has_attrs(aop, a_write)) {
-	    if (!r_has_attrs(aop, a_read) && !r_has_attrs(aop, a_execute)) {
-		/* Already noaccess - do nothing (CET 24-09-1). */
-		return 0;
-	    }
-	    return_error(e_invalidaccess);
-	}
+        ref *aop = dict_access_ref(op);
 
-	/* Don't allow removing read access to permanent dictionaries. */
-	if (dict_is_permanent_on_dstack(op))
-	    return_error(e_invalidaccess);
+        /* CPSI throws invalidaccess when seting noaccess to a readonly dictionary (CET 13-13-6) : */
+        if (!r_has_attrs(aop, a_write)) {
+            if (!r_has_attrs(aop, a_read) && !r_has_attrs(aop, a_execute)) {
+                /* Already noaccess - do nothing (CET 24-09-1). */
+                return 0;
+            }
+            return_error(e_invalidaccess);
+        }
+
+        /* Don't allow removing read access to permanent dictionaries. */
+        if (dict_is_permanent_on_dstack(op))
+            return_error(e_invalidaccess);
     }
     return access_check(i_ctx_p, 0, true);
 }
@@ -217,7 +217,7 @@ zrcheck(i_ctx_t *i_ctx_p)
     int code = access_check(i_ctx_p, a_read, false);
 
     if (code >= 0)
-	make_bool(op, code), code = 0;
+        make_bool(op, code), code = 0;
     return code;
 }
 
@@ -229,7 +229,7 @@ zwcheck(i_ctx_t *i_ctx_p)
     int code = access_check(i_ctx_p, a_write, false);
 
     if (code >= 0)
-	make_bool(op, code), code = 0;
+        make_bool(op, code), code = 0;
     return code;
 }
 
@@ -242,39 +242,39 @@ zcvi(i_ctx_t *i_ctx_p)
     float fval;
 
     switch (r_type(op)) {
-	case t_integer:
-	    return 0;
-	case t_real:
-	    fval = op->value.realval;
-	    break;
-	default:
-	    return_op_typecheck(op);
-	case t_string:
-	    {
-		ref str, token;
-		int code;
+        case t_integer:
+            return 0;
+        case t_real:
+            fval = op->value.realval;
+            break;
+        default:
+            return_op_typecheck(op);
+        case t_string:
+            {
+                ref str, token;
+                int code;
 
-		ref_assign(&str, op);
-		code = scan_string_token(i_ctx_p, &str, &token);
-		if (code > 0)	/* anything other than a plain token */
-		    code = gs_note_error(e_syntaxerror);
-		if (code < 0)
-		    return code;
-		switch (r_type(&token)) {
-		    case t_integer:
-			*op = token;
-			return 0;
-		    case t_real:
-			fval = token.value.realval;
-			break;
-		    default:
-			return_error(e_typecheck);
-		}
-	    }
+                ref_assign(&str, op);
+                code = gs_scan_string_token(i_ctx_p, &str, &token);
+                if (code > 0)   /* anything other than a plain token */
+                    code = gs_note_error(e_syntaxerror);
+                if (code < 0)
+                    return code;
+                switch (r_type(&token)) {
+                    case t_integer:
+                        *op = token;
+                        return 0;
+                    case t_real:
+                        fval = token.value.realval;
+                        break;
+                    default:
+                        return_error(e_typecheck);
+                }
+            }
     }
     if (!REAL_CAN_BE_INT(fval))
-	return_error(e_rangecheck);
-    make_int(op, (long)fval);	/* truncates towards 0 */
+        return_error(e_rangecheck);
+    make_int(op, (long)fval);   /* truncates towards 0 */
     return 0;
 }
 
@@ -296,34 +296,34 @@ zcvr(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     switch (r_type(op)) {
-	case t_integer:
-	    make_real(op, (float)op->value.intval);
-	case t_real:
-	    return 0;
-	default:
-	    return_op_typecheck(op);
-	case t_string:
-	    {
-		ref str, token;
-		int code;
+        case t_integer:
+            make_real(op, (float)op->value.intval);
+        case t_real:
+            return 0;
+        default:
+            return_op_typecheck(op);
+        case t_string:
+            {
+                ref str, token;
+                int code;
 
-		ref_assign(&str, op);
-		code = scan_string_token(i_ctx_p, &str, &token);
-		if (code > 0)	/* anything other than a plain token */
-		    code = gs_note_error(e_syntaxerror);
-		if (code < 0)
-		    return code;
-		switch (r_type(&token)) {
-		    case t_integer:
-			make_real(op, (float)token.value.intval);
-			return 0;
-		    case t_real:
-			*op = token;
-			return 0;
-		    default:
-			return_error(e_typecheck);
-		}
-	    }
+                ref_assign(&str, op);
+                code = gs_scan_string_token(i_ctx_p, &str, &token);
+                if (code > 0)   /* anything other than a plain token */
+                    code = gs_note_error(e_syntaxerror);
+                if (code < 0)
+                    return code;
+                switch (r_type(&token)) {
+                    case t_integer:
+                        make_real(op, (float)token.value.intval);
+                        return 0;
+                    case t_real:
+                        *op = token;
+                        return 0;
+                    default:
+                        return_error(e_typecheck);
+                }
+            }
     }
 }
 
@@ -336,60 +336,60 @@ zcvrs(i_ctx_t *i_ctx_p)
 
     check_type(op[-1], t_integer);
     if (op[-1].value.intval < 2 || op[-1].value.intval > 36)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     radix = op[-1].value.intval;
     check_write_type(*op, t_string);
     if (radix == 10) {
-	switch (r_type(op - 2)) {
-	    case t_integer:
-	    case t_real:
-		{
-		    int code = convert_to_string(imemory, op - 2, op);
+        switch (r_type(op - 2)) {
+            case t_integer:
+            case t_real:
+                {
+                    int code = convert_to_string(imemory, op - 2, op);
 
-		    if (code < 0)
-			return code;
-		    pop(2);
-		    return 0;
-		}
+                    if (code < 0)
+                        return code;
+                    pop(2);
+                    return 0;
+                }
             case t__invalid:
                 return_error(e_stackunderflow);
-	    default:
-		return_error(e_rangecheck); /* CET 24-05 wants rangecheck */
-	}
+            default:
+                return_error(e_rangecheck); /* CET 24-05 wants rangecheck */
+        }
     } else {
-	uint ival;
-	byte digits[sizeof(ulong) * 8];
-	byte *endp = &digits[countof(digits)];
-	byte *dp = endp;
+        uint ival;
+        byte digits[sizeof(ulong) * 8];
+        byte *endp = &digits[countof(digits)];
+        byte *dp = endp;
 
-	switch (r_type(op - 2)) {
-	    case t_integer:
-		ival = (uint) op[-2].value.intval;
-		break;
-	    case t_real:
-		{
-		    float fval = op[-2].value.realval;
+        switch (r_type(op - 2)) {
+            case t_integer:
+                ival = (uint) op[-2].value.intval;
+                break;
+            case t_real:
+                {
+                    float fval = op[-2].value.realval;
 
-		    if (!REAL_CAN_BE_INT(fval))
-			return_error(e_rangecheck);
-		    ival = (ulong) (long)fval;
-		} break;
+                    if (!REAL_CAN_BE_INT(fval))
+                        return_error(e_rangecheck);
+                    ival = (ulong) (long)fval;
+                } break;
             case t__invalid:
                 return_error(e_stackunderflow);
-	    default:
-		return_error(e_rangecheck); /* CET 24-05 wants rangecheck */
-	}
-	do {
-	    int dit = ival % radix;
+            default:
+                return_error(e_rangecheck); /* CET 24-05 wants rangecheck */
+        }
+        do {
+            int dit = ival % radix;
 
-	    *--dp = dit + (dit < 10 ? '0' : ('A' - 10));
-	    ival /= radix;
-	}
-	while (ival);
-	if (endp - dp > r_size(op))
-	    return_error(e_rangecheck);
-	memcpy(op->value.bytes, dp, (uint) (endp - dp));
-	r_set_size(op, endp - dp);
+            *--dp = dit + (dit < 10 ? '0' : ('A' - 10));
+            ival /= radix;
+        }
+        while (ival);
+        if (endp - dp > r_size(op))
+            return_error(e_rangecheck);
+        memcpy(op->value.bytes, dp, (uint) (endp - dp));
+        r_set_size(op, endp - dp);
     }
     op[-2] = *op;
     pop(2);
@@ -407,7 +407,7 @@ zcvs(i_ctx_t *i_ctx_p)
     check_op(2);
     code = convert_to_string(imemory, op - 1, op);
     if (code >= 0)
-	pop(1);
+        pop(1);
     return code;
 }
 
@@ -443,43 +443,43 @@ const op_def ztype_op_defs[] =
 /* or if the object did not have the access already when modify=1. */
 static int
 access_check(i_ctx_t *i_ctx_p,
-	     int access,	/* mask for attrs */
-	     bool modify)	/* if true, reduce access */
+             int access,        /* mask for attrs */
+             bool modify)       /* if true, reduce access */
 {
     os_ptr op = osp;
     ref *aop;
 
     switch (r_type(op)) {
-	case t_dictionary:
-	    aop = dict_access_ref(op);
-	    if (modify) {
-		if (!r_has_attrs(aop, access))
-		    return_error(e_invalidaccess);
-		ref_save(op, aop, "access_check(modify)");
-		r_clear_attrs(aop, a_all);
-		r_set_attrs(aop, access);
-		dict_set_top();
-		return 0;
-	    }
-	    break;
-	case t_array:
-	case t_file:
-	case t_string:
-	case t_mixedarray:
-	case t_shortarray:
-	case t_astruct:
-	case t_device:;
-	    if (modify) {
-		if (!r_has_attrs(op, access))
-		    return_error(e_invalidaccess);
-		r_clear_attrs(op, a_all);
-		r_set_attrs(op, access);
-		return 0;
-	    }
-	    aop = op;
-	    break;
-	default:
-	    return_op_typecheck(op);
+        case t_dictionary:
+            aop = dict_access_ref(op);
+            if (modify) {
+                if (!r_has_attrs(aop, access))
+                    return_error(e_invalidaccess);
+                ref_save(op, aop, "access_check(modify)");
+                r_clear_attrs(aop, a_all);
+                r_set_attrs(aop, access);
+                dict_set_top();
+                return 0;
+            }
+            break;
+        case t_array:
+        case t_file:
+        case t_string:
+        case t_mixedarray:
+        case t_shortarray:
+        case t_astruct:
+        case t_device:;
+            if (modify) {
+                if (!r_has_attrs(op, access))
+                    return_error(e_invalidaccess);
+                r_clear_attrs(op, a_all);
+                r_set_attrs(op, access);
+                return 0;
+            }
+            aop = op;
+            break;
+        default:
+            return_op_typecheck(op);
     }
     return (r_has_attrs(aop, access) ? 1 : 0);
 }
@@ -495,29 +495,29 @@ convert_to_string(const gs_memory_t *mem, os_ptr op1, os_ptr op)
     int code = obj_cvs(mem, op1, op->value.bytes, r_size(op), &len, &pstr);
 
     if (code < 0) {
-	/*
-	 * Some common downloaded error handlers assume that
-	 * operator names don't exceed a certain fixed size.
-	 * To work around this bit of bad design, we implement
-	 * a special hack here: if we got a rangecheck, and
-	 * the object is an operator whose name begins with
-	 * %, ., or @, we just truncate the name.
-	 */
-	if (code == e_rangecheck)
-	    switch (r_btype(op1)) {
-		case t_oparray:
-		case t_operator:
-		    if (pstr != 0)
-			switch (*pstr) {
-			    case '%':
-			    case '.':
-			    case '@':
-				len = r_size(op);
-				memcpy(op->value.bytes, pstr, len);
-				goto ok;
-			}
-	    }
-	return code;
+        /*
+         * Some common downloaded error handlers assume that
+         * operator names don't exceed a certain fixed size.
+         * To work around this bit of bad design, we implement
+         * a special hack here: if we got a rangecheck, and
+         * the object is an operator whose name begins with
+         * %, ., or @, we just truncate the name.
+         */
+        if (code == e_rangecheck)
+            switch (r_btype(op1)) {
+                case t_oparray:
+                case t_operator:
+                    if (pstr != 0)
+                        switch (*pstr) {
+                            case '%':
+                            case '.':
+                            case '@':
+                                len = r_size(op);
+                                memcpy(op->value.bytes, pstr, len);
+                                goto ok;
+                        }
+            }
+        return code;
     }
 ok:
     *op1 = *op;

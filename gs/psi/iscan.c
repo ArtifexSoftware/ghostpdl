@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -18,25 +18,25 @@
 #include "string_.h"
 #include "stream.h"
 #include "ierrors.h"
-#include "btoken.h"		/* for ref_binary_object_format */
-#include "files.h"		/* for fptr */
+#include "btoken.h"             /* for ref_binary_object_format */
+#include "files.h"              /* for fptr */
 #include "ialloc.h"
-#include "idict.h"		/* for //name lookup */
-#include "dstack.h"		/* ditto */
+#include "idict.h"              /* for //name lookup */
+#include "dstack.h"             /* ditto */
 #include "ilevel.h"
 #include "iname.h"
 #include "ipacked.h"
 #include "iparray.h"
-#include "strimpl.h"		/* for string decoding */
-#include "sa85d.h"		/* ditto */
-#include "sfilter.h"		/* ditto */
-#include "ostack.h"		/* for accumulating proc bodies; */
-					/* must precede iscan.h */
-#include "iscan.h"		/* defines interface */
+#include "strimpl.h"            /* for string decoding */
+#include "sa85d.h"              /* ditto */
+#include "sfilter.h"            /* ditto */
+#include "ostack.h"             /* for accumulating proc bodies; */
+                                        /* must precede iscan.h */
+#include "iscan.h"              /* defines interface */
 #include "iscanbin.h"
 #include "iscannum.h"
 #include "istream.h"
-#include "istruct.h"		/* for RELOC_REF_VAR */
+#include "istruct.h"            /* for RELOC_REF_VAR */
 #include "iutil.h"
 #include "ivmspace.h"
 #include "store.h"
@@ -47,13 +47,13 @@
 
 /* Procedure for handling DSC comments if desired. */
 /* Set at initialization if a DSC handling module is included. */
-int (*scan_dsc_proc) (const byte *, uint) = NULL;
+int (*gs_scan_dsc_proc) (const byte *, uint) = NULL;
 
 /* Procedure for handling all comments if desired. */
 /* Set at initialization if a comment handling module is included. */
-/* If both scan_comment_proc and scan_dsc_proc are set, */
+/* If both gs_scan_comment_proc and gs_scan_dsc_proc are set, */
 /* scan_comment_proc is called only for non-DSC comments. */
-int (*scan_comment_proc) (const byte *, uint) = NULL;
+int (*gs_scan_comment_proc) (const byte *, uint) = NULL;
 
 /*
  * Level 2 includes some changes in the scanner:
@@ -63,7 +63,7 @@ int (*scan_comment_proc) (const byte *, uint) = NULL;
  *      - Character codes above 127 introduce binary objects.
  * We explicitly enable or disable these changes here.
  */
-#define scan_enable_level2 level2_enabled	/* from ilevel.h */
+#define scan_enable_level2 level2_enabled       /* from ilevel.h */
 
 /* ------ Dynamic strings ------ */
 
@@ -82,7 +82,7 @@ static void
 dynamic_free(da_ptr pda)
 {
     if (pda->is_dynamic)
-	gs_free_string(pda->memory, pda->base, da_size(pda), "scanner");
+        gs_free_string(pda->memory, pda->base, da_size(pda), "scanner");
 }
 
 /* Resize a dynamic string. */
@@ -96,16 +96,16 @@ dynamic_resize(da_ptr pda, uint new_size)
     byte *base;
 
     if (pda->is_dynamic) {
-	base = gs_resize_string(mem, pda->base, old_size,
-				new_size, "scanner");
-	if (base == 0)
-	    return_error(e_VMerror);
-    } else {			/* switching from static to dynamic */
-	base = gs_alloc_string(mem, new_size, "scanner");
-	if (base == 0)
-	    return_error(e_VMerror);
-	memcpy(base, pda->base, min(old_size, new_size));
-	pda->is_dynamic = true;
+        base = gs_resize_string(mem, pda->base, old_size,
+                                new_size, "scanner");
+        if (base == 0)
+            return_error(e_VMerror);
+    } else {                    /* switching from static to dynamic */
+        base = gs_alloc_string(mem, new_size, "scanner");
+        if (base == 0)
+            return_error(e_VMerror);
+        memcpy(base, pda->base, min(old_size, new_size));
+        pda->is_dynamic = true;
     }
     pda->base = base;
     pda->next = base + pos;
@@ -122,17 +122,17 @@ dynamic_grow(da_ptr pda, byte * next, uint max_size)
 {
     uint old_size = da_size(pda);
     uint new_size = (old_size < 10 ? 20 :
-		     old_size >= (max_size >> 1) ? max_size :
-		     old_size << 1);
+                     old_size >= (max_size >> 1) ? max_size :
+                     old_size << 1);
     int code;
 
     pda->next = next;
     if (old_size >= max_size)
-	return_error(e_limitcheck);
+        return_error(e_limitcheck);
     while ((code = dynamic_resize(pda, new_size)) < 0 &&
-	   new_size > old_size
-	) {			/* Try trimming down the requested new size. */
-	new_size -= (new_size - old_size + 1) >> 1;
+           new_size > old_size
+        ) {                     /* Try trimming down the requested new size. */
+        new_size -= (new_size - old_size + 1) >> 1;
     }
     return code;
 }
@@ -145,11 +145,11 @@ dynamic_save(da_ptr pda)
     if (!pda->is_dynamic && pda->base != pda->buf) {
         int len = da_size(pda);
 
-	if (len > sizeof(pda->buf))
+        if (len > sizeof(pda->buf))
             len = sizeof(pda->buf);
         memcpy(pda->buf, pda->base, len);
-	pda->next = pda->buf + len;
-	pda->base = pda->buf;
+        pda->next = pda->buf + len;
+        pda->base = pda->buf;
     }
 }
 
@@ -161,10 +161,10 @@ dynamic_make_string(i_ctx_t *i_ctx_p, ref * pref, da_ptr pda, byte * next)
     int code = dynamic_resize(pda, size);
 
     if (code < 0)
-	return code;
+        return code;
     make_tasv_new(pref, t_string,
-		  a_all | imemory_space((gs_ref_memory_t *) pda->memory),
-		  size, bytes, pda->base);
+                  a_all | imemory_space((gs_ref_memory_t *) pda->memory),
+                  size, bytes, pda->base);
     return 0;
 }
 
@@ -172,7 +172,7 @@ dynamic_make_string(i_ctx_t *i_ctx_p, ref * pref, da_ptr pda, byte * next)
 
 /* GC procedures */
 #define ssarray ssptr->s_ss.binary.bin_array
-static 
+static
 CLEAR_MARKS_PROC(scanner_clear_marks)
 {
     scanner_state *const ssptr = vptr;
@@ -181,7 +181,7 @@ CLEAR_MARKS_PROC(scanner_clear_marks)
     r_clear_attrs(&ssarray, l_mark);
     r_clear_attrs(&ssptr->s_error.object, l_mark);
 }
-static 
+static
 ENUM_PTRS_WITH(scanner_enum_ptrs, scanner_state *ssptr) return 0;
 case 0:
     ENUM_RETURN_REF(&ssptr->s_file);
@@ -189,13 +189,13 @@ case 1:
     ENUM_RETURN_REF(&ssptr->s_error.object);
 case 2:
     if (ssptr->s_scan_type == scanning_none ||
-	!ssptr->s_da.is_dynamic
-	)
-	ENUM_RETURN(0);
+        !ssptr->s_da.is_dynamic
+        )
+        ENUM_RETURN(0);
     return ENUM_STRING2(ssptr->s_da.base, da_size(&ssptr->s_da));
 case 3:
     if (ssptr->s_scan_type != scanning_binary)
-	return 0;
+        return 0;
     ENUM_RETURN_REF(&ssarray);
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
@@ -203,18 +203,18 @@ static RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
     RELOC_REF_VAR(ssptr->s_file);
     r_clear_attrs(&ssptr->s_file, l_mark);
     if (ssptr->s_scan_type != scanning_none && ssptr->s_da.is_dynamic) {
-	gs_string sda;
+        gs_string sda;
 
-	sda.data = ssptr->s_da.base;
-	sda.size = da_size(&ssptr->s_da);
-	RELOC_STRING_VAR(sda);
-	ssptr->s_da.limit = sda.data + sda.size;
-	ssptr->s_da.next = sda.data + (ssptr->s_da.next - ssptr->s_da.base);
-	ssptr->s_da.base = sda.data;
+        sda.data = ssptr->s_da.base;
+        sda.size = da_size(&ssptr->s_da);
+        RELOC_STRING_VAR(sda);
+        ssptr->s_da.limit = sda.data + sda.size;
+        ssptr->s_da.next = sda.data + (ssptr->s_da.next - ssptr->s_da.base);
+        ssptr->s_da.base = sda.data;
     }
     if (ssptr->s_scan_type == scanning_binary) {
-	RELOC_REF_VAR(ssarray);
-	r_clear_attrs(&ssarray, l_mark);
+        RELOC_REF_VAR(ssarray);
+        r_clear_attrs(&ssarray, l_mark);
     }
     RELOC_REF_VAR(ssptr->s_error.object);
     r_clear_attrs(&ssptr->s_error.object, l_mark);
@@ -225,7 +225,7 @@ public_st_scanner_state_dynamic();
 
 /* Initialize a scanner. */
 void
-scanner_init_options(scanner_state *sstate, const ref *fop, int options)
+gs_scanner_init_options(scanner_state *sstate, const ref *fop, int options)
 {
     ref_assign(&sstate->s_file, fop);
     sstate->s_scan_type = scanning_none;
@@ -233,8 +233,8 @@ scanner_init_options(scanner_state *sstate, const ref *fop, int options)
     sstate->s_options = options;
     SCAN_INIT_ERROR(sstate);
 }
-void scanner_init_stream_options(scanner_state *sstate, stream *s,
-				 int options)
+void gs_scanner_init_stream_options(scanner_state *sstate, stream *s,
+                                 int options)
 {
     /*
      * The file 'object' will never be accessed, but it must be in correct
@@ -243,7 +243,7 @@ void scanner_init_stream_options(scanner_state *sstate, stream *s,
     ref fobj;
 
     make_file(&fobj, a_read, 0, s);
-    scanner_init_options(sstate, &fobj, options);
+    gs_scanner_init_options(sstate, &fobj, options);
 }
 
 /*
@@ -251,42 +251,42 @@ void scanner_init_stream_options(scanner_state *sstate, stream *s,
  * --token--, if any, or <0 if no special error object is available.
  */
 int
-scanner_error_object(i_ctx_t *i_ctx_p, const scanner_state *pstate,
-		     ref *pseo)
+gs_scanner_error_object(i_ctx_t *i_ctx_p, const scanner_state *pstate,
+                     ref *pseo)
 {
     if (!r_has_type(&pstate->s_error.object, t__invalid)) {
-	ref_assign(pseo, &pstate->s_error.object);
-	return 0;
+        ref_assign(pseo, &pstate->s_error.object);
+        return 0;
     }
     if (pstate->s_error.string[0]) {
-	int len = strlen(pstate->s_error.string);
+        int len = strlen(pstate->s_error.string);
 
-	if (pstate->s_error.is_name) {
-	    int code = name_ref(imemory, (const byte *)pstate->s_error.string, len, pseo, 1);
+        if (pstate->s_error.is_name) {
+            int code = name_ref(imemory, (const byte *)pstate->s_error.string, len, pseo, 1);
 
-	    if (code < 0)
-		return code;
-	    r_set_attrs(pseo, a_executable); /* Adobe compatibility */
-	    return 0;
-	} else {
-	    byte *estr = ialloc_string(len, "scanner_error_object");
+            if (code < 0)
+                return code;
+            r_set_attrs(pseo, a_executable); /* Adobe compatibility */
+            return 0;
+        } else {
+            byte *estr = ialloc_string(len, "gs_scanner_error_object");
 
-	    if (estr == 0)
-		return -1;		/* VMerror */
-	    memcpy(estr, (const byte *)pstate->s_error.string, len);
-	    make_string(pseo, a_all | icurrent_space, len, estr);
-	    return 0;
-	}
+            if (estr == 0)
+                return -1;              /* VMerror */
+            memcpy(estr, (const byte *)pstate->s_error.string, len);
+            make_string(pseo, a_all | icurrent_space, len, estr);
+            return 0;
+        }
     }
-    return -1;			/* no error object */
+    return -1;                  /* no error object */
 }
 
-/* Handle a scan_Refill return from scan_token. */
-/* This may return o_push_estack, 0 (meaning just call scan_token again), */
-/* or an error code. */
+/* Handle a scan_Refill return from gs_scan_token. */
+/* This may return o_push_estack, 0 (meaning just call gs_scan_token */
+/* again), or an error code. */
 int
-scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
-		   bool save, op_proc_t cont)
+gs_scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
+                   bool save, op_proc_t cont)
 {
     const ref *const fop = &sstate->s_file;
     stream *s = fptr(fop);
@@ -294,41 +294,41 @@ scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
     int status;
 
     if (s->end_status == EOFC) {
-	/* More data needed, but none available, so this is a syntax error. */
-	return_error(e_syntaxerror);
+        /* More data needed, but none available, so this is a syntax error. */
+        return_error(e_syntaxerror);
     }
     status = s_process_read_buf(s);
     if (sbufavailable(s) > avail)
-	return 0;
+        return 0;
     if (status == 0)
-	status = s->end_status;
+        status = s->end_status;
     switch (status) {
-	case EOFC:
-	    /* We just discovered that we're at EOF. */
-	    /* Let the caller find this out. */
-	    return 0;
-	case ERRC:
-	    return_error(e_ioerror);
-	case INTC:
-	case CALLC:
-	    {
-		ref rstate[1];
-		scanner_state *pstate;
+        case EOFC:
+            /* We just discovered that we're at EOF. */
+            /* Let the caller find this out. */
+            return 0;
+        case ERRC:
+            return_error(e_ioerror);
+        case INTC:
+        case CALLC:
+            {
+                ref rstate[1];
+                scanner_state *pstate;
 
-		if (save) {
-		    pstate = (scanner_state *)
-			ialloc_struct(scanner_state_dynamic, &st_scanner_state_dynamic,
-				      "scan_handle_refill");
-		    if (pstate == 0)
-			return_error(e_VMerror);
-		    ((scanner_state_dynamic *)pstate)->mem = imemory;
-		    *pstate = *sstate;
-		} else
-		    pstate = sstate;
-		make_istruct(&rstate[0], 0, pstate);
-		return s_handle_read_exception(i_ctx_p, status, fop,
-					       rstate, 1, cont);
-	    }
+                if (save) {
+                    pstate = (scanner_state *)
+                        ialloc_struct(scanner_state_dynamic, &st_scanner_state_dynamic,
+                                      "gs_scan_handle_refill");
+                    if (pstate == 0)
+                        return_error(e_VMerror);
+                    ((scanner_state_dynamic *)pstate)->mem = imemory;
+                    *pstate = *sstate;
+                } else
+                    pstate = sstate;
+                make_istruct(&rstate[0], 0, pstate);
+                return s_handle_read_exception(i_ctx_p, status, fop,
+                                               rstate, 1, cont);
+            }
     }
     /* No more data available, but no exception. */
     /* A filter is consuming headers but returns nothing. */
@@ -341,7 +341,7 @@ scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
  */
 static int
 scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
-	     const byte * base, const byte * end, bool saved)
+             const byte * base, const byte * end, bool saved)
 {
     uint len = (uint) (end - base);
     int code;
@@ -350,50 +350,50 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 #endif
 
     if (len > 1 && (base[1] == '%' || base[1] == '!')) {
-	/* Process as a DSC comment if requested. */
+        /* Process as a DSC comment if requested. */
 #ifdef DEBUG
-	if (gs_debug_c('%')) {
-	    dlprintf2("[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
-	    debug_print_string(base, len);
-	    dputs("\n");
-	}
+        if (gs_debug_c('%')) {
+            dlprintf2("[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
+            debug_print_string(base, len);
+            dputs("\n");
+        }
 #endif
-	if (scan_dsc_proc != NULL) {
-	    code = scan_dsc_proc(base, len);
-	    return (code < 0 ? code : 0);
-	}
-	if (pstate->s_options & SCAN_PROCESS_DSC_COMMENTS) {
-	    code = scan_DSC_Comment;
-	    goto comment;
-	}
-	/* Treat as an ordinary comment. */
+        if (gs_scan_dsc_proc != NULL) {
+            code = gs_scan_dsc_proc(base, len);
+            return (code < 0 ? code : 0);
+        }
+        if (pstate->s_options & SCAN_PROCESS_DSC_COMMENTS) {
+            code = scan_DSC_Comment;
+            goto comment;
+        }
+        /* Treat as an ordinary comment. */
     }
 #ifdef DEBUG
     else {
-	if (gs_debug_c('%')) {
-	    dlprintf2("[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
-	    debug_print_string(base, len);
-	    dputs("\n");
-	}
+        if (gs_debug_c('%')) {
+            dlprintf2("[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
+            debug_print_string(base, len);
+            dputs("\n");
+        }
     }
 #endif
-    if (scan_comment_proc != NULL) {
-	code = scan_comment_proc(base, len);
-	return (code < 0 ? code : 0);
+    if (gs_scan_comment_proc != NULL) {
+        code = gs_scan_comment_proc(base, len);
+        return (code < 0 ? code : 0);
     }
     if (pstate->s_options & SCAN_PROCESS_COMMENTS) {
-	code = scan_Comment;
-	goto comment;
+        code = scan_Comment;
+        goto comment;
     }
     return 0;
  comment:
     {
-	byte *cstr = ialloc_string(len, "scan_comment");
+        byte *cstr = ialloc_string(len, "scan_comment");
 
-	if (cstr == 0)
-	    return_error(e_VMerror);
-	memcpy(cstr, base, len);
-	make_string(pref, a_all | icurrent_space, len, cstr);
+        if (cstr == 0)
+            return_error(e_VMerror);
+        memcpy(cstr, base, len);
+        make_string(pref, a_all | icurrent_space, len, cstr);
     }
     return code;
 }
@@ -402,8 +402,8 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 /* Update the string if succesful. */
 /* Store the error object in i_ctx_p->error_object if not. */
 int
-scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
-			  int options)
+gs_scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
+                             int options)
 {
     stream st;
     stream *s = &st;
@@ -411,31 +411,31 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
     int code;
 
     if (!r_has_attr(pstr, a_read))
-	return_error(e_invalidaccess);
+        return_error(e_invalidaccess);
     s_init(s, NULL);
     sread_string(s, pstr->value.bytes, r_size(pstr));
-    scanner_init_stream_options(&state, s, options | SCAN_FROM_STRING);
-    switch (code = scan_token(i_ctx_p, pref, &state)) {
-	default:		/* error or comment */
-	    if (code < 0)
-		break;
-	    /* falls through */
-	case 0:		/* read a token */
-	case scan_BOS:
-	    {
-		uint pos = stell(s);
+    gs_scanner_init_stream_options(&state, s, options | SCAN_FROM_STRING);
+    switch (code = gs_scan_token(i_ctx_p, pref, &state)) {
+        default:                /* error or comment */
+            if (code < 0)
+                break;
+            /* falls through */
+        case 0:         /* read a token */
+        case scan_BOS:
+            {
+                uint pos = stell(s);
 
-		pstr->value.bytes += pos;
-		r_dec_size(pstr, pos);
-	    }
-	    break;
-	case scan_Refill:	/* error */
-	    code = gs_note_error(e_syntaxerror);
-	case scan_EOF:
-	    break;
+                pstr->value.bytes += pos;
+                r_dec_size(pstr, pos);
+            }
+            break;
+        case scan_Refill:       /* error */
+            code = gs_note_error(e_syntaxerror);
+        case scan_EOF:
+            break;
     }
     if (code < 0)
-	scanner_error_object(i_ctx_p, &state, &i_ctx_p->error_object);
+        gs_scanner_error_object(i_ctx_p, &state, &i_ctx_p->error_object);
     return code;
 }
 
@@ -448,7 +448,7 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
  * as well as for scan_Refill.
  */
 int
-scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
+gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 {
     stream *const s = pstate->s_file.value.pfile;
     ref *myref = pref;
@@ -474,7 +474,7 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
   if ( osp >= osbot ) osp--;\
   else ref_stack_pop(&o_stack, 1)
     int max_name_ctype =
-	(recognize_btokens()? ctype_name : ctype_btoken);
+        (recognize_btokens()? ctype_name : ctype_btoken);
 
 #define scan_sign(sign, ptr)\
   switch ( *ptr ) {\
@@ -512,42 +512,42 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 
     sptr = endptr = NULL; /* Quiet compiler */
     if (pstate->s_pstack != 0) {
-	if_not_spush1()
-	    return retcode;
-	myref = osp;
+        if_not_spush1()
+            return retcode;
+        myref = osp;
     }
     /* Check whether we are resuming after an interruption. */
     if (pstate->s_scan_type != scanning_none) {
-	sstate = *pstate;
-	if (!da.is_dynamic && da.base != da.buf) {
-	    /* The da contains some self-referencing pointers. */
-	    /* Fix them up now. */
-	    uint next = da.next - da.base;
-	    uint limit = da.limit - da.base;
+        sstate = *pstate;
+        if (!da.is_dynamic && da.base != da.buf) {
+            /* The da contains some self-referencing pointers. */
+            /* Fix them up now. */
+            uint next = da.next - da.base;
+            uint limit = da.limit - da.base;
 
-	    da.base = da.buf;
-	    da.next = da.buf + next;
-	    da.limit = da.buf + limit;
-	}
-	daptr = da.next;
-	switch (scan_type) {
-	    case scanning_binary:
-		retcode = (*sstate.s_ss.binary.cont)
-		    (i_ctx_p, myref, &sstate);
-		scan_begin_inline();
-		if (retcode == scan_Refill)
-		    goto pause;
-		goto sret;
-	    case scanning_comment:
-		scan_begin_inline();
-		goto cont_comment;
-	    case scanning_name:
-		goto cont_name;
-	    case scanning_string:
-		goto cont_string;
-	    default:
-		return_error(e_Fatal);
-	}
+            da.base = da.buf;
+            da.next = da.buf + next;
+            da.limit = da.buf + limit;
+        }
+        daptr = da.next;
+        switch (scan_type) {
+            case scanning_binary:
+                retcode = (*sstate.s_ss.binary.cont)
+                    (i_ctx_p, myref, &sstate);
+                scan_begin_inline();
+                if (retcode == scan_Refill)
+                    goto pause;
+                goto sret;
+            case scanning_comment:
+                scan_begin_inline();
+                goto cont_comment;
+            case scanning_name:
+                goto cont_name;
+            case scanning_string:
+                goto cont_string;
+            default:
+                return_error(e_Fatal);
+        }
     }
     /* Fetch any state variables that are relevant even if */
     /* scan_type == scanning_none. */
@@ -564,658 +564,658 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
   top:c = scan_getc();
     if_debug1('S', (c >= 32 && c <= 126 ? "`%c'" : c >= 0 ? "`\\%03o'" : "`%d'"), c);
     switch (c) {
-	case ' ':
-	case '\f':
-	case '\t':
-	case char_CR:
-	case char_EOL:
-	case char_NULL:
-	    goto top;
-	case 0x04:		/* see ctrld above */
-	    if (c == ctrld)	/* treat as ordinary name char */
-		goto begin_name;
-	case '[':
-	case ']':
-	    s1[0] = (byte) c;
-	    retcode = name_ref(imemory, s1, 1, myref, 1);	/* can't fail */
-	    r_set_attrs(myref, a_executable);
-	    break;
-	case '<':
-	    if (scan_enable_level2) {
-		ensure2(scanning_none);
-		c = scan_getc();
-		switch (c) {
-		    case '<':
-			scan_putback();
-			name_type = 0;
-			try_number = false;
-			goto try_funny_name;
-		    case '~':
-			s_A85D_init_inline(&sstate.s_ss.a85d);
-			sstate.s_ss.st.template = &s_A85D_template;
-			goto str;
-		}
-		scan_putback();
-	    }
-	    s_AXD_init_inline(&sstate.s_ss.axd);
-	    sstate.s_ss.st.template = &s_AXD_template;
-	  str:scan_end_inline();
-	    dynamic_init(&da, imemory);
-	  cont_string:for (;;) {
-		stream_cursor_write w;
+        case ' ':
+        case '\f':
+        case '\t':
+        case char_CR:
+        case char_EOL:
+        case char_NULL:
+            goto top;
+        case 0x04:              /* see ctrld above */
+            if (c == ctrld)     /* treat as ordinary name char */
+                goto begin_name;
+        case '[':
+        case ']':
+            s1[0] = (byte) c;
+            retcode = name_ref(imemory, s1, 1, myref, 1);       /* can't fail */
+            r_set_attrs(myref, a_executable);
+            break;
+        case '<':
+            if (scan_enable_level2) {
+                ensure2(scanning_none);
+                c = scan_getc();
+                switch (c) {
+                    case '<':
+                        scan_putback();
+                        name_type = 0;
+                        try_number = false;
+                        goto try_funny_name;
+                    case '~':
+                        s_A85D_init_inline(&sstate.s_ss.a85d);
+                        sstate.s_ss.st.template = &s_A85D_template;
+                        goto str;
+                }
+                scan_putback();
+            }
+            s_AXD_init_inline(&sstate.s_ss.axd);
+            sstate.s_ss.st.template = &s_AXD_template;
+          str:scan_end_inline();
+            dynamic_init(&da, imemory);
+          cont_string:for (;;) {
+                stream_cursor_write w;
 
-		w.ptr = da.next - 1;
-		w.limit = da.limit - 1;
-		status = (*sstate.s_ss.st.template->process)
-		    (&sstate.s_ss.st, &s->cursor.r, &w,
-		     s->end_status == EOFC);
-		if (!check_only)
-		    da.next = w.ptr + 1;
-		switch (status) {
-		    case 0:
-			status = s->end_status;
-			if (status < 0) {
-			    if (status == EOFC) {
-				if (check_only) {
-				    retcode = scan_Refill;
-				    scan_type = scanning_string;
-				    goto suspend;
-				} else
-				    sreturn(e_syntaxerror);
-			    }
-			    break;
-			}
-			s_process_read_buf(s);
-			continue;
-		    case 1:
-			if (!check_only) {
-			    retcode = dynamic_grow(&da, da.next, max_string_size);
-			    if (retcode == e_VMerror) {
-				scan_type = scanning_string;
-				goto suspend;
-			    } else if (retcode < 0)
-				sreturn(retcode);
-			}
-			continue;
-		}
-		break;
-	    }
-	    scan_begin_inline();
-	    switch (status) {
-		default:
-		    /*case ERRC: */
-		    sreturn(e_syntaxerror);
-		case INTC:
-		case CALLC:
-		    scan_type = scanning_string;
-		    goto pause;
-		case EOFC:
-		    ;
-	    }
-	    retcode = dynamic_make_string(i_ctx_p, myref, &da, da.next);
-	    if (retcode < 0) {	/* VMerror */
-		sputback(s);	/* rescan ) */
-		scan_type = scanning_string;
-		goto suspend;
-	    }
-	    break;
-	case '(':
-	    sstate.s_ss.pssd.from_string =
-		((pstate->s_options & SCAN_FROM_STRING) != 0) &&
-		!scan_enable_level2;
-	    s_PSSD_partially_init_inline(&sstate.s_ss.pssd);
-	    sstate.s_ss.st.template = &s_PSSD_template;
-	    goto str;
-	case '{':
-	    if (pstack == 0) {	/* outermost procedure */
-		if_not_spush1() {
-		    scan_putback();
-		    scan_type = scanning_none;
-		    goto pause_ret;
-		}
-		pdepth = ref_stack_count_inline(&o_stack);
-	    }
-	    make_int(osp, pstack);
-	    pstack = ref_stack_count_inline(&o_stack);
-	    if_debug3('S', "[S{]d=%d, s=%d->%d\n",
-		      pdepth, (int)osp->value.intval, pstack);
-	    goto snext;
-	case '>':
-	    if (scan_enable_level2) {
-		ensure2(scanning_none);
-		name_type = 0;
-		try_number = false;
-		goto try_funny_name;
-	    }
-	    /* falls through */
-	case ')':
-	    sreturn(e_syntaxerror);
-	case '}':
-	    if (pstack == 0)
-		sreturn(e_syntaxerror);
-	    osp--;
-	    {
-		uint size = ref_stack_count_inline(&o_stack) - pstack;
-		ref arr;
+                w.ptr = da.next - 1;
+                w.limit = da.limit - 1;
+                status = (*sstate.s_ss.st.template->process)
+                    (&sstate.s_ss.st, &s->cursor.r, &w,
+                     s->end_status == EOFC);
+                if (!check_only)
+                    da.next = w.ptr + 1;
+                switch (status) {
+                    case 0:
+                        status = s->end_status;
+                        if (status < 0) {
+                            if (status == EOFC) {
+                                if (check_only) {
+                                    retcode = scan_Refill;
+                                    scan_type = scanning_string;
+                                    goto suspend;
+                                } else
+                                    sreturn(e_syntaxerror);
+                            }
+                            break;
+                        }
+                        s_process_read_buf(s);
+                        continue;
+                    case 1:
+                        if (!check_only) {
+                            retcode = dynamic_grow(&da, da.next, max_string_size);
+                            if (retcode == e_VMerror) {
+                                scan_type = scanning_string;
+                                goto suspend;
+                            } else if (retcode < 0)
+                                sreturn(retcode);
+                        }
+                        continue;
+                }
+                break;
+            }
+            scan_begin_inline();
+            switch (status) {
+                default:
+                    /*case ERRC: */
+                    sreturn(e_syntaxerror);
+                case INTC:
+                case CALLC:
+                    scan_type = scanning_string;
+                    goto pause;
+                case EOFC:
+                    ;
+            }
+            retcode = dynamic_make_string(i_ctx_p, myref, &da, da.next);
+            if (retcode < 0) {  /* VMerror */
+                sputback(s);    /* rescan ) */
+                scan_type = scanning_string;
+                goto suspend;
+            }
+            break;
+        case '(':
+            sstate.s_ss.pssd.from_string =
+                ((pstate->s_options & SCAN_FROM_STRING) != 0) &&
+                !scan_enable_level2;
+            s_PSSD_partially_init_inline(&sstate.s_ss.pssd);
+            sstate.s_ss.st.template = &s_PSSD_template;
+            goto str;
+        case '{':
+            if (pstack == 0) {  /* outermost procedure */
+                if_not_spush1() {
+                    scan_putback();
+                    scan_type = scanning_none;
+                    goto pause_ret;
+                }
+                pdepth = ref_stack_count_inline(&o_stack);
+            }
+            make_int(osp, pstack);
+            pstack = ref_stack_count_inline(&o_stack);
+            if_debug3('S', "[S{]d=%d, s=%d->%d\n",
+                      pdepth, (int)osp->value.intval, pstack);
+            goto snext;
+        case '>':
+            if (scan_enable_level2) {
+                ensure2(scanning_none);
+                name_type = 0;
+                try_number = false;
+                goto try_funny_name;
+            }
+            /* falls through */
+        case ')':
+            sreturn(e_syntaxerror);
+        case '}':
+            if (pstack == 0)
+                sreturn(e_syntaxerror);
+            osp--;
+            {
+                uint size = ref_stack_count_inline(&o_stack) - pstack;
+                ref arr;
 
-		if_debug4('S', "[S}]d=%d, s=%d->%d, c=%d\n",
-			  pdepth, pstack,
-			  (pstack == pdepth ? 0 :
-			  ref_stack_index(&o_stack, size)->value.intval),
-			  size + pstack);
-		myref = (pstack == pdepth ? pref : &arr);
-		if (check_only) {
-		    make_empty_array(myref, 0);
-		    ref_stack_pop(&o_stack, size);
-		} else if (ref_array_packing.value.boolval) {
-		    retcode = make_packed_array(myref, &o_stack, size,
-						idmemory, "scanner(packed)");
-		    if (retcode < 0) {	/* must be VMerror */
-			osp++;
-			scan_putback();
-			scan_type = scanning_none;
-			goto pause_ret;
-		    }
-		    r_set_attrs(myref, a_executable);
-		} else {
-		    retcode = ialloc_ref_array(myref,
-					       a_executable + a_all, size,
-					       "scanner(proc)");
-		    if (retcode < 0) {	/* must be VMerror */
-			osp++;
-			scan_putback();
-			scan_type = scanning_none;
-			goto pause_ret;
-		    }
-		    retcode = ref_stack_store(&o_stack, myref, size, 0, 1,
-					      false, idmemory, "scanner");
-		    if (retcode < 0) {
-			ifree_ref_array(myref, "scanner(proc)");
-			sreturn(retcode);
-		    }
-		    ref_stack_pop(&o_stack, size);
-		}
-		if (pstack == pdepth) {		/* This was the top-level procedure. */
-		    spop1();
-		    pstack = 0;
-		} else {
-		    if (osp < osbot)
-			ref_stack_pop_block(&o_stack);
-		    pstack = osp->value.intval;
-		    *osp = arr;
-		    goto snext;
-		}
-	    }
-	    break;
-	case '/':
-	    /*
-	     * If the last thing in the input is a '/', don't try to read
-	     * any more data.
-	     */
-	    if (sptr >= endptr && s->end_status != EOFC) {
-		refill2(scanning_none);
-	    }
-	    c = scan_getc();
-	    if (!PDFScanRules && (c == '/')) {
-		name_type = 2;
-		c = scan_getc();
-	    } else
-		name_type = 1;
-	    try_number = false;
-	    switch (decoder[c]) {
-		case ctype_name:
-		default:
-		    goto do_name;
-		case ctype_btoken:
-		    if (!recognize_btokens())
-			goto do_name;
-		    /* otherwise, an empty name */
-		case ctype_exception:
-		case ctype_space:
-		    /*
-		     * Amazingly enough, the Adobe implementations don't accept
-		     * / or // followed by [, ], <<, or >>, so we do the same.
-		     * (Older versions of our code had a ctype_other case here
-		     * that handled these specially.)
-		     */
-		case ctype_other:
-		    if (c == ctrld) /* see above */
-			goto do_name;
-		    da.base = da.limit = daptr = 0;
-		    da.is_dynamic = false;
-		    goto nx;
-	    }
-	case '%':
-	    {			/* Scan as much as possible within the buffer. */
-		const byte *base = sptr;
-		const byte *end;
+                if_debug4('S', "[S}]d=%d, s=%d->%d, c=%d\n",
+                          pdepth, pstack,
+                          (pstack == pdepth ? 0 :
+                          ref_stack_index(&o_stack, size)->value.intval),
+                          size + pstack);
+                myref = (pstack == pdepth ? pref : &arr);
+                if (check_only) {
+                    make_empty_array(myref, 0);
+                    ref_stack_pop(&o_stack, size);
+                } else if (ref_array_packing.value.boolval) {
+                    retcode = make_packed_array(myref, &o_stack, size,
+                                                idmemory, "scanner(packed)");
+                    if (retcode < 0) {  /* must be VMerror */
+                        osp++;
+                        scan_putback();
+                        scan_type = scanning_none;
+                        goto pause_ret;
+                    }
+                    r_set_attrs(myref, a_executable);
+                } else {
+                    retcode = ialloc_ref_array(myref,
+                                               a_executable + a_all, size,
+                                               "scanner(proc)");
+                    if (retcode < 0) {  /* must be VMerror */
+                        osp++;
+                        scan_putback();
+                        scan_type = scanning_none;
+                        goto pause_ret;
+                    }
+                    retcode = ref_stack_store(&o_stack, myref, size, 0, 1,
+                                              false, idmemory, "scanner");
+                    if (retcode < 0) {
+                        ifree_ref_array(myref, "scanner(proc)");
+                        sreturn(retcode);
+                    }
+                    ref_stack_pop(&o_stack, size);
+                }
+                if (pstack == pdepth) {         /* This was the top-level procedure. */
+                    spop1();
+                    pstack = 0;
+                } else {
+                    if (osp < osbot)
+                        ref_stack_pop_block(&o_stack);
+                    pstack = osp->value.intval;
+                    *osp = arr;
+                    goto snext;
+                }
+            }
+            break;
+        case '/':
+            /*
+             * If the last thing in the input is a '/', don't try to read
+             * any more data.
+             */
+            if (sptr >= endptr && s->end_status != EOFC) {
+                refill2(scanning_none);
+            }
+            c = scan_getc();
+            if (!PDFScanRules && (c == '/')) {
+                name_type = 2;
+                c = scan_getc();
+            } else
+                name_type = 1;
+            try_number = false;
+            switch (decoder[c]) {
+                case ctype_name:
+                default:
+                    goto do_name;
+                case ctype_btoken:
+                    if (!recognize_btokens())
+                        goto do_name;
+                    /* otherwise, an empty name */
+                case ctype_exception:
+                case ctype_space:
+                    /*
+                     * Amazingly enough, the Adobe implementations don't accept
+                     * / or // followed by [, ], <<, or >>, so we do the same.
+                     * (Older versions of our code had a ctype_other case here
+                     * that handled these specially.)
+                     */
+                case ctype_other:
+                    if (c == ctrld) /* see above */
+                        goto do_name;
+                    da.base = da.limit = daptr = 0;
+                    da.is_dynamic = false;
+                    goto nx;
+            }
+        case '%':
+            {                   /* Scan as much as possible within the buffer. */
+                const byte *base = sptr;
+                const byte *end;
 
-		while (++sptr < endptr)		/* stop 1 char early */
-		    switch (*sptr) {
-			case char_CR:
-			    end = sptr;
-			    if (sptr[1] == char_EOL)
-				sptr++;
-			  cend:	/* Check for externally processed comments. */
-			    retcode = scan_comment(i_ctx_p, myref, &sstate,
-						   base, end, false);
-			    if (retcode != 0)
-				goto comment;
-			    goto top;
-			case char_EOL:
-			case '\f':
-			    end = sptr;
-			    goto cend;
-		    }
-		/*
-		 * We got to the end of the buffer while inside a comment.
-		 * If there is a possibility that we must pass the comment
-		 * to an external procedure, move what we have collected
-		 * so far into a private buffer now.
-		 */
+                while (++sptr < endptr)         /* stop 1 char early */
+                    switch (*sptr) {
+                        case char_CR:
+                            end = sptr;
+                            if (sptr[1] == char_EOL)
+                                sptr++;
+                          cend: /* Check for externally processed comments. */
+                            retcode = scan_comment(i_ctx_p, myref, &sstate,
+                                                   base, end, false);
+                            if (retcode != 0)
+                                goto comment;
+                            goto top;
+                        case char_EOL:
+                        case '\f':
+                            end = sptr;
+                            goto cend;
+                    }
+                /*
+                 * We got to the end of the buffer while inside a comment.
+                 * If there is a possibility that we must pass the comment
+                 * to an external procedure, move what we have collected
+                 * so far into a private buffer now.
+                 */
 #define comment_line da.buf
-		--sptr;
-		comment_line[1] = 0;
-		{
-		    /* Could be an externally processable comment. */
-		    uint len = sptr + 1 - base;
-		    if (len > sizeof(comment_line))
-			len = sizeof(comment_line);
+                --sptr;
+                comment_line[1] = 0;
+                {
+                    /* Could be an externally processable comment. */
+                    uint len = sptr + 1 - base;
+                    if (len > sizeof(comment_line))
+                        len = sizeof(comment_line);
 
-		    memcpy(comment_line, base, len);
-		    daptr = comment_line + len;
-		}
-		da.base = comment_line;
-		da.is_dynamic = false;
-	    }
-	    /* Enter here to continue scanning a comment. */
-	    /* daptr must be set. */
-	  cont_comment:for (;;) {
-		switch ((c = scan_getc())) {
-		    default:
-			if (c < 0)
-			    switch (c) {
-				case INTC:
-				case CALLC:
-				    da.next = daptr;
-				    scan_type = scanning_comment;
-				    goto pause;
-				case EOFC:
-				    /*
-				     * One would think that an EOF in a comment
-				     * should be a syntax error, but there are
-				     * quite a number of files that end that way.
-				     */
-				    goto end_comment;
-				default:
-				    sreturn(e_syntaxerror);
-			    }
-			if (daptr < comment_line + max_comment_line)
-			    *daptr++ = c;
-			continue;
-		    case char_CR:
-		    case char_EOL:
-		    case '\f':
-		      end_comment:
-			retcode = scan_comment(i_ctx_p, myref, &sstate,
-					       comment_line, daptr, true);
-			if (retcode != 0)
-			    goto comment;
-			goto top;
-		}
-	    }
+                    memcpy(comment_line, base, len);
+                    daptr = comment_line + len;
+                }
+                da.base = comment_line;
+                da.is_dynamic = false;
+            }
+            /* Enter here to continue scanning a comment. */
+            /* daptr must be set. */
+          cont_comment:for (;;) {
+                switch ((c = scan_getc())) {
+                    default:
+                        if (c < 0)
+                            switch (c) {
+                                case INTC:
+                                case CALLC:
+                                    da.next = daptr;
+                                    scan_type = scanning_comment;
+                                    goto pause;
+                                case EOFC:
+                                    /*
+                                     * One would think that an EOF in a comment
+                                     * should be a syntax error, but there are
+                                     * quite a number of files that end that way.
+                                     */
+                                    goto end_comment;
+                                default:
+                                    sreturn(e_syntaxerror);
+                            }
+                        if (daptr < comment_line + max_comment_line)
+                            *daptr++ = c;
+                        continue;
+                    case char_CR:
+                    case char_EOL:
+                    case '\f':
+                      end_comment:
+                        retcode = scan_comment(i_ctx_p, myref, &sstate,
+                                               comment_line, daptr, true);
+                        if (retcode != 0)
+                            goto comment;
+                        goto top;
+                }
+            }
 #undef comment_line
-	    /*NOTREACHED */
-	case EOFC:
-	    if (pstack != 0) {
-		if (check_only)
-		    goto pause;
-		sreturn(e_syntaxerror);
-	    }
-	    retcode = scan_EOF;
-	    break;
-	case ERRC:
-	    sreturn(e_ioerror);
+            /*NOTREACHED */
+        case EOFC:
+            if (pstack != 0) {
+                if (check_only)
+                    goto pause;
+                sreturn(e_syntaxerror);
+            }
+            retcode = scan_EOF;
+            break;
+        case ERRC:
+            sreturn(e_ioerror);
 
-	    /* Check for a Level 2 funny name (<< or >>). */
-	    /* c is '<' or '>'.  We already did an ensure2. */
-	  try_funny_name:
-	    {
-		int c1 = scan_getc();
+            /* Check for a Level 2 funny name (<< or >>). */
+            /* c is '<' or '>'.  We already did an ensure2. */
+          try_funny_name:
+            {
+                int c1 = scan_getc();
 
-		if (c1 == c) {
-		    s1[0] = s1[1] = c;
-		    name_ref(imemory, s1, 2, myref, 1);	/* can't fail */
-		    goto have_name;
-		}
-		scan_putback();
-	    }
-	    sreturn(e_syntaxerror);
+                if (c1 == c) {
+                    s1[0] = s1[1] = c;
+                    name_ref(imemory, s1, 2, myref, 1); /* can't fail */
+                    goto have_name;
+                }
+                scan_putback();
+            }
+            sreturn(e_syntaxerror);
 
-	    /* Handle separately the names that might be a number. */
-	case '0':
-	case '1':
-	case '2':
-	case '3':
-	case '4':
-	case '5':
-	case '6':
-	case '7':
-	case '8':
-	case '9':
-	case '.':
-	    sign = 0;
-    nr:	    /*
-	     * Skip a leading sign, if any, by conditionally passing
-	     * sptr + 1 rather than sptr.  Also, if the last character
-	     * in the buffer is a CR, we must stop the scan 1 character
-	     * early, to be sure that we can test for CR+LF within the
-	     * buffer, by passing endptr rather than endptr + 1.
-	     */
-	    retcode = scan_number(sptr + (sign & 1),
-		    endptr /*(*endptr == char_CR ? endptr : endptr + 1) */ ,
-				  sign, myref, &newptr, i_ctx_p->scanner_options);
-	    if (retcode == 1 && decoder[newptr[-1]] == ctype_space) {
-		sptr = newptr - 1;
-		if (*sptr == char_CR && sptr[1] == char_EOL)
-		    sptr++;
-		retcode = 0;
-		ref_mark_new(myref);
-		break;
-	    }
-	    name_type = 0;
-	    try_number = true;
-	    goto do_name;
-	case '+':
-	    sign = 1;
-	    goto nr;
-	case '-':
-	    sign = -1;
-	    goto nr;
+            /* Handle separately the names that might be a number. */
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '.':
+            sign = 0;
+    nr:     /*
+             * Skip a leading sign, if any, by conditionally passing
+             * sptr + 1 rather than sptr.  Also, if the last character
+             * in the buffer is a CR, we must stop the scan 1 character
+             * early, to be sure that we can test for CR+LF within the
+             * buffer, by passing endptr rather than endptr + 1.
+             */
+            retcode = scan_number(sptr + (sign & 1),
+                    endptr /*(*endptr == char_CR ? endptr : endptr + 1) */ ,
+                                  sign, myref, &newptr, i_ctx_p->scanner_options);
+            if (retcode == 1 && decoder[newptr[-1]] == ctype_space) {
+                sptr = newptr - 1;
+                if (*sptr == char_CR && sptr[1] == char_EOL)
+                    sptr++;
+                retcode = 0;
+                ref_mark_new(myref);
+                break;
+            }
+            name_type = 0;
+            try_number = true;
+            goto do_name;
+        case '+':
+            sign = 1;
+            goto nr;
+        case '-':
+            sign = -1;
+            goto nr;
 
-	    /* Check for a binary object */
+            /* Check for a binary object */
 #define case4(c) case c: case c+1: case c+2: case c+3
-	  case4(128): case4(132): case4(136): case4(140):
-	  case4(144): case4(148): case4(152): case4(156):
+          case4(128): case4(132): case4(136): case4(140):
+          case4(144): case4(148): case4(152): case4(156):
 #undef case4
-	    if (recognize_btokens()) {
-		scan_end_inline();
-		retcode = scan_binary_token(i_ctx_p, myref, &sstate);
-		scan_begin_inline();
-		if (retcode == scan_Refill)
-		    goto pause;
-		break;
-	    }
-	    /* Not a binary object, fall through. */
+            if (recognize_btokens()) {
+                scan_end_inline();
+                retcode = scan_binary_token(i_ctx_p, myref, &sstate);
+                scan_begin_inline();
+                if (retcode == scan_Refill)
+                    goto pause;
+                break;
+            }
+            /* Not a binary object, fall through. */
 
-	    /* The default is a name. */
-	default:
-	    if (c < 0) {
-		dynamic_init(&da, name_memory(imemory));	/* da state must be clean */
-		scan_type = scanning_none;
-		goto pause;
-	    }
-	    /* Populate the switch with enough cases to force */
-	    /* simple compilers to use a dispatch rather than tests. */
-	case '!':
-	case '"':
-	case '#':
-	case '$':
-	case '&':
-	case '\'':
-	case '*':
-	case ',':
-	case '=':
-	case ':':
-	case ';':
-	case '?':
-	case '@':
-	case 'A':
-	case 'B':
-	case 'C':
-	case 'D':
-	case 'E':
-	case 'F':
-	case 'G':
-	case 'H':
-	case 'I':
-	case 'J':
-	case 'K':
-	case 'L':
-	case 'M':
-	case 'N':
-	case 'O':
-	case 'P':
-	case 'Q':
-	case 'R':
-	case 'S':
-	case 'T':
-	case 'U':
-	case 'V':
-	case 'W':
-	case 'X':
-	case 'Y':
-	case 'Z':
-	case '\\':
-	case '^':
-	case '_':
-	case '`':
-	case 'a':
-	case 'b':
-	case 'c':
-	case 'd':
-	case 'e':
-	case 'f':
-	case 'g':
-	case 'h':
-	case 'i':
-	case 'j':
-	case 'k':
-	case 'l':
-	case 'm':
-	case 'n':
-	case 'o':
-	case 'p':
-	case 'q':
-	case 'r':
-	case 's':
-	case 't':
-	case 'u':
-	case 'v':
-	case 'w':
-	case 'x':
-	case 'y':
-	case 'z':
-	case '|':
-	case '~':
-	  begin_name:
-	    /* Common code for scanning a name. */
-	    /* try_number and name_type are already set. */
-	    /* We know c has ctype_name (or maybe ctype_btoken, */
-	    /* or is ^D) or is a digit. */
-	    name_type = 0;
-	    try_number = false;
-	  do_name:
-	    /* Try to scan entirely within the stream buffer. */
-	    /* We stop 1 character early, so we don't switch buffers */
-	    /* looking ahead if the name is terminated by \r\n. */
-	    da.base = (byte *) sptr;
-	    da.is_dynamic = false;
-	    {
-		const byte *endp1 = endptr - 1;
+            /* The default is a name. */
+        default:
+            if (c < 0) {
+                dynamic_init(&da, name_memory(imemory));        /* da state must be clean */
+                scan_type = scanning_none;
+                goto pause;
+            }
+            /* Populate the switch with enough cases to force */
+            /* simple compilers to use a dispatch rather than tests. */
+        case '!':
+        case '"':
+        case '#':
+        case '$':
+        case '&':
+        case '\'':
+        case '*':
+        case ',':
+        case '=':
+        case ':':
+        case ';':
+        case '?':
+        case '@':
+        case 'A':
+        case 'B':
+        case 'C':
+        case 'D':
+        case 'E':
+        case 'F':
+        case 'G':
+        case 'H':
+        case 'I':
+        case 'J':
+        case 'K':
+        case 'L':
+        case 'M':
+        case 'N':
+        case 'O':
+        case 'P':
+        case 'Q':
+        case 'R':
+        case 'S':
+        case 'T':
+        case 'U':
+        case 'V':
+        case 'W':
+        case 'X':
+        case 'Y':
+        case 'Z':
+        case '\\':
+        case '^':
+        case '_':
+        case '`':
+        case 'a':
+        case 'b':
+        case 'c':
+        case 'd':
+        case 'e':
+        case 'f':
+        case 'g':
+        case 'h':
+        case 'i':
+        case 'j':
+        case 'k':
+        case 'l':
+        case 'm':
+        case 'n':
+        case 'o':
+        case 'p':
+        case 'q':
+        case 'r':
+        case 's':
+        case 't':
+        case 'u':
+        case 'v':
+        case 'w':
+        case 'x':
+        case 'y':
+        case 'z':
+        case '|':
+        case '~':
+          begin_name:
+            /* Common code for scanning a name. */
+            /* try_number and name_type are already set. */
+            /* We know c has ctype_name (or maybe ctype_btoken, */
+            /* or is ^D) or is a digit. */
+            name_type = 0;
+            try_number = false;
+          do_name:
+            /* Try to scan entirely within the stream buffer. */
+            /* We stop 1 character early, so we don't switch buffers */
+            /* looking ahead if the name is terminated by \r\n. */
+            da.base = (byte *) sptr;
+            da.is_dynamic = false;
+            {
+                const byte *endp1 = endptr - 1;
 
-		do {
-		    if (sptr >= endp1)	/* stop 1 early! */
-			goto dyn_name;
-		}
-		while (decoder[*++sptr] <= max_name_ctype || *sptr == ctrld);	/* digit or name */
-	    }
-	    /* Name ended within the buffer. */
-	    daptr = (byte *) sptr;
-	    c = *sptr;
-	    goto nx;
-	  dyn_name:		/* Name extended past end of buffer. */
-	    scan_end_inline();
-	    /* Initialize the dynamic area. */
-	    /* We have to do this before the next */
-	    /* sgetc, which will overwrite the buffer. */
-	    da.limit = (byte *)++ sptr;
-	    da.memory = name_memory(imemory);
-	    retcode = dynamic_grow(&da, da.limit, name_max_string);
-	    if (retcode < 0) {
-		dynamic_save(&da);
-		if (retcode != e_VMerror)
-		    sreturn(retcode);
-		scan_type = scanning_name;
-		goto pause_ret;
-	    }
-	    daptr = da.next;
-	    /* Enter here to continue scanning a name. */
-	    /* daptr must be set. */
-	  cont_name:scan_begin_inline();
-	    while (decoder[c = scan_getc()] <= max_name_ctype || c == ctrld) {
-		if (daptr == da.limit) {
-		    retcode = dynamic_grow(&da, daptr,
-					   name_max_string);
-		    if (retcode < 0) {
-			dynamic_save(&da);
-			if (retcode != e_VMerror)
-			    sreturn(retcode);
-			scan_putback();
-			scan_type = scanning_name;
-			goto pause_ret;
-		    }
-		    daptr = da.next;
-		}
-		*daptr++ = c;
-	    }
-	  nx:switch (decoder[c]) {
-		case ctype_other:
-		    if (c == ctrld) /* see above */
-			break;
-		case ctype_btoken:
-		    scan_putback();
-		    break;
-		case ctype_space:
-		    /* Check for \r\n */
-		    if (c == char_CR) {
-			if (sptr >= endptr) {	/* ensure2 *//* We have to check specially for */
-			    /* the case where the very last */
-			    /* character of a file is a CR. */
-			    if (s->end_status != EOFC) {
-				sptr--;
-				goto pause_name;
-			    }
-			} else if (sptr[1] == char_EOL)
-			    sptr++;
-		    }
-		    break;
-		case ctype_exception:
-		    switch (c) {
-			case INTC:
-			case CALLC:
-			    goto pause_name;
-			case ERRC:
-			    sreturn(e_ioerror);
-			case EOFC:
-			    break;
-		    }
-	    }
-	    /* Check for a number */
-	    if (try_number) {
-		const byte *base = da.base;
+                do {
+                    if (sptr >= endp1)  /* stop 1 early! */
+                        goto dyn_name;
+                }
+                while (decoder[*++sptr] <= max_name_ctype || *sptr == ctrld);   /* digit or name */
+            }
+            /* Name ended within the buffer. */
+            daptr = (byte *) sptr;
+            c = *sptr;
+            goto nx;
+          dyn_name:             /* Name extended past end of buffer. */
+            scan_end_inline();
+            /* Initialize the dynamic area. */
+            /* We have to do this before the next */
+            /* sgetc, which will overwrite the buffer. */
+            da.limit = (byte *)++ sptr;
+            da.memory = name_memory(imemory);
+            retcode = dynamic_grow(&da, da.limit, name_max_string);
+            if (retcode < 0) {
+                dynamic_save(&da);
+                if (retcode != e_VMerror)
+                    sreturn(retcode);
+                scan_type = scanning_name;
+                goto pause_ret;
+            }
+            daptr = da.next;
+            /* Enter here to continue scanning a name. */
+            /* daptr must be set. */
+          cont_name:scan_begin_inline();
+            while (decoder[c = scan_getc()] <= max_name_ctype || c == ctrld) {
+                if (daptr == da.limit) {
+                    retcode = dynamic_grow(&da, daptr,
+                                           name_max_string);
+                    if (retcode < 0) {
+                        dynamic_save(&da);
+                        if (retcode != e_VMerror)
+                            sreturn(retcode);
+                        scan_putback();
+                        scan_type = scanning_name;
+                        goto pause_ret;
+                    }
+                    daptr = da.next;
+                }
+                *daptr++ = c;
+            }
+          nx:switch (decoder[c]) {
+                case ctype_other:
+                    if (c == ctrld) /* see above */
+                        break;
+                case ctype_btoken:
+                    scan_putback();
+                    break;
+                case ctype_space:
+                    /* Check for \r\n */
+                    if (c == char_CR) {
+                        if (sptr >= endptr) {   /* ensure2 *//* We have to check specially for */
+                            /* the case where the very last */
+                            /* character of a file is a CR. */
+                            if (s->end_status != EOFC) {
+                                sptr--;
+                                goto pause_name;
+                            }
+                        } else if (sptr[1] == char_EOL)
+                            sptr++;
+                    }
+                    break;
+                case ctype_exception:
+                    switch (c) {
+                        case INTC:
+                        case CALLC:
+                            goto pause_name;
+                        case ERRC:
+                            sreturn(e_ioerror);
+                        case EOFC:
+                            break;
+                    }
+            }
+            /* Check for a number */
+            if (try_number) {
+                const byte *base = da.base;
 
-		scan_sign(sign, base);
-		retcode = scan_number(base, daptr, sign, myref, &newptr, i_ctx_p->scanner_options);
-		if (retcode == 1) {
-		    ref_mark_new(myref);
-		    retcode = 0;
-		} else if (retcode != e_syntaxerror) {
-		    dynamic_free(&da);
-		    if (name_type == 2)
-			sreturn(e_syntaxerror);
-		    break;	/* might be e_limitcheck */
-		}
-	    }
-	    if (da.is_dynamic) {	/* We've already allocated the string on the heap. */
-		uint size = daptr - da.base;
+                scan_sign(sign, base);
+                retcode = scan_number(base, daptr, sign, myref, &newptr, i_ctx_p->scanner_options);
+                if (retcode == 1) {
+                    ref_mark_new(myref);
+                    retcode = 0;
+                } else if (retcode != e_syntaxerror) {
+                    dynamic_free(&da);
+                    if (name_type == 2)
+                        sreturn(e_syntaxerror);
+                    break;      /* might be e_limitcheck */
+                }
+            }
+            if (da.is_dynamic) {        /* We've already allocated the string on the heap. */
+                uint size = daptr - da.base;
 
-		retcode = name_ref(imemory, da.base, size, myref, -1);
-		if (retcode >= 0) {
-		    dynamic_free(&da);
-		} else {
-		    retcode = dynamic_resize(&da, size);
-		    if (retcode < 0) {	/* VMerror */
-			if (c != EOFC)
-			    scan_putback();
-			scan_type = scanning_name;
-			goto pause_ret;
-		    }
-		    retcode = name_ref(imemory, da.base, size, myref, 2);
-		}
-	    } else {
-		retcode = name_ref(imemory, da.base, (uint) (daptr - da.base),
-				   myref, !s->foreign);
-	    }
-	    /* Done scanning.  Check for preceding /'s. */
-	    if (retcode < 0) {
-		if (retcode != e_VMerror)
-		    sreturn(retcode);
-		if (!da.is_dynamic) {
-		    da.next = daptr;
-		    dynamic_save(&da);
-		}
-		if (c != EOFC)
-		    scan_putback();
-		scan_type = scanning_name;
-		goto pause_ret;
-	    }
-	  have_name:switch (name_type) {
-		case 0:	/* ordinary executable name */
-		    if (r_has_type(myref, t_name))	/* i.e., not a number */
-			r_set_attrs(myref, a_executable);
-		case 1:	/* quoted name */
-		    break;
-		case 2:	/* immediate lookup */
-		    {
-			ref *pvalue;
+                retcode = name_ref(imemory, da.base, size, myref, -1);
+                if (retcode >= 0) {
+                    dynamic_free(&da);
+                } else {
+                    retcode = dynamic_resize(&da, size);
+                    if (retcode < 0) {  /* VMerror */
+                        if (c != EOFC)
+                            scan_putback();
+                        scan_type = scanning_name;
+                        goto pause_ret;
+                    }
+                    retcode = name_ref(imemory, da.base, size, myref, 2);
+                }
+            } else {
+                retcode = name_ref(imemory, da.base, (uint) (daptr - da.base),
+                                   myref, !s->foreign);
+            }
+            /* Done scanning.  Check for preceding /'s. */
+            if (retcode < 0) {
+                if (retcode != e_VMerror)
+                    sreturn(retcode);
+                if (!da.is_dynamic) {
+                    da.next = daptr;
+                    dynamic_save(&da);
+                }
+                if (c != EOFC)
+                    scan_putback();
+                scan_type = scanning_name;
+                goto pause_ret;
+            }
+          have_name:switch (name_type) {
+                case 0: /* ordinary executable name */
+                    if (r_has_type(myref, t_name))      /* i.e., not a number */
+                        r_set_attrs(myref, a_executable);
+                case 1: /* quoted name */
+                    break;
+                case 2: /* immediate lookup */
+                    {
+                        ref *pvalue;
 
-			if (!r_has_type(myref, t_name) ||
-			    (pvalue = dict_find_name(myref)) == 0) {
-			    ref_assign(&sstate.s_error.object, myref);
-			    r_set_attrs(&sstate.s_error.object,
-				a_executable); /* Adobe compatibility */
-			    sreturn(e_undefined);
-			}
-			if (pstack != 0 &&
-			    r_space(pvalue) > ialloc_space(idmemory)
-			    )
-			    sreturn(e_invalidaccess);
-			ref_assign_new(myref, pvalue);
-		    }
-	    }
+                        if (!r_has_type(myref, t_name) ||
+                            (pvalue = dict_find_name(myref)) == 0) {
+                            ref_assign(&sstate.s_error.object, myref);
+                            r_set_attrs(&sstate.s_error.object,
+                                a_executable); /* Adobe compatibility */
+                            sreturn(e_undefined);
+                        }
+                        if (pstack != 0 &&
+                            r_space(pvalue) > ialloc_space(idmemory)
+                            )
+                            sreturn(e_invalidaccess);
+                        ref_assign_new(myref, pvalue);
+                    }
+            }
     }
   sret:if (retcode < 0) {
-	scan_end_inline();
-	pstate->s_error = sstate.s_error;
-	if (pstack != 0) {
-	    if (retcode == e_undefined)
-		*pref = *osp;	/* return undefined name as error token */
-	    ref_stack_pop(&o_stack,
-			  ref_stack_count(&o_stack) - (pdepth - 1));
-	}
-	return retcode;
+        scan_end_inline();
+        pstate->s_error = sstate.s_error;
+        if (pstack != 0) {
+            if (retcode == e_undefined)
+                *pref = *osp;   /* return undefined name as error token */
+            ref_stack_pop(&o_stack,
+                          ref_stack_count(&o_stack) - (pdepth - 1));
+        }
+        return retcode;
     }
     /* If we are at the top level, return the object, */
     /* otherwise keep going. */
     if (pstack == 0) {
-	scan_end_inline();
-	return retcode;
+        scan_end_inline();
+        return retcode;
     }
   snext:if_not_spush1() {
-	scan_end_inline();
-	scan_type = scanning_none;
-	goto save;
+        scan_end_inline();
+        scan_type = scanning_none;
+        goto save;
     }
     myref = osp;
     goto top;
@@ -1233,7 +1233,7 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     scan_end_inline();
   suspend:
     if (pstack != 0)
-	osp--;			/* myref */
+        osp--;                  /* myref */
   save:
     *pstate = sstate;
     return retcode;
@@ -1241,7 +1241,7 @@ scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     /* Handle a scanned comment. */
  comment:
     if (retcode < 0)
-	goto sret;
+        goto sret;
     scan_end_inline();
     scan_type = scanning_none;
     goto save;
