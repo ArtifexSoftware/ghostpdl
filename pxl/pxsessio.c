@@ -560,33 +560,6 @@ setd:	{ gs_memory_t *mem = pxs->memory;
 	    gs_setmatrix(pgs, &mat);
 	    pxs->initial_matrix = mat;
 	  }
-	  {
-	      /* note we don't expect errors here since the
-                 coordinates are functions of media sizes known at
-                 compile time */
-	      gs_rect page_bbox, device_page_bbox;
-	      gs_fixed_rect fixed_bbox;
-	      /* XL requires a 1/6" border to print correctly, this
-                 will set up the border as long as we do not exceed
-                 the boundary of the hardware margins.  If the
-                 engine's border is larger than 1/6" the XL output
-                 will be clipped by the engine and will not behave as
-                 expected */
-	      page_bbox.p.x = max(dev->HWMargins[0], pxs->pm->m_left * media_size_scale);
-	      page_bbox.p.y = max(dev->HWMargins[1], pxs->pm->m_top * media_size_scale);
-	      page_bbox.q.x = (pxs->media_width * media_size_scale) -
-		  max(dev->HWMargins[2], pxs->pm->m_bottom * media_size_scale);
-	      page_bbox.q.y = (pxs->media_height * media_size_scale) - 
-		  max(dev->HWMargins[3], pxs->pm->m_right * media_size_scale);
-	      gs_bbox_transform(&page_bbox, &points2device, &device_page_bbox);
-	      /* clip to rectangle takes fixed coordinates */
-	      fixed_bbox.p.x = float2fixed(device_page_bbox.p.x);
-	      fixed_bbox.p.y = float2fixed(device_page_bbox.p.y);
-	      fixed_bbox.q.x = float2fixed(device_page_bbox.q.x);
-	      fixed_bbox.q.y = float2fixed(device_page_bbox.q.y);
-	      gx_clip_to_rectangle(pgs, &fixed_bbox);
-	      pxs->pxgs->initial_clip_rect = fixed_bbox;
-	  }
 	}
 	{ /*
 	     * Set the default halftone method.  We have to do this here,
@@ -688,34 +661,6 @@ pxBeginPageFromPassthrough(px_state_t *pxs)
 	gs_setmatrix(pgs, &mat);
 	pxs->initial_matrix = mat;
     }
-    {
-	/* note we don't expect errors here since the
-	   coordinates are functions of media sizes known at
-	   compile time */
-	gs_rect page_bbox, device_page_bbox;
-	gs_fixed_rect fixed_bbox;
-	/* XL requires a 1/6" border to print correctly, this
-	   will set up the border as long as we do not exceed
-	   the boundary of the hardware margins.  If the
-	   engine's border is larger than 1/6" the XL output
-	   will be clipped by the engine and will not behave as
-	   expected */
-	page_bbox.p.x = max(dev->HWMargins[0], pxs->pm->m_left * media_size_scale);
-	page_bbox.p.y = max(dev->HWMargins[1], pxs->pm->m_top * media_size_scale);
-	page_bbox.q.x = (pxs->media_width * media_size_scale) -
-	    max(dev->HWMargins[2], pxs->pm->m_bottom * media_size_scale);
-	page_bbox.q.y = (pxs->media_height * media_size_scale) - 
-	    max(dev->HWMargins[3], pxs->pm->m_right * media_size_scale);
-	gs_bbox_transform(&page_bbox, &points2device, &device_page_bbox);
-	/* clip to rectangle takes fixed coordinates */
-	fixed_bbox.p.x = float2fixed(device_page_bbox.p.x);
-	fixed_bbox.p.y = float2fixed(device_page_bbox.p.y);
-	fixed_bbox.q.x = float2fixed(device_page_bbox.q.x);
-	fixed_bbox.q.y = float2fixed(device_page_bbox.q.y);
-	gx_clip_to_rectangle(pgs, &fixed_bbox);
-	pxs->pxgs->initial_clip_rect = fixed_bbox;
-    }
-
     pxs->have_page = true;
     return 0;
 }

@@ -307,7 +307,7 @@ px_gstate_reset(px_gstate_t *pxgs)
 int
 px_initclip(px_state_t *pxs) 
 {
-    return gx_clip_to_rectangle(pxs->pgs, &pxs->pxgs->initial_clip_rect);
+    return gs_initclip(pxs->pgs);
 }
 
 static bool

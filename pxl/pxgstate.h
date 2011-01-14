@@ -158,9 +158,6 @@ typedef struct px_gstate_s {
   bool char_matrix_set;
   int stack_depth;		/* # of unmatched PushGS */
   const pl_symbol_map_t *symbol_map; /* symbol mapping */
-  gs_fixed_rect initial_clip_rect;   /* the intersection of hardware
-					margins and the infamous PCL 1/6"
-					border */
 } px_gstate_t;
 #define private_st_px_gstate()	/* in pxgstate.c */\
   gs_private_st_composite(st_px_gstate, px_gstate_t, "px_gstate_t",\
