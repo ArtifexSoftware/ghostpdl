@@ -111,14 +111,22 @@ private_st_ht_cache();
 uint
 gx_ht_cache_default_tiles(void)
 {
+#ifdef DEBUG
     return (gs_debug_c('.') ? max_ht_cached_tiles_SMALL :
 	    max_ht_cached_tiles);
+#else
+    return max_ht_cached_tiles;
+#endif
 }
 uint
 gx_ht_cache_default_bits_size(void)
 {
+#ifdef DEBUG
     return (gs_debug_c('.') ? max_ht_cache_bits_size_SMALL :
 	    max_ht_cache_bits_size);
+#else
+    return max_ht_cache_bits_size;
+#endif
 }
 
 /* Allocate a halftone cache. max_bits_size is number of bytes */

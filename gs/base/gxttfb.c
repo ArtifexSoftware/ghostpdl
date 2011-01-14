@@ -403,8 +403,13 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
 	return 0;
+#ifdef DEBUG
     ttfFont__init(ttf, &dir->ttm->super, DebugRepaint,
                   (gs_debug_c('Y') ? DebugPrint : NULL), mem);
+#else
+    ttfFont__init(ttf, &dir->ttm->super, DebugRepaint, NULL, mem);
+#endif
+
     return ttf;
 }
 

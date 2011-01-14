@@ -810,9 +810,11 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 	if_debug5('k', "[k]compressing %dx%d by %dx%d to depth=%d\n",
 		  cc->width, cc->height, 1 << log2_x, 1 << log2_y,
 		  depth);
+#ifdef DEBUG
 	if (gs_debug_c('K'))
 	    debug_dump_bitmap(bits, raster, cc->height,
 			      "[K]uncompressed bits");
+#endif
 	/* Truncate/round the bbox to a multiple of the scale. */
 	{
 	    int scale_x = 1 << log2_x;

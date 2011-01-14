@@ -48,8 +48,12 @@ gx_pat_cache_default_tiles(void)
 #if arch_small_memory
     return max_cached_patterns_SMALL;
 #else
+#ifdef DEBUG
     return (gs_debug_c('.') ? max_cached_patterns_SMALL :
 	    max_cached_patterns_LARGE);
+#else
+    return max_cached_patterns_LARGE;
+#endif
 #endif
 }
 ulong
@@ -58,8 +62,12 @@ gx_pat_cache_default_bits(void)
 #if arch_small_memory
     return max_pattern_bits_SMALL;
 #else
+#ifdef DEBUG
     return (gs_debug_c('.') ? max_pattern_bits_SMALL :
 	    max_pattern_bits_LARGE);
+#else
+    return max_pattern_bits_LARGE;
+#endif
 #endif
 }
 

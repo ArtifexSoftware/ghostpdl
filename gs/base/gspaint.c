@@ -37,8 +37,12 @@
 #if arch_small_memory
 #  define abuf_nominal abuf_nominal_SMALL
 #else
+#ifdef DEBUG
 #  define abuf_nominal\
      (gs_debug_c('.') ? abuf_nominal_SMALL : abuf_nominal_LARGE)
+#else
+#  define abuf_nominal abuf_nominal_LARGE
+#endif
 #endif
 
 /* Erase the page */

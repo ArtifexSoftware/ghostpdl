@@ -979,6 +979,7 @@ clist_create_compositor(gx_device * dev,
     /* Using 'v' here instead of 'L' since this is used almost exclusively with
        the transparency code */
 
+#ifdef DEBUG
     if (gs_debug_c('v')) {
 
         if(cropping_op != 0) {
@@ -994,8 +995,8 @@ clist_create_compositor(gx_device * dev,
                      cropping_op);
 
         }
-
     }
+#endif
 
     if (cropping_op == ALLBANDS) {
         /* overprint applies to all bands */
