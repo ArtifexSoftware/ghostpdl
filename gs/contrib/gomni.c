@@ -346,6 +346,36 @@ gx_device_omni far_data gs_omni_device =
 /* ------------------------------------------------------*/
 /* ------------------------------------------------------*/
 
+/* Colour mapping code copied from gdevbmpc.c to ensure that
+ * this driver does not depend on on other, optional source
+ * files.
+ */
+
+/* Map a r-g-b color to a color index. */
+static gx_color_index
+omni_map_16m_rgb_color(gx_device * dev, const gx_color_value cv[])
+{
+
+    gx_color_value r, g, b;
+    r = cv[0]; g = cv[1]; b = cv[2];
+    return gx_color_value_to_byte(r) +
+	((uint) gx_color_value_to_byte(g) << 8) +
+	((ulong) gx_color_value_to_byte(b) << 16);
+}
+
+/* Map a color index to a r-g-b color. */
+static int
+omni_map_16m_color_rgb(gx_device * dev, gx_color_index color,
+		  gx_color_value prgb[3])
+{
+    prgb[2] = gx_color_value_from_byte(color >> 16);
+    prgb[1] = gx_color_value_from_byte((color >> 8) & 0xff);
+    prgb[0] = gx_color_value_from_byte(color & 0xff);
+    return 0;
+}
+
+/* ------------------------------------------------------*/
+
 /* Generic routine to send the page to the printer. */
 static int
 PrintPageMultiple (gx_device *pDev, int iCopies, int flush)
@@ -437,8 +467,8 @@ OpenDevice (gx_device *pdev  /* Driver instance to open */)
    {
       if (fDebugOutput) dprintf("Remapping color pointers\n");
 
-      set_dev_proc(pdev, map_rgb_color, bmp_map_16m_rgb_color);
-      set_dev_proc(pdev, map_color_rgb, bmp_map_16m_color_rgb);
+      set_dev_proc(pdev, map_rgb_color, omni_map_16m_rgb_color);
+      set_dev_proc(pdev, map_color_rgb, omni_map_16m_color_rgb);
    }
 
    if (pDev->iSync)

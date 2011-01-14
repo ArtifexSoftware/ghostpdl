@@ -533,7 +533,7 @@ if test -z "$PNGDEVS"; then
 fi
 AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
-AC_SUBST(PNGDEVS)
+#AC_SUBST(PNGDEVS)
 
 
 dnl look for libtiff, it also requires lib
@@ -652,7 +652,7 @@ if ( test -d cups ); then
     fi
 fi
 
-AC_SUBST(CUPSDEV)
+#AC_SUBST(CUPSDEV)
 AC_SUBST(CUPSCFLAGS)
 AC_SUBST(CUPSLIBS)
 AC_SUBST(CUPSLIBDIRS)
@@ -680,7 +680,7 @@ if test x$with_ijs != xno; then
     fi
 fi
 AC_SUBST(IJSDIR)
-AC_SUBST(IJSDEVS)
+#AC_SUBST(IJSDEVS)
 
 dnl look for jbig2dec
 AC_ARG_WITH([jbig2dec], AC_HELP_STRING([--without-jbig2dec],
@@ -906,8 +906,8 @@ fi
 AC_SUBST(X_LDFLAGS)
 AC_SUBST(X_CFLAGS)
 AC_SUBST(X_LIBS)
-AC_SUBST(X_DEVS)
-AC_SUBST(X11DEVS)
+#AC_SUBST(X_DEVS)
+#AC_SUBST(X11DEVS)
 AC_SUBST(XLIBS)
 
 dnl executible name
@@ -993,13 +993,21 @@ dnl Known file formats
 BMP_DEVS="bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b"
 FAX_DEVS="cfax dfaxlow dfaxhigh fax tfax tiffg3 tiffg32d tiffg4 faxg3 faxg32d faxg4"
 JPEG_DEVS="jpeg jpeggray jpegcmyk"
-PNG_DEVS="png16 png16m png256 pngalpha pnggray pngmono"
+# PNG_DEVS="png16 png16m png256 pngalpha pnggray pngmono"
 TIFF_DEVS="tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled"
 PCX_DEVS="pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up"
 PBM_DEVS="pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam"
 PS_DEVS="psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox"
 WTS_HALFTONING_DEVS="imdi simdi wtsimdi wtscmyk"
 MISC_FDEVS="ccr cgm24 cgm8 cgmmono cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf"
+SVGDEV="svgwrite"
+
+CUPS_DEVS=""
+SVG_DEVS=""
+JBIG2_DEVS=""
+IJS_DEVS=""
+PNG_DEVS=""
+X11_DEVS=""
 
 while test -n "$drivers"; do
 	if echo $drivers |grep "," >/dev/null; then
@@ -1013,16 +1021,20 @@ while test -n "$drivers"; do
 	ALL)
 		# ALL = PRINTERS + FILES...
 		if test -z "$drivers"; then
-			drivers="PRINTERS,FILES"
+			drivers="PRINTERS,FILES,X11"
 		else
-			drivers="$drivers,PRINTERS,FILES"
+			drivers="$drivers,PRINTERS,FILES,X11"
 		fi
 		;;
 	PRINTERS)
 		P_DEVS="$P_DEVS $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS $OPVP_DEVS"
+                IJS_DEVS="$IJSDEVS"
 		;;
 	FILES)
-		F_DEVS="$F_DEVS $BMP_DEVS $FAX_DEVS $JPEG_DEVS $PNG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $WTS_HALFTONING_DEVS $MISC_FDEVS"
+		F_DEVS="$F_DEVS $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $WTS_HALFTONING_DEVS $MISC_FDEVS"
+		CUPS_DEVS="$CUPSDEV"
+		JBIG2_DEVS="$JBIG2DEVS"
+		PNG_DEVS="$PNGDEVS"
 		;;
 	APPLE)
 		# All Apple printers
@@ -1048,9 +1060,13 @@ while test -n "$drivers"; do
 		# Jpeg file formats
 		F_DEVS="$F_DEVS $JPEG_DEVS"
 		;;
+	JBIG2)
+		# JBIG file formats
+		JBIG2_DEVS="$JBIG2DEVS"
+		;;
 	PNG)
 		# PNG file formats
-		F_DEVS="$F_DEVS $PNG_DEVS"
+		PNG_DEVS="$PNGDEVS"
 		;;
 	TIFF)
 		# TIFF file formats
@@ -1067,6 +1083,10 @@ while test -n "$drivers"; do
 	PBM)
 		# PBM file formats
 		F_DEVS="$F_DEVS $PBM_DEVS"
+		;;
+	CUPS)
+		# CUPS file format
+		CUPS_DEVS="$CUPSDEV"
 		;;
 	HP)
 		# All HP printers
@@ -1088,13 +1108,21 @@ while test -n "$drivers"; do
 		# All IBM printers
 		P_DEVS="$P_DEVS $IBM_DEVS"
 		;;
+	IJS)
+		# IJS printers
+		IJS_DEVS="$IJSDEVS"
+		;;
 	JAPAN)
 		# All old japanese printers
 		P_DEVS="$P_DEVS $JAPAN_DEVS"
 		;;
 	PS)
 		# PostScript/PDF writing
-		F_DEVS="$F_DEVS $PS_DEVS"
+		F_DEVS="$F_DEVS $SVG_DEVS"
+		;;
+	SVG)
+		# PostScript/PDF writing
+		SVG_DEVS="$SVGDEV"
 		;;
 	WTS)
 		# WTS Halftoning devices
@@ -1103,6 +1131,10 @@ while test -n "$drivers"; do
 	ETS)
 		# ETS Halftoning devices
 		F_DEVS="$F_DEVS $ETS_HALFTONING_DEVS"
+		;;
+	X11)
+		# X11 display devices
+		X11_DEVS="$X_DEVS"
 		;;
         opvp)
 		# Open Vector Printing driver...
@@ -1135,6 +1167,12 @@ if test -n "$F_DEVS"; then
 fi
 AC_SUBST(PRINTERS)
 AC_SUBST(FILES)
+AC_SUBST(CUPS_DEVS)
+AC_SUBST(SVG_DEVS)
+AC_SUBST(JBIG2_DEVS)
+AC_SUBST(IJS_DEVS)
+AC_SUBST(PNG_DEVS)
+AC_SUBST(X11_DEVS)
 
 dnl Dynamic device support.
 DYNAMIC_CFLAGS=""
