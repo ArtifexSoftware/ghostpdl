@@ -36,11 +36,7 @@ pcl_set_graphics_state(
 )
 {
     int             code = pcl_set_ctm(pcs, true);
-
-    return ( code < 0 ? code 
-                      : gx_clip_to_rectangle( pcs->pgs,
-                                              &(pcs->xfm_state.dev_print_rect)
-                                              ) );
+    return ( code < 0 ? code : gs_initclip(pcs->pgs) );
 }
 
 /*
