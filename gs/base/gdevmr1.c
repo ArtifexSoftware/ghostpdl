@@ -25,6 +25,9 @@
 #include "gdevmem.h"
 #include "gdevmrop.h"
 
+#define USE_RUN_ROP
+#undef COMPARE_AND_CONTRAST
+
 /* Calculate the X offset for a given Y value, */
 /* taking shift into account if necessary. */
 #define x_offset(px, ty, textures)\
@@ -51,6 +54,9 @@ mem_mono_strip_copy_rop(gx_device * dev,
     byte *drow;
     const byte *srow;
     int ty;
+#ifdef USE_RUN_ROP
+    rop_run_op ropper;
+#endif
 
     /* If map_rgb_color isn't the default one for monobit memory */
     /* devices, palette might not be set; set it now if needed. */
@@ -222,6 +228,10 @@ mem_mono_strip_copy_rop(gx_device * dev,
     traster = textures->raster;
     ty = y + phase_y;
 
+#ifdef USE_RUN_ROP
+    rop_get_run_op(&ropper, rop, 1, 0);
+#endif
+
     /* Loop over scan lines. */
     for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {
 	int sx = sourcex;
@@ -234,7 +244,8 @@ mem_mono_strip_copy_rop(gx_device * dev,
 
 	/* Loop over (horizontal) copies of the tile. */
 	for (; w > 0; sx += nw, dx += nw, w -= nw) {
-	    int dbit = dx & 7;
+#ifndef USE_RUN_ROP
+            int dbit = dx & 7;
 	    int sbit = sx & 7;
 	    int sskew = sbit - dbit;
 	    int tx = (dx + xoff) % textures->rep_width;
@@ -249,7 +260,7 @@ mem_mono_strip_copy_rop(gx_device * dev,
 	    const byte *sptr = srow + (sx >> 3);
 	    const byte *tptr = trow + (tx >> 3);
 
-	    if (sskew < 0)
+            if (sskew < 0)
 		--sptr, sskew += 8;
 	    if (tskew < 0)
 		--tptr, tskew += 8;
@@ -273,8 +284,68 @@ mem_mono_strip_copy_rop(gx_device * dev,
 		*dptr = (mask == 0xff ? result :
 			 (result & mask) | (dbyte & ~mask));
 	    }
-	}
+#else
+            int dbit = dx & 7;
+	    int sbit = sx & 7;
+	    int tx = (dx + xoff) % textures->rep_width;
+	    int tbit = tx & 7;
+	    int left = nw = min(w, textures->size.x - tx);
+	    byte *dptr = drow + (dx >> 3);
+	    const byte *sptr = srow + (sx >> 3);
+	    const byte *tptr = trow + (tx >> 3);
+#ifdef COMPARE_AND_CONTRAST
+	    int sskew = sbit - dbit;
+	    int tskew = tbit - dbit;
+	    byte lmask = 0xff >> dbit;
+	    byte rmask = 0xff << (~(dbit + nw - 1) & 7);
+	    byte mask = lmask;
+	    int nx = 8 - dbit;
+
+            static byte testbuffer[4096];
+            byte *start = dptr-2;
+            int bytelen = (left+32+7)>>3;
+            memcpy(testbuffer, start, bytelen);
+#endif
+            rop_set_s_bitmap_subbyte(&ropper, sptr, sbit);
+            rop_set_t_bitmap_subbyte(&ropper, tptr, tbit);
+#ifndef COMPARE_AND_CONTRAST
+            rop_run_subbyte(&ropper, dptr, dbit, left);
+#else
+            rop_run_subbyte(&ropper, testbuffer+2, dbit, left);
+            if (sskew < 0)
+		--sptr, sskew += 8;
+	    if (tskew < 0)
+		--tptr, tskew += 8;
+	    for (; left > 0;
+		 left -= nx, mask = 0xff, nx = 8,
+		 ++dptr, ++sptr, ++tptr
+		) {
+		byte dbyte = *dptr;
+
+#define fetch1(ptr, skew)\
+  (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
+		byte sbyte = fetch1(sptr, sskew);
+		byte tbyte = fetch1(tptr, tskew);
+
+#undef fetch1
+		byte result =
+		(*rop_proc_table[rop]) (dbyte, sbyte, tbyte);
+
+		if (left <= nx)
+		    mask &= rmask;
+		*dptr = (mask == 0xff ? result :
+			 (result & mask) | (dbyte & ~mask));
+	    }
+            if (memcmp(testbuffer, start, bytelen) != 0)
+                eprintf("Different! Shoulda put a breakpoint on it.\n");
+#endif
+#endif
+        }
     }
+
+#ifdef USE_RUN_ROP
+    rop_release_run_op(&ropper);
+#endif
 #ifdef DEBUG
     if (gs_debug_c('B'))
 	debug_dump_bitmap(scan_line_base(mdev, y), mdev->raster,

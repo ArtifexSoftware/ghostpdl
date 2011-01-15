@@ -265,4 +265,96 @@ extern const rop_proc rop_proc_table[256];
 /* Define the table of RasterOp operand usage. */
 extern const byte /*rop_usage_t*/ rop_usage_table[256];
 
+/* Rather than just doing one raster operation at a time (which costs us
+ * a significant amount of time due to function call overheads), we attempt
+ * to ameliorate this by doing runs of raster operations at a time.
+ */
+
+/* The raster op run operator type */
+typedef struct rop_run_op_s rop_run_op;
+
+/* The contents of these structs should really be private, but we define them
+ * in the open here to allow us to easily allocate the space on the stack
+ * and thus avoid costly malloc/free overheads. */
+typedef union rop_source_s {
+    struct {
+        const byte *ptr;
+        int         pos;
+    } b;
+    rop_operand c;
+} rop_source;
+
+struct rop_run_op_s {
+    void (*run)(rop_run_op *, byte *dest, int len);
+    void (*runswap)(rop_run_op *, byte *dest, int len);
+    rop_source s;
+    rop_source t;
+    byte rop;
+    byte depth;
+    byte flags;
+    byte dpos;
+    void (*release)(rop_run_op *);
+    void *opaque;
+};
+
+/* Flags for passing into rop_get_run_op */
+enum {
+    rop_s_constant = 1,
+    rop_t_constant = 2
+};
+
+/* To use a rop_run_op, allocate it on the stack, then call
+ * rop_get_run_op with a pointer to it to fill it in with details of an
+ * implementer. If you're lucky (doing a popular rop) you'll get an optimised
+ * implementation. If you're not, you'll get a general purpose slow rop. You
+ * will always get an implementation of some kind though.
+ *
+ * You should logical or together the flags - this tells the routine whether
+ * s and t are constant, or will be varying across the run.
+ */
+void rop_get_run_op(rop_run_op *op, byte rop, byte depth, int flags);
+
+/* Next, you should set the values of S and T. Each of these can either be
+ * a constant value, or a pointer to a run of bytes. It is the callers
+ * responsibility to set these in the correct way (corresponding to the flags
+ * passed into the call to rop_get_run_op.
+ *
+ * For cases where depth < 8, and a bitmap is used, we have to specify the
+ * start bit position within the byte. (All data in rop bitmaps is considered
+ * to be bigendian). */
+void rop_set_s_constant(rop_run_op *op, int s);
+void rop_set_s_bitmap(rop_run_op *op, const byte *s);
+void rop_set_s_bitmap_subbyte(rop_run_op *op, const byte *s, int startbitpos);
+void rop_set_t_constant(rop_run_op *op, int t);
+void rop_set_t_bitmap(rop_run_op *op, const byte *t);
+void rop_set_t_bitmap_subbyte(rop_run_op *op, const byte *s, int startbitpos);
+
+/* At last we call the rop_run function itself. (This can happen multiple
+ * times, perhaps once per scanline, with any required calls to the
+ * rop_set_{s,t} functions.) The length field is given in terms of 'number
+ * of depth bits'.
+ *
+ * This version is for the depth >= 8 case. */
+void rop_run(rop_run_op *op, byte *d, int len);
+
+/* This version tells us how many bits to skip over in the first byte, and
+ * is therefore only useful in the depth < 8 case. */
+void rop_run_subbyte(rop_run_op *op, byte *d, int startbitpos, int len);
+
+/* And finally we release our rop (in case any allocation was done). */
+void rop_release_run_op(rop_run_op *op);
+
+/* We offer some of these functions implemented as macros for speed */
+#define rop_set_s_constant(OP,S)          ((OP)->s.c = (S))
+#define rop_set_s_bitmap(OP,S)            ((OP)->s.b.ptr = (S))
+#define rop_set_s_bitmap_subbyte(OP,S,B) (((OP)->s.b.ptr = (S)),((OP)->s.b.pos = (B)))
+#define rop_set_t_constant(OP,T)          ((OP)->t.c = (T))
+#define rop_set_t_bitmap(OP,T)            ((OP)->t.b.ptr = (T))
+#define rop_set_t_bitmap_subbyte(OP,T,B) (((OP)->t.b.ptr = (T)),((OP)->t.b.pos = (B)))
+#define rop_run(OP,D,LEN)                (((OP)->run)(OP,D,LEN))
+#define rop_run_subbyte(OP,D,S,L)        (((OP)->dpos=(byte)S),((OP)->run)(OP,D,L))
+#define rop_release_run_op(OP)           do { rop_run_op *OP2 = (OP); \
+                                              if (OP2->release) OP2->release(OP2); \
+                                         } while (0==1)
+
 #endif /* gsropt_INCLUDED */
