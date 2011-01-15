@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -76,9 +76,9 @@
 /* 2-input RasterOp */
 typedef enum {
     rop2_0 = 0,
-    rop2_S = 0xc,		/* source */
+    rop2_S = 0xc,               /* source */
 #define rop2_S_shift 2
-    rop2_D = 0xa,		/* destination */
+    rop2_D = 0xa,               /* destination */
 #define rop2_D_shift 1
     rop2_1 = 0xf,
 #define rop2_operand(shift, d, s)\
@@ -95,11 +95,11 @@ typedef enum {
 /* 3-input RasterOp */
 typedef enum {
     rop3_0 = 0,
-    rop3_T = 0xf0,		/* texture */
+    rop3_T = 0xf0,              /* texture */
 #define rop3_T_shift 4
-    rop3_S = 0xcc,		/* source */
+    rop3_S = 0xcc,              /* source */
 #define rop3_S_shift 2
-    rop3_D = 0xaa,		/* destination */
+    rop3_D = 0xaa,              /* destination */
 #define rop3_D_shift 1
     rop3_1 = 0xff,
     rop3_default = rop3_T | rop3_S
@@ -140,7 +140,7 @@ typedef enum {
 #define rop3_swap_S_T(op)\
   ( (((op) & rop3_S & ~rop3_T) << (rop3_T_shift - rop3_S_shift)) |\
     (((op) & ~rop3_S & rop3_T) >> (rop3_T_shift - rop3_S_shift)) |\
-    ((op) & (~rop3_1 | (rop3_S ^ rop3_T))) )
+    ((op) & ~(rop3_S ^ rop3_T)) )
 /*
  * Account for transparency.
  */
@@ -199,7 +199,7 @@ typedef enum {
  * transparency is in effect. This doesn't change rendering in any way,
  * but does force the lop to be considered non-idempotent.
  */
-#define lop_rop(lop) ((gs_rop3_t)((lop) & 0xff))	/* must be low-order bits */
+#define lop_rop(lop) ((gs_rop3_t)((lop) & 0xff))        /* must be low-order bits */
 #define lop_S_transparent 0x100
 #define lop_T_transparent 0x200
 #define lop_pdf14 0x4000
@@ -213,10 +213,10 @@ typedef uint gs_logical_operation_t;
    (pattern_transparent_default ? lop_T_transparent : 0))
 
      /* Test whether a logical operation uses S or T. */
-#ifdef TRANSPARENCY_PER_H_P	/* bizarre but necessary definition */
+#ifdef TRANSPARENCY_PER_H_P     /* bizarre but necessary definition */
 #define lop_uses_S(lop)\
   (rop3_uses_S(lop) || ((lop) & (lop_S_transparent | lop_T_transparent)))
-#else				/* reasonable definition */
+#else                           /* reasonable definition */
 #define lop_uses_S(lop)\
   (rop3_uses_S(lop) || ((lop) & lop_S_transparent))
 #endif
