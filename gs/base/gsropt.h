@@ -141,6 +141,12 @@ typedef enum {
   ( (((op) & rop3_S & ~rop3_T) << (rop3_T_shift - rop3_S_shift)) |\
     (((op) & ~rop3_S & rop3_T) >> (rop3_T_shift - rop3_S_shift)) |\
     ((op) & ~(rop3_S ^ rop3_T)) )
+
+#define lop_swap_S_T(op)\
+  ( ((rop3_swap_S_T(op)) & ~(lop_S_transparent | lop_T_transparent)) |\
+    (((op) & lop_S_transparent) ? lop_T_transparent : 0) |\
+    (((op) & lop_T_transparent) ? lop_S_transparent : 0) )
+
 /*
  * Account for transparency.
  */
@@ -287,18 +293,22 @@ struct rop_run_op_s {
     void (*runswap)(rop_run_op *, byte *dest, int len);
     rop_source s;
     rop_source t;
-    byte rop;
+    int rop;
     byte depth;
     byte flags;
     byte dpos;
+    const byte *scolors;
+    const byte *tcolors;
     void (*release)(rop_run_op *);
-    void *opaque;
+    void *opaque;    
 };
 
 /* Flags for passing into rop_get_run_op */
 enum {
     rop_s_constant = 1,
-    rop_t_constant = 2
+    rop_t_constant = 2,
+    rop_s_1bit     = 4,
+    rop_t_1bit     = 8
 };
 
 /* To use a rop_run_op, allocate it on the stack, then call
@@ -310,7 +320,7 @@ enum {
  * You should logical or together the flags - this tells the routine whether
  * s and t are constant, or will be varying across the run.
  */
-void rop_get_run_op(rop_run_op *op, byte rop, byte depth, int flags);
+void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags);
 
 /* Next, you should set the values of S and T. Each of these can either be
  * a constant value, or a pointer to a run of bytes. It is the callers
@@ -323,9 +333,11 @@ void rop_get_run_op(rop_run_op *op, byte rop, byte depth, int flags);
 void rop_set_s_constant(rop_run_op *op, int s);
 void rop_set_s_bitmap(rop_run_op *op, const byte *s);
 void rop_set_s_bitmap_subbyte(rop_run_op *op, const byte *s, int startbitpos);
+void rop_set_s_colors(rop_run_op *op, const byte *scolors);
 void rop_set_t_constant(rop_run_op *op, int t);
 void rop_set_t_bitmap(rop_run_op *op, const byte *t);
 void rop_set_t_bitmap_subbyte(rop_run_op *op, const byte *s, int startbitpos);
+void rop_set_t_colors(rop_run_op *op, const byte *scolors);
 
 /* At last we call the rop_run function itself. (This can happen multiple
  * times, perhaps once per scanline, with any required calls to the
@@ -346,9 +358,11 @@ void rop_release_run_op(rop_run_op *op);
 #define rop_set_s_constant(OP,S)          ((OP)->s.c = (S))
 #define rop_set_s_bitmap(OP,S)            ((OP)->s.b.ptr = (S))
 #define rop_set_s_bitmap_subbyte(OP,S,B) (((OP)->s.b.ptr = (S)),((OP)->s.b.pos = (B)))
+#define rop_set_s_colors(OP,S)            ((OP)->scolors = (const byte *)(S))
 #define rop_set_t_constant(OP,T)          ((OP)->t.c = (T))
 #define rop_set_t_bitmap(OP,T)            ((OP)->t.b.ptr = (T))
 #define rop_set_t_bitmap_subbyte(OP,T,B) (((OP)->t.b.ptr = (T)),((OP)->t.b.pos = (B)))
+#define rop_set_t_colors(OP,T)            ((OP)->tcolors = (const byte *)(T))
 #define rop_run(OP,D,LEN)                (((OP)->run)(OP,D,LEN))
 #define rop_run_subbyte(OP,D,S,L)        (((OP)->dpos=(byte)S),((OP)->run)(OP,D,L))
 #define rop_release_run_op(OP)           do { rop_run_op *OP2 = (OP); \
