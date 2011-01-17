@@ -202,9 +202,7 @@ typedef enum {
 #define lop_rop(lop) ((gs_rop3_t)((lop) & 0xff))        /* must be low-order bits */
 #define lop_S_transparent 0x100
 #define lop_T_transparent 0x200
-#define lop_pdf14 0x4000
-#define lop_ral_shift 10
-#define lop_ral_mask 0xf
+#define lop_pdf14 0x400
 typedef uint gs_logical_operation_t;
 
 #define lop_default\
