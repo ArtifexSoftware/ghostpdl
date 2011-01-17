@@ -687,11 +687,7 @@ JPXSRCDIR=lwf_jp2
 !endif
 !ifndef JPX_CFLAGS
 # required compiler flags
-!if $(MSVC_VERSION) <= 7
 JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32 -DNO_ASSEMBLY
-!else
-JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32
-!endif
 !endif
 !else
 # Use jasper by default. See jasper.mak for more information.
