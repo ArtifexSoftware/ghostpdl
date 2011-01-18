@@ -246,7 +246,7 @@ my %tests=(
     "pbmraw.75.0",
 #   "pbmraw.600.0",
     "pbmraw.600.1",
-#   "pgmraw.75.0",
+    "pgmraw.75.0",
 #   "pgmraw.600.0",
 #   "pgmraw.600.1",
     #"wtsimdi.75.0",
@@ -263,8 +263,8 @@ my %tests=(
 ##"psdcmyk.600.1",
     "pdf.ppmraw.75.0",
     "pdf.ppmraw.600.0",
-    "ps.ppmraw.75.0",
-    "ps.ppmraw.600.0"
+#   "ps.ppmraw.75.0",  #
+#   "ps.ppmraw.600.0"  #
 #   "pdf.pkmraw.600.0"
     ],
   'xps' => [
@@ -287,7 +287,7 @@ my %tests=(
 ###"psdcmyk.300.0",
 ###"psdcmyk.300.1",
     "pdf.ppmraw.72.0",
-    "ps.ppmraw.72.0",
+#   "ps.ppmraw.72.0",  #
 ##"pdf.ppmraw.300.0",
 ##"pdf.pkmraw.300.0"
     ],
