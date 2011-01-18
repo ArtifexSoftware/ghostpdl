@@ -353,12 +353,14 @@ pxl_impl_set_device(
 	if ( (code = gs_gsave(pxli->pgs)) < 0)
 	  goto pisdEnd;
 
+    /* PXL always sets up a page and erases it so the following is not
+       needed in normal operation. */
+#ifdef PRELIMINARY_ERASE
 	stage = Serase;
 	if ( (code = gs_erasepage(pxli->pgs)) < 0 )
 		goto pisdEnd;
-
+#endif
 	stage = Sdone;	/* success */
-
 	/* Unwind any errors */
 pisdEnd:
 	switch (stage) {

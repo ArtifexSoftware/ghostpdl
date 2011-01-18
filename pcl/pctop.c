@@ -390,9 +390,14 @@ pcl_impl_set_device(
     stage = Sgsave1;
     if ( (code = gs_gsave(pcli->pcs.pgs)) < 0 )
 	goto pisdEnd;
+
+    /* PCL always sets up a page and erases it so the following is not
+       needed in normal operation. */
+#ifdef PRELIMINARY_ERASE
     stage = Serase;
     if ( (code = gs_erasepage(pcli->pcs.pgs)) < 0 )
 	goto pisdEnd;
+#endif
     /* Do device-dependent pcl inits */
     stage = Sreset;
     if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0 )

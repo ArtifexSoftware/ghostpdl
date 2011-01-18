@@ -318,7 +318,7 @@ reset_margins(
  * an initial reset. In that case, done't call HPGL's reset - the reset
  * will do that later.
  */
-  void
+  static void
 new_page_size(
     pcl_state_t *               pcs,
     const pcl_paper_size_t *    psize,
@@ -332,15 +332,11 @@ new_page_size(
     static float                old_page_size[2] = { 0, 0 };
     gs_state *                  pgs = pcs->pgs;
     gs_matrix                   mat;
+    bool                        changed_page_size;
 
     page_size[0] = width_pts;
     page_size[1] = height_pts;
 
-    /* NB: save off the page size for the case where set device page size
-     * doesn't match the PJL page size and no escE reset occurs, and we are not coming from PXL.
-     * A direct query, reset initial erasepage or a erasepage with notmarked don't do it
-     * would all be preferable...
-     */
     old_page_size[0] = pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->width : 0;
     old_page_size[1] = pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->height : 0;
 
@@ -366,29 +362,28 @@ new_page_size(
     update_xfm_state(pcs, reset_initial);
     reset_margins(pcs, for_passthrough);
 
+    /* check if update_xfm_state changed the page size */
+    changed_page_size = !(old_page_size[0] == pcs->xfm_state.paper_size->width &&
+                          old_page_size[1] == pcs->xfm_state.paper_size->height);
+
+
     /*
-     * If this is an initial reset, make sure underlining is disabled (homing
-     * the cursor may cause an underline to be put out.
+     * make sure underlining is disabled (homing the cursor may cause
+     * an underline to be put out.
      */
-    if (reset_initial)
-        pcs->underline_enabled = false;
-    else
-        pcl_home_cursor(pcs);
+    pcs->underline_enabled = false;
+    pcl_home_cursor(pcs);
 
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
-    if (!reset_initial) {
+    if (!reset_initial)
         hpgl_do_reset(pcs, pcl_reset_page_params);
-        if ( pcs->end_page == pcl_end_page_top )   /* don't erase in snippet mode */
+
+    if ( pcs->end_page == pcl_end_page_top ) {  /* don't erase in snippet mode */
+        if (pcs->page_marked || changed_page_size) {
             gs_erasepage(pcs->pgs);
-        pcs->page_marked = false;
-    }
-    else if ( pcs->end_page == pcl_end_page_top &&
-              !(old_page_size[0] == pcs->xfm_state.paper_size->width &&
-                old_page_size[1] == pcs->xfm_state.paper_size->height)) {
-            /* PJL paper size change without escE case. */
-        gs_erasepage(pcs->pgs);
-        pcs->page_marked = false;
+            pcs->page_marked = false;
+        }
     }
 }
 

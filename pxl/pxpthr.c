@@ -165,6 +165,7 @@ pxPassthrough_init(px_state_t *pxs)
     pcl_process_init(&global_pcl_parser_state);
     /* default 600 to match XL allow PCL to override */
     global_pcs->uom_cp = 7200L / 600L;
+    gs_setgray(global_pcs->pgs, 0);
     return 0;
 }
 

@@ -911,6 +911,7 @@ process_row(
 
     if ((prast->gen_mask_row != 0) && (code >= 0))
         code = process_mask_row(prast);
+    prast->pcs->page_marked = true;
     return code;
 }
 
