@@ -441,6 +441,8 @@ CCAUX=$(CC) `cat $(AK)` $(CFLAGS)
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
 CC_SHARED=$(CC_) $(CFLAGS_SO)
 
+LD_SET_DT_SONAME=-soname=
+
 # ---------------- End of platform-specific section ---------------- #
 
 include $(GLSRCDIR)/unixhead.mak

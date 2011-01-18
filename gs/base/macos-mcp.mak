@@ -259,6 +259,8 @@ CCAUX=cc
 # specific few files that need this.  We may turn off others in the future.
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
 
+LD_SET_DT_SONAME=-soname=
+
 # ---------------- End of platform-specific section ---------------- #
 
 include $(GLSRCDIR)/unixhead.mak

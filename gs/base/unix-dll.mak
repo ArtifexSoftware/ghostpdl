@@ -49,7 +49,13 @@ GS_SOEXT=so
 GS_SONAME=$(GS_SONAME_BASE).$(GS_SOEXT)
 GS_SONAME_MAJOR=$(GS_SONAME).$(GS_VERSION_MAJOR)
 GS_SONAME_MAJOR_MINOR=$(GS_SONAME).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)
-LDFLAGS_SO=-shared -Wl,-soname=$(GS_SONAME_MAJOR)
+#LDFLAGS_SO=-shared -Wl,-soname=$(GS_SONAME_MAJOR)
+
+# NOTE: the value of LD_SET_DT_SONAME for, for example, Solaris ld, must contain the
+# trailing space to separation it from the value of the option. For GNU ld and
+# similar linkers it must containt the trailing "=" 
+LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(GS_SONAME_MAJOR)
+
 
 # MacOS X
 #GS_SOEXT=dylib

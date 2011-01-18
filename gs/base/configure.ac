@@ -113,15 +113,46 @@ dnl --------------------------------------------------
 
 #AC_CANONICAL_HOST
 
+CC_OPT_FLAGS_TO_TRY="-O"
+SET_DT_SONAME="-soname="
+
+case `uname` in
+	Linux*|GNU*)
+        if test $ac_cv_prog_gcc = yes; then
+            CC_OPT_FLAGS_TO_TRY="-O2"
+        fi
+	;;
+	*BSD)
+        if test $ac_cv_prog_gcc = yes; then
+	    CC_OPT_FLAGS_TO_TRY="-O2"
+	fi
+	;;
+	Darwin*)
+        if test $ac_cv_prog_gcc = yes; then
+	    CC_OPT_FLAGS_TO_TRY="-O2"
+	fi
+	;;
+	SunOS)
+	CC_OPT_FLAGS_TO_TRY="-O2"
+	# the trailing space is required!
+        if test $ac_cv_prog_gcc = no; then
+	    SET_DT_SONAME="-h "
+	fi
+	;;
+esac
+
+AC_SUBST(SET_DT_SONAME)
+
+
 if test $ac_cv_prog_gcc = yes; then
     cflags_to_try="-Wall -Wstrict-prototypes -Wundef \
 -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
 -Wno-strict-aliasing -Wdeclaration-after-statement \
 -fno-builtin -fno-common"
-    optflags_to_try="-O2"
+    optflags_to_try="$CC_OPT_FLAGS_TO_TRY"
 else
     cflags_to_try=
-    optflags_to_try="-O"
+    optflags_to_try="$CC_OPT_FLAGS_TO_TRY"
 fi
 
 AC_ARG_ENABLE([debug], AC_HELP_STRING([--enable-debug],

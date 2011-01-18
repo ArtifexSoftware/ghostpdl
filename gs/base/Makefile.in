@@ -513,6 +513,8 @@ CC_LEAF_PG=$(CC_)
 CC_NO_WARN=$(CC_)
 CC_SHARED=$(CC_) @DYNAMIC_CFLAGS@
 
+LD_SET_DT_SONAME=@SET_DT_SONAME@
+
 # ---------------- End of platform-specific section ---------------- #
 
 INSTALL_CONTRIB=@INSTALL_CONTRIB@
