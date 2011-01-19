@@ -23,7 +23,6 @@
 
 /* Define the names of the known blend modes. */
 typedef enum {
-    BLEND_MODE_Compatible,
     BLEND_MODE_Normal,
     BLEND_MODE_Multiply,
     BLEND_MODE_Screen,
@@ -39,14 +38,17 @@ typedef enum {
     BLEND_MODE_Luminosity,
     BLEND_MODE_Hue,
     BLEND_MODE_Saturation,
-    BLEND_MODE_Color
+    BLEND_MODE_Color,
 #define MAX_BLEND_MODE BLEND_MODE_Color
+
+    /* For compatibility with old PDFs */
+    BLEND_MODE_Compatible
 } gs_blend_mode_t;
 #define GS_BLEND_MODE_NAMES\
-  "Compatible", "Normal", "Multiply", "Screen", "Difference",\
+  "Normal", "Multiply", "Screen", "Difference",\
   "Darken", "Lighten", "ColorDodge", "ColorBurn", "Exclusion",\
   "HardLight", "Overlay", "SoftLight", "Luminosity", "Hue",\
-  "Saturation", "Color"
+  "Saturation", "Color", "Compatible"
 
 /* Define the common part for a transparency stack state. */
 typedef enum {

@@ -1775,7 +1775,7 @@ pdf14_put_params(gx_device * dev, gs_param_list	* plist)
 
 /*
  * Copy marking related parameters into the PDF 1.4 device structure for use
- * by pdf14_fill_rrectangle.
+ * by pdf14_fill_rectangle.
  */
 static	void
 pdf14_set_marking_params(gx_device *dev, const gs_imager_state *pis)
@@ -6154,7 +6154,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
 }
 
 /*
- * stroke_path routine for the PDF 1.4 transaprency compositor device for
+ * stroke_path routine for the PDF 1.4 transparency compositor device for
  * writing the clist.
  */
 static	int

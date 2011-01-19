@@ -47,6 +47,8 @@ gs_setblendmode(gs_state *pgs, gs_blend_mode_t mode)
 	    dprintf1("%d??\n", (int)mode);
     }
 #endif
+    if (mode == BLEND_MODE_Compatible)
+        mode = BLEND_MODE_Normal;
     if (mode < 0 || mode > MAX_BLEND_MODE)
 	return_error(gs_error_rangecheck);
     pgs->blend_mode = mode;
