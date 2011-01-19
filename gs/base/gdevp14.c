@@ -1794,12 +1794,31 @@ pdf14_set_marking_params(gx_device *dev, const gs_imager_state *pis)
 }
 
 static  void
-update_lop_for_pdf14(gs_imager_state *pis)
+update_lop_for_pdf14(gs_imager_state *pis, const gx_drawing_color *pdcolor)
 {
+    bool hastrans = false;
+
+    /* We'd really rather not have to set the pdf14 bit in the lop, as this
+     * makes other operations much slower. We have no option however, if the
+     * current colour involves transparency, or if it's anything other than
+     * a completely solid (or transparent) operation in the normal blend mode.
+     */
+    if (pdcolor != NULL)
+    {
+        if (gx_dc_is_pattern1_color(pdcolor) &&
+            gx_pattern1_get_transptr(pdcolor) != NULL) {
+            hastrans = true;
+        } else if (gx_dc_is_pattern2_color(pdcolor)) {
+            /* FIXME: Here we assume that ALL type 2 patterns are
+             * transparent - this test could be better. */
+            hastrans = true;
+        }
+    }
     if ((pis->alpha != 0xFFFF) ||
         (pis->blend_mode != BLEND_MODE_Normal) ||
         (pis->opacity.alpha != 1.0) ||
-        (pis->shape.alpha != 1.0))
+        (pis->shape.alpha != 1.0) ||
+        (hastrans))
     {
         /*
          * The blend operations are not idempotent.  Force non-idempotent
@@ -1861,7 +1880,7 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
               by the pdf14 clist writer device.  */
            pinst->saved->trans_device = dev;
     }
-    update_lop_for_pdf14(&new_is);
+    update_lop_for_pdf14(&new_is, pdcolor);
     pdf14_set_marking_params(dev, pis);
     new_is.trans_device = dev;
     new_is.has_transparency = true;
@@ -1882,7 +1901,7 @@ pdf14_stroke_path(gx_device *dev, const	gs_imager_state	*pis,
 {
     gs_imager_state new_is = *pis;
 
-    update_lop_for_pdf14(&new_is);
+    update_lop_for_pdf14(&new_is, pdcolor);
     pdf14_set_marking_params(dev, pis);
     return gx_default_stroke_path(dev, &new_is, ppath, params, pdcolor,
 				  pcpath);
@@ -6125,7 +6144,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     code = pdf14_clist_update_params(pdev, pis, false, NULL);
     if (code < 0)
 	return code;
-    /* If we are doing a shading fill and we are in a tranparency group of a 
+    /* If we are doing a shading fill and we are in a transparency group of a 
        different color space, then we do not want to do the shading in the 
        device color space. It must occur in the source space.  To handle it in 
        the device space would require knowing all the nested transparency group 
@@ -6141,7 +6160,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
               clist writer device.  */
            pinst->saved->trans_device = dev;
     }
-    update_lop_for_pdf14(&new_is);
+    update_lop_for_pdf14(&new_is, pdcolor);
     new_is.trans_device = dev;
     new_is.has_transparency = true;
     code = gx_forward_fill_path(dev, &new_is, ppath, params, pdcolor, pcpath);
@@ -6177,7 +6196,7 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_imager_state *pis,
     code = pdf14_clist_update_params(pdev, pis, false, NULL);
     if (code < 0)
 	return code;
-    /* If we are doing a shading stroke and we are in a tranparency group of a 
+    /* If we are doing a shading stroke and we are in a transparency group of a 
        different color space, then we need to get the proper device information 
        passed along so that we use the correct color procs and colorinfo about 
        the transparency device and not the final target device */
@@ -6191,7 +6210,7 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_imager_state *pis,
            pinst->saved->trans_device = dev;
     }
 
-    update_lop_for_pdf14(&new_is);
+    update_lop_for_pdf14(&new_is, pdcolor);
     new_is.trans_device = dev;
     new_is.has_transparency = true;
     code = gx_forward_stroke_path(dev, &new_is, ppath, params, pdcolor, pcpath);
