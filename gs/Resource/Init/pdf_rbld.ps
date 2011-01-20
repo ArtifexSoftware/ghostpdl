@@ -144,7 +144,7 @@
       PDFfile fileposition	% get file position
     } if
   } {
-    pop search_end_trailer	% no xref, should not happen, search end of file
+    pop 0                 	% no xref, should not happen, report it upstrem
   } ifelse
 } bind def
 
@@ -163,10 +163,15 @@
   % read block of data
   dup string 0 1 4 -1 roll 1 sub { 2 copy PDFfile read pop put pop } for
   % search for last occurance of 'trailer'
-  (trailer) { search not { exit } if pop } loop
-  % determine where the trailer is in the file
-  %   trailer loc = end loc - remaing string length
-  length sub 
+  (trailer) search {
+    pop
+    { search not { exit } if pop } loop
+    % determine where the trailer is in the file
+    %   trailer loc = end loc - remaing string length
+    length sub 
+  } {
+    pop pop 0
+  } ifelse
 } bind def
 
 % We want to find the trailer dictionary.  There is a trailer dictionary
@@ -193,7 +198,7 @@
   % read block of data
   dup string 0 1 4 -1 roll 1 sub { 2 copy PDFfile read pop put pop } for
   % search for last occurance of 'startxref'
-  false				% Assume that startxref not present
+  //false				% Assume that startxref not present
   exch (startxref) { 
      search not { exit } if	% Exit loop when no more startxref's
      pop 3 -1 roll pop true 3 1 roll	% Idicate that we have found starxref
@@ -211,7 +216,15 @@
      pop pop PDFfilelen
   } ifelse
   % compare xref position to 1/2 the length of the file and search for trailer
-  exch 2 div lt { search_start_trailer } { search_end_trailer } ifelse
+  exch 2 div lt {
+    search_start_trailer dup 0 eq { pop search_end_trailer } if
+  } {
+    search_end_trailer   dup 0 eq { pop search_start_trailer } if
+  } ifelse
+  dup 0 eq {
+    pop
+    (   **** Error:  Trailer is not found.\n) pdfformaterror
+  } if
   % get the trailer
   PDFfile exch setfileposition		% set to the specified trailer location
   /dictlevelcount 0 def
@@ -232,22 +245,25 @@
   string PDFfile exch readstring pop % ()
 
   % search for last occurance of 'startxref', '%%EOF' is often damaged
-  (startxref) {
-    search not { exit } if pop
-  } loop
-  % how much is left = remaining string length
+  (startxref) search {
+    pop
+    { search not { exit } if pop
+    } loop
+    % how much is left = remaining string length
 
-  % Now search for %%EO or try to read a number after 'startxref'.
-  (%%EO) search {
-    pop pop 
+    % Now search for %%EO or try to read a number after 'startxref'.
+    (%%EO) search {
+      pop pop 
+    } {
+      % Look for a number after startxref
+      { dup token { pop exch pop } if
+      } stopped pop
+    } ifelse
+    length
   } {
-    % Look for a number after startxref
-    { dup token { pop exch pop } if
-    } stopped {
-      pop
-    } if
+    % Can't even find startxref, assume it's all objects
+    pop 0 
   } ifelse
-  length
 } bind def
 
 % This routine will scan a file searaching for object locations to build
@@ -266,19 +282,20 @@
   % using a maximum size string size the logic below wants a recovered object
   % to fit into our working string.
   65535 dup string
-  { % Now loop through the entire file lloking for objects
+  { % Now loop through the entire file looking for objects
     PDFfile fileposition		% save current file position
     % When we get near the end of the file, we use a smaller interval of
     % our working string to prevent reading past the end.  (See comments on
     % EOF testing below.)
     PDFfile bytesavailable post_eof_count sub 10 sub dup 4 index lt {
       2 index 0 3 -1 roll getinterval	% near EOF, use interval of string
-    } { pop 1 index			% not near end, use full working string
-    }ifelse
+    } {
+      pop 1 index			% not near end, use full working string
+    } ifelse
     % Read a line from file.  If the line does not fit into our working string,
     % or any other error, then we will discard it.
     PDFfile exch { readline } .internalstopped
-    { pop pop false } if		% indicate no string if we stopped
+    { pop pop //false } if		% indicate no string if we stopped
     { % stack: <length> <working_str> <loc> <string>
       % Now that we have line, get obj num, ref num, and 'obj'.  Verify that each
       % of these is correct type.
