@@ -203,14 +203,18 @@ TARGET_XE=$(GENDIR)\pcl6
 # Main file's name
 !ifndef MAIN_OBJ
 !ifndef ALLOW_VD_TRACE
-MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ)
+MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ) $(PLOBJDIR)\dwimg.$(OBJ)\
+  $(PLOBJDIR)\dwreg.$(OBJ)
 !else
 MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ) $(PLOBJDIR)\dwtrace.$(OBJ)\
  $(PLOBJDIR)\dwimg.$(OBJ) $(PLOBJDIR)\dwreg.$(OBJ)
 !endif
 !endif
 !ifndef REALMAIN_OBJ
-REALMAIN_OBJ=$(PLOBJDIR)\realmain.$(OBJ)
+REALMAIN_OBJ=dwmainc.$(OBJ)
+!endif
+!ifndef REALMAIN_SRC
+REALMAIN_SRC=dwmainc.c
 !endif
 !ifndef PCL_TOP_OBJ
 PCL_TOP_OBJ=$(PCLOBJDIR)\pctop.$(OBJ)
@@ -377,7 +381,7 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev $(DD)\tiffscaled.dev \
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\jpeg.dev \
  $(DD)\pdfwrite.dev $(DD)\pswrite.dev $(DD)\ps2write.dev \
- $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev
+ $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev $(DD)\display.dev
 !endif
 
 # GS options
@@ -432,6 +436,9 @@ config-clean: pl.config-clean pxl.config-clean
 	$(RMN_) $(PXLGENDIR)\pconf.h $(PXLGENDIR)\pconfig.h
 
 
+# Define the compilation rule for Windows interpreter code.
+PLATCCC=$(CC_WX) $(CCWINFLAGS) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I)
+
 # Subsystems
 !include $(PLSRCDIR)\pl.mak
 !include $(PCLSRCDIR)\pcl.mak
@@ -449,14 +456,15 @@ $(PLOBJDIR)\dwtrace.$(OBJ): $(GLSRC)dwtrace.c $(AK)\
  $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
 	$(PLCCC_W) $(GLO_)dwtrace.$(OBJ) $(C_) $(GLSRC)dwtrace.c
 
-$(PLOBJDIR)\dwimg.obj: $(GLSRC)dwimg.c $(AK)\
- $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h) $(stdio__h) \
- $(gscdefs_h) $(iapi_h) $(dwreg_h)
-	$(PLCCC_W)  $(GLO_)dwimg.obj $(C_) $(GLSRC)dwimg.c
+$(PLOBJDIR)\dwreg.obj: $(PLSRC)dwreg.c $(AK) $(dwreg_h)
+	$(PLATCCC) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwreg.obj $(C_) $(PLSRC)dwreg.c
 
-$(PLOBJDIR)\dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
-	$(PLCCC_W) $(GLO_)dwreg.obj $(C_) $(GLSRC)dwreg.c
 
+$(PLOBJDIR)\dwimg.obj: $(PLSRC)dwimg.c $(AK) $(windows__h) 
+	$(PLATCCC) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwimg.obj $(C_) $(PLSRC)dwimg.c
+
+$(PLOBJDIR)dwmainc.obj: $(PLSRC)dwmainc.c $(AK) $(windows__h) 
+	$(PLATCCC) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj $(C_) $(PLSRC)dwmainc.c
 
 !ifndef BSCFILE
 BSCFILE=$(GENDIR)\pcl.bsc
