@@ -292,8 +292,10 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 
 # Real top level; provides main that just calls pl_main
-$(PLOBJ)realmain.$(OBJ): $(PLSRC)realmain.c
-	$(PLCCC) $(PLSRC)realmain.c $(PLO_)realmain.$(OBJ)
+# On Windows this also sets up the display device so that we
+# can view the output.
+$(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c
+	$(PLATCCC) $(PLSRC)$(REALMAIN_SRC).c $(PLO_)$(REALMAIN_SRC).$(OBJ)
 
 $(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \
                         $(AK)                       \

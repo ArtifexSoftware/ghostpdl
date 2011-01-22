@@ -127,7 +127,8 @@ TARGET_DEVS?=$(PXLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(
 TARGET_XE?=$(GENDIR)/pcl6
 TARGET_LIB?=$(GENDIR)/pcl6.a
 MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
-REALMAIN_OBJ?=$(PLOBJDIR)/realmain.$(OBJ)
+REALMAIN_OBJ=$(PLOBJDIR)/realmain.$(OBJ)
+REALMAIN_SRC=realmain
 PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
 TOP_OBJ?=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
@@ -251,6 +252,10 @@ XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak
+
+# Windows eneds a different set of C flags, so pl.mak uses PLATCCC
+# gcc doesn't need this, so use the same set.
+PLATCCC=$(PLCCC)
 
 # Subsystems
 
