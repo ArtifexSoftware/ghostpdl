@@ -466,6 +466,19 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     if (penum->icc_link != NULL) {
         gsicc_release_link(penum->icc_link);
     }
+    if (penum->color_cache != NULL) {
+        if (penum->color_cache->free_contone) {
+            gs_free_object(mem, penum->color_cache->device_contone, 
+                            "device_contone");
+        }
+        gs_free_object(mem, penum->color_cache->is_transparent, 
+                       "image is_transparent");
+        gs_free_object(mem, penum->color_cache, "image color cache");
+    }
+    if (penum->landscape_byte_buff != NULL) {
+        gs_free_object(mem, penum->landscape_byte_buff,
+                       "image landscape_byte_buff");
+        }
     if (penum->clues != NULL) {
         gs_free_object(mem,penum->clues, "image clues");
     }

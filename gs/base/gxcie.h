@@ -141,5 +141,7 @@ int gx_psconcretize_CIEABC(const gs_client_color * pc, const gs_color_space * pc
 int gx_psconcretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 		     frac * pconc, const gs_imager_state * pis);
 bool check_range(gs_range *ranges, int num_colorants);
+bool check_cie_range( const gs_color_space * pcs );
+gs_range* get_cie_range( const gs_color_space * pcs );
 
 #endif /* gxcie_INCLUDED */

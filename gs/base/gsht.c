@@ -26,6 +26,21 @@
 #include "gzht.h"
 #include "gswts.h"
 
+/* Used in threshold from tiles construction */
+static const uint32_t bit_order[32]={
+#if arch_is_big_endian
+        0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000,
+        0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
+        0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,
+        0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001
+#else
+        0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001,
+        0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,
+        0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
+        0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000
+#endif
+    };
+
 /* Forward declarations */
 void gx_set_effective_transfer(gs_state *);
 
@@ -278,6 +293,7 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
 {
     porder->wse = NULL;
     porder->wts = NULL;
+    porder->threshold = NULL;
     porder->width = width;
     porder->height = height;
     porder->raster = bitmap_raster(width);
@@ -598,6 +614,10 @@ gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache)
 		       "gx_ht_order_release(bit_data)");
 	gs_free_object(porder->data_memory, porder->levels,
 		       "gx_ht_order_release(levels)");
+    }
+    if (porder->threshold != NULL) {
+        gs_free_object(porder->data_memory->non_gc_memory, porder->threshold, 
+                       "gx_ht_order_release(threshold)");
     }
     porder->levels = 0;
     porder->bit_data = 0;
@@ -1343,3 +1363,93 @@ gx_set_effective_transfer(gs_state * pgs)
 {
     gx_imager_set_effective_xfer((gs_imager_state *) pgs);
 }
+
+/* Lifted from threshold_from_order in gdevtsep.c.  This creates a threshold
+   array from the tiles.  Threshold is allocated in non-gc memory and is
+   not known to the gc */
+int
+gx_ht_construct_threshold( gx_ht_order *d_order)
+{
+   int i, j, l, prev_l;
+   unsigned char *thresh;
+   gx_ht_bit *bits = (gx_ht_bit *)d_order->bit_data;
+   gs_memory_t *memory = d_order->data_memory->non_gc_memory;
+
+   if (d_order == NULL) return -1;
+   if (d_order->threshold != NULL) return 0;
+
+#ifdef DEBUG
+if ( gs_debug_c('h') ) {
+       dprintf2("   width=%d, height=%d,",
+            d_order->width, d_order->height );
+       dprintf2(" num_levels=%d, raster=%d\n",
+            d_order->num_levels, d_order->raster );
+}
+#endif
+
+   thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
+                                  "gx_ht_construct_threshold");
+   if( thresh == NULL ) {
+#ifdef DEBUG
+      emprintf(memory, "threshold_from_order, malloc failed\n");
+      emprintf2(memory, "   width=%d, height=%d,",
+                d_order->width, d_order->height );
+      emprintf2(memory, " num_levels=%d, raster=%d\n",
+                d_order->num_levels, d_order->raster );
+#endif
+        return -1 ;         /* error if allocation failed   */
+   }
+   for( i=0; i<d_order->num_bits; i++ )
+      thresh[i] = 1;
+
+   prev_l = 0;
+   l = 1;
+   while( l < d_order->num_levels ) {
+      if( d_order->levels[l] > d_order->levels[prev_l] ) {
+         int t_level = (256*l)/d_order->num_levels;
+         int row, col;
+#ifdef DEBUG
+         if ( gs_debug_c('h') )
+            dprintf2("  level[%3d]=%3d\n", l, d_order->levels[l]);
+#endif
+         for( j=d_order->levels[prev_l]; j<d_order->levels[l]; j++) {
+#ifdef DEBUG
+            if ( gs_debug_c('h') )
+               dprintf2("       bits.offset=%3d, bits.mask=%8x  ",
+                   bits[j].offset, bits[j].mask);
+#endif
+            row = bits[j].offset / d_order->raster;
+            for( col=0; col < (8*sizeof(ht_mask_t)); col++ ) {
+               if( bits[j].mask & bit_order[col] )
+                  break;
+            }
+            col += 8 * ( bits[j].offset - (row * d_order->raster) );
+#ifdef DEBUG
+            if ( gs_debug_c('h') )
+               dprintf3("row=%2d, col=%2d, t_level=%3d\n",
+                  row, col, t_level);
+#endif
+            if( col < (int)d_order->width )
+               *(thresh+col+(row * d_order->width)) = t_level;
+         }
+         prev_l = l;
+      }
+      l++;
+   }
+
+#ifdef DEBUG
+   if ( gs_debug_c('h') ) {
+      for( i=0; i<(int)d_order->height; i++ ) {
+         dprintf1("threshold array row %3d= ", i);
+         for( j=(int)d_order->width-1; j>=0; j-- )
+            dprintf1("%3d ", *(thresh+j+(i*d_order->width)) );
+         dprintf("\n");
+      }
+   }
+#endif
+   d_order->threshold = thresh;
+   return 0;
+}
+
+
+

@@ -33,6 +33,15 @@
 #include "gximage.h"
 #include "gzht.h"
 #include "vdtrace.h"
+#include "gsicc.h"
+#include "gsicc_cache.h"
+#include "gsicc_littlecms.h"
+#include "gxcie.h"
+#include "gscie.h"
+#include <emmintrin.h>
+
+#define RAW_HT_DUMP 0
+#define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
 
 /* ------ Strategy procedure ------ */
 
@@ -40,37 +49,138 @@
 iclass_proc(gs_image_class_3_mono);
 
 static irender_proc(image_render_mono);
+static irender_proc(image_render_mono_ht);
+
 irender_proc_t
 gs_image_class_3_mono(gx_image_enum * penum)
 {
+    bool test_ht_code = true;
+    int code;
+    /* Set up the link now */
+    const gs_color_space *pcs;
+    gsicc_rendering_param_t rendering_params;
+    int k;
+
     if (penum->spp == 1) {
-	/*
-	 * Use the slow loop for imagemask with a halftone or a non-default
-	 * logical operation.
-	 */
-	penum->slow_loop =
-	    (penum->masked && !color_is_pure(penum->icolor0)) ||
-	    penum->use_rop;
-	/* We can bypass X clipping for portrait mono-component images. */
-	if (!(penum->slow_loop || penum->posture != image_portrait))
-	    penum->clip_image &= ~(image_clip_xmin | image_clip_xmax);
-	if_debug0('b', "[b]render=mono\n");
-	/* Precompute values needed for rasterizing. */
-	penum->dxx =
-	    float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
-	/*
-	 * Scale the mask colors to match the scaling of each sample to a
-	 * full byte.  Also, if black or white is transparent, reset icolor0
-	 * or icolor1, which are used directly in the fast case loop.
-	 */
-	if (penum->use_mask_color) {
-	    gx_image_scale_mask_colors(penum, 0);
-	    if (penum->mask_color.values[0] <= 0)
-		color_set_null(penum->icolor0);
-	    if (penum->mask_color.values[1] >= 255)
-		color_set_null(penum->icolor1);
-	}
-	return &image_render_mono;
+        /* At this point in time, only use the ht approach if our device
+           uses halftoning, and our source image is a reaonable size.  We 
+           probably don't want to do this if we have a bunch of tiny little
+           images.  Then the rect fill approach is probably not all that bad */
+
+        if (test_ht_code) {
+             penum->icc_setup.need_decode = false;
+            /* Check if we need to do any decoding.  */
+            if ( penum->map[0].decoding != sd_none ) {
+                if (!(penum->map[0].decoding == sd_compute
+                     && penum->map[0].decode_factor == 1.0 &&
+                        penum->map[0].decode_lookup[0] == 0.0)) {
+                    penum->icc_setup.need_decode = true;
+                } 
+            } 
+            /* Define the rendering intents */
+            rendering_params.black_point_comp = BP_ON;
+            rendering_params.object_type = GS_IMAGE_TAG;
+            rendering_params.rendering_intent = penum->pis->renderingintent;
+            if (gs_color_space_get_index(penum->pcs) == 
+                gs_color_space_index_Indexed) {
+                pcs = penum->pcs->base_space;
+            } else {
+                pcs = penum->pcs;
+            }
+            if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent != NULL) {
+                pcs = pcs->icc_equivalent;
+            } 
+            penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
+            penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
+            penum->icc_setup.has_transfer = gx_has_transfer(penum->pis,
+                                    penum->dev->device_icc_profile->num_comps);
+            if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
+            if (penum->icc_link == NULL) {
+                penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL, 
+                    &rendering_params, penum->memory, false);
+            }
+            /* PS CIE color spaces may have addition decoding that needs to
+               be performed to ensure that the range of 0 to 1 is provided
+               to the CMM since ICC profiles are restricted to that range
+               but the PS color spaces are not. */
+            if (gs_color_space_is_PSCIE(penum->pcs) && 
+                penum->pcs->icc_equivalent != NULL) {
+                /* We have a PS CIE space.  Check the range */
+                if ( !check_cie_range(penum->pcs) ) {
+                    /* It is not 0 to 1.  We will be doing decode
+                       plus an additional linear adjustment */
+                    penum->cie_range = get_cie_range(penum->pcs);
+                }
+            }
+            /* If the image has more than 256 pixels then go ahead and
+               precompute the con-tone device colors for all of our 256 source
+               values.  We should not be taking this patch for cases where
+               we have lots of tiny little images.  Mark those that are 
+               transparent or masked also at this time.  Since halftoning will
+               be done via thresholding we will keep clues in continuous tone */
+            code = image_init_color_cache(penum, penum->bps, penum->spp);
+            /* TODO: Also check that the threshold arrays are initialized */
+            if (gx_device_must_halftone(penum->dev) && code >= 0) {
+                if (penum->pis != NULL && penum->pis->dev_ht != NULL) {
+                    gx_ht_order *d_order = 
+                                    &(penum->pis->dev_ht->components[0].corder);
+                    code = gx_ht_construct_threshold(d_order);
+                } else {
+                    code = -1;
+                }
+            }
+            if (code >= 0 ) {
+                /* If the image is landscaped then we want to maintain a buffer
+                   that is sufficiently large so that we can hold a byte
+                   of halftoned data along the column.  This way we avoid doing
+                   multiple writes into the same position over and over.
+                   The size of the buffer we need depends upon the bitdepth of 
+                   the output device, the number of device coloranants and the 
+                   number of  colorants in the source space.  Compute the needed 
+                   size here and allocate.  Note we will need to eventually 
+                   consider  multi-level halftone case here too. */
+                if (penum->posture == image_landscape) {
+                    int num_src_comps = gs_color_space_num_components(pcs);
+                    int num_des_comps = penum->dev->color_info.num_components;
+                    int col_width = num_src_comps*8/num_des_comps;
+                    int col_length = 
+                        fixed2int_var_rounded(any_abs(penum->x_extent.y));
+                    int buff_size = col_length * col_width;
+
+                    penum->landscape_col_width = col_width;
+                    penum->landscape_byte_buff = gs_alloc_bytes(penum->memory,
+                                            buff_size, "image_render_mono");
+                }
+                return &image_render_mono_ht;
+            }
+        }
+        /*
+         * Use the slow loop for imagemask with a halftone or a non-default
+         * logical operation.
+         */
+        penum->slow_loop =
+            (penum->masked && !color_is_pure(penum->icolor0)) ||
+            penum->use_rop;
+        /* We can bypass X clipping for portrait mono-component images. */
+        if (!(penum->slow_loop || penum->posture != image_portrait))
+            penum->clip_image &= ~(image_clip_xmin | image_clip_xmax);
+        if_debug0('b', "[b]render=mono\n");
+        /* Precompute values needed for rasterizing. */
+        penum->dxx =
+            float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
+        /*
+         * Scale the mask colors to match the scaling of each sample to a
+         * full byte.  Also, if black or white is transparent, reset icolor0
+         * or icolor1, which are used directly in the fast case loop.
+         */
+        if (penum->use_mask_color) {
+            gx_image_scale_mask_colors(penum, 0);
+            if (penum->mask_color.values[0] <= 0)
+	        color_set_null(penum->icolor0);
+            if (penum->mask_color.values[1] >= 255)
+	        color_set_null(penum->icolor1);
+        }
+        return &image_render_mono;
     }
     return 0;
 }
@@ -629,4 +739,609 @@ err:
     penum->used.x = rsrc - psrc_initial;
     penum->used.y = 0;
     return code;
+}
+
+static void
+fill_threshhold_buffer(byte *dest_strip, byte *src_strip, int src_width,
+                       int left_offset, int left_width, int num_tiles, 
+                       int right_width) 
+{
+    byte *ptr_out_temp = dest_strip;
+    int ii;
+
+    /* Left part */
+    memcpy(dest_strip, src_strip + left_offset, left_width);
+    ptr_out_temp += left_width;
+    /* Now the full parts */
+    for (ii = 0; ii < num_tiles; ii++){
+        memcpy(ptr_out_temp, src_strip, src_width);
+        ptr_out_temp += src_width;
+    }
+    /* Now the remainder */
+    memcpy(ptr_out_temp, src_strip, right_width);
+}
+
+#if RAW_HT_DUMP 
+/* This is slow thresholding, byte output for debug only */
+static void 
+threshold_row_byte(byte *contone, byte *threshold_strip, int contone_stride, 
+                              byte *halftone, int dithered_stride, int width, 
+                              int num_rows)
+{
+    int k, j;
+    byte *contone_ptr;
+    byte *thresh_ptr;
+    byte *halftone_ptr;
+
+    /* For the moment just do a very slow compare until we get 
+       get this working */
+    for (j = 0; j < num_rows; j++) {
+        contone_ptr = contone;
+        thresh_ptr = threshold_strip + contone_stride * j;
+        halftone_ptr = halftone + dithered_stride * j;
+        for (k = 0; k < width; k++) {
+            if (contone_ptr[k] < thresh_ptr[k]) {
+                halftone_ptr[k] = 0;
+            } else {
+                halftone_ptr[k] = 255;
+            }
+        }
+    }
+}
+#endif
+/* This is slow thresholding bit output */
+static void
+threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
+                  byte *halftone, int dithered_stride, int width,  
+                  int num_rows, int left_bits)
+{
+    int k, j;
+    byte *contone_ptr;
+    byte *thresh_ptr;
+    byte *halftone_ptr;
+    byte bit_init;
+    int ht_index;
+
+    /* For the moment just do a very slow compare until we get 
+       get this working.  This could use some serious optimization */
+    for (j = 0; j < num_rows; j++) {
+        contone_ptr = contone;
+        thresh_ptr = threshold_strip + contone_stride * j;
+        halftone_ptr = halftone + dithered_stride * j;
+        /* First get the left remainder portion.  Put into MSBs of first byte */
+        bit_init = 0x80;
+        ht_index = -1;
+        for (k = 0; k < left_bits; k++) {
+            if ( (k % 8) == 0) {
+                ht_index++;
+            }
+            if (contone_ptr[k] < thresh_ptr[k]) {
+                halftone_ptr[ht_index] |=  bit_init;
+            } else {
+                halftone_ptr[ht_index] &=  ~bit_init;
+            }
+            if (bit_init == 1) {
+                bit_init = 0x80; 
+            } else {
+                bit_init >>= 1;
+            }
+        }
+        bit_init = 0x80;
+        ht_index = -1;
+        if (left_bits > 0) {
+            halftone_ptr += 2; /* Point to the next 16 bits of data */
+        }
+        /* Now get the rest, which will be 16 bit aligned. */
+        for (k = left_bits; k < width; k++) {
+            if (((k-left_bits)%8) == 0) {
+                ht_index++;
+            }
+            if (contone_ptr[k] < thresh_ptr[k]) {
+                halftone_ptr[ht_index] |=  bit_init;
+            } else {
+                halftone_ptr[ht_index] &=  ~bit_init;
+            }
+            if (bit_init == 1) {
+                bit_init = 0x80; 
+            } else {
+                bit_init >>= 1;
+            }
+        }
+    }
+}
+
+/* Note this function has strict data alignment needs */
+threshold_16_SSE(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
+{
+    const unsigned int mask1 = 0x80808080;
+    const unsigned int mask2 = 0x01020408;
+    const unsigned int mask3 = 0x10204080;
+    __m128i input1;
+    __m128i input2;
+    __m128i result;
+    __m128i sign_fix = _mm_set_epi32(mask1, mask1, mask1, mask1);
+    __m128i twizzle_mask = _mm_set_epi32(mask2, mask3, mask2, mask3);
+    unsigned short out_temp[8];  /* of sufficient size to hold 128 aligned bits */
+    byte *sse_data = &(out_temp[0]);
+
+    input1 = _mm_load_si128((const __m128i *)contone_ptr);
+    input2 = _mm_load_si128((const __m128i *) thresh_ptr);
+    /* This only does signed testing.  Apply xor to sign bit
+       prior to comparison */
+    input1 = _mm_xor_si128(input1, sign_fix);
+    input2 = _mm_xor_si128(input2, sign_fix);
+    /* The compare */
+    result = _mm_cmpgt_epi8(input2, input1);
+    /* Do some bit twizzling to get the bits of interest packed together.
+       There may be a better way to do this but I could not find a 
+       direct command to grab a set of bits from the 128 bit register.
+       Start off with a bit mask that selects non intersecting bits */
+    result = _mm_and_si128(result, twizzle_mask);
+    /* Shift by 1 byte */
+    input1 = _mm_srli_si128(result, 1);
+    /* Or together */
+    result = _mm_or_si128(result, input1);
+    /* Shift by 2 bytes */
+    input1 = _mm_srli_si128(result, 2);
+    /* Or together */
+    result = _mm_or_si128(result, input1);
+    /* Shift by 4 bytes */
+    input1 = _mm_srli_si128(result, 4);
+    /* Or together */
+    result = _mm_or_si128(result, input1);
+    /* Packed bits should be in low order byte of each 64 bit word */
+    /* bytes sse_data[0] and sse_data[8] contain the HT data */
+    _mm_store_si128((__m128i*)sse_data, result);
+    ht_data[0] = sse_data[0];
+    ht_data[1] = sse_data[8];
+}
+
+/* Not so fussy on its alignment */
+threshold_16_SSE_unaligned(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
+{
+    const unsigned int mask1 = 0x80808080;
+    const unsigned int mask2 = 0x01020408;
+    const unsigned int mask3 = 0x10204080;
+    __m128i input1;
+    __m128i input2;
+    __m128i result;
+    __m128i sign_fix = _mm_set_epi32(mask1, mask1, mask1, mask1);
+    __m128i twizzle_mask = _mm_set_epi32(mask2, mask3, mask2, mask3);
+    unsigned short out_temp[8];  /* of sufficient size to hold 128 aligned bits */
+    byte *sse_data = &(out_temp[0]);
+
+    input1 = _mm_loadu_si128((const __m128i *)contone_ptr);
+    input2 = _mm_loadu_si128((const __m128i *) thresh_ptr);
+    /* This only does signed testing.  Apply xor to sign bit
+       prior to comparison */
+    input1 = _mm_xor_si128(input1, sign_fix);
+    input2 = _mm_xor_si128(input2, sign_fix);
+    /* The compare */
+    result = _mm_cmpgt_epi8(input2, input1);
+    /* Do some bit twizzling to get the bits of interest packed together.
+       There may be a better way to do this but I could not find a 
+       direct command to grab a set of bits from the 128 bit register.
+       Start off with a bit mask that selects non intersecting bits */
+    result = _mm_and_si128(result, twizzle_mask);
+    /* Shift by 1 byte */
+    input1 = _mm_srli_si128(result, 1);
+    /* Or together */
+    result = _mm_or_si128(result, input1);
+    /* Shift by 2 bytes */
+    input1 = _mm_srli_si128(result, 2);
+    /* Or together */
+    result = _mm_or_si128(result, input1);
+    /* Shift by 4 bytes */
+    input1 = _mm_srli_si128(result, 4);
+    /* Or together */
+    result = _mm_or_si128(result, input1);
+    /* Packed bits should be in low order byte of each 64 bit word */
+    /* bytes sse_data[0] and sse_data[8] contain the HT data */
+    _mm_store_si128((__m128i*)sse_data, result);
+    ht_data[0] = sse_data[0];
+    ht_data[1] = sse_data[8];
+}
+
+/* This uses SSE2 simd operations to perform the thresholding operation.
+   Intrinsics are used since in-line assm is not supported in Visual 
+   Studio on 64 bit machines, plus instrinsics are easily ported between
+   Visual Studio and gcc. requires <emmintrin.h> */
+static void
+threshold_row_SSE(byte *contone,  byte *threshold_strip,  int contone_stride,
+                  byte *halftone, int dithered_stride, int width,  
+                  int num_rows, int left_bits)
+{
+    byte *contone_ptr;
+    byte *thresh_ptr;
+    byte *halftone_ptr;
+    int num_tiles = (int) ceil((float) (width - left_bits)/16.0);
+    int k, j;
+
+    for (j = 0; j < num_rows; j++) {
+        /* contone and thresh_ptr are 128 bit aligned.  We do need to do this in 
+           two steps to ensure that we pack the bits in an aligned fashion
+           into halftone_ptr.  */
+        contone_ptr = contone;
+        thresh_ptr = threshold_strip + contone_stride * j;
+        halftone_ptr = halftone + dithered_stride * j;
+        if (left_bits > 0) {
+            /* Since we allowed for 16 bits in our left remainder
+               we can go directly in to the destination.  threshold_16_SSE
+               requires 128 bit alignment.  contone_ptr and thresh_ptr
+               are set up so that after we move in by left_bits elements
+               then we are 128 bit aligned.  */
+            threshold_16_SSE_unaligned(contone_ptr, thresh_ptr, halftone_ptr);
+            halftone_ptr += 2;
+            thresh_ptr += left_bits;  
+            contone_ptr += left_bits;
+        }
+        /* Now we should have 128 bit aligned with our input data. Iterate
+           over sets of 16 going directly into our HT buffer.  Sources and
+           halftone_ptr buffers should be padded to allow 15 bit overrun */
+        for (k = 0; k < num_tiles; k++) {
+            threshold_16_SSE(contone_ptr, thresh_ptr, halftone_ptr);
+            thresh_ptr += 16;
+            contone_ptr += 16;
+            halftone_ptr += 2;
+        }
+    }
+}
+
+/*
+ An image render case where the source color is monochrome or indexed and
+ the output is to be halftoned.  If the source color requires decoding,
+ an index look-up or ICC color managment, these operations have already been
+ performed on the index values and we are ready now to halftone */
+static int
+image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x,
+		  uint w, int h, gx_device * dev)
+{
+    const gx_image_enum *const penum = penum_orig; /* const within proc */
+    const gs_imager_state *pis = penum->pis;
+    gs_logical_operation_t lop = penum->log_op;
+    gx_dda_fixed_point pnext;
+    image_posture posture = penum->posture;
+    fixed xprev, yprev;
+    fixed pdyx, pdyy;		
+    int vci, vdi;  /* amounts to replicate */
+    fixed xrun;			
+    fixed yrun;			
+    int irun;			
+    byte *contone, *contone_align;
+    byte *threshold_strip, *threshold_strip_align;
+    byte *halftone;
+    int spp_out = penum->dev->color_info.num_components;
+    byte *devc_contone, *bufend;
+    int xi, wi, yi, hi;
+    const byte *psrc = buffer + data_x - 1;  /* -1 due to initial startup */
+    int dest_width, dest_height, data_length;
+    byte *dev_value, *color_cache;
+    gx_ht_order *d_order = &(penum->pis->dev_ht->components[0].corder);
+    byte *threshold = d_order->threshold;
+    byte *thresh_tile;
+    int thresh_width, thresh_height; 
+    int dx, dy;
+    int left_rem_end, left_width, right_tile_width;
+    int num_full_tiles, i;
+    byte *curr_ptr;
+    int dithered_stride;
+    int position, k;
+    int left_bits;
+    int offset_threshold, offset_contone;
+    int contone_stride;
+#if RAW_HT_DUMP
+    FILE *fid;
+    char file_name[50];
+#endif
+
+    if (h == 0)
+	return 0;
+    /* Set up the dda stuff */
+    pnext = penum->dda.pixel0;
+    xrun = xprev = dda_current(pnext.x);
+    yrun = yprev = dda_current(pnext.y);
+    pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
+    pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
+    switch (posture) {
+	case image_portrait:
+	    vci = penum->yci, vdi = penum->hci;
+	    irun = fixed2int_var_rounded(xrun);
+            dest_width = fixed2int_var_rounded(any_abs(penum->x_extent.x));
+            data_length = dest_width;
+            dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
+#if RAW_HT_DUMP
+            dithered_stride = data_length * spp_out;
+            left_bits = 0;
+#else
+            /* Get the bit position so that we can do a copy_mono for the left
+               remainder and then 16 bit aligned copies for the rest.  The right
+               remainder will be OK as it will land in the MSBit positions. 
+               Note the #define chunk bits16 in gdevm1.c.  Allow also for a 15
+               sample over run.
+               */
+            left_bits = 16 - irun % 16;
+            if (left_bits > 0) {
+                dithered_stride = ((7 + (data_length + 4) * spp_out) / 8) + 
+                                    ARCH_SIZEOF_LONG;
+            } else {
+                dithered_stride = ((7 + (data_length + 2) * spp_out) / 8) + 
+                                ARCH_SIZEOF_LONG;
+            }
+#endif
+            /* We want to have 128 bit alignement for our contone and
+               threshold strips so that we can use SSE operations
+               in the threshold operation.  Add in a minor buffer and offset 
+               to ensure this.  If gs_alloc_bytes provides at least 16
+               bit alignment so we may need to move 14 bytes.  However, the 
+               HT process is split in
+               two operations.  One that involves the HT of a left remainder
+               and the rest which ensures that we pack in the HT data in the bits
+               with no skew for a fast copy into the gdevm1 device.  So, we 
+               need to account for those pixels which occur first and which
+               are NOT aligned for the contone buffer.  After we offset by this
+               remainder portion we should be 128 bit aligned.  Also allow
+               a 15 sample over run during the execution */
+            contone_stride = (data_length + 15) * spp_out + 15;
+            contone = gs_alloc_bytes(penum->memory, contone_stride, 
+                                     "image_render_mono_ht");
+            threshold_strip = gs_alloc_bytes(penum->memory, contone_stride * vdi, 
+                                             "image_render_mono_ht");
+            /* Figure out our offset in the contone and threshold data buffers
+               so that we ensure that we are on the 128bit memory boundaries
+               when we get left_bits into the data. */
+            offset_contone = 
+                (16 - (((unsigned long)(contone)) + left_bits) % 16) % 16;
+            offset_threshold = 
+                (16 - (((unsigned long) (threshold_strip)) + left_bits) % 16) % 16;
+            contone_align = contone + offset_contone;
+            threshold_strip_align = threshold_strip + offset_threshold; 
+            halftone = gs_alloc_bytes(penum->memory, dithered_stride * vdi, 
+                                      "image_render_mono_ht");
+            /* For debug */
+            memset(halftone,0x00, dithered_stride * vdi);
+#if RAW_HT_DUMP
+            memset(contone, 0x01, contone_stride);
+            memset(threshold_strip,0x02, contone_stride * vdi);
+            memset(halftone,0x03, dithered_stride * vdi);
+#endif
+	    break;
+	case image_landscape:
+	default:    
+	    vci = penum->xci, vdi = penum->wci;
+	    irun = fixed2int_var_rounded(yrun);
+            dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
+            dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
+            data_length = dest_height;
+            /* In the landscaped case, we want to accumulate multiple columns
+               of data before sending to the device.  We want to have a full
+               byte of HT data in one write.  This may not be possible at the 
+               left or right and for those and for those we have so send partial 
+               chunks */
+            contone = gs_alloc_bytes(penum->memory, data_length * spp_out, 
+                                     "image_render_mono_ht");
+            threshold_strip = gs_alloc_bytes(penum->memory, data_length * spp_out * vdi, 
+                                             "image_render_mono_ht");
+#if RAW_HT_DUMP
+            dithered_stride = data_length * spp_out;
+#else
+            dithered_stride = (((7 + data_length * spp_out) / 8) + ARCH_SIZEOF_LONG);
+#endif
+            halftone = gs_alloc_bytes(penum->memory, dithered_stride * vdi, 
+                                      "image_render_mono_ht");
+#if RAW_HT_DUMP
+            memset(contone, 0x01, data_length * spp_out);
+            memset(threshold_strip,0x02, data_length * spp_out * vdi);
+            memset(halftone,0x03, dithered_stride * vdi);
+#endif
+	    break;
+    }
+    if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+	      penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
+    if (contone == NULL || threshold_strip == NULL || halftone == NULL)
+        return gs_rethrow(gs_error_VMerror, "Memory allocation failure");
+    devc_contone = contone_align;
+    bufend = devc_contone + data_length * spp_out;
+
+    if (penum->color_cache == NULL) {
+        /* No look-up in the cache to fill the source buffer. Still need to
+           have the data at device resolution... */
+        while (devc_contone < bufend) {
+            dda_next(pnext.x);
+            dda_next(pnext.y);
+	    switch (posture) {
+	        case image_portrait:
+	            xi = irun;
+	            wi = (irun = fixed2int_var_rounded(xprev)) - xi;
+	            if (wi < 0)
+	                xi += wi, wi = -wi;
+                    if (wi > 0) {
+                        memset(devc_contone,*psrc,wi);
+                        devc_contone += wi;
+                    }
+	            break;
+	        case image_landscape:
+	            yi = irun;
+	            hi = (irun = fixed2int_var_rounded(yprev)) - yi;
+	            if (hi < 0)
+	                yi += hi, hi = -hi;
+                    if (hi > 0) {
+                        memset(devc_contone,*psrc,hi);
+                        devc_contone += hi;
+                    }
+	            break;
+	        default:
+                    break;
+            }
+            xprev = dda_current(pnext.x);
+            yprev = dda_current(pnext.y);
+            ++psrc;
+        }
+    } else {
+        /* look-up in the cache to fill the source buffer */
+        color_cache = penum->color_cache->device_contone;
+        while (devc_contone < bufend) {
+            dda_next(pnext.x);
+            dda_next(pnext.y);
+	    switch (posture) {
+	        case image_portrait:
+	            xi = irun;
+	            wi = (irun = fixed2int_var_rounded(xprev)) - xi;
+	            if (wi < 0)
+	                xi += wi, wi = -wi;
+                    if (wi > 0) {
+                        dev_value = color_cache + (*psrc) * spp_out;
+                        for (k = 0; k < wi; k++) {
+                            memcpy(devc_contone, dev_value, spp_out);
+                            devc_contone += spp_out;
+                        }
+                    }
+	            break;
+	        case image_landscape:
+	            yi = irun;
+	            hi = (irun = fixed2int_var_rounded(yprev)) - yi;
+	            if (hi < 0)
+	                yi += hi, hi = -hi;
+                    if (hi > 0) {
+                        dev_value = color_cache + (*psrc) * spp_out;
+                        for (k = 0; k < hi; k++) {
+                            memcpy(devc_contone, dev_value, spp_out);
+                            devc_contone += spp_out;
+                        }
+                    }
+	            break;
+	        default:
+                    break;
+            }
+            xprev = dda_current(pnext.x);
+            yprev = dda_current(pnext.y);
+            psrc++;
+        }
+    }
+    /* Go ahead and fill the threshold line buffer with tiled threshold values.
+       First just grab the row or column that we are going to tile with and
+       then do memcpy into the buffer */
+    thresh_width = d_order->width;
+    thresh_height = d_order->height;
+    /* Figure out the tile steps.  Left offset, Number of tiles, Right offset. */    
+    switch (posture) {
+        case image_portrait:
+            /* Compute the tiling positions with dest_width */
+            dx = fixed2int(xrun % int2fixed(thresh_width));
+            /* Left remainder part */
+            left_rem_end = min(dx + dest_width, thresh_width);
+            left_width = left_rem_end - dx;  /* The left width of our tile part */
+            /* Now the middle part */
+            num_full_tiles = 
+                (int)fastfloor((dest_width - left_width)/ (float) thresh_width);
+            /* Now the right part */
+            right_tile_width = dest_width -  num_full_tiles * thresh_width - 
+                               left_width;
+            /* Those dimensions stay the same across the set of lines that
+               we fill in our buffer.  Iterate over the vdi and fill up our
+               threshold buffer */
+            for (k = 0; k < vdi; k++) {
+                /* Get a pointer to our tile row */
+                dy = (penum->yci+k) % thresh_height; 
+                thresh_tile = threshold + d_order->width * dy;
+                /* Fill the buffer, can be multiple rows.  Make sure
+                   to update with stride */
+                position = contone_stride * k;
+                /* Tile into the 128 bit aligned threshold strip */
+                fill_threshhold_buffer(&(threshold_strip_align[position]), 
+                                       thresh_tile, thresh_width, dx, left_width, 
+                                       num_full_tiles, right_tile_width);
+            }
+            /* Apply the threshold operation */
+#if RAW_HT_DUMP
+            threshold_row_byte(contone_align, threshold_strip_align, contone_stride, 
+                              halftone, dithered_stride, dest_width, vdi);
+            sprintf(file_name,"HT_Portrait_%d_%dx%dx%d.raw", penum->id, dest_width,
+                    dest_height, spp_out);
+            fid = fopen(file_name,"a+b");
+            fwrite(halftone,1,dest_width * vdi,fid);
+            fclose(fid);
+#else           
+      /*      threshold_row_SSE(contone_align, threshold_strip_align, contone_stride, 
+                              halftone, dithered_stride, dest_width, vdi, left_bits); */
+            threshold_row_bit(contone_align, threshold_strip_align, contone_stride, 
+                              halftone, dithered_stride, dest_width, vdi, left_bits); 
+            /* Now do the copy mono operation */
+            /* First the left remainder bits */
+            if (left_bits > 0) {
+                int x_pos = fixed2int_var_rounded(xrun);
+                int y_pos = fixed2int_var_rounded(yrun);
+                (*dev_proc(dev, copy_mono)) (dev, halftone, 0, dithered_stride, 
+                                             gx_no_bitmap_id, x_pos, y_pos, 
+                                             left_bits, vdi,
+					     (gx_color_index) 0, (gx_color_index) 1);
+            }
+            if ((dest_width - left_bits) > 0 ) {
+                /* Now the primary aligned bytes */
+                byte *curr_ptr = halftone;
+                int curr_width = dest_width - left_bits;
+                int x_pos = fixed2int_var_rounded(xrun) + left_bits;
+                int y_pos = fixed2int_var_rounded(yrun);
+                if (left_bits > 0) {
+                    curr_ptr += 2; /* If the first 2 bytes had the left part then increment */
+                }
+                (*dev_proc(dev, copy_mono)) (dev, curr_ptr, 0, dithered_stride, 
+                                             gx_no_bitmap_id, x_pos, y_pos, 
+                                             curr_width, vdi,
+					     (gx_color_index) 0, (gx_color_index) 1);
+            }
+            
+#endif
+            break;
+        case image_landscape:
+            dy = fixed2int(yrun % int2fixed(thresh_height));
+            thresh_tile = gs_alloc_bytes(penum->memory, thresh_height, 
+                                       "image_render_mono_ht");
+            if (thresh_tile == NULL)
+                return gs_rethrow(gs_error_VMerror, "Memory allocation failure");
+            /* Left remainder part */
+            left_rem_end = min(dy + dest_height, thresh_height);
+            left_width = left_rem_end - dy;  /* The left width of our tile part */
+            /* Now the middle part */
+            num_full_tiles = 
+                (int)fastfloor((dest_height - left_width)/ (float) thresh_height);
+            /* Now the right part */
+            right_tile_width = dest_height -  num_full_tiles * thresh_height - 
+                               left_width;
+            /* Those dimensions stay the same across the set of lines that
+               we fill in our buffer.  Iterate over the vdi and fill up our
+               threshold buffer */
+            for (k = 0; k < vdi; k++) {
+                /* Get a column from the threshold array */
+                dx = (penum->xci+k) % thresh_height; 
+                curr_ptr = threshold + dx;
+                for (i = 0; i < thresh_height; i++) {
+                    thresh_tile[i] = *curr_ptr;
+                    curr_ptr += thresh_width;
+                }
+                /* Fill the threshold buffer, can be multiple rows */
+                position = dest_height * spp_out * k;
+                fill_threshhold_buffer(&(threshold_strip[position]), thresh_tile, 
+                                       thresh_height, dy, left_width, 
+                                       num_full_tiles, right_tile_width);
+            }
+            gs_free_object(penum->memory, thresh_tile, "image_render_mono_ht");
+            /* Apply the threshold operation */
+#if RAW_HT_DUMP
+            threshold_row_byte(contone_align, threshold_strip_align, contone_stride, 
+                              halftone, dithered_stride, dest_height, vdi);
+            sprintf(file_name,"HT_Landscape_%d_%dx%dx%d.raw", penum->id, dest_height,
+                    dest_width, spp_out);
+            fid = fopen(file_name,"a+b");
+            fwrite(halftone,1,dest_height * vdi,fid);
+            fclose(fid);
+#endif
+            break;
+        default:
+            return gs_rethrow(-1, "Invalid orientation for thresholding");
+    }
+
+    /* Clean up */
+    gs_free_object(penum->memory, contone, "image_render_mono_ht");
+    gs_free_object(penum->memory, threshold_strip, "image_render_mono_ht");
+    gs_free_object(penum->memory, halftone, "image_render_mono_ht");
 }

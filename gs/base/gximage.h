@@ -155,6 +155,12 @@ typedef struct gx_image_clue_s {
     bits32 key;
 } gx_image_clue;
 
+typedef struct gx_image_color_cache_s {
+    bool *is_transparent;
+    byte *device_contone;
+    bool free_contone;
+} gx_image_color_cache_t;
+
 /* Main state structure */
 
 #ifndef gx_device_clip_DEFINED
@@ -282,6 +288,11 @@ struct gx_image_enum_s {
     gx_device_color *icolor0;
     gx_device_color *icolor1;
     gsicc_link_t *icc_link; /* ICC link to avoid recreation with every line */
+    gx_image_color_cache_t *color_cache;  /* A cache that is con-tone values */
+    byte *landscape_byte_buff;  /* A buffer when halftoning indexed or mono data 
+                                   in a landscaped situation */
+    int landscape_col_width;    /* The width in bytes of our above contone buffer.  
+                                   Which  will give us our byte of HT data */
     gx_image_icc_setup_t icc_setup;
     gs_range_t *cie_range;   /* Needed potentially if CS was PS CIE based */
 };
@@ -290,8 +301,8 @@ struct gx_image_enum_s {
 #define gx_image_enum_do_ptrs(m)\
   m(0,pis) m(1,pcs) m(2,dev) m(3,buffer) m(4,line)\
   m(5,clip_dev) m(6,rop_dev) m(7,scaler) m(8,icc_link)\
-  m(9,cie_range) m(10,clues)
-#define gx_image_enum_num_ptrs 11
+  m(9,color_cache) m(10,landscape_byte_buff) m(11,cie_range) m(12,clues)
+#define gx_image_enum_num_ptrs 13
 #define private_st_gx_image_enum() /* in gsimage.c */\
   gs_private_st_composite(st_gx_image_enum, gx_image_enum, "gx_image_enum",\
     image_enum_enum_ptrs, image_enum_reloc_ptrs)
@@ -341,4 +352,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 void
 image_init_clues(gx_image_enum * penum, int bps, int spp);
 
+/* Initialize and do all the required mapping to get the con-tone device 
+   values right away */
+int
+image_init_color_cache(gx_image_enum * penum, int bps, int spp);
 #endif /* gximage_INCLUDED */

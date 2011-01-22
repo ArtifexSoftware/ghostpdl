@@ -55,41 +55,6 @@ iclass_proc(gs_image_class_4_color);
 static irender_proc(image_render_color_DeviceN);
 static irender_proc(image_render_color_icc);
 
-/* Returns false if range is not 0 1 */
-static bool
-check_cie_range( const gs_color_space * pcs )
-{
-    switch(gs_color_space_get_index(pcs)){
-        case gs_color_space_index_CIEDEFG:
-            return(check_range(&(pcs->params.defg->RangeDEFG.ranges[0]), 4));
-        case gs_color_space_index_CIEDEF:
-            return(check_range(&(pcs->params.def->RangeDEF.ranges[0]), 3));
-        case gs_color_space_index_CIEABC:
-            return(check_range(&(pcs->params.abc->RangeABC.ranges[0]), 3));
-        case gs_color_space_index_CIEA:
-            return(check_range(&(pcs->params.a->RangeA), 1));
-        default:            
-            return true;
-    }
-}
-
-static gs_range*
-get_cie_range( const gs_color_space * pcs )
-{
-    switch(gs_color_space_get_index(pcs)){
-        case gs_color_space_index_CIEDEFG:
-            return(&(pcs->params.defg->RangeDEFG.ranges[0]));
-        case gs_color_space_index_CIEDEF:
-            return(&(pcs->params.def->RangeDEF.ranges[0]));
-        case gs_color_space_index_CIEABC:
-            return(&(pcs->params.abc->RangeABC.ranges[0]));
-        case gs_color_space_index_CIEA:
-            return(&(pcs->params.a->RangeA));
-        default:            
-            return NULL;
-    }
-}
-
 irender_proc_t
 gs_image_class_4_color(gx_image_enum * penum)
 {
