@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id: gslt_font_api_test.c 2490 2006-08-08 22:33:47Z giles $ */
+/* $Id$ */
 /* gslt OpenType font library example client */
 
 #include <stdlib.h>
