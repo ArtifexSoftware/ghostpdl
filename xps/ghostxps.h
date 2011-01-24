@@ -208,11 +208,11 @@ struct xps_image_s
 int xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image);
 int xps_decode_tiff(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image);
-int xps_decode_hdphoto(xps_context_t *ctx, byte *buf, int len, xps_image_t *image);
+int xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *image);
 
 int xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen);
 int xps_tiff_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen);
-int xps_hdphoto_has_alpha(xps_context_t *ctx, byte *buf, int len);
+int xps_jpegxr_has_alpha(xps_context_t *ctx, byte *buf, int len);
 
 void xps_free_image(xps_context_t *ctx, xps_image_t *image);
 

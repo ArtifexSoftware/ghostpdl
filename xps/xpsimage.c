@@ -95,7 +95,7 @@ xps_image_has_alpha(xps_context_t *ctx, xps_part_t *part)
     else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
         return xps_png_has_alpha(ctx, buf, len);
     else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
-        return xps_hdphoto_has_alpha(ctx, buf, len);
+        return xps_jpegxr_has_alpha(ctx, buf, len);
     else if (memcmp(buf, "MM", 2) == 0)
         return xps_tiff_has_alpha(ctx, buf, len);
     else if (memcmp(buf, "II", 2) == 0)
@@ -133,7 +133,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
     }
     else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
     {
-        error = xps_decode_hdphoto(ctx, buf, len, image);
+        error = xps_decode_jpegxr(ctx, buf, len, image);
         if (error)
             return gs_rethrow(error, "could not decode image");
     }

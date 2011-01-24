@@ -1,0 +1,150 @@
+/* Copyright (C) 2006-2010 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/
+   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
+   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
+/* JPEG-XR (formerly HD-Photo (formerly Windows Media Photo)) support */
+
+#include "ghostxps.h"
+#include "jpegxr.h"
+
+struct state { xps_context_t *ctx; xps_image_t *output; };
+
+static const char *
+jxr_error_string(int code)
+{
+    switch (code)
+    {
+    case JXR_EC_OK: return "No error";
+    default:
+    case JXR_EC_ERROR: return "Unspecified error";
+    case JXR_EC_BADMAGIC: return "Stream lacks proper magic number";
+    case JXR_EC_FEATURE_NOT_IMPLEMENTED: return "Feature not implemented";
+    case JXR_EC_IO: return "Error reading/writing data";
+    case JXR_EC_BADFORMAT: return "Bad file format";
+    }
+}
+
+static void
+xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
+{
+    struct state *state = jxr_get_user_data(image);
+    xps_context_t *ctx = state->ctx;
+    xps_image_t *output = state->output;
+    unsigned char *p;
+    int x, y, k;
+
+    if (!output->samples)
+    {
+        output->width = jxr_get_IMAGE_WIDTH(image);
+        output->height = jxr_get_IMAGE_HEIGHT(image);
+        output->comps = jxr_get_IMAGE_CHANNELS(image);
+        output->hasalpha = jxr_get_ALPHACHANNEL_FLAG(image);
+        output->bits = 8;
+        output->stride = output->width * output->comps;
+        output->samples = xps_alloc(ctx, output->stride * output->height);
+
+        switch (output->comps)
+        {
+        case 1: output->colorspace = ctx->gray; break;
+        case 3: output->colorspace = ctx->srgb; break;
+        case 4: output->colorspace = ctx->cmyk; break;
+        }
+    }
+
+    my = my * 16;
+    mx = mx * 16;
+
+    for (y = 0; y < 16; y++)
+    {
+        if (my + y >= output->height)
+            return;
+        p = output->samples + (my + y) * output->stride + mx * output->comps;
+        for (x = 0; x < 16; x++)
+        {
+            if (mx + x >= output->width)
+                data += output->comps;
+            else
+                for (k = 0; k < output->comps; k++)
+                    *p++ = *data++;
+        }
+    }
+}
+
+int
+xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
+{
+    FILE *file;
+    char name[gp_file_name_sizeof];
+    struct state state;
+    jxr_container_t container;
+    jxr_image_t image;
+    int offset;
+    int rc;
+
+    memset(output, 0, sizeof(*output));
+
+    file = gp_open_scratch_file(ctx->memory, "jpegxr-scratch-", name, "wb+");
+    if (!file)
+        return gs_throw(gs_error_invalidfileaccess, "cannot open scratch file");
+    rc = fwrite(buf, 1, len, file);
+    if (rc != len)
+        return gs_throw(gs_error_invalidfileaccess, "cannot write to scratch file");
+    fseek(file, 0, SEEK_SET);
+
+    container = jxr_create_container();
+    rc = jxr_read_image_container(container, file);
+    if (rc < 0)
+        return gs_throw1(-1, "jxr_read_image_container: %s", jxr_error_string(rc));
+
+    offset = jxrc_image_offset(container, 0);
+
+    output->xres = jxrc_width_resolution(container, 0);
+    output->yres = jxrc_height_resolution(container, 0);
+
+    image = jxr_create_input();
+    jxr_set_PROFILE_IDC(image, 111);
+    jxr_set_LEVEL_IDC(image, 255);
+    jxr_set_pixel_format(image, jxrc_image_pixelformat(container, 0));
+    jxr_set_container_parameters(image,
+        jxrc_image_pixelformat(container, 0),
+        jxrc_image_width(container, 0),
+        jxrc_image_height(container, 0),
+        jxrc_alpha_offset(container, 0),
+        jxrc_image_band_presence(container, 0),
+        jxrc_alpha_band_presence(container, 0), 0);
+
+    jxr_set_block_output(image, xps_decode_jpegxr_block);
+    state.ctx = ctx;
+    state.output = output;
+    jxr_set_user_data(image, &state);
+
+    fseek(file, offset, SEEK_SET);
+
+    rc = jxr_read_image_bitstream(image, file);
+    if (rc < 0)
+        return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
+
+    jxr_destroy(image);
+
+    jxr_destroy_container(container);
+
+    fclose(file);
+    unlink(name);
+
+    return gs_okay;
+}
+
+int
+xps_jpegxr_has_alpha(xps_context_t *ctx, byte *buf, int len)
+{
+    return 0;
+}

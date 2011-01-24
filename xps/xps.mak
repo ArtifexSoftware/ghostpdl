@@ -19,7 +19,9 @@ XPSO_       = $(O_)$(XPSOBJ)
 EXPATINCDIR = $(EXPATSRCDIR)$(D)lib
 PLOBJ       = $(PLOBJDIR)$(D)
 
-XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) $(C_)
+XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) \
+	$(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) \
+	$(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 XPS_MAK     = $(XPSSRC)xps.mak
@@ -34,7 +36,6 @@ xps.config-clean: clean_gs
 	$(RM_) $(XPSOBJ)devs.tr5
 
 XPSINCLUDES=$(XPSSRC)*.h $(XPSOBJ)arch.h $(XPSOBJ)jpeglib_.h
-
 
 $(XPSOBJ)xpsmem.$(OBJ): $(XPSSRC)xpsmem.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsmem.c $(XPSO_)xpsmem.$(OBJ)
@@ -57,8 +58,8 @@ $(XPSOBJ)xpspng.$(OBJ): $(XPSSRC)xpspng.c $(XPSINCLUDES) $(PNGSRCDIR)$(D)png.h
 $(XPSOBJ)xpstiff.$(OBJ): $(XPSSRC)xpstiff.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpstiff.c $(XPSO_)xpstiff.$(OBJ)
 
-$(XPSOBJ)xpshdp.$(OBJ): $(XPSSRC)xpshdp.c $(XPSINCLUDES)
-	$(XPSCCC) $(XPSSRC)xpshdp.c $(XPSO_)xpshdp.$(OBJ)
+$(XPSOBJ)xpsjxr.$(OBJ): $(XPSSRC)xpsjxr.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsjxr.c $(XPSO_)xpsjxr.$(OBJ)
 
 $(XPSOBJ)xpszip.$(OBJ): $(XPSSRC)xpszip.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpszip.c $(XPSO_)xpszip.$(OBJ)
@@ -127,7 +128,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpsjpeg.$(OBJ) \
     $(XPSOBJ)xpspng.$(OBJ) \
     $(XPSOBJ)xpstiff.$(OBJ) \
-    $(XPSOBJ)xpshdp.$(OBJ) \
+    $(XPSOBJ)xpsjxr.$(OBJ) \
     $(XPSOBJ)xpszip.$(OBJ) \
     $(XPSOBJ)xpsxml.$(OBJ) \
     $(XPSOBJ)xpsdoc.$(OBJ) \
