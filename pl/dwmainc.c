@@ -573,7 +573,7 @@ display_callback display = {
     display_separation
 };
 
-/* End of code copied from the Windows Ghostscritp client for the display
+/* End of code copied from the Windows Ghostscript client for the display
  * device
  */
 
@@ -651,32 +651,6 @@ win_pl_main(
         pl_print_usage(&inst, "Start");
 #endif
 
-    /* Find and set up the display device if possible. If we set up the 
-     * display device, then the interpreter setup will realise that we already
-     * have a device and won't try to replace it. If we don't have a display
-     * device (not built in) then it will set up the default (ljet4) device, 
-     * just as it always has.
-     */
-    {
-	display_callback *d = &display;
-	int i, code;
-        const gx_device **dev_list;
-	/* Get the list of devices */
-        int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
-
-	for (i=0; i< num_devs;i++) {
-	    /* Is this the 'display' device ? */
-	    if(strcmp(gs_devicename(dev_list[i]), "display") == 0){
-		/* Create the device if it is */
-		code = gs_copydevice(&pinst->device, dev_list[i],
-                             pinst->device_memory);
-		((gx_device_display *)(pinst->device))->callback = &display;
-		if (inst.device != NULL)
-		    gs_register_struct_root(pinst->device_memory, &device_root,
-                                  (void **)&inst.device, "pl_top_create_device");
-	    }
-	}
-    }
     /* ------ Begin Main LOOP ------- */
     for (;;) {
         /* Process one input file. */
@@ -699,11 +673,12 @@ win_pl_main(
         }
 
         /* Process any new options. May request new device. */
-        if (argc==1 ||
+        if (argc==3 ||
             pl_main_process_options(&inst,
                                     &args,
                                     &params,
-                                    pjl_instance, pdl_implementation, &filename) < 0) {
+				    pjl_instance, pdl_implementation, &filename) < 0) {
+
             /* Print error verbage and return */
             int i;
             const gx_device **dev_list;
@@ -724,15 +699,16 @@ win_pl_main(
                 errprintf(mem, " %s", gs_devicename(dev_list[i]));
             }
             errprintf(mem, "\n");
-
-            return -1;
-        }
-
+	}
         if (!filename)
             break;  /* no nore files to process */
 
-
-        /* open file for reading - NB we should respect the minimum
+	/* If the display device is selected (default), set up the callback */
+	if (strcmp(inst.device->dname, "display") == 0) {
+	    gx_device_display *ddev = (gx_device_display *)inst.device;
+	    ddev->callback = &display;
+	}
+	/* open file for reading - NB we should respect the minimum
            requirements specified by each implementation in the
            characteristics structure */
         if (pl_main_cursor_open(mem, &r, filename, buf, sizeof(buf)) < 0) {

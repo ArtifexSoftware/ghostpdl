@@ -87,6 +87,8 @@ static gs_gc_root_t device_root;
 void *hwndtext; /* Hack: Should be of HWND type. */
 #endif
 
+void pl_print_usage(const pl_main_instance_t *, const char *);
+
 /* ---------------- Forward decls ------------------ */
 /* Functions to encapsulate pl_main_universe_t */
 int   /* 0 ok, else -1 error */
@@ -875,8 +877,39 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                     code = param_write_bool((gs_param_list *)params, arg_heap_copy(arg), &bval);
                     continue;
                 }
+		/* Search for a non-decimal 'radix' number */
+		if ( strchr(value, '#') ) {
+		    int base, number = 0;
+		    char *val = strchr(value, '#');
+
+		    *val++ = 0x00;
+		    sscanf(value, "%d", &base);
+		    if (base < 2 || base > 36) {
+			dprintf1("Value out of range %s", value);
+			return -1;
+		    }
+		    while(*val) {
+			if (*val >= '0' && *val <= '9') {
+			    number = number * base + (*val - '0');
+			} else {
+			    if (*val >= 'A' && *val <= 'Z') {
+				number = number * base + (*val - 'A');
+			    } else {
+				if (*val >= 'a' && *val <= 'z') {
+				    number = number * base + (*val - 'a');
+				} else {
+				    dprintf1("Value out of range %s", val);
+				    return -1;
+				}
+			    }
+			}
+			val++;
+		    }
+                    strncpy(buffer, arg, eqp - arg);
+                    buffer[eqp - arg] = '\0';
+                    code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &number);
+		} else if ( ( !strchr(value, '.' ) ) &&
                 /* search for an int (no decimal), if fail try a float */
-                if ( ( !strchr(value, '.' ) ) &&
                      ( sscanf(value, "%d", &vi) == 1 ) ) {
                     if ( !strncmp(arg, "FirstPage", 9) )
                         pmi->first_page = max(vi, 1);

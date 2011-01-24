@@ -366,8 +366,8 @@ TARGET_DEVS= $(TARGET_DEVS) $(XPSOBJDIR)/xps.dev
 !endif
 
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=$(DD)\ljet4.dev\
- $(DD)\wtsimdi.dev\
+DEVICE_DEVS=$(DD)\display.dev\
+ $(DD)\ljet4.dev $(DD)\wtsimdi.dev\
  $(DD)\bmpmono.dev $(DD)\bmp16m.dev $(DD)\bmp32b.dev\
  $(DD)\bitcmyk.dev $(DD)\bitrgb.dev $(DD)\bit.dev\
  $(DD)\pkmraw.dev $(DD)\ppmraw.dev $(DD)\pgmraw.dev $(DD)\pbmraw.dev\
@@ -381,7 +381,7 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev $(DD)\tiffscaled.dev \
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\jpeg.dev \
  $(DD)\pdfwrite.dev $(DD)\pswrite.dev $(DD)\ps2write.dev \
- $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev $(DD)\display.dev
+ $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev 
 !endif
 
 # GS options
