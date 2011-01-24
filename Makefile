@@ -20,13 +20,13 @@ product: pcl
 # specific front-end targets
 
 pcl: tiff
-	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product # build PCL and PCLXL. 
+	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product XCFLAGS="$(XCFLAGS)" # build PCL and PCLXL. 
 
 pcl-lib: tiff
-	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product-lib # build PCL and PCLXL lib
+	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product-lib XCFLAGS="$(XCFLAGS)" # build PCL and PCLXL lib
 
 pcl-debug:  tiff
-	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug GENDIR="./debugobj"
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
@@ -34,7 +34,7 @@ fonts:
 	touch fonts
 
 pcl-profile: tiff
-	$(MAKE) -C main -f pcl6_gcc.mak GENDIR="./pgobj" pdl-pg
+	$(MAKE) -C main -f pcl6_gcc.mak XCFLAGS="$(XCFLAGS)" GENDIR="./pgobj" pdl-pg
 
 pcl-install:
 	install main/obj/pcl6 /usr/local/bin
@@ -50,64 +50,64 @@ pcl-test:
 # names here so they could be removed individually.
 
 pcl-clean: tiff_clean
-	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)"
 	rm -f fonts
 
 pcl-debug-clean: tiff_clean
-	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean GENDIR="./debugobj"
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 	rm -f fonts
 
 xps-debug: tiff
-	$(MAKE) -C xps -f xps_gcc.mak pdl-debug GENDIR="./debugobj"
+	$(MAKE) -C xps -f xps_gcc.mak pdl-debug XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 xps:  tiff
-	$(MAKE) -C xps -f xps_gcc.mak pdl-product # build XPS
+	$(MAKE) -C xps -f xps_gcc.mak pdl-product XCFLAGS="$(XCFLAGS)" # build XPS
 
 xps-lib:  tiff
-	$(MAKE) -C xps -f xps_gcc.mak pdl-product-lib # build XPS lib
+	$(MAKE) -C xps -f xps_gcc.mak pdl-product-lib XCFLAGS="$(XCFLAGS)" # build XPS lib
 
 xps-clean: tiff_clean
-	$(MAKE) -C xps -f xps_gcc.mak pdl-clean
+	$(MAKE) -C xps -f xps_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)"
 
 xps-debug-clean: tiff_clean
-	$(MAKE) -C xps -f xps_gcc.mak pdl-clean GENDIR="./debugobj"
+	$(MAKE) -C xps -f xps_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 xps-test:
 	./xps/obj/gxps tools/tiger.xps
 
 svg-debug: tiff
-	$(MAKE) -C svg -f svg_gcc.mak pdl-debug GENDIR="./debugobj"
+	$(MAKE) -C svg -f svg_gcc.mak pdl-debug XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 svg:  tiff
-	$(MAKE) -C svg -f svg_gcc.mak pdl-product # build SVG
+	$(MAKE) -C svg -f svg_gcc.mak pdl-product XCFLAGS="$(XCFLAGS)" # build SVG
 
 svg-lib:  tiff
-	$(MAKE) -C svg -f svg_gcc.mak pdl-product-lib # build SVG lib
+	$(MAKE) -C svg -f svg_gcc.mak pdl-product-lib XCFLAGS="$(XCFLAGS)" # build SVG lib
 
 svg-clean: tiff_clean
-	$(MAKE) -C svg -f svg_gcc.mak pdl-clean
+	$(MAKE) -C svg -f svg_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)"
 
 svg-debug-clean: tiff_clean
-	$(MAKE) -C svg -f svg_gcc.mak pdl-clean GENDIR="./debugobj"
+	$(MAKE) -C svg -f svg_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 svg-test:
 	./svg/obj/gsvg tools/tiger.svg
 
 mupdf-debug:
-	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-debug GENDIR="./debugobj"
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-debug XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 mupdf:
-	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-product
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-product XCFLAGS="$(XCFLAGS)"
 
 mupdf-clean:
-	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-clean
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)"
 
 mupdf-debug-clean:
-	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-clean GENDIR="./debugobj"
+	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 
 ufst_built:
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex
+	$(MAKE) -C ufst/rts/lib -f makefile.artifex XCFLAGS="$(XCFLAGS)"
 	touch ufst_built	
 
 ####  UFST LIBRARY DEPENDENCY RULES ####
@@ -131,16 +131,16 @@ tiff_clean:
 #### tiff ####
 
 ls-profile: tiff
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak GENDIR="./pgobj" pdl-pg
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak XCFLAGS="$(XCFLAGS)" GENDIR="./pgobj" pdl-pg
 
 ls-product: tiff
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product # build PS/PCL/XL. 
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product XCFLAGS="$(XCFLAGS)" # build PS/PCL/XL. 
 
 ls-lib: tiff
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product-lib # build PS/PCL/XL lib.
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product-lib XCFLAGS="$(XCFLAGS)" # build PS/PCL/XL lib.
 
 ls-debug:  tiff
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug GENDIR="./debugobj"
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 ls-fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
@@ -165,51 +165,51 @@ check:
 # names here so they could be removed individually.
 
 ls-clean: tiff_clean
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)"
 	#rm -f fonts /usr/local/bin/pspcl6
 
 ls-debug-clean: tiff_clean
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean GENDIR="./debugobj"
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean XCFLAGS="$(XCFLAGS)" GENDIR="./debugobj"
 
 # shortcuts for common build types.
 
 ls-uproduct: ufst tiff
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product XCFLAGS="$(XCFLAGS)"
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
 ls-udebug: ufst tiff
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug XCFLAGS="$(XCFLAGS)"
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
 ls-uclean: tiff_clean
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean XCFLAGS="$(XCFLAGS)"
+	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean XCFLAGS="$(XCFLAGS)"
 	rm -f ufst_built
 
 ls-udebug-clean: tiff_clean
-	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean XCFLAGS="$(XCFLAGS)"
+	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean XCFLAGS="$(XCFLAGS)"
 	rm -f ufst_built
 
 uproduct: ufst tiff
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product XCFLAGS="$(XCFLAGS)"
 	cp *.icc ./main/ufst-obj
 	cp wts_* ./main/ufst-obj
 
 udebug: ufst tiff
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug XCFLAGS="$(XCFLAGS)"
 	cp *.icc ./main/ufst-debugobj
 	cp wts_* ./main/ufst-debugobj
 
 uclean: tiff_clean
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean XCFLAGS="$(XCFLAGS)"
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 	rm -f ufst_built
 
 udebug-clean: tiff_clean
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-clean
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-clean XCFLAGS="$(XCFLAGS)"
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 	rm -f ufst_built
 
