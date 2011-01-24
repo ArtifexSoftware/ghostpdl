@@ -120,16 +120,19 @@ case `uname` in
 	Linux*|GNU*)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_DBG_FLAGS_TO_TRY="-g -O0"
         fi
 	;;
 	*BSD)
         if test $ac_cv_prog_gcc = yes; then
 	    CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_DBG_FLAGS_TO_TRY="-g -O0"
 	fi
 	;;
 	Darwin*)
         if test $ac_cv_prog_gcc = yes; then
 	    CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_DBG_FLAGS_TO_TRY="-g -O0"
 	fi
 	;;
 	SunOS)
@@ -138,6 +141,7 @@ case `uname` in
         if test $ac_cv_prog_gcc = no; then
 	    SET_DT_SONAME="-h "
 	fi
+        CC_DBG_FLAGS_TO_TRY="-g -O0"
 	;;
 esac
 
@@ -150,17 +154,20 @@ if test $ac_cv_prog_gcc = yes; then
 -Wno-strict-aliasing -Wdeclaration-after-statement \
 -fno-builtin -fno-common"
     optflags_to_try="$CC_OPT_FLAGS_TO_TRY"
+    dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
 else
     cflags_to_try=
     optflags_to_try="$CC_OPT_FLAGS_TO_TRY"
+    dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
 fi
 
-AC_ARG_ENABLE([debug], AC_HELP_STRING([--enable-debug],
-    [turn on debugging]))
-if test x$enable_debug = xyes; then
-    optflags_to_try="-g"
-    CFLAGS="-DDEBUG $CFLAGS"
-fi
+# debug configurarion is available by default with "make debug"
+#AC_ARG_ENABLE([debug], AC_HELP_STRING([--enable-debug],
+#    [turn on debugging]))
+#if test x$enable_debug = xyes; then
+#    optflags_to_try="-g"
+#    CFLAGS="-DDEBUG $CFLAGS"
+#fi
 
 AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
@@ -181,6 +188,17 @@ for flag in $cflags_to_try; do
 	])
 	CFLAGS=$old_cflags
 done
+old_cflags=$CFLAGS
+echo
+for flag in $dbgflags_to_try; do
+    CFLAGS="$CFLAGS $flag"
+    AC_TRY_COMPILE(, [return 0;], [
+	echo "   $flag"
+	DBG_CFLAGS="$DBG_CFLAGS $flag"
+    ])
+    CFLAGS=$old_cflags
+done
+
 AC_MSG_RESULT([ ...done.])
 
 dnl --------------------------------------------------
@@ -1006,32 +1024,32 @@ P_DEVS=""
 F_DEVS=""
 
 dnl Known printers
-HP_DEVS="cdj500 djet500 djet500c dnj650c cljet5pr deskjet laserjet ljetplus ljet2p ljet3 ljet3d ljet4 ljet4d lj4dith lj5mono lj5gray cdeskjet cdjcolor cdjmono cdj550 pj pjxl pjxl300 lp2563 paintjet pjetxl cljet5 cljet5c pxlmono pxlcolor cdj670 cdj850 cdj880 cdj890 cdj970 cdj1600 cdnj500 chp2200 pcl3 hpdjplus hpdjportable hpdj310 hpdj320 hpdj340 hpdj400 hpdj500 hpdj500c hpdj510 hpdj520 hpdj540 hpdj550c hpdj560c hpdj600 hpdj660c hpdj670c hpdj680c hpdj690c hpdj850c hpdj855c hpdj870c hpdj890c hpdj1120c lj3100sw"
-PCLXL_DEVS="pxlmono pxlcolor"
-EPSON_DEVS="eps9high eps9mid epson epsonc escp lp8000 lq850 photoex st800 stcolor alc1900 alc2000 alc4000 alc4100 alc8500 alc8600 alc9100 lp3000c lp8000c lp8200c lp8300c lp8500c lp8800c lp9000c lp9200c lp9500c lp9800c lps6500 epl2050 epl2050p epl2120 epl2500 epl2750 epl5800 epl5900 epl6100 epl6200 lp1800 lp1900 lp2200 lp2400 lp2500 lp7500 lp7700 lp7900 lp8100 lp8300f lp8400f lp8600 lp8600f lp8700 lp8900 lp9000b lp9100 lp9200b lp9300 lp9400 lp9600 lp9600s lps4500 eplcolor eplmono"
-CANON_DEVS="bj10e bj200 bjc600 bjc800 lbp8 lips3 bjcmono bjcgray bjccmyk bjccolor"
-LEXMARK_DEVS="lxm5700m lx5000 lxm3200 lex2050 lex3200 lex5700 lex7000"
-BROTHER_DEVS="hl7x0 hl1240 hl1250"
-APPLE_DEVS="appledmp iwhi iwlo iwlq"
-IBM_DEVS="ibmpro jetp3852"
-OKI_DEVS="oki182 okiibm oki4w"
-JAPAN_DEVS="lips4 lips4v ljet4pjl lj4dithp dj505j picty180 lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl"
-MISC_PDEVS="uniprint ap3250 atx23 atx24 atx38 coslw2p coslwxl cp50 declj250 fs600 imagen lj250 m8510 necp6 oce9050 r4081 sj48 tek4696 t4693d2 t4693d4 t4693d8 dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k gdi samsunggdi"
-OPVP_DEVS="opvp oprp"
-ETS_HALFTONING_DEVS="rinkj"
+HP_DEVS='$(DD)cdj500.dev $(DD)djet500.dev $(DD)djet500c.dev $(DD)dnj650c.dev $(DD)cljet5pr.dev $(DD)deskjet.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj4dith.dev $(DD)lj5mono.dev $(DD)lj5gray.dev $(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)lp2563.dev $(DD)paintjet.dev $(DD)pjetxl.dev $(DD)cljet5.dev $(DD)cljet5c.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev $(DD)cdj670.dev $(DD)cdj850.dev $(DD)cdj880.dev $(DD)cdj890.dev $(DD)cdj970.dev $(DD)cdj1600.dev $(DD)cdnj500.dev $(DD)chp2200.dev $(DD)pcl3.dev $(DD)hpdjplus.dev $(DD)hpdjportable.dev $(DD)hpdj310.dev $(DD)hpdj320.dev $(DD)hpdj340.dev $(DD)hpdj400.dev $(DD)hpdj500.dev $(DD)hpdj500c.dev $(DD)hpdj510.dev $(DD)hpdj520.dev $(DD)hpdj540.dev $(DD)hpdj550c.dev $(DD)hpdj560c.dev $(DD)hpdj600.dev $(DD)hpdj660c.dev $(DD)hpdj670c.dev $(DD)hpdj680c.dev $(DD)hpdj690c.dev $(DD)hpdj850c.dev $(DD)hpdj855c.dev $(DD)hpdj870c.dev $(DD)hpdj890c.dev $(DD)hpdj1120c.dev $(DD)lj3100sw.dev'
+PCLXL_DEVS='$(DD)pxlmono.dev $(DD)pxlcolor.dev'
+EPSON_DEVS='$(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epson.dev $(DD)epsonc.dev $(DD)escp.dev $(DD)lp8000.dev $(DD)lq850.dev $(DD)photoex.dev $(DD)st800.dev $(DD)stcolor.dev $(DD)alc1900.dev $(DD)alc2000.dev $(DD)alc4000.dev $(DD)alc4100.dev $(DD)alc8500.dev $(DD)alc8600.dev $(DD)alc9100.dev $(DD)lp3000c.dev $(DD)lp8000c.dev $(DD)lp8200c.dev $(DD)lp8300c.dev $(DD)lp8500c.dev $(DD)lp8800c.dev $(DD)lp9000c.dev $(DD)lp9200c.dev $(DD)lp9500c.dev $(DD)lp9800c.dev $(DD)lps6500.dev $(DD)epl2050.dev $(DD)epl2050p.dev $(DD)epl2120.dev $(DD)epl2500.dev $(DD)epl2750.dev $(DD)epl5800.dev $(DD)epl5900.dev $(DD)epl6100.dev $(DD)epl6200.dev $(DD)lp1800.dev $(DD)lp1900.dev $(DD)lp2200.dev $(DD)lp2400.dev $(DD)lp2500.dev $(DD)lp7500.dev $(DD)lp7700.dev $(DD)lp7900.dev $(DD)lp8100.dev $(DD)lp8300f.dev $(DD)lp8400f.dev $(DD)lp8600.dev $(DD)lp8600f.dev $(DD)lp8700.dev $(DD)lp8900.dev $(DD)lp9000b.dev $(DD)lp9100.dev $(DD)lp9200b.dev $(DD)lp9300.dev $(DD)lp9400.dev $(DD)lp9600.dev $(DD)lp9600s.dev $(DD)lps4500.dev $(DD)eplcolor.dev $(DD)eplmono.dev'
+CANON_DEVS='$(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev $(DD)lbp8.dev $(DD)lips3.dev $(DD)bjcmono.dev $(DD)bjcgray.dev $(DD)bjccmyk.dev $(DD)bjccolor.dev'
+LEXMARK_DEVS='$(DD)lxm5700m.dev $(DD)lx5000.dev $(DD)lxm3200.dev $(DD)lex2050.dev $(DD)lex3200.dev $(DD)lex5700.dev $(DD)lex7000.dev'
+BROTHER_DEVS='$(DD)hl7x0.dev $(DD)hl1240.dev $(DD)hl1250.dev'
+APPLE_DEVS='$(DD)appledmp.dev $(DD)iwhi.dev $(DD)iwlo.dev $(DD)iwlq.dev'
+IBM_DEVS='$(DD)ibmpro.dev $(DD)jetp3852.dev'
+OKI_DEVS='$(DD)oki182.dev $(DD)okiibm.dev $(DD)oki4w.dev'
+JAPAN_DEVS='$(DD)lips4.dev $(DD)lips4v.dev $(DD)ljet4pjl.dev $(DD)lj4dithp.dev $(DD)dj505j.dev $(DD)picty180.dev $(DD)lips2p.dev $(DD)bjc880j.dev $(DD)pr201.dev $(DD)pr150.dev $(DD)pr1000.dev $(DD)pr1000_4.dev $(DD)jj100.dev $(DD)bj10v.dev $(DD)bj10vh.dev $(DD)mj700v2c.dev $(DD)mj500c.dev $(DD)mj6000c.dev $(DD)mj8000c.dev $(DD)fmpr.dev $(DD)fmlbp.dev $(DD)ml600.dev $(DD)lbp310.dev $(DD)lbp320.dev $(DD)md50Mono.dev $(DD)md50Eco.dev $(DD)md1xMono.dev $(DD)escpage.dev $(DD)lp2000.dev $(DD)npdl.dev $(DD)rpdl.dev'
+MISC_PDEVS='$(DD)uniprint.dev $(DD)ap3250.dev $(DD)atx23.dev $(DD)atx24.dev $(DD)atx38.dev $(DD)coslw2p.dev $(DD)coslwxl.dev $(DD)cp50.dev $(DD)declj250.dev $(DD)fs600.dev $(DD)imagen.dev $(DD)lj250.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)oce9050.dev $(DD)r4081.dev $(DD)sj48.dev $(DD)tek4696.dev $(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)dl2100.dev $(DD)la50.dev $(DD)la70.dev $(DD)la75.dev $(DD)la75plus.dev $(DD)ln03.dev $(DD)xes.dev $(DD)md2k.dev $(DD)md5k.dev $(DD)gdi.dev $(DD)samsunggdi.dev'
+OPVP_DEVS='$(DD)opvp.dev $(DD)oprp.dev'
+ETS_HALFTONING_DEVS='$(DD)rinkj.dev'
 
 dnl Known file formats
-BMP_DEVS="bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b"
-FAX_DEVS="cfax dfaxlow dfaxhigh fax tfax tiffg3 tiffg32d tiffg4 faxg3 faxg32d faxg4"
-JPEG_DEVS="jpeg jpeggray jpegcmyk"
-# PNG_DEVS="png16 png16m png256 pngalpha pnggray pngmono"
-TIFF_DEVS="tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled"
-PCX_DEVS="pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up"
-PBM_DEVS="pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam"
-PS_DEVS="psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox"
-WTS_HALFTONING_DEVS="imdi simdi wtsimdi wtscmyk"
-MISC_FDEVS="ccr cgm24 cgm8 cgmmono cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf"
-SVGDEV="svgwrite"
+BMP_DEVS='$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev'
+FAX_DEVS='$(DD)cfax.dev $(DD)dfaxlow.dev $(DD)dfaxhigh.dev $(DD)fax.dev $(DD)tfax.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev'
+JPEG_DEVS='$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev'
+# PNG_DEVS='png16.dev $(DD)png16m.dev $(DD)png256.dev $(DD)pngalpha.dev $(DD)pnggray.dev $(DD)pngmono.dev'
+TIFF_DEVS='$(DD)tiffs.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiff48nc.dev $(DD)tiff32nc.dev $(DD)tiff64nc.dev $(DD)tiffcrle.dev $(DD)tifflzw.dev $(DD)tiffpack.dev $(DD)tiffgray.dev $(DD)tiffsep.dev $(DD)tiffsep1.dev $(DD)tiffscaled.dev'
+PCX_DEVS='$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev $(DD)pcx2up.dev'
+PBM_DEVS='$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev $(DD)pam.dev'
+PS_DEVS='$(DD)psdf.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev $(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)psgray.dev $(DD)psmono.dev $(DD)psrgb.dev $(DD)bbox.dev'
+WTS_HALFTONING_DEVS='$(DD)imdi.dev $(DD)simdi.dev $(DD)wtsimdi.dev $(DD)wtscmyk.dev'
+MISC_FDEVS='$(DD)ccr.dev $(DD)cgm24.dev $(DD)cgm8.dev $(DD)cgmmono.dev $(DD)cif.dev $(DD)inferno.dev $(DD)mag16.dev $(DD)mag256.dev $(DD)mgr4.dev $(DD)mgr8.dev $(DD)mgrgray2.dev $(DD)mgrgray4.dev $(DD)mgrgray8.dev $(DD)mgrmono.dev $(DD)miff24.dev $(DD)plan9bm.dev $(DD)sgirgb.dev $(DD)sunhmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev $(DD)bitcmyk.dev $(DD)devicen.dev $(DD)spotcmyk.dev $(DD)xcf.dev'
+SVGDEV='$(DD)svgwrite.dev'
 
 CUPS_DEVS=""
 SVG_DEVS=""
@@ -1196,14 +1214,16 @@ fi
 if test -n "$F_DEVS"; then
 	FILES=`(for i in $F_DEVS; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012' ' '`
 fi
-AC_SUBST(PRINTERS)
-AC_SUBST(FILES)
+AC_SUBST(P_DEVS)
+AC_SUBST(F_DEVS)
 AC_SUBST(CUPS_DEVS)
 AC_SUBST(SVG_DEVS)
 AC_SUBST(JBIG2_DEVS)
 AC_SUBST(IJS_DEVS)
 AC_SUBST(PNG_DEVS)
-AC_SUBST(X11_DEVS)
+
+# This now gets done after handling --enable-dynamic
+# AC_SUBST(X11_DEVS)
 
 dnl Dynamic device support.
 DYNAMIC_CFLAGS=""
@@ -1246,7 +1266,8 @@ esac
 
 AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
     [Enable dynamically loaded drivers]),
-[	case `uname` in
+[
+	case `uname` in
 		Linux*|GNU*)
 		INSTALL_SHARED="install-shared"
 		if test "x$X_DEVS" != x; then
@@ -1255,22 +1276,29 @@ AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
 			DYNAMIC_DEVS=""
 		fi
 		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		X_DEVS=""
+		X11_DEVS=""
+		OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+		DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
 		;;
 		*BSD)
 		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
 		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		X_DEVS=""
+		X11_DEVS=""
+		OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+		DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
 		;;
 		Darwin*)
 		INSTALL_SHARED="install-shared"
 		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		X_DEVS=""
+		X11_DEVS=""
+		OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+		DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
 		;;
 		SunOS)
 		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
 		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		X_DEVS=""
+		OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+		DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
 		;;
 		*)
 		AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
@@ -1284,6 +1312,7 @@ AC_SUBST(DYNAMIC_FLAGS)
 AC_SUBST(DYNAMIC_LDFLAGS)
 AC_SUBST(DYNAMIC_LIBS)
 AC_SUBST(INSTALL_SHARED)
+AC_SUBST(X11_DEVS)
 
 dnl look for default font path...
 AC_ARG_WITH([fontpath],  AC_HELP_STRING([--with-fontpath],
@@ -1357,6 +1386,7 @@ dnl Do substitutions
 dnl --------------------------------------------------
 
 AC_SUBST(OPT_CFLAGS)
+AC_SUBST(DBG_CFLAGS)
 AC_SUBST(GCFLAGS)
 AC_OUTPUT(Makefile cups/pstopxl cups/pstoraster)
 
