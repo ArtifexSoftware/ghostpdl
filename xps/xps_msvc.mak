@@ -84,6 +84,14 @@ SHARE_EXPAT=0
 EXPAT_CFLAGS=/DHAVE_MEMMOVE
 !endif
 
+!ifndef JPEGXR_SRCDIR
+JPEGXR_SRCDIR=..\gs\jpegxr
+!endif
+
+!ifndef SHARE_JPEGXR
+SHARE_JPEGXR=0
+!endif
+
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
 !ifndef PLPLATFORM
@@ -163,3 +171,4 @@ COMPILE_INITS=1
 # Subsystems
 !include $(XPSSRCDIR)\xps.mak
 !include $(GLSRCDIR)\expat.mak
+!include $(GLSRCDIR)\jpegxr.mak

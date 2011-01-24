@@ -43,9 +43,12 @@ PSLIBDIR?=../gs/lib
 ICCSRCDIR?=../gs/icclib
 PNGSRCDIR?=../gs/libpng
 EXPATSRCDIR?=../gs/expat
+JPEGXR_SRCDIR?=../gs/jpegxr
 
 SHARE_EXPAT?=0
 EXPAT_CFLAGS=-DHAVE_MEMMOVE
+
+SHARE_JPEGXR?=0
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
@@ -63,6 +66,8 @@ ZGENDIR?=$(GENDIR)
 ZOBJDIR?=$(GENDIR)
 EXPATGENDIR?=$(GENDIR)
 EXPATOBJDIR?=$(GENDIR)
+JPEGXR_GENDIR?=$(GENDIR)
+JPEGXR_OBJDIR?=$(GENDIR)
 
 # Executable path\name w/o the .EXE extension
 TARGET_DEVS=$(XPSOBJDIR)/xps.dev
@@ -87,3 +92,4 @@ include $(MAINSRCDIR)/pcl6_gcc.mak
 # this is already in pcl6_gcc.mak
 include $(XPSSRCDIR)/xps.mak
 include $(GLSRCDIR)/expat.mak
+include $(GLSRCDIR)/jpegxr.mak

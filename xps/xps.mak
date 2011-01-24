@@ -19,7 +19,7 @@ XPSO_       = $(O_)$(XPSOBJ)
 EXPATINCDIR = $(EXPATSRCDIR)$(D)lib
 PLOBJ       = $(PLOBJDIR)$(D)
 
-XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(EXPATINCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) $(C_)
+XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 XPS_MAK     = $(XPSSRC)xps.mak
@@ -32,7 +32,6 @@ xps.clean-not-config-clean:
 xps.config-clean: clean_gs
 	$(RM_) $(XPSOBJ)*.dev
 	$(RM_) $(XPSOBJ)devs.tr5
-
 
 XPSINCLUDES=$(XPSSRC)*.h $(XPSOBJ)arch.h $(XPSOBJ)jpeglib_.h
 
@@ -151,8 +150,7 @@ XPS_OBJS=\
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==XPSGEN is required.
 
-$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS) $(XPSGEN)expat.dev \
+$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS) $(XPSGEN)expat.dev $(XPSGEN)jpegxr.dev \
 		  $(XPSGEN)pl.dev $(XPSGEN)$(PL_SCALER).dev $(XPSGEN)pjl.dev
 	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)
-	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)expat $(XPSGEN)pl $(XPSGEN)$(PL_SCALER) $(XPSGEN)pjl.dev
-
+	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)expat $(XPSGEN)jpegxr $(XPSGEN)pl $(XPSGEN)$(PL_SCALER) $(XPSGEN)pjl.dev
