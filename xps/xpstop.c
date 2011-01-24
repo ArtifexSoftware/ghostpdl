@@ -251,7 +251,7 @@ xps_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
 
     code = xps_process_file(ctx, filename);
     if (code)
-        gs_catch1(code, "cannot process xps file (%s)", filename);
+        gs_catch1(code, "cannot process xps file '%s'", filename);
 
     return code;
 }

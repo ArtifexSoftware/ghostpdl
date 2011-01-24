@@ -123,25 +123,25 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
     {
         error = xps_decode_jpeg(ctx, buf, len, image);
         if (error)
-            return gs_rethrow(error, "could not decode image");
+            return gs_rethrow(error, "could not decode jpeg image");
     }
     else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
     {
         error = xps_decode_png(ctx, buf, len, image);
         if (error)
-            return gs_rethrow(error, "could not decode image");
+            return gs_rethrow(error, "could not decode png image");
     }
     else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
     {
         error = xps_decode_jpegxr(ctx, buf, len, image);
         if (error)
-            return gs_rethrow(error, "could not decode image");
+            return gs_rethrow(error, "could not decode jpeg-xr image");
     }
     else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
     {
         error = xps_decode_tiff(ctx, buf, len, image);
         if (error)
-            return gs_rethrow(error, "could not decode image");
+            return gs_rethrow(error, "could not decode tiff image");
     }
     else
         return gs_throw(-1, "unknown image file format");
@@ -409,7 +409,7 @@ xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
 
     code = xps_decode_image(ctx, part, image);
     if (code < 0)
-        return gs_rethrow(-1, "cannot decode image resource");
+        return gs_rethrow1(code, "cannot decode image '%s'", part->name);
 
     /* Override any embedded colorspace profiles if the external one matches. */
     if (profilename)

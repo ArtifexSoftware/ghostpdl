@@ -21,7 +21,12 @@ xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_it
     if (!strcmp(xps_tag(node), "SolidColorBrush"))
         return xps_parse_solid_color_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "ImageBrush"))
-        return xps_parse_image_brush(ctx, base_uri, dict, node);
+    {
+        int code = xps_parse_image_brush(ctx, base_uri, dict, node);
+        if (code)
+            gs_catch(code, "ignoring error in image brush");
+        return gs_okay;
+    }
     if (!strcmp(xps_tag(node), "VisualBrush"))
         return xps_parse_visual_brush(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "LinearGradientBrush"))
