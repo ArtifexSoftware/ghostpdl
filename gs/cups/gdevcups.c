@@ -79,6 +79,12 @@
 #undef private
 #define private
 
+#ifdef WIN32
+#define cbrt(arg) pow(arg, 1.0/3)
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#endif
+
 /* This should go into gdevprn.h, or, better yet, gdevprn should
    acquire an API for changing resolution. */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
@@ -415,10 +421,10 @@ gx_device_cups	gs_cups_device =
     0x02, 0x06, 0x0a, 0x0e, 0x03, 0x07, 0x0b, 0x0f },/* RevLower2 */
   { 0x00, 0x40, 0x80, 0xc0, 0x10, 0x50, 0x90, 0xd0,
     0x20, 0x60, 0xa0, 0xe0, 0x30, 0x70, 0xb0, 0xf0 },/* RevUpper2 */
-  { },                                  /* DecodeLUT */
-  { },                                  /* EncodeLUT */
-  { },                                  /* Density */
-  { },                                  /* Matrix */
+  {0x00},                                  /* DecodeLUT */
+  {0x00},                                  /* EncodeLUT */
+  {0x00},                                  /* Density */
+  {0x00},                                  /* Matrix */
   3                                     /* cupsRasterVersion */
 };
 
