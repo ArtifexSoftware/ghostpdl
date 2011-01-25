@@ -772,8 +772,8 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
     int num_src_comp;
     int num_entries = 1 << bps; 
     bool need_decode = penum->icc_setup.need_decode;
-    byte k, value;
-    int temp;
+    byte value;
+    int k, temp;
     byte psrc[4];
     byte *temp_buffer;
     bool is_indexed = (gs_color_space_get_index(penum->pcs) ==  
