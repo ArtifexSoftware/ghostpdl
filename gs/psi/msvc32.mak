@@ -275,6 +275,8 @@ LCMSSRCDIR=lcms
 # See ijs.mak for more information.
 
 !ifndef IJSSRCDIR
+SHARE_IJS=0
+IJS_NAME=
 IJSSRCDIR=ijs
 IJSEXECTYPE=win
 !endif

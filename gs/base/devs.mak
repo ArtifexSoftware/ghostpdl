@@ -651,15 +651,18 @@ $(GLOBJ)gdevlj56.$(OBJ) : $(GLSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
 
 ### -------------------- The ijs client ----------------- ###
 
-ijs_=$(GLOBJ)gdevijs.$(OBJ) $(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_client.$(OBJ) \
- $(IJSOBJ)ijs_exec_$(IJSEXECTYPE).$(OBJ)
+ijs_=$(GLOBJ)gdevijs.$(OBJ)
+
+#$(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_client.$(OBJ) \
+# $(IJSOBJ)ijs_exec_$(IJSEXECTYPE).$(OBJ)
 
 $(DD)ijs.dev : $(ijs_) $(GLD)page.dev $(DD)ijslib.dev
 	$(SETPDEV) $(DD)ijs $(ijs_)
+	$(ADDMOD) $(DD)ijs -include $(GLD)ijslib
 
-$(GLOBJ)gdevijs.$(OBJ) : $(GLSRC)gdevijs.c $(PDEVH) $(unistd__h) $(gp_h)\
- $(ijs_h) $(ijs_client_h)
-	$(CC_) $(I_)$(GLI_) $(II)$(IJSI_)$(_I) $(GLF_) $(GLO_)gdevijs.$(OBJ) $(C_) $(GLSRC)gdevijs.c
+$(GLOBJ)gdevijs.$(OBJ) : $(GLSRC)gdevijs.c $(PDEVH) $(unistd__h) $(gp_h)
+	$(CC_) $(I_)$(GLI_) $(II)$(IJSI_)$(_I) $(II)$(IJSI_)$(D)..$(_I) \
+            $(GLF_) $(GLO_)gdevijs.$(OBJ) $(C_) $(GLSRC)gdevijs.c
 
 # Please see ijs.mak for the Makefile fragment which builds the IJS
 # library.

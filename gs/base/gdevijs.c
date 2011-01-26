@@ -66,8 +66,8 @@
 #include <fcntl.h>
 #include "gdevprn.h"
 #include "gp.h"
-#include "ijs.h"
-#include "ijs_client.h"
+#include "ijs/ijs.h"
+#include "ijs/ijs_client.h"
 
 #if 0
 #define KRGB_DEBUG

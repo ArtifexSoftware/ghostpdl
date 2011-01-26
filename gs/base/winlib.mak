@@ -29,6 +29,11 @@ SHARE_JBIG2=0
 SHARE_JPX=0
 SHARE_LCMS=0
 
+SHARE_IJS=0
+IJS_NAME=
+IJSSRCDIR=ijs
+IJSEXECTYPE=win
+
 # Define the platform name.
 
 !ifndef PLATFORM

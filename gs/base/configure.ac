@@ -531,8 +531,6 @@ else
     [define if the libjpeg memory system prototypes aren't available])
 fi
 
-dnl these are technically optional
-
 AC_MSG_CHECKING([for local zlib source])
 dnl zlib is needed for language level 3, and libpng
 # we must define ZLIBDIR regardless because png.mak does a -I$(ZLIBDIR)
@@ -584,6 +582,16 @@ AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
 #AC_SUBST(PNGDEVS)
 
+AC_MSG_CHECKING([for local ijs library source])
+LIBIJSDIR=ijs
+if test -f $LIBIJSDIR/ijs.h; then
+	AC_MSG_RESULT([jpeg])
+	SHARE_LIBIJS=0
+else
+AC_CHECK_LIB(ijs, ijs_server_init, [
+	  AC_CHECK_HEADERS([ijs/ijs.h], [SHARE_LIBIJS=1,LIBIJSDIR=""])
+	])
+fi
 
 dnl look for libtiff, it also requires lib
 dnl png for the png output device; it also requires zlib
@@ -718,6 +726,7 @@ AC_ARG_WITH([ijs], AC_HELP_STRING([--without-ijs],
 dnl set safe defaults
     IJSDIR=src
     IJSDEVS=''
+    SHAREIJS=0
 if test x$with_ijs != xno; then
     AC_MSG_CHECKING([for local ijs library source])
     if test -d ijs; then
@@ -726,9 +735,20 @@ if test x$with_ijs != xno; then
         IJSDEVS='$(DD)ijs.dev'
     else
         AC_MSG_RESULT([no])
+        AC_CHECK_LIB(ijs, ijs_server_init, [
+	  AC_CHECK_HEADERS(ijs/ijs.h, [SHAREIJS=1])
+	])
+        if test $SHAREIJS -eq 1 ; then
+            IJSLIB=ijs
+            # This is for safety - it prevents our header search path going outside the GS source tree
+            IJSDIR='$(GLOBJDIR)'
+            IJSDEVS='$(DD)ijs.dev'
+        fi
     fi
 fi
 AC_SUBST(IJSDIR)
+AC_SUBST(SHAREIJS)
+AC_SUBST(IJSLIB)
 #AC_SUBST(IJSDEVS)
 
 dnl look for jbig2dec
