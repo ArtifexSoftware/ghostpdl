@@ -585,7 +585,7 @@ AC_SUBST(LIBPNGDIR)
 AC_MSG_CHECKING([for local ijs library source])
 LIBIJSDIR=ijs
 if test -f $LIBIJSDIR/ijs.h; then
-	AC_MSG_RESULT([jpeg])
+	AC_MSG_RESULT([ijs])
 	SHARE_LIBIJS=0
 else
 AC_CHECK_LIB(ijs, ijs_server_init, [
