@@ -14,6 +14,11 @@
 /* JPEG-XR (formerly HD-Photo (formerly Windows Media Photo)) support */
 
 #include "ghostxps.h"
+
+#ifdef _MSC_VER
+#undef _MSC_VER
+#endif
+
 #include "jpegxr.h"
 
 struct state { xps_context_t *ctx; xps_image_t *output; };

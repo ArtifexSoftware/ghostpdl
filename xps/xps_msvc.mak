@@ -92,6 +92,10 @@ JPEGXR_SRCDIR=..\gs\jpegxr
 SHARE_JPEGXR=0
 !endif
 
+!ifndef JPEGXR_CFLAGS
+JPEGXR_CFLAGS=/TP
+!endif
+
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
 !ifndef PLPLATFORM
@@ -138,6 +142,14 @@ EXPATGENDIR=$(GENDIR)
 
 !ifndef EXPATOBJDIR
 EXPATOBJDIR=$(GENDIR)
+!endif
+
+!ifndef JPEGXR_GENDIR
+JPEGXR_GENDIR=$(GENDIR)
+!endif
+
+!ifndef JPEGXR_OBJDIR
+JPEGXR_OBJDIR=$(GENDIR)
 !endif
 
 # Executable path\name w/o the .EXE extension
