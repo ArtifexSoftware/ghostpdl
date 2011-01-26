@@ -166,7 +166,7 @@ JDEP=$(AK) $(jconfig_h) $(jmorecfg_h) $(JHCOPY)
 
 # Code common to compression and decompression.
 
-jpegc0_=$(JOBJ)jcomapi.$(OBJ) $(JOBJ)jutils.$(OBJ) $(JOBJ)jmemmgr.$(OBJ) $(JOBJ)jerror.$(OBJ) $(JOBJ)jaricom.$(OBJ)
+jpegc0_=$(JOBJ)jcomapi.$(OBJ) $(JOBJ)jutils.$(OBJ) $(JOBJ)jmemmgr.$(OBJ) $(JOBJ)jerror.$(OBJ)
 $(JGEN)jpegc0.dev : $(JPEG_MAK) $(ECHOGS_XE) $(jpegc0_)
 	$(SETMOD) $(JGEN)jpegc0 $(jpegc0_)
 
@@ -190,11 +190,6 @@ $(JOBJ)jerror.$(OBJ) : $(JSRC)jerror.c $(JDEP)
 	$(JCC) $(JO_)jerror.$(OBJ) $(C_) $(GLGEN)jerror.c
 	$(RM_) $(GLGEN)jerror.c
 
-$(JOBJ)jaricom.$(OBJ) : $(JSRC)jaricom.c $(JDEP)
-	$(CP_) $(JSRC)jaricom.c $(GLGEN)jaricom.c
-	$(JCC) $(JO_)jaricom.$(OBJ) $(C_) $(GLGEN)jaricom.c
-	$(RM_) $(GLGEN)jaricom.c
-
 # Encoding (compression) code.
 
 $(JGEN)jpege.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpege_$(SHARE_JPEG).dev
@@ -208,7 +203,7 @@ $(JGEN)jpege_0.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpege6.dev
 
 jpege6=$(JOBJ)jcapimin.$(OBJ) $(JOBJ)jcapistd.$(OBJ) $(JOBJ)jcinit.$(OBJ)
 
-jpege_1=$(JOBJ)jccoefct.$(OBJ) $(JOBJ)jccolor.$(OBJ) $(JOBJ)jcdctmgr.$(OBJ) $(JOBJ)jcarith.$(OBJ)
+jpege_1=$(JOBJ)jccoefct.$(OBJ) $(JOBJ)jccolor.$(OBJ) $(JOBJ)jcdctmgr.$(OBJ)
 jpege_2=$(JOBJ)jchuff.$(OBJ) $(JOBJ)jcmainct.$(OBJ) $(JOBJ)jcmarker.$(OBJ) $(JOBJ)jcmaster.$(OBJ)
 jpege_3=$(JOBJ)jcparam.$(OBJ) $(JOBJ)jcprepct.$(OBJ) $(JOBJ)jcsample.$(OBJ) $(JOBJ)jfdctint.$(OBJ)
 
@@ -289,11 +284,6 @@ $(JOBJ)jfdctint.$(OBJ) : $(JSRC)jfdctint.c $(JDEP)
 	$(JCC) $(JO_)jfdctint.$(OBJ) $(C_) $(GLGEN)jfdctint.c
 	$(RM_) $(GLGEN)jfdctint.c
 
-$(JOBJ)jcarith.$(OBJ) : $(JSRC)jcarith.c $(JDEP)
-	$(CP_) $(JSRC)jcarith.c $(GLGEN)jcarith.c
-	$(JCC) $(JO_)jcarith.$(OBJ) $(C_) $(GLGEN)jcarith.c
-	$(RM_) $(GLGEN)jcarith.c
-
 # Decompression code
 
 $(JGEN)jpegd.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpegd_$(SHARE_JPEG).dev
@@ -305,11 +295,11 @@ $(JGEN)jpegd_1.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(ECHOGS_XE)
 $(JGEN)jpegd_0.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpegd6.dev
 	$(CP_) $(JGEN)jpegd6.dev $(JGEN)jpegd_0.dev
 
-jpegd6=$(JOBJ)jdapimin.$(OBJ) $(JOBJ)jdapistd.$(OBJ) $(JOBJ)jdinput.$(OBJ) $(JOBJ)jdhuff.$(OBJ)
+jpegd6=$(JOBJ)jdapimin.$(OBJ) $(JOBJ)jdapistd.$(OBJ) $(JOBJ)jdinput.$(OBJ) $(JOBJ)jdphuff.$(OBJ)
 
 jpegd_1=$(JOBJ)jdcoefct.$(OBJ) $(JOBJ)jdcolor.$(OBJ)
 jpegd_2=$(JOBJ)jddctmgr.$(OBJ) $(JOBJ)jdhuff.$(OBJ) $(JOBJ)jdmainct.$(OBJ) $(JOBJ)jdmarker.$(OBJ)
-jpegd_3=$(JOBJ)jdmaster.$(OBJ) $(JOBJ)jdpostct.$(OBJ) $(JOBJ)jdsample.$(OBJ) $(JOBJ)jidctint.$(OBJ) $(JOBJ)jdarith.$(OBJ)
+jpegd_3=$(JOBJ)jdmaster.$(OBJ) $(JOBJ)jdpostct.$(OBJ) $(JOBJ)jdsample.$(OBJ) $(JOBJ)jidctint.$(OBJ)
 
 $(JGEN)jpegd6.dev : $(JPEG_MAK) $(ECHOGS_XE) $(JGEN)jpegc0.dev $(jpegd6) $(jpegd_1) $(jpegd_2) $(jpegd_3)
 	$(SETMOD) $(JGEN)jpegd6 $(jpegd6)
@@ -368,10 +358,10 @@ $(JOBJ)jdmaster.$(OBJ) : $(JSRC)jdmaster.c $(JDEP)
 	$(JCC) $(JO_)jdmaster.$(OBJ) $(C_) $(GLGEN)jdmaster.c
 	$(RM_) $(GLGEN)jdmaster.c
 
-#$(JOBJ)jdhuff.$(OBJ) : $(JSRC)jdhuff.c $(JDEP)
-#	$(CP_) $(JSRC)jdhuff.c $(GLGEN)jdhuff.c
-#	$(JCC) $(JO_)jdhuff.$(OBJ) $(C_) $(GLGEN)jdhuff.c
-#	$(RM_) $(GLGEN)jdhuff.c
+$(JOBJ)jdphuff.$(OBJ) : $(JSRC)jdphuff.c $(JDEP)
+	$(CP_) $(JSRC)jdphuff.c $(GLGEN)jdphuff.c
+	$(JCC) $(JO_)jdphuff.$(OBJ) $(C_) $(GLGEN)jdphuff.c
+	$(RM_) $(GLGEN)jdphuff.c
 
 $(JOBJ)jdpostct.$(OBJ) : $(JSRC)jdpostct.c $(JDEP)
 	$(CP_) $(JSRC)jdpostct.c $(GLGEN)jdpostct.c
@@ -387,8 +377,3 @@ $(JOBJ)jidctint.$(OBJ) : $(JSRC)jidctint.c $(JDEP)
 	$(CP_) $(JSRC)jidctint.c $(GLGEN)jidctint.c
 	$(JCC) $(JO_)jidctint.$(OBJ) $(C_) $(GLGEN)jidctint.c
 	$(RM_) $(GLGEN)jidctint.c
-
-$(JOBJ)jdarith.$(OBJ) : $(JSRC)jdarith.c $(JDEP)
-	$(CP_) $(JSRC)jdarith.c $(GLGEN)jdarith.c
-	$(JCC) $(JO_)jdarith.$(OBJ) $(C_) $(GLGEN)jdarith.c
-	$(RM_) $(GLGEN)jdarith.c
