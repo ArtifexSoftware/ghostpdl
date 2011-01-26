@@ -819,17 +819,26 @@ end readonly def                % .loadttfontdict
   /offsets f 12 string readstring pop def
   load_stripped { readtables_stripped } { readtables } ifelse /readtables_ exch def
   offsets 0 4 getinterval (ttcf) eq {
-    % We need to handle TT collections with disk fonts only.
-    % Therefore the file is a disk file and it can be positioned.
     offsets 8 getu32 /num_fonts exch def
     SubfontID num_fonts ge {
       QUIET not { (True Type collection contains insufficient fonts.) = } if
       /.loadttfonttables cvx /invalidfont signalerror
     } if
-    SubfontID 4 mul 12 add f exch setfileposition
-    f 4 string readstring pop 0
-    getu32 /ttc_offset exch def
-    f ttc_offset setfileposition
+    f SubfontID 4 mul dup 0 ne {
+      () /SubFileDecode filter flushfile
+    } {
+      pop pop
+    } ifelse
+
+    f 4 string readstring pop
+    0 getu32 /ttc_offset exch def
+
+    f ttc_offset SubfontID 4 mul sub 16 sub
+    dup 0 ne {
+      () /SubFileDecode filter flushfile
+    } {
+      pop pop
+    } ifelse
     /offsets f 12 string readstring pop def
   } {
     SubfontID 0 gt {
