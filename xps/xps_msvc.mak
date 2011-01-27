@@ -93,7 +93,7 @@ SHARE_JPEGXR=0
 !endif
 
 !ifndef JPEGXR_CFLAGS
-JPEGXR_CFLAGS=/TP
+JPEGXR_CFLAGS=/TP /DNDEBUG
 !endif
 
 # PLPLATFORM indicates should be set to 'ps' for language switch

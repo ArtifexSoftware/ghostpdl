@@ -49,6 +49,7 @@ SHARE_EXPAT?=0
 EXPAT_CFLAGS=-DHAVE_MEMMOVE
 
 SHARE_JPEGXR?=0
+JPEGXR_CFLAGS?=-DNDEBUG
 
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
