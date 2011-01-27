@@ -28,8 +28,9 @@
 #ifdef HAVE_LIBTIFF
 #  include <tiff.h>	/* TIFF image definitions */
 #  include <tiffio.h>
+#ifndef WIN32
 #  include <unistd.h>
-
+#endif
 
 /*
  * '_cupsImageReadTIFF()' - Read a TIFF image file.

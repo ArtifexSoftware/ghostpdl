@@ -59,6 +59,9 @@
  * Include necessary headers.
  */
 
+#if WIN32
+char *strchr(const char *, int);
+#endif
 #include "ppd-private.h"
 #include "pwg-private.h"
 #include "globals.h"
