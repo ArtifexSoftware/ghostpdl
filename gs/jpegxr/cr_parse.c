@@ -79,7 +79,7 @@ int jxr_read_image_container(jxr_container_t container, FILE*fd)
     if (buf[0] != 0x49) return JXR_EC_BADMAGIC;
     if (buf[1] != 0x49) return JXR_EC_BADMAGIC;
     if (buf[2] != 0xbc) return JXR_EC_BADMAGIC;
-    if (buf[3] != 0x01) return JXR_EC_BADMAGIC; /* Version. */
+    if (buf[3] > 0x01) return JXR_EC_BADMAGIC; /* Version. */
 
     rc = fread(buf, 1, 4, fd);
     if (rc != 4) return JXR_EC_IO;
