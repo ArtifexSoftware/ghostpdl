@@ -39,7 +39,8 @@
 #include "gxcie.h"
 #include "gscie.h"
 #include <emmintrin.h>
-
+/* Need to fix HAVE_SSE set up for windows in the build */
+#define HAVE_SSE 1
 #define RAW_HT_DUMP 0
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
 
@@ -850,6 +851,7 @@ threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
     }
 }
 
+#ifdef HAVE_SSE
 /* Note this function has strict data alignment needs */
 threshold_16_SSE(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 {
@@ -986,6 +988,7 @@ threshold_row_SSE(byte *contone,  byte *threshold_strip,  int contone_stride,
         }
     }
 }
+#endif
 
 /*
  An image render case where the source color is monochrome or indexed and
@@ -1029,6 +1032,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int left_bits;
     int offset_threshold, offset_contone;
     int contone_stride;
+    int temp;
 #if RAW_HT_DUMP
     FILE *fid;
     char file_name[50];
@@ -1080,8 +1084,9 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                need to account for those pixels which occur first and which
                are NOT aligned for the contone buffer.  After we offset by this
                remainder portion we should be 128 bit aligned.  Also allow
-               a 15 sample over run during the execution */
-            contone_stride = (data_length + 15) * spp_out + 15;
+               a 15 sample over run during the execution.  */
+            temp = (int) ceil((float) ((data_length + 15.0) * spp_out + 15.0)/16.0);
+            contone_stride = temp * 16;
             contone = gs_alloc_bytes(penum->memory, contone_stride, 
                                      "image_render_mono_ht");
             threshold_strip = gs_alloc_bytes(penum->memory, contone_stride * vdi, 
@@ -1261,10 +1266,13 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             fwrite(halftone,1,dest_width * vdi,fid);
             fclose(fid);
 #else           
-      /*      threshold_row_SSE(contone_align, threshold_strip_align, contone_stride, 
-                              halftone, dithered_stride, dest_width, vdi, left_bits); */
+#ifdef HAVE_SSE
+            threshold_row_SSE(contone_align, threshold_strip_align, contone_stride, 
+                              halftone, dithered_stride, dest_width, vdi, left_bits); 
+#else
             threshold_row_bit(contone_align, threshold_strip_align, contone_stride, 
                               halftone, dithered_stride, dest_width, vdi, left_bits); 
+#endif
             /* Now do the copy mono operation */
             /* First the left remainder bits */
             if (left_bits > 0) {
