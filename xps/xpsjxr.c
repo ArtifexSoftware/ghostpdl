@@ -126,6 +126,41 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
     }
 }
 
+static void
+xps_decode_jpegxr_alpha_block(jxr_image_t image, int mx, int my, int *data)
+{
+    struct state *state = jxr_get_user_data(image);
+    xps_context_t *ctx = state->ctx;
+    xps_image_t *output = state->output;
+    int depth;
+    unsigned char *p;
+    int x, y, k;
+
+    if (!output->alpha)
+    {
+        output->alpha = xps_alloc(ctx, output->width * output->height);
+    }
+
+    depth = jxr_get_OUTPUT_BITDEPTH(image);
+
+    my = my * 16;
+    mx = mx * 16;
+
+    for (y = 0; y < 16; y++)
+    {
+        if (my + y >= output->height)
+            return;
+        p = output->alpha + (my + y) * output->width + mx;
+        for (x = 0; x < 16; x++)
+        {
+            if (mx + x >= output->width)
+                data ++;
+            else
+                *p++ = scale_bits(depth, *data++);
+        }
+    }
+}
+
 int
 xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 {
@@ -134,7 +169,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     struct state state;
     jxr_container_t container;
     jxr_image_t image;
-    int offset;
+    int offset, alpha_offset;
     int rc;
 
     memset(output, 0, sizeof(*output));
@@ -153,6 +188,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
         return gs_throw1(-1, "jxr_read_image_container: %s", jxr_error_string(rc));
 
     offset = jxrc_image_offset(container, 0);
+    alpha_offset = jxrc_alpha_offset(container, 0);
 
     output->xres = jxrc_width_resolution(container, 0);
     output->yres = jxrc_height_resolution(container, 0);
@@ -175,12 +211,38 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     jxr_set_user_data(image, &state);
 
     fseek(file, offset, SEEK_SET);
-
     rc = jxr_read_image_bitstream(image, file);
     if (rc < 0)
         return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
 
     jxr_destroy(image);
+
+    if (alpha_offset > 0)
+    {
+        image = jxr_create_input();
+        jxr_set_PROFILE_IDC(image, 111);
+        jxr_set_LEVEL_IDC(image, 255);
+        jxr_set_pixel_format(image, jxrc_image_pixelformat(container, 0));
+        jxr_set_container_parameters(image,
+            jxrc_image_pixelformat(container, 0),
+            jxrc_image_width(container, 0),
+            jxrc_image_height(container, 0),
+            jxrc_alpha_offset(container, 0),
+            jxrc_image_band_presence(container, 0),
+            jxrc_alpha_band_presence(container, 0), 0);
+
+        jxr_set_block_output(image, xps_decode_jpegxr_alpha_block);
+        state.ctx = ctx;
+        state.output = output;
+        jxr_set_user_data(image, &state);
+
+        fseek(file, alpha_offset, SEEK_SET);
+        rc = jxr_read_image_bitstream(image, file);
+        if (rc < 0)
+            return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
+
+        jxr_destroy(image);
+    }
 
     jxr_destroy_container(container);
 
@@ -193,5 +255,5 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 int
 xps_jpegxr_has_alpha(xps_context_t *ctx, byte *buf, int len)
 {
-    return 0;
+    return 1;
 }
