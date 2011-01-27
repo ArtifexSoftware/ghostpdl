@@ -38,12 +38,51 @@ jxr_error_string(int code)
     }
 }
 
+#define CLAMP(v, mn, mx) (v < mn ? mn : v > mx ? mx : v)
+
+static inline int
+scale_bits(int depth, int value)
+{
+    union { int iv; float fv; } bd32f;
+
+    switch (depth)
+    {
+    case JXR_BD1WHITE1:
+        return value * 255;
+    case JXR_BD1BLACK1:
+        return value ? 0 : 255;
+    case JXR_BD8:
+        return value;
+    case JXR_BD16:
+        return value >> 8;
+    case JXR_BD16S: /* -4 .. 4 ; 8192 = 1.0 */
+        value = value >> 5;
+        return CLAMP(value, 0, 255);
+    case JXR_BD32S: /* -128 .. 128 ; 16777216 = 1.0 */
+        value = value >> 16;
+        return CLAMP(value, 0, 255);
+    case JXR_BD32F:
+        bd32f.iv = value;
+        value = bd32f.fv * 255;
+        return CLAMP(value, 0, 255);
+#if 0
+    case JXR_BDRESERVED: return value;
+    case JXR_BD16F: return value;
+    case JXR_BD5: return value;
+    case JXR_BD10: return value;
+    case JXR_BD565: return value;
+#endif
+    }
+    return value;
+}
+
 static void
 xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
 {
     struct state *state = jxr_get_user_data(image);
     xps_context_t *ctx = state->ctx;
     xps_image_t *output = state->output;
+    int depth;
     unsigned char *p;
     int x, y, k;
 
@@ -59,11 +98,14 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
 
         switch (output->comps)
         {
+        default:
         case 1: output->colorspace = ctx->gray; break;
         case 3: output->colorspace = ctx->srgb; break;
         case 4: output->colorspace = ctx->cmyk; break;
         }
     }
+
+    depth = jxr_get_OUTPUT_BITDEPTH(image);
 
     my = my * 16;
     mx = mx * 16;
@@ -79,7 +121,7 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
                 data += output->comps;
             else
                 for (k = 0; k < output->comps; k++)
-                    *p++ = *data++;
+                    *p++ = scale_bits(depth, *data++);
         }
     }
 }
