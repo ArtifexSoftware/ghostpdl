@@ -39,10 +39,20 @@
 #include "gxcie.h"
 #include "gscie.h"
 #include <emmintrin.h>
+
 /* Need to fix HAVE_SSE set up for windows in the build */
 #define HAVE_SSE 1
 #define RAW_HT_DUMP 0
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
+
+/* This should be moved someplace else later */
+#ifndef __WIN32__
+#define __align16  __attribute__((align(16)))
+#else
+#define __align16 __declspec(align(16))
+#endif 
+
+
 
 /* ------ Strategy procedure ------ */
 
@@ -941,7 +951,7 @@ threshold_16_SSE(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
     __m128i result;
     __m128i sign_fix = _mm_set_epi32(mask1, mask1, mask1, mask1);
     __m128i twizzle_mask = _mm_set_epi32(mask2, mask3, mask2, mask3);
-    unsigned short out_temp[8];  /* of sufficient size to hold 128 aligned bits */
+   __align16 byte out_temp[16];  /* of sufficient size to hold 128 aligned bits */
     byte *sse_data = &(out_temp[0]);
 
     input1 = _mm_load_si128((const __m128i *)contone_ptr);
@@ -987,7 +997,7 @@ threshold_16_SSE_unaligned(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
     __m128i result;
     __m128i sign_fix = _mm_set_epi32(mask1, mask1, mask1, mask1);
     __m128i twizzle_mask = _mm_set_epi32(mask2, mask3, mask2, mask3);
-    unsigned short out_temp[8];  /* of sufficient size to hold 128 aligned bits */
+    __align16 byte out_temp[16];  /* of sufficient size to hold 128 aligned bits */
     byte *sse_data = &(out_temp[0]);
 
     input1 = _mm_loadu_si128((const __m128i *)contone_ptr);
