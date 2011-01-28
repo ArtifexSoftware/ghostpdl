@@ -501,7 +501,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->line = 0;
     penum->icc_link = NULL;
     penum->color_cache = NULL;
-    penum->landscape_byte_buff = NULL;
+    penum->ht_buffer = NULL;
+    penum->thresh_buffer = NULL;
     penum->cie_range = NULL;
     penum->line_size = 0;
     penum->use_rop = lop != (masked ? rop3_T : rop3_S);
