@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -17,12 +17,241 @@
 #include "stdpre.h"
 #include "gsropt.h"
 
+/* A hack. Define this, and we will update the rop usage within a file. */
+#undef RECORD_ROP_USAGE
+
+#ifdef RECORD_ROP_USAGE
+#define MAX (1024<<7)
+static int usage[MAX*3];
+
+static int inited = 0;
+
+static void write_usage(void)
+{
+    int i;
+    for (i = 0; i < MAX; i++)
+        if (usage[3*i] != 0)
+            (fprintf)(stderr, "ROP: %d %d %d %d\n", i, usage[3*i], usage[3*i+1],
+                      usage[3*i+2]);
+#ifdef RECORD_BINARY
+    FILE *out = fopen("ropusage2.tmp", "wb");
+    if (!out)
+        return;
+    fwrite(usage, sizeof(int), (1024<<7), out);
+    fclose(out);
+#endif
+}
+
+static void record(int rop)
+{
+    if (inited == 0) {
+#ifdef RECORD_BINARY
+        FILE *in = fopen("ropusage2.tmp", "r");
+        if (!in)
+            memset(usage, 0, MAX*sizeof(int));
+        else {
+            fread(usage, sizeof(int), MAX, in);
+            fclose(in);
+        }
+#endif
+        memset(usage, 0, MAX*3*sizeof(int));
+        atexit(write_usage);
+        inited = 1;
+    }
+
+    usage[3*rop]++;
+}
+
+static void unrecord(int rop)
+{
+    usage[3*rop]--;
+}
+#endif
+
 #define get24(ptr)\
   (((rop_operand)(ptr)[0] << 16) | ((rop_operand)(ptr)[1] << 8) | (ptr)[2])
 #define put24(ptr, pixel)\
   (ptr)[0] = (byte)((pixel) >> 16),\
   (ptr)[1] = (byte)((uint)(pixel) >> 8),\
   (ptr)[2] = (byte)(pixel)
+
+/* Rop specific code */
+/* Rop 0x55 = Invert   dep=1  (all cases) */
+static void invert_rop_run1(rop_run_op *op, byte *d, int len)
+{
+    byte lmask, rmask;
+
+    len    = len * op->depth + op->dpos;
+    /* lmask = the set of bits to alter in the output bitmap on the left
+     * hand edge of the run. rmask = the set of bits NOT to alter in the
+     * output bitmap on the right hand edge of the run. */
+    lmask  = 255>>(7 & op->dpos);
+    rmask  = 255>>(7 & len);
+
+    len -= 8;
+    if (len < 0) {
+        /* Short case - starts and ends in the same byte */
+        lmask &= ~rmask; /* Combined mask = bits to alter */
+        *d = (*d & ~lmask) | ((~*d) & lmask);
+        return;
+    }
+    if (lmask != 0xFF) {
+        *d = (*d & ~lmask) | ((~*d) & lmask);
+        d++;
+        len -= 8;
+    }
+    if (len >= 0) {
+        /* Simple middle case (complete destination bytes). */
+        do {
+            *d = ~*d;
+            d++;
+            len -= 8;
+        } while (len >= 0);
+    }
+    if (rmask != 0xFF) {
+        /* Unaligned right hand case */
+        *d = ((~*d) & ~rmask) | (*d & rmask);
+    }
+}
+
+/* Rop 0x55 = Invert   dep=8  (all cases) */
+static void invert_rop_run8(rop_run_op *op, byte *d, int len)
+{
+    do {
+        *d = ~*d;
+        d++;
+    }
+    while (--len);
+}
+
+/* Rop 0x55 = Invert   dep=8  (all cases) */
+static void invert_rop_run24(rop_run_op *op, byte *d, int len)
+{
+    do
+    {
+        *d = ~*d;
+        d++;
+        *d = ~*d;
+        d++;
+        *d = ~*d;
+        d++;
+    }
+    while (--len);
+}
+
+/* Rop 0x66 = d^s (and 0x5A = d^t) */
+
+/* 0x5A = d^t  dep=1 s_constant */
+static void xor_rop_run1_const_s(rop_run_op *op, byte *d, int len)
+{
+    byte        lmask, rmask;
+    const byte *t = op->t.b.ptr;
+    byte        T, D;
+    int         t_skew;
+
+    len    = len * op->depth + op->dpos;
+    /* lmask = the set of bits to alter in the output bitmap on the left
+     * hand edge of the run. rmask = the set of bits NOT to alter in the
+     * output bitmap on the right hand edge of the run. */
+    lmask  = 255>>(7 & op->dpos);
+    rmask  = 255>>(7 & len);
+
+    /* Note #1: This mirrors what the original code did, but I think it has
+     * the risk of moving s and t back beyond officially allocated space. We
+     * may be saved by the fact that all blocks have a word or two in front
+     * of them due to the allocator. If we ever get valgrind properly marking
+     * allocated blocks as readable etc, then this may throw some spurious
+     * errors. RJW. */
+    t_skew = op->t.b.pos - op->dpos;
+    if (t_skew < 0) {
+        t_skew += 8;
+        t--;
+    }
+
+    len -= 8;
+    if (len < 0) {
+        /* Short case - starts and ends in the same byte */
+        lmask &= ~rmask; /* Combined mask = bits to alter */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        D = *d ^ T;
+        *d = (*d & ~lmask) | (D & lmask);
+        return;
+    }
+    if (lmask != 0xFF) {
+        /* Unaligned left hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        t++;
+        D = *d ^ T;
+        *d = (*d & ~lmask) | (D & lmask);
+        d++;
+        len -= 8;
+    }
+    if (len >= 0) {
+        /* Simple middle case (complete destination bytes). */
+        if (t_skew == 0) {
+            do {
+                *d++ ^= *t++;
+                len -= 8;
+            } while (len >= 0);
+        } else {
+            do {
+                T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+                t++;
+                *d = *d ^ T;
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        }
+    }
+    if (rmask != 0xFF) {
+        /* Unaligned right hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        D = *d ^ T;
+        *d = (D & ~rmask) | (*d & rmask);
+    }
+}
+
+/* rop = 0x66 = d^s  dep=8  s_constant t_constant */
+static void xor_rop_run8_const_st(rop_run_op *op, byte *d, int len)
+{
+    const byte S = op->s.c;
+    if (S == 0)
+        return;
+    do {
+        *d ^= S;
+        d++;
+    }
+    while (--len);
+}
+
+/* rop = 0x66 = d^s  dep=24  s_constant t_constant */
+static void xor_rop_run24_const_st(rop_run_op *op, byte *d, int len)
+{
+    rop_operand S = op->s.c;
+    if (S == 0)
+        return;
+    do
+    {
+        rop_operand D = get24(d) ^ S;
+        put24(d, D);
+        d += 3;
+    }
+    while (--len);
+}
+
+/* rop = 0xFC = s | t  dep=24  s_constant t_constant */
+static void sort_rop_run24_const_st(rop_run_op *op, byte *d, int len)
+{
+    rop_operand SorT = op->s.c | op->t.c;
+    do
+    {
+        put24(d, SorT);
+        d += 3;
+    }
+    while (--len);
+}
+
+/* Generic ROP run code */
 
 static void generic_rop_run1(rop_run_op *op, byte *d, int len)
 {
@@ -32,7 +261,7 @@ static void generic_rop_run1(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     byte        S, T, D;
     int         s_skew, t_skew;
-    
+
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -161,7 +390,7 @@ static void generic_rop_run8_trans_T(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     do {
         rop_operand T = *t++;
-        if (T != 255) 
+        if (T != 255)
             *d = proc(*d, *s, T);
         s++;
         d++;
@@ -177,7 +406,7 @@ static void generic_rop_run8_trans_ST(rop_run_op *op, byte *d, int len)
     do {
         rop_operand S = *s++;
         rop_operand T = *t++;
-        if ((S != 255) && (T != 255)) 
+        if ((S != 255) && (T != 255))
             *d = proc(*d, S, T);
         d++;
     }
@@ -209,22 +438,24 @@ static void generic_rop_run8_1bit(rop_run_op *op, byte *d, int len)
         if (sroll == 0)
             S = *s++;
         else {
-            if (--sroll == 0) {
+            --sroll;
+            S = scolors[(*s >> sroll) & 1];
+            if (sroll == 0) {
                 sroll = 8;
                 s++;
             }
-            S = scolors[(*s >> sroll) & 1];
         }
         if (troll == 0)
             T = *t++;
         else {
-            if (--troll == 0) {
+            --troll;
+            T = tcolors[(*t >> troll) & 1];
+            if (troll == 0) {
                 troll = 8;
                 t++;
             }
-            T = tcolors[(*t >> troll) & 1];
         }
-        if ((S != strans) && (T != ttrans)) 
+        if ((S != strans) && (T != ttrans))
             *d = proc(*d, S, T);
         d++;
     }
@@ -300,21 +531,23 @@ static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
             S = get24(s);
             s += 3;
         } else {
-            if (--sroll == 0) {
+            --sroll;
+            S = sc[(*s >> sroll) & 1];
+            if (sroll == 0) {
                 sroll = 8;
                 s++;
             }
-            S = sc[(*s >> sroll) & 1];
         }
         if (troll == 0) {
             T = get24(t);
             t += 3;
         } else {
-            if (--troll == 0) {
+            --troll;
+            T = tc[(*t >> troll) & 1];
+            if (troll == 0) {
                 troll = 8;
                 t++;
             }
-            T = tc[(*t >> troll) & 1];
         }
         if ((S != strans) && (T != ttrans)) {
             rop_operand D = proc(get24(d), S, T);
@@ -333,7 +566,7 @@ static void generic_rop_run1_const_s(rop_run_op *op, byte *d, int len)
     byte        T, D;
     const byte *t = op->t.b.ptr;
     int         t_skew;
-    
+
     /* S should be supplied as 'depth' bits. Duplicate that up to be byte
      * size (if it's supplied byte sized, that's fine too). */
     if (op->depth & 1)
@@ -461,7 +694,7 @@ static void generic_rop_run8_const_s_1bit(rop_run_op *op, byte *d, int len)
             }
             T = tcolors[(*t >> troll) & 1];
         }
-        if ((T != ttrans)) 
+        if ((T != ttrans))
             *d = proc(*d, S, T);
         d++;
     }
@@ -553,7 +786,7 @@ static void generic_rop_run1_const_st(rop_run_op *op, byte *d, int len)
     byte     S = (byte)op->s.c;
     byte     T = (byte)op->t.c;
     byte     D;
-    
+
     /* S and T should be supplied as 'depth' bits. Duplicate them up to be
      * byte size (if they are supplied byte sized, that's fine too). */
     if (op->depth & 1) {
@@ -666,9 +899,38 @@ static void generic_rop_run24_const_st_trans(rop_run_op *op, byte *d, int len)
     while (--len);
 }
 
+#ifdef RECORD_ROP_USAGE
+static void record_run(rop_run_op *op, byte *d, int len)
+{
+    rop_run_op local;
+
+    usage[(int)op->opaque*3 + 1]++;
+    usage[(int)op->opaque*3 + 2] += len;
+
+    local.run     = op->runswap;
+    local.s       = op->s;
+    local.t       = op->t;
+    local.scolors = op->scolors;
+    local.tcolors = op->tcolors;
+    local.rop     = op->rop;
+    local.depth   = op->depth;
+    local.flags   = op->flags;
+    local.dpos    = op->dpos;
+    local.release = op->release;
+    local.opaque  = op->opaque;
+
+    op->runswap(&local, d, len);
+}
+#endif
+
 static void rop_run_swapped(rop_run_op *op, byte *d, int len)
 {
     rop_run_op local;
+
+#ifdef RECORD_ROP_USAGE
+    usage[(int)op->opaque*3 + 1]++;
+    usage[(int)op->opaque*3 + 2] += len;
+#endif
 
     local.run     = op->runswap;
     local.s       = op->t;
@@ -680,7 +942,7 @@ static void rop_run_swapped(rop_run_op *op, byte *d, int len)
     local.flags   = op->flags;
     local.dpos    = op->dpos;
     local.release = op->release;
-    local.opaque  = op->opaque;    
+    local.opaque  = op->opaque;
 
     op->runswap(&local, d, len);
 }
@@ -695,16 +957,25 @@ void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
      * count towards transparency. */
     if (!rop3_uses_S(rop)) {
         flags |= rop_s_constant;
+        flags &= ~rop_s_1bit;
         rop &= ~lop_S_transparent;
     }
     if (!rop3_uses_T(rop)) {
         flags |= rop_t_constant;
+        flags &= ~rop_t_1bit;
         rop &= ~lop_T_transparent;
     }
 
     /* Cut down the number of cases by mapping 'S bitmap,T constant' onto
      * 'S constant,Tbitmap'. */
     swap = ((flags & (rop_s_constant | rop_t_constant)) == rop_t_constant);
+    if (0 == 1) {
+force_swap:
+#ifdef RECORD_ROP_USAGE
+        unrecord((int)op->opaque);
+#endif
+        swap = 1;
+    }
     if (swap) {
         flags = ((flags & rop_t_constant ? rop_s_constant : 0) |
                  (flags & rop_s_constant ? rop_t_constant : 0) |
@@ -718,15 +989,51 @@ void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
     op->rop     = rop & (0xFF | lop_S_transparent | lop_T_transparent);
     op->release = NULL;
 
-#define ROP_SPECIFIC_KEY(rop, depth, flags) (((rop)<<11)+1024+((depth)<<4)+(flags))
-#define KEY_IS_ROP_SPECIFIC(key)            (key & 1024)
-#define STRIP_ROP_SPECIFICITY(key)          (key &= 1023)
-#define KEY(depth, flags)                   (((depth)<<4)+(flags))
+#define ROP_SPECIFIC_KEY(rop, depth, flags) (((rop)<<7)+(1<<6)+((depth>>3)<<4)+(flags))
+#define KEY_IS_ROP_SPECIFIC(key)            (key & (1<<6))
+#define STRIP_ROP_SPECIFICITY(key)          (key &= ((1<<6)-1))
+#define KEY(depth, flags)                   (((depth>>3)<<4)+(flags))
 
     key = ROP_SPECIFIC_KEY(rop, depth, flags);
+#ifdef RECORD_ROP_USAGE
+    op->opaque = (void*)(key & (MAX-1));
+    record((int)op->opaque);
+#endif
 retry:
     switch (key)
     {
+    /* First, the rop specific ones */
+    /* 0x55 = Invert */
+    case ROP_SPECIFIC_KEY(0x55, 1, rop_s_constant | rop_t_constant):
+        op->run     = invert_rop_run1;
+        op->s.b.pos = 0;
+        op->t.b.pos = 0;
+        op->dpos    = 0;
+        break;
+    case ROP_SPECIFIC_KEY(0x55, 8, rop_s_constant | rop_t_constant):
+        op->run     = invert_rop_run8;
+        break;
+    case ROP_SPECIFIC_KEY(0x55, 24, rop_s_constant | rop_t_constant):
+        op->run     = invert_rop_run24;
+        break;
+    /* 0x66 = D xor S */
+    case ROP_SPECIFIC_KEY(0x5a, 1, rop_s_constant):
+        op->run     = xor_rop_run1_const_s;
+        break;
+    case ROP_SPECIFIC_KEY(0x5a, 8, rop_s_constant | rop_t_constant):
+        goto force_swap;
+    case ROP_SPECIFIC_KEY(0x66, 8, rop_s_constant | rop_t_constant):
+        op->run     = xor_rop_run8_const_st;
+        break;
+    case ROP_SPECIFIC_KEY(0x5a, 24, rop_s_constant | rop_t_constant):
+        goto force_swap;
+    case ROP_SPECIFIC_KEY(0x66, 24, rop_s_constant | rop_t_constant):
+        op->run     = xor_rop_run24_const_st;
+        break;
+    case ROP_SPECIFIC_KEY(0xFC, 24, rop_s_constant | rop_t_constant):
+        op->run     = sort_rop_run24_const_st;
+        break;
+    /* Then the generic ones */
     case KEY(1, 0):
         op->run     = generic_rop_run1;
         op->s.b.pos = 0;
@@ -842,6 +1149,13 @@ retry:
         op->runswap = op->run;
         op->run = rop_run_swapped;
     }
+#ifdef RECORD_ROP_USAGE
+    else
+    {
+        op->runswap = op->run;
+        op->run = record_run;
+    }
+#endif
 }
 
 void (rop_set_s_constant)(rop_run_op *op, int s)
