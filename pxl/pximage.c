@@ -181,9 +181,10 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
     stream_cursor_read r;
     stream_cursor_write w;
     uint used;
+    int code = -1;
 
     /* consumed all of the data */
-    if ( par->source.position >= end_pos ) {
+    if ( (par->source.position >= end_pos) && (ss->phase != 4) ) {
         /* shutdown jpeg filter if necessary */
         if (benum->initialized)
             gs_jpeg_destroy((&benum->dct_stream_state));
@@ -215,7 +216,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
         w.ptr = data + pos_in_row - 1;
         w.limit = data + data_per_row - 1;
-        (*s_DCTD_template.process)((stream_state *)ss, &r, &w, false);
+        code = (*s_DCTD_template.process)((stream_state *)ss, &r, &w, false);
         used = w.ptr + 1 - data - pos_in_row;
         pos_in_row += used;
         par->source.position += used;
@@ -223,7 +224,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
     used = r.ptr + 1 - data;
     par->source.data = r.ptr + 1;
     par->source.available = avail - used;
-    return (pos_in_row < data_per_row ? pxNeedData : 1);
+    return ( code == 0 ? pxNeedData : 1);
 }
 
 static int
