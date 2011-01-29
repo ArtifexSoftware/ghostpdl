@@ -57,6 +57,12 @@
 #endif /* HAVE_COREFOUNDATION_H */
 
 
+#ifdef __APPLE__
+/* This file does not #include the neccesary Carbon Framework .h files for
+ * the C code to work, so we'll just undefine it and use the fallback
+ */
+#undef __APPLE__
+#endif
 /*
  * Local globals...
  */
