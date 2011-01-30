@@ -52,7 +52,32 @@
 #define __align16 __declspec(align(16))
 #endif 
 
+#if HAVE_SSE
 
+static const byte bitreverse[] = 
+{ 0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0, 0x10, 0x90, 0x50, 0xD0, 
+  0x30, 0xB0, 0x70, 0xF0, 0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8, 
+  0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8, 0x04, 0x84, 0x44, 0xC4, 
+  0x24, 0xA4, 0x64, 0xE4, 0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4, 
+  0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC, 0x1C, 0x9C, 0x5C, 0xDC, 
+  0x3C, 0xBC, 0x7C, 0xFC, 0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2, 
+  0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2, 0x0A, 0x8A, 0x4A, 0xCA, 
+  0x2A, 0xAA, 0x6A, 0xEA, 0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+  0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6, 0x16, 0x96, 0x56, 0xD6, 
+  0x36, 0xB6, 0x76, 0xF6, 0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE, 
+  0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE, 0x01, 0x81, 0x41, 0xC1, 
+  0x21, 0xA1, 0x61, 0xE1, 0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+  0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9, 0x19, 0x99, 0x59, 0xD9, 
+  0x39, 0xB9, 0x79, 0xF9, 0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5, 
+  0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5, 0x0D, 0x8D, 0x4D, 0xCD, 
+  0x2D, 0xAD, 0x6D, 0xED, 0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+  0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3, 0x13, 0x93, 0x53, 0xD3, 
+  0x33, 0xB3, 0x73, 0xF3, 0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB, 
+  0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB, 0x07, 0x87, 0x47, 0xC7, 
+  0x27, 0xA7, 0x67, 0xE7, 0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7, 
+  0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF, 0x1F, 0x9F, 0x5F, 0xDF, 
+  0x3F, 0xBF, 0x7F, 0xFF};
+#endif
 
 /* ------ Strategy procedure ------ */
 
@@ -61,6 +86,7 @@ iclass_proc(gs_image_class_3_mono);
 
 static irender_proc(image_render_mono);
 static irender_proc(image_render_mono_ht);
+static irender_proc(image_render_mono_ht2);
 
 irender_proc_t
 gs_image_class_3_mono(gx_image_enum * penum)
@@ -179,8 +205,8 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     ox = dda_current(penum->dda.pixel0.x);
                     oy = dda_current(penum->dda.pixel0.y);
                     dev_width =
-		                fixed2long_pixround(ox + penum->x_extent.x) -
-		                fixed2long_pixround(ox);
+		       (int) fabs((long) fixed2long_pixround(ox + penum->x_extent.x) -
+		                fixed2long_pixround(ox));
                     /* Get the bit position so that we can do a copy_mono for 
                        the left remainder and then 16 bit aligned copies for the 
                        rest.  The right remainder will be OK as it will land in 
@@ -941,95 +967,58 @@ threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
 
 #if HAVE_SSE
 /* Note this function has strict data alignment needs */
+static void
 threshold_16_SSE(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 {
-    const unsigned int mask1 = 0x80808080;
-    const unsigned int mask2 = 0x01020408;
-    const unsigned int mask3 = 0x10204080;
     __m128i input1;
     __m128i input2;
-    __m128i result;
+    int result_int;
+    byte *sse_data;
+    const unsigned int mask1 = 0x80808080;
     __m128i sign_fix = _mm_set_epi32(mask1, mask1, mask1, mask1);
-    __m128i twizzle_mask = _mm_set_epi32(mask2, mask3, mask2, mask3);
-   __align16 byte out_temp[16];  /* of sufficient size to hold 128 aligned bits */
-    byte *sse_data = &(out_temp[0]);
 
+    sse_data = (byte*) &(result_int);
+    /* Load */
     input1 = _mm_load_si128((const __m128i *)contone_ptr);
     input2 = _mm_load_si128((const __m128i *) thresh_ptr);
-    /* This only does signed testing.  Apply xor to sign bit
-       prior to comparison */
+    /* Unsigned subtraction does Unsigned saturation so we
+       have to use the signed operation */
     input1 = _mm_xor_si128(input1, sign_fix);
     input2 = _mm_xor_si128(input2, sign_fix);
-    /* The compare */
-    result = _mm_cmpgt_epi8(input2, input1);
-    /* Do some bit twizzling to get the bits of interest packed together.
-       There may be a better way to do this but I could not find a 
-       direct command to grab a set of bits from the 128 bit register.
-       Start off with a bit mask that selects non intersecting bits */
-    result = _mm_and_si128(result, twizzle_mask);
-    /* Shift by 1 byte */
-    input1 = _mm_srli_si128(result, 1);
-    /* Or together */
-    result = _mm_or_si128(result, input1);
-    /* Shift by 2 bytes */
-    input1 = _mm_srli_si128(result, 2);
-    /* Or together */
-    result = _mm_or_si128(result, input1);
-    /* Shift by 4 bytes */
-    input1 = _mm_srli_si128(result, 4);
-    /* Or together */
-    result = _mm_or_si128(result, input1);
-    /* Packed bits should be in low order byte of each 64 bit word */
-    /* bytes sse_data[0] and sse_data[8] contain the HT data */
-    _mm_store_si128((__m128i*)sse_data, result);
-    ht_data[0] = sse_data[0];
-    ht_data[1] = sse_data[8];
+    /* Subtract the two */
+    input2 = _mm_subs_epi8(input1, input2); 
+    /* Grab the sign mask */
+    result_int = _mm_movemask_epi8(input2);
+    /* bit wise reversal on 16 bit word */
+    ht_data[0] = bitreverse[sse_data[0]];
+    ht_data[1] = bitreverse[sse_data[1]];
 }
 
 /* Not so fussy on its alignment */
 threshold_16_SSE_unaligned(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 {
-    const unsigned int mask1 = 0x80808080;
-    const unsigned int mask2 = 0x01020408;
-    const unsigned int mask3 = 0x10204080;
     __m128i input1;
     __m128i input2;
-    __m128i result;
+    int result_int;
+    byte *sse_data;
+    const unsigned int mask1 = 0x80808080;
     __m128i sign_fix = _mm_set_epi32(mask1, mask1, mask1, mask1);
-    __m128i twizzle_mask = _mm_set_epi32(mask2, mask3, mask2, mask3);
-    __align16 byte out_temp[16];  /* of sufficient size to hold 128 aligned bits */
-    byte *sse_data = &(out_temp[0]);
-
+    
+    sse_data = (byte*) &(result_int);
+    /* Load */
     input1 = _mm_loadu_si128((const __m128i *)contone_ptr);
     input2 = _mm_loadu_si128((const __m128i *) thresh_ptr);
-    /* This only does signed testing.  Apply xor to sign bit
-       prior to comparison */
+    /* Unsigned subtraction does Unsigned saturation so we
+       have to use the signed operation */
     input1 = _mm_xor_si128(input1, sign_fix);
     input2 = _mm_xor_si128(input2, sign_fix);
-    /* The compare */
-    result = _mm_cmpgt_epi8(input2, input1);
-    /* Do some bit twizzling to get the bits of interest packed together.
-       There may be a better way to do this but I could not find a 
-       direct command to grab a set of bits from the 128 bit register.
-       Start off with a bit mask that selects non intersecting bits */
-    result = _mm_and_si128(result, twizzle_mask);
-    /* Shift by 1 byte */
-    input1 = _mm_srli_si128(result, 1);
-    /* Or together */
-    result = _mm_or_si128(result, input1);
-    /* Shift by 2 bytes */
-    input1 = _mm_srli_si128(result, 2);
-    /* Or together */
-    result = _mm_or_si128(result, input1);
-    /* Shift by 4 bytes */
-    input1 = _mm_srli_si128(result, 4);
-    /* Or together */
-    result = _mm_or_si128(result, input1);
-    /* Packed bits should be in low order byte of each 64 bit word */
-    /* bytes sse_data[0] and sse_data[8] contain the HT data */
-    _mm_store_si128((__m128i*)sse_data, result);
-    ht_data[0] = sse_data[0];
-    ht_data[1] = sse_data[8];
+    /* Subtract the two */
+    input2 = _mm_subs_epi8(input1, input2); 
+    /* Grab the sign mask */
+    result_int = _mm_movemask_epi8(input2);
+    /* bit wise reversal on 16 bit word */
+    ht_data[0] = bitreverse[sse_data[0]];
+    ht_data[1] = bitreverse[sse_data[1]];
 }
 
 /* This uses SSE2 simd operations to perform the thresholding operation.
@@ -1093,13 +1082,12 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
     fixed xprev, yprev;
-    fixed pdyx, pdyy;		
     int vci, vdi;  /* amounts to replicate */
     fixed xrun;			
     int irun;			
     byte *contone_align, *thresh_align, *halftone;
     int spp_out = penum->dev->color_info.num_components;
-    byte *devc_contone, *bufend;
+    byte *devc_contone;
     int xi, wi, yi, hi;
     const byte *psrc = buffer + data_x - 1;  /* -1 due to initial startup */
     int dest_width, dest_height, data_length;
@@ -1118,6 +1106,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int contone_stride;
     int temp_val;
     const int y_pos = penum->yci;
+    fixed scale_factor, offset;
 
 #if RAW_HT_DUMP
     FILE *fid;
@@ -1129,8 +1118,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     /* Set up the dda stuff */
     pnext = penum->dda.pixel0;
     xrun = xprev = dda_current(pnext.x);
-    pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
-    pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
     switch (posture) {
 	case image_portrait:
 	    vci = penum->yci, vdi = penum->hci;
@@ -1139,6 +1126,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             data_length = dest_width;
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
             contone_stride = penum->line_size;
+            scale_factor = float2fixed((float) penum->Width / (float) dest_width);
 #if RAW_HT_DUMP
             dithered_stride = data_length * spp_out;
             offset_bits = 0;
@@ -1187,81 +1175,64 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
 	      penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
     devc_contone = contone_align;
-    bufend = devc_contone + data_length * spp_out;
-
     if (penum->color_cache == NULL) {
         /* No look-up in the cache to fill the source buffer. Still need to
-           have the data at device resolution... */
-        while (devc_contone < bufend) {
-            dda_next(pnext.x);
-            dda_next(pnext.y);
-	    switch (posture) {
-	        case image_portrait:
-	            xi = irun;
-	            wi = (irun = fixed2int_var_rounded(xprev)) - xi;
-	            if (wi < 0)
-	                xi += wi, wi = -wi;
-                    if (wi > 0) {
-                        memset(devc_contone,*psrc,wi);
-                        devc_contone += wi;
+           have the data at device resolution.  Do these in quick small
+           loops. */
+        switch (posture) {
+            case image_portrait:
+                if (penum->dst_width > 0) {
+                    if (fixed2int(scale_factor) == 1 ) {
+                        memcpy(devc_contone, psrc, data_length);
                     }
-	            break;
-	        case image_landscape:
-	            yi = irun;
-	            hi = (irun = fixed2int_var_rounded(yprev)) - yi;
-	            if (hi < 0)
-	                yi += hi, hi = -hi;
-                    if (hi > 0) {
-                        memset(devc_contone,*psrc,hi);
-                        devc_contone += hi;
+                    for (k = 0; k < data_length; k++) {
+                        offset = fixed2int(scale_factor * k);
+                        devc_contone[k] = psrc[offset];
                     }
-	            break;
-	        default:
-                    break;
+                } else {
+                    for (k = 0; k < data_length; k++) {
+                        offset = fixed2int(scale_factor * k);
+                        devc_contone[data_length - k] = psrc[offset];
+                    }
+                }
+                break;
+            case image_landscape:
+                /* To do shortly */
+                break;
+            default:
+                /* error not allowed */
+                break;
             }
-            xprev = dda_current(pnext.x);
-            yprev = dda_current(pnext.y);
-            ++psrc;
-        }
     } else {
         /* look-up in the cache to fill the source buffer */
         color_cache = penum->color_cache->device_contone;
-        while (devc_contone < bufend) {
-            dda_next(pnext.x);
-            dda_next(pnext.y);
-	    switch (posture) {
-	        case image_portrait:
-	            xi = irun;
-	            wi = (irun = fixed2int_var_rounded(xprev)) - xi;
-	            if (wi < 0)
-	                xi += wi, wi = -wi;
-                    if (wi > 0) {
-                        dev_value = color_cache + (*psrc) * spp_out;
-                        for (k = 0; k < wi; k++) {
-                            memcpy(devc_contone, dev_value, spp_out);
-                            devc_contone += spp_out;
-                        }
+        switch (posture) {
+            case image_portrait:
+                if (penum->dst_width > 0) {
+                    for (k = 0; k < data_length; k++) {
+                        offset = fixed2int(scale_factor * k);
+                        dev_value = color_cache + psrc[offset] * spp_out;
+                        memcpy(devc_contone, dev_value, spp_out);
+                        devc_contone += spp_out;
                     }
-	            break;
-	        case image_landscape:
-	            yi = irun;
-	            hi = (irun = fixed2int_var_rounded(yprev)) - yi;
-	            if (hi < 0)
-	                yi += hi, hi = -hi;
-                    if (hi > 0) {
-                        dev_value = color_cache + (*psrc) * spp_out;
-                        for (k = 0; k < hi; k++) {
-                            memcpy(devc_contone, dev_value, spp_out);
-                            devc_contone += spp_out;
-                        }
+                } else {
+                    for (k = 0; k < data_length; k++) {
+                        offset = fixed2int(scale_factor * k);
+                        dev_value = color_cache + psrc[offset] * spp_out;
+                        /* This could probably be done a bit better but
+                           reversed indexed images probably don't occur
+                           that often */
+                        memcpy(&(devc_contone[data_length - k]), 
+                               dev_value, spp_out);
                     }
-	            break;
-	        default:
-                    break;
-            }
-            xprev = dda_current(pnext.x);
-            yprev = dda_current(pnext.y);
-            psrc++;
+                }
+                break;
+            case image_landscape:
+                /* To do shortly */
+                break;
+            default:
+                /* error not allowed */
+                break;
         }
     }
     /* Go ahead and fill the threshold line buffer with tiled threshold values.
@@ -1398,4 +1369,5 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     gs_free_object(penum->memory, halftone, "image_render_mono_ht");
 #endif
 }
+
 
