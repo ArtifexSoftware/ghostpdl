@@ -19,7 +19,7 @@ systemdict /ProcessColorModel known {
 
 % Define entries to the document Info dictionary :
 
-/ICCProfile (/ghostpdl/cmyk.icc) def  % Customize or remove.
+/ICCProfile (ISO Coated sb.icc) def  % Customize or remove.
 
 [ /GTS_PDFXVersion (PDF/X-3:2002) % Must be so (the standard requires).
   /Title (Title)                  % Customize.
@@ -49,4 +49,3 @@ currentdict /ICCProfile known {
   } if
 >> /PUT pdfmark
 [{Catalog} <</OutputIntents [ {OutputIntent_PDFX} ]>> /PUT pdfmark
-
