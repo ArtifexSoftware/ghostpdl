@@ -25,6 +25,7 @@
 $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 	-mkdir $(PSOBJDIR)
 	-mkdir $(PSGENDIR)
+	-mkdir $(PSGENDIR)$(D)cups
 	-mkdir $(GLOBJDIR)
 	-mkdir $(GLGENDIR)
 	-mkdir $(BINDIR)
@@ -73,5 +74,6 @@ $(LIBCTR): $(TOP_MAKEFILES)
 	echo user32.lib >>$(LIBCTR)
 	echo winspool.lib >>$(LIBCTR)
 	echo advapi32.lib >>$(LIBCTR)
+	echo ws2_32.lib >>$(LIBCTR)
 
 # end of msvctail.mak

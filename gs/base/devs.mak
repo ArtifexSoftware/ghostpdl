@@ -1771,3 +1771,16 @@ $(DD)tiffsep1.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev $(minftrsz_h)
 	$(SETPDEV2) $(DD)tiffsep1 $(tiffsep_)
 	$(ADDMOD) $(DD)tiffsep1 -include $(DD)tiffs
 
+### ------------------------------- CUPS ------------------------------- ###
+lcups_dev=$(LCUPSGENDIR)$(D)lcups.dev
+lcupsi_dev=$(LCUPSIGENDIR)$(D)lcupsi.dev
+
+cups_=$(GLOBJ)gdevcups.$(OBJ)
+$(DD)cups.dev : $(DEVS_MAK) $(lcups_dev) $(lcupsi_dev) $(cups_) 
+	$(SETPDEV2) $(DD)cups $(cups_)
+	$(ADDMOD) $(DD)cups -include $(lcups_dev)
+	$(ADDMOD) $(DD)cups -include $(lcupsi_dev)
+
+$(GLOBJ)gdevcups.$(OBJ) : cups$(D)gdevcups.c 
+	$(CUPS_CC) $(GLO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(I_)$(GLSRC) $(I_)$(GLOBJ) $(I_)$(LCUPSSRCDIR)$(D)libs $(LCUPSSRCDIR)$(D)gdevcups.c
+

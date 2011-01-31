@@ -20,6 +20,7 @@ STDDIRS:
 	@if test ! -d $(GLGENDIR); then mkdir $(GLGENDIR); fi
 	@if test ! -d $(GLOBJDIR); then mkdir $(GLOBJDIR); fi
 	@if test ! -d $(PSGENDIR); then mkdir $(PSGENDIR); fi
+	@if test ! -d $(PSGENDIR)/cups; then mkdir $(PSGENDIR)/cups; fi
 	@if test ! -d $(PSOBJDIR); then mkdir $(PSOBJDIR); fi
 
 # Define a rule for building profiling configurations.
@@ -28,6 +29,7 @@ PGDIRS: STDDIRS
 	@if test ! -d $(GLGENDIR)/$(PGRELDIR); then mkdir $(GLGENDIR)/$(PGRELDIR); fi
 	@if test ! -d $(GLOBJDIR)/$(PGRELDIR); then mkdir $(GLOBJDIR)/$(PGRELDIR); fi
 	@if test ! -d $(PSGENDIR)/$(PGRELDIR); then mkdir $(PSGENDIR)/$(PGRELDIR); fi
+	@if test ! -d $(PSGENDIR)/$(PGRELDIR)/cups; then mkdir $(PSGENDIR)/$(PGRELDIR)/cups; fi
 	@if test ! -d $(PSOBJDIR)/$(PGRELDIR); then mkdir $(PSOBJDIR)/$(PGRELDIR); fi
 
 PGDEFS=GENOPT='-DPROFILE' CFLAGS='$(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\
@@ -49,6 +51,7 @@ DEBUGDIRS: STDDIRS
 	@if test ! -d $(GLGENDIR)/$(DEBUGRELDIR); then mkdir $(GLGENDIR)/$(DEBUGRELDIR); fi
 	@if test ! -d $(GLOBJDIR)/$(DEBUGRELDIR); then mkdir $(GLOBJDIR)/$(DEBUGRELDIR); fi
 	@if test ! -d $(PSGENDIR)/$(DEBUGRELDIR); then mkdir $(PSGENDIR)/$(DEBUGRELDIR); fi
+	@if test ! -d $(PSGENDIR)/$(DEBUGRELDIR)/cups; then mkdir $(PSGENDIR)/$(DEBUGRELDIR)/cups; fi
 	@if test ! -d $(PSOBJDIR)/$(DEBUGRELDIR); then mkdir $(PSOBJDIR)/$(DEBUGRELDIR); fi
 
 DEBUGDEFS=GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\

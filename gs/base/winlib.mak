@@ -28,11 +28,30 @@ SHARE_ZLIB=0
 SHARE_JBIG2=0
 SHARE_JPX=0
 SHARE_LCMS=0
+SHARE_LCUPS=0
+SHARE_LCUPSI=0
 
 SHARE_IJS=0
 IJS_NAME=
 IJSSRCDIR=ijs
 IJSEXECTYPE=win
+
+# Define the directory where the CUPS library sources are stored,
+
+!ifndef LCUPSSRCDIR
+SHARE_LCUPS=0
+LCUPS_NAME=
+LCUPSSRCDIR=cups
+LCUPSBUILDTYPE=win
+CUPS_CC=$(CC) $(CFLAGS) -DWIN32 
+!endif
+
+!ifndef LCUPSISRCDIR
+SHARE_LCUPSI=0
+LCUPSI_NAME=
+LCUPSISRCDIR=cups
+CUPS_CC=$(CC) $(CFLAGS) -DWIN32 
+!endif
 
 # Define the platform name.
 
@@ -98,6 +117,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
  $(GLOBJDIR)\*.res $(GLOBJDIR)\*.ico\
  $(BINDIR)\$(GSDLL).dll $(BINDIR)\$(GSCONSOLE).exe\
  $(BINDIR)\setupgs.exe $(BINDIR)\uninstgs.exe\
+ $(GLOBJDIR)\cups\*.h\
  $(BEGINFILES2)
 
 # Include the generic makefiles.
@@ -118,6 +138,8 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\icclib.mak
 !include $(GLSRCDIR)\lcms.mak
 !include $(GLSRCDIR)\ijs.mak
+!include $(GLSRCDIR)\lcups.mak
+!include $(GLSRCDIR)\lcupsi.mak
 !include $(GLSRCDIR)\devs.mak
 !include $(GLSRCDIR)\contrib.mak
 

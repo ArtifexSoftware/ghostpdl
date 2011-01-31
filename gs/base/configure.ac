@@ -671,6 +671,10 @@ AC_ARG_ENABLE([cups], AC_HELP_STRING([--disable-cups],
 AC_ARG_WITH([pdftoraster], AC_HELP_STRING([--without-pdftoraster],
     [Don't include CUPS' pdftoraster filter]))
 
+AC_ARG_WITH([local-cups], AC_HELP_STRING([--with-local-cups],
+					     [Force using the GS supplied cups code - only useful for debugging]),
+	    [with_local_cups=yes], [with_local_cups=no])
+
 CUPSDEV=""
 CUPSINCLUDE=""
 CUPSCFLAGS=""
@@ -683,29 +687,47 @@ CUPSDATA=""
 CUPSVERSION="0"
 CUPSPDFTORASTER="0"
 
+SHARELCUPS=1
+SHARELCUPSI=1
+
 if ( test -d cups ); then
     if test x$enable_cups != xno; then
-	AC_PATH_PROG(CUPSCONFIG,cups-config)
-	dnl AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
-	if test "x$CUPSCONFIG" != x; then
-	    dnl Use values from CUPS config...
-	    CUPSCFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
-#	    CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
-	    CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs`"
-	    GS_SPLIT_LIBS([CUPSLIBS], [$CUPSLINK])
-	    GS_SPLIT_LIBPATHS([CUPSLIBDIRS],[$CUPSLINK])
-	    CUPSSERVERROOT="`$CUPSCONFIG --serverroot`"
-	    CUPSSERVERBIN="`$CUPSCONFIG --serverbin`"
-	    CUPSDATA="`$CUPSCONFIG --datadir`"
-	    CUPSINCLUDE="include cups/cups.mak"
-	    CUPSDEV="\$(DD)cups.dev"
-	    CUPSVERSION="`$CUPSCONFIG --version`"
-	    if ( test x$with_pdftoraster != xno ); then
-	        if test "$CUPSVERSION" ">" "1.2"; then
-		    CUPSPDFTORASTER="1"
-		fi
+        if test x$with_local_cups != xyes; then
+	    AC_PATH_PROG(CUPSCONFIG,cups-config)
+	    dnl AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
+	    if test "x$CUPSCONFIG" != x; then
+	        dnl Use values from CUPS config...
+	        CUPSCFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
+#	        CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
+	        CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs`"
+	        GS_SPLIT_LIBS([CUPSLIBS], [$CUPSLINK])
+	        GS_SPLIT_LIBPATHS([CUPSLIBDIRS],[$CUPSLINK])
+	        CUPSSERVERROOT="`$CUPSCONFIG --serverroot`"
+	        CUPSSERVERBIN="`$CUPSCONFIG --serverbin`"
+	        CUPSDATA="`$CUPSCONFIG --datadir`"
+	        CUPSINCLUDE="include cups/cups.mak"
+	        CUPSDEV="\$(DD)cups.dev"
+	        CUPSVERSION="`$CUPSCONFIG --version`"
+	        LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
+	        LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
+	        if ( test x$with_pdftoraster != xno ); then
+	            if test "$CUPSVERSION" ">" "1.2"; then
+	                CUPSPDFTORASTER="1"
+	            fi
+	        fi
 	    fi
-	fi
+        else
+            if test "$(uname)" = "Linux"; then
+                AC_MSG_WARN([* USING LOCAL CUPS SOURCE *])
+                SHARELCUPS=0
+                SHARELCUPSI=0
+                LCUPSBUILDTYPE=linux
+	        LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
+	        LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
+	        CUPSDEV="\$(DD)cups.dev"
+                
+            fi
+        fi
     fi
 fi
 
@@ -717,8 +739,15 @@ AC_SUBST(CUPSINCLUDE)
 AC_SUBST(CUPSSERVERBIN)
 AC_SUBST(CUPSSERVERROOT)
 AC_SUBST(CUPSDATA)
-AC_SUBST(CUPSPDFTORASTER)
 
+AC_SUBST(SHARELCUPS)
+AC_SUBST(SHARELCUPSI)
+AC_SUBST(LCUPSBUILDTYPE)
+AC_SUBST(LCUPSINCLUDE)
+AC_SUBST(LCUPSIINCLUDE)
+
+
+AC_SUBST(CUPSPDFTORASTER)
 
 dnl look for IJS implementation
 AC_ARG_WITH([ijs], AC_HELP_STRING([--without-ijs],

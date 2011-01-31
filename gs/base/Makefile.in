@@ -253,6 +253,19 @@ IJS_NAME=@IJSLIB@
 IJSSRCDIR=@IJSDIR@
 IJSEXECTYPE=unix
 
+
+SHARE_LCUPS=@SHARELCUPS@
+LCUPS_NAME=cups
+LCUPSSRCDIR=cups
+LCUPSBUILDTYPE=@LCUPSBUILDTYPE@
+CUPS_CC=$(CC)
+
+SHARE_LCUPSI=@SHARELCUPSI@
+LCUPSI_NAME=cupsimage
+LCUPSISRCDIR=cups
+CUPS_CC=$(CC)
+
+
 # Define the directory where the imdi library source is stored.
 # See devs.mak for more information.
 
@@ -539,6 +552,8 @@ include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/lcms.mak
 include $(GLSRCDIR)/ijs.mak
+@LCUPSINCLUDE@
+@LCUPSIINCLUDE@
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak

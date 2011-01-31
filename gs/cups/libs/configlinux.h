@@ -132,10 +132,10 @@
  * Do we have various image libraries?
  */
 
-#define HAVE_LIBPNG 1
-#define HAVE_LIBZ 1
-#define HAVE_LIBJPEG 1
-#define HAVE_LIBTIFF 1
+/* #define HAVE_LIBPNG 1 */
+/* #define HAVE_LIBZ 1 */
+/* #define HAVE_LIBJPEG 1 */
+/* #define HAVE_LIBTIFF 1 */
 
 
 /*
