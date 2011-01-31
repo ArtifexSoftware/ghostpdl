@@ -352,7 +352,3 @@
 /TimesNewRoman,Italic			/TimesNewRomanPS-ItalicMT	;
 /TimesNewRoman,BoldItalic		/TimesNewRomanPS-BoldItalicMT	;
 
-/Deja		(/tests/691780/luximr.ttf) ;
-
-
-
