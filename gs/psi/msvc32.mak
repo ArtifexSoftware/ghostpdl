@@ -39,11 +39,23 @@
 !if "$(DEBUG)"=="1"
 DEFAULT_OBJ_DIR=.\debugobj
 !else
+!if "$(DEBUGSYM)"=="1"
+DEFAULT_OBJ_DIR=.\profobj
+!else
 DEFAULT_OBJ_DIR=.\obj
+!endif
 !endif
 
 !ifndef BINDIR
+!if "$(DEBUG)"=="1"
+BINDIR=.\debugbin
+!else
+!if "$(DEBUGSYM)"=="1"
+BINDIR=.\profbin
+!else
 BINDIR=.\bin
+!endif
+!endif
 !endif
 !ifndef GLSRCDIR
 GLSRCDIR=.\base
@@ -941,7 +953,7 @@ WINDEFS=WIN64=
 WINDEFS=
 !endif
 
-DEBUGDEFS=BINDIR=.\debugbin GLGENDIR=.\debugobj GLOBJDIR=.\debugobj PSLIBDIR=.\lib PSGENDIR=.\debugobj PSOBJDIR=.\debugobj DEBUG=1 TDEBUG=1 SBRDIR=.\debugobj
+DEBUGDEFS=DEBUG=1 TDEBUG=1
 
 debug:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS)
@@ -951,6 +963,20 @@ debugclean:
 
 debugbsc:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) bsc
+
+# ---------------------- Profile targets ---------------------- #
+# Simply set some definitions and call ourselves back         #
+
+PROFILEDEFS=DEBUGSYM=1
+
+profile:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS)
+
+profileclean:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) clean
+
+profilebsc:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) bsc
 
 
 

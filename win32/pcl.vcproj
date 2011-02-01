@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -39,26 +39,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="..\main\obj"
-			IntermediateDirectory="..\main\obj"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\main &amp;&amp; nmake /A -f pcl6_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= clean"
-				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
@@ -79,6 +59,26 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="..\main\obj"
+			IntermediateDirectory="..\main\obj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\main &amp;&amp; nmake /A -f pcl6_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak DEVSTUDIO= clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|x64"
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
@@ -91,6 +91,46 @@
 				CleanCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak WIN64= DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Profile|Win32"
+			OutputDirectory="..\main\profobj"
+			IntermediateDirectory="..\main\profobj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 SBR=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; &amp;&amp; nmake -f pcl6_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; bsc"
+				ReBuildCommandLine="cd ..\main &amp;&amp; nmake /A -f pcl6_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 SBR=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; &amp;&amp; nmake -f pcl6_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; bsc"
+				CleanCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak clean DEBUG=0 TDEBUG=0 DEBUGSYM=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot;"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;DEBUGSYM=1"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Profile|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\main &amp;&amp; nmake /A -f pcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f pcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\main &amp;&amp; nmake -f pcl6_msvc.mak WIN64= clean DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO="
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -510,6 +550,18 @@
 			Name="pl"
 			>
 			<File
+				RelativePath="..\pl\dwimg.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pl\dwmainc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pl\dwreg.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pl\pjparse.c"
 				>
 			</File>
@@ -599,18 +651,6 @@
 			</File>
 			<File
 				RelativePath="..\pl\pllfont.h"
-				>
-			</File>
-			<File
-				RelativePath="..\pl\dwmainc.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pl\dwimg.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pl\dwreg.c"
 				>
 			</File>
 			<File
