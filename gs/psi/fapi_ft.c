@@ -680,12 +680,43 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
 {
     double scalex, scaley, fact = 1.0;
     FT_Matrix ftscale_mat;
-    FT_UInt xres = *xresp;
-    FT_UInt yres = *yresp;
+    FT_UInt xres;
+    FT_UInt yres;
+    FT_Vector vectx, vecty;
     
-    scalex = hypot ((double)a_transform->xx, (double)a_transform->xy) / 65536.0;
-    scaley = hypot ((double)a_transform->yx, (double)a_transform->yy) / 65536.0;
+    scalex = hypot ((double)a_transform->xx, (double)a_transform->xy);
+    scaley = hypot ((double)a_transform->yx, (double)a_transform->yy);
     
+    if (*xresp != *yresp) {
+        /* We need to give the resolution in "glyph space", taking account of rotation and
+         * shearing, so that makes life a little complicated when non-square resolutions
+         * are used.
+         */
+        ftscale_mat.xx = scalex;
+        ftscale_mat.xy = ftscale_mat.yx = 0;
+        ftscale_mat.yy = scaley;
+    
+        FT_Matrix_Invert(&ftscale_mat);
+    
+        FT_Matrix_Multiply (a_transform, &ftscale_mat);
+    
+        vectx.x = *xresp << 16;
+        vecty.y = *yresp << 16;
+        vectx.y = vecty.x = 0;
+    
+        FT_Vector_Transform (&vectx, &ftscale_mat);
+        FT_Vector_Transform (&vecty, &ftscale_mat);
+        xres = (FT_UInt)((hypot ((double)vectx.x, (double)vecty.x) / 65536.0) + 0.5);
+        yres = (FT_UInt)((hypot ((double)vectx.y, (double)vecty.y) / 65536.0) + 0.5);
+    }
+    else {
+        /* Life is considerably easier when square resolutions are in use! */
+        xres = *xresp;
+        yres = *yresp;
+    }
+    
+    scalex /= 65536.0;
+    scaley /= 65536.0;
     /* FT clamps the width and height to a lower limit of 1.0 units
      * (note: as FT stores it in 64ths of a unit, that is 64)
      * So if either the width or the height are <1.0 here, we scale
