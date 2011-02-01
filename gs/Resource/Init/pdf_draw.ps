@@ -401,7 +401,8 @@ end
     dup sethalftonephases .swapcolors sethalftonephases .swapcolors
   }
 	% PDF 1.3
-  /Font { aload pop Tf }
+  % The font is an indirect reference, not a resource name
+  /Font { aload pop exch oforce resourcefont exch Tf }
   /LW { setlinewidth }
   /LC { setlinecap }
   /LJ { setlinejoin }
