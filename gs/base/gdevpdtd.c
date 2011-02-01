@@ -639,7 +639,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
 	pdf_font_descriptor_common_t fd;
 
 	fd = pfd->common;
-	if (pfd->embed && pfd->FontType == ft_TrueType && !pdev->PDFA &&
+	if (pfd->embed && pfd->FontType == ft_TrueType /*&& !pdev->PDFA*/ &&
 	    pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)
 	    )
 	    fd.values.Flags =
