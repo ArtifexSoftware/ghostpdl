@@ -31,7 +31,11 @@
 
 #include "dwdll.h"
 
+#ifdef _WIN64
+static const char name[] = "gsdll64.dll";
+#else
 static const char name[] = "gsdll32.dll";
+#endif
 
 int load_dll(GSDLL *gsdll, char *last_error, int len)
 {

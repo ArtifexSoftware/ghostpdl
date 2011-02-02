@@ -37,6 +37,7 @@ $(ECHOGS_XE): $(GLSRC)echogs.c
 # Don't create genarch if it's not needed
 !ifdef GENARCH_XE
 !ifdef WIN64
+# The genarch.exe that is generated is 64-bit, so the OS must be able to run it
 $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
 	$(CC) @$(GLGENDIR)\ccf32.tr /Fo$(GLOBJ)genarch.obj $(GLSRC)genarch.c
 	$(LINK) $(LCT) $(LINKLIBPATH) $(GLOBJ)genarch.obj /OUT:$(GENARCH_XE)

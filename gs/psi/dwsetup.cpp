@@ -802,7 +802,11 @@ install_prog()
 	strcpy(szProgram, g_szTargetDir);
 	strcat(szProgram, "\\");
 	strcat(szProgram, cinst.GetMainDir());
+#ifdef _WIN64
+	strcat(szProgram, "\\bin\\gswin64.exe");
+#else
 	strcat(szProgram, "\\bin\\gswin32.exe");
+#endif
 	strcpy(szArguments, "\042-I");
 	strcat(szArguments, szLIB);
 	strcat(szArguments, "\042");
@@ -919,7 +923,11 @@ BOOL write_cidfmap(const char *gspath, const char *cidpath)
 
     strcpy(buf, "\042");
     strcat(buf, gspath);
+#ifdef _WIN64
+    strcat(buf, "\\bin\\gswin64c.exe\042 -q -dBATCH \042-sFONTDIR=");
+#else
     strcat(buf, "\\bin\\gswin32c.exe\042 -q -dBATCH \042-sFONTDIR=");
+#endif
     strcat(buf, fontpath);
     strcat(buf, "\042 \042");
     strcat(buf, "-sCIDFMAP=");

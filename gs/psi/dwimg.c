@@ -502,6 +502,7 @@ create_window(IMAGE *img)
 	*   It allows to replace window title so that user can identify window
 	*   when multiple instances of the application run in same time.
 	*   Create gs\bin\gswin32.ini or gs\bin\gswin32c.ini and
+	*   (for 64-bit: gs\bin\gswin64.ini or gs\bin\gswin64c.ini)
 	*   put an identifier to there like this :
 	*
 	*	[Window]
