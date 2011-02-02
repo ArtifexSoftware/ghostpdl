@@ -19,6 +19,7 @@
 #include "memory_.h"
 #include "math_.h"
 #include "stat_.h" /* include before definition of esp macro, bug 691123 */
+#include "string_.h"
 #include "ghost.h"
 #include "gp.h"
 #include "oper.h"
@@ -466,11 +467,15 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
         case FAPI_FONT_FEATURE_lenIV: return (ff->need_decrypt ? 0 : pfont->data.lenIV);
         case FAPI_FONT_FEATURE_GlobalSubrs_count:
             {   ref *Private, *GlobalSubrs;
-                if (dict_find_string(pdr, "Private", &Private) <= 0)
-                    return 0;
-                if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
-                    return 0;;
-                return r_size(GlobalSubrs);
+                if (pfont->FontType == ft_encrypted2) {                
+                    if (dict_find_string(pdr, "Private", &Private) <= 0)
+                        return 0;
+                    if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
+                        return 0;;
+                    return r_size(GlobalSubrs);
+                }
+                /* Since we don't have an error return capability, use as unlikely a value as possible */
+                return(65535);
             }
         case FAPI_FONT_FEATURE_Subrs_count:
             {   ref *Private, *Subrs;
@@ -2541,12 +2546,14 @@ retry_oversampling:
         if (code > 0) {
             os_ptr op = osp;
             ref *proc;
-            if (get_charstring(&I->ff, code - 1, &proc) >= 0) {
+            if ((get_charstring(&I->ff, code - 1, &proc) >= 0) && (r_has_type(proc, t_array) || r_has_type(proc, t_mixedarray))) {
                 ref_assign(op, proc);
                 push_op_estack(zexec);  /* execute the operand */
                 return o_push_estack;
-            } else
-                return e_invalidfont;
+            } else {
+                if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
+                   return code;
+            }
         }
         
         /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
@@ -2805,6 +2812,8 @@ static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success
     char *xlatmap = NULL;
     FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
     const char *decodingID = NULL;
+    ref *req, reqstr;
+    bool do_restart = false;
 
 
     if (code < 0)
@@ -2813,35 +2822,71 @@ static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success
     if (code < 0)
         return code;
     pbfont = (gs_font_base *)pfont;
+    
     *success = false;
-    for (; h != 0; h = h->next) {
+    
+    /* If the font dictionary contains a FAPIPlugInReq key, the the PS world wants us
+     * to try to use a specific FAPI plugin, so find it, and try it....
+     */
+    if (dict_find_string(pdr, "FAPIPlugInReq", &req) >= 0 && r_type(req) == t_name) {
+        char *fapi_request;
+        name_string_ref (imemory, req, &reqstr);
+        
+        fapi_request = ref_to_string(&reqstr, imemory, "FAPI_do_char");
+        if (fapi_request) {
+            dprintf1("Requested FAPI plugin: %s ", fapi_request);
+        
+            while (h && (strncmp(h->I->d->type, "FAPI", 4) != 0 || strncmp(h->I->d->subtype, fapi_request, strlen(fapi_request)) != 0)) {
+               h = h->next;
+            }
+            if (!h) {
+                dprintf("not found. Falling back to normal plugin search\n");
+                h = i_plugin_get_list(i_ctx_p);
+            }
+            else {
+                dprintf("found.\n");
+                do_restart = true;
+            }
+            gs_free_string(imemory, (byte *)fapi_request, strlen(fapi_request) + 1, "do_FAPIpassfont");
+        }
+    }
+    
+    
+    while (h) {
         ref FAPI_ID;
         FAPI_server *I;
         const byte *server_param = NULL;
         int server_param_size = 0;
 
-        if (strcmp(h->I->d->type, "FAPI"))
-            continue;
-        I = (FAPI_server *)h->I;
-        get_server_param(i_ctx_p, I->ig.d->subtype, &server_param, &server_param_size);
-        if ((code = renderer_retcode(i_ctx_p, I, I->ensure_open(I, server_param, server_param_size))) < 0)
-            return code;
-        font_scale.HWResolution[0] = font_scale.HWResolution[1] = 72 << I->frac_shift;
-        font_scale.matrix[0] = font_scale.matrix[3] = 1 << I->frac_shift;
+        if (!strcmp(h->I->d->type, "FAPI")) {
+            I = (FAPI_server *)h->I;
+            get_server_param(i_ctx_p, I->ig.d->subtype, &server_param, &server_param_size);
+            if ((code = renderer_retcode(i_ctx_p, I, I->ensure_open(I, server_param, server_param_size))) < 0)
+                return code;
+            font_scale.HWResolution[0] = font_scale.HWResolution[1] = 72 << I->frac_shift;
+            font_scale.matrix[0] = font_scale.matrix[3] = 1 << I->frac_shift;
 
-        pbfont->FAPI = I; /* we need the FAPI server during this stage */
-        code = FAPI_prepare_font(i_ctx_p, I, pdr, pbfont, font_file_path, &font_scale, xlatmap, BBox, &decodingID);
-        if (code < 0) {
-            pbfont->FAPI = NULL;
-            /* Failed, skip this renderer : */
-            continue;
+            pbfont->FAPI = I; /* we need the FAPI server during this stage */
+            code = FAPI_prepare_font(i_ctx_p, I, pdr, pbfont, font_file_path, &font_scale, xlatmap, BBox, &decodingID);
+            if (code >= 0) {
+                if ((code = name_ref(imemory, (const byte *)I->ig.d->subtype, strlen(I->ig.d->subtype), &FAPI_ID, false)) < 0)
+                    return code;
+                if ((code = dict_put_string(pdr, "FAPI", &FAPI_ID, NULL)) < 0)
+                    return code; /* Insert FAPI entry to font dictionary. */
+                *success = true;
+                return 0;
+            }
         }
-        if ((code = name_ref(imemory, (const byte *)I->ig.d->subtype, strlen(I->ig.d->subtype), &FAPI_ID, false)) < 0)
-            return code;
-        if ((code = dict_put_string(pdr, "FAPI", &FAPI_ID, NULL)) < 0)
-            return code; /* Insert FAPI entry to font dictionary. */
-        *success = true;
-        return 0;
+        /* renderer failed, continue search */
+        pbfont->FAPI = NULL;
+        if (do_restart == true) {
+            dprintf1("Requested FAPI plugin %s failed, searching for alternative plugin\n", h->I->d->subtype);
+            h = i_plugin_get_list(i_ctx_p);
+            do_restart = false;
+        }
+        else {
+            h = h->next;
+        }
     }
     /* Could not find renderer, return with false success. */
     return 0;

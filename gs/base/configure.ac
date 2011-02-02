@@ -435,7 +435,7 @@ FT_LIBS=
 
 dnl UFST detection
 AC_ARG_WITH([ufst], AC_HELP_STRING([--with-ufst=UFST_ROOT_DIR],
-                                   [Use UFST (implies disable freetype)]),
+                                   [Use UFST]),
             [], [with_ufst=no])
 INSERT_UFST_BRIDGE_EQUAL_ONE=
 UFST_ROOT=
@@ -446,7 +446,6 @@ INSERT_UFST_BRIDGE_EQUAL_ONE="UFST_BRIDGE=1"
 UFST_ROOT=$with_ufst
 UFST_CFLAGS=-DGCCx86
 UFST_LIB_EXT=.a
-enable_freetype=no
 fi
 AC_SUBST(INSERT_UFST_BRIDGE_EQUAL_ONE)
 AC_SUBST(UFST_ROOT)

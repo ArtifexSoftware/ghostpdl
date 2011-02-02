@@ -987,7 +987,22 @@ profilebsc:
 UFST_ROOT=C:\ufst
 !endif
 
-UFSTBASEDEFS=UFST_BRIDGE=1 FT_BRIDGE=1 UFST_ROOT="$(UFST_ROOT)"
+!if "$(COMPILE_INITS)" == "1"
+ UFST_ROMFS_ARGS=-b \
+   -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+   -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+   -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+
+ UFST_CFLAGS=$(UFST_CFLAGS) /DUFSTFONTDIR=\\\"%%%%%rom%%%%%fontdata/\\\"
+
+!else
+ UFST_ROMFS_ARGS=
+
+ UFST_CFLAGS=$(UFST_CFLAGS) /DUFSTFONTDIR="$(UFST_ROOT)/fontdata"
+!endif
+
+
+UFSTBASEDEFS=UFST_BRIDGE=1 FT_BRIDGE=1 UFST_ROOT="$(UFST_ROOT)" UFST_ROMFS_ARGS="$(UFST_ROMFS_ARGS)" UFSTFONTDIR="$(UFSTFONTDIR)"
 UFSTDEBUGDEFS=BINDIR=.\ufstdebugbin GLGENDIR=.\ufstdebugobj GLOBJDIR=.\ufstdebugobj PSLIBDIR=.\lib PSGENDIR=.\ufstdebugobj PSOBJDIR=.\ufstdebugobj DEBUG=1 TDEBUG=1 SBRDIR=.\ufstdebugobj
 UFSTDEFS=BINDIR=.\ufstbin GLGENDIR=.\ufstobj GLOBJDIR=.\ufstobj PSLIBDIR=.\lib PSGENDIR=.\ufstobj PSOBJDIR=.\ufstobj SBRDIR=.\ufstobj
 
@@ -997,22 +1012,22 @@ ufst-lib:
 #	nmake -f makefile.artifex fco_lib.a if_lib.a psi_lib.a tt_lib.a
 
 ufst-debug: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) $(WINDEFS)
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(UFSTDEBUGDEFS) $(WINDEFS) 
 
 ufst-debugclean: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) $(WINDEFS) clean
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(UFSTDEBUGDEFS) $(WINDEFS) clean
 
 ufst-debugbsc: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) $(WINDEFS) bsc
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(UFSTDEBUGDEFS) $(WINDEFS) bsc
 
 ufst: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) $(WINDEFS)
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(UFSTDEFS) $(WINDEFS)
 
 ufst-clean: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) $(WINDEFS) clean
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(UFSTDEFS) $(WINDEFS) clean
 
 ufst-bsc: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) $(WINDEFS) bsc
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(UFSTDEFS) $(WINDEFS) bsc
 
 
 

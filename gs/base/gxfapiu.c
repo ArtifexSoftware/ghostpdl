@@ -15,23 +15,18 @@
 /* Font API support : UFST common initialization */
 
 /* GS includes : */
+#include "std.h"
 #include "gx.h"
 #include "strmio.h"
+#include "gsmalloc.h"
 
 /* UFST includes : */
-#undef true
-#undef false
 #undef frac_bits
 #include "cgconfig.h"
 #include "ufstport.h"
 #include "shareinc.h"
 /* GS includes : */
 #include "gxfapiu.h"
-
-#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
-#define false FALSE
-#define true TRUE
-#endif
 
 #define MAX_STATIC_FCO_COUNT 4
 
@@ -84,7 +79,7 @@ static LPUB8 (*m_PCLglyphID2Ptr)(FSP UW16 glyphID) = stub_PCLglyphID2Ptr;
 static fco_list_elem static_fco_list[MAX_STATIC_FCO_COUNT] = {0, 0, 0, 0};
 static char static_fco_paths[MAX_STATIC_FCO_COUNT][gp_file_name_sizeof];
 static int static_fco_count = 0;
-static bool ufst_initialized = false;
+static bool ufst_initialized = FALSE;
 #endif
 
 LPUB8 PCLEO_charptr(FSP LPUB8 pfont_hdr, UW16  sym_code)
@@ -174,13 +169,124 @@ int FAPIU_lseek (void *s, int offset, int whence)
     }
     return(pos);
 }
-#endif
+
+int fapi_ufseek (stream *s, long offset, int whence)
+{
+    int pos = sfseek (s, offset, whence);
+    
+    if (pos >= 0)
+    {
+        pos = sftell(s);
+    }
+    return(pos);
+}
 
 int FAPIU_close (void *s)
 {
     return(sfclose((stream *)(s)));
 }
 
+
+GLOBAL VOID MEMinit(FSP0)
+{
+   if_state.pserver->mem_avail[CACHE_POOL]  = 16 * 1024 * 1024;
+   if_state.pserver->mem_fund[CACHE_POOL]   = 16 * 1024 * 1024;
+
+   if_state.pserver->mem_avail[BUFFER_POOL] = 4 * 1024 * 1024;
+   if_state.pserver->mem_fund[BUFFER_POOL]  = 4 * 1024 * 1024;
+
+   if_state.pserver->mem_avail[CHARGEN_POOL]  = 16 * 1024 * 1024;
+   if_state.pserver->mem_fund[CHARGEN_POOL]   = 16 * 1024 * 1024;
+    
+}
+#ifndef UFST_MEMORY_CHECKING
+#define UFST_MEMORY_CHECKING 0
+#endif
+
+#if UFST_MEMORY_CHECKING
+static unsigned long curmem = 0;
+unsigned long maxmem = 0;
+#endif
+
+GLOBAL MEM_HANDLE MEMalloc(FSP UW16 pool, SL32 size)
+{
+
+    void *ptr;
+#if UFST_MEMORY_CHECKING
+    void *ptr2;
+
+    size += sizeof(long) + 2 * sizeof(void *);
+#endif
+
+    size += sizeof(long);
+    ptr = gs_malloc (gs_mem_ctx, size, 1, "UFST MEMalloc");
+    if(!ptr) {
+        return(NIL_MH);
+    }
+    else {
+        *((long *)ptr) = size;
+
+#if UFST_MEMORY_CHECKING
+        *((long *)(ptr + size - sizeof(long))) = size;
+        ptr2 = ptr;
+#endif
+
+        ptr += sizeof(long);
+
+#if UFST_MEMORY_CHECKING
+        if ((curmem += size) > maxmem) {
+            maxmem = curmem;
+        }
+        size -= 2 * sizeof(long);
+        *((char *)ptr) = ptr2;
+        *((char *)(ptr + size - sizeof(void *))) = ptr2;
+        ptr += sizeof(void *);
+
+#endif
+        
+        return((MEM_HANDLE)ptr);
+    }
+}
+
+GLOBAL VOID MEMfree(FSP UW16 pool, MEM_HANDLE ptr)
+{
+    int size = 0;
+    void *ptr1;
+#if UFST_MEMORY_CHECKING
+    int size1;
+    void *ptr2;
+    
+    size = sizeof(void *);
+#endif
+    
+    if (!ptr) {
+        return;
+    }
+    
+    ptr -= (sizeof(long) + size);
+    size = *((long *)ptr);
+
+#if UFST_MEMORY_CHECKING
+    ptr1 = ptr;
+    size1 = size;
+    curmem -= size;
+
+    if (size1 != *((long *)(ptr + size - sizeof(long)))) {
+        dprintf("Memory length corrupt!\n");
+    }
+
+    ptr1 += sizeof(long);
+    size1 -= sizeof(long);
+    if (*((char *)ptr) != *((char *)(ptr + size - sizeof(void *)))) {
+        dprintf("Memory pointer record corrupt!\n");
+    }
+#endif
+    
+    memset (ptr, 0x00, size);
+    gs_free (gs_mem_ctx, ptr, 0, 0, "UFST MEMfree");
+}
+
+#endif
 
 /* Set UFST callbacks. Each PDL will want it's own character build function and must set the callbacks
  * upon language entry/initialization.
@@ -218,6 +324,7 @@ gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
 #if !UFST_REENTRANT
     if (ufst_initialized)
 	return 0;
+    gs_mem_ctx = mem;
 #endif
     strcpy(config_block.ufstPath, ufst_root_dir);
     strcpy(config_block.typePath, ufst_root_dir);
@@ -230,19 +337,21 @@ gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
 
     if ((status = CGIFinit(FSA0)) != 0) {
 	dprintf1("CGIFinit() error: %d\n", status);
+        gs_mem_ctx = NULL;
 	return status;
     }
     if ((status = CGIFconfig(FSA &config_block)) != 0) {
 	dprintf1("CGIFconfig() error: %d\n", status);
+        gs_mem_ctx = NULL;
 	return status;
     }
     if ((status = CGIFenter(FSA0)) != 0) {
 	dprintf1("CGIFenter() error: %u\n",status);
+        gs_mem_ctx = NULL;
 	return status;
     }
 #if !UFST_REENTRANT
     ufst_initialized = TRUE;
-    gs_mem_ctx = mem;
 #endif
     return 1; /* first time, caller may have more initialization to do */
 }
@@ -252,7 +361,7 @@ gx_UFST_fini(void)
 {
     CGIFexit(FSA0);
 #if !UFST_REENTRANT
-    ufst_initialized = false;
+    ufst_initialized = FALSE;
     gs_mem_ctx = NULL;
 #endif
     return 0;
@@ -350,7 +459,6 @@ void gx_UFST_close_static_fcos()
 #endif
 }
 
-#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
 #if GRAYSCALING
 /* ------------------------------- BLACKPIX --------------------------------
  * Description: Called by UFST gichar function.
@@ -373,4 +481,3 @@ GLOBAL VOID GRAYPIX(FSP SW16 x, SW16 y, SW16 v )
 	return;
 }
 #endif	/* GRAYSCALING */
-#endif

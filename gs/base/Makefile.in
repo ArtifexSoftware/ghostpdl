@@ -84,6 +84,11 @@ CUPSSERVERROOT=@CUPSSERVERROOT@
 CUPSDATA=@CUPSDATA@
 CUPSPDFTORASTER=@CUPSPDFTORASTER@
 
+# Choose whether to compile the .ps initialization files into the executable.
+# See gs.mak for details.
+
+COMPILE_INITS=@COMPILE_INITS@
+
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with a :.
 
@@ -162,8 +167,25 @@ FT_LIBS=@FT_LIBS@
 # (i.e. use "UFST_BRIDGE=1" or *not to define UFST_BRIDGE to anything*)
 @INSERT_UFST_BRIDGE_EQUAL_ONE@
 UFST_ROOT=@UFST_ROOT@
-UFST_CFLAGS=@UFST_CFLAGS@
 UFST_LIB_EXT=@UFST_LIB_EXT@
+
+ifeq ($(UFST_BRIDGE), 1)
+ ifeq ($(COMPILE_INITS), 1)
+   UFST_ROMFS_ARGS?=-b \
+     -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+     -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+     -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+   UFSTFONTDIR?=%rom%fontdata/
+ else
+   UFST_ROMFS_ARGS=
+   UFSTFONTDIR?=$(UFST_ROOT)/fontdata/
+ endif
+else
+ UFST_ROMFS_ARGS=
+ UFSTFONTDIR=
+endif
+
+UFST_CFLAGS=@UFST_CFLAGS@ -DUFSTFONTDIR="\"$(UFSTFONTDIR)"\"
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -412,11 +434,6 @@ FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 # The list of resources to be included in the %rom% file system.
 # This is in the top makefile since the file descriptors are platform specific
 RESOURCE_LIST=Resource/CMap/ Resource/ColorSpace/ Resource/Decoding/ Resource/Font/ Resource/ProcSet/ Resource/IdiomSet/ Resource/CIDFont/
-
-# Choose whether to compile the .ps initialization files into the executable.
-# See gs.mak for details.
-
-COMPILE_INITS=@COMPILE_INITS@
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
