@@ -862,8 +862,8 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
 
 opdfread_h=$(GLSRC)opdfread.h
 gs_agl_h=$(GLSRC)gs_agl.h
-gs_mro_e_h=$(GLSRC)gs_agl.h
-gs_mgl_e_h=$(GLSRC)gs_agl.h
+gs_mro_e_h=$(GLSRC)gs_mro_e.h
+gs_mgl_e_h=$(GLSRC)gs_mgl_e.h
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(fcntl__h) $(memory__h) $(string__h) $(time__h) $(unistd__h) $(gp_h)\
