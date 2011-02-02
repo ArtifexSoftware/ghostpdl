@@ -1034,7 +1034,7 @@ static FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff,
     if (d->font_type == FC_TT_TYPE)
 	fc->ssnum = USER_CMAP;
     else if (d->font_type == FC_FCO_TYPE) {
-	fc->ssnum = UFST_UNICODE;
+	fc->ssnum = UNICODE;
     } else if (d->font_type == FC_PST1_TYPE) {
         fc->ssnum = T1ENCODING;
     }
@@ -1381,19 +1381,19 @@ static FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref *
         r->char_data = pbm;
         r->bRaster = TRUE;
         
+		design_escapement[0] = pbm->escapement;
+
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+
         design_bbox[0] = pIFS->glyphMetricsDU.bbox.BBox[0];
         design_bbox[1] = pIFS->glyphMetricsDU.bbox.BBox[1];
         design_bbox[2] = pIFS->glyphMetricsDU.bbox.BBox[2];
         design_bbox[3] = pIFS->glyphMetricsDU.bbox.BBox[3];
-                
-        if (d->font_type == FC_FCO_TYPE) {
-            design_escapement[0] = pbm->escapement;
-        }
-        else {
+        if (d->font_type != FC_FCO_TYPE) {
             design_escapement[0] = pIFS->glyphMetricsDU.aw.x;
             design_escapement[1] = pIFS->glyphMetricsDU.aw.y;
         }
-        
+#endif        
         
     } else {
         IFOUTLINE *pol = (IFOUTLINE *)result;

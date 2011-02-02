@@ -143,7 +143,6 @@ int FAPIU_fclose (FILE *s)
     return(sfclose((stream *)(s)));
 }
 
-#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
 
 void * FAPIU_open (char *path, int mode)
 {
@@ -186,6 +185,7 @@ int FAPIU_close (void *s)
     return(sfclose((stream *)(s)));
 }
 
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
 
 GLOBAL VOID MEMinit(FSP0)
 {
