@@ -459,7 +459,7 @@ if test x"$enable_freetype" != xno; then
   dnl the included freetype source with a checkout from upstream.
   for dir in freetype2 freetype; do
     if test -f $dir/src/base/ftbbox.c; then
-	AC_MSG_RESULT([$dir])
+	AC_MSG_RESULT(yes)
 	SHARE_FT=0
 	FTSRCDIR="$dir"
 	FT_CFLAGS="-I$dir/include"
@@ -582,16 +582,19 @@ AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
 #AC_SUBST(PNGDEVS)
 
-AC_MSG_CHECKING([for local ijs library source])
-LIBIJSDIR=ijs
-if test -f $LIBIJSDIR/ijs.h; then
-	AC_MSG_RESULT([ijs])
-	SHARE_LIBIJS=0
+AC_MSG_CHECKING([for local lcms library source])
+LCMSDIR=lcms
+SHARELCMS=0
+if test -f $LCMSDIR/include/lcms.h; then
+	AC_MSG_RESULT([yes])
 else
-AC_CHECK_LIB(ijs, ijs_server_init, [
-	  AC_CHECK_HEADERS([ijs/ijs.h], [SHARE_LIBIJS=1,LIBIJSDIR=""])
+AC_CHECK_LIB(lcms, cmsCreateXYZProfile, [
+	  AC_CHECK_HEADERS([lcms.h], [SHARELCMS=1;LCMSDIR=""])
 	])
 fi
+
+AC_SUBST(SHARELCMS)
+AC_SUBST(LCMSDIR)
 
 dnl look for libtiff, it also requires lib
 dnl png for the png output device; it also requires zlib
