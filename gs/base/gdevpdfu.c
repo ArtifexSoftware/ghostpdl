@@ -44,6 +44,11 @@
 #include "sjpx_luratech.h"
 #endif
 
+#include "opdfread.h"
+#include "gs_agl.h"
+#include "gs_mgl_e.h"
+#include "gs_mro_e.h"
+
 /* Define the size of internal stream buffers. */
 /* (This is not a limitation, it only affects performance.) */
 #define sbuf_size 512
@@ -77,6 +82,7 @@ private_st_pdf_pattern();
 
 /* ---------------- Utilities ---------------- */
 
+#ifdef PS2WRITE_USES_ROMFS
 /*
  * Strip whitespace and comments from a line of PostScript code as possible.
  * Return a pointer to any string that remains, or NULL if none.
@@ -302,10 +308,56 @@ copy_ps_file_strip_comments(stream *s, const char *fname, bool HaveTrueTypes)
     sfclose(f);
     return 0;
 }
+#endif
+
+static int write_opdfread(stream *s)
+{
+    int index = 0;
+
+    do {
+	if (opdfread_ps[index] == 0x00)
+	    break;
+	stream_write(s, opdfread_ps[index], strlen(opdfread_ps[index]));
+	index++;
+    } while (1);
+    return 0;
+}
+
+static int write_tt_encodings(stream *s, bool HaveTrueTypes)
+{
+    int index = 0;
+
+    do {
+	if (gs_mro_e_ps[index] == 0x00)
+	    break;
+	stream_write(s, gs_mro_e_ps[index], strlen(gs_mro_e_ps[index]));
+	index++;
+    } while (1);
+
+    if (HaveTrueTypes) {
+	index = 0;
+	do {
+	    if (gs_agl_ps[index] == 0x00)
+		break;
+	    stream_write(s, gs_agl_ps[index], strlen(gs_agl_ps[index]));
+	    index++;
+	} while (1);
+
+	index = 0;
+	do {
+	    if (gs_mgl_e_ps[index] == 0x00)
+		break;
+	    stream_write(s, gs_mgl_e_ps[index], strlen(gs_mgl_e_ps[index]));
+	    index++;
+	} while (1);
+    }
+    return 0;
+}
 
 static int
 copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes, bool stripping)
 {
+#ifdef PS2WRITE_USES_ROMFS
     char fname[gp_file_name_sizeof];
     const byte *p = path->data, *e = path->data + path->size;
     int l, i = 0, code;
@@ -349,6 +401,17 @@ copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes, bool s
     if (!i)
 	return_error(gs_error_undefinedfilename);
     return 0;
+#else
+    int code;
+
+    code = write_opdfread(s);
+    if (code < 0)
+	return code;
+
+    code = write_tt_encodings(s, HaveTrueTypes);
+    return code;
+
+#endif
 }
 
 static int
@@ -421,6 +484,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
 	status = s_close_filters(&s, pdev->strm);
 	if (status < 0)
 	    return_error(gs_error_ioerror);
+	stream_puts(s, "\n");
 	pdev->OPDFRead_procset_length = stell(s);
     }
     return 0;
