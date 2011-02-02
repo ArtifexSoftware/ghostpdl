@@ -988,17 +988,17 @@ UFST_ROOT=C:\ufst
 !endif
 
 !if "$(COMPILE_INITS)" == "1"
- UFST_ROMFS_ARGS=-b \
+UFST_ROMFS_ARGS=-b \
    -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
    -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
    -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
 
- UFST_CFLAGS=$(UFST_CFLAGS) /DUFSTFONTDIR=\\\"%%%%%rom%%%%%fontdata/\\\"
+UFST_CFLAGS=$(UFST_CFLAGS) /DUFSTFONTDIR=\\\"%%%%%rom%%%%%fontdata/\\\"
 
 !else
- UFST_ROMFS_ARGS=
+UFST_ROMFS_ARGS=
 
- UFST_CFLAGS=$(UFST_CFLAGS) /DUFSTFONTDIR="$(UFST_ROOT)/fontdata"
+UFST_CFLAGS=$(UFST_CFLAGS) /DUFSTFONTDIR="$(UFST_ROOT)/fontdata"
 !endif
 
 
