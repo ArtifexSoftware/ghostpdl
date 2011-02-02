@@ -178,22 +178,75 @@ gs_image_class_3_mono(gx_image_enum * penum)
                    multiple writes into the same position over and over.
                    The size of the buffer we need depends upon the bitdepth of 
                    the output device, the number of device coloranants and the 
-                   number of  colorants in the source space.  Compute the needed 
-                   size here and allocate.  Note we will need to eventually 
-                   consider  multi-level halftone case here too. */
+                   number of  colorants in the source space.  Note we will 
+                   need to eventually  consider  multi-level halftone case 
+                   here too.  For now, to make use of the SSE2 stuff, we would 
+                   like to have 16 bytes of data to process at a time.  So we 
+                   will collect the columns of data in a buffer that is 16 wide.  
+                   We will also keep track of the widths of each column.  When 
+                   the total width count reaches 16, we will create our 
+                   threshold array and apply it.  We may have one column that is 
+                   buffered between calls in this case.  Also if a call is made 
+                   with h=0 we will flush the buffer as we are at the end of the 
+                   data.  */
                 if (penum->posture == image_landscape) {
-                   /* int num_src_comps = gs_color_space_num_components(pcs);
-                    int num_des_comps = penum->dev->color_info.num_components;
-                    int col_width = num_src_comps*8/num_des_comps;
                     int col_length = 
-                        fixed2int_var_rounded(any_abs(penum->x_extent.y));
-                    int buff_size = col_length * col_width;
+                        fixed2int_var_rounded(any_abs(penum->x_extent.y)) * spp_out;
+                    ox = dda_current(penum->dda.pixel0.x);
+                    oy = dda_current(penum->dda.pixel0.y);
+                    dev_width =
+		       (int) fabs((long) fixed2long_pixround(ox + penum->x_extent.x) -
+		                fixed2long_pixround(ox));
+                    temp = (int) ceil((float) col_length/16.0);
+                    penum->line_size = temp * 16;  /* The stride */
+                    /* Now we need at most 16 of these */
+                    penum->line = gs_alloc_bytes(penum->memory, 
+                                                 16 * penum->line_size, 
+                                                 "gs_image_class_3_mono");
+                    /* Same with this */
+                    penum->thresh_buffer = 
+                                gs_alloc_bytes(penum->memory, 
+                                               penum->line_size * 16, 
+                                               "gs_image_class_3_mono");
 
-                    penum->landscape_col_width = col_width;
-                    penum->landscape_byte_buff = gs_alloc_bytes(penum->memory,
-                                            buff_size, "image_render_mono");*/
-                    /* Dont allow this yet */
-                    code = -1;
+                    /* That mapps into 2 bytes of Halftone data */
+                    penum->ht_buffer = 
+                                    gs_alloc_bytes(penum->memory, 
+                                                   penum->line_size * 2, 
+                                                   "gs_image_class_3_mono");
+                    penum->ht_stride = penum->line_size;
+                    /* Figure out our offset in the contone and threshold data 
+                       buffers so that we ensure that we are on the 128bit 
+                       memory boundaries  */
+                    penum->offset_contone = 
+                        16 - ((unsigned long)(penum->line)) % 16;
+                    if (penum->offset_contone == 16) 
+                        penum->offset_contone = 0;
+                    penum->offset_threshold = 
+                        16 - ((unsigned long) (penum->thresh_buffer)) % 16;
+                    if (penum->offset_threshold == 16) 
+                        penum->offset_threshold = 0;
+                    if (penum->line == NULL || penum->thresh_buffer == NULL 
+                                || penum->ht_buffer == NULL)
+                        code = -1;
+                    penum->ht_landscape.count = 0;
+                    penum->ht_landscape.num_contones = 0;
+                    if (penum->y_extent.x < 0) {
+                        /* Going right to left */
+                        penum->ht_landscape.curr_pos = 15;
+                        penum->ht_landscape.index = -1;
+                    } else {
+                        /* Going left to right */
+                        penum->ht_landscape.curr_pos = 0;
+                        penum->ht_landscape.index = 1;
+                    }
+                    memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
+#ifdef DEBUG
+                    memset(penum->line, 0, 16 * penum->line_size);
+                    memset(penum->thresh_buffer, 0, 16 * penum->line_size);
+                    memset(penum->ht_buffer, 0, penum->line_size * 2);
+#endif
+                    code = 1;  /* Landscape support off for check in */
                 } else {
                     /* In the portrait case we allocate a single line buffer 
                        in device width, a threshold buffer of the same size
@@ -213,7 +266,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
                        the MSBit positions. Note the #define chunk bits16 in 
                        gdevm1.c.  Allow also for a 15 sample over run.
                     */
-                    penum->ht_offset_bits = 16 - dev_width % 16;
+                    penum->ht_offset_bits = 16 - fixed2int_var_pixround(ox) % 16;
                     if (penum->ht_offset_bits > 0) {
                         penum->ht_stride = ((7 + (dev_width + 4) * spp_out) / 8) + 
                                             ARCH_SIZEOF_LONG;
@@ -1067,6 +1120,99 @@ threshold_row_SSE(byte *contone,  byte *threshold_strip,  int contone_stride,
 }
 #endif
 
+/* This thresholds a buffer that is 16 wide by data_length tall */
+static void
+threshold_landscape(byte *contone_align, byte *thresh_align, 
+                    ht_landscape_info_t ht_landscape, byte *halftone, 
+                    int data_length)
+{
+    __align16 byte contone[16];
+    int count = ht_landscape.count;
+    int position_start, position, curr_position;
+    int increment;
+    int *widths = &(ht_landscape.widths[0]);
+    int num_contone = ht_landscape.num_contones;
+    int k, j, w, contone_out_posit, num_used;
+    byte *contone_ptr, *thresh_ptr, *halftone_ptr;
+
+    /* Work through chunks of 16.  */
+    /* Data may have come in left to right or right to left. */
+    if (ht_landscape.index > 0) {
+        position = position_start = 0;    
+    } else {
+        position = position_start = ht_landscape.curr_pos + 1;
+    }
+    thresh_ptr = thresh_align;
+    halftone_ptr = halftone;
+    for (k = 0; k < data_length; k++) { /* Loop on rows */
+        contone_ptr = &(contone_align[position]); /* Point us to our row start */
+        curr_position = position_start; /* We use this in keeping track of widths */
+        contone_out_posit = 0; /* Our index out */
+        for (j = 0; j < num_contone; j++) {
+            num_used = 0;
+            for (w = 0; w < widths[curr_position]; w++) {
+                contone[contone_out_posit] = *contone_ptr;
+                contone_out_posit++;
+                num_used++;
+                if (contone_out_posit == count) {
+                    /* We have a section which will be used in the next chunk */
+                    break;
+                }
+            }
+            curr_position++; /* Move us to the next position in our width array */
+            contone_ptr++;   /* Move us to a new location in our contone buffer */
+        }
+        /* Now we have our left justified and expanded contone data for a single 
+           set of 16.  Go ahead and threshold these */
+#if HAVE_SSE
+
+        threshold_16_SSE(contone_ptr, thresh_ptr, halftone_ptr);
+#else
+        threshold_row_bit(contone_ptr, thresh_ptr, 16, halftone_ptr, 2, 1, 1, 0);
+#endif
+        thresh_ptr += 16;
+        position += 16; 
+        halftone_ptr += 2;
+    }
+}
+
+
+/* If we are in here, we had data left over.  Move it to the proper position
+   and get ht_landscape_info_t set properly */
+static void
+reset_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align, 
+                       int data_length, int num_used, int curr_x_pos) 
+{
+    int k;
+    int position_curr, position_new, delta;
+
+    if (ht_landscape->index < 0) {
+        /* Moving right to left, move column to far right */
+        position_curr = ht_landscape->curr_pos + 1;
+        position_new = 15;
+        delta = ht_landscape->count - num_used;
+        memset(&(ht_landscape->widths[0]), 0, sizeof(int)*16);
+        ht_landscape->widths[15] = delta;
+        ht_landscape->curr_pos = 14;
+    } else {
+        /* Moving left to right, move column to far left */
+        position_curr = ht_landscape->curr_pos - 1;
+        position_new = 0;
+        delta = ht_landscape->count - num_used;
+        memset(&(ht_landscape->widths[0]), 0, sizeof(int)*16);
+        ht_landscape->widths[0] = delta;
+        ht_landscape->curr_pos = 1;
+    }
+    ht_landscape->xstart = curr_x_pos + ht_landscape->index;
+    ht_landscape->count = delta;
+    ht_landscape->num_contones = 1;
+    for (k = 0; k < data_length; k++) {
+            contone_align[position_new] = contone_align[position_curr];
+            position_curr += 16;
+            position_new += 16;
+    }
+}
+
 /*
  An image render case where the source color is monochrome or indexed and
  the output is to be halftoned.  If the source color requires decoding,
@@ -1076,15 +1222,14 @@ static int
 image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x,
 		  uint w, int h, gx_device * dev)
 {
-    const gx_image_enum *const penum = penum_orig; /* const within proc */
+    gx_image_enum *penum = penum_orig; /* const within proc */
     const gs_imager_state *pis = penum->pis;
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
     fixed xprev, yprev;
-    int vci, vdi;  /* amounts to replicate */
+    int vdi;  /* amounts to replicate */
     fixed xrun;			
-    int irun;			
     byte *contone_align, *thresh_align, *halftone;
     int spp_out = penum->dev->color_info.num_components;
     byte *devc_contone;
@@ -1107,6 +1252,11 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int temp_val;
     const int y_pos = penum->yci;
     fixed scale_factor, offset;
+    int in_row_offset, jj, ii;
+    byte *row_ptr, *ptr_out_temp, *ptr_out;
+    int init_tile, num_tiles, tile_remainder;
+    bool replicate_tile, offset_set;
+    int width;
 
 #if RAW_HT_DUMP
     FILE *fid;
@@ -1120,8 +1270,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     xrun = xprev = dda_current(pnext.x);
     switch (posture) {
 	case image_portrait:
-	    vci = penum->yci, vdi = penum->hci;
-	    irun = fixed2int_var_rounded(xrun);
+	    vdi = penum->hci;
             dest_width = fixed2int_var_rounded(any_abs(penum->x_extent.x));
             data_length = dest_width;
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
@@ -1153,10 +1302,10 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
 	    break;
 	case image_landscape:
 	default:    
-	    vci = penum->xci, vdi = penum->wci;
-	    irun = y_pos;
+	    vdi = penum->wci;
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
+            scale_factor = float2fixed((float) penum->Width / (float) dest_height);
             data_length = dest_height;
             /* In the landscaped case, we want to accumulate multiple columns
                of data before sending to the device.  We want to have a full
@@ -1165,11 +1314,40 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                chunks */
 #if RAW_HT_DUMP
             dithered_stride = data_length * spp_out;
-#else
-            dithered_stride = (((7 + data_length * spp_out) / 8) + ARCH_SIZEOF_LONG);
-#endif
+            offset_bits = 0;
+            thresh_align = gs_alloc_bytes(penum->memory, contone_stride * vdi, 
+                                             "image_render_mono_ht");
             halftone = gs_alloc_bytes(penum->memory, dithered_stride * vdi, 
                                       "image_render_mono_ht");
+            contone_align = gs_alloc_bytes(penum->memory, contone_stride * spp_out, 
+                                     "image_render_mono_ht");
+            if (contone_align == NULL || thresh_align == NULL || halftone == NULL)
+                return gs_rethrow(gs_error_VMerror, "Memory allocation failure");
+#else
+            /* Initialize our xstart and compute our partial bit chunk so 
+               that we get in sync with the 1 bit mem device 16 bit positions
+               for the rest of the chunks */
+            if (penum->ht_landscape.count == 0) {
+                penum->ht_landscape.xstart = penum->xci;
+                /* In the landscape case, the size depends upon
+                   if we are moving left to right or right to left with 
+                   the image data.  This offset is to ensure that we  get
+                   aligned in our chunks along 16 bit boundaries */
+                offset_set = true;
+                if (penum->ht_landscape.index < 0) {
+                    offset_bits = penum->xci % 16;
+                } else {
+                    offset_bits = 16 - penum->xci % 16;
+                    if (offset_bits == 16) offset_bits = 0;
+                }
+                if (offset_bits == 0) offset_set = false;
+            }
+            /* Get the pointers to our buffers */
+            dithered_stride = penum->ht_stride;
+            halftone = penum->ht_buffer;
+            contone_align = penum->line + penum->offset_contone;
+            thresh_align = penum->thresh_buffer + penum->offset_threshold;
+#endif
 	    break;
     }
     if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
@@ -1197,7 +1375,20 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 }
                 break;
             case image_landscape:
-                /* To do shortly */
+                /* We store the data at this point into a column. Depending
+                   upon our landscape direction we may be going left to right
+                   or right to left. */
+                position = penum->ht_landscape.curr_pos;
+                for (k = 0; k < data_length; k++) {
+                        offset = fixed2int(scale_factor * k);
+                        devc_contone[position] = psrc[offset];
+                        position += 16;
+                }
+                /* Store the width information and update our counts */
+                penum->ht_landscape.count += vdi;
+                penum->ht_landscape.widths[penum->ht_landscape.curr_pos] = vdi;
+                penum->ht_landscape.curr_pos += penum->ht_landscape.index;
+                penum->ht_landscape.num_contones++;
                 break;
             default:
                 /* error not allowed */
@@ -1311,52 +1502,104 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                                              curr_width, vdi,
 					     (gx_color_index) 0, (gx_color_index) 1);
             }
-            
 #endif
             break;
         case image_landscape:
-            dy = y_pos % thresh_height;
-            thresh_tile = gs_alloc_bytes(penum->memory, thresh_height, 
-                                       "image_render_mono_ht");
-            if (thresh_tile == NULL)
-                return gs_rethrow(gs_error_VMerror, "Memory allocation failure");
-            /* Left remainder part */
-            left_rem_end = min(dy + dest_height, thresh_height);
-            left_width = left_rem_end - dy;  /* The left width of our tile part */
-            /* Now the middle part */
-            num_full_tiles = 
-                (int)fastfloor((dest_height - left_width)/ (float) thresh_height);
-            /* Now the right part */
-            right_tile_width = dest_height -  num_full_tiles * thresh_height - 
-                               left_width;
-            /* Those dimensions stay the same across the set of lines that
-               we fill in our buffer.  Iterate over the vdi and fill up our
-               threshold buffer */
-            for (k = 0; k < vdi; k++) {
-                /* Get a column from the threshold array */
-                dx = (penum->xci+k) % thresh_height; 
-                curr_ptr = threshold + dx;
-                for (i = 0; i < thresh_height; i++) {
-                    thresh_tile[i] = *curr_ptr;
-                    curr_ptr += thresh_width;
+            /* Go ahead and paint the chunk if we have 16 values or a partial
+               to get us in sync with the 1 bit devices 16 bit positions */
+            if (penum->ht_landscape.count > 15 || 
+                ((penum->ht_landscape.count >= offset_bits) && offset_set)) {
+                /* Go ahead and 2D tile in the threshold buffer at this time */
+                /* Always work the tiling from the upper left corner of our
+                   16 columns */
+                if (penum->y_extent.x < 0) {
+                    /* May need to worry about sign on this with the % operator */
+                    dx = (penum->ht_landscape.xstart - 16) % thresh_width;
+                } else {
+                    dx = penum->ht_landscape.xstart % thresh_width;
                 }
-                /* Fill the threshold buffer, can be multiple rows */
-                position = dest_height * spp_out * k;
-                fill_threshhold_buffer(&(thresh_align[position]), thresh_tile, 
-                                       thresh_height, dy, left_width, 
-                                       num_full_tiles, right_tile_width);
+                dy = penum->yi0 % thresh_height;
+                /* Left remainder part */
+                left_rem_end = min(dx + 16, thresh_width);
+                left_width = left_rem_end - dx;
+                /* Now the middle part */
+                num_full_tiles = 
+                    (int)fastfloor((float) (16 - left_width)/ (float) thresh_width);
+                /* Now the right part */
+                right_tile_width = 
+                    16 - num_full_tiles * thresh_width - left_width;
+                /* Now loop over the y stuff */
+                ptr_out = thresh_align;
+                /* Do this in three parts.  We do a top part, followed by 
+                   larger mem copies followed by a bottom partial. After
+                   a slower initial fill we are able to do larger faster
+                   expansions */
+                if (dest_width <= 2 * thresh_height) {
+                    init_tile = dest_width;
+                    replicate_tile = false;
+                } else {
+                    init_tile = thresh_height;
+                    replicate_tile = true;
+                }
+                for (jj = 0; jj < init_tile; jj++) {
+                    in_row_offset = (jj + dy) % thresh_height;
+                    row_ptr = threshold + in_row_offset * thresh_width;
+                    ptr_out_temp = ptr_out;
+                    /* Left part */
+                    memcpy(ptr_out_temp, row_ptr + dx, left_width);
+                    ptr_out_temp += left_width;
+                    /* Now the full tiles */
+                    for (ii = 0; ii < num_full_tiles; ii++) {
+                        memcpy(ptr_out_temp, row_ptr, thresh_width);
+                        ptr_out_temp += thresh_width;
+                    }
+                    /* Now the remainder */
+                    memcpy(ptr_out_temp, row_ptr, right_tile_width);
+                    ptr_out += 16;
+                }
+                if (replicate_tile) {
+                    /* Find out how many we need to copy */
+                    num_tiles =  
+                        (int)fastfloor((float) (dest_width - thresh_height)/ (float) thresh_height);
+                    tile_remainder = dest_width - (num_tiles + 1) * thresh_height;
+                    for (jj = 0; jj < num_tiles; jj ++) {
+                        memcpy(ptr_out, thresh_align, 16 * thresh_height);
+                        ptr_out += 16 * thresh_height;
+                    }
+                    /* Now fill in the remainder */
+                    memcpy(ptr_out, thresh_align, 16 * tile_remainder);
+                }
+                /* Apply the threshold operation */
+                  threshold_landscape(contone_align, thresh_align, 
+                                    penum->ht_landscape, halftone, data_length);  
+                /* Perform the copy mono */
+                if (offset_set) {
+                    width = offset_bits;
+                } else {
+                    width = 16;
+                }
+                if (penum->ht_landscape.index < 0) {
+                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, 2, 
+                                                 gx_no_bitmap_id, penum->xci,
+                                                 penum->yi0, width, data_length, 
+                                                 (gx_color_index) 0, 
+                                                 (gx_color_index) 1);
+                } else {
+                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, 2, 
+                                                 gx_no_bitmap_id, 
+                                                 penum->ht_landscape.xstart,
+                                                 penum->yi0, width, data_length, 
+                                                 (gx_color_index) 0, 
+                                                 (gx_color_index) 1);
+                }
+                /* Clean up and reset our buffer.  We may have a line left 
+                   over that has to be maintained due to line replication in the
+                   resolution conversion */
+                if (width != penum->ht_landscape.count) {
+                    reset_landscape_buffer(&(penum->ht_landscape), contone_align, 
+                                           data_length, width, penum->xci);
+                }
             }
-            gs_free_object(penum->memory, thresh_tile, "image_render_mono_ht");
-            /* Apply the threshold operation */
-#if RAW_HT_DUMP
-            threshold_row_byte(contone_align, thresh_align, contone_stride, 
-                              halftone, dithered_stride, dest_height, vdi);
-            sprintf(file_name,"HT_Landscape_%d_%dx%dx%d.raw", penum->id, dest_height,
-                    dest_width, spp_out);
-            fid = fopen(file_name,"a+b");
-            fwrite(halftone,1,dest_height * vdi,fid);
-            fclose(fid);
-#endif
             break;
         default:
             return gs_rethrow(-1, "Invalid orientation for thresholding");

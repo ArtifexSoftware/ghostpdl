@@ -88,6 +88,15 @@ struct sample_map_s {
     bool inverted;
 
 };
+/* Used for bookkeeping ht buffer information in lanscape mode */
+typedef struct ht_landscape_info_s {
+    int count;
+    int widths[16];
+    int xstart;
+    int curr_pos;
+    int index;
+    int num_contones;
+} ht_landscape_info_t;
 
 #ifndef sample_map_DEFINED
 #define sample_map_DEFINED
@@ -296,6 +305,7 @@ struct gx_image_enum_s {
     int thresh_stride;
     int offset_contone;    /* to ensure 128 bit boundary */
     int offset_threshold;  /* to ensure 128 bit boundary */
+    ht_landscape_info_t ht_landscape; 
     gx_image_icc_setup_t icc_setup;
     gs_range_t *cie_range;   /* Needed potentially if CS was PS CIE based */
 };
