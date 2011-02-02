@@ -92,7 +92,7 @@ irender_proc_t
 gs_image_class_3_mono(gx_image_enum * penum)
 {
     bool test_ht_code = true;
-        int code = 0;
+    int code = 0;
     /* Set up the link now */
     const gs_color_space *pcs;
     gsicc_rendering_param_t rendering_params;
@@ -194,21 +194,17 @@ gs_image_class_3_mono(gx_image_enum * penum)
                         fixed2int_var_rounded(any_abs(penum->x_extent.y)) * spp_out;
                     ox = dda_current(penum->dda.pixel0.x);
                     oy = dda_current(penum->dda.pixel0.y);
-                    dev_width =
-		       (int) fabs((long) fixed2long_pixround(ox + penum->x_extent.x) -
-		                fixed2long_pixround(ox));
                     temp = (int) ceil((float) col_length/16.0);
                     penum->line_size = temp * 16;  /* The stride */
                     /* Now we need at most 16 of these */
                     penum->line = gs_alloc_bytes(penum->memory, 
-                                                 16 * penum->line_size, 
+                                                 16 * penum->line_size + 16, 
                                                  "gs_image_class_3_mono");
                     /* Same with this */
                     penum->thresh_buffer = 
                                 gs_alloc_bytes(penum->memory, 
-                                               penum->line_size * 16, 
+                                               penum->line_size * 16  + 16, 
                                                "gs_image_class_3_mono");
-
                     /* That mapps into 2 bytes of Halftone data */
                     penum->ht_buffer = 
                                     gs_alloc_bytes(penum->memory, 
@@ -240,7 +236,16 @@ gs_image_class_3_mono(gx_image_enum * penum)
                         penum->ht_landscape.curr_pos = 0;
                         penum->ht_landscape.index = 1;
                     }
+                    if (penum->x_extent.y < 0) {
+                        penum->ht_landscape.flipy = true;
+                        penum->ht_landscape.y_pos = 
+                            penum->yi0 + fixed2int(penum->x_extent.y); 
+                    } else {
+                        penum->ht_landscape.flipy = false;
+                        penum->ht_landscape.y_pos = penum->yi0;
+                    }
                     memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
+                    penum->ht_landscape.offset_set = false;
 #ifdef DEBUG
                     memset(penum->line, 0, 16 * penum->line_size);
                     memset(penum->thresh_buffer, 0, 16 * penum->line_size);
@@ -1166,7 +1171,7 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
            set of 16.  Go ahead and threshold these */
 #if HAVE_SSE
 
-        threshold_16_SSE(contone_ptr, thresh_ptr, halftone_ptr);
+        threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
 #else
         threshold_row_bit(contone_ptr, thresh_ptr, 16, halftone_ptr, 2, 1, 1, 0);
 #endif
@@ -1333,14 +1338,14 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                    if we are moving left to right or right to left with 
                    the image data.  This offset is to ensure that we  get
                    aligned in our chunks along 16 bit boundaries */
-                offset_set = true;
+                penum->ht_landscape.offset_set = true;
                 if (penum->ht_landscape.index < 0) {
                     offset_bits = penum->xci % 16;
                 } else {
                     offset_bits = 16 - penum->xci % 16;
                     if (offset_bits == 16) offset_bits = 0;
                 }
-                if (offset_bits == 0) offset_set = false;
+                if (offset_bits == 0) penum->ht_landscape.offset_set = false;
             }
             /* Get the pointers to our buffers */
             dithered_stride = penum->ht_stride;
@@ -1378,17 +1383,27 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 /* We store the data at this point into a column. Depending
                    upon our landscape direction we may be going left to right
                    or right to left. */
-                position = penum->ht_landscape.curr_pos;
-                for (k = 0; k < data_length; k++) {
-                        offset = fixed2int(scale_factor * k);
-                        devc_contone[position] = psrc[offset];
-                        position += 16;
+                if (penum->ht_landscape.flipy) {
+                    position = penum->ht_landscape.curr_pos + 
+                                16 * (data_length - 1);
+                    for (k = 0; k < data_length; k++) {
+                            offset = fixed2int(scale_factor * k);
+                            devc_contone[position] = psrc[offset];
+                            position -= 16;
+                    }
+                } else {
+                    position = penum->ht_landscape.curr_pos;
+                    for (k = 0; k < data_length; k++) {
+                            offset = fixed2int(scale_factor * k);
+                            devc_contone[position] = psrc[offset];
+                            position += 16;
+                    }
                 }
                 /* Store the width information and update our counts */
                 penum->ht_landscape.count += vdi;
                 penum->ht_landscape.widths[penum->ht_landscape.curr_pos] = vdi;
                 penum->ht_landscape.curr_pos += penum->ht_landscape.index;
-                penum->ht_landscape.num_contones++;
+                penum->ht_landscape.num_contones++; 
                 break;
             default:
                 /* error not allowed */
@@ -1508,7 +1523,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             /* Go ahead and paint the chunk if we have 16 values or a partial
                to get us in sync with the 1 bit devices 16 bit positions */
             if (penum->ht_landscape.count > 15 || 
-                ((penum->ht_landscape.count >= offset_bits) && offset_set)) {
+                ((penum->ht_landscape.count >= offset_bits) && 
+                penum->ht_landscape.offset_set)) {
                 /* Go ahead and 2D tile in the threshold buffer at this time */
                 /* Always work the tiling from the upper left corner of our
                    16 columns */
@@ -1534,8 +1550,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                    larger mem copies followed by a bottom partial. After
                    a slower initial fill we are able to do larger faster
                    expansions */
-                if (dest_width <= 2 * thresh_height) {
-                    init_tile = dest_width;
+                if (dest_height <= 2 * thresh_height) {
+                    init_tile = dest_height;
                     replicate_tile = false;
                 } else {
                     init_tile = thresh_height;
@@ -1560,8 +1576,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 if (replicate_tile) {
                     /* Find out how many we need to copy */
                     num_tiles =  
-                        (int)fastfloor((float) (dest_width - thresh_height)/ (float) thresh_height);
-                    tile_remainder = dest_width - (num_tiles + 1) * thresh_height;
+                        (int)fastfloor((float) (dest_height - thresh_height)/ (float) thresh_height);
+                    tile_remainder = dest_height - (num_tiles + 1) * thresh_height;
                     for (jj = 0; jj < num_tiles; jj ++) {
                         memcpy(ptr_out, thresh_align, 16 * thresh_height);
                         ptr_out += 16 * thresh_height;
@@ -1573,31 +1589,46 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                   threshold_landscape(contone_align, thresh_align, 
                                     penum->ht_landscape, halftone, data_length);  
                 /* Perform the copy mono */
-                if (offset_set) {
+                if (penum->ht_landscape.offset_set) {
                     width = offset_bits;
                 } else {
                     width = 16;
                 }
+                penum->ht_landscape.offset_set = false;
                 if (penum->ht_landscape.index < 0) {
                     (*dev_proc(dev, copy_mono)) (dev, halftone, 0, 2, 
                                                  gx_no_bitmap_id, penum->xci,
-                                                 penum->yi0, width, data_length, 
+                                                 penum->ht_landscape.y_pos, 
+                                                 width, data_length, 
                                                  (gx_color_index) 0, 
                                                  (gx_color_index) 1);
                 } else {
                     (*dev_proc(dev, copy_mono)) (dev, halftone, 0, 2, 
                                                  gx_no_bitmap_id, 
                                                  penum->ht_landscape.xstart,
-                                                 penum->yi0, width, data_length, 
+                                                 penum->ht_landscape.y_pos, 
+                                                 width, data_length, 
                                                  (gx_color_index) 0, 
                                                  (gx_color_index) 1);
-                }
+                } 
                 /* Clean up and reset our buffer.  We may have a line left 
                    over that has to be maintained due to line replication in the
                    resolution conversion */
                 if (width != penum->ht_landscape.count) {
                     reset_landscape_buffer(&(penum->ht_landscape), contone_align, 
                                            data_length, width, penum->xci);
+                } else { 
+                    /* Reset the whole buffer */
+                    penum->ht_landscape.count = 0;
+                    if (penum->ht_landscape.index < 0) {
+                        /* Going right to left */
+                        penum->ht_landscape.curr_pos = 15;
+                    } else {
+                        /* Going left to right */
+                        penum->ht_landscape.curr_pos = 0;
+                    }
+                    penum->ht_landscape.num_contones = 0;
+                    memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
                 }
             }
             break;

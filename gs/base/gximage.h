@@ -96,6 +96,9 @@ typedef struct ht_landscape_info_s {
     int curr_pos;
     int index;
     int num_contones;
+    bool offset_set;
+    bool flipy;
+    int y_pos;
 } ht_landscape_info_t;
 
 #ifndef sample_map_DEFINED
