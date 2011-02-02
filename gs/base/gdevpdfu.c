@@ -436,7 +436,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
 {
     stream *s = pdev->strm;
 
-    if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
+    if (pdev->ForOPDFRead) {
         char cre_date_time[41];
 	int code, status, cre_date_time_len;
 	char BBox[256];
