@@ -218,9 +218,6 @@ static inline void release_char_data_inline(fapi_ufst_server *r)
     */
     if (r->char_data != NULL) {
 	FSA_FROM_SERVER;
-        SL32    buck_search_lvl = 0;
-        /* This gets rid of the reference to char_data held in the UFST */
-/*        int status = BUCKfind (FSA buck_search_lvl, PURGE_BUCKET, NULL);*/
 
         CHARfree(FSA (MEM_HANDLE)r->char_data);
         r->char_data = 0;
@@ -500,10 +497,10 @@ static LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
     ushort glyph_length = ff->get_glyph(ff, chId, 0, 0);
     CDATASTR charstring;
     PCDATASTR_DEMO pcharstring;
-    FSA_FROM_SERVER;
     byte *cstring;
     ufst_common_font_data *d = (ufst_common_font_data *)r->fc.font_hdr - 1;
     MEM_HANDLE hndl;
+    FSA_FROM_SERVER;
 
     d->glyphs = NULL;
     
@@ -975,8 +972,8 @@ static FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff,
     double hx, hy;
     FAPI_retcode code = 0;
     bool use_XL_format = ff->is_mtx_skipped;
-    FSA_FROM_SERVER;
     int world_scale = 0;
+    FSA_FROM_SERVER;
 
     if (ff->is_cid && ff->is_type1 && ff->font_file_path == NULL && 
         (dc == FAPI_TOPLEVEL_BEGIN || dc == FAPI_TOPLEVEL_COMPLETE)) {
@@ -1262,7 +1259,8 @@ static inline void set_metrics(fapi_ufst_server *r, FAPI_metrics *metrics, SL32 
 }
 
 static FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref *c, FAPI_path *p, FAPI_metrics *metrics, UW16 format)
-{   UW16 code = 0, code2 = 0;
+{
+    UW16 code = 0, code2 = 0;
     UW16 cc = (UW16)c->char_code;
     SL32 design_bbox[4];
     char PSchar_name[MAX_CHAR_NAME_LENGTH];
@@ -1270,12 +1268,12 @@ static FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref *
     ufst_common_font_data *d = (ufst_common_font_data *)ff->server_font_data;
     SW16 design_escapement[2];
     SW16 du_emx, du_emy;
-    FSA_FROM_SERVER;
     char *notdef = ".notdef";
     const void *client_char_data = ff->char_data;
     const int client_char_data_len = ff->char_data_len;
-    int length;
     bool need_decrypt = ff->need_decrypt;
+    int length;
+    FSA_FROM_SERVER;
     
     design_escapement[0] = design_escapement[1] = 0;
     
