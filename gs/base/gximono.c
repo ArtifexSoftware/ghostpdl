@@ -1264,14 +1264,23 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int init_tile, num_tiles, tile_remainder;
     bool replicate_tile;
     int width;
+    bool flush_buff = false;
 
 #if RAW_HT_DUMP
     FILE *fid;
     char file_name[50];
 #endif
 
-    if (h == 0)
-	return 0;
+    if (h == 0) {
+        if (penum->ht_landscape.count == 0 || posture == image_portrait) {
+	    return 0;
+        } else {
+            /* Need to flush the buffer */
+            offset_bits = penum->ht_landscape.count;
+            penum->ht_landscape.offset_set = true;
+            flush_buff = true;
+        }
+    }
     /* Set up the dda stuff */
     pnext = penum->dda.pixel0;
     xrun = xprev = dda_current(pnext.x);
@@ -1359,6 +1368,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
 #endif
 	    break;
     }
+    if (flush_buff) goto flush;  /* All done */
     if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
 	      penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
     devc_contone = contone_align;
@@ -1448,6 +1458,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     /* Go ahead and fill the threshold line buffer with tiled threshold values.
        First just grab the row or column that we are going to tile with and
        then do memcpy into the buffer */
+flush:    
     thresh_width = d_order->width;
     thresh_height = d_order->height;
     /* Figure out the tile steps.  Left offset, Number of tiles, Right offset. */    
