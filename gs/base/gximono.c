@@ -1281,13 +1281,14 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             flush_buff = true;
         }
     }
-    /* Set up the dda stuff */
-    pnext = penum->dda.pixel0;
-    xrun = xprev = dda_current(pnext.x);
     switch (posture) {
 	case image_portrait:
-	    vdi = penum->hci;
+            pnext = penum->dda.pixel0;
+            xrun = xprev = dda_current(pnext.x);
             dest_width = fixed2int_var_rounded(any_abs(penum->x_extent.x));
+            if (penum->x_extent.x < 0) 
+                xrun += penum->x_extent.x;
+	    vdi = penum->hci;
             data_length = dest_width;
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
             contone_stride = penum->line_size;
