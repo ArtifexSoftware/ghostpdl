@@ -1186,10 +1186,11 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
    and get ht_landscape_info_t set properly */
 static void
 reset_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align, 
-                       int data_length, int num_used, int curr_x_pos) 
+                       int data_length, int num_used) 
 {
     int k;
     int position_curr, position_new, delta;
+    int curr_x_pos = ht_landscape->xstart;
 
     if (ht_landscape->index < 0) {
         /* Moving right to left, move column to far right */
@@ -1199,6 +1200,7 @@ reset_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align,
         memset(&(ht_landscape->widths[0]), 0, sizeof(int)*16);
         ht_landscape->widths[15] = delta;
         ht_landscape->curr_pos = 14;
+        ht_landscape->xstart = curr_x_pos - num_used;
     } else {
         /* Moving left to right, move column to far left */
         position_curr = ht_landscape->curr_pos - 1;
@@ -1207,8 +1209,8 @@ reset_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align,
         memset(&(ht_landscape->widths[0]), 0, sizeof(int)*16);
         ht_landscape->widths[0] = delta;
         ht_landscape->curr_pos = 1;
+        ht_landscape->xstart = curr_x_pos + num_used;
     }
-    ht_landscape->xstart = curr_x_pos + ht_landscape->index;
     ht_landscape->count = delta;
     ht_landscape->num_contones = 1;
     for (k = 0; k < data_length; k++) {
@@ -1260,7 +1262,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int in_row_offset, jj, ii;
     byte *row_ptr, *ptr_out_temp, *ptr_out;
     int init_tile, num_tiles, tile_remainder;
-    bool replicate_tile, offset_set;
+    bool replicate_tile;
     int width;
 
 #if RAW_HT_DUMP
@@ -1333,19 +1335,21 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                that we get in sync with the 1 bit mem device 16 bit positions
                for the rest of the chunks */
             if (penum->ht_landscape.count == 0) {
-                penum->ht_landscape.xstart = penum->xci;
                 /* In the landscape case, the size depends upon
                    if we are moving left to right or right to left with 
                    the image data.  This offset is to ensure that we  get
                    aligned in our chunks along 16 bit boundaries */
                 penum->ht_landscape.offset_set = true;
                 if (penum->ht_landscape.index < 0) {
-                    offset_bits = penum->xci % 16;
+                    penum->ht_landscape.xstart = penum->xci + vdi - 1;
+                    offset_bits = (penum->ht_landscape.xstart % 16) + 1;
                 } else {
+                    penum->ht_landscape.xstart = penum->xci;
                     offset_bits = 16 - penum->xci % 16;
                     if (offset_bits == 16) offset_bits = 0;
                 }
-                if (offset_bits == 0) penum->ht_landscape.offset_set = false;
+                if (offset_bits == 0 || offset_bits == 16) 
+                    penum->ht_landscape.offset_set = false;
             }
             /* Get the pointers to our buffers */
             dithered_stride = penum->ht_stride;
@@ -1597,7 +1601,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 penum->ht_landscape.offset_set = false;
                 if (penum->ht_landscape.index < 0) {
                     (*dev_proc(dev, copy_mono)) (dev, halftone, 0, 2, 
-                                                 gx_no_bitmap_id, penum->xci,
+                                                 gx_no_bitmap_id, 
+                                                 penum->ht_landscape.xstart - width + 1,
                                                  penum->ht_landscape.y_pos, 
                                                  width, data_length, 
                                                  (gx_color_index) 0, 
@@ -1616,7 +1621,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                    resolution conversion */
                 if (width != penum->ht_landscape.count) {
                     reset_landscape_buffer(&(penum->ht_landscape), contone_align, 
-                                           data_length, width, penum->xci);
+                                           data_length, width);
                 } else { 
                     /* Reset the whole buffer */
                     penum->ht_landscape.count = 0;
