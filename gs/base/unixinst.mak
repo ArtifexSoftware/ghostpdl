@@ -71,7 +71,7 @@ acctest.ps addxchar.ps align.ps bdftops.ps \
 caption.ps cid2code.ps decrypt.ps docie.ps dumphint.ps \
 errpage.ps font2c.ps font2pcl.ps gslp.ps gsnup.ps image-qa.ps impath.ps \
 jispaper.ps landscap.ps level1.ps lines.ps markhint.ps markpath.ps \
-mkcidfm.ps opdfread.ps PDFA_def.ps PDFX_def.ps \
+mkcidfm.ps PDFA_def.ps PDFX_def.ps \
 packfile.ps pcharstr.ps pf2afm.ps pfbtopfa.ps ppath.ps \
 pphs.ps \
 prfont.ps printafm.ps \

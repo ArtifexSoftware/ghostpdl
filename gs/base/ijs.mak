@@ -18,6 +18,8 @@
 #		in spawning the server. currently
 #		'unix' and 'win' are supported.
 #	BINDIR - where to put the executible examples
+#	SHARE_IJS - 0 to compile the library, 1 to share
+#	IJS_NAME - if SHARE_IJS = 1, the name of the shared library
 
 # This partial makefile compiles the IJS client library for use in
 # Ghostscript.
@@ -53,8 +55,17 @@ IJSDEP=$(AK)
 
 ijslib_=$(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_server.$(OBJ) \
     $(IJSOBJ)ijs_client.$(OBJ) $(IJSOBJ)ijs_exec_$(IJSEXECTYPE).$(OBJ)
-$(IJSGEN)ijslib.dev : $(IJS_MAK) $(ECHOGS_XE) $(ijslib_)
-	$(SETMOD) $(IJSGEN)ijslib $(ijslib_)
+
+$(IJSGEN)ijslib_0.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(ECHOGS_XE) $(ijslib_)
+	$(SETMOD) $(IJSGEN)ijslib_0 $(ijslib_)
+
+$(IJSGEN)ijslib_1.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(IJSGEN)ijslib_1 -lib $(IJS_NAME)
+
+
+$(IJSGEN)ijslib.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(IJSGEN)ijslib_$(SHARE_IJS).dev
+	$(CP_) $(IJSGEN)ijslib_$(SHARE_IJS).dev $(IJSGEN)ijslib.dev
+
 
 ijs_h=$(IJSSRC)ijs.h
 

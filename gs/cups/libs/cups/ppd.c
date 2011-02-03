@@ -59,12 +59,13 @@
  * Include necessary headers.
  */
 
+char *strchr(const char *, int);
+
 #include "ppd-private.h"
 #include "pwg-private.h"
 #include "globals.h"
 #include "debug.h"
 #include <stdlib.h>
-
 
 /*
  * Definitions...

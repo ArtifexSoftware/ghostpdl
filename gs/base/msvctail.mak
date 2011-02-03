@@ -25,6 +25,7 @@
 $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 	-mkdir $(PSOBJDIR)
 	-mkdir $(PSGENDIR)
+	-mkdir $(PSGENDIR)$(D)cups
 	-mkdir $(GLOBJDIR)
 	-mkdir $(GLGENDIR)
 	-mkdir $(BINDIR)
@@ -36,6 +37,7 @@ $(ECHOGS_XE): $(GLSRC)echogs.c
 # Don't create genarch if it's not needed
 !ifdef GENARCH_XE
 !ifdef WIN64
+# The genarch.exe that is generated is 64-bit, so the OS must be able to run it
 $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
 	$(CC) @$(GLGENDIR)\ccf32.tr /Fo$(GLOBJ)genarch.obj $(GLSRC)genarch.c
 	$(LINK) $(LCT) $(LINKLIBPATH) $(GLOBJ)genarch.obj /OUT:$(GENARCH_XE)
@@ -73,5 +75,6 @@ $(LIBCTR): $(TOP_MAKEFILES)
 	echo user32.lib >>$(LIBCTR)
 	echo winspool.lib >>$(LIBCTR)
 	echo advapi32.lib >>$(LIBCTR)
+	echo ws2_32.lib >>$(LIBCTR)
 
 # end of msvctail.mak

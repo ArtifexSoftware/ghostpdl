@@ -35,14 +35,6 @@ cups_=	$(GLOBJ)gdevcups.$(OBJ)
 # CUPSDATA=`cups-config --datadir`
 # CUPSPDFTORASTER= 1 if CUPS is new enough (cups-config --version)
 
-$(DD)cups.dev : $(CUPS_MAK) $(cups_) $(GLD)page.dev
-	$(SETPDEV2) $(DD)cups $(cups_)
-	$(ADDMOD) $(DD)cups -libpath $(CUPSLIBDIRS)
-	$(ADDMOD) $(DD)cups -lib $(CUPSLIBS)
-
-$(GLOBJ)gdevcups.$(OBJ) : cups/gdevcups.c $(PDEVH)
-	$(GLCC) $(CUPSCFLAGS) $(GLO_)gdevcups.$(OBJ) $(C_) cups/gdevcups.c
-
 PDFTORASTER_XE=$(BINDIR)$(D)pdftoraster$(XE)
 
 cups: pdftoraster

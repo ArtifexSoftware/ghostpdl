@@ -60,6 +60,21 @@ languagelevel 2 .setlanguagelevel
 
 %----------------------------- Process FAPIconfig -----------------------
 
+% The HookDiskFonts and HookEmbeddedFonts take a simple array setting normally.
+% but if two or more FAPI plugins are built in, they can take a dictionary,
+% whose contents are the FAPI subtype string of a given plugin as the key,
+% and an array containing the (sub)set of font types the plugin should handle.
+% Any repetition of font types is ill advised since the resulting bevhaviour
+% will depend on the order entries are stored in the dictionary, which is
+% indeterminate. An attempt to use request a font scaler/renderer which cannot
+% deal with a given font type will result in the FAPI resorting to it's default
+% search for a viable plugin.
+%
+% As an example, you might want UFST to handle Truetype/Type 42 fonts, and
+% Freetype to handle others, thus:
+% /HookDiskFonts << /UFST [11 42] /FreeType  [1 2 9] >>
+% /HookEmbeddedFonts << /UFST [11 42] /FreeType  [1 2 9] >>
+
 /Config
 <<
   % If we've got a FAPIConfig, run it now.
@@ -75,7 +90,7 @@ languagelevel 2 .setlanguagelevel
   currentdict /CIDFontPath known not { /CIDFontPath (/CIDFonts)} if		% A default directory for FAPI-handled CIDfont 							   % files path in FAPIcidfmap.
   currentdict /HookDiskFonts known not { /HookDiskFonts [1 2 9 11 42] } if		% FontType values for disk PS fonts to be
 									% redirected to FAPI.
-  currentdict /HookEmbeddedFonts known not { /HookEmbeddedFonts [1 2 9 11 42]} if	% FontType values for embedded PS fonts to be
+  currentdict /HookEmbeddedFonts known not { /HookEmbeddedFonts [1 2 9 11 42] } if	% FontType values for embedded PS fonts to be
 									% redirected to FAPI.
   /ServerOptions 2 dict
 >> def
@@ -155,7 +170,8 @@ currentdict end def
 currentdict end def
 
 /ReadFCOfontmap:   % <path> ReadFCOfontmap: name dict ...
-{ /fontfile exch def
+{
+ /fontfile exch def
   {
     currentfile =string readline not {
       pop exit
@@ -218,8 +234,8 @@ currentdict end def
            % which try to look inside it
            /CharStrings
            <<
-             /.notdef ( )
-             StandardEncoding { (     ) } forall 
+             /.notdef (                    )
+             StandardEncoding { (                    ) } forall 
            >>
            % FontBBox will get replaced with valid numbers pulled from the rendering engine
            /FontBBox [-128 -128 1024 1024] cvx
@@ -333,7 +349,23 @@ bind def
     } ifelse
     { /HookDiskFonts } { /HookEmbeddedFonts } ifelse
     //Config exch get                                  % name <<font>> [types]
-    1 index //GetFontType exec //FindInArray exec      % name <<font>> bHook
+
+    dup type /dicttype eq
+    {
+      false exch
+      {
+        3 index //GetFontType exec //FindInArray exec
+        {
+          2 index exch /FAPIPlugInReq exch put
+          pop true exit
+        }
+        { pop } ifelse
+      } forall
+    }
+    {
+        1 index //GetFontType exec //FindInArray exec      % name <<font>> bHook
+    } ifelse
+    
     { { (Trying to render the font ) print //PrintFontRef exec ( with FAPI...) = } //FAPI_hook_debug exec
       //.FAPIpassfont {
         { //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get = } //FAPI_hook_debug exec
@@ -344,6 +376,9 @@ bind def
     } {
       { (The font ) print //PrintFontRef exec ( doesn't need to render with FAPI.) = } //FAPI_hook_debug exec
     } ifelse
+    
+    % Remove the plugin request from the font dictionary
+    dup /FAPIPlugInReq undef
   } ifelse
 } bind def
 

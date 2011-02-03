@@ -40,8 +40,13 @@ TW *tw;
 
 static const LPSTR szAppName = "Ghostscript";
 
+#ifdef _WIN64
+const LPSTR szIniName = "gswin64.ini";
+const char *szDllName = "gsdll64.dll";
+#else
 const LPSTR szIniName = "gswin32.ini";
 const char *szDllName = "gsdll32.dll";
+#endif
 const LPSTR szIniSection = "Text";
 
 

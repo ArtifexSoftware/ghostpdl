@@ -1,0 +1,11 @@
+	JPEG XR MSVS 2008 Versions
+
+0.1.0.0 20080227 Code ported to MSVS 2008 solution.  2 Projects in separate sub-directories - app and dll.  JPEG XR library compiled as a DLL.
+
+0.1.0.1 20080228 The 2 projects directories are merged into a single directory (the top level solution directory).  So sub-directories APP and DLL have been removed.
+
+0.1.1.0 20080304 Tweaks to SP setting API (at the C level) in preparation for distributed QP work.
+
+0.1.2.0 20090410 Several updates for April 2009 JPEG Maui meeting
+
+0.1.2.1 20090410 Bug fixes for October 2009 JPEG meeting

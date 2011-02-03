@@ -1,6 +1,5 @@
-/* config.h.  Generated from config.h.in by configure.  */
 /*
- * "$Id: config.h.in 9259 2010-08-13 04:11:46Z mike $"
+ * "$Id: config.h 9233 2010-08-10 06:15:55Z mike $"
  *
  *   Configuration file for CUPS.
  *
@@ -18,28 +17,97 @@
 #define _CUPS_CONFIG_H_
 
 /*
+ * Include necessary headers...
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <io.h>
+
+
+/*
+ * Microsoft renames the POSIX functions to _name, and introduces
+ * a broken compatibility layer using the original names.  As a result,
+ * random crashes can occur when, for example, strdup() allocates memory
+ * from a different heap than used by malloc() and free().
+ *
+ * To avoid moronic problems like this, we #define the POSIX function
+ * names to the corresponding non-standard Microsoft names.
+ */
+
+#define access		_access
+#define close		_close
+#define fileno		_fileno
+#define lseek		_lseek
+#define open		_open
+#define read	        _read
+#ifndef HAVE_SNPRINTF
+#define snprintf 	_snprintf
+#define HAVE_SNPRINTF 1
+#endif
+#ifndef HAVE_STRDUP
+#define strdup		_strdup
+#define HAVE_STRDUP 1
+#endif
+#define unlink		_unlink
+#define vsnprintf 	_vsnprintf
+#define write		_write
+
+
+/*
+ * Map the POSIX sleep() and usleep() functions to the Win32 Sleep() function...
+ */
+
+#define sleep(X)	Sleep(1000 * (X))
+#define usleep(X)	Sleep((X)/1000)
+
+
+/*
+ * Map various parameters to Posix style system calls
+ */
+
+#  define F_OK		00
+#  define W_OK		02
+#  define R_OK		04
+#  define O_RDONLY	_O_RDONLY
+#  define O_WRONLY	_O_WRONLY
+#  define O_CREATE	_O_CREAT
+#  define O_TRUNC	_O_TRUNC
+
+
+/*
+ * Compiler stuff...
+ */
+
+#undef const
+#undef __CHAR_UNSIGNED__
+
+
+/*
  * Version of software...
  */
 
-#define CUPS_SVERSION "CUPS v1.4.5"
-#define CUPS_MINIMAL "CUPS/1.4.5"
+#define CUPS_SVERSION "CUPS v1.4.4"
+#define CUPS_MINIMAL "CUPS/1.4.4"
 
 
 /*
  * Default user and groups...
  */
 
-#define CUPS_DEFAULT_USER "lp"
-#define CUPS_DEFAULT_GROUP "lp"
-#define CUPS_DEFAULT_SYSTEM_GROUPS "lpadmin sys root"
-#define CUPS_DEFAULT_PRINTOPERATOR_AUTH "@SYSTEM"
+#define CUPS_DEFAULT_USER	""
+#define CUPS_DEFAULT_GROUP	""
+#define CUPS_DEFAULT_SYSTEM_GROUPS ""
+#define CUPS_DEFAULT_PRINTOPERATOR_AUTH ""
 
 
 /*
  * Default file permissions...
  */
 
-#define CUPS_DEFAULT_CONFIG_FILE_PERM 0640
+#define CUPS_DEFAULT_CONFIG_FILE_PERM 0644
 #define CUPS_DEFAULT_LOG_FILE_PERM 0644
 
 
@@ -63,12 +131,12 @@
  */
 
 #define CUPS_DEFAULT_BROWSING 1
-#define CUPS_DEFAULT_BROWSE_LOCAL_PROTOCOLS "CUPS"
-#define CUPS_DEFAULT_BROWSE_REMOTE_PROTOCOLS "CUPS"
+#define CUPS_DEFAULT_BROWSE_LOCAL_PROTOCOLS "CUPS dnssd"
+#define CUPS_DEFAULT_BROWSE_REMOTE_PROTOCOLS ""
 #define CUPS_DEFAULT_BROWSE_SHORT_NAMES 1
 #define CUPS_DEFAULT_DEFAULT_SHARED 1
 #define CUPS_DEFAULT_IMPLICIT_CLASSES 1
-#define CUPS_DEFAULT_USE_NETWORK_DEFAULT 1
+#define CUPS_DEFAULT_USE_NETWORK_DEFAULT 0
 
 
 /*
@@ -82,7 +150,7 @@
  * Default printcap file...
  */
 
-#define CUPS_DEFAULT_PRINTCAP "/etc/printcap"
+#define CUPS_DEFAULT_PRINTCAP ""
 
 
 /*
@@ -104,7 +172,7 @@
  * Do we have domain socket support?
  */
 
-#define CUPS_DEFAULT_DOMAINSOCKET "/var/run/cups/cups.sock"
+#undef CUPS_DEFAULT_DOMAINSOCKET
 
 
 /*
@@ -114,28 +182,28 @@
  *       variables at run-time...
  */
 
-#define CUPS_BINDIR "/usr/bin"
-#define CUPS_CACHEDIR "/var/cache/cups"
-#define CUPS_DATADIR "/usr/share/cups"
-#define CUPS_DOCROOT "/usr/share/doc/cups"
-#define CUPS_FONTPATH "/usr/share/cups/fonts"
-#define CUPS_LOCALEDIR "/usr/share/locale"
-#define CUPS_LOGDIR "/var/log/cups"
-#define CUPS_REQUESTS "/var/spool/cups"
-#define CUPS_SBINDIR "/usr/sbin"
-#define CUPS_SERVERBIN "/usr/lib/cups"
-#define CUPS_SERVERROOT "/etc/cups"
-#define CUPS_STATEDIR "/var/run/cups"
+#define CUPS_BINDIR "C:/CUPS/bin"
+#define CUPS_CACHEDIR "C:/CUPS/cache"
+#define CUPS_DATADIR "C:/CUPS/share"
+#define CUPS_DOCROOT "C:/CUPS/share/doc"
+#define CUPS_FONTPATH "C:/CUPS/share/fonts"
+#define CUPS_LOCALEDIR "C:/CUPS/locale"
+#define CUPS_LOGDIR "C:/CUPS/logs"
+#define CUPS_REQUESTS "C:/CUPS/spool"
+#define CUPS_SBINDIR "C:/CUPS/sbin"
+#define CUPS_SERVERBIN "C:/CUPS/lib"
+#define CUPS_SERVERROOT "C:/CUPS/etc"
+#define CUPS_STATEDIR "C:/CUPS/run"
 
 
 /*
  * Do we have various image libraries?
  */
 
-#define HAVE_LIBPNG 1
-#define HAVE_LIBZ 1
-#define HAVE_LIBJPEG 1
-#define HAVE_LIBTIFF 1
+/* #undef HAVE_LIBPNG */
+/* #undef HAVE_LIBZ */
+/* #undef HAVE_LIBJPEG */
+/* #undef HAVE_LIBTIFF */
 
 
 /*
@@ -155,21 +223,21 @@
  * Do we have <shadow.h>?
  */
 
-#define HAVE_SHADOW_H 1
+/* #undef HAVE_SHADOW_H */
 
 
 /*
  * Do we have <crypt.h>?
  */
 
-#define HAVE_CRYPT_H 1
+/* #undef HAVE_CRYPT_H */
 
 
 /*
  * Do we have <scsi/sg.h>?
  */
 
-#define HAVE_SCSI_SG_H 1
+/* #undef HAVE_SCSI_SG_H */
 
 
 /*
@@ -177,14 +245,15 @@
  */
 
 #define HAVE_STRING_H 1
-#define HAVE_STRINGS_H 1
+/* #undef HAVE_STRINGS_H */
 /* #undef HAVE_BSTRING_H */
+
 
 /*
  * Do we have the long long type?
  */
 
-#define HAVE_LONG_LONG 1
+/* #undef HAVE_LONG_LONG */
 
 #ifdef HAVE_LONG_LONG
 #  define CUPS_LLFMT	"%lld"
@@ -194,39 +263,48 @@
 #  define CUPS_LLCAST	(long)
 #endif /* HAVE_LONG_LONG */
 
+
 /*
  * Do we have the strtoll() function?
  */
 
-#define HAVE_STRTOLL 1
+/* #undef HAVE_STRTOLL */
 
 #ifndef HAVE_STRTOLL
 #  define strtoll(nptr,endptr,base) strtol((nptr), (endptr), (base))
 #endif /* !HAVE_STRTOLL */
+
 
 /*
  * Do we have the strXXX() functions?
  */
 
 #define HAVE_STRDUP 1
-#define HAVE_STRCASECMP 1
-#define HAVE_STRNCASECMP 1
+#  if defined(WIN32) || defined(__EMX__)
+#    ifndef HAVE_STRCASECMP
+#      define strcasecmp	_stricmp
+#      define HAVE_STRCASECMP 1
+#    endif /* HAVE_STRCASECMP */
+#    ifndef HAVE_STRNCASECMP
+#      define strncasecmp	_strnicmp
+#      define HAVE_STRNCASECMP 1
+#    endif /* HAVE_STRNCASECMP */
+#  endif /* WIN32 || __EMX__ */
 /* #undef HAVE_STRLCAT */
 /* #undef HAVE_STRLCPY */
-
 
 /*
  * Do we have the geteuid() function?
  */
 
-#define HAVE_GETEUID 1
+/* #undef HAVE_GETEUID */
 
 
 /*
  * Do we have the vsyslog() function?
  */
 
-#define HAVE_VSYSLOG 1
+/* #undef HAVE_VSYSLOG */
 
 
 /*
@@ -242,15 +320,15 @@
  */
 
 /* #undef HAVE_SIGSET */
-#define HAVE_SIGACTION 1
+/* #undef HAVE_SIGACTION */
 
 
 /*
  * What wait functions to use?
  */
 
-#define HAVE_WAITPID 1
-#define HAVE_WAIT3 1
+/* #undef HAVE_WAITPID */
+/* #undef HAVE_WAIT3 */
 
 
 /*
@@ -258,7 +336,7 @@
  */
 
 /* #undef HAVE_MALLINFO */
-#define HAVE_MALLOC_H 1
+/* #undef HAVE_MALLOC_H */
 
 
 /*
@@ -272,7 +350,7 @@
  * Do we have the langinfo.h header file?
  */
 
-#define HAVE_LANGINFO_H 1
+/* #undef HAVE_LANGINFO_H */
 
 
 /*
@@ -290,7 +368,6 @@
  */
 
 /* #undef HAVE_AUTHORIZATION_H */
-/* #undef HAVE_SECITEMPRIV_H */
 /* #undef HAVE_SECPOLICY_H */
 /* #undef HAVE_SECPOLICYPRIV_H */
 /* #undef HAVE_SECBASEPRIV_H */
@@ -302,13 +379,6 @@
  */
 
 /* #undef HAVE_SECIDENTITYSEARCHCREATEWITHPOLICY */
-
-
-/*
- * Do we have the SecPolicyCreateSSL function?
- */
-
-/* #undef HAVE_SECPOLICYCREATESSL */
 
 
 /*
@@ -348,28 +418,21 @@
  * Do we have <sys/ioctl.h>?
  */
 
-#define HAVE_SYS_IOCTL_H 1
-
-
-/*
- * Does the "stat" structure contain the "st_gen" member?
- */
-
-/* #undef HAVE_ST_GEN */
+/* #undef HAVE_SYS_IOCTL_H */
 
 
 /*
  * Does the "tm" structure contain the "tm_gmtoff" member?
  */
 
-#define HAVE_TM_GMTOFF 1
+/* #undef HAVE_TM_GMTOFF */
 
 
 /*
  * Do we have rresvport_af()?
  */
 
-#define HAVE_RRESVPORT_AF 1
+/* #undef HAVE_RRESVPORT_AF */
 
 
 /*
@@ -390,28 +453,28 @@
  * Do we have getifaddrs()?
  */
 
-#define HAVE_GETIFADDRS 1
+/* #undef HAVE_GETIFADDRS */
 
 
 /*
  * Do we have hstrerror()?
  */
 
-#define HAVE_HSTRERROR 1
+/* #undef HAVE_HSTRERROR */
 
 
 /*
  * Do we have res_init()?
  */
 
-#define HAVE_RES_INIT 1
+/* #undef HAVE_RES_INIT */
 
 
 /*
  * Do we have <resolv.h>
  */
 
-#define HAVE_RESOLV_H 1
+/* #undef HAVE_RESOLV_H */
 
 
 /*
@@ -439,7 +502,7 @@
  * Do we have pthread support?
  */
 
-#define HAVE_PTHREAD_H 1
+/* #undef HAVE_PTHREAD_H */
 
 
 /*
@@ -454,22 +517,22 @@
  * Various scripting languages...
  */
 
-#define HAVE_JAVA 1
-#define CUPS_JAVA "/usr/bin/java"
-#define HAVE_PERL 1
-#define CUPS_PERL "/usr/bin/perl"
-#define HAVE_PHP 1
-#define CUPS_PHP "no"
-#define HAVE_PYTHON 1
-#define CUPS_PYTHON "/usr/bin/python"
+/* #undef HAVE_JAVA */
+#define CUPS_JAVA	""
+/* #undef HAVE_PERL */
+#define CUPS_PERL	""
+/* #undef HAVE_PHP */
+#define CUPS_PHP	""
+/* #undef HAVE_PYTHON */
+#define CUPS_PYTHON	""
 
 
 /*
  * Location of the poppler/Xpdf pdftops program...
  */
 
-#define HAVE_PDFTOPS 1
-#define CUPS_PDFTOPS "/usr/bin/pdftops"
+/* #undef HAVE_PDFTOPS */
+#define CUPS_PDFTOPS ""
 
 
 /*
@@ -498,13 +561,6 @@
 
 
 /*
- * Do we have ApplicationServices public headers?
- */
-
-/* #undef HAVE_APPLICATIONSERVICES_H */
-
-
-/*
  * Do we have the SCDynamicStoreCopyComputerName function?
  */
 
@@ -512,7 +568,7 @@
 
 
 /*
- * Do we have MacOSX 10.4's mbr_XXX functions?
+ * Do we have MacOSX 10.4's mbr_XXX functions()?
  */
 
 /* #undef HAVE_MEMBERSHIP_H */
@@ -521,7 +577,7 @@
 
 
 /*
- * Do we have Darwin's notify_post header and function?
+ * Do we have Darwin's notify_post() header and function?
  */
 
 /* #undef HAVE_NOTIFY_H */
@@ -571,8 +627,8 @@
  * Select/poll interfaces...
  */
 
-#define HAVE_POLL 1
-#define HAVE_EPOLL 1
+/* #undef HAVE_POLL */
+/* #undef HAVE_EPOLL */
 /* #undef HAVE_KQUEUE */
 
 
@@ -587,7 +643,7 @@
  * Do we have <sys/param.h>?
  */
 
-#define HAVE_SYS_PARAM_H 1
+/* #undef HAVE_SYS_PARAM_H */
 
 
 /*
@@ -616,8 +672,8 @@
  */
 
 /* #undef HAVE_ARC4RANDOM */
-#define HAVE_RANDOM 1
-#define HAVE_LRAND48 1
+/* #undef HAVE_RANDOM */
+/* #undef HAVE_LRAND48 */
 
 #ifdef HAVE_ARC4RANDOM
 #  define CUPS_RAND() arc4random()
@@ -645,7 +701,7 @@
  * Do we have libusb?
  */
 
-#define HAVE_USB_H 1
+/* #undef HAVE_USB_H */
 
 
 /*
@@ -655,20 +711,8 @@
 /* #undef HAVE_TCPD_H */
 
 
-/*
- * Do we have statfs or statvfs and one of the corresponding headers?
- */
-
-#define HAVE_STATFS 1
-#define HAVE_STATVFS 1
-#define HAVE_SYS_MOUNT_H 1
-#define HAVE_SYS_STATFS_H 1
-#define HAVE_SYS_STATVFS_H 1
-#define HAVE_SYS_VFS_H 1
-
-
 #endif /* !_CUPS_CONFIG_H_ */
 
 /*
- * End of "$Id: config.h.in 9259 2010-08-13 04:11:46Z mike $".
+ * End of "$Id: config.h 9233 2010-08-10 06:15:55Z mike $".
  */

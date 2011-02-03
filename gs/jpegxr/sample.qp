@@ -1,0 +1,96 @@
+
+# This is a sample QP map file that defines a QP map for a
+# color image with a tile 4x4 macroblocks. The format is simple enough
+# and this example illustrates all the aspects of the format.
+#
+# The file is free-formatted. Comments start with a '#' and continue
+# to the end of the text line. white space separates tokens and can be
+# used freely. Keywords are case sensitive, and numbers are unsigned
+# decimal.
+
+# The complete list of keywords is:
+#
+#   DC, HP, LP, channel, independent, separate, tile, uniform
+#
+
+# A tile section is needed for each tile in the image to compress. The
+# values in the () are the column and row of the tile that you are
+# configuring. In this case, the (0,0) means this is the upper left tile.
+tile (0,0) {
+
+  # Specify a component mode. The value values are:
+  #
+  #   uniform   - all the components are the same. In this case, you
+  #               only need to specify channel 0, and all the other
+  #               channels will copy their values from that channel.
+  #
+  #   separate  - The first channel uses one QP set, and all the other
+  #               channels use another QP set. You will only need to
+  #               specify channel-0 and channel-1.
+  #   independent
+  #             - All the channels have their own channel set. You
+  #               need to specify the channel set for all the channels
+  #               in the image.
+  separate
+
+  # Next, give all the QP parameters for the channels that you
+  # need. For each channel, specify the DC, LP and HP qp values. The
+  # QP values range from 0-255 inclusive, with 0 being lossless and
+  # 255 being most lossy.
+  #
+  # There is always exactly 1 DC QP value for each channel.
+  #
+  # There is at least 1 and at most 16 LP(HP) QP values, and the
+  # number of LP(HP) values must be the same for each channel. For
+  # example, if channel 0 has 2 LP values, channel 1 must also have 2
+  # LP values. The same is true for HP values. (There can be different
+  # numbers of LP and HP QP values. For example, it is OK to have 2 LP
+  # QP values and 1 HP QP value.
+  channel 0 {
+	DC { 1 }
+	LP { 1, 100 }
+	HP { 1, 150 }
+  }
+  # Note that the comma listing the QP values is optional.
+  channel 1 {
+	DC { 5 }
+	LP { 5 240 }
+	HP { 5 250 }
+  }
+
+  # Finally, map each macroblock to an LP(HP) QP value by specifying
+  # the index here. For this step you need the dimensions of the tile
+  # in macroblocks, and you need to specify a map value for each
+  # macroblock. In this example, there are 16 macroblocks in this tile
+  # (it doesn't matter if they are arranged 4x4 or 8x2 or whatever)
+  # and they are assigned in raster order.
+  #
+  # The number in the map is an index into the LP or HP list above,
+  # and can range from 0 to the number of items in the list above. For
+  # example, in this example the channels have 2 LP QP values so the
+  # index value can be 0 or 1. If there were 5 LP QP items then the
+  # values would range from 0-4.
+  #
+  # You need to map the LP and HP values independently.
+  #
+  # Each map selects the LP(HP) QP values for all the channels. Recall
+  # the constraint above that the LP(HP) QP list have the same length
+  # for all the channels.
+  #
+  # If an LP or HP map is left out, then it is assumed to contain all
+  # zeros. This is useful if for example there is only 1 QP value for
+  # LP/HP subband, or if the subband is to be dropped by the
+  # compressor.
+  #
+  # Note that the map is surrounded by [] instead of {} to more
+  # clearly distinguish this map from the QP list inside the channels.
+  LP [ 0 0 0 0
+       0 0 0 0
+       1 1 1 1
+       1 1 1 1 ]
+
+  HP [ 0 0 0 0
+       0 0 0 0
+       1 1 1 1
+       1 1 1 1 ]
+}

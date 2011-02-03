@@ -651,15 +651,18 @@ $(GLOBJ)gdevlj56.$(OBJ) : $(GLSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
 
 ### -------------------- The ijs client ----------------- ###
 
-ijs_=$(GLOBJ)gdevijs.$(OBJ) $(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_client.$(OBJ) \
- $(IJSOBJ)ijs_exec_$(IJSEXECTYPE).$(OBJ)
+ijs_=$(GLOBJ)gdevijs.$(OBJ)
+
+#$(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_client.$(OBJ) \
+# $(IJSOBJ)ijs_exec_$(IJSEXECTYPE).$(OBJ)
 
 $(DD)ijs.dev : $(ijs_) $(GLD)page.dev $(DD)ijslib.dev
 	$(SETPDEV) $(DD)ijs $(ijs_)
+	$(ADDMOD) $(DD)ijs -include $(GLD)ijslib
 
-$(GLOBJ)gdevijs.$(OBJ) : $(GLSRC)gdevijs.c $(PDEVH) $(unistd__h) $(gp_h)\
- $(ijs_h) $(ijs_client_h)
-	$(CC_) $(I_)$(GLI_) $(II)$(IJSI_)$(_I) $(GLF_) $(GLO_)gdevijs.$(OBJ) $(C_) $(GLSRC)gdevijs.c
+$(GLOBJ)gdevijs.$(OBJ) : $(GLSRC)gdevijs.c $(PDEVH) $(unistd__h) $(gp_h)
+	$(CC_) $(I_)$(GLI_) $(II)$(IJSI_)$(_I) $(II)$(IJSI_)$(D)..$(_I) \
+            $(GLF_) $(GLO_)gdevijs.$(OBJ) $(C_) $(GLSRC)gdevijs.c
 
 # Please see ijs.mak for the Makefile fragment which builds the IJS
 # library.
@@ -857,6 +860,11 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
  $(gsparam_h) $(gsuid_h) $(gxdevice_h) $(gxfont_h) $(gxline_h)\
  $(spprint_h) $(stream_h) $(gdevpsdf_h) $(gxdevmem_h) $(sarc4_h) 
 
+opdfread_h=$(GLSRC)opdfread.h
+gs_agl_h=$(GLSRC)gs_agl.h
+gs_mro_e_h=$(GLSRC)gs_mro_e.h
+gs_mgl_e_h=$(GLSRC)gs_mgl_e.h
+
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(fcntl__h) $(memory__h) $(string__h) $(time__h) $(unistd__h) $(gp_h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h) $(smd5_h) $(sarc4_h)\
@@ -949,7 +957,8 @@ $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
  $(gsdsrc_h) $(gsfunc_h) $(gsfunc3_h)\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sarc4_h) $(smd5_h) $(sstring_h) $(strimpl_h) $(szlibx_h)\
- $(strmio_h) $(sjbig2_luratech_h) $(sjpx_luratech_h)
+ $(strmio_h) $(sjbig2_luratech_h) $(sjpx_luratech_h)\
+ $(opdfread_h) $(gs_agl_h) $(gs_mro_e_h) $(gs_mgl_e_h)
 	$(GDEVLWFJB2JPXCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
 
 $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
@@ -1767,4 +1776,17 @@ $(DD)tiffsep.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev $(minf
 $(DD)tiffsep1.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev $(minftrsz_h)
 	$(SETPDEV2) $(DD)tiffsep1 $(tiffsep_)
 	$(ADDMOD) $(DD)tiffsep1 -include $(DD)tiffs
+
+### ------------------------------- CUPS ------------------------------- ###
+lcups_dev=$(LCUPSGENDIR)$(D)lcups.dev
+lcupsi_dev=$(LCUPSIGENDIR)$(D)lcupsi.dev
+
+cups_=$(GLOBJ)gdevcups.$(OBJ)
+$(DD)cups.dev : $(DEVS_MAK) $(lcups_dev) $(lcupsi_dev) $(cups_) 
+	$(SETPDEV2) $(DD)cups $(cups_)
+	$(ADDMOD) $(DD)cups -include $(lcups_dev)
+	$(ADDMOD) $(DD)cups -include $(lcupsi_dev)
+
+$(GLOBJ)gdevcups.$(OBJ) : cups$(D)gdevcups.c $(std_h)
+	$(CUPS_CC) $(GLO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(I_)$(GLSRC) $(I_)$(GLOBJ) $(I_)$(LCUPSSRCDIR)$(D)libs $(LCUPSSRCDIR)$(D)gdevcups.c
 

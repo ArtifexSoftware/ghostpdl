@@ -63,6 +63,9 @@
 
 #include "image-private.h"
 
+#if WIN32
+#define cbrt(arg) pow(arg, 1.0/3)
+#endif
 
 /*
  * Define some math constants that are required...

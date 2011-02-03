@@ -47,6 +47,7 @@
 #include "ppd-private.h"
 #include "debug.h"
 
+int strcmp(const char *, const char *);
 
 /*
  * Local functions...

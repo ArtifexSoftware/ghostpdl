@@ -425,7 +425,9 @@ _cups_debug_printf(const char *format,	/* I - Printf-style format string */
     * thread already did it...
     */
 
+#  ifdef HAVE_PTHREAD_H
     pthread_mutex_lock(&debug_mutex);
+#endif
 
     if (!debug_init)
     {
@@ -446,6 +448,7 @@ _cups_debug_printf(const char *format,	/* I - Printf-style format string */
       if ((cups_debug_level = getenv("CUPS_DEBUG_LEVEL")) != NULL)
 	_cups_debug_level = atoi(cups_debug_level);
 
+#ifndef WIN32
       if ((cups_debug_filter = getenv("CUPS_DEBUG_FILTER")) != NULL)
       {
         if ((debug_filter = (regex_t *)calloc(1, sizeof(regex_t))) == NULL)
@@ -459,11 +462,14 @@ _cups_debug_printf(const char *format,	/* I - Printf-style format string */
 	  debug_filter = NULL;
 	}
       }
+#endif
 
       debug_init = 1;
     }
 
+#  ifdef HAVE_PTHREAD_H
     pthread_mutex_unlock(&debug_mutex);
+#endif
   }
 
   if (_cups_debug_fd < 0)
@@ -481,6 +487,7 @@ _cups_debug_printf(const char *format,	/* I - Printf-style format string */
   if (level > _cups_debug_level)
     return;
 
+#ifndef WIN32
   if (debug_filter)
   {
     int	result;				/* Filter result */
@@ -492,12 +499,17 @@ _cups_debug_printf(const char *format,	/* I - Printf-style format string */
     if (result)
       return;
   }
+#endif
 
  /*
   * Format the message...
   */
 
+#ifndef WIN32
   gettimeofday(&curtime, NULL);
+#else
+  curtime.tv_sec = time(NULL);
+#endif
   snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d.%03d ",
 	   (int)((curtime.tv_sec / 3600) % 24),
 	   (int)((curtime.tv_sec / 60) % 60),

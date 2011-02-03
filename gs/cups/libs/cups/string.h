@@ -49,8 +49,14 @@
  */
 
 #  if defined(WIN32) || defined(__EMX__)
-#    define strcasecmp	_stricmp
-#    define strncasecmp	_strnicmp
+#    ifndef HAVE_STRCASECMP
+#      define strcasecmp	_stricmp
+#      define HAVE_STRCASECMP 1
+#    endif /* HAVE_STRCASECMP */
+#    ifndef HAVE_STRNCASECMP
+#      define strncasecmp	_strnicmp
+#      define HAVE_STRNCASECMP 1
+#    endif /* HAVE_STRNCASECMP */
 #  endif /* WIN32 || __EMX__ */
 
 

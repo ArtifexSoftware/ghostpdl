@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -15,8 +15,8 @@
 #include "memory_.h"
 #include "gx.h"
 #include "gxdevice.h"
-#include "gxdevmem.h"		/* semi-public definitions */
-#include "gdevmem.h"		/* private definitions */
+#include "gxdevmem.h"           /* semi-public definitions */
+#include "gdevmem.h"            /* private definitions */
 
 #define mem_gray8_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
 
@@ -31,9 +31,9 @@ declare_mem_procs(mem_mapped8_copy_mono, mem_mapped8_copy_color, mem_mapped8_fil
 /* The device descriptor. */
 const gx_device_memory mem_mapped8_device =
 mem_device("image8", 8, 0,
-	   mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
+           mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
   mem_mapped8_copy_mono, mem_mapped8_copy_color, mem_mapped8_fill_rectangle,
-	   mem_gray8_strip_copy_rop);
+           mem_gray8_strip_copy_rop);
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte
@@ -42,28 +42,28 @@ mem_device("image8", 8, 0,
 /* Fill a rectangle with a color. */
 static int
 mem_mapped8_fill_rectangle(gx_device * dev,
-			   int x, int y, int w, int h, gx_color_index color)
+                           int x, int y, int w, int h, gx_color_index color)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
 
     fit_fill(dev, x, y, w, h);
     bytes_fill_rectangle(scan_line_base(mdev, y) + x, mdev->raster,
-			 (byte) color, w, h);
+                         (byte) color, w, h);
     return 0;
 }
 
 /* Copy a monochrome bitmap. */
 /* We split up this procedure because of limitations in the bcc32 compiler. */
 static void mapped8_copy01(chunk *, const byte *, int, int, uint,
-			    int, int, byte, byte);
+                            int, int, byte, byte);
 static void mapped8_copyN1(chunk *, const byte *, int, int, uint,
-			    int, int, byte);
+                            int, int, byte);
 static void mapped8_copy0N(chunk *, const byte *, int, int, uint,
-			    int, int, byte);
+                            int, int, byte);
 static int
 mem_mapped8_copy_mono(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+               const byte * base, int sourcex, int sraster, gx_bitmap_id id,
+        int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     const byte *line;
@@ -73,77 +73,239 @@ mem_mapped8_copy_mono(gx_device * dev,
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     setup_rect(dest);
     line = base + (sourcex >> 3);
-    first_bit = 0x80 >> (sourcex & 7);
+    first_bit = sourcex & 7;
 #define is_color(c) ((int)(c) != (int)gx_no_color_index)
     if (is_color(one)) {
-	if (is_color(zero))
-	    mapped8_copy01(dest, line, first_bit, sraster, draster,
-			   w, h, (byte) zero, (byte) one);
-	else
-	    mapped8_copyN1(dest, line, first_bit, sraster, draster,
-			   w, h, (byte) one);
+        if (is_color(zero))
+            mapped8_copy01(dest, line, first_bit, sraster, draster,
+                           w, h, (byte) zero, (byte) one);
+        else
+            mapped8_copyN1(dest, line, first_bit, sraster, draster,
+                           w, h, (byte) one);
     } else if (is_color(zero))
-	mapped8_copy0N(dest, line, first_bit, sraster, draster,
-		       w, h, (byte) zero);
+        mapped8_copy0N(dest, line, first_bit, sraster, draster,
+                       w, h, (byte) zero);
 #undef is_color
     return 0;
 }
-/* Macros for copy loops */
-#define COPY_BEGIN\
-	while ( h-- > 0 )\
-	{	register byte *pptr = dest;\
-		const byte *sptr = line;\
-		register int sbyte = *sptr;\
-		register uint bit = first_bit;\
-		int count = w;\
-		do\
-		{
-#define COPY_END\
-			if ( (bit >>= 1) == 0 )\
-				bit = 0x80, sbyte = *++sptr;\
-			pptr++;\
-		}\
-		while ( --count > 0 );\
-		line += sraster;\
-		inc_ptr(dest, draster);\
-	}
 /* Halftone coloring */
 static void
 mapped8_copy01(chunk * dest, const byte * line, int first_bit,
-	       int sraster, uint draster, int w, int h, byte b0, byte b1)
+               int sraster, uint draster, int w, int h, byte b0, byte b1)
 {
-    COPY_BEGIN
-	* pptr = (sbyte & bit ? b1 : b0);
-    COPY_END
+    while ( h-- > 0 ) {
+        register byte *pptr = dest;
+        const byte *sptr = line;
+        register int sbyte = *sptr++;
+        register uint bit;
+        int count = w + first_bit - 8; /* How many bits after first byte */
+        if (count >= 0) {
+            switch (first_bit) {
+                case 0:
+                    goto enter0;
+                case 1:
+                    goto enter1;
+                case 2:
+                    goto enter2;
+                case 3:
+                    goto enter3;
+                case 4:
+                    goto enter4;
+                case 5:
+                    goto enter5;
+                case 6:
+                    goto enter6;
+                default:
+                    goto enter7;
+            }
+            do {
+                /* In true gs fashion: Do not be tempted to replace the
+                 * following lines with: *pptr++ = (condition ? b1 : b0);
+                 * without good reason as gcc on ARM takes 4 cycles to do that
+                 * rather than 3 cycles to do the form here. */
+                enter0: if (sbyte & 128) *pptr++ = b1; else *pptr++ = b0;
+                enter1: if (sbyte &  64) *pptr++ = b1; else *pptr++ = b0;
+                enter2: if (sbyte &  32) *pptr++ = b1; else *pptr++ = b0;
+                enter3: if (sbyte &  16) *pptr++ = b1; else *pptr++ = b0;
+                enter4: if (sbyte &   8) *pptr++ = b1; else *pptr++ = b0;
+                enter5: if (sbyte &   4) *pptr++ = b1; else *pptr++ = b0;
+                enter6: if (sbyte &   2) *pptr++ = b1; else *pptr++ = b0;
+                enter7: if (sbyte &   1) *pptr++ = b1; else *pptr++ = b0;
+                sbyte = *sptr++;
+                count -= 8;
+            } while (count >= 0);
+            bit = 128;
+            count += 8;
+        } else {
+            /* Less than 1 byte to do */
+            bit = 0x80>>first_bit;
+            count += 8-first_bit;
+        }
+        while (count > 0) {
+            if (sbyte & bit) *pptr++ = b1; else *pptr++ = b0;
+            bit >>= 1;
+            count--;
+        }
+        line += sraster;
+        inc_ptr(dest, draster);
+    }
 }
 /* Stenciling */
 static void
 mapped8_copyN1(chunk * dest, const byte * line, int first_bit,
-	       int sraster, uint draster, int w, int h, byte b1)
+               int sraster, uint draster, int w, int h, byte b1)
 {
-    COPY_BEGIN
-	if (sbyte & bit)
-	*pptr = b1;
-    COPY_END
+    while ( h-- > 0 ) {
+        register byte *pptr = dest;
+        const byte *sptr = line;
+        register int sbyte = *sptr++;
+        register uint bit;
+        int count = w + first_bit - 8; /* How many bits after first byte */
+        if (count >= 0) {
+            switch (first_bit) {
+                case 0:
+                    goto enter0;
+                case 1:
+                    goto enter1;
+                case 2:
+                    goto enter2;
+                case 3:
+                    goto enter3;
+                case 4:
+                    goto enter4;
+                case 5:
+                    goto enter5;
+                case 6:
+                    goto enter6;
+                default:
+                    goto enter7;
+            }
+            do {
+                enter0: if (sbyte & 128)
+                            *pptr = b1;
+                        pptr++;
+                enter1: if (sbyte & 64)
+                            *pptr = b1;
+                        pptr++;
+                enter2: if (sbyte & 32)
+                            *pptr = b1;
+                        pptr++;
+                enter3: if (sbyte & 16)
+                            *pptr = b1;
+                        pptr++;
+                enter4: if (sbyte & 8)
+                            *pptr = b1;
+                        pptr++;
+                enter5: if (sbyte & 4)
+                            *pptr = b1;
+                        pptr++;
+                enter6: if (sbyte & 2)
+                            *pptr = b1;
+                        pptr++;
+                enter7: if (sbyte & 1)
+                            *pptr = b1;
+                        pptr++;
+                sbyte = *sptr++;
+                count -= 8;
+            } while (count >= 0);
+            bit = 128;
+            count += 8;
+        } else {
+            /* Less than 1 byte to do */
+            bit = 0x80>>first_bit;
+            count += 8-first_bit;
+        }
+        while (count > 0) {
+            if (sbyte & bit) *pptr = b1;
+            pptr++;
+            bit >>= 1;
+            count--;
+        }
+        line += sraster;
+        inc_ptr(dest, draster);
+    }
 }
 /* Reverse stenciling */
 static void
 mapped8_copy0N(chunk * dest, const byte * line, int first_bit,
-	       int sraster, uint draster, int w, int h, byte b0)
+               int sraster, uint draster, int w, int h, byte b0)
 {
-    COPY_BEGIN
-	if (!(sbyte & bit))
-	*pptr = b0;
-    COPY_END
+    while ( h-- > 0 ) {
+        register byte *pptr = dest;
+        const byte *sptr = line;
+        register int sbyte = *sptr++;
+        register uint bit;
+        int count = w + first_bit - 8; /* How many bits after first byte */
+        if (count >= 0) {
+            switch (first_bit) {
+                case 0:
+                    goto enter0;
+                case 1:
+                    goto enter1;
+                case 2:
+                    goto enter2;
+                case 3:
+                    goto enter3;
+                case 4:
+                    goto enter4;
+                case 5:
+                    goto enter5;
+                case 6:
+                    goto enter6;
+                default:
+                    goto enter7;
+            }
+            do {
+                enter0: if (!(sbyte & 128))
+                            *pptr = b0;
+                        pptr++;
+                enter1: if (!(sbyte & 64))
+                           *pptr = b0;
+                        pptr++;
+                enter2: if (!(sbyte & 32))
+                            *pptr = b0;
+                        pptr++;
+                enter3: if (!(sbyte & 16))
+                            *pptr = b0;
+                        pptr++;
+                enter4: if (!(sbyte & 8))
+                            *pptr = b0;
+                        pptr++;
+                enter5: if (!(sbyte & 4))
+                            *pptr = b0;
+                        pptr++;
+                enter6: if (!(sbyte & 2))
+                            *pptr = b0;
+                        pptr++;
+                enter7: if (!(sbyte & 1))
+                            *pptr = b0;
+                        pptr++;
+                sbyte = *sptr++;
+                count -= 8;
+            } while (count >= 0);
+            bit = 128;
+            count += 8;
+        } else {
+            /* Less than 1 byte to do */
+            bit = 0x80>>first_bit;
+            count += 8-first_bit;
+        }
+        while (count > 0) {
+            if (!(sbyte & bit)) *pptr = b0;
+            pptr++;
+            bit >>= 1;
+            count--;
+        }
+        line += sraster;
+        inc_ptr(dest, draster);
+    }
 }
-#undef COPY_BEGIN
-#undef COPY_END
 
 /* Copy a color bitmap. */
 static int
 mem_mapped8_copy_color(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-		       int x, int y, int w, int h)
+               const byte * base, int sourcex, int sraster, gx_bitmap_id id,
+                       int x, int y, int w, int h)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
 
@@ -165,15 +327,15 @@ declare_mem_procs(mem8_word_copy_mono, mem8_word_copy_color, mem8_word_fill_rect
 /* Here is the device descriptor. */
 const gx_device_memory mem_mapped8_word_device =
 mem_full_device("image8w", 8, 0, mem_open,
-		mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
-	mem8_word_copy_mono, mem8_word_copy_color, mem8_word_fill_rectangle,
-		gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
-		gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
+                mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
+        mem8_word_copy_mono, mem8_word_copy_color, mem8_word_fill_rectangle,
+                gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
+                gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
 static int
 mem8_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-			 gx_color_index color)
+                         gx_color_index color)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *base;
@@ -191,8 +353,8 @@ mem8_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Copy a bitmap. */
 static int
 mem8_word_copy_mono(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+               const byte * base, int sourcex, int sraster, gx_bitmap_id id,
+        int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
@@ -205,7 +367,7 @@ mem8_word_copy_mono(gx_device * dev,
     store = (zero != gx_no_color_index && one != gx_no_color_index);
     mem_swap_byte_rect(row, raster, x << 3, w << 3, h, store);
     mem_mapped8_copy_mono(dev, base, sourcex, sraster, id,
-			  x, y, w, h, zero, one);
+                          x, y, w, h, zero, one);
     mem_swap_byte_rect(row, raster, x << 3, w << 3, h, false);
     return 0;
 }
@@ -213,8 +375,8 @@ mem8_word_copy_mono(gx_device * dev,
 /* Copy a color bitmap. */
 static int
 mem8_word_copy_color(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-		     int x, int y, int w, int h)
+               const byte * base, int sourcex, int sraster, gx_bitmap_id id,
+                     int x, int y, int w, int h)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;

@@ -63,8 +63,9 @@ systemdict exch /.xlatmap exch put
   /TypeKey /FontType def
 
   1
-  { /FontMatrix [0.001 0 0 0.001 0 0] def
-    /FontBBox [-128 -128 1024 1024] cvx def % zfapi.ps refines it.
+  { 
+    currentdict /FontMatrix known not { /FontMatrix [0.001 0 0 0.001 0 0] def } if
+    currentdict /FontBBox known not { /FontBBox [-128 -128 1024 1024] cvx def } if % zfapi.ps refines it.
     /Private 0 dict def
     % if we're using the FAPI/UFST code for Microtype fonts,
     % then we've already created a "fake" CharStrings, so don't replace it.

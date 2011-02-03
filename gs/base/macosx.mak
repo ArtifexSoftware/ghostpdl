@@ -174,7 +174,9 @@ LCMSSRCDIR=lcms
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
-
+ 
+SHARE_IJS=0
+IJS_NAME=
 IJSSRCDIR=ijs
 IJSEXECTYPE=unix
 

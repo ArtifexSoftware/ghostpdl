@@ -860,7 +860,7 @@ currentdict /.pdf_hook_DSC_Creator undef
   } if
   not {                                             % if necessary, compute a default
     mark
-    (gs_mgl_e.ps) (gs_mro_e.ps) (gs_agl.ps) (opdfread.ps) % Reverse order !
+    (gs_mgl_e.ps) (gs_mro_e.ps) (gs_agl.ps) % Reverse order !
     () counttomark 1 sub {
       exch
       .libfile { .filename } { false } ifelse not {

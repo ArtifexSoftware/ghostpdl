@@ -110,6 +110,13 @@ pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
 
     if (pdfont->u.simple.Encoding == NULL)
 	return true; /* Bitmap Type 3 fonts have no pdfont->u.simple.Encoding . */
+    if (pdfont->FontType == ft_TrueType)
+	/*
+	    TrueType fonts are always written as symbolic, and so they do not have
+	    an Encoding entry (SVN revision 11735, bugs #690744, #691036, #691319).
+	    In this circumstance, write the ToUnicode map to get a searchable PDF.
+	*/
+	return true;
     for (ch = 0; ch < 256; ++ch) {
 	pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
 	gs_glyph glyph = pet->glyph;
