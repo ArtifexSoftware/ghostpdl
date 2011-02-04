@@ -688,11 +688,12 @@ static void generic_rop_run8_const_s_1bit(rop_run_op *op, byte *d, int len)
         if (troll == 0)
             T = *t++;
         else {
-            if (--troll == 0) {
+            --troll;
+            T = tcolors[(*t >> troll) & 1];
+            if (troll == 0) {
                 troll = 8;
                 t++;
             }
-            T = tcolors[(*t >> troll) & 1];
         }
         if ((T != ttrans))
             *d = proc(*d, S, T);
