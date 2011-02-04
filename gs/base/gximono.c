@@ -283,7 +283,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
                        have in taking a single source row and going to device 
                        space */
                     max_height = 
-                        (int) ceil(fixed2float(penum->dst_height) /
+                        (int) ceil(fixed2float(any_abs(penum->dst_height)) /
                                                         (float) penum->Height);
                     penum->ht_buffer = 
                                     gs_alloc_bytes(penum->memory, 
