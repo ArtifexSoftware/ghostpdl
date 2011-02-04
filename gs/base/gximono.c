@@ -1023,6 +1023,31 @@ threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
     }
 }
 
+/* A simple case for use in the landscape mode. Could probably be coded up 
+   faster */
+static void
+threshold_16_bit(byte *contone_ptr_in, byte *thresh_ptr_in, byte *ht_data)
+{
+    int k, j;
+    byte *contone_ptr = contone_ptr_in;
+    byte *thresh_ptr = thresh_ptr_in;
+    byte bit_init;
+
+    for (j = 0; j < 2; j++) {
+        bit_init = 0x80;
+        for (k = 0; k < 8; k++) {
+            if (contone_ptr[k] < thresh_ptr[k]) {
+                ht_data[j] |=  bit_init;
+            } else {
+                ht_data[j] &=  ~bit_init;
+            }
+            bit_init >>= 1;
+        }
+        contone_ptr += 8;
+        thresh_ptr += 8;
+    }
+}
+
 #if HAVE_SSE
 /* Note this function has strict data alignment needs */
 static void
@@ -1170,10 +1195,9 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
         /* Now we have our left justified and expanded contone data for a single 
            set of 16.  Go ahead and threshold these */
 #if HAVE_SSE
-
         threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
 #else
-        threshold_row_bit(contone_ptr, thresh_ptr, 16, halftone_ptr, 2, 1, 1, 0);
+        threshold_16_bit(&(contone[0]), thresh_ptr, halftone_ptr);
 #endif
         thresh_ptr += 16;
         position += 16; 
