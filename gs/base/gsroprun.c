@@ -31,7 +31,7 @@ static void write_usage(void)
     int i;
     for (i = 0; i < MAX; i++)
         if (usage[3*i] != 0)
-            (fprintf)(stderr, "ROP: %d %d %d %d\n", i, usage[3*i], usage[3*i+1],
+            (fprintf)(stderr, "ROP: %x %d %d %d\n", i, usage[3*i], usage[3*i+1],
                       usage[3*i+2]);
 #ifdef RECORD_BINARY
     FILE *out = fopen("ropusage2.tmp", "wb");
@@ -80,7 +80,7 @@ static void unrecord(int rop)
 static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 {
     byte lmask, rmask;
-
+    
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -148,7 +148,7 @@ static void xor_rop_run1_const_s(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     byte        T, D;
     int         t_skew;
-
+    
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -249,6 +249,77 @@ static void sort_rop_run24_const_st(rop_run_op *op, byte *d, int len)
         d += 3;
     }
     while (--len);
+}
+
+/* 0xA5 = ~(d^t)  dep=1 s_constant */
+static void invert_xor_rop_run1_const_s(rop_run_op *op, byte *d, int len)
+{
+    byte        lmask, rmask;
+    const byte *t = op->t.b.ptr;
+    byte        T, D;
+    int         t_skew;
+    
+    len    = len * op->depth + op->dpos;
+    /* lmask = the set of bits to alter in the output bitmap on the left
+     * hand edge of the run. rmask = the set of bits NOT to alter in the
+     * output bitmap on the right hand edge of the run. */
+    lmask  = 255>>(7 & op->dpos);
+    rmask  = 255>>(7 & len);
+
+    /* Note #1: This mirrors what the original code did, but I think it has
+     * the risk of moving s and t back beyond officially allocated space. We
+     * may be saved by the fact that all blocks have a word or two in front
+     * of them due to the allocator. If we ever get valgrind properly marking
+     * allocated blocks as readable etc, then this may throw some spurious
+     * errors. RJW. */
+    t_skew = op->t.b.pos - op->dpos;
+    if (t_skew < 0) {
+        t_skew += 8;
+        t--;
+    }
+
+    len -= 8;
+    if (len < 0) {
+        /* Short case - starts and ends in the same byte */
+        lmask &= ~rmask; /* Combined mask = bits to alter */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        D = ~(*d ^ T);
+        *d = (*d & ~lmask) | (D & lmask);
+        return;
+    }
+    if (lmask != 0xFF) {
+        /* Unaligned left hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        t++;
+        D = ~(*d ^ T);
+        *d = (*d & ~lmask) | (D & lmask);
+        d++;
+        len -= 8;
+    }
+    if (len >= 0) {
+        /* Simple middle case (complete destination bytes). */
+        if (t_skew == 0) {
+            do {
+                *d = ~(*d ^ *t++);
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        } else {
+            do {
+                T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+                t++;
+                *d = ~(*d ^ T);
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        }
+    }
+    if (rmask != 0xFF) {
+        /* Unaligned right hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        D = ~(*d ^ T);
+        *d = (D & ~rmask) | (*d & rmask);
+    }
 }
 
 /* Generic ROP run code */
@@ -688,11 +759,12 @@ static void generic_rop_run8_const_s_1bit(rop_run_op *op, byte *d, int len)
         if (troll == 0)
             T = *t++;
         else {
-            if (--troll == 0) {
+            --troll;
+            T = tcolors[(*t >> troll) & 1];
+            if (troll == 0) {
                 troll = 8;
                 t++;
             }
-            T = tcolors[(*t >> troll) & 1];
         }
         if ((T != ttrans))
             *d = proc(*d, S, T);
@@ -917,7 +989,7 @@ static void record_run(rop_run_op *op, byte *d, int len)
     local.flags   = op->flags;
     local.dpos    = op->dpos;
     local.release = op->release;
-    local.opaque  = op->opaque;
+    local.opaque  = op->opaque;    
 
     op->runswap(&local, d, len);
 }
@@ -1032,6 +1104,10 @@ retry:
         break;
     case ROP_SPECIFIC_KEY(0xFC, 24, rop_s_constant | rop_t_constant):
         op->run     = sort_rop_run24_const_st;
+        break;
+    /* 0xa5 = !(D xor S) */
+    case ROP_SPECIFIC_KEY(0xa5, 1, rop_s_constant):
+        op->run     = invert_xor_rop_run1_const_s;
         break;
     /* Then the generic ones */
     case KEY(1, 0):
