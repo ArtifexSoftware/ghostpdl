@@ -1449,7 +1449,32 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 }
                 break;
             case image_landscape:
-                /* To do shortly */
+                /* We store the data at this point into a column. Depending
+                   upon our landscape direction we may be going left to right
+                   or right to left. */
+                if (penum->ht_landscape.flipy) {
+                    position = penum->ht_landscape.curr_pos + 
+                                16 * (data_length - 1);
+                    for (k = 0; k < data_length; k++) {
+                            offset = fixed2int(scale_factor * k);
+                            dev_value = color_cache + psrc[offset] * spp_out;
+                            devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
+                            position -= 16;
+                    }
+                } else {
+                    position = penum->ht_landscape.curr_pos;
+                    for (k = 0; k < data_length; k++) {
+                            offset = fixed2int(scale_factor * k);
+                            dev_value = color_cache + psrc[offset] * spp_out;
+                            devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
+                            position += 16;
+                    }
+                }
+                /* Store the width information and update our counts */
+                penum->ht_landscape.count += vdi;
+                penum->ht_landscape.widths[penum->ht_landscape.curr_pos] = vdi;
+                penum->ht_landscape.curr_pos += penum->ht_landscape.index;
+                penum->ht_landscape.num_contones++; 
                 break;
             default:
                 /* error not allowed */
