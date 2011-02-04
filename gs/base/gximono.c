@@ -272,6 +272,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
                        gdevm1.c.  Allow also for a 15 sample over run.
                     */
                     penum->ht_offset_bits = 16 - fixed2int_var_pixround(ox) % 16;
+                    if (penum->ht_offset_bits == 16) penum->ht_offset_bits = 0;
                     if (penum->ht_offset_bits > 0) {
                         penum->ht_stride = ((7 + (dev_width + 4) * spp_out) / 8) + 
                                             ARCH_SIZEOF_LONG;
