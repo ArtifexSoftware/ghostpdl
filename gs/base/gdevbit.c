@@ -445,7 +445,7 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 
     switch (ncomp) {
 	case 1:		/* gray */
-	    cv[0] =
+	    cv[0] = cv[1] = cv[2] =
 		(depth == 1 ? (color ? 0 : gx_max_color_value) :
 		 cvalue(color));
 	    break;
