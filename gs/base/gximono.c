@@ -239,10 +239,11 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     if (penum->x_extent.y < 0) {
                         penum->ht_landscape.flipy = true;
                         penum->ht_landscape.y_pos = 
-                            penum->yi0 + fixed2int(penum->x_extent.y); 
+                            fixed2int_pixround_perfect(dda_current(penum->dda.pixel0.y) + penum->x_extent.y); 
                     } else {
                         penum->ht_landscape.flipy = false;
-                        penum->ht_landscape.y_pos = penum->yi0;
+                        penum->ht_landscape.y_pos = 
+                            fixed2int_pixround_perfect(dda_current(penum->dda.pixel0.y)); 
                     }
                     memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
                     penum->ht_landscape.offset_set = false;
@@ -1347,7 +1348,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
 	    vdi = penum->wci;
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
-            scale_factor = float2fixed((float) penum->Width / (float) dest_height);
+            scale_factor = float2fixed((float) penum->rect.w / (float) dest_height);
             data_length = dest_height;
             /* In the landscaped case, we want to accumulate multiple columns
                of data before sending to the device.  We want to have a full
@@ -1600,7 +1601,7 @@ flush:
                 } else {
                     dx = penum->ht_landscape.xstart % thresh_width;
                 }
-                dy = penum->yi0 % thresh_height;
+                dy = (penum->dev->band_offset_y + penum->ht_landscape.y_pos) % thresh_height;
                 /* Left remainder part */
                 left_rem_end = min(dx + 16, thresh_width);
                 left_width = left_rem_end - dx;
