@@ -65,7 +65,7 @@
 <li><a href="#Tool_specific_issues">Tool-specific issues</a>
 <ul>
 <li><a href="#gcc_27x">gcc 2.7.*</a>
-<li><a href="#GNU_make">GNU make</a>
+<li><a href="#GNU_make">make tools</a>
 </ul>
 <li><a href="#OS_specific_issues">OS-specific issues</a>
 <ul>
@@ -112,7 +112,7 @@
 <li><a href="#QNX">QNX</a>
 </ul>
 <li><a href="#UFST_build">How to build Ghostscript with UFST</a>
-<li><a href="#FT_build">How to build Ghostscript with FreeType</a>
+<li><a href="#FT_build">How to build Ghostscript without FreeType</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -1775,8 +1775,19 @@ of gcc; for instance, gcc 2.5.8, gcc 2.6.3, 2.7.2.1 or later which don't
 have this bug.  Note, however, that gcc has other problems on some
 platforms, so please read the section for your specific platform.
 
-<h4><a name="GNU_make"></a>GNU make</h4>
+<h4><a name="GNU_make"></a>make tools</h4>
 
+<p>
+You require a make tool which supports separate directories for
+the derived objects (such as object files, executables and dynamically created
+header files) and the source files.
+
+In general, GNU make is the recommended choice, and some features (such as the
+building of the Linux/Unix shared library build ("make so") are only available
+with GNU make.
+
+<p>
+<u><a name="GNU_make"></a>GNU make</u>
 <p>
 Current versions of GNU <code>make</code> have no problems, but GNU
 <code>make</code> 3.59 can't handle the final linking step in some
@@ -2763,18 +2774,27 @@ to begin
 <h2><a name="UFST_build"></a>How to build Ghostscript with UFST</h2>
 
 <p>
-<em>Note: This section is only for customers who have licensed UFST from Monotype Imaging.
+<em>Note: This section is only for customers who have a Monotype Imaging UFST license.
 Other users please skip this section.
 </em>
 
 <p>
-Ghostscript sources do not include UFST sources. You need to obtain them from Monotype Imaging.
-Ghostscript includes only some source modules that provide a bridge to UFST.
+Ghostscript sources do not include UFST sources. You need to obtain them separately.
+The Ghostscript distributed source include only some source modules that provide a
+bridge to UFST.
 
 <p>
-Ghostscript makefiles do not include any script for building UFST libraries.
-Refer to UFST manual how to build them. UFST object libraries must be built
-before building Ghostscript with the UFST bridge.
+Ghostscript makefiles do not include any script for building UFST libraries automatically.
+If you received the UFST source from Artifex, for Unix/Linux type platforms, please refer to
+the "readme.artifex" text file in the top UFST directory.
+<p>
+On Windows with Microsoft Visual Studio&copy;, with UFST 5.x and 6.x, you can use the "demo"
+solution supplied by Monotype Imaging and build the subprojects "fco_lib", "if_lib", "ps_lib"
+and "tt_lib", and those will create the UFST libraries that the Ghostscript build system requires.
+<p>
+For other systems, please refer to UFST manual how to build on them.
+<p>
+UFST object libraries must be built before building Ghostscript with the UFST bridge.
 
 <p>
 To build Ghostscript with UFST, specify additional options for "make":
@@ -2810,24 +2830,14 @@ msvc32.mak sets the other options automatically.
 
 <p>
 
-<h2><a name="FT_build"></a>How to build Ghostscript with FreeType</h2>
+<h2><a name="FT_build"></a>How to build Ghostscript without FreeType</h2>
 
 <p>
-As of Ghostscript version 9.0, Ghostscript uses the Freetype
-scaler/renderer for all fonts (except Type 3) by default.
+This configuration is now deprecated and essentially unsupported, and this
+section (along with this option) will be removed in a future release.
 
-Ghostscript sources include a copy of the the FreeType libary, or you
-can use a recent release (Freetype 2.4.1 or later) which enables the
-incremental font interface.
-
-<p>
-As the FAPI/Freetype code in its current form is relatively new, the
-old AFS (Artifex Font Scaler) is still included in Ghostscript, and
-will remain until we are fully satisfied that the "real world" performance
-of the FAPI/Freetype is proven.
-
-To return a build to the AFS with the autoconf build (Linux, MacOS X,
-Solaris, etc.), pass the <tt>--disable-freetype</tt> to the
+To return a build to the pre-Freetype font scaler with the autoconf build
+(Linux, MacOS X, Solaris, etc.), pass the <tt>--disable-freetype</tt> to the
 configure script.
 
 <p>For Windows/MSVC you need to define FT_BRIGE=0 on the nmake
