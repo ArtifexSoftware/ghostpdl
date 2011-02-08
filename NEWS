@@ -1,0 +1,32 @@
+ 
+GhostPDL Release 9.0.1 (February 2011)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Adds this file (NEWS) to document newsworthy changes since the last
+  release.
+
+* Profile configurations for Visual Studio projects are now supported.
+
+* Implementation for JPEG-XR (previously known as HD-Photo) has been
+  completed for XPS.
+
+* The languages: PCL, XPS and SVG, now support and default to the
+  display device on Windows.
+
+* Optimizations related to clipping and blank pages, for details see
+  logs for revisions 12036 and 12027.
+
+* pcl/PCL5C_Color_Laserjet_4700_Differences.xls and
+  pxl/PXL_Color_Laserjet_4700_Differences.xls document and illustrate
+  differences between the Artifex PCL interpreter and the HP Color
+  Laserjet 4700.
+
+* Include the new tiffscaled device.  This entry overlaps with a
+  similar news entry in ghostscript news but the device is important
+  for PCL fax customers and was worthy of mention here as well.  See
+  Ghostscript news for details.
+
+* The languages (PCL, XPS and SVG) now support the ps2write device.
+  This is intended to replace pswrite which will eventually be
+  deprecated in a future release.  The output of ps2write is
+  DSC-compliant level 2 PostScript.
