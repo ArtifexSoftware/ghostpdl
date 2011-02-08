@@ -325,6 +325,9 @@ gs_image_class_3_mono(gx_image_enum * penum)
                                 || penum->ht_buffer == NULL)
                         code = -1;
                 }
+                /* Precompute values needed for rasterizing. */
+                penum->dxx =
+                    float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
                 if (code >= 0)
                     return &image_render_mono_ht;
             }
@@ -1260,14 +1263,13 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
-    fixed xprev, yprev;
     int vdi;  /* amounts to replicate */
     fixed xrun;			
     byte *contone_align, *thresh_align, *halftone;
     int spp_out = penum->dev->color_info.num_components;
     byte *devc_contone;
     int xi, wi, yi, hi;
-    const byte *psrc = buffer + data_x - 1;  /* -1 due to initial startup */
+    const byte *psrc = buffer + data_x;
     int dest_width, dest_height, data_length;
     byte *dev_value, *color_cache;
     gx_ht_order *d_order = &(penum->pis->dev_ht->components[0].corder);
@@ -1310,7 +1312,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     switch (posture) {
 	case image_portrait:
             pnext = penum->dda.pixel0;
-            xrun = xprev = dda_current(pnext.x);
+            xrun = dda_current(pnext.x);
+            xrun = xrun - penum->adjust + (fixed_half - fixed_epsilon);
             dest_width = fixed2int_var_rounded(any_abs(penum->x_extent.x));
             if (penum->x_extent.x < 0) 
                 xrun += penum->x_extent.x;
@@ -1396,8 +1399,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
 	    break;
     }
     if (flush_buff) goto flush;  /* All done */
-    if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
-	      penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
     devc_contone = contone_align;
     if (penum->color_cache == NULL) {
         /* No look-up in the cache to fill the source buffer. Still need to

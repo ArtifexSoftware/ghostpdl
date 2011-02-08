@@ -1400,7 +1400,7 @@ if ( gs_debug_c('h') ) {
         return -1 ;         /* error if allocation failed   */
    }
    for( i=0; i<d_order->num_bits; i++ )
-      thresh[i] = 1;
+      thresh[i] = 255;
 
    prev_l = 0;
    l = 1;
