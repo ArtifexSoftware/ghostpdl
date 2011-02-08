@@ -1321,7 +1321,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             data_length = dest_width;
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
             contone_stride = penum->line_size;
-            scale_factor = float2fixed((float) penum->Width / (float) dest_width);
+            scale_factor = 
+              float2fixed((float) penum->Width / fixed2float(any_abs(penum->x_extent.x)));
 #if RAW_HT_DUMP
             dithered_stride = data_length * spp_out;
             offset_bits = 0;
@@ -1411,12 +1412,12 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                         memcpy(devc_contone, psrc, data_length);
                     }
                     for (k = 0; k < data_length; k++) {
-                        offset = fixed2int(scale_factor * k);
+                        offset = fixed2int_rounded(scale_factor * k);
                         devc_contone[k] = psrc[offset];
                     }
                 } else {
                     for (k = 0; k < data_length; k++) {
-                        offset = fixed2int(scale_factor * k);
+                        offset = fixed2int_rounded(scale_factor * k);
                         devc_contone[data_length - k] = psrc[offset];
                     }
                 }
@@ -1429,14 +1430,14 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     position = penum->ht_landscape.curr_pos + 
                                 16 * (data_length - 1);
                     for (k = 0; k < data_length; k++) {
-                            offset = fixed2int(scale_factor * k);
+                            offset = fixed2int_rounded(scale_factor * k);
                             devc_contone[position] = psrc[offset];
                             position -= 16;
                     }
                 } else {
                     position = penum->ht_landscape.curr_pos;
                     for (k = 0; k < data_length; k++) {
-                            offset = fixed2int(scale_factor * k);
+                            offset = fixed2int_rounded(scale_factor * k);
                             devc_contone[position] = psrc[offset];
                             position += 16;
                     }
@@ -1458,14 +1459,14 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             case image_portrait:
                 if (penum->dst_width > 0) {
                     for (k = 0; k < data_length; k++) {
-                        offset = fixed2int(scale_factor * k);
+                        offset = fixed2int_rounded(scale_factor * k);
                         dev_value = color_cache + psrc[offset] * spp_out;
                         memcpy(devc_contone, dev_value, spp_out);
                         devc_contone += spp_out;
                     }
                 } else {
                     for (k = 0; k < data_length; k++) {
-                        offset = fixed2int(scale_factor * k);
+                        offset = fixed2int_rounded(scale_factor * k);
                         dev_value = color_cache + psrc[offset] * spp_out;
                         /* This could probably be done a bit better but
                            reversed indexed images probably don't occur
@@ -1483,7 +1484,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     position = penum->ht_landscape.curr_pos + 
                                 16 * (data_length - 1);
                     for (k = 0; k < data_length; k++) {
-                            offset = fixed2int(scale_factor * k);
+                            offset = fixed2int_rounded(scale_factor * k);
                             dev_value = color_cache + psrc[offset] * spp_out;
                             devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
                             position -= 16;
@@ -1491,7 +1492,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 } else {
                     position = penum->ht_landscape.curr_pos;
                     for (k = 0; k < data_length; k++) {
-                            offset = fixed2int(scale_factor * k);
+                            offset = fixed2int_rounded(scale_factor * k);
                             dev_value = color_cache + psrc[offset] * spp_out;
                             devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
                             position += 16;
