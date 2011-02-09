@@ -105,8 +105,8 @@ struct gs_pdf14trans_params_s {
     bool mask_is_image;
     gs_matrix ctm;
     bool replacing;
-        bool overprint;
-        bool overprint_mode;
+    bool overprint;
+    bool overprint_mode;
     bool idle; /* For clist reader.*/
     uint mask_id; /* For clist reader.*/
     int group_color_numcomps;
@@ -115,7 +115,7 @@ struct gs_pdf14trans_params_s {
     cmm_profile_t *iccprofile;               /* The profile  */
     bool crop_blend_params;  /* This is used when the blend params are updated
                                 during a transparency group push */
-
+    bool is_pattern;      /* Needed to detect device push and pop for clist pattern */
 };
 
 #ifndef gs_pdf14trans_params_DEFINED
@@ -155,9 +155,9 @@ gs_transparency_state_type_t
  * We have to abbreviate the procedure name because procedure names are
  * only unique to 23 characters on VMS.
  */
-int gs_push_pdf14trans_device(gs_state * pgs);
+int gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern);
 
-int gs_pop_pdf14trans_device(gs_state * pgs);
+int gs_pop_pdf14trans_device(gs_state * pgs, bool is_pattern);
 
 void gs_trans_group_params_init(gs_transparency_group_params_t *ptgp);
 

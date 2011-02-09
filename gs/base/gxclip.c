@@ -82,7 +82,7 @@ static const gx_device_clip gs_clip_device =
   gx_default_begin_typed_image,
   clip_get_bits_rectangle,
   gx_forward_map_color_rgb_alpha,
-  gx_no_create_compositor,
+  gx_forward_create_compositor,
   gx_forward_get_hardware_params,
   gx_default_text_begin,
   gx_default_finish_copydevice,

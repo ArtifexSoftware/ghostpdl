@@ -187,6 +187,27 @@ static dev_proc_destroy_buf_device(dummy_destroy_buf_device)
 {
 }
 
+/* Attempt to determine the size of a pattern (the approximate amount that will */
+/* be needed in the pattern cache). If we end up using the clist, this is only	*/
+/* a guess -- we use the tile size which will _probably_ be too large.		*/
+static int
+gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, int has_tags)
+{
+    gx_device *tdev = pinst->saved->device;
+    int depth = (pinst->template.PaintType == 2 ? 1 : tdev->color_info.depth);
+    int raster;
+    int size;
+
+    if (pinst->template.uses_transparency) {
+        raster = (pinst->size.x * ((depth/8) + 1 + has_tags));
+        size = raster > 0x7fffffff / pinst->size.y ? 0x7fff0000 : raster * pinst->size.y;
+    } else {
+        raster = (pinst->size.x * depth + 7) / 8;
+        size = raster * pinst->size.y;
+    }
+    return size;
+}
+
 #ifndef MaxPatternBitmap_DEFAULT
 #  define MaxPatternBitmap_DEFAULT (8*1024*1024) /* reasonable on most modern hosts */
 #endif
@@ -197,14 +218,12 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
                        gs_pattern1_instance_t *pinst, client_name_t cname)
 {
     gx_device *tdev = pinst->saved->device;
-    int depth = (pinst->template.PaintType == 2 ? 1 : tdev->color_info.depth);
-    int raster = (pinst->size.x * depth + 7) / 8;
-    int64_t size = (int64_t)raster * pinst->size.y;
+    int has_tags = (mem->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
+    int size = gx_pattern_size_estimate(pinst, has_tags);
     gx_device_forward *fdev;
     int force_no_clist = 0;
     int max_pattern_bitmap = tdev->MaxPatternBitmap == 0 ? MaxPatternBitmap_DEFAULT :
                                 tdev->MaxPatternBitmap;
-
     /*
      * If the target device can accumulate a pattern stream and the language
      * client supports high level patterns (ps and pdf only) we don't need a
@@ -222,16 +241,11 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     if (pinst->saved->have_pattern_streams == 0 && (*dev_proc(pinst->saved->device,
         dev_spec_op))((gx_device *)pinst->saved->device,
         gxdso_pattern_can_accum, pinst, 0) == 1)
-        force_no_clist = 1;
-    /* Do not allow pattern to be a clist if it uses transparency.  We
-       will want to fix this at some point */
-
-    if (force_no_clist || (size < max_pattern_bitmap && !pinst->is_clist) || pinst->template.PaintType != 1 ||
-                        pinst->template.uses_transparency ) {
-
+        force_no_clist = 1; /* Set only for first time through */
+    if (force_no_clist || (size < max_pattern_bitmap && !pinst->is_clist)
+        || pinst->template.PaintType != 1 ) {
         gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
                         &st_device_pattern_accum, cname);
-
         if (adev == 0)
             return 0;
 #ifdef DEBUG
@@ -320,8 +334,14 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         clist_init_io_procs(cdev, true);
         cwdev->data = data;
         cwdev->data_size = data_size;
-        cwdev->buf_procs = buf_procs ;
-        cwdev->band_params.page_uses_transparency = false;
+        cwdev->buf_procs = buf_procs;
+        if ( pinst->template.uses_transparency) {
+            cwdev->band_params.page_uses_transparency = true;
+            cwdev->page_uses_transparency = true;
+        } else {
+            cwdev->band_params.page_uses_transparency = false;
+            cwdev->page_uses_transparency = false;
+        }
         cwdev->band_params.BandWidth = pinst->size.x;
         cwdev->band_params.BandHeight = pinst->size.x;
         cwdev->band_params.BandBufferSpace = 0;
@@ -329,7 +349,6 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         cwdev->bandlist_memory = storage_memory->non_gc_memory;
         cwdev->free_up_bandlist_memory = dummy_free_up_bandlist_memory;
         cwdev->disable_mask = 0;
-        cwdev->page_uses_transparency = false;
         cwdev->pinst = pinst;
         set_dev_proc(cwdev, get_clipping_box, gx_default_get_clipping_box);
         fdev = (gx_device_forward *)cdev;
@@ -380,26 +399,20 @@ pattern_accum_open(gx_device * dev)
 
     PDSET(padev);
     padev->color_info = target->color_info;
-
     /* If we have transparency, then fix the color info
        now so that the mem device allocates the proper
        buffer space for the pattern template.  We can
        do this since the transparency code all */
-
-    if(pinst->template.uses_transparency){
-
+    if (pinst->template.uses_transparency) {
         /* Allocate structure that we will use for the trans pattern */
         padev->transbuff = gs_alloc_struct(mem,gx_pattern_trans_t,&st_pattern_trans,"pattern_accum_open(trans)");
         padev->transbuff->transbytes = NULL;
+        padev->transbuff->mem = NULL;
         padev->transbuff->pdev14 = NULL;
         padev->transbuff->fill_trans_buffer = NULL;
-
     } else {
-
         padev->transbuff = NULL;
-
     }
-
     if (pinst->uses_mask) {
         mask = gs_alloc_struct( mem,
                                 gx_device_memory,
@@ -420,20 +433,15 @@ pattern_accum_open(gx_device * dev)
     }
 
     if (code >= 0) {
-
-        if (pinst->template.uses_transparency){
-
+        if (pinst->template.uses_transparency) {
             /* In this case, we will grab the buffer created
                by the graphic state's device (which is pdf14) and
                we will be tiling that into a transparency group buffer
                to blend with the pattern accumulator's target.  Since
                all the transparency stuff is planar format, it is
                best just to keep the data in that form */
-
             gx_device_set_target((gx_device_forward *)padev, target);
-
         } else {
-
         switch (pinst->template.PaintType) {
             case 2:		/* uncolored */
                 gx_device_set_target((gx_device_forward *)padev, target);
@@ -479,13 +487,13 @@ pattern_accum_open(gx_device * dev)
 gx_pattern_trans_t*
 new_pattern_trans_buff(gs_memory_t *mem)
 {
-
     gx_pattern_trans_t *result;
 
     /* Allocate structure that we will use for the trans pattern */
     result = gs_alloc_struct(mem, gx_pattern_trans_t, &st_pattern_trans, "new_pattern_trans_buff");
     result->transbytes = NULL;
     result->pdev14 = NULL;
+    result->mem = NULL;
     result->fill_trans_buffer = NULL;
 
     return(result);
@@ -700,6 +708,7 @@ static void
 gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
     gx_device *temp_device;
+    int size_b, size_c;
 
     if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
         gs_memory_t *mem = pcache->memory;
@@ -733,6 +742,14 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
             ctile->tbits.data = 0;	/* for GC */
         }
         if (ctile->cdev != NULL) {
+            size_b = clist_data_size(ctile->cdev, 0);
+            if (size_b < 0)
+                return;		/* gs_error_unregistered) */
+            size_c = clist_data_size(ctile->cdev, 1);
+            if (size_c < 0)
+                return;		/* gs_error_unregistered) */
+            used = size_b + size_c;
+            ctile->cdev->common.do_not_open_or_close_bandfiles = false;  /* make sure memfile gets freed/closed */
             dev_proc(&ctile->cdev->common, close_device)((gx_device *)&ctile->cdev->common);
             /* Free up the icc based stuff in the clist device.  I am puzzled
                why the other objects are not released */
@@ -740,7 +757,8 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
                             ctile->cdev->common.memory);
             rc_decrement(ctile->cdev->common.icc_cache_cl,
                             "gx_pattern_cache_free_entry");
-            gs_free_object(ctile->cdev->common.memory, ctile->cdev, "free_pattern_cache_entry(pattern-clist)");
+            temp_device = (gx_device *)ctile->cdev;
+            gx_device_retain(temp_device, false);
             ctile->cdev = NULL;
         }
 
@@ -748,15 +766,17 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 
             if ( ctile->ttrans->pdev14 == NULL) {
                 /* This can happen if we came from the clist */
-                gs_free_object(mem,ctile->ttrans->transbytes,
+                gs_free_object(ctile->ttrans->mem ,ctile->ttrans->transbytes,
                                "free_pattern_cache_entry(transbytes)");
                 gs_free_object(mem,ctile->ttrans->fill_trans_buffer,
                                 "free_pattern_cache_entry(fill_trans_buffer)");
                 ctile->ttrans->transbytes = NULL;
+                ctile->ttrans->fill_trans_buffer = NULL;
             } else {
                 dev_proc(ctile->ttrans->pdev14, close_device)((gx_device *)ctile->ttrans->pdev14);
                 temp_device = ctile->ttrans->pdev14;
                 gx_device_retain(temp_device, false);
+                rc_decrement(temp_device,"gx_pattern_cache_free_entry");
                 ctile->ttrans->pdev14 = NULL;
                 ctile->ttrans->transbytes = NULL;  /* should be ok due to pdf14_close */
                 ctile->ttrans->fill_trans_buffer = NULL; /* This is always freed */
@@ -770,10 +790,46 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
         }
 
         pcache->tiles_used--;
+        if (pcache->bits_used < used)		/* FIXME: tile 'used' doesn't match cache */
+            pcache->bits_used = 0;		/* FIXME: tile 'used' doesn't match cache */
+        else					/* FIXME: tile 'used' doesn't match cache */
         pcache->bits_used -= used;
         ctile->id = gx_no_bitmap_id;
         gx_device_retain((gx_device *)pmdev, false);
     }
+}
+
+/* Given the size of a new pattern tile, free entries from the cache until  */
+/* enough space is available (or nothing left to free).			    */
+/* This will allow 1 oversized entry					    */
+void
+gx_pattern_cache_ensure_space(gs_imager_state * pis, int needed)
+{
+    int code = ensure_pattern_cache(pis);
+    gx_pattern_cache *pcache;
+
+    if (code < 0)
+        return;			/* no cache -- just exit */
+
+    pcache = pis->pattern_cache;
+
+    /* If too large then start freeing entries */
+    /* By starting at 'next', we attempt to first free the oldest entries */
+    while (pcache->bits_used + needed > pcache->max_bits &&
+           pcache->bits_used != 0) {
+        pcache->next = (pcache->next + 1) % pcache->num_tiles;
+        gx_pattern_cache_free_entry(pcache, &pcache->tiles[pcache->next]);
+    }
+}
+
+/* Export updating the pattern_cache bits_used and tiles_used for clist reading */
+void
+gx_pattern_cache_update_used(gs_imager_state *pis, ulong used)
+{
+    gx_pattern_cache *pcache = pis->pattern_cache;
+
+    pcache->bits_used += used;
+    pcache->tiles_used++;
 }
 
 /*
@@ -797,6 +853,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     gx_device_memory *mmask = NULL;
     gx_device_memory *mbits = NULL;
     gx_pattern_trans_t *trans = NULL;
+    int size_b, size_c;
 
     if (code < 0)
         return code;
@@ -851,22 +908,18 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
         if (code < 0)
             return code;
         pinst = cdev->writer.pinst;
-        /* HACK: we would like to copy the pattern clist stream into the
-           tile cache memory and properly account its size,
-           but we have no time for this development now.
-           Therefore the stream is stored outside the cache. */
-        used = 0;
+        size_b = clist_data_size(cdev, 0);
+        if (size_b < 0)
+            return_error(gs_error_unregistered);
+        size_c = clist_data_size(cdev, 1);
+        if (size_c < 0)
+            return_error(gs_error_unregistered);
+        /* The memfile size is the size, not the size determined by the depth*width*height */
+        used = size_b + size_c;
     }
     id = pinst->id;
     ctile = &pcache->tiles[id % pcache->num_tiles];
-    gx_pattern_cache_free_entry(pcache, ctile);
-    /* If too large then start freeing entries */
-    while (pcache->bits_used + used > pcache->max_bits &&
-           pcache->bits_used != 0	/* allow 1 oversized entry (?) */
-        ) {
-        pcache->next = (pcache->next + 1) % pcache->num_tiles;
-        gx_pattern_cache_free_entry(pcache, &pcache->tiles[pcache->next]);
-    }
+    gx_pattern_cache_free_entry(pcache, ctile);		/* ensure that this cache slot is empty */
     ctile->id = id;
     ctile->depth = fdev->color_info.depth;
     ctile->uid = pinst->template.uid;
@@ -892,7 +945,6 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
         }
 
         ctile->cdev = NULL;
-        pcache->bits_used += used;
     } else {
         gx_device_clist *cdev = (gx_device_clist *)fdev;
         gx_device_clist_writer *cwdev = (gx_device_clist_writer *)fdev;
@@ -916,7 +968,8 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
         /* Prevent freeing files on pattern_paint_cleanup : */
         cwdev->do_not_open_or_close_bandfiles = true;
     }
-    pcache->tiles_used++;
+    gx_pattern_cache_update_used(pis, used);
+
     *pctile = ctile;
     return 0;
 }
@@ -1105,14 +1158,18 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     gs_state *saved;
     gx_color_tile *ctile;
     gs_memory_t *mem = pis->memory;
+    int has_tags = (mem->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
     int code;
+
+    if (pis->pattern_cache == NULL)
+        if ((code = ensure_pattern_cache((gs_imager_state *) pis))< 0)      /* break const for call */
+            return code;
 
     if (gx_pattern_cache_lookup(pdc, pis, dev, select))
         return 0;
-    /* We REALLY don't like the following cast.... */
-    code = ensure_pattern_cache((gs_imager_state *) pis);
-    if (code < 0)
-        return code;
+
+    /* Get enough space in the cache for this pattern (estimated if it is a clist) */
+    gx_pattern_cache_ensure_space(pis, gx_pattern_size_estimate(pinst, has_tags));
     /*
      * Note that adev is an internal device, so it will be freed when the
      * last reference to it from a graphics state is deleted.
@@ -1133,10 +1190,10 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         saved->pattern_cache = pis->pattern_cache;
     gs_setdevice_no_init(saved, (gx_device *)adev);
     if (pinst->template.uses_transparency) {
-        /*  This should not occur from PS or PDF, but is provided for other clients (XPS) */
         if_debug0('v', "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
-        if ((code = gs_push_pdf14trans_device(saved)) < 0)
+        if ((code = gs_push_pdf14trans_device(saved, true)) < 0)
             return code;
+        saved->device->is_open = true;
     } else {
         /* For colored patterns we clear the pattern device's
            background.  This is necessary for the anti aliasing code
@@ -1152,14 +1209,25 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 
     code = (*pinst->template.PaintProc)(&pdc->ccolor, saved);
     if (code < 0) {
+        gx_device_retain(saved->device, false);		/* device no longer retained */
+        if (pinst->template.uses_transparency) {
+            dev_proc(saved->device, close_device)((gx_device *)saved->device);
         dev_proc(adev, close_device)((gx_device *)adev);
-        /* Freeing the state will free the device and the pdf14 compositor (if any). */
+            if (pinst->is_clist == 0)
+                gs_free_object(((gx_device_pattern_accum *)adev)->bitmap_memory,
+                            ((gx_device_pattern_accum *)adev)->transbuff, "gx_pattern_load");
+            rc_decrement_only(adev, "gx_pattern_load");	/* may free the device */
+            // gs_free_object(mem, adev, "gx_pattern_load");
+        } else {
+            dev_proc(saved->device, close_device)((gx_device *)adev);
+        }
+        /* Freeing the state should now free the device which may be the pdf14 compositor. */
         gs_state_free(saved);
         return code;
     }
     if (pinst->template.uses_transparency) {
         if_debug0('v', "gx_pattern_load: popping the pdf14 compositor device from this graphics state\n");
-        if ((code = gs_pop_pdf14trans_device(saved)) < 0)
+        if ((code = gs_pop_pdf14trans_device(saved, true)) < 0)
             return code;
     }
     /* We REALLY don't like the following cast.... */

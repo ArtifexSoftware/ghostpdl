@@ -564,28 +564,36 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
     return 0;
 }
 
-/* This does the case of tiling with simple tiles.  Since it is not commented anywhere note
-   that simple means that the tile size is the same as the step matrix size and the cross
-   terms in the step matrix are 0.  Hence a simple case of tile replication. This needs to be optimized.  */
+/* This does the case of tiling with simple tiles.  Since it is not commented
+ * anywhere note that simple means that the tile size is the same as the step
+ * matrix size and the cross terms in the step matrix are 0.  Hence a simple
+ * case of tile replication. This needs to be optimized.  */
+/* Our source tile runs (conceptually) from (0,0) to
+ * (ptile->ttrans->width, ptile->ttrans->height). In practise, only a limited
+ * section of this (ptile->rect) may actually be used. */
 void
-tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
-            gx_pattern_trans_t *fill_trans_buffer)
+tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax,
+                       int px, int py, const gx_color_tile *ptile,
+                       gx_pattern_trans_t *fill_trans_buffer)
 {
-    int kk, jj, ii, h, w, buff_y_offset, buff_x_offset;
+    int kk, jj, ii, h, w;
+    int buff_out_y_offset, buff_out_x_offset;
     unsigned char *ptr_out, *ptr_in, *buff_out, *buff_in, *ptr_out_temp;
     unsigned char *row_ptr;
     int in_row_offset;
-    int tile_width = ptile->ttrans->width;
-    int tile_height = ptile->ttrans->height;
     int dx, dy;
     int left_rem_end, left_width, num_full_tiles, right_tile_width;
+    int left_copy_rem_end, left_copy_width, left_copy_offset, left_copy_start;
+    int mid_copy_width, right_copy_width;
+    int tile_width  = ptile->ttrans->width;
+    int tile_height = ptile->ttrans->height;
 
-    buff_y_offset = ymin - fill_trans_buffer->rect.p.y;
-    buff_x_offset = xmin - fill_trans_buffer->rect.p.x;
+    buff_out_y_offset = ymin - fill_trans_buffer->rect.p.y;
+    buff_out_x_offset = xmin - fill_trans_buffer->rect.p.x;
 
     buff_out = fill_trans_buffer->transbytes +
-        buff_y_offset * fill_trans_buffer->rowstride +
-        buff_x_offset;
+        buff_out_y_offset * fill_trans_buffer->rowstride +
+        buff_out_x_offset;
 
     buff_in = ptile->ttrans->transbytes;
 
@@ -594,126 +602,142 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
 
     if (h <= 0 || w <= 0) return;
 
+    /* Calc dx, dy within the entire (conceptual) input tile. */
     dx = (xmin + px) % tile_width;
     dy = (ymin + py) % tile_height;
 
     /* To speed this up, the inner loop on the width is implemented with
-       mem copys where we have a left remainder, full tiles and a right remainder.
-       Depending upon the rect that we are filling we may have only one of these
-       three portions, or two or all three.  We compute the parts now outside the loops. */
+     * memcpys where we have a left remainder, full tiles and a right
+     * remainder. Depending upon the rect that we are filling we may have
+     * only one of these three portions, or two or all three.  We compute
+     * the parts now outside the loops. */
 
     /* Left remainder part */
-
     left_rem_end = min(dx+w,tile_width);
     left_width = left_rem_end - dx;
+    left_copy_start = max(dx,ptile->ttrans->rect.p.x);
+    left_copy_rem_end = min(dx+w,ptile->ttrans->rect.q.x);
+    left_copy_width = left_copy_rem_end - left_copy_start;
+    left_copy_offset = left_copy_start-ptile->ttrans->rect.p.x;
 
     /* Now the middle part */
-
     num_full_tiles = (int)fastfloor((float) (w - left_width)/ (float) tile_width);
+    mid_copy_width = ptile->ttrans->rect.q.x - ptile->ttrans->rect.p.x;
 
     /* Now the right part */
-
     right_tile_width = w - num_full_tiles*tile_width - left_width;
+    right_copy_width = right_tile_width - ptile->ttrans->rect.p.x;
+    if (right_copy_width > ptile->ttrans->rect.q.x)
+        right_copy_width = ptile->ttrans->rect.q.x;
+    right_copy_width -= ptile->ttrans->rect.p.x;
+    if (right_copy_width < 0)
+        right_copy_width = 0;
 
-    for (kk = 0; kk < fill_trans_buffer->n_chan; kk++){
+    for (kk = 0; kk < fill_trans_buffer->n_chan; kk++) {
 
         ptr_out = buff_out + kk * fill_trans_buffer->planestride;
-        ptr_in = buff_in + kk * ptile->ttrans->planestride;
+        ptr_in  = buff_in  + kk * ptile->ttrans->planestride;
 
-        for (jj = 0; jj < h; jj++){
+        for (jj = 0; jj < h; jj++, ptr_out += fill_trans_buffer->rowstride) {
 
-            in_row_offset = (jj + dy) % ptile->ttrans->height;
+            in_row_offset = ((jj + dy) % ptile->ttrans->height);
+            if (in_row_offset >= ptile->ttrans->rect.q.y)
+                continue;
+            in_row_offset -= ptile->ttrans->rect.p.y;
+            if (in_row_offset < 0)
+                continue;
             row_ptr = ptr_in + in_row_offset * ptile->ttrans->rowstride;
 
              /* This is the case when we have no blending. */
-
             ptr_out_temp = ptr_out;
 
             /* Left part */
-
-            memcpy( ptr_out_temp, row_ptr + dx, left_width);
+            memcpy( ptr_out_temp, row_ptr + left_copy_offset, left_copy_width);
             ptr_out_temp += left_width;
 
             /* Now the full tiles */
 
             for ( ii = 0; ii < num_full_tiles; ii++){
-
-                memcpy( ptr_out_temp, row_ptr, tile_width);
+                memcpy( ptr_out_temp, row_ptr, mid_copy_width);
                 ptr_out_temp += tile_width;
-
             }
 
             /* Now the remainder */
-
-            memcpy( ptr_out_temp, row_ptr, right_tile_width);
-
-            ptr_out += fill_trans_buffer->rowstride;
-
+            memcpy( ptr_out_temp, row_ptr, right_copy_width);
         }
-
     }
 
     /* If the group we are filling has a shape plane fill that now */
-    /* Note:  Since this was a virgin group push we can just blast it with 255 */
-
+    /* Note:  Since this was a virgin group push we can just blast it with
+     * 255 */
     if (fill_trans_buffer->has_shape) {
-
         ptr_out = buff_out + fill_trans_buffer->n_chan * fill_trans_buffer->planestride;
-
-        for (jj = 0; jj < h; jj++){
-
-            memset(ptr_out, 255, w);
-            ptr_out += fill_trans_buffer->rowstride;
-
+        for (jj = 0; jj < h; jj++,ptr_out += fill_trans_buffer->rowstride) {
+            memset(ptr_out_temp, 255, w);
         }
-
     }
-
 }
 
-/* This does the case of tiling with non simple tiles.  In this case, the tiles may overlap and
-   so we really need to do blending within the existing buffer.  This needs some serious optimization. */
+/* This does the case of tiling with non simple tiles.  In this case, the
+ * tiles may overlap and so we really need to do blending within the existing
+ * buffer.  This needs some serious optimization. */
 void
-tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, const gx_color_tile *ptile,
-            gx_pattern_trans_t *fill_trans_buffer)
+tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax,
+                      int px, int py, const gx_color_tile *ptile,
+                      gx_pattern_trans_t *fill_trans_buffer)
 {
-    int kk, jj, ii, h, w, buff_y_offset, buff_x_offset;
+    int kk, jj, ii, h, w;
+    int buff_out_y_offset, buff_out_x_offset;
     unsigned char *buff_out, *buff_in;
     unsigned char *buff_ptr, *row_ptr_in, *row_ptr_out;
     unsigned char *tile_ptr;
     int in_row_offset;
-    int tile_width = ptile->ttrans->width;
-    int tile_height = ptile->ttrans->height;
     int dx, dy;
     byte src[PDF14_MAX_PLANES];
     byte dst[PDF14_MAX_PLANES];
-    int num_chan = ptile->ttrans->n_chan;  /* Includes alpha */
+    int tile_width  = ptile->ttrans->width;
+    int tile_height = ptile->ttrans->height;
+    int num_chan    = ptile->ttrans->n_chan;  /* Includes alpha */
 
-    buff_y_offset = ymin - fill_trans_buffer->rect.p.y;
-    buff_x_offset = xmin - fill_trans_buffer->rect.p.x;
+    buff_out_y_offset = ymin - fill_trans_buffer->rect.p.y;
+    buff_out_x_offset = xmin - fill_trans_buffer->rect.p.x;
 
     buff_out = fill_trans_buffer->transbytes +
-        buff_y_offset * fill_trans_buffer->rowstride +
-        buff_x_offset;
+        buff_out_y_offset * fill_trans_buffer->rowstride +
+        buff_out_x_offset;
 
     buff_in = ptile->ttrans->transbytes;
 
     h = ymax - ymin;
     w = xmax - xmin;
 
+    if (h <= 0 || w <= 0) return;
+
+    /* Calc dx, dy within the entire (conceptual) input tile. */
     dx = (xmin + px) % tile_width;
     dy = (ymin + py) % tile_height;
 
     for (jj = 0; jj < h; jj++){
 
         in_row_offset = (jj + dy) % ptile->ttrans->height;
+        if (in_row_offset >= ptile->ttrans->rect.q.y)
+            continue;
+        in_row_offset -= ptile->ttrans->rect.p.y;
+        if (in_row_offset < 0)
+            continue;
         row_ptr_in = buff_in + in_row_offset * ptile->ttrans->rowstride;
 
         row_ptr_out = buff_out + jj * fill_trans_buffer->rowstride;
 
         for (ii = 0; ii < w; ii++) {
+            int x_in_offset = (dx + ii) % ptile->ttrans->width;
 
-            tile_ptr = row_ptr_in + (dx + ii) % ptile->ttrans->width;
+            if (x_in_offset >= ptile->ttrans->rect.q.x)
+                continue;
+            x_in_offset -= ptile->ttrans->rect.p.x;
+            if (x_in_offset < 0)
+                continue;
+            tile_ptr = row_ptr_in + x_in_offset;
             buff_ptr = row_ptr_out + ii;
 
             /* We need to blend here.  The blending mode from the current
@@ -721,55 +745,43 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, co
             */
 
             /* The color values. This needs to be optimized */
-
-            for (kk = 0; kk < num_chan; kk++){
-
+            for (kk = 0; kk < num_chan; kk++) {
                 dst[kk] = *(buff_ptr + kk * fill_trans_buffer->planestride);
                 src[kk] = *(tile_ptr + kk * ptile->ttrans->planestride);
-
             }
 
             /* Blend */
-
-           art_pdf_composite_pixel_alpha_8(dst, src, ptile->ttrans->n_chan-1,
-                                         ptile->ttrans->blending_mode, ptile->ttrans->blending_procs);
+            art_pdf_composite_pixel_alpha_8(dst, src,
+                                            ptile->ttrans->n_chan-1,
+                                            ptile->ttrans->blending_mode,
+                                            ptile->ttrans->blending_procs);
 
             /* Store the color values */
-
-            for (kk = 0; kk < num_chan; kk++){
-
+            for (kk = 0; kk < num_chan; kk++) {
                 *(buff_ptr + kk * fill_trans_buffer->planestride) = dst[kk];
-
             }
-
         }
-
     }
 
     /* If the group we are filling has a shape plane fill that now */
-    /* Note:  Since this was a virgin group push we can just blast it with 255 */
-
+    /* Note:  Since this was a virgin group push we can just blast it with
+     * 255 */
     if (fill_trans_buffer->has_shape) {
-
         buff_ptr = buff_out + fill_trans_buffer->n_chan * fill_trans_buffer->planestride;
 
-        for (jj = 0; jj < h; jj++){
-
+        for (jj = 0; jj < h; jj++) {
             memset(buff_ptr, 255, w);
             buff_ptr += fill_trans_buffer->rowstride;
-
         }
-
     }
-
 }
 
 /* This version does a rect fill with the transparency object */
 int
 gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
-                             int w, int h, gx_device * dev,
-                             gs_logical_operation_t lop,
-                             const gx_rop_source_t * source)
+                               int w, int h, gx_device * dev,
+                               gs_logical_operation_t lop,
+                               const gx_rop_source_t * source)
 {
     gx_color_tile *ptile = pdevc->colors.pattern.p_tile;
     int code;
@@ -786,7 +798,8 @@ gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     phase.y = pdevc->phase.y;
 
     code = gx_trans_pattern_fill_rect(x, y, x+w, y+h, ptile,
-                                    ptile->ttrans->fill_trans_buffer, phase);
+                                      ptile->ttrans->fill_trans_buffer, phase,
+                                      dev, pdevc);
 
     return code;
 }
@@ -795,12 +808,15 @@ gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
    buffer that includes transparency */
 
 int
-gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile,
-                               gx_pattern_trans_t *fill_trans_buffer,
-                               gs_int_point phase)
+gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
+                           gx_color_tile *ptile,
+                           gx_pattern_trans_t *fill_trans_buffer,
+                           gs_int_point phase, gx_device *dev,
+                           const gx_device_color * pdevc)
 {
 
-    tile_fill_trans_state_t state;
+    tile_fill_trans_state_t state_trans;
+    tile_fill_state_t state_clist_trans;
     int code;
 
     if (ptile == 0)             /* null pattern */
@@ -814,8 +830,9 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile
             ymin = 0;
     }
 
-    state.phase.x = phase.x;
-    state.phase.y = phase.y;
+    /* Initialize the fill state */
+    state_trans.phase.x = phase.x;
+    state_trans.phase.y = phase.y;
 
     if (ptile->is_simple && ptile->cdev == NULL) {
         /* A simple case.  Tile is not clist and simple. */
@@ -834,16 +851,36 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile
                This portion transforms the bounding box by the step matrix
                and does partial rect fills with tiles that fall into this
                transformed bbox */
-            code = tile_by_steps_trans(&state, xmin, ymin, xmax-xmin, ymax-ymin,
-                fill_trans_buffer, ptile);
+            code = tile_by_steps_trans(&state_trans, xmin, ymin, xmax-xmin,
+                                        ymax-ymin, fill_trans_buffer, ptile);
         } else {
-            /* clist for the tile.  Currently this is not implemented
-               for the case when the tile has transparency.  This is
-               on the to do list.  Right now, all tiles with transparency
-               are rendered into the pattern cache or into the clist
-               */
-            return_error(gs_error_unregistered);
+            /* clist for the trans tile.  This uses the pdf14 device as a target
+               and should blend directly into the buffer.  Note that the
+               pattern can not have a push pdf14 device or a pop pdf14 device
+               compositor action.  Those are removed during the compositor
+               clist writing operation where we check for the case of a pattern
+               with a transparency */
+            gx_device_clist *cdev = ptile->cdev;
+            gx_device_clist_reader *crdev = (gx_device_clist_reader *)cdev;
+            gx_strip_bitmap tbits;
+
+            code = tile_fill_init(&state_clist_trans, pdevc, dev, false);
+
+            state_clist_trans.phase.x = phase.x;
+            state_clist_trans.phase.y = phase.y;
+            crdev->yplane.depth = 0;
+            crdev->yplane.shift = 0;
+            crdev->yplane.index = -1;
+            crdev->pages = NULL;
+            crdev->num_pages = 1;
+            state_clist_trans.orig_dev = dev;
+            state_clist_trans.pdevc = pdevc;
+            tbits = ptile->tbits;
+            tbits.size.x = crdev->width;
+            tbits.size.y = crdev->height;
+            code = tile_by_steps(&state_clist_trans, xmin, ymin, xmax,
+                                 ymax, ptile, &tbits, tile_pattern_clist);
         }
     }
-return(0);
+    return(0);
 }

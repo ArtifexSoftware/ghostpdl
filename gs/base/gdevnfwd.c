@@ -62,7 +62,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, sync_output, gx_forward_sync_output);
     fill_dev_proc(dev, output_page, gx_forward_output_page);
     /* NOT close_device */
-    fill_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
     fill_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
     /* NOT fill_rectangle */
     /* NOT tile_rectangle */
@@ -887,6 +886,20 @@ gx_forward_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdev
         (tdev == 0 ? (tdev = dev, gx_default_fillpage) :
          dev_proc(tdev, fillpage));
     return proc(tdev, pis, pdevc);
+}
+
+int
+gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
+                        const gs_composite_t * pcte,
+                        gs_imager_state * pis, gs_memory_t * memory,
+                        gx_device *cdev)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    return (tdev == 0 ?
+        gx_no_create_compositor(dev, pcdev, pcte, pis, memory, cdev) :
+        dev_proc(tdev, create_compositor)(tdev, pcdev, pcte, pis, memory, cdev));
 }
 
 /* ---------------- The null device(s) ---------------- */

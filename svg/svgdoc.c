@@ -326,7 +326,7 @@ svg_parse_document(svg_context_t *ctx, svg_item_t *root)
 
     if (use_transparency)
     {
-        code = gs_push_pdf14trans_device(ctx->pgs);
+        code = gs_push_pdf14trans_device(ctx->pgs, false);
         if (code < 0)
             return gs_rethrow(code, "cannot install transparency device");
     }
@@ -342,7 +342,7 @@ svg_parse_document(svg_context_t *ctx, svg_item_t *root)
 
     if (use_transparency)
     {
-        code = gs_pop_pdf14trans_device(ctx->pgs);
+        code = gs_pop_pdf14trans_device(ctx->pgs, false);
         if (code < 0)
             return gs_rethrow(code, "cannot uninstall transparency device");
     }

@@ -93,6 +93,8 @@ bool gx_dc_is_pattern1_color(const gx_device_color *pdevc);
 
 /* Get transparency pointer */
 void * gx_pattern1_get_transptr(const gx_device_color *pdevc);
+/* pattern is clist with transparency */
+int gx_pattern1_clist_has_trans(const gx_device_color *pdevc);
 
 /* For changing the device color procs when we have a transparency situation */
 
