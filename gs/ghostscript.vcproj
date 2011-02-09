@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="ghostscript"
 	ProjectGUID="{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
 	RootNamespace="ghostscript"

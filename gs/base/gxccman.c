@@ -383,7 +383,7 @@ gx_lookup_xfont(const gs_state * pgs, cached_fm_pair * pair, int encoding_index)
     gs_font *font = pair->font;
     const gx_xfont_procs *procs = (*dev_proc(fdev, get_xfont_procs)) (fdev);
     gx_xfont *xf = 0;
-
+    
     /* We mustn't attempt to use xfonts for stroked characters, */
     /* because such characters go outside their bounding box. */
     if (procs != 0 && font->PaintType == 0) {
@@ -434,6 +434,11 @@ gx_lookup_xfont(const gs_state * pgs, cached_fm_pair * pair, int encoding_index)
 	    }
 	}
     }
+    
+    if (xf) {
+        emprintf(pgs->memory, "Warning: the Xfonts feature is deprecated and will be removed in a future release.\n");
+    }
+    
     pair->xfont = xf;
 }
 

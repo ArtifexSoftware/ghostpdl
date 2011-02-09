@@ -56,53 +56,39 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.00"></a>Version 9.00 (2010-09-14)</h3>
+<h2><a name="Version9.01"></a>Version 9.01 (2011-02-07)</h3>
 
-<p>This is the first release in the stable 9.x series.
+<p>This is the second release in the stable 9.x series.
 
-<p>This release includes a move to an ICC-based color rendering workflow. The
-design allows easy integration of 3rd party color management modules (CMMs)
-and management of DeviceN and spot source colors with ICC profiles as well
-as with non-ICC proprietary methods. The default CMM is the well known littleCMS.
-Postscript color objects and non-ICC CIE-based PDF color spaces are converted to
-equivalent ICC profiles enabling complete color management for all color spaces by
-an ICC-based CMM. New command line options enable the specification of gray, rgb
-and cmyk default ICC profiles as well as output device ICC profiles. The new
-work flow provides performance improvements in the rendering of images, shadings
-and transparencies. In addition, the color conversions are designed to work
-efficiently in multithreaded display list (c-list) rendering through the use of a
-shared link cache. Finally, proper ICC based rendering now occurs for ALL XPS
-objects including Named colors, N-Channel colors and images with internally embedded
-ICC profiles.
- 
-<p>The second major change in this release is that glyph rendering for all font types
-except Type 3 is now handled by Freetype (via a much improved and enhanced Font API).
-The most obvious benefit of this is a complete, and proven implementation of the 
-TrueType byte code interpreter (now unencumbered by patents).
+<p> Highlights in this release include:
 
-<p> Another major change is that the Postscript interpreter's graphics state now
-stores two separate colour space settings for stroking and filling, to better
-support the stroke and fill colours required by the PDF interpreter.
+<p> A new, robust CFF parser implemented in C (replacing the previous
+Poscript one),
 
-<p>Finally, support for optional content has been added to the PDF interpreter.
+<p> tiffscaled device - this renders internally as tiffgray, but then
+downsamples by an integer scale factor (specified by -dDownScaleFactor=n)
+and error diffuses to 1bpp output. 
 
-<p> This release also includes a number of improvements to the pdfwrite device
-to improve reliability and quality with PCL and XPS input. Many improvements to
-the support of JPX images in PDF files, PDF annotation rendering and the usual
-number of general bug and robustness fixes. 
+<p> Add DSC compatible output in ps2write.
 
-<p>For security reasons, Ghostscript no longer searches the current directory
-by default. Use -P option to revert to old behavior.
+<p> Windows makefiles now support 64 bit builds on 64 bit systems.
+
+<p> A number of performance, memory use, and stability improvements with the new
+features introduced in 9.00, plus the usual bug fixes.
+
+<p> We have also dropped support for Watcom and Borland development environments.
+These had not been maintained for some time, and were suffering "bit rot".
+
 
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.00_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.01_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
 No recorded incompatible changes.
 
-<h3><a name="9.00_changelog"></a>Changelog</h3>
+<h3><a name="9.01_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
@@ -113,7 +99,7 @@ of changes.
 <hr>
 
 <p>
-<small>Copyright &copy; 2005-2010 Artifex Software, Inc.
+<small>Copyright &copy; 2005-2011 Artifex Software, Inc.
 All rights reserved.</small>
 
 <p>
@@ -127,7 +113,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.00, 14 September 2010
+<small>Ghostscript version 9.01, 7 February 2011
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
