@@ -1291,6 +1291,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     bool replicate_tile;
     int width;
     bool flush_buff = false;
+    fixed scale_step;
+    byte *psrc_temp;
 
 #if RAW_HT_DUMP
     FILE *fid;
@@ -1402,21 +1404,33 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     if (penum->color_cache == NULL) {
         /* No look-up in the cache to fill the source buffer. Still need to
            have the data at device resolution.  Do these in quick small
-           loops. */
+           loops.  This likely could be a vectorized function */
         switch (posture) {
             case image_portrait:
                 if (penum->dst_width > 0) {
-                    if (fixed2int(scale_factor) == 1 ) {
+                    if (scale_factor == fixed_1) {
                         memcpy(devc_contone, psrc, data_length);
-                    }
-                    for (k = 0; k < data_length; k++) {
-                        offset = fixed2int_rounded(scale_factor * k);
-                        devc_contone[k] = psrc[offset];
+                    } else if (scale_factor == fixed_half) {
+                        psrc_temp = psrc;
+                        for (k = 0; k < data_length; k+=2, devc_contone+=2,
+                             psrc_temp++) {
+                            *devc_contone = *(devc_contone+1) = *psrc_temp;
+                        }
+                     } else {
+                        scale_step = 0;
+                        for (k = 0; k < data_length; k++, devc_contone++, 
+                                                    scale_step += scale_factor) {
+                            offset = fixed2int_rounded(scale_step);
+                            *devc_contone = psrc[offset];
+                        }
                     }
                 } else {
-                    for (k = 0; k < data_length; k++) {
-                        offset = fixed2int_rounded(scale_factor * k);
-                        devc_contone[data_length - k] = psrc[offset];
+                    devc_contone += (data_length - 1);
+                    scale_step = 0;
+                    for (k = 0; k < data_length; k++, devc_contone--, 
+                                                scale_step += scale_factor) {
+                        offset = fixed2int_rounded(scale_step);
+                        *devc_contone = psrc[offset];
                     }
                 }
                 break;
