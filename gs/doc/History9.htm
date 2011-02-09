@@ -74,7 +74,12 @@ Poscript one),
 
 <p> tiffscaled device - this renders internally as tiffgray, but then
 downsamples by an integer scale factor (specified by -dDownScaleFactor=n)
-and error diffuses to 1bpp output. 
+and error diffuses to 1bpp output. The tiffscaled device also implements
+limited minimum feature size functionality; by setting -dMinFeatureSize
+to 1, 2 or 3, the device output is guaranteed to generate minimum dot
+sizes as multiples of the final resolution, useful for devices that
+offer finer position control than dot size control.
+
 
 <p> Add DSC compatible output in ps2write.
 
