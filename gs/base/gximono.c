@@ -38,10 +38,7 @@
 #include "gsicc_littlecms.h"
 #include "gxcie.h"
 #include "gscie.h"
-#include <emmintrin.h>
 
-/* Need to fix HAVE_SSE set up for windows in the build */
-#define HAVE_SSE 1
 #define RAW_HT_DUMP 0
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
 
@@ -52,7 +49,9 @@
 #define __align16 __declspec(align(16))
 #endif 
 
-#if HAVE_SSE
+#ifdef HAVE_SSE2
+
+#include <emmintrin.h>
 
 static const byte bitreverse[] = 
 { 0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0, 0x10, 0x90, 0x50, 0xD0, 
@@ -967,6 +966,8 @@ threshold_row_byte(byte *contone, byte *threshold_strip, int contone_stride,
     }
 }
 #endif
+
+#ifndef HAVE_SSE2
 /* This is slow thresholding bit output */
 static void
 threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
@@ -1052,8 +1053,7 @@ threshold_16_bit(byte *contone_ptr_in, byte *thresh_ptr_in, byte *ht_data)
         thresh_ptr += 8;
     }
 }
-
-#if HAVE_SSE
+#else
 /* Note this function has strict data alignment needs */
 static void
 threshold_16_SSE(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
@@ -1197,7 +1197,7 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
         }
         /* Now we have our left justified and expanded contone data for a single 
            set of 16.  Go ahead and threshold these */
-#if HAVE_SSE
+#ifdef HAVE_SSE2
         threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
 #else
         threshold_16_bit(&(contone[0]), thresh_ptr, halftone_ptr);
@@ -1566,7 +1566,7 @@ flush:
             fwrite(halftone,1,dest_width * vdi,fid);
             fclose(fid);
 #else           
-#if HAVE_SSE
+#ifdef HAVE_SSE2
             threshold_row_SSE(contone_align, thresh_align, contone_stride, 
                               halftone, dithered_stride, dest_width, vdi, 
                               offset_bits); 
