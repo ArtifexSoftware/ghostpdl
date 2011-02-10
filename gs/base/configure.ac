@@ -286,6 +286,18 @@ if test "$uint64_type" != "none"; then
 fi
 
 dnl --------------------------------------------------
+dnl Set options that we want to pass into all other
+dnl configure scripts we might call
+dnl --------------------------------------------------
+
+SUBCONFIG_OPTS=""
+
+if test x$build_alias != x; then
+SUBCONFIG_OPTS="$SUBCONFIG_OPTS --build=$build_alias"
+fi
+
+
+dnl --------------------------------------------------
 dnl Check for libraries
 dnl --------------------------------------------------
 
@@ -651,7 +663,7 @@ if test $SHARE_LIBTIFF -eq 0; then
       echo
       echo "Running libtiff configure script..."
       olddir=`pwd`
-      cd $LIBTIFFDIR && ./configure
+      cd $LIBTIFFDIR && ./configure $SUBCONFIG_OPTS
       status=$?
       if test "$status" -ne 0 ; then
         AC_MSG_ERROR([libtiff configure script failed], $status)
@@ -797,7 +809,7 @@ if test x$with_jbig2dec != xno; then
   if test "x$JBIG2DIR" != xsrc; then
       echo "Running jbig2dec configure script..."
       olddir=`pwd`
-      cd $JBIG2DIR && ./configure
+      cd $JBIG2DIR && ./configure $SUBCONFIG_OPTS
       status=$?
       if test "$status" -ne 0 ; then
         AC_MSG_ERROR([jbig2dec configure script failed], $status)
@@ -851,7 +863,7 @@ if test x$with_jasper != xno; then
       echo
       echo "Running jasper configure script..."
       olddir=`pwd`
-      cd $JASPERDIR && ./configure
+      cd $JASPERDIR && ./configure $SUBCONFIG_OPTS
       status=$?
       if test "$status" -ne 0 ; then
         AC_MSG_ERROR([jasper configure script failed], $status)
