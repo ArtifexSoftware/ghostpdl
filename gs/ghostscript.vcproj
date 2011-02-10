@@ -6,7 +6,6 @@
 	ProjectGUID="{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
 	RootNamespace="ghostscript"
 	Keyword="MakeFileProj"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -31,7 +30,7 @@
 				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean"
 				Output=""
-				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -71,7 +70,7 @@
 				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
 				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;"
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -111,7 +110,7 @@
 				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean"
 				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
