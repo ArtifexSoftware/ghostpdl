@@ -47,7 +47,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     stream *                s = 0L;
     cmm_profile_t           *picc_profile;
     gs_imager_state *       pis = (gs_imager_state *)igs;
-    int                     i;
+    int                     i, expected = 0;
     ref *                   pnameval;
     static const char *const icc_std_profile_names[] = {
 	    GSICC_STANDARD_PROFILES
@@ -121,6 +121,27 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         return -1;
     }
     picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
+    switch( picc_profile->data_cs ) {
+	case gsCIEXYZ:
+	case gsCIELAB:
+	case gsRGB:
+	    expected = 3;
+	    break;
+	case gsGRAY:
+	    expected = 1;
+	    break;
+	case gsCMYK:
+	    expected = 4;
+	    break;
+	case gsNCHANNEL:
+	    expected = 0;
+	    break;
+    }
+    if (expected && ncomps != expected) {
+	rc_decrement(picc_profile,"seticc");
+	rc_decrement(pcs,"seticc");
+	return_error(e_rangecheck);
+    }
 
     /* Lets go ahead and get the hash code and check if we match one of the default spaces */
     /* Later we may want to delay this, but for now lets go ahead and do it */

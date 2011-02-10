@@ -5550,12 +5550,15 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		    ref_assign(op, &ICCdict);
 		    code = seticc(i_ctx_p, components, op, (float *)&range);
 		    if (code < 0) {
-			if (altref) {
+			code = dict_find_string(&ICCdict, "Alternate", &altref); /* Alternate is optional */
+			if (code < 0)
+			    return code;
+			if ((altref != NULL) && (r_type(altref) != t_null)) {
 			    /* We have a /Alternate in the ICC space */
 			    /* Our ICC dictionary still on operand stack, we can reuse the
 			     * slot on the stack to hold the alternate space.
 			     */
-			    ref_assign(op, (ref *)&altref);
+			    ref_assign(op, (ref *)altref);
 			    /* If CIESubst, we are already substituting for CIE, so use nosubst
 			     * to prevent further substitution!
 			     */
@@ -5641,7 +5644,7 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
     }
     code = dict_find_string(&ICCdict, "Alternate", &tempref);
     if (code >= 0 && !r_has_type(tempref, t_null)) {
-	*r = tempref;
+	ref_assign(*r, tempref);
 	if (r_has_type(tempref, t_name)) {
 	    name_string_ref(imemory, tempref, &sref);
 	    if (sref.value.bytes && strncmp((const char *)sref.value.bytes, "Pattern", 7) == 0)

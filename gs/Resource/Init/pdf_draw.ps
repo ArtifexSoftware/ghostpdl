@@ -757,16 +757,29 @@ currentdict end readonly def
     } if
     3 1 roll
     oforce dup type /stringtype ne {
+	% Get the steram length and save it
+	dup /Length get 6 1 roll
 		% The color lookup table is a stream.
 		% Get its contents.  Don't lose our place in PDFfile.
-		% Stack: /Indexed basespace hival lookup
+		% Stack: Length /Indexed basespace hival lookup
 	PDFfile fileposition 5 1 roll true resolvestream
-		% Stack: filepos /Indexed basespace hival lookupstream
+		% Stack: Length filepos /Indexed basespace hival lookupstream
 	1 index 1 add
-		% Stack: filepos /Indexed basespace hival lookupstream len
+		% Stack: Length filepos /Indexed basespace hival lookupstream len
 	3 index
 	  dup dup type /arraytype eq { 0 get } if
 	  //csncompdict exch get exec mul
+	% Bring length of stream to top and copy
+	8 -1 roll dup 
+	% copy calculated string length
+	2 index 
+	gt {
+		% If stream length greater, use it
+		exch pop
+	}{
+		% otherwise use calculated length
+		pop
+	} ifelse
 	string dup 3 1 roll readstring pop  % the string is padded with 0s
         length 1 index length lt {
           (   **** Warning: Short look-up table in the Indexed color space was padded with 0's.\n)
