@@ -1691,9 +1691,13 @@ flush:
                 /* Go ahead and 2D tile in the threshold buffer at this time */
                 /* Always work the tiling from the upper left corner of our
                    16 columns */
+                if (penum->ht_landscape.offset_set) {
+                    width = offset_bits;
+                } else {
+                    width = 16;
+                }
                 if (penum->y_extent.x < 0) {
-                    /* May need to worry about sign on this with the % operator */
-                    dx = (penum->ht_landscape.xstart - 16) % thresh_width;
+                    dx = (penum->ht_landscape.xstart - width + 1) % thresh_width;
                 } else {
                     dx = penum->ht_landscape.xstart % thresh_width;
                 }
@@ -1752,11 +1756,6 @@ flush:
                   threshold_landscape(contone_align, thresh_align, 
                                     penum->ht_landscape, halftone, data_length);  
                 /* Perform the copy mono */
-                if (penum->ht_landscape.offset_set) {
-                    width = offset_bits;
-                } else {
-                    width = 16;
-                }
                 penum->ht_landscape.offset_set = false;
                 if (penum->ht_landscape.index < 0) {
                     (*dev_proc(dev, copy_mono)) (dev, halftone, 0, 2, 
