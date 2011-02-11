@@ -49,7 +49,7 @@
 #define __align16 __declspec(align(16))
 #endif 
 
-#undef HAVE_SSE2
+/* #undef HAVE_SSE2 */
 #ifdef HAVE_SSE2
 
 #include <emmintrin.h>
@@ -247,6 +247,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     }
                     memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
                     penum->ht_landscape.offset_set = false;
+                    penum->ht_offset_bits = 0; /* Will get set in call to render */
 #ifdef DEBUG
                     memset(penum->line, 0, 16 * penum->line_size);
                     memset(penum->thresh_buffer, 0, 16 * penum->line_size);
@@ -1341,7 +1342,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     byte *curr_ptr;
     int dithered_stride;
     int position, k;
-    int offset_bits;
+    int offset_bits = penum->ht_offset_bits;
     int contone_stride;
     int temp_val;
     const int y_pos = penum->yci;
@@ -1397,7 +1398,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 return gs_rethrow(gs_error_VMerror, "Memory allocation failure");
 #else
             /* Get the pointers to our buffers */
-            offset_bits = penum->ht_offset_bits;
             dithered_stride = penum->ht_stride;
             halftone = penum->ht_buffer;
             contone_align = penum->line + penum->offset_contone;
@@ -1449,8 +1449,12 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     offset_bits = 16 - penum->xci % 16;
                     if (offset_bits == 16) offset_bits = 0;
                 }
-                if (offset_bits == 0 || offset_bits == 16) 
+                if (offset_bits == 0 || offset_bits == 16) {
                     penum->ht_landscape.offset_set = false;
+                    penum->ht_offset_bits = 0;
+                } else {
+                    penum->ht_offset_bits = offset_bits;
+                }
             }
             /* Get the pointers to our buffers */
             dithered_stride = penum->ht_stride;
