@@ -765,7 +765,7 @@ image_cache_decode(gx_image_enum *penum, byte input, byte *output)
    contone.  Device colors.  If we are halftoning we will then go ahead and
    apply the thresholds to the device contone values.  Only used for gray,
    rgb or cmyk source colors (No DeviceN for now) */
-/* TO DO  Add in has_transfer case and PSCIE decoder */
+/* TO DO  Add in PSCIE decoder */
 int 
 image_init_color_cache(gx_image_enum * penum, int bps, int spp)
 {
@@ -773,15 +773,18 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
     int num_src_comp;
     int num_entries = 1 << bps; 
     bool need_decode = penum->icc_setup.need_decode;
+    bool has_transfer = penum->icc_setup.has_transfer;
     byte value;
-    int k, temp;
+    int k, temp, kk;
     byte psrc[4];
     byte *temp_buffer;
+    byte *byte_ptr;
     bool is_indexed = (gs_color_space_get_index(penum->pcs) ==  
                                             gs_color_space_index_Indexed);
     bool free_temp_buffer = true;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
+    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
@@ -792,7 +795,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
         /* Detect case where cache is not needed.  Colors are already in the 
            device space.  Need to fast track this one and halftone row directly.
            Detected in gximono.c by looking if penum->color_cache is NULL */
-        if (penum->icc_link->is_identity && !need_decode) {
+        if (penum->icc_link->is_identity && !need_decode && !has_transfer) {
             return 0;
         }
         num_src_comp = 1;
@@ -815,45 +818,54 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
        image with a look-up-table uses the table data directly or does as many
        operations with memcpy as we can */
     if (penum->icc_link->is_identity) {
-        /* No CM needed. */
-        if (need_decode) {
-            if (is_indexed) {
-                /* Decode and un-indexed slow way */
-                for (k = 0; k < num_entries; k++) {
+        /* No CM needed.  */
+        if (need_decode || has_transfer) {
+            /* Slower case.  This could be sped up later to avoid the tests 
+               within the loop by use of specialized loops.  */
+            for (k = 0; k < num_entries; k++) {
+                /* Data is in k */
+                if (need_decode) {
                     image_cache_decode(penum, k, &value);
+                } else {
+                    value = k;
+                }
+                /* Data is in value */
+                if (is_indexed) {
                     gs_cspace_indexed_lookup_bytes(penum->pcs, value, psrc);
+                } else {
+                    psrc[0] = value;
+                }
+                /* Data is in psrc */
+                /* These silly transforms need to go away. ToDo. */
+                if (has_transfer) {
+                    for (kk = 0; kk < num_des_comp; kk++) {
+                        conc[kk] = gx_color_value_from_byte(psrc[kk]);
+                    }
+                    cmap_transfer(&(conc[0]), penum->pis, penum->dev);
+                    for (kk = 0; kk < num_des_comp; kk++) {
+                        psrc[kk] = gx_color_value_to_byte(conc[kk]);
+                    }
+                } 
+                memcpy(&(penum->color_cache->device_contone[k * num_des_comp]),
+                               psrc, num_des_comp);
+            }
+        } else {
+            /* Indexing only.  No CM, decode or transfer functions. */
+            if (penum->pcs->params.indexed.use_proc) {
+                /* Have to do the slow way */
+                for (k = 0; k < num_entries; k++) {
+                    gs_cspace_indexed_lookup_bytes(penum->pcs, k, psrc);
                     memcpy(&(penum->color_cache->device_contone[k * num_des_comp]),
                                psrc, num_des_comp);
                 }
             } else {
-                /* Decode only */
-                for (k = 0; k < num_entries; k++) {
-                    image_cache_decode(penum, k, 
-                                    &(penum->color_cache->device_contone[k]));
-                }
-            }
-        } else {
-            /* No Decode or CM  */
-            if (is_indexed) {
-                /* If index uses a table then just use its pointer */
-                if (penum->pcs->params.indexed.use_proc) {
-                    /* Have to do the slow way */
-                    for (k = 0; k < num_entries; k++) {
-                        gs_cspace_indexed_lookup_bytes(penum->pcs, value, psrc);
-                        memcpy(&(penum->color_cache->device_contone[k * num_des_comp]),
-                                   psrc, num_des_comp);
-                    }
-                } else {
-                    /* Possible GC issue? In this case we just use the pointer
-                       of the index table data directly for our cache */
-                    gs_free_object(penum->memory, penum->color_cache->device_contone, 
-                                    "image_init_color_cache(device_contone)");
-                    penum->color_cache->device_contone = 
-                        (byte*) penum->pcs->params.indexed.lookup.table.data;
-                    penum->color_cache->free_contone = false;
-                }
-            } else {
-                return gs_rethrow(-1, "Logic Error. No Decode, CM, or Indexing");
+                /* Possible GC issue? In this case we just use the pointer
+                   of the index table data directly for our cache */
+                gs_free_object(penum->memory, penum->color_cache->device_contone, 
+                                "image_init_color_cache(device_contone)");
+                penum->color_cache->device_contone = 
+                    (byte*) penum->pcs->params.indexed.lookup.table.data;
+                penum->color_cache->free_contone = false;
             }
         }
     } else {
@@ -885,7 +897,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
                 if (penum->pcs->params.indexed.use_proc) {
                     /* Have to do the slow way */
                     for (k = 0; k < num_entries; k++) {
-                        gs_cspace_indexed_lookup_bytes(penum->pcs, value, psrc);
+                        gs_cspace_indexed_lookup_bytes(penum->pcs, k, psrc);
                         memcpy(&(temp_buffer[k * num_src_comp]), psrc, num_src_comp);
                     }
                 } else {
@@ -910,6 +922,20 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
         gscms_transform_color_buffer(penum->icc_link, &input_buff_desc, 
                                     &output_buff_desc, (void*) temp_buffer, 
                                     (void*) penum->color_cache->device_contone);
+        /* Check if we need to apply any transfer funcitons.  If so then do it now */
+        if (has_transfer) {
+            for (k = 0; k < num_entries; k++) {
+                byte_ptr = 
+                    &(penum->color_cache->device_contone[k * num_des_comp]);
+                for (kk = 0; kk < num_des_comp; kk++) {
+                    conc[kk] = gx_color_value_from_byte(byte_ptr[kk]);
+                }
+                cmap_transfer(&(conc[0]), penum->pis, penum->dev);
+                for (kk = 0; kk < num_des_comp; kk++) {
+                    byte_ptr[kk] = gx_color_value_to_byte(conc[kk]);
+                }
+            }
+        }
         if (free_temp_buffer)
             gs_free_object(penum->memory, temp_buffer, "image_init_color_cache");
     }

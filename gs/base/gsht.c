@@ -1400,7 +1400,7 @@ if ( gs_debug_c('h') ) {
         return -1 ;         /* error if allocation failed   */
    }
    for( i=0; i<d_order->num_bits; i++ )
-      thresh[i] = 255;
+      thresh[i] = 1;
 
    prev_l = 0;
    l = 1;
@@ -1430,7 +1430,7 @@ if ( gs_debug_c('h') ) {
                   row, col, t_level);
 #endif
             if( col < (int)d_order->width )
-               *(thresh+col+(row * d_order->width)) = t_level;
+               *(thresh+col+(row * d_order->width)) = 256 - t_level;
          }
          prev_l = l;
       }

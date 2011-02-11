@@ -49,6 +49,7 @@
 #define __align16 __declspec(align(16))
 #endif 
 
+#undef HAVE_SSE2
 #ifdef HAVE_SSE2
 
 #include <emmintrin.h>
@@ -1178,11 +1179,14 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
     thresh_ptr = thresh_align;
     halftone_ptr = halftone;
     for (k = 0; k < data_length; k++) { /* Loop on rows */
+
         contone_ptr = &(contone_align[position]); /* Point us to our row start */
         curr_position = position_start; /* We use this in keeping track of widths */
         contone_out_posit = 0; /* Our index out */
+
         for (j = 0; j < num_contone; j++) {
             num_used = 0;
+
             for (w = 0; w < widths[curr_position]; w++) {
                 contone[contone_out_posit] = *contone_ptr;
                 contone_out_posit++;
@@ -1192,6 +1196,7 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
                     break;
                 }
             }
+
             curr_position++; /* Move us to the next position in our width array */
             contone_ptr++;   /* Move us to a new location in our contone buffer */
         }
@@ -1207,6 +1212,62 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
         halftone_ptr += 2;
     }
 }
+
+/* This thresholds a buffer that is 16 wide by data_length tall */
+static void
+threshold_landscape_old(byte *contone_align, byte *thresh_align, 
+                    ht_landscape_info_t ht_landscape, byte *halftone, 
+                    int data_length)
+{
+    __align16 byte contone[32];  /* Allow overruns to avoid test */
+    int count = ht_landscape.count;
+    int position_start, position, curr_position;
+    int increment;
+    int *widths = &(ht_landscape.widths[0]);
+    int num_contone = ht_landscape.num_contones;
+    int k, j, w, contone_out_posit;
+    byte *contone_ptr, *thresh_ptr, *halftone_ptr;
+    byte *temp_buff_ptr;
+
+    /* Work through chunks of 16.  */
+    /* Data may have come in left to right or right to left. */
+    if (ht_landscape.index > 0) {
+        position = position_start = 0;    
+    } else {
+        position = position_start = ht_landscape.curr_pos + 1;
+    }
+    thresh_ptr = thresh_align;
+    halftone_ptr = halftone;
+    for (k = 0; k < data_length; k++) { /* Loop on rows */
+        contone_ptr = &(contone_align[position]); /* Point us to our row start */
+        curr_position = position_start; /* We use this in keeping track of widths */
+        contone_out_posit = 0; /* Our index out */
+        temp_buff_ptr = &(contone[0]); 
+        while (contone_out_posit < count) {
+            memcpy(temp_buff_ptr, contone_ptr, widths[curr_position]);
+            contone_out_posit += widths[curr_position];
+            temp_buff_ptr += widths[curr_position];
+            curr_position++; /* Move us to the next position in our width array */
+            contone_ptr++;   /* Move us to a new location in our contone buffer */
+        }
+        /* Now we have our left justified and expanded contone data for a single 
+           set of 16.  Go ahead and threshold these */
+#if HAVE_SSE2
+        threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
+#else
+        threshold_16_bit(&(contone[0]), thresh_ptr, halftone_ptr);
+#endif
+        thresh_ptr += 16;
+        position += 16; 
+        halftone_ptr += 2;
+    }
+}
+
+
+
+
+
+
 
 
 /* If we are in here, we had data left over.  Move it to the proper position
@@ -1448,10 +1509,27 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     }
                 } else {
                     position = penum->ht_landscape.curr_pos;
-                    for (k = 0; k < data_length; k++) {
-                            offset = fixed2int_rounded(scale_factor * k);
-                            devc_contone[position] = psrc[offset];
-                            position += 16;
+                    /* Code up special cases for when we have no scaling
+                       and 2x scaling which we will run into in 300 and
+                       600dpi devices and content */
+                    if (scale_factor == fixed_1) {
+                        for (k = 0; k < data_length; k++) {
+                                devc_contone[position] = psrc[k];
+                                position += 16;
+                        }
+                    } else if (scale_factor == fixed_half) {
+                        for (k = 0; k < data_length; k+=2) {
+                                offset = fixed2int_rounded(scale_factor * k);
+                                devc_contone[position] = 
+                                    devc_contone[position + 16] = psrc[offset];
+                                position += 32;
+                        }
+                    } else {
+                        for (k = 0; k < data_length; k++) {
+                                offset = fixed2int_rounded(scale_factor * k);
+                                devc_contone[position] = psrc[offset];
+                                position += 16;
+                        }
                     }
                 }
                 /* Store the width information and update our counts */
