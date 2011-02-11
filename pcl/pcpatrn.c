@@ -921,11 +921,21 @@ pattern_set_pen(
 	pen = 1;
 
     /* check if the current pen is white; if so, use the "unsolid" pattern */
-    if (!for_pcl_raster && pcl_cs_indexed_is_white(pindexed, pen))
-        return pattern_set_shade_gl(pcs, 1, pen);
+
+    if (!for_pcl_raster && pcl_cs_indexed_is_white(pindexed, pen)) {
+        /* Optimization for a special case where we don't need the
+           unsolid pattern, drawing an opaque white rectangle with
+           simple rops (we only check for 2 common rops).  */
+        if (!pcs->g.source_transparent && 
+            (pcs->logical_op == rop3_default || pcs->logical_op == rop3_T))
+            goto skip_unsolid;
+        else
+            return pattern_set_shade_gl(pcs, 1, pen);
+    }
 
     /* set halftone and crd from the palette */
-    code = set_ht_crd_from_palette(pcs);
+skip_unsolid:
+     code = set_ht_crd_from_palette(pcs);
 
     if (code >= 0) {
         gs_paint_color  paint = {0,0,0,0};
