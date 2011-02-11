@@ -104,8 +104,8 @@ uncompress_2(
             int     cnt = min(257 - cntrl, plim - pb);
             int     val = *pin++;
 
-            while (cnt-- > 0)
-                *pb++ = val;
+            memset(pb, val, cnt);
+            pb += cnt;
         }
     }
     if (!pout->is_blank)
