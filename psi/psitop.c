@@ -294,6 +294,7 @@ ps_impl_set_device(
 )
 {
     int code = 0;
+    int exit_code = 0;
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     gs_state *pgs = psi->minst->i_ctx_p->pgs;
 
@@ -305,7 +306,23 @@ ps_impl_set_device(
     code = gs_setdevice_no_erase(pgs, device);
     if (code >= 0 )
 	code = gs_erasepage(pgs);
-    return code;
+
+    if (code < 0)
+        return code;
+    /* install a screen appropriate for the device */
+    {
+        const char *screen_str = ".setdefaultscreen\n";
+        code = gsapi_run_string_continue(psi->plmemory->gs_lib_ctx,
+                                         screen_str, strlen(screen_str),
+                                         0, &exit_code);
+        /* needs more input this is not an error */
+        if ( code == e_NeedInput )
+            code = 0;
+
+        if (code < 0)
+            return code;
+    }
+    return exit_code;
 }
 
 /* fetch the gs_memory_t ptr so that the device and ps use the same 
