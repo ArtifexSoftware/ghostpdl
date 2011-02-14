@@ -188,12 +188,17 @@ HAVE_MKSTEMP_DEFINE?=-DHAVE_MKSTEMP
 HAVE_HYPOT_DEFINE?=-DHAVE_HYPOT
 HAVE_NO_STRICT_ALIASING_WARNING?=-Wno-strict-aliasing
 
+# We assume SSE2 extensions here. This is a problem for non-x86 (or old
+# x86 builds). To avoid this use make HAVE_SSE2_DEFINE=""
+HAVE_SSE2_DEFINE?=-DHAVE_SSE2
+
 GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
          -Wmissing-prototypes -Wpointer-arith \
          -Wwrite-strings $(HAVE_NO_STRICT_ALIASING_WARNING) \
          -fno-builtin -fno-common \
           $(HAVE_STDINT_H_DEFINE) $(HAVE_MKSTEMP_DEFINE) $(HAVE_HYPOT_DEFINE) \
-          $(GX_COLOR_INDEX_DEFINE) $(PSICFLAGS) $(PDL_INCLUDE_FLAGS)
+          $(GX_COLOR_INDEX_DEFINE) $(PSICFLAGS) $(PDL_INCLUDE_FLAGS) \
+          $(HAVE_SSE2_DEFINE)
 
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
