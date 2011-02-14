@@ -666,6 +666,8 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
 	    }
 	}
     }
+    pctx->state.op_array_table_global = i_ctx_p->op_array_table_global;
+    pctx->state.op_array_table_local  = i_ctx_p->op_array_table_local;
     pctx->state.language_level = i_ctx_p->language_level;
     pctx->state.dict_stack.min_size = idict_stack.min_size;
     pctx->state.dict_stack.userdict_index = idict_stack.userdict_index;
