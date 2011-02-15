@@ -1099,6 +1099,7 @@ OKI_DEVS='$(DD)oki182.dev $(DD)okiibm.dev $(DD)oki4w.dev'
 JAPAN_DEVS='$(DD)lips4.dev $(DD)lips4v.dev $(DD)ljet4pjl.dev $(DD)lj4dithp.dev $(DD)dj505j.dev $(DD)picty180.dev $(DD)lips2p.dev $(DD)bjc880j.dev $(DD)pr201.dev $(DD)pr150.dev $(DD)pr1000.dev $(DD)pr1000_4.dev $(DD)jj100.dev $(DD)bj10v.dev $(DD)bj10vh.dev $(DD)mj700v2c.dev $(DD)mj500c.dev $(DD)mj6000c.dev $(DD)mj8000c.dev $(DD)fmpr.dev $(DD)fmlbp.dev $(DD)ml600.dev $(DD)lbp310.dev $(DD)lbp320.dev $(DD)md50Mono.dev $(DD)md50Eco.dev $(DD)md1xMono.dev $(DD)escpage.dev $(DD)lp2000.dev $(DD)npdl.dev $(DD)rpdl.dev'
 MISC_PDEVS='$(DD)uniprint.dev $(DD)ap3250.dev $(DD)atx23.dev $(DD)atx24.dev $(DD)atx38.dev $(DD)coslw2p.dev $(DD)coslwxl.dev $(DD)cp50.dev $(DD)declj250.dev $(DD)fs600.dev $(DD)imagen.dev $(DD)lj250.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)oce9050.dev $(DD)r4081.dev $(DD)sj48.dev $(DD)tek4696.dev $(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)dl2100.dev $(DD)la50.dev $(DD)la70.dev $(DD)la75.dev $(DD)la75plus.dev $(DD)ln03.dev $(DD)xes.dev $(DD)md2k.dev $(DD)md5k.dev $(DD)gdi.dev $(DD)samsunggdi.dev'
 OPVP_DEVS='$(DD)opvp.dev $(DD)oprp.dev'
+
 ETS_HALFTONING_DEVS='$(DD)rinkj.dev'
 
 dnl Known file formats
@@ -1265,7 +1266,7 @@ done
 # No need to include opvp/oprp driver without iconv/libiconv.
 if test -n "$P_DEVS"; then
 	if test x$found_iconv = xno ; then
-		P_DEVS=`echo $P_DEVS | sed -e 's|opvp||' -e 's|oprp||'` 
+		P_DEVS=`echo $P_DEVS | sed -e 's|$(DD)opvp.dev||' -e 's|$(DD)oprp.dev||'` 
 		AC_MSG_WARN(Unable to include opvp/oprp driver due to missing iconv/libiconv...)
 	fi
 
