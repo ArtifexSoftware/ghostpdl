@@ -1264,7 +1264,7 @@ threshold_landscape_old(byte *contone_align, byte *thresh_align,
         }
         /* Now we have our left justified and expanded contone data for a single
            set of 16.  Go ahead and threshold these */
-#if HAVE_SSE2
+#ifdef HAVE_SSE2
         threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
 #else
         threshold_16_bit(&(contone[0]), thresh_ptr, halftone_ptr);
