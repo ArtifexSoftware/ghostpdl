@@ -33,7 +33,7 @@ WININT_MAK=$(PSSRC)winint.mak
 
 # Define the location of the WinZip self-extracting-archive-maker.
 !ifndef WINZIPSE_XE
-!ifdef WIN64
+!if $(BUILD_SYSTEM) == 32
 WINZIPSE_XE="C:\Program Files (x86)\WinZip Self-Extractor\WZIPSE32.EXE"
 !else
 WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
@@ -42,7 +42,7 @@ WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
 
 # Define the location of the NSIS makensis installer utility
 !ifndef MAKENSIS_XE
-!ifdef WIN64
+!if $(BUILD_SYSTEM) == 32
 MAKENSIS_XE="C:\Program Files (x86)\NSIS\makensis.exe"
 !else
 MAKENSIS_XE="C:\Program Files\NSIS\makensis.exe"
@@ -242,11 +242,18 @@ $(PSOBJ)dwuninst.obj: $(PSSRC)dwuninst.cpp $(PSSRC)dwuninst.h $(AK)
 # directories listed in ZIPTEMPFILE are the complete list
 # of needed files and directories relative to the current directory's parent.
 
-ZIPTEMPFILE=gs$(GS_DOT_VERSION)\obj\dwfiles.rsp
+ZIPTEMPFILE=gs$(GS_DOT_VERSION)\$(PSOBJ)\dwfiles.rsp
+!ifdef WIN64
+ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsdll64.dll
+ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gsdll64.lib
+ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gswin64.exe
+ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gswin64c.exe
+!else
 ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsdll32.dll
 ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gsdll32.lib
 ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gswin32.exe
 ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gswin32c.exe
+!endif
 ZIPPROGFILE5=gs$(GS_DOT_VERSION)\doc
 ZIPPROGFILE6=gs$(GS_DOT_VERSION)\examples
 ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib
