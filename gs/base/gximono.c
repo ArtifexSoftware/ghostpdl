@@ -1168,8 +1168,9 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
     int position_start, position, curr_position;
     int increment;
     int *widths = &(ht_landscape.widths[0]);
+    int local_widths[16];
     int num_contone = ht_landscape.num_contones;
-    int k, j, w, contone_out_posit, num_used;
+    int k, j, w, contone_out_posit;
     byte *contone_ptr, *thresh_ptr, *halftone_ptr;
 
     /* Work through chunks of 16.  */
@@ -1181,23 +1182,31 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
     }
     thresh_ptr = thresh_align;
     halftone_ptr = halftone;
-    for (k = 0; k < data_length; k++) { /* Loop on rows */
+
+    /* Copy the widths to a local array, and truncate the last one (which may
+     * be the first one!) if required. */
+    k = 0;
+    for (j = 0; j < num_contone; j++)
+        k += (local_widths[j] = widths[position_start+j]);
+    if (k > 16) {
+        if (ht_landscape.index > 0) {
+            local_widths[num_contone-1] -= k-16;
+        } else {
+            local_widths[0] -= k-16;
+        }
+    }
+
+    for (k = data_length; k > 0; k--) { /* Loop on rows */
 
         contone_ptr = &(contone_align[position]); /* Point us to our row start */
-        curr_position = position_start; /* We use this in keeping track of widths */
+        curr_position = 0; /* We use this in keeping track of widths */
         contone_out_posit = 0; /* Our index out */
 
-        for (j = 0; j < num_contone; j++) {
-            num_used = 0;
-
-            for (w = 0; w < widths[curr_position]; w++) {
-                contone[contone_out_posit] = *contone_ptr;
+        for (j = num_contone; j > 0; j--) {
+            byte c = *contone_ptr;
+            for (w = local_widths[curr_position]; w > 0; w--) {
+                contone[contone_out_posit] = c;
                 contone_out_posit++;
-                num_used++;
-                if (contone_out_posit == count) {
-                    /* We have a section which will be used in the next chunk */
-                    break;
-                }
             }
 
             curr_position++; /* Move us to the next position in our width array */
@@ -1687,9 +1696,9 @@ flush:
         case image_landscape:
             /* Go ahead and paint the chunk if we have 16 values or a partial
                to get us in sync with the 1 bit devices 16 bit positions */
-            if (penum->ht_landscape.count > 15 ||
-                ((penum->ht_landscape.count >= offset_bits) &&
-                penum->ht_landscape.offset_set)) {
+            while (penum->ht_landscape.count > 15 ||
+                   ((penum->ht_landscape.count >= offset_bits) &&
+                    penum->ht_landscape.offset_set)) {
                 /* Go ahead and 2D tile in the threshold buffer at this time */
                 /* Always work the tiling from the upper left corner of our
                    16 columns */
