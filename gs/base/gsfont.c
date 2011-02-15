@@ -29,10 +29,10 @@
 /* Define the sizes of the various aspects of the font/character cache. */
 /*** Big memory machines ***/
 #define smax_LARGE 50		/* smax - # of scaled fonts */
-#define bmax_LARGE 500000	/* bmax - space for cached chars */
+#define bmax_LARGE 1000000	/* bmax - space for cached chars */
 #define mmax_LARGE 200		/* mmax - # of cached font/matrix pairs */
 #define cmax_LARGE 5000		/* cmax - # of cached chars */
-#define blimit_LARGE 2500	/* blimit/upper - max size of a single cached char */
+#define blimit_LARGE 32000	/* blimit/upper - max size of a single cached char */
 /*** Small memory machines ***/
 #define smax_SMALL 20		/* smax - # of scaled fonts */
 #define bmax_SMALL 25000	/* bmax - space for cached chars */
