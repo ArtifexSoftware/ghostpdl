@@ -168,7 +168,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
                 if (penum->pis != NULL && penum->pis->dev_ht != NULL) {
                     gx_ht_order *d_order =
                                     &(penum->pis->dev_ht->components[0].corder);
-                    code = gx_ht_construct_threshold(d_order);
+                    code = gx_ht_construct_threshold(d_order, penum->dev, 0);
                 } else {
                     code = -1;
                 }
@@ -1624,7 +1624,7 @@ flush:
     switch (posture) {
         case image_portrait:
             /* Compute the tiling positions with dest_width */
-            dx = fixed2int(xrun % int2fixed(thresh_width));
+            dx = fixed2int_var(xrun) % thresh_width;
             /* Left remainder part */
             left_rem_end = min(dx + dest_width, thresh_width);
             left_width = left_rem_end - dx;  /* The left width of our tile part */
@@ -1671,7 +1671,7 @@ flush:
             /* Now do the copy mono operation */
             /* First the left remainder bits */
             if (offset_bits > 0) {
-                int x_pos = fixed2int_var_rounded(xrun);
+                int x_pos = fixed2int_var(xrun);
                 (*dev_proc(dev, copy_mono)) (dev, halftone, 0, dithered_stride,
                                              gx_no_bitmap_id, x_pos, y_pos,
                                              offset_bits, vdi,
@@ -1682,7 +1682,7 @@ flush:
                 /* Now the primary aligned bytes */
                 byte *curr_ptr = halftone;
                 int curr_width = dest_width - offset_bits;
-                int x_pos = fixed2int_var_rounded(xrun) + offset_bits;
+                int x_pos = fixed2int_var(xrun) + offset_bits;
                 if (offset_bits > 0) {
                     curr_ptr += 2; /* If the first 2 bytes had the left part then increment */
                 }
