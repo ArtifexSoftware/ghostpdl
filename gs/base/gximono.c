@@ -134,6 +134,13 @@ gs_image_class_3_mono(gx_image_enum * penum)
             if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent != NULL) {
                 pcs = pcs->icc_equivalent;
             }
+
+            /* The code below falls over if cmm->icc_profile_data is NULL.
+             * For now, just drop out. Michael can review this when he
+             * returns. */
+            if (pcs->cmm_icc_profile_data == NULL)
+                goto not_fast_halftoning;
+
             penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
             penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
             penum->icc_setup.has_transfer = gx_has_transfer(penum->pis,
@@ -335,6 +342,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     return &image_render_mono_ht;
             }
         }
+not_fast_halftoning:
         /*
          * Use the slow loop for imagemask with a halftone or a non-default
          * logical operation.
