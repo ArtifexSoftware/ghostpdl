@@ -387,7 +387,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           if ( cdata[0] == 0 )
             { /* PCL XL format */
               params = cdata + 2;
-              bitmap_data = cdata + 10;
+              bitmap_data = cdata + round_up(10, ARCH_ALIGN_PTR_MOD);
               delta_x = 0;      /* irrelevant */
               lsb = pl_get_int16(params);
               ascent = pl_get_int16(params + 2);

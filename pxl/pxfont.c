@@ -700,6 +700,8 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
                 int toff = pl_get_int16(data+4);
                 uint width = pl_get_uint16(data+6);
                 uint height = pl_get_uint16(data+8);
+                uint bmp_size = ((width + 7) >> 3) * height;
+                uint bmp_offset = round_up(10, ARCH_ALIGN_PTR_MOD);
                 if ( size < 10 || size != 10 + ((width + 7) >> 3) * height)
                     code = gs_note_error(errorIllegalCharacterData);
                 else if ((-16384 > toff) || (toff > 16384))
@@ -710,6 +712,15 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
                     code = gs_note_error(errorIllegalCharacterData);
                 else if ((1 > width) || (width > 16384))
                     code = gs_note_error(errorIllegalCharacterData);
+
+                if (code >= 0) {
+                    /* try to get the bitmap aligned */
+                    data = gs_resize_object(pxs->memory, data, bmp_offset + bmp_size, "pxReadChar");
+                    if (data)
+                        memmove(data + bmp_offset, data + 10, bmp_size);
+                    else
+                        code = 1;
+                }
             }
             break;
         case 1:             /* TrueType outline */
