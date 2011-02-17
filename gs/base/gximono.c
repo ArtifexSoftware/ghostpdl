@@ -104,7 +104,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
 
     if (penum->spp == 1) {
         /* At this point in time, only use the ht approach if our device
-           uses halftoning, and our source image is a reaonable size.  We
+           uses halftoning, and our source image is a reasonable size.  We
            probably don't want to do this if we have a bunch of tiny little
            images.  Then the rect fill approach is probably not all that bad */
 
@@ -214,23 +214,12 @@ gs_image_class_3_mono(gx_image_enum * penum)
                                 gs_alloc_bytes(penum->memory,
                                                penum->line_size * 16  + 16,
                                                "gs_image_class_3_mono");
-                    /* That mapps into 2 bytes of Halftone data */
+                    /* That maps into 2 bytes of Halftone data */
                     penum->ht_buffer =
                                     gs_alloc_bytes(penum->memory,
                                                    penum->line_size * 2,
                                                    "gs_image_class_3_mono");
                     penum->ht_stride = penum->line_size;
-                    /* Figure out our offset in the contone and threshold data
-                       buffers so that we ensure that we are on the 128bit
-                       memory boundaries  */
-                    penum->offset_contone =
-                        16 - ((unsigned long)(penum->line)) % 16;
-                    if (penum->offset_contone == 16)
-                        penum->offset_contone = 0;
-                    penum->offset_threshold =
-                        16 - ((unsigned long) (penum->thresh_buffer)) % 16;
-                    if (penum->offset_threshold == 16)
-                        penum->offset_threshold = 0;
                     if (penum->line == NULL || penum->thresh_buffer == NULL
                                 || penum->ht_buffer == NULL)
                         code = -1;
@@ -282,8 +271,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
                        the MSBit positions. Note the #define chunk bits16 in
                        gdevm1.c.  Allow also for a 15 sample over run.
                     */
-                    penum->ht_offset_bits = 16 - fixed2int_var_pixround(ox) % 16;
-                    if (penum->ht_offset_bits == 16) penum->ht_offset_bits = 0;
+                    penum->ht_offset_bits = (-fixed2int_var_pixround(ox)) & 15;
                     if (penum->ht_offset_bits > 0) {
                         penum->ht_stride = ((7 + (dev_width + 4) * spp_out) / 8) +
                                             ARCH_SIZEOF_LONG;
@@ -322,15 +310,6 @@ gs_image_class_3_mono(gx_image_enum * penum)
                                 gs_alloc_bytes(penum->memory,
                                                penum->line_size * max_height,
                                                "gs_image_class_3_mono");
-                    /* Figure out our offset in the contone and threshold data
-                       buffers so that we ensure that we are on the 128bit
-                       memory boundaries when we get offset_bits into the data. */
-                    penum->offset_contone =
-                        (16 - (((unsigned long)(penum->line)) +
-                                 penum->ht_offset_bits) % 16) % 16;
-                    penum->offset_threshold =
-                        (16 - (((unsigned long) (penum->thresh_buffer)) +
-                                 penum->ht_offset_bits) % 16) % 16;
                     if (penum->line == NULL || penum->thresh_buffer == NULL
                                 || penum->ht_buffer == NULL)
                         code = -1;
@@ -1374,6 +1353,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     bool flush_buff = false;
     fixed scale_step;
     byte *psrc_temp;
+    int offset_contone;    /* to ensure 128 bit boundary */
+    int offset_threshold;  /* to ensure 128 bit boundary */
 
 #if RAW_HT_DUMP
     FILE *fid;
@@ -1392,6 +1373,14 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     }
     switch (posture) {
         case image_portrait:
+            /* Figure out our offset in the contone and threshold data
+               buffers so that we ensure that we are on the 128bit
+               memory boundaries when we get offset_bits into the data. */
+            /* Can't do this earlier, as GC might move the buffers. */
+            offset_contone   = (- (((long)(penum->line)) +
+                                   penum->ht_offset_bits)) & 15;
+            offset_threshold = (- (((long)(penum->thresh_buffer)) +
+                                   penum->ht_offset_bits)) & 15;
             pnext = penum->dda.pixel0;
             xrun = dda_current(pnext.x);
             xrun = xrun - penum->adjust + (fixed_half - fixed_epsilon);
@@ -1419,8 +1408,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             /* Get the pointers to our buffers */
             dithered_stride = penum->ht_stride;
             halftone = penum->ht_buffer;
-            contone_align = penum->line + penum->offset_contone;
-            thresh_align = penum->thresh_buffer + penum->offset_threshold;
+            contone_align = penum->line + offset_contone;
+            thresh_align = penum->thresh_buffer + offset_threshold;
 #endif
 #ifdef DEBUG
             /* Help in spotting problems */
@@ -1429,6 +1418,12 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             break;
         case image_landscape:
         default:
+            /* Figure out our offset in the contone and threshold data buffers
+               so that we ensure that we are on the 128bit memory boundaries.
+               Can't do this earlier as GC may move the buffers.
+             */
+            offset_contone   = (-(long)(penum->line)) & 15;
+            offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
             vdi = penum->wci;
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
@@ -1478,8 +1473,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             /* Get the pointers to our buffers */
             dithered_stride = penum->ht_stride;
             halftone = penum->ht_buffer;
-            contone_align = penum->line + penum->offset_contone;
-            thresh_align = penum->thresh_buffer + penum->offset_threshold;
+            contone_align = penum->line + offset_contone;
+            thresh_align = penum->thresh_buffer + offset_threshold;
 #endif
             break;
     }
@@ -1772,7 +1767,7 @@ flush:
                     memcpy(ptr_out, thresh_align, 16 * tile_remainder);
                 }
                 /* Apply the threshold operation */
-                  threshold_landscape(contone_align, thresh_align,
+                threshold_landscape(contone_align, thresh_align,
                                     penum->ht_landscape, halftone, data_length);
                 /* Perform the copy mono */
                 penum->ht_landscape.offset_set = false;
@@ -1824,6 +1819,7 @@ flush:
     gs_free_object(penum->memory, thresh_align, "image_render_mono_ht");
     gs_free_object(penum->memory, halftone, "image_render_mono_ht");
 #endif
+    return 0;
 }
 
 
