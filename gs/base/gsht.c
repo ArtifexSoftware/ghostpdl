@@ -1292,7 +1292,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
     }
 
     /*
-     * Discard and unused components and the components array of the
+     * Discard any unused components and the components array of the
      * operand device halftone
      */
     gx_device_halftone_release(pdht, pdht->rc.memory);
@@ -1390,7 +1390,7 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index
     /* Adjustments to ensure that we properly map our 256 levels into
       the number of shades that we have in our halftone screen.  For example
       if we have a 16x16 screen, we have 257 shadings that we can represent
-      if we have a  4x4  screen, we have 5 shadings that we can represent.
+      if we have a  2x2  screen, we have 5 shadings that we can represent.
       Calculations are performed to match what happens in the tile filling
       code */
     max_value = (dev->color_info.gray_index == plane_index) ?
@@ -1399,50 +1399,50 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index
     hsize = d_order->num_levels;
     nshades = hsize * max_value + 1;
 
-   if (d_order == NULL) return -1;
-   if (d_order->threshold != NULL) return 0;
-   thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
-                                  "gx_ht_construct_threshold");
-   if( thresh == NULL ) {
+    if (d_order == NULL) return -1;
+    if (d_order->threshold != NULL) return 0;
+    thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
+                               "gx_ht_construct_threshold");
+    if( thresh == NULL ) {
         return -1 ;         /* error if allocation failed   */
-   }
-   for( i = 0; i < d_order->num_bits; i++ ) {
-      thresh[i] = 255;
-   }
-   prev_l = 0;
-   l = 1;
-   while (l < d_order->num_levels) {
-      /* If we have some dots to turn on then proceed */
-      if (d_order->levels[l] > d_order->levels[prev_l]) {
-         t_level = (256 * l) / d_order->num_levels;
-         t_level_adjust = byte2frac(t_level) * nshades / (frac_1_long + 1);
-         delta = t_level_adjust - t_level;
-         if (delta > delta_sum) {
-             /* We had a change in our value.  We need to do some adjustments.
-                This particular level stays were it is and subsequent ones
-                will be offset by delta_sum. */
-             t_level -= delta_sum;
-             delta_sum += delta;
-         } else {
-             t_level -= delta_sum;
-         }
-         /* Loop over the number of dots that we have to set in going 
-            to this new level from the old level */
-         for (j = d_order->levels[prev_l]; j < d_order->levels[l]; j++) {
-            row = bits[j].offset / d_order->raster;
-            for (col = 0; col < (8*sizeof(ht_mask_t)); col++) {
-               if (bits[j].mask & bit_order[col])
-                  break;
+    }
+    for( i = 0; i < d_order->num_bits; i++ ) {
+        thresh[i] = 255;
+    }
+    prev_l = 0;
+    l = 1;
+    while (l < d_order->num_levels) {
+        /* If we have some dots to turn on then proceed */
+        if (d_order->levels[l] > d_order->levels[prev_l]) {
+            t_level = (256 * l) / d_order->num_levels;
+            t_level_adjust = byte2frac(t_level) * nshades / (frac_1_long + 1);
+            delta = t_level_adjust - t_level;
+            if (delta > delta_sum) {
+                /* We had a change in our value.  We need to do some adjustments.
+                   This particular level stays were it is and subsequent ones
+                   will be offset by delta_sum. */
+                t_level -= delta_sum;
+                delta_sum += delta;
+            } else {
+                t_level -= delta_sum;
             }
-            col += 8 * ( bits[j].offset - (row * d_order->raster));
-            if (col < (int)d_order->width)
-               *(thresh + col + (row * d_order->width)) = t_level;
-         }
-         prev_l = l;
-      }
-      l++;
-   }
-   d_order->threshold = thresh;
-   return 0;
+            /* Loop over the number of dots that we have to set in going 
+               to this new level from the old level */
+            for (j = d_order->levels[prev_l]; j < d_order->levels[l]; j++) {
+                gs_int_point ppt;
+                int code = d_order->procs->bit_index(d_order, j, &ppt);
+                if (code < 0)
+                    return code;
+                row = ppt.y;
+                col = ppt.x;
+                if (col < (int)d_order->width)
+                    *(thresh + col + (row * d_order->width)) = t_level;
+            }
+            prev_l = l;
+        }
+        l++;
+    }
+    d_order->threshold = thresh;
+    return 0;
 }
 
