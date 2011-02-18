@@ -372,9 +372,10 @@ extern_st(st_path_enum);
 
 /* Macros equivalent to a few heavily used procedures. */
 /* Be aware that these macros may evaluate arguments more than once. */
-#define gx_path_current_point_inline(ppath,ppt)\
- ( !path_position_valid(ppath) ? gs_note_error(gs_error_nocurrentpoint) :\
-   ((ppt)->x = ppath->position.x, (ppt)->y = ppath->position.y, 0) )
+#define gx_path_current_point_inline(pgs,ppt)\
+ ( !pgs->current_point_valid ? gs_note_error(gs_error_nocurrentpoint) :\
+   ((ppt)->x = float2fixed_rounded(pgs->current_point.x), \
+   (ppt)->y = float2fixed_rounded(pgs->current_point.y), 0) )
 
 /* An iterator of flattened segments for a minotonic curve. */
 typedef struct gx_flattened_iterator_s gx_flattened_iterator;
