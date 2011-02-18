@@ -1384,9 +1384,10 @@ pdf_resource_t *pdf_substitute_pattern(pdf_resource_t *pres)
 static int 
 check_unsubstituted2(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
 {
-    pdf_pattern_t *ppat = (pdf_pattern_t *)pres0;
+    pdf_pattern_t *ppat0 = (pdf_pattern_t *)pres0;
+    pdf_pattern_t *ppat1 = (pdf_pattern_t *)pres1;
 
-    return ppat->substitute == NULL;
+    return (ppat0->substitute == NULL && ppat1->substitute == NULL);
 }
 
 static int 
