@@ -78,6 +78,10 @@ typedef struct cos_stream_piece_s cos_stream_piece_t;
   int proc(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
 	cos_proc_equal((*equal));
 
+#define cos_proc_hash(proc)\
+  int proc(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
+	cos_proc_hash((*hash));
+
 } /*cos_object_procs_t*/;
 /*typedef const cos_object_procs_t *cos_type_t;*/
 #define cos_type(pco) ((pco)->cos_procs)
@@ -115,9 +119,11 @@ struct otype_s {\
     byte written;		/* see above */\
     long length;                /* only for stream objects */\
     stream *input_strm;		/* only for stream objects */\
-    gs_md5_state_t md5;         /* only for stream objects */\
-    int md5_valid;              /* only for stream objects */\
-    byte hash[16];		/* only for stream objects */\
+    gs_md5_state_t md5;         /* used to create MD5 hash to test equality */\
+    int md5_valid;              /* 1 if hash created, 0 otherwise */\
+    byte hash[16];		/* MD5 hash value */\
+    int stream_md5_valid;       /* (for streams) 1 if hash created, 0 otherwise */\
+    byte stream_hash[16];	/* MD5 hash value (if stream) */\
     /* input_strm is introduced recently for pdfmark. */\
     /* Using this field, psdf_binary_writer_s may be simplified. */\
 }

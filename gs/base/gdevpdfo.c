@@ -173,6 +173,8 @@ cos_object_init(cos_object_t *pco, gx_device_pdf *pdev,
 	pco->written = false;
  	pco->length = 0;
  	pco->input_strm = 0;
+	pco->md5_valid = 0;
+	memset(&pco->hash, 0x00, 16);
     }
 }
 
@@ -371,36 +373,22 @@ cos_uncopy_element_value(cos_value_t *pcv, gs_memory_t *mem, bool copy)
 		       "cos_uncopy_element_value");
 }
 
-/* Compare 2 cos values for equality. */
-static int
-cos_value_equal(const cos_value_t *pcv0, const cos_value_t *pcv1, gx_device_pdf *pdev)
+static int cos_value_hash(cos_value_t *pcv0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
 {
-    if (pcv0->value_type != pcv1->value_type)
-	return false;
+    int code;
     switch (pcv0->value_type) {
 	case COS_VALUE_SCALAR:
 	case COS_VALUE_CONST:
-	    if (bytes_compare(pcv0->contents.chars.data, pcv0->contents.chars.size, 
-			      pcv1->contents.chars.data, pcv1->contents.chars.size))
-		return false;
+	    gs_md5_append(md5, pcv0->contents.chars.data, pcv0->contents.chars.size);
 	    break;
-	case COS_VALUE_OBJECT:
-	    if (pcv0->contents.object != pcv1->contents.object) {
-		int code = pcv0->contents.object->cos_procs->equal(
-			pcv0->contents.object, pcv1->contents.object, pdev);
 
-		if (code < 0)
-		    return code;
-		if (!code)
-		    return false;
-	    }
+	case COS_VALUE_OBJECT:
+	    code = pcv0->contents.object->cos_procs->hash(pcv0->contents.object, md5, hash, pdev);
 	    break;
 	case COS_VALUE_RESOURCE:
-	    if (pcv0->contents.object != pcv1->contents.object)
-		return false;
 	    break;
     }
-    return true;
+    return 0;
 }
 
 /* ---------------- Specific object types ---------------- */
@@ -410,8 +398,9 @@ cos_value_equal(const cos_value_t *pcv0, const cos_value_t *pcv1, gx_device_pdf 
 static cos_proc_release(cos_generic_release);
 static cos_proc_write(cos_generic_write);
 static cos_proc_equal(cos_generic_equal);
+static cos_proc_hash(cos_generic_hash);
 const cos_object_procs_t cos_generic_procs = {
-    cos_generic_release, cos_generic_write, cos_generic_equal
+    cos_generic_release, cos_generic_write, cos_generic_equal, cos_generic_hash
 };
 
 cos_object_t *
@@ -443,13 +432,20 @@ cos_generic_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_
     return_error(gs_error_Fatal);
 }
 
+static int
+cos_generic_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
+{
+    return_error(gs_error_Fatal);
+}
+
 /* ------ Arrays ------ */
 
 static cos_proc_release(cos_array_release);
 static cos_proc_write(cos_array_write);
 static cos_proc_equal(cos_array_equal);
+static cos_proc_hash(cos_array_hash);
 const cos_object_procs_t cos_array_procs = {
-    cos_array_release, cos_array_write, cos_array_equal
+    cos_array_release, cos_array_write, cos_array_equal, cos_array_hash
 };
 
 cos_array_t *
@@ -562,24 +558,44 @@ cos_array_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pd
 {
     const cos_array_t *const pca0 = (const cos_array_t *)pco0;
     const cos_array_t *const pca1 = (const cos_array_t *)pco1;
-    cos_array_element_t *first0 = pca0->elements;
-    cos_array_element_t *first1 = pca1->elements;
-    cos_array_element_t *pcae0, *pcae1;
     int code;
 
-    for (pcae0 = first0, pcae1 = first1; pcae0 && pcae1; 
-	    pcae0 = pcae0->next, pcae1 = pcae1->next) {
-	if (pcae0->index != pcae1->index)
-	    return false;
-	code = cos_value_equal(&pcae0->value, &pcae1->value, pdev);
+    if (!pca0->md5_valid) {
+	gs_md5_init((gs_md5_state_t *)&pca0->md5);
+	code = cos_array_hash(pco0, (gs_md5_state_t *)&pca0->md5, (gs_md5_byte_t *)pca0->hash, pdev);
 	if (code < 0)
 	    return code;
-	if (!code)
-	    return false;
+	gs_md5_finish((gs_md5_state_t *)&pca0->md5, (gs_md5_byte_t *)pca0->hash);
+	((cos_object_t *)pca0)->md5_valid = true;
     }
-    if (pcae0 || pcae1)
+    if (!pca1->md5_valid) {
+	gs_md5_init((gs_md5_state_t *)&pca1->md5);
+	code = cos_array_hash(pco1, (gs_md5_state_t *)&pca1->md5, (gs_md5_byte_t *)pca1->hash, pdev);
+	if (code < 0)
+	    return code;
+	gs_md5_finish((gs_md5_state_t *)&pca1->md5, (gs_md5_byte_t *)pca1->hash);
+	((cos_object_t *)pca1)->md5_valid = true;
+    }
+    if (memcmp(&pca0->hash, &pca1->hash, 16) != 0)
 	return false;
+
     return true;
+}
+
+static int
+cos_array_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
+{
+    const cos_array_t *const pca0 = (const cos_array_t *)pco0;
+    cos_array_element_t *first0 = pca0->elements;
+    cos_array_element_t *pcae0;
+    int code;
+
+    for (pcae0 = first0; pcae0;pcae0 = pcae0->next) {
+	code = cos_value_hash(&pcae0->value, md5, hash, pdev);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
 }
 
 
@@ -596,6 +612,7 @@ cos_array_put(cos_array_t *pca, long index, const cos_value_t *pvalue)
 	if (code < 0)
 	    cos_uncopy_element_value(&value, mem, true);
     }
+    pca->md5_valid = false;
     return code;
 }
 int
@@ -624,6 +641,7 @@ cos_array_put_no_copy(cos_array_t *pca, long index, const cos_value_t *pvalue)
 	*ppcae = pcae;
     }
     pcae->value = *pvalue;
+    pca->md5_valid = false;
     return 0;
 }
 static long
@@ -634,11 +652,13 @@ cos_array_next_index(const cos_array_t *pca)
 int
 cos_array_add(cos_array_t *pca, const cos_value_t *pvalue)
 {
+    pca->md5_valid = false;
     return cos_array_put(pca, cos_array_next_index(pca), pvalue);
 }
 int
 cos_array_add_no_copy(cos_array_t *pca, const cos_value_t *pvalue)
 {
+    pca->md5_valid = false;
     return cos_array_put_no_copy(pca, cos_array_next_index(pca), pvalue);
 }
 int
@@ -695,6 +715,7 @@ cos_array_unadd(cos_array_t *pca, cos_value_t *pvalue)
     *pvalue = pcae->value;
     pca->elements = pcae->next;
     gs_free_object(COS_OBJECT_MEMORY(pca), pcae, "cos_array_unadd");
+    pca->md5_valid = false;
     return 0;
 }
 
@@ -737,8 +758,9 @@ cos_array_reorder(const cos_array_t *pca, cos_array_element_t *first)
 static cos_proc_release(cos_dict_release);
 static cos_proc_write(cos_dict_write);
 static cos_proc_equal(cos_dict_equal);
+static cos_proc_hash(cos_dict_hash);
 const cos_object_procs_t cos_dict_procs = {
-    cos_dict_release, cos_dict_write, cos_dict_equal
+    cos_dict_release, cos_dict_write, cos_dict_equal, cos_dict_hash
 };
 
 cos_dict_t *
@@ -973,6 +995,7 @@ cos_dict_put_copy(cos_dict_t *pcd, const byte *key_data, uint key_size,
 	*ppcde = pcde;
     }
     pcde->value = value;
+    pcd->md5_valid = false;
     return 0;
 }
 int
@@ -1095,6 +1118,7 @@ cos_dict_move_all(cos_dict_t *pcdto, cos_dict_t *pcdfrom)
     }
     pcdto->elements = head;
     pcdfrom->elements = 0;
+    pcdto->md5_valid = false;
     return 0;
 }
 
@@ -1115,31 +1139,43 @@ cos_dict_find_c_key(const cos_dict_t *pcd, const char *key)
     return cos_dict_find(pcd, (const byte *)key, strlen(key));
 }
 
+int cos_dict_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
+{
+    cos_dict_t *dict = (cos_dict_t *) pco0;
+    cos_dict_element_t *pcde0 = dict->elements;
+
+    for (; pcde0; pcde0 = pcde0->next) {
+	gs_md5_append(md5, pcde0->key.data, pcde0->key.size);
+	cos_value_hash(&pcde0->value, md5, hash, pdev);
+    }
+    return 0;
+}
+
 /* Compare two dictionaries. */
 int
 cos_dict_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
 {
-    const cos_dict_t *pcd0 = (const cos_dict_t *)pco0;
-    const cos_dict_t *pcd1 = (const cos_dict_t *)pco1;
-    cos_dict_element_t *pcde0 = pcd0->elements;
-    cos_dict_element_t *pcde1 = pcd1->elements;
+    int code = 0;
 
-    for (; pcde1; pcde1 = pcde1->next) {
-	if (cos_dict_find(pcd0, pcde1->key.data, pcde1->key.size) == NULL)
-	    return false;
-    }
-    for (; pcde0; pcde0 = pcde0->next) {
-	const cos_value_t *v = cos_dict_find(pcd1, pcde0->key.data, pcde0->key.size);
-	int code;
-
-	if (v == NULL)
-	    return false;
-	code = cos_value_equal(&pcde0->value, v, pdev);
+    if (!pco0->md5_valid) {
+	gs_md5_init((gs_md5_state_t *)&pco0->md5);
+	code = cos_dict_hash(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)pco0->hash, pdev);
 	if (code < 0)
 	    return code;
-	if (!code)
-	    return false;
+	gs_md5_finish((gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)pco0->hash);
+	((cos_object_t *)pco0)->md5_valid = true;
     }
+    if (!pco1->md5_valid) {
+	gs_md5_init((gs_md5_state_t *)&pco1->md5);
+	code = cos_dict_hash(pco1, (gs_md5_state_t *)&pco1->md5, (gs_md5_byte_t *)pco1->hash, pdev);
+	if (code < 0)
+	    return code;
+	gs_md5_finish((gs_md5_state_t *)&pco1->md5, (gs_md5_byte_t *)pco1->hash);
+	((cos_object_t *)pco1)->md5_valid = true;
+    }
+    if (memcmp(&pco0->hash, &pco1->hash, 16) != 0)
+	return false;
+
     return true;
 }
 
@@ -1267,8 +1303,9 @@ cos_param_list_writer_init(cos_param_list_writer_t *pclist, cos_dict_t *pcd,
 static cos_proc_release(cos_stream_release);
 static cos_proc_write(cos_stream_write);
 static cos_proc_equal(cos_stream_equal);
+static cos_proc_hash(cos_stream_hash);
 const cos_object_procs_t cos_stream_procs = {
-    cos_stream_release, cos_stream_write, cos_stream_equal
+    cos_stream_release, cos_stream_write, cos_stream_equal, cos_stream_hash
 };
 
 cos_stream_t *
@@ -1279,9 +1316,6 @@ cos_stream_alloc(gx_device_pdf *pdev, client_name_t cname)
 	gs_alloc_struct(mem, cos_stream_t, &st_cos_object, cname);
 
     cos_object_init((cos_object_t *)pcs, pdev, &cos_stream_procs);
-    pcs->md5_valid = 0;
-    gs_md5_init(&pcs->md5);
-    memset(&pcs->hash, 0x00, 16);
     return pcs;
 }
 
@@ -1301,55 +1335,78 @@ cos_stream_release(cos_object_t *pco, client_name_t cname)
     cos_dict_release(pco, cname);
 }
 
-static int hash_cos_stream(gs_memory_t *mem, const cos_object_t *pco, FILE *sfile, uint64_t *hash)
+static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
 {
-    const cos_stream_t *pcs = (const cos_stream_t *)pco;
+    const cos_stream_t *pcs = (const cos_stream_t *)pco0;
     cos_stream_piece_t *pcsp = pcs->pieces;
+    FILE *sfile = pdev->streams.file;
     byte *ptr;
     long position_save = ftell(sfile);
     int result;
-    gs_md5_state_t md5;
 
-    gs_md5_init(&md5);
-    
+    if (!pcsp)
+	return -1;
+
+    gs_md5_init(md5);
     while(pcsp) {
-	ptr = gs_malloc(mem, sizeof (byte), pcsp->size, "hash_cos_stream");
+	ptr = gs_malloc(pdev->memory, sizeof (byte), pcsp->size, "hash_cos_stream");
 	fseek(sfile, pcsp->position, SEEK_SET);
 	if (fread(ptr, 1, pcsp->size, sfile) != pcsp->size) {
 	    result = gs_note_error(gs_error_ioerror);
 	    return result;
 	}
-	gs_md5_append(&md5, ptr, pcsp->size);
-	gs_free(mem, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
+	gs_md5_append(md5, ptr, pcsp->size);
+	gs_free(pdev->memory, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
 	pcsp = pcsp->next;
     }
     fseek(sfile, position_save, SEEK_SET);
-    gs_md5_finish(&md5, (gs_md5_byte_t *)hash);
+    gs_md5_finish(md5, (gs_md5_byte_t *)hash);
     return 0;
 }
+
+static int cos_stream_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
+{
+    cos_stream_t *pcs0 = (cos_stream_t *)pco0;
+    int code;
+    if (!pco0->stream_md5_valid) {
+	code = hash_cos_stream(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)&pco0->stream_hash, pdev);
+	if (code < 0)
+	    return false;
+	pcs0->stream_md5_valid = 1;
+    }
+    gs_md5_append(md5, (byte *)&pco0->stream_hash, sizeof(pco0->stream_hash));
+    code = cos_dict_hash(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)pco0->hash, pdev);
+    return code;
+}
+
 
 static int
 cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
 {
-    const cos_stream_t *pcs0 = (const cos_stream_t *)pco0;
-    const cos_stream_t *pcs1 = (const cos_stream_t *)pco1;
+    cos_stream_t *pcs0 = (cos_stream_t *)pco0;
+    cos_stream_t *pcs1 = (cos_stream_t *)pco1;
     int code;
 
+    if (!pco0->stream_md5_valid) {
+	code = cos_stream_hash(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)&pco0->stream_hash, pdev);
+	if (code < 0)
+	    return false;
+	pcs0->stream_md5_valid = 1;
+    }
+    if (!pco1->stream_md5_valid) {
+	code = cos_stream_hash(pco1, (gs_md5_state_t *)&pco1->md5, (gs_md5_byte_t *)&pco1->stream_hash, pdev);
+	if (code < 0)
+	    return false;
+	pcs1->stream_md5_valid = 1;
+    }
+    if (memcmp(&pcs0->stream_hash, &pcs1->stream_hash, 16) != 0)
+	return false;
     code = cos_dict_equal(pco0, pco1, pdev);
     if (code < 0)
 	return code;
     if (!code)
 	return false;
-    if (!pco0->md5_valid) {
-	hash_cos_stream(pdev->memory, pco0, pdev->streams.file, (uint64_t *)&pcs0->hash);
-    }
-    if (!pco1->md5_valid) {
-	hash_cos_stream(pdev->memory, pco1, pdev->streams.file, (uint64_t *)&pcs1->hash);
-    }
-    if (memcmp(&pcs0->hash, &pcs1->hash, 16) == 0)
-	return true;
-    return false;
-
+    return true;
 }
 
 /* Find the total length of a stream. */
@@ -1568,8 +1625,8 @@ cos_write_stream_close(stream *s)
 
     sflush(s);
     status = s_close_filters(&ss->target, ss->pdev->streams.strm);
-    gs_md5_finish(&ss->pcs->md5, (gs_md5_byte_t *)ss->pcs->hash);
-    ss->pcs->md5_valid = 1;
+    gs_md5_finish(&ss->pcs->md5, (gs_md5_byte_t *)ss->pcs->stream_hash);
+    ss->pcs->stream_md5_valid = 1;
     return (status < 0 ? status : s_std_close(s));
 }
 
@@ -1595,7 +1652,7 @@ cos_write_stream_alloc(cos_stream_t *pcs, gx_device_pdf *pdev,
 	goto fail;
     ss->template = &cos_write_stream_template;
     ss->pcs = pcs;
-    ss->pcs->md5_valid = 0;
+    ss->pcs->stream_md5_valid = 0;
     gs_md5_init(&ss->pcs->md5);
     memset(&ss->pcs->hash, 0x00, 16);
     ss->pdev = pdev;
