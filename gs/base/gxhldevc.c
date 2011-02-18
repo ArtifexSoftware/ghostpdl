@@ -165,7 +165,7 @@ gx_hld_get_color_space_and_ccolor(const gs_imager_state * pis,
 	if (pdevc->type == gx_dc_type_pattern 
 	   || pdevc->type == &gx_dc_pure_masked
 	   || pdevc->type == gx_dc_type_pattern2)
-            return pattern_color_sapce;
+            return pattern_color_space;
 	else {
             return non_pattern_color_space;
 	}

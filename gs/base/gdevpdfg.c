@@ -409,7 +409,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		return code;
 	    pprints1(pdev->strm, " %s\n", command);
 	    break;
-	case pattern_color_sapce:
+	case pattern_color_space:
 	    {	pdf_resource_t *pres;
 
 		if (pdc->type == gx_dc_type_pattern)

@@ -128,7 +128,7 @@ gx_hld_is_hl_color_available(const gs_imager_state * pis,
  */
 typedef enum {
         non_pattern_color_space,
-        pattern_color_sapce,
+        pattern_color_space,
 	use_process_color
 } gx_hld_get_color_space_and_ccolor_status;
 
