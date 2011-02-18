@@ -516,9 +516,20 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	    pres->object = COS_OBJECT(named);
 	} else if (!pres->named) { /* named objects are written at the end */
 	    if (pdev->DetectDuplicateImages) {
+		pdf_x_object_t *pxo = (pdf_x_object_t *)piw->pres;
+		int height = pxo->height, width = pxo->width;
+
 		code = pdf_substitute_resource(pdev, &piw->pres, resourceXObject, NULL, false);
 		if (code < 0)
 		    return code;
+
+		/* These values are related to the image matrix and should *not* be
+		 * substituted if we found a duplicate image, or the matrix calculation
+		 * will be incorrect! This only seems to matter for the PCL interpreter.
+		 */
+		pxo = (pdf_x_object_t *)piw->pres;
+		pxo->height = height;		
+		pxo->width = width;		
 	    } else {
 		pdf_reserve_object_id(pdev, piw->pres, gs_no_id);
 	    }
