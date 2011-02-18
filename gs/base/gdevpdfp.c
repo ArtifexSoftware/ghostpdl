@@ -114,6 +114,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("PreserveSeparation", gs_param_type_bool, PreserveSeparation),
     pi("PreserveDeviceN", gs_param_type_bool, PreserveDeviceN),
     pi("PDFACompatibilityPolicy", gs_param_type_int, PDFACompatibilityPolicy),
+    pi("DetectDuplicateImages", gs_param_type_bool, DetectDuplicateImages),
 #undef pi
     gs_param_item_end
 };

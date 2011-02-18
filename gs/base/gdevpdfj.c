@@ -515,9 +515,13 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	    *(cos_object_t *)named = *pco;
 	    pres->object = COS_OBJECT(named);
 	} else if (!pres->named) { /* named objects are written at the end */
-	    code = pdf_substitute_resource(pdev, &piw->pres, resourceXObject, NULL, false);
-	    if (code < 0)
-		return code;
+	    if (pdev->DetectDuplicateImages) {
+		code = pdf_substitute_resource(pdev, &piw->pres, resourceXObject, NULL, false);
+		if (code < 0)
+		    return code;
+	    } else {
+		pdf_reserve_object_id(pdev, piw->pres, gs_no_id);
+	    }
 	    /*  Warning : If the substituted image used alternate streams,
 		its space in the pdev->streams.strm file won't be released. */
 	    piw->pres->where_used |= pdev->used_mask;

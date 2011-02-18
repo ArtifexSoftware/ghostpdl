@@ -253,6 +253,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* DoNumCopies */
  true,				/* PreserveSeparation */
  true,				/* PreserveDeviceN */
- 0				/* PDFACompatibilityPolicy */
+ 0,				/* PDFACompatibilityPolicy */
+ true				/* DetectDuplicateImages */
 };
 
