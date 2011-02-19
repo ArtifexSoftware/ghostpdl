@@ -1990,8 +1990,12 @@ currentdict /PDF2PS_matrix_key undef
     } if
     /XObject knownoget {
       dup type dup /dicttype eq exch /arraytype eq or {
-        { { exch pop oforce dup
-            /Subtype get /Form eq { resourcespotcolors } { pop } ifelse
+        { { exch pop oforce 
+            dup //null ne {
+              dup /Subtype get /Form eq { resourcespotcolors } { pop } ifelse
+            } {
+              pop
+            } ifelse
           } forall
         } big-res-forall
       } {
