@@ -250,5 +250,6 @@ pcl_init_state(
     pcl_cs_base_init(pcs);
     pcl_cs_indexed_init(pcs);
 
+    pcs->cap.x = pcs->cap.y = 0;
     pcs->halftone_set = false;
 }
