@@ -95,9 +95,9 @@ typedef enum {
 /* 3-input RasterOp */
 typedef enum {
     rop3_0 = 0,
-    rop3_T = 0xf0,              /* texture */
+#define rop3_T 0xf0              /* texture */
 #define rop3_T_shift 4
-    rop3_S = 0xcc,              /* source */
+#define rop3_S 0xcc              /* source */
 #define rop3_S_shift 2
     rop3_D = 0xaa,              /* destination */
 #define rop3_D_shift 1
@@ -368,5 +368,29 @@ void rop_release_run_op(rop_run_op *op);
 #define rop_release_run_op(OP)           do { rop_run_op *OP2 = (OP); \
                                               if (OP2->release) OP2->release(OP2); \
                                          } while (0==1)
+
+#ifdef _MSC_VER /* Are we using MSVC? */
+
+#if defined(_M_IX86) || defined(_M_AMD64) /* Are we on an x86? */
+
+#include "intrin.h"
+#define ENDIAN_SWAP_INT _byteswap_ulong
+
+#endif
+
+#elif defined(__GNUC__) /* Are we using GCC? */
+
+#ifdef __i386__ /* Are we on an x86? */
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+#if GCC_VERSION >= 40300 /* Modern enough to have byteswap intrinsics? */
+
+#include <byteswap.h>
+
+#define ENDIAN_SWAP_INT bswap_32
+
+#endif /* GCC >= 4.3 */
+#endif /* x86 or later */
+
+#endif
 
 #endif /* gsropt_INCLUDED */

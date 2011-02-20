@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -16,6 +16,9 @@
 #include "std.h"
 #include "stdpre.h"
 #include "gsropt.h"
+#include "arch.h"
+
+#undef USE_TEMPLATES
 
 /* A hack. Define this, and we will update the rop usage within a file. */
 #undef RECORD_ROP_USAGE
@@ -31,7 +34,7 @@ static void write_usage(void)
     int i;
     for (i = 0; i < MAX; i++)
         if (usage[3*i] != 0)
-            (fprintf)(stderr, "ROP: %d %d %d %d\n", i, usage[3*i], usage[3*i+1],
+            (fprintf)(stderr, "ROP: %x %d %d %d\n", i, usage[3*i], usage[3*i+1],
                       usage[3*i+2]);
 #ifdef RECORD_BINARY
     FILE *out = fopen("ropusage2.tmp", "wb");
@@ -77,6 +80,14 @@ static void unrecord(int rop)
 
 /* Rop specific code */
 /* Rop 0x55 = Invert   dep=1  (all cases) */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          invert_rop_run1
+#define SPECIFIC_ROP           0x55
+#define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
+#define S_CONST
+#define T_CONST
+#include "gsroprun1.h"
+#else
 static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 {
     byte lmask, rmask;
@@ -113,6 +124,7 @@ static void invert_rop_run1(rop_run_op *op, byte *d, int len)
         *d = ((~*d) & ~rmask) | (*d & rmask);
     }
 }
+#endif
 
 /* Rop 0x55 = Invert   dep=8  (all cases) */
 static void invert_rop_run8(rop_run_op *op, byte *d, int len)
@@ -139,9 +151,252 @@ static void invert_rop_run24(rop_run_op *op, byte *d, int len)
     while (--len);
 }
 
+/* Rop 0x0f = ~t */
+
+/* 0x0F = ~t  dep=1 s_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          notT_rop_run1_const_s
+#define SPECIFIC_ROP           0x0F
+#define SPECIFIC_CODE(O,D,S,T) do { O = ~T; } while (0)
+#define S_CONST
+#include "gsroprun1.h"
+#else
+static void notT_rop_run1_const_s(rop_run_op *op, byte *d, int len)
+{
+    byte        lmask, rmask;
+    const byte *t = op->t.b.ptr;
+    byte        T;
+    int         t_skew;
+
+    len    = len * op->depth + op->dpos;
+    /* lmask = the set of bits to alter in the output bitmap on the left
+     * hand edge of the run. rmask = the set of bits NOT to alter in the
+     * output bitmap on the right hand edge of the run. */
+    lmask  = 255>>(7 & op->dpos);
+    rmask  = 255>>(7 & len);
+
+    /* Note #1: This mirrors what the original code did, but I think it has
+     * the risk of moving s and t back beyond officially allocated space. We
+     * may be saved by the fact that all blocks have a word or two in front
+     * of them due to the allocator. If we ever get valgrind properly marking
+     * allocated blocks as readable etc, then this may throw some spurious
+     * errors. RJW. */
+    t_skew = op->t.b.pos - op->dpos;
+    if (t_skew < 0) {
+        t_skew += 8;
+        t--;
+    }
+
+    len -= 8;
+    if (len < 0) {
+        /* Short case - starts and ends in the same byte */
+        lmask &= ~rmask; /* Combined mask = bits to alter */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        *d = (*d & ~lmask) | (~T & lmask);
+        return;
+    }
+    if (lmask != 0xFF) {
+        /* Unaligned left hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        t++;
+        *d = (*d & ~lmask) | (~T & lmask);
+        d++;
+        len -= 8;
+    }
+    if (len >= 0) {
+        /* Simple middle case (complete destination bytes). */
+        if (t_skew == 0) {
+            do {
+                *d++ = ~*t++;
+                len -= 8;
+            } while (len >= 0);
+        } else {
+            do {
+                T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+                t++;
+                *d++ = ~T;
+                len -= 8;
+            } while (len >= 0);
+        }
+    }
+    if (rmask != 0xFF) {
+        /* Unaligned right hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        *d = (~T & ~rmask) | (*d & rmask);
+    }
+}
+#endif
+
+/* Rop 0xEE = d|s */
+
+/* 0xEE = d|s  dep=1 t_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          dors_rop_run1_const_t
+#define SPECIFIC_ROP           0xEE
+#define SPECIFIC_CODE(O,D,S,T) do { O = D|S; } while (0)
+#define T_CONST
+#include "gsroprun1.h"
+#else
+static void dors_rop_run1_const_t(rop_run_op *op, byte *d, int len)
+{
+    byte        lmask, rmask;
+    const byte *s = op->s.b.ptr;
+    byte        S, D;
+    int         s_skew;
+
+    len    = len * op->depth + op->dpos;
+    /* lmask = the set of bits to alter in the output bitmap on the left
+     * hand edge of the run. rmask = the set of bits NOT to alter in the
+     * output bitmap on the right hand edge of the run. */
+    lmask  = 255>>(7 & op->dpos);
+    rmask  = 255>>(7 & len);
+
+    /* Note #1: This mirrors what the original code did, but I think it has
+     * the risk of moving s and t back beyond officially allocated space. We
+     * may be saved by the fact that all blocks have a word or two in front
+     * of them due to the allocator. If we ever get valgrind properly marking
+     * allocated blocks as readable etc, then this may throw some spurious
+     * errors. RJW. */
+    s_skew = op->s.b.pos - op->dpos;
+    if (s_skew < 0) {
+        s_skew += 8;
+        s--;
+    }
+
+    len -= 8;
+    if (len < 0) {
+        /* Short case - starts and ends in the same byte */
+        lmask &= ~rmask; /* Combined mask = bits to alter */
+        S = (s[0]<<s_skew) | (s[1]>>(8-s_skew));
+        D = *d | S;
+        *d = (*d & ~lmask) | (D & lmask);
+        return;
+    }
+    if (lmask != 0xFF) {
+        /* Unaligned left hand case */
+        S = (s[0]<<s_skew) | (s[1]>>(8-s_skew));
+        s++;
+        D = *d | S;
+        *d = (*d & ~lmask) | (D & lmask);
+        d++;
+        len -= 8;
+    }
+    if (len >= 0) {
+        /* Simple middle case (complete destination bytes). */
+        if (s_skew == 0) {
+            do {
+                *d++ |= *s++;
+                len -= 8;
+            } while (len >= 0);
+        } else {
+            do {
+                S = (s[0]<<s_skew) | (s[1]>>(8-s_skew));
+                s++;
+                *d |= S;
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        }
+    }
+    if (rmask != 0xFF) {
+        /* Unaligned right hand case */
+        S = (s[0]<<s_skew) | (s[1]>>(8-s_skew));
+        D = *d | S;
+        *d = (D & ~rmask) | (*d & rmask);
+    }
+}
+#endif
+
+/* Rop 0xfa = d|t */
+
+/* 0xFA = d|t  dep=1 s_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          dort_rop_run1_const_s
+#define SPECIFIC_ROP           0xFA
+#define SPECIFIC_CODE(O,D,S,T) do { O = D|T; } while (0)
+#define S_CONST
+#include "gsroprun1.h"
+#else
+static void dort_rop_run1_const_s(rop_run_op *op, byte *d, int len)
+{
+    byte        lmask, rmask;
+    const byte *t = op->t.b.ptr;
+    byte        T, D;
+    int         t_skew;
+
+    len    = len * op->depth + op->dpos;
+    /* lmask = the set of bits to alter in the output bitmap on the left
+     * hand edge of the run. rmask = the set of bits NOT to alter in the
+     * output bitmap on the right hand edge of the run. */
+    lmask  = 255>>(7 & op->dpos);
+    rmask  = 255>>(7 & len);
+
+    /* Note #1: This mirrors what the original code did, but I think it has
+     * the risk of moving s and t back beyond officially allocated space. We
+     * may be saved by the fact that all blocks have a word or two in front
+     * of them due to the allocator. If we ever get valgrind properly marking
+     * allocated blocks as readable etc, then this may throw some spurious
+     * errors. RJW. */
+    t_skew = op->t.b.pos - op->dpos;
+    if (t_skew < 0) {
+        t_skew += 8;
+        t--;
+    }
+
+    len -= 8;
+    if (len < 0) {
+        /* Short case - starts and ends in the same byte */
+        lmask &= ~rmask; /* Combined mask = bits to alter */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        D = *d | T;
+        *d = (*d & ~lmask) | (D & lmask);
+        return;
+    }
+    if (lmask != 0xFF) {
+        /* Unaligned left hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        t++;
+        D = *d | T;
+        *d = (*d & ~lmask) | (D & lmask);
+        d++;
+        len -= 8;
+    }
+    if (len >= 0) {
+        /* Simple middle case (complete destination bytes). */
+        if (t_skew == 0) {
+            do {
+                *d++ |= *t++;
+                len -= 8;
+            } while (len >= 0);
+        } else {
+            do {
+                T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+                t++;
+                *d |= T;
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        }
+    }
+    if (rmask != 0xFF) {
+        /* Unaligned right hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        D = *d | T;
+        *d = (D & ~rmask) | (*d & rmask);
+    }
+}
+#endif
+
 /* Rop 0x66 = d^s (and 0x5A = d^t) */
 
 /* 0x5A = d^t  dep=1 s_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          xor_rop_run1_const_s
+#define SPECIFIC_ROP           0xEE
+#define SPECIFIC_CODE(O,D,S,T) do { O = D^T; } while (0)
+#define S_CONST
+#include "gsroprun1.h"
+#else
 static void xor_rop_run1_const_s(rop_run_op *op, byte *d, int len)
 {
     byte        lmask, rmask;
@@ -210,6 +465,7 @@ static void xor_rop_run1_const_s(rop_run_op *op, byte *d, int len)
         *d = (D & ~rmask) | (*d & rmask);
     }
 }
+#endif
 
 /* rop = 0x66 = d^s  dep=8  s_constant t_constant */
 static void xor_rop_run8_const_st(rop_run_op *op, byte *d, int len)
@@ -252,7 +508,10 @@ static void sort_rop_run24_const_st(rop_run_op *op, byte *d, int len)
 }
 
 /* Generic ROP run code */
-
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run1
+#include "gsroprun1.h"
+#else
 static void generic_rop_run1(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[op->rop];
@@ -355,6 +614,7 @@ static void generic_rop_run1(rop_run_op *op, byte *d, int len)
         *d = (D & ~rmask) | (*d & rmask);
     }
 }
+#endif
 
 static void generic_rop_run8(rop_run_op *op, byte *d, int len)
 {
@@ -558,6 +818,11 @@ static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
     while (--len);
 }
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run1_const_s
+#define S_CONST
+#include "gsroprun1.h"
+#else
 static void generic_rop_run1_const_s(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[op->rop];
@@ -633,6 +898,7 @@ static void generic_rop_run1_const_s(rop_run_op *op, byte *d, int len)
         *d = (D & ~rmask) | (*d & rmask);
     }
 }
+#endif
 
 static void generic_rop_run8_const_s(rop_run_op *op, byte *d, int len)
 {
@@ -780,6 +1046,12 @@ static void generic_rop_run24_const_s_1bit(rop_run_op *op, byte *d, int len)
     while (--len);
 }
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run1_const_st
+#define T_CONST
+#define S_CONST
+#include "gsroprun1.h"
+#else
 static void generic_rop_run1_const_st(rop_run_op *op, byte *d, int len)
 {
     rop_proc proc = rop_proc_table[op->rop];
@@ -837,6 +1109,7 @@ static void generic_rop_run1_const_st(rop_run_op *op, byte *d, int len)
         *d = (D & ~rmask) | (*d & rmask);
     }
 }
+#endif
 
 static void generic_rop_run8_const_st(rop_run_op *op, byte *d, int len)
 {
@@ -952,6 +1225,7 @@ void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
 {
     int key;
     int swap = 0;
+    int could_swap = 0;
 
     /* If the rop ignores either S or T, then we might as well set them to
      * be constants; will save us slaving through memory. Also, they can't
@@ -969,12 +1243,13 @@ void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
 
     /* Cut down the number of cases by mapping 'S bitmap,T constant' onto
      * 'S constant,Tbitmap'. */
-    swap = ((flags & (rop_s_constant | rop_t_constant)) == rop_t_constant);
+    could_swap = ((flags & (rop_s_constant | rop_t_constant)) == rop_t_constant);
     if (0 == 1) {
 force_swap:
 #ifdef RECORD_ROP_USAGE
         unrecord((int)op->opaque);
 #endif
+        could_swap = 0;
         swap = 1;
     }
     if (swap) {
@@ -1004,6 +1279,10 @@ retry:
     switch (key)
     {
     /* First, the rop specific ones */
+    /* 0x0F = T */
+    case ROP_SPECIFIC_KEY(0x0F, 1, rop_s_constant):
+        op->run     = notT_rop_run1_const_s;
+        break;
     /* 0x55 = Invert */
     case ROP_SPECIFIC_KEY(0x55, 1, rop_s_constant | rop_t_constant):
         op->run     = invert_rop_run1;
@@ -1033,6 +1312,14 @@ retry:
         break;
     case ROP_SPECIFIC_KEY(0xFC, 24, rop_s_constant | rop_t_constant):
         op->run     = sort_rop_run24_const_st;
+        break;
+    /* 0xEE = D or S */
+    case ROP_SPECIFIC_KEY(0xEE, 1, rop_t_constant):
+        op->run     = dors_rop_run1_const_t;
+        break;
+    /* 0xFA = D or T */
+    case ROP_SPECIFIC_KEY(0xFA, 1, rop_s_constant):
+        op->run     = dort_rop_run1_const_s;
         break;
     /* Then the generic ones */
     case KEY(1, 0):
@@ -1134,6 +1421,10 @@ retry:
         op->run = generic_rop_run24_const_st;
         break;
     default:
+        /* If we failed to find a specific one, and swapping is an option,
+         * then try swapping. */
+        if (could_swap)
+            goto force_swap;
         /* If we failed to find a specific one for this rop value, try again
          * for a generic one. */
         if (KEY_IS_ROP_SPECIFIC(key))

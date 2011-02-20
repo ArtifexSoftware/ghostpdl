@@ -215,6 +215,7 @@ extern const gx_device_memory mem_planar_device;
  * referenced in several implementation modules.
  */
 dev_proc_strip_copy_rop(mem_mono_strip_copy_rop);
+dev_proc_strip_copy_rop(mem_mono_strip_copy_rop_dev);
 dev_proc_strip_copy_rop(mem_gray_strip_copy_rop);
 dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 
