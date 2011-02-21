@@ -18,7 +18,12 @@
 #include "gsropt.h"
 #include "arch.h"
 
-#undef USE_TEMPLATES
+/* Enable the following define to use 'template'd code (code formed by
+ * repeated #inclusion of a header file to generate differen versions).
+ * This code should be faster as it uses native ints where possible.
+ * Eventually this should be the only type of code left in here and we can
+ * remove this define. */
+#define USE_TEMPLATES
 
 /* A hack. Define this, and we will update the rop usage within a file. */
 #undef RECORD_ROP_USAGE
@@ -392,7 +397,7 @@ static void dort_rop_run1_const_s(rop_run_op *op, byte *d, int len)
 /* 0x5A = d^t  dep=1 s_constant */
 #ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          xor_rop_run1_const_s
-#define SPECIFIC_ROP           0xEE
+#define SPECIFIC_ROP           0x5A
 #define SPECIFIC_CODE(O,D,S,T) do { O = D^T; } while (0)
 #define S_CONST
 #include "gsroprun1.h"
