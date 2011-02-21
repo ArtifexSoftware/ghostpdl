@@ -17,6 +17,8 @@
 #if !defined(gpsync_INCLUDED)
 #  define gpsync_INCLUDED
 
+#include "stdint_.h" /* make sure stdint types are available - for int64_t */
+
 /* Initial version 4/1/98 by John Desrosiers (soho@crl.com). */
 /* 8/9/98 L. Peter Deutsch (ghost@aladdin.com) Changed ...sizeof to
    procedures, added some comments. */
@@ -28,8 +30,13 @@
  * control to proceed iff the number of signals since semaphore creation
  * is greater than the number of waits.
  */
-typedef struct {
-    void *dummy_;
+
+/* Needs to have maximum alignment */
+typedef union {
+    void *dummy1;
+    double dummy2;
+    long dummy3;
+    int64_t dummy4;
 } gp_semaphore;
 
 uint gp_semaphore_sizeof(void);

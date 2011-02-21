@@ -136,7 +136,7 @@ gsserial_h=$(GLSRC)gsserial.h
 gsstype_h=$(GLSRC)gsstype.h
 gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
  $(gserror_h) $(gsio_h) $(gsmemory_h) $(gstypes_h)
-gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
+gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h) $(stdint__h)
 gxclthrd_h=$(GLSRC)gxclthrd.h $(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 # Out of order
 gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
