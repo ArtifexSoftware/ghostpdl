@@ -355,8 +355,10 @@ XCFLAGS=
 !endif
 
 !ifndef CFLAGS
-CFLAGS=$(XCFLAGS)
+CFLAGS=
 !endif
+
+CFLAGS=$(CFLAGS) $(XCFLAGS)
 
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.
@@ -728,6 +730,24 @@ CPU_FAMILY=i386
 !ifndef CPU_TYPE
 CPU_TYPE=486
 #CPU_TYPE=601
+!endif
+
+# Define special features of CPUs
+
+# We'll assume that if you have an x86 machine, you've got a modern
+# enough one to have SSE2 instructions. If you don't, then predefine
+# DONT_HAVE_SSE2 when calling this makefile
+!if "$(CPU_FAMILY)" == "i386"
+!ifndef DONT_HAVE_SSE2
+!ifndef HAVE_SSE2
+!message **************************************************************
+!message * Assuming that target has SSE2 instructions available. If   *
+!message * this is NOT the case, define DONT_HAVE_SSE2 when building. *
+!message **************************************************************
+!endif
+HAVE_SSE2=1
+CFLAGS=$(CFLAGS) /DHAVE_SSE2
+!endif
 !endif
 
 # Define the .dev module that implements thread and synchronization

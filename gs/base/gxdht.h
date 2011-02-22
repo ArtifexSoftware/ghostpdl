@@ -231,6 +231,7 @@ struct gx_ht_order_s {
     gx_ht_cache *cache;		/* cache to use */
     gx_transfer_map *transfer;	/* TransferFunction or 0 */
     gx_ht_order_screen_params_t screen_params;
+    byte *threshold;
 };
 
 #define ht_order_is_complete(porder)\

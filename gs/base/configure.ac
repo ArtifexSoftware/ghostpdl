@@ -1446,6 +1446,23 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([bzero dup2 floor gettimeofday memchr memmove memset mkdir mkfifo modf pow putenv rint setenv sqrt strchr strerror strrchr strspn strstr])
 
 dnl --------------------------------------------------
+dnl check for sse2 intrinsics
+dnl --------------------------------------------------
+
+HAVE_SSE2=""
+AC_COMPILE_IFELSE([
+#include <emmintrin.h>
+],HAVE_SSE2="-DHAVE_SSE2")
+
+AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
+       [Do not use sse2 instrinsics]), [
+             if test "x$enable_sse2" = xno; then
+                HAVE_SSE2=""
+             fi])
+
+AC_SUBST(HAVE_SSE2)
+
+dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
 

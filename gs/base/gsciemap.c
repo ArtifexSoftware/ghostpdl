@@ -110,6 +110,41 @@ check_range(gs_range *ranges, int num_colorants)
     return(true);
 }
 
+/* Returns false if range is not 0 1 */
+bool
+check_cie_range( const gs_color_space * pcs )
+{
+    switch(gs_color_space_get_index(pcs)){
+        case gs_color_space_index_CIEDEFG:
+            return(check_range(&(pcs->params.defg->RangeDEFG.ranges[0]), 4));
+        case gs_color_space_index_CIEDEF:
+            return(check_range(&(pcs->params.def->RangeDEF.ranges[0]), 3));
+        case gs_color_space_index_CIEABC:
+            return(check_range(&(pcs->params.abc->RangeABC.ranges[0]), 3));
+        case gs_color_space_index_CIEA:
+            return(check_range(&(pcs->params.a->RangeA), 1));
+        default:            
+            return true;
+    }
+}
+
+gs_range*
+get_cie_range( const gs_color_space * pcs )
+{
+    switch(gs_color_space_get_index(pcs)){
+        case gs_color_space_index_CIEDEFG:
+            return(&(pcs->params.defg->RangeDEFG.ranges[0]));
+        case gs_color_space_index_CIEDEF:
+            return(&(pcs->params.def->RangeDEF.ranges[0]));
+        case gs_color_space_index_CIEABC:
+            return(&(pcs->params.abc->RangeABC.ranges[0]));
+        case gs_color_space_index_CIEA:
+            return(&(pcs->params.a->RangeA));
+        default:            
+            return NULL;
+    }
+}
+
 static void
 rescale_input_color(gs_range *ranges, int num_colorants, gs_client_color *src,
                     gs_client_color *des)

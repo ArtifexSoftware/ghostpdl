@@ -43,6 +43,7 @@ void gx_ht_construct_spot_order(gx_ht_order *);
 int gx_ht_construct_threshold_order(gx_ht_order *, const byte *);
 void gx_ht_construct_bit(gx_ht_bit * bit, int width, int bit_num);
 void gx_ht_construct_bits(gx_ht_order *);
+int gx_ht_construct_threshold(gx_ht_order *d_order, gx_device *dev, int plane_index);
 
 /* Halftone enumeration structure */
 struct gs_screen_enum_s {

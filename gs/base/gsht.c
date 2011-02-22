@@ -26,6 +26,21 @@
 #include "gzht.h"
 #include "gswts.h"
 
+/* Used in threshold from tiles construction */
+static const uint32_t bit_order[32]={
+#if arch_is_big_endian
+        0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000,
+        0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
+        0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,
+        0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001
+#else
+        0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001,
+        0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,
+        0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
+        0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000
+#endif
+    };
+
 /* Forward declarations */
 void gx_set_effective_transfer(gs_state *);
 
@@ -278,6 +293,7 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
 {
     porder->wse = NULL;
     porder->wts = NULL;
+    porder->threshold = NULL;
     porder->width = width;
     porder->height = height;
     porder->raster = bitmap_raster(width);
@@ -598,6 +614,10 @@ gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache)
 		       "gx_ht_order_release(bit_data)");
 	gs_free_object(porder->data_memory, porder->levels,
 		       "gx_ht_order_release(levels)");
+    }
+    if (porder->threshold != NULL) {
+        gs_free_object(porder->data_memory->non_gc_memory, porder->threshold, 
+                       "gx_ht_order_release(threshold)");
     }
     porder->levels = 0;
     porder->bit_data = 0;
@@ -1272,7 +1292,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
     }
 
     /*
-     * Discard and unused components and the components array of the
+     * Discard any unused components and the components array of the
      * operand device halftone
      */
     gx_device_halftone_release(pdht, pdht->rc.memory);
@@ -1343,3 +1363,96 @@ gx_set_effective_transfer(gs_state * pgs)
 {
     gx_imager_set_effective_xfer((gs_imager_state *) pgs);
 }
+
+/* Lifted from threshold_from_order in gdevtsep.c.  This creates a threshold
+   array from the tiles.  Threshold is allocated in non-gc memory and is
+   not known to the gc */
+int
+gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index)
+{
+    int i, j, l, prev_l;
+    unsigned char *thresh;
+    gx_ht_bit *bits = (gx_ht_bit *)d_order->bit_data;
+    gs_memory_t *memory = d_order->data_memory->non_gc_memory;
+    uint max_value;
+    unsigned long hsize, nshades;
+    int t_level, t_level_adjust;
+    int row, col;
+    int delta, delta_sum = 0;
+
+    if (d_order == NULL) return -1;
+    if (d_order->threshold != NULL) return 0;
+    thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
+                              "gx_ht_construct_threshold");
+    if( thresh == NULL ) {
+        return -1 ;         /* error if allocation failed   */
+    }
+    /* Adjustments to ensure that we properly map our 256 levels into
+      the number of shades that we have in our halftone screen.  For example
+      if we have a 16x16 screen, we have 257 shadings that we can represent
+      if we have a  2x2  screen, we have 5 shadings that we can represent.
+      Calculations are performed to match what happens in the tile filling
+      code */
+    max_value = (dev->color_info.gray_index == plane_index) ?
+         dev->color_info.dither_grays - 1 :
+         dev->color_info.dither_colors - 1;
+    hsize = d_order->num_levels;
+    nshades = hsize * max_value + 1;
+
+    if (d_order == NULL) return -1;
+    if (d_order->threshold != NULL) return 0;
+    thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
+                               "gx_ht_construct_threshold");
+    if( thresh == NULL ) {
+        return -1 ;         /* error if allocation failed   */
+    }
+    for( i = 0; i < d_order->num_bits; i++ ) {
+        thresh[i] = 255;
+    }
+    prev_l = 0;
+    l = 1;
+    while (l < d_order->num_levels) {
+        /* If we have some dots to turn on then proceed */
+        if (d_order->levels[l] > d_order->levels[prev_l]) {
+            t_level = (256 * l) / d_order->num_levels;
+            t_level_adjust = byte2frac(t_level) * nshades / (frac_1_long + 1);
+            delta = t_level_adjust - t_level;
+            if (delta > delta_sum) {
+                /* We had a change in our value.  We need to do some adjustments.
+                   This particular level stays were it is and subsequent ones
+                   will be offset by delta_sum. */
+                t_level -= delta_sum;
+                delta_sum += delta;
+            } else {
+                t_level -= delta_sum;
+            }
+            /* Loop over the number of dots that we have to set in going 
+               to this new level from the old level */
+            for (j = d_order->levels[prev_l]; j < d_order->levels[l]; j++) {
+                gs_int_point ppt;
+                int code = d_order->procs->bit_index(d_order, j, &ppt);
+                if (code < 0)
+                    return code;
+                row = ppt.y;
+                col = ppt.x;
+                if (col < (int)d_order->width)
+                    *(thresh + col + (row * d_order->width)) = t_level;
+            }
+            prev_l = l;
+        }
+        l++;
+    }
+    d_order->threshold = thresh;
+#ifdef DEBUG
+   if ( gs_debug_c('h') ) {
+      for( i=0; i<(int)d_order->height; i++ ) {
+         dprintf1("threshold array row %3d= ", i);
+         for( j=(int)d_order->width-1; j>=0; j-- )
+            dprintf1("%3d ", *(thresh+j+(i*d_order->width)) );
+         dprintf("\n");
+      }
+   }
+#endif
+    return 0;
+}
+

@@ -1746,6 +1746,51 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
     }
 }
 
+/* This is used by image color render to apply only the transfer function.  
+   We follow this up with threshold rendering. */
+void
+cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis, gx_device * dev)
+{
+    int ncomps = dev->color_info.num_components;
+    frac frac_value;
+    int i;
+    frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    /* apply the transfer function(s) */
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+        for (i = 0; i < ncomps; i++) {
+            frac_value = cv2frac(pconc[i]);
+            cv_frac[i] = gx_map_color_frac(pis,
+    			    frac_value, effective_transfer[i]);
+            pconc[i] = frac2cv(cv_frac[i]);
+        }
+    } else {
+        if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN) {
+            check_cmyk_color_model_comps(dev);
+        }
+        if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+            int k = dev->color_info.black_component;
+            for (i = 0; i < ncomps; i++) {
+                frac_value = cv2frac(pconc[i]);
+                if (i == k) {
+                    cv_frac[i] = frac_1 - gx_map_color_frac(pis,
+    		    (frac)(frac_1 - frac_value), effective_transfer[i]);
+                } else {
+                    cv_frac[i] = cv2frac(pconc[i]);  /* Ignore transfer, see PLRM3 p. 494 */
+                }
+                pconc[i] = frac2cv(cv_frac[i]);
+            }
+        } else {
+            for (i = 0; i < ncomps; i++) {
+                frac_value = cv2frac(pconc[i]);
+                cv_frac[i] = frac_1 - gx_map_color_frac(pis,
+    		        (frac)(frac_1 - frac_value), effective_transfer[i]);
+                pconc[i] = frac2cv(cv_frac[i]);
+            }
+        }
+    }
+}
+
 bool
 gx_device_uses_std_cmap_procs(gx_device * dev) 
 {
