@@ -21,7 +21,7 @@
 
 /* Either we can implement copy_mono directly, or we can call copy_rop to do
  * its work. It used to be faster to do it directly, but no more. */
-#undef DO_COPY_MONO_BY_COPY_ROP
+#define DO_COPY_MONO_BY_COPY_ROP
 
 /* Either we can implement tile_rect directly, or we can call copy_rop to do
  * its work. It used to be faster to do it directly, but no more. */
@@ -115,11 +115,13 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
 #endif
 
         switch (rop_usage_table[rop]) {
-#ifndef DO_FILL_RECT_BY_COPY_ROP /* Fill rect calls us - don't call it */
             case rop_usage_none:
+#ifndef DO_FILL_RECT_BY_COPY_ROP /* Fill rect calls us - don't call it */
                 /* We're just filling with a constant. */
                 return (*dev_proc(dev, fill_rectangle))
                     (dev, x, y, width, height, (gx_color_index) (rop & 1));
+#else
+                break;
 #endif
             case rop_usage_D:
                 /* This is either D (no-op) or ~D. */
@@ -131,8 +133,8 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                 sourcex = x;
                 sraster = 0;
                 goto no_T;
-#ifndef DO_COPY_MONO_BY_COPY_ROP /* Copy mono is calling us, don't call it! */
             case rop_usage_S:
+#ifndef DO_COPY_MONO_BY_COPY_ROP /* Copy mono is calling us, don't call it! */
                 /* This is either S or ~S, which copy_mono can handle. */
                 if (rop == rop3_S)
                     color0 = 0, color1 = 1;
@@ -141,6 +143,9 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
               do_copy:return (*dev_proc(dev, copy_mono))
                     (dev, sdata, sourcex, sraster, id, x, y, width, height,
                      color0, color1);
+#else
+                fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
+                break;
 #endif
             case rop_usage_DS:
 #ifndef DO_COPY_MONO_BY_COPY_ROP /* Copy mono is calling us, don't call it! */
@@ -169,8 +174,8 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                 no_texture.rep_shift = no_texture.shift = 0;
                 textures = &no_texture;
                 break;
-#ifndef DO_TILE_RECT_BY_COPY_ROP /* Tile rect calls us - don't call it! */
             case rop_usage_T:
+#ifndef DO_TILE_RECT_BY_COPY_ROP /* Tile rect calls us - don't call it! */
                 /* This is either T or ~T, which tile_rectangle can handle. */
                 if (rop == rop3_T)
                     color0 = 0, color1 = 1;
@@ -179,6 +184,9 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
               do_tile:return (*dev_proc(dev, strip_tile_rectangle))
                     (dev, textures, x, y, width, height, color0, color1,
                      phase_x, phase_y);
+#else
+                fit_fill(dev, x, y, width, height);
+                break;
 #endif
             case rop_usage_DT:
 #ifndef DO_TILE_RECT_BY_COPY_ROP /* Tile rect calls us - don't call it! */
