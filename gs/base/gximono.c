@@ -86,7 +86,6 @@ iclass_proc(gs_image_class_3_mono);
 
 static irender_proc(image_render_mono);
 static irender_proc(image_render_mono_ht);
-static irender_proc(image_render_mono_ht2);
 
 irender_proc_t
 gs_image_class_3_mono(gx_image_enum * penum)
@@ -100,7 +99,6 @@ gs_image_class_3_mono(gx_image_enum * penum)
     /* Set up the link now */
     const gs_color_space *pcs;
     gsicc_rendering_param_t rendering_params;
-    int k;
     int spp_out;
     fixed ox, oy;
     int dev_width, max_height;
@@ -1076,6 +1074,7 @@ threshold_16_SSE(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 }
 
 /* Not so fussy on its alignment */
+static void
 threshold_16_SSE_unaligned(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 {
     __m128i input1;
@@ -1155,9 +1154,7 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
                     int data_length)
 {
     __align16 byte contone[16];
-    int count = ht_landscape.count;
     int position_start, position, curr_position;
-    int increment;
     int *widths = &(ht_landscape.widths[0]);
     int local_widths[16];
     int num_contone = ht_landscape.num_contones;
@@ -1216,63 +1213,6 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
     }
 }
 
-/* This thresholds a buffer that is 16 wide by data_length tall */
-static void
-threshold_landscape_old(byte *contone_align, byte *thresh_align,
-                    ht_landscape_info_t ht_landscape, byte *halftone,
-                    int data_length)
-{
-    __align16 byte contone[32];  /* Allow overruns to avoid test */
-    int count = ht_landscape.count;
-    int position_start, position, curr_position;
-    int increment;
-    int *widths = &(ht_landscape.widths[0]);
-    int num_contone = ht_landscape.num_contones;
-    int k, j, w, contone_out_posit;
-    byte *contone_ptr, *thresh_ptr, *halftone_ptr;
-    byte *temp_buff_ptr;
-
-    /* Work through chunks of 16.  */
-    /* Data may have come in left to right or right to left. */
-    if (ht_landscape.index > 0) {
-        position = position_start = 0;
-    } else {
-        position = position_start = ht_landscape.curr_pos + 1;
-    }
-    thresh_ptr = thresh_align;
-    halftone_ptr = halftone;
-    for (k = 0; k < data_length; k++) { /* Loop on rows */
-        contone_ptr = &(contone_align[position]); /* Point us to our row start */
-        curr_position = position_start; /* We use this in keeping track of widths */
-        contone_out_posit = 0; /* Our index out */
-        temp_buff_ptr = &(contone[0]);
-        while (contone_out_posit < count) {
-            memcpy(temp_buff_ptr, contone_ptr, widths[curr_position]);
-            contone_out_posit += widths[curr_position];
-            temp_buff_ptr += widths[curr_position];
-            curr_position++; /* Move us to the next position in our width array */
-            contone_ptr++;   /* Move us to a new location in our contone buffer */
-        }
-        /* Now we have our left justified and expanded contone data for a single
-           set of 16.  Go ahead and threshold these */
-#ifdef HAVE_SSE2
-        threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
-#else
-        threshold_16_bit(&(contone[0]), thresh_ptr, halftone_ptr);
-#endif
-        thresh_ptr += 16;
-        position += 16;
-        halftone_ptr += 2;
-    }
-}
-
-
-
-
-
-
-
-
 /* If we are in here, we had data left over.  Move it to the proper position
    and get ht_landscape_info_t set properly */
 static void
@@ -1321,8 +1261,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                   uint w, int h, gx_device * dev)
 {
     gx_image_enum *penum = penum_orig; /* const within proc */
-    const gs_imager_state *pis = penum->pis;
-    gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
     int vdi;  /* amounts to replicate */
@@ -1330,7 +1268,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     byte *contone_align, *thresh_align, *halftone;
     int spp_out = penum->dev->color_info.num_components;
     byte *devc_contone;
-    int xi, wi, yi, hi;
     const byte *psrc = buffer + data_x;
     int dest_width, dest_height, data_length;
     byte *dev_value, *color_cache;
@@ -1341,12 +1278,10 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int dx, dy;
     int left_rem_end, left_width, right_tile_width;
     int num_full_tiles, i;
-    byte *curr_ptr;
     int dithered_stride;
     int position, k;
     int offset_bits = penum->ht_offset_bits;
     int contone_stride;
-    int temp_val;
     const int y_pos = penum->yci;
     fixed scale_factor, offset;
     int in_row_offset, jj, ii;
