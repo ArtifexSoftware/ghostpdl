@@ -40,6 +40,7 @@
 #include "gscie.h"
 
 #define RAW_HT_DUMP 0
+#define USE_FAST_CODE 0
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
 
 /* This should be moved someplace else later */
@@ -90,7 +91,11 @@ static irender_proc(image_render_mono_ht2);
 irender_proc_t
 gs_image_class_3_mono(gx_image_enum * penum)
 {
-    bool test_ht_code = true;
+#if USE_FAST_CODE
+    bool use_fast_code = true;
+#else
+    bool use_fast_code = false;
+#endif
     int code = 0;
     /* Set up the link now */
     const gs_color_space *pcs;
@@ -107,7 +112,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
            probably don't want to do this if we have a bunch of tiny little
            images.  Then the rect fill approach is probably not all that bad */
 
-        if (test_ht_code && penum->pcs != NULL &&
+        if (use_fast_code && penum->pcs != NULL &&
             penum->dev->color_info.num_components == 1 &&
             penum->dev->color_info.depth == 1) {
             spp_out = penum->dev->color_info.num_components;
