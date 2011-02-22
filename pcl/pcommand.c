@@ -52,7 +52,7 @@ float_value(
 )
 {
     return ( value_is_float(pv) ?
-	     (float)(value_is_neg(pv) ? -(int)pv->i - pv->fraction
+             (float)(value_is_neg(pv) ? -(int)pv->i - pv->fraction
                                       : pv->i + pv->fraction)
                                 : (float)int_value(pv) );
 }
@@ -153,7 +153,7 @@ int
 put_param1_string(pcl_state_t *pcs, gs_param_name pkey, const char *str)
 {
     gs_c_param_list list;
-    gs_param_string paramstr;        
+    gs_param_string paramstr;
     gs_c_param_list_write(&list, pcs->memory);
     param_string_from_string(paramstr, str);
     /* code = */param_write_string((gs_param_list *)&list, pkey, &paramstr);
@@ -175,15 +175,15 @@ pcl_do_registrations(
     /* initialize pcl's command counter */
     code = pcl_init_command_index(pst, pcs);
     if ( code < 0 )
-	return code;
+        return code;
     for (init = pcl_init_table; *init; ++init) {
-	if ( (*init)->do_registration ) {
-	    code = (*(*init)->do_registration)(pst, pcs->memory);
-	    if (code < 0) {
-		lprintf1("Error %d during initialization!\n", code);
-		return code;
-	    }
-	}
+        if ( (*init)->do_registration ) {
+            code = (*(*init)->do_registration)(pst, pcs->memory);
+            if (code < 0) {
+                lprintf1("Error %d during initialization!\n", code);
+                return code;
+            }
+        }
     }
     return 0;
 }
@@ -200,8 +200,8 @@ pcl_do_resets(
     int                 code = 0;
 
     for ( ; *init && code >= 0; ++init) {
-	if ((*init)->do_reset)
-	    (*(*init)->do_reset)(pcs, type);
+        if ((*init)->do_reset)
+            (*(*init)->do_reset)(pcs, type);
     }
     return code;
 }
@@ -251,5 +251,6 @@ pcl_init_state(
     pcl_cs_indexed_init(pcs);
 
     pcs->cap.x = pcs->cap.y = 0;
+    pcs->vmi_cp = 0;
     pcs->halftone_set = false;
 }
