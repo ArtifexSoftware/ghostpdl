@@ -25,8 +25,16 @@
  * remove this define. */
 #define USE_TEMPLATES
 
+/* Enable the following define to disable all rops (at least, all the ones
+ * done using the rop run mechanism. For debugging only. */
+#undef DISABLE_ROPS
+
 /* A hack. Define this, and we will update the rop usage within a file. */
 #undef RECORD_ROP_USAGE
+
+/* Values used for defines used when including 'template' headers. */
+#define MAYBE 0
+#define YES   1
 
 #ifdef RECORD_ROP_USAGE
 #define MAX (1024<<7)
@@ -141,7 +149,15 @@ static void invert_rop_run8(rop_run_op *op, byte *d, int len)
     while (--len);
 }
 
-/* Rop 0x55 = Invert   dep=8  (all cases) */
+/* Rop 0x55 = Invert   dep=24  (all cases) */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          invert_rop_run24
+#define SPECIFIC_ROP           0x55
+#define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
+#define S_CONST
+#define T_CONST
+#include "gsroprun24.h"
+#else
 static void invert_rop_run24(rop_run_op *op, byte *d, int len)
 {
     do
@@ -155,6 +171,7 @@ static void invert_rop_run24(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 /* Rop 0x0f = ~t */
 
@@ -486,6 +503,14 @@ static void xor_rop_run8_const_st(rop_run_op *op, byte *d, int len)
 }
 
 /* rop = 0x66 = d^s  dep=24  s_constant t_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          xor_rop_run24_const_st
+#define SPECIFIC_ROP           0x66
+#define SPECIFIC_CODE(O,D,S,T) do { O = D^S; } while (0)
+#define S_CONST
+#define T_CONST
+#include "gsroprun24.h"
+#else
 static void xor_rop_run24_const_st(rop_run_op *op, byte *d, int len)
 {
     rop_operand S = op->s.c;
@@ -499,8 +524,18 @@ static void xor_rop_run24_const_st(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 /* rop = 0xFC = s | t  dep=24  s_constant t_constant */
+#ifdef USE_TEMPLATES
+/* FIXME: Not optimal; introduce 'PRE' code to combine S and T. */
+#define TEMPLATE_NAME          sort_rop_run24_const_st
+#define SPECIFIC_ROP           0x66
+#define SPECIFIC_CODE(O,D,S,T) do { O = S|T; } while (0)
+#define S_CONST
+#define T_CONST
+#include "gsroprun24.h"
+#else
 static void sort_rop_run24_const_st(rop_run_op *op, byte *d, int len)
 {
     rop_operand SorT = op->s.c | op->t.c;
@@ -510,6 +545,12 @@ static void sort_rop_run24_const_st(rop_run_op *op, byte *d, int len)
         d += 3;
     }
     while (--len);
+}
+#endif
+
+/* rop = 0xAA = d  dep=?  s_constant t_constant */
+static void nop_rop_const_st(rop_run_op *op, byte *d, int len)
+{
 }
 
 /* Generic ROP run code */
@@ -727,6 +768,10 @@ static void generic_rop_run8_1bit(rop_run_op *op, byte *d, int len)
     while (--len);
 }
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run24
+#include "gsroprun24.h"
+#else
 static void generic_rop_run24(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[op->rop];
@@ -742,7 +787,14 @@ static void generic_rop_run24(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run24_trans
+#define T_TRANS MAYBE
+#define S_TRANS MAYBE
+#include "gsroprun24.h"
+#else
 static void generic_rop_run24_trans(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
@@ -764,7 +816,16 @@ static void generic_rop_run24_trans(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run24_1bit
+#define S_TRANS MAYBE
+#define T_TRANS MAYBE
+#define S_1BIT MAYBE
+#define T_1BIT MAYBE
+#include "gsroprun24.h"
+#else
 static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
 {
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
@@ -822,6 +883,7 @@ static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 #ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run1_const_s
@@ -973,6 +1035,11 @@ static void generic_rop_run8_const_s_1bit(rop_run_op *op, byte *d, int len)
     while (--len);
 }
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run24_const_s
+#define S_CONST
+#include "gsroprun24.h"
+#else
 static void generic_rop_run24_const_s(rop_run_op *op, byte *d, int len)
 {
     rop_proc     proc = rop_proc_table[op->rop];
@@ -987,7 +1054,15 @@ static void generic_rop_run24_const_s(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run24_const_s_trans
+#define S_CONST
+#define S_TRANS MAYBE
+#define T_TRANS MAYBE
+#include "gsroprun24.h"
+#else
 static void generic_rop_run24_const_s_trans(rop_run_op *op, byte *d, int len)
 {
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
@@ -1010,7 +1085,16 @@ static void generic_rop_run24_const_s_trans(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run24_const_s_1bit
+#define S_CONST
+#define S_TRANS MAYBE
+#define T_TRANS MAYBE
+#define T_1BIT MAYBE
+#include "gsroprun24.h"
+#else
 static void generic_rop_run24_const_s_1bit(rop_run_op *op, byte *d, int len)
 {
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
@@ -1050,6 +1134,7 @@ static void generic_rop_run24_const_s_1bit(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 #ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run1_const_st
@@ -1146,6 +1231,12 @@ static void generic_rop_run8_const_st_trans(rop_run_op *op, byte *d, int len)
     while (--len);
 }
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run24_const_st
+#define S_CONST
+#define T_CONST
+#include "gsroprun24.h"
+#else
 static void generic_rop_run24_const_st(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[op->rop];
@@ -1159,7 +1250,16 @@ static void generic_rop_run24_const_st(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run24_const_st_trans
+#define S_CONST
+#define T_CONST
+#define S_TRANS MAYBE
+#define T_TRANS MAYBE
+#include "gsroprun24.h"
+#else
 static void generic_rop_run24_const_st_trans(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
@@ -1177,6 +1277,7 @@ static void generic_rop_run24_const_st_trans(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 #ifdef RECORD_ROP_USAGE
 static void record_run(rop_run_op *op, byte *d, int len)
@@ -1231,6 +1332,10 @@ void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
     int key;
     int swap = 0;
     int could_swap = 0;
+
+#ifdef DISABLE_ROPS
+    rop = 0xAA;
+#endif
 
     /* If the rop ignores either S or T, then we might as well set them to
      * be constants; will save us slaving through memory. Also, they can't
@@ -1317,6 +1422,11 @@ retry:
         break;
     case ROP_SPECIFIC_KEY(0xFC, 24, rop_s_constant | rop_t_constant):
         op->run     = sort_rop_run24_const_st;
+        break;
+    case ROP_SPECIFIC_KEY(0xAA, 1, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0xAA, 8, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0xAA, 24, rop_s_constant | rop_t_constant):
+        op->run     = nop_rop_const_st;
         break;
     /* 0xEE = D or S */
     case ROP_SPECIFIC_KEY(0xEE, 1, rop_t_constant):

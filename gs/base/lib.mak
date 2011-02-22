@@ -1949,7 +1949,7 @@ $(GLOBJ)gsroptab.$(OBJ) : $(GLSRC)gsroptab.c $(stdpre_h) $(gsropt_h)
 	$(GLCC) $(GLO_)gsroptab.$(OBJ) $(C_) $(GLSRC)gsroptab.c
 
 $(GLOBJ)gsroprun.$(OBJ) : $(GLSRC)gsroprun.c $(std_h) $(stdpre_h) $(gsropt_h)\
-  $(GLSRC)gsroprun1.h
+  $(GLSRC)gsroprun1.h  $(GLSRC)gsroprun24.h
 	$(GLCC) $(GLO_)gsroprun.$(OBJ) $(C_) $(GLSRC)gsroprun.c
 
 # ---------------- Async rendering ---------------- #
