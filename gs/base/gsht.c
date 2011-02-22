@@ -1443,6 +1443,16 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index
         l++;
     }
     d_order->threshold = thresh;
+#ifdef DEBUG
+   if ( gs_debug_c('h') ) {
+      for( i=0; i<(int)d_order->height; i++ ) {
+         dprintf1("threshold array row %3d= ", i);
+         for( j=(int)d_order->width-1; j>=0; j-- )
+            dprintf1("%3d ", *(thresh+j+(i*d_order->width)) );
+         dprintf("\n");
+      }
+   }
+#endif
     return 0;
 }
 

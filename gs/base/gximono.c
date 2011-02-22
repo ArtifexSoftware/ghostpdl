@@ -49,7 +49,6 @@
 #define __align16 __declspec(align(16))
 #endif
 
-/* #undef HAVE_SSE2 */
 #ifdef HAVE_SSE2
 
 #include <emmintrin.h>
@@ -165,7 +164,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             }
             /* If the image has more than 256 pixels then go ahead and
                precompute the con-tone device colors for all of our 256 source
-               values.  We should not be taking this patch for cases where
+               values.  We should not be taking this path for cases where
                we have lots of tiny little images.  Mark those that are
                transparent or masked also at this time.  Since halftoning will
                be done via thresholding we will keep clues in continuous tone */
@@ -1392,7 +1391,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
             contone_stride = penum->line_size;
             scale_factor =
-              float2fixed((float) penum->Width / fixed2float(any_abs(penum->x_extent.x)));
+              float2fixed_rounded((float) penum->Width / fixed2float(any_abs(penum->x_extent.x)));
 #if RAW_HT_DUMP
             dithered_stride = data_length * spp_out;
             offset_bits = 0;
@@ -1427,7 +1426,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             vdi = penum->wci;
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
-            scale_factor = float2fixed((float) penum->rect.w / (float) dest_height);
+            scale_factor = float2fixed_rounded((float) (penum->rect.w - 1.0) / (float) dest_height);
             data_length = dest_height;
             /* In the landscaped case, we want to accumulate multiple columns
                of data before sending to the device.  We want to have a full
@@ -1642,7 +1641,7 @@ flush:
                threshold buffer */
             for (k = 0; k < vdi; k++) {
                 /* Get a pointer to our tile row */
-                dy = (penum->yci+k) % thresh_height;
+                dy = (penum->yci + k + penum->dev->band_offset_y) % thresh_height;
                 thresh_tile = threshold + d_order->width * dy;
                 /* Fill the buffer, can be multiple rows.  Make sure
                    to update with stride */
