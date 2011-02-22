@@ -25,7 +25,7 @@
 
 /* Either we can implement tile_rect directly, or we can call copy_rop to do
  * its work. It used to be faster to do it directly, but no more. */
-#undef DO_TILE_RECT_BY_COPY_ROP
+#define DO_TILE_RECT_BY_COPY_ROP
 
 /* Either we can implement fill_rect directly, or we can call copy_rop to do
  * its work. For now we still implement it directly. */
@@ -56,11 +56,11 @@
 int
 mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                             int sourcex,uint sraster, gx_bitmap_id id,
-                            const gx_color_index * scolors,
+			    const gx_color_index * scolors,
                             const gx_strip_bitmap * textures,
                             const gx_color_index * tcolors,
-                            int x, int y, int width, int height,
-                            int phase_x, int phase_y,
+			    int x, int y, int width, int height,
+			    int phase_x, int phase_y,
                             gs_logical_operation_t lop)
 {
     gx_device_memory *mdev = (gx_device_memory *) dev;
@@ -77,36 +77,36 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
 #endif
 
     /* Modify the raster operation according to the source palette. */
-    if (scolors != 0) {         /* Source with palette. */
-        switch ((int)((scolors[1] << 1) + scolors[0])) {
-            case 0:
-                rop = rop3_know_S_0(rop);
-                break;
-            case 1:
-                rop = rop3_invert_S(rop);
-                break;
-            case 2:
-                break;
-            case 3:
-                rop = rop3_know_S_1(rop);
-                break;
-        }
+    if (scolors != 0) {		/* Source with palette. */
+	switch ((int)((scolors[1] << 1) + scolors[0])) {
+	    case 0:
+		rop = rop3_know_S_0(rop);
+		break;
+	    case 1:
+		rop = rop3_invert_S(rop);
+		break;
+	    case 2:
+		break;
+	    case 3:
+		rop = rop3_know_S_1(rop);
+		break;
+	}
     }
     /* Modify the raster operation according to the texture palette. */
-    if (tcolors != 0) {         /* Texture with palette. */
-        switch ((int)((tcolors[1] << 1) + tcolors[0])) {
-            case 0:
-                rop = rop3_know_T_0(rop);
-                break;
-            case 1:
-                rop = rop3_invert_T(rop);
-                break;
-            case 2:
-                break;
-            case 3:
-                rop = rop3_know_T_1(rop);
-                break;
-        }
+    if (tcolors != 0) {		/* Texture with palette. */
+	switch ((int)((tcolors[1] << 1) + tcolors[0])) {
+	    case 0:
+		rop = rop3_know_T_0(rop);
+		break;
+	    case 1:
+		rop = rop3_invert_T(rop);
+		break;
+	    case 2:
+		break;
+	    case 3:
+		rop = rop3_know_T_1(rop);
+		break;
+	}
     }
     /* Handle constant source and/or texture, and other special cases. */
     {
@@ -114,107 +114,107 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
         gx_color_index color0, color1;
 #endif
 
-        switch (rop_usage_table[rop]) {
+	switch (rop_usage_table[rop]) {
             case rop_usage_none:
 #ifndef DO_FILL_RECT_BY_COPY_ROP /* Fill rect calls us - don't call it */
-                /* We're just filling with a constant. */
-                return (*dev_proc(dev, fill_rectangle))
-                    (dev, x, y, width, height, (gx_color_index) (rop & 1));
+		/* We're just filling with a constant. */
+		return (*dev_proc(dev, fill_rectangle))
+		    (dev, x, y, width, height, (gx_color_index) (rop & 1));
 #else
                 break;
 #endif
             case rop_usage_D:
-                /* This is either D (no-op) or ~D. */
-                if (rop == rop3_D)
-                    return 0;
-                /* Code no_S inline, then finish with no_T. */
-                fit_fill(dev, x, y, width, height);
-                sdata = scan_line_base(mdev, 0);
-                sourcex = x;
-                sraster = 0;
-                goto no_T;
-            case rop_usage_S:
+		/* This is either D (no-op) or ~D. */
+		if (rop == rop3_D)
+		    return 0;
+		/* Code no_S inline, then finish with no_T. */
+		fit_fill(dev, x, y, width, height);
+		sdata = scan_line_base(mdev, 0);
+		sourcex = x;
+		sraster = 0;
+		goto no_T;
+	    case rop_usage_S:
 #ifndef DO_COPY_MONO_BY_COPY_ROP /* Copy mono is calling us, don't call it! */
-                /* This is either S or ~S, which copy_mono can handle. */
-                if (rop == rop3_S)
-                    color0 = 0, color1 = 1;
-                else
-                    color0 = 1, color1 = 0;
-              do_copy:return (*dev_proc(dev, copy_mono))
-                    (dev, sdata, sourcex, sraster, id, x, y, width, height,
-                     color0, color1);
+		/* This is either S or ~S, which copy_mono can handle. */
+		if (rop == rop3_S)
+		    color0 = 0, color1 = 1;
+		else
+		    color0 = 1, color1 = 0;
+	      do_copy:return (*dev_proc(dev, copy_mono))
+		    (dev, sdata, sourcex, sraster, id, x, y, width, height,
+		     color0, color1);
 #else
-                fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
+		fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
                 break;
 #endif
-            case rop_usage_DS:
+	    case rop_usage_DS:
 #ifndef DO_COPY_MONO_BY_COPY_ROP /* Copy mono is calling us, don't call it! */
-                /* This might be a case that copy_mono can handle. */
+		/* This might be a case that copy_mono can handle. */
 #define copy_case(c0, c1) color0 = c0, color1 = c1; goto do_copy;
-                switch ((uint) rop) {   /* cast shuts up picky compilers */
-                    case rop3_D & rop3_not(rop3_S):
-                        copy_case(gx_no_color_index, 0);
-                    case rop3_D | rop3_S:
-                        copy_case(gx_no_color_index, 1);
-                    case rop3_D & rop3_S:
-                        copy_case(0, gx_no_color_index);
-                    case rop3_D | rop3_not(rop3_S):
-                        copy_case(1, gx_no_color_index);
-                    default:;
-                }
+		switch ((uint) rop) {	/* cast shuts up picky compilers */
+		    case rop3_D & rop3_not(rop3_S):
+			copy_case(gx_no_color_index, 0);
+		    case rop3_D | rop3_S:
+			copy_case(gx_no_color_index, 1);
+		    case rop3_D & rop3_S:
+			copy_case(0, gx_no_color_index);
+		    case rop3_D | rop3_not(rop3_S):
+			copy_case(1, gx_no_color_index);
+		    default:;
+		}
 #undef copy_case
 #endif
-                fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
-              no_T:             /* Texture is not used; textures may be garbage. */
-                no_texture.data = scan_line_base(mdev, 0);  /* arbitrary */
-                no_texture.raster = 0;
-                no_texture.size.x = width;
-                no_texture.size.y = height;
-                no_texture.rep_width = no_texture.rep_height = 1;
-                no_texture.rep_shift = no_texture.shift = 0;
-                textures = &no_texture;
-                break;
-            case rop_usage_T:
+		fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
+	      no_T:		/* Texture is not used; textures may be garbage. */
+		no_texture.data = scan_line_base(mdev, 0);  /* arbitrary */
+		no_texture.raster = 0;
+		no_texture.size.x = width;
+		no_texture.size.y = height;
+		no_texture.rep_width = no_texture.rep_height = 1;
+		no_texture.rep_shift = no_texture.shift = 0;
+		textures = &no_texture;
+		break;
+	    case rop_usage_T:
 #ifndef DO_TILE_RECT_BY_COPY_ROP /* Tile rect calls us - don't call it! */
-                /* This is either T or ~T, which tile_rectangle can handle. */
-                if (rop == rop3_T)
-                    color0 = 0, color1 = 1;
-                else
-                    color0 = 1, color1 = 0;
-              do_tile:return (*dev_proc(dev, strip_tile_rectangle))
-                    (dev, textures, x, y, width, height, color0, color1,
-                     phase_x, phase_y);
+		/* This is either T or ~T, which tile_rectangle can handle. */
+		if (rop == rop3_T)
+		    color0 = 0, color1 = 1;
+		else
+		    color0 = 1, color1 = 0;
+	      do_tile:return (*dev_proc(dev, strip_tile_rectangle))
+		    (dev, textures, x, y, width, height, color0, color1,
+		     phase_x, phase_y);
 #else
                 fit_fill(dev, x, y, width, height);
-                break;
+		break;
 #endif
             case rop_usage_DT:
 #ifndef DO_TILE_RECT_BY_COPY_ROP /* Tile rect calls us - don't call it! */
-                /* This might be a case that tile_rectangle can handle. */
+		/* This might be a case that tile_rectangle can handle. */
 #define tile_case(c0, c1) color0 = c0, color1 = c1; goto do_tile;
-                switch ((uint) rop) {   /* cast shuts up picky compilers */
-                    case rop3_D & rop3_not(rop3_T):
-                        tile_case(gx_no_color_index, 0);
-                    case rop3_D | rop3_T:
-                        tile_case(gx_no_color_index, 1);
-                    case rop3_D & rop3_T:
-                        tile_case(0, gx_no_color_index);
-                    case rop3_D | rop3_not(rop3_T):
-                        tile_case(1, gx_no_color_index);
-                    default:;
-                }
+		switch ((uint) rop) {	/* cast shuts up picky compilers */
+		    case rop3_D & rop3_not(rop3_T):
+			tile_case(gx_no_color_index, 0);
+		    case rop3_D | rop3_T:
+			tile_case(gx_no_color_index, 1);
+		    case rop3_D & rop3_T:
+			tile_case(0, gx_no_color_index);
+		    case rop3_D | rop3_not(rop3_T):
+			tile_case(1, gx_no_color_index);
+		    default:;
+		}
 #undef tile_case
 #endif
                 fit_fill(dev, x, y, width, height);
-                /* Source is not used; sdata et al may be garbage. */
-                sdata = mdev->base;     /* arbitrary, as long as all */
-                                        /* accesses are valid */
-                sourcex = x;    /* guarantee no source skew */
-                sraster = 0;
-                break;
-            default:            /* rop_usage_[D]ST */
-                fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
-        }
+		/* Source is not used; sdata et al may be garbage. */
+		sdata = mdev->base;	/* arbitrary, as long as all */
+					/* accesses are valid */
+		sourcex = x;	/* guarantee no source skew */
+		sraster = 0;
+		break;
+	    default:		/* rop_usage_[D]ST */
+		fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
+	}
     }
 
 #ifdef DEBUG
@@ -234,72 +234,72 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
 
     /* Loop over scan lines. */
     for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {
-        int sx = sourcex;
-        int dx = x;
-        int w = width;
-        const byte *trow = (textures == NULL ? 0 :
+	int sx = sourcex;
+	int dx = x;
+	int w = width;
+	const byte *trow = (textures == NULL ? 0 :
                             textures->data + (ty % textures->rep_height) * traster);
         int xoff = (textures ? x_offset(phase_x, ty, textures) : 0);
-        int nw;
+	int nw;
 
         /* Loop over (horizontal) copies of the tile. */
-        for (; w > 0; sx += nw, dx += nw, w -= nw) {
+	for (; w > 0; sx += nw, dx += nw, w -= nw) {
 #ifndef USE_ROP_RUN
             int dbit = dx & 7;
-            int sbit = sx & 7;
-            int sskew = sbit - dbit;
-            int tx = (dx + xoff) % textures->rep_width;
-            int tbit = tx & 7;
-            int tskew = tbit - dbit;
-            int left = nw = min(w, textures->size.x - tx);
-            byte lmask = 0xff >> dbit;
-            byte rmask = 0xff << (~(dbit + nw - 1) & 7);
-            byte mask = lmask;
-            int nx = 8 - dbit;
-            byte *dptr = drow + (dx >> 3);
-            const byte *sptr = srow + (sx >> 3);
-            const byte *tptr = trow + (tx >> 3);
+	    int sbit = sx & 7;
+	    int sskew = sbit - dbit;
+	    int tx = (dx + xoff) % textures->rep_width;
+	    int tbit = tx & 7;
+	    int tskew = tbit - dbit;
+	    int left = nw = min(w, textures->size.x - tx);
+	    byte lmask = 0xff >> dbit;
+	    byte rmask = 0xff << (~(dbit + nw - 1) & 7);
+	    byte mask = lmask;
+	    int nx = 8 - dbit;
+	    byte *dptr = drow + (dx >> 3);
+	    const byte *sptr = srow + (sx >> 3);
+	    const byte *tptr = trow + (tx >> 3);
 
             if (sskew < 0)
-                --sptr, sskew += 8;
-            if (tskew < 0)
-                --tptr, tskew += 8;
-            for (; left > 0;
-                 left -= nx, mask = 0xff, nx = 8,
-                 ++dptr, ++sptr, ++tptr
-                ) {
-                byte dbyte = *dptr;
+		--sptr, sskew += 8;
+	    if (tskew < 0)
+		--tptr, tskew += 8;
+	    for (; left > 0;
+		 left -= nx, mask = 0xff, nx = 8,
+		 ++dptr, ++sptr, ++tptr
+		) {
+		byte dbyte = *dptr;
 
 #define fetch1(ptr, skew)\
   (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
-                byte sbyte = fetch1(sptr, sskew);
-                byte tbyte = fetch1(tptr, tskew);
+		byte sbyte = fetch1(sptr, sskew);
+		byte tbyte = fetch1(tptr, tskew);
 
 #undef fetch1
-                byte result =
-                (*rop_proc_table[rop]) (dbyte, sbyte, tbyte);
+		byte result =
+		(*rop_proc_table[rop]) (dbyte, sbyte, tbyte);
 
-                if (left <= nx)
-                    mask &= rmask;
-                *dptr = (mask == 0xff ? result :
-                         (result & mask) | (dbyte & ~mask));
-            }
+		if (left <= nx)
+		    mask &= rmask;
+		*dptr = (mask == 0xff ? result :
+			 (result & mask) | (dbyte & ~mask));
+	    }
 #else
             int dbit = dx & 7;
-            int sbit = sx & 7;
+	    int sbit = sx & 7;
             int tx = (textures ? (dx + xoff) % textures->rep_width : 0);
-            int tbit = tx & 7;
+	    int tbit = tx & 7;
             int left = nw = (textures ? min(w, textures->size.x - tx) : w);
-            byte *dptr = drow + (dx >> 3);
-            const byte *sptr = srow + (sx >> 3);
-            const byte *tptr = trow + (tx >> 3);
+	    byte *dptr = drow + (dx >> 3);
+	    const byte *sptr = srow + (sx >> 3);
+	    const byte *tptr = trow + (tx >> 3);
 #ifdef COMPARE_AND_CONTRAST
-            int sskew = sbit - dbit;
-            int tskew = tbit - dbit;
-            byte lmask = 0xff >> dbit;
-            byte rmask = 0xff << (~(dbit + nw - 1) & 7);
-            byte mask = lmask;
-            int nx = 8 - dbit;
+	    int sskew = sbit - dbit;
+	    int tskew = tbit - dbit;
+	    byte lmask = 0xff >> dbit;
+	    byte rmask = 0xff << (~(dbit + nw - 1) & 7);
+	    byte mask = lmask;
+	    int nx = 8 - dbit;
 
             static byte testbuffer[4096];
             byte *start = dptr-2;
@@ -314,29 +314,29 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
             eprintf5("rop=%x dbit=%d sbit=%d tbit=%d left=%d\n", rop, dbit, sbit, tbit, left);
             rop_run_subbyte(&ropper, testbuffer+2, dbit, left);
             if (sskew < 0)
-                --sptr, sskew += 8;
-            if (tskew < 0)
-                --tptr, tskew += 8;
-            for (; left > 0;
-                 left -= nx, mask = 0xff, nx = 8,
-                 ++dptr, ++sptr, ++tptr
-                ) {
-                byte dbyte = *dptr;
+		--sptr, sskew += 8;
+	    if (tskew < 0)
+		--tptr, tskew += 8;
+	    for (; left > 0;
+		 left -= nx, mask = 0xff, nx = 8,
+		 ++dptr, ++sptr, ++tptr
+		) {
+		byte dbyte = *dptr;
 
 #define fetch1(ptr, skew)\
   (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
-                byte sbyte = fetch1(sptr, sskew);
-                byte tbyte = fetch1(tptr, tskew);
+		byte sbyte = fetch1(sptr, sskew);
+		byte tbyte = fetch1(tptr, tskew);
 
 #undef fetch1
-                byte result =
-                (*rop_proc_table[rop]) (dbyte, sbyte, tbyte);
+		byte result =
+		(*rop_proc_table[rop]) (dbyte, sbyte, tbyte);
 
-                if (left <= nx)
-                    mask &= rmask;
-                *dptr = (mask == 0xff ? result :
-                         (result & mask) | (dbyte & ~mask));
-            }
+		if (left <= nx)
+		    mask &= rmask;
+		*dptr = (mask == 0xff ? result :
+			 (result & mask) | (dbyte & ~mask));
+	    }
             if (memcmp(testbuffer, start, bytelen) != 0)
                 eprintf("Different! Shoulda put a breakpoint on it.\n");
 #endif
@@ -349,8 +349,8 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
 #endif
 #ifdef DEBUG
     if (gs_debug_c('B'))
-        debug_dump_bitmap(scan_line_base(mdev, y), mdev->raster,
-                          height, "final dest bits");
+	debug_dump_bitmap(scan_line_base(mdev, y), mdev->raster,
+			  height, "final dest bits");
 #endif
     return 0;
 }
@@ -400,9 +400,9 @@ mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 #ifdef DO_FILL_RECT_BY_COPY_ROP
     return mem_mono_strip_copy_rop(dev, NULL, 0, 0, gx_no_bitmap_id, NULL,
-                             NULL, NULL,
-                             x, y, w, h, 0, 0,
-                             (color ? rop3_1 : rop3_0));
+			     NULL, NULL,
+			     x, y, w, h, 0, 0,
+			     (color ? rop3_1 : rop3_0));
 #else
     fit_fill(dev, x, y, w, h);
     bits_fill_rectangle(scan_line_base(mdev, y), x, mdev->raster,
@@ -539,15 +539,15 @@ mem_mono_copy_mono(gx_device * dev,
 
 #ifdef DO_COPY_MONO_BY_COPY_ROP
     return mem_mono_strip_copy_rop_dev(dev, source_data, source_x, source_raster,
-                             id, NULL, NULL, NULL,
-                             x, y, w, h, 0, 0,
-                             ((color0 == gx_no_color_index ? rop3_D :
-                               color0 == 0 ? rop3_0 : rop3_1) & ~rop3_S) |
-                             ((color1 == gx_no_color_index ? rop3_D :
-                               color1 == 0 ? rop3_0 : rop3_1) & rop3_S));
+			     id, NULL, NULL, NULL,
+			     x, y, w, h, 0, 0,
+			     ((color0 == gx_no_color_index ? rop3_D :
+			       color0 == 0 ? rop3_0 : rop3_1) & ~rop3_S) |
+			     ((color1 == gx_no_color_index ? rop3_D :
+			       color1 == 0 ? rop3_0 : rop3_1) & rop3_S));
 #else /* !DO_COPY_MONO_BY_COPY_ROP */
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-    register const byte *bptr;  /* actually chunk * */
+    register const byte *bptr;	/* actually chunk * */
     int dbit, wleft;
     uint mask;
     copy_mode mode;
@@ -788,13 +788,20 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
                               int px, int py)
 {
 #ifdef DO_TILE_RECT_BY_COPY_ROP
-    return mem_mono_strip_copy_rop(dev, NULL, 0, 0, tiles->id, NULL,
-                                   tiles, NULL,
-                                   tx, y, tw, th, px, py,
-                                   ((color0 == gx_no_color_index ? rop3_D :
-                                 color0 == 0 ? rop3_0 : rop3_1) & ~rop3_T) |
-                                   ((color1 == gx_no_color_index ? rop3_D :
-                                  color1 == 0 ? rop3_0 : rop3_1) & rop3_T));
+    gs_logical_operation_t rop = ((color0 == gx_no_color_index ? rop3_D :
+				   color0 == 0 ? rop3_0 : rop3_1) & ~rop3_T) |
+				 ((color1 == gx_no_color_index ? rop3_D :
+				   color1 == 0 ? rop3_0 : rop3_1) & rop3_T);
+
+    /* If color0 == gx_no_color_index && color1 == gx_no_color_index then
+     * we have a color pixmap, not a bitmap, so we want to use copy_color,
+     * rather than copy_mono. This case gives us rop == 0xAA (no change). */
+    if (rop == 0xAA) 
+        return gx_default_strip_tile_rectangle(dev, tiles, tx, y, tw, th,
+                                               color0, color1, px, py);
+    return mem_mono_strip_copy_rop_dev(dev, NULL, 0, 0, tiles->id, NULL,
+                                       tiles, NULL,
+				       tx, y, tw, th, px, py, rop);
 #else /* !USE_COPY_ROP */
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     register uint invert;
