@@ -4659,6 +4659,10 @@
 					>
 				</File>
 				<File
+					RelativePath="base\gsroprun8.h"
+					>
+				</File>
+				<File
 					RelativePath="base\gsroprun24.h"
 					>
 				</File>

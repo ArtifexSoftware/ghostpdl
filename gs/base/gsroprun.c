@@ -46,9 +46,16 @@ static void write_usage(void)
 {
     int i;
     for (i = 0; i < MAX; i++)
-        if (usage[3*i] != 0)
-            (fprintf)(stderr, "ROP: %x %d %d %d\n", i, usage[3*i], usage[3*i+1],
-                      usage[3*i+2]);
+        if (usage[3*i] != 0) {
+            int depth = ((i>>4)&3)<<3;
+            if (depth == 0) depth = 1;
+            if (i & (1<<6))
+               (fprintf)(stderr, "ROP: rop=%x ", i>>7);
+            else
+               (fprintf)(stderr, "ROP: rop=ANY ");
+           (fprintf)(stderr, "depth=%d flags=%d gets=%d inits=%d pixels=%d\n",
+                     depth, i&15, usage[3*i], usage[3*i+1], usage[3*i+2]);
+        }
 #ifdef RECORD_BINARY
     FILE *out = fopen("ropusage2.tmp", "wb");
     if (!out)
@@ -104,7 +111,7 @@ static void unrecord(int rop)
 static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 {
     byte lmask, rmask;
-
+    
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -140,6 +147,14 @@ static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 #endif
 
 /* Rop 0x55 = Invert   dep=8  (all cases) */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          invert_rop_run8
+#define SPECIFIC_ROP           0x55
+#define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
+#define S_CONST
+#define T_CONST
+#include "gsroprun8.h"
+#else
 static void invert_rop_run8(rop_run_op *op, byte *d, int len)
 {
     do {
@@ -148,6 +163,7 @@ static void invert_rop_run8(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 /* Rop 0x55 = Invert   dep=24  (all cases) */
 #ifdef USE_TEMPLATES
@@ -189,7 +205,7 @@ static void notT_rop_run1_const_s(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     byte        T;
     int         t_skew;
-
+    
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -265,7 +281,7 @@ static void dors_rop_run1_const_t(rop_run_op *op, byte *d, int len)
     const byte *s = op->s.b.ptr;
     byte        S, D;
     int         s_skew;
-
+    
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -345,7 +361,7 @@ static void dort_rop_run1_const_s(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     byte        T, D;
     int         t_skew;
-
+    
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -425,7 +441,7 @@ static void xor_rop_run1_const_s(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     byte        T, D;
     int         t_skew;
-
+    
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -490,6 +506,14 @@ static void xor_rop_run1_const_s(rop_run_op *op, byte *d, int len)
 #endif
 
 /* rop = 0x66 = d^s  dep=8  s_constant t_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          xor_rop_run8_const_st
+#define SPECIFIC_ROP           0x66
+#define SPECIFIC_CODE(O,D,S,T) do { O = D^S; } while (0)
+#define S_CONST
+#define T_CONST
+#include "gsroprun8.h"
+#else
 static void xor_rop_run8_const_st(rop_run_op *op, byte *d, int len)
 {
     const byte S = op->s.c;
@@ -501,6 +525,7 @@ static void xor_rop_run8_const_st(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 /* rop = 0x66 = d^s  dep=24  s_constant t_constant */
 #ifdef USE_TEMPLATES
@@ -662,6 +687,10 @@ static void generic_rop_run1(rop_run_op *op, byte *d, int len)
 }
 #endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[op->rop];
@@ -673,7 +702,13 @@ static void generic_rop_run8(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_trans_S
+#define S_TRANS YES
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_trans_S(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
@@ -688,7 +723,13 @@ static void generic_rop_run8_trans_S(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_trans_T
+#define T_TRANS YES
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_trans_T(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
@@ -703,7 +744,14 @@ static void generic_rop_run8_trans_T(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_trans_ST
+#define S_TRANS YES
+#define T_TRANS YES
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_trans_ST(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
@@ -718,7 +766,16 @@ static void generic_rop_run8_trans_ST(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_1bit
+#define S_TRANS MAYBE
+#define T_TRANS MAYBE
+#define S_1BIT  MAYBE
+#define T_1BIT  MAYBE
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_1bit(rop_run_op *op, byte *d, int len)
 {
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
@@ -767,6 +824,7 @@ static void generic_rop_run8_1bit(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 #ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run24
@@ -967,6 +1025,11 @@ static void generic_rop_run1_const_s(rop_run_op *op, byte *d, int len)
 }
 #endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_const_s
+#define S_CONST
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_const_s(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[op->rop];
@@ -979,7 +1042,15 @@ static void generic_rop_run8_const_s(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_const_s_trans
+#define S_CONST
+#define S_TRANS MAYBE
+#define T_TRANS MAYBE
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_const_s_trans(rop_run_op *op, byte *d, int len)
 {
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
@@ -999,7 +1070,16 @@ static void generic_rop_run8_const_s_trans(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_const_s_1bit
+#define S_CONST
+#define S_TRANS MAYBE
+#define T_TRANS MAYBE
+#define T_1BIT MAYBE
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_const_s_1bit(rop_run_op *op, byte *d, int len)
 {
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
@@ -1034,6 +1114,7 @@ static void generic_rop_run8_const_s_1bit(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 #ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run24_const_s
@@ -1201,6 +1282,12 @@ static void generic_rop_run1_const_st(rop_run_op *op, byte *d, int len)
 }
 #endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_const_st
+#define S_CONST
+#define T_CONST
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_const_st(rop_run_op *op, byte *d, int len)
 {
     rop_proc proc = rop_proc_table[op->rop];
@@ -1213,7 +1300,16 @@ static void generic_rop_run8_const_st(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          generic_rop_run8_const_st_trans
+#define S_CONST
+#define T_CONST
+#define S_TRANS MAYBE
+#define T_TRANS MAYBE
+#include "gsroprun8.h"
+#else
 static void generic_rop_run8_const_st_trans(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc   = rop_proc_table[lop_rop(op->rop)];
@@ -1230,6 +1326,7 @@ static void generic_rop_run8_const_st_trans(rop_run_op *op, byte *d, int len)
     }
     while (--len);
 }
+#endif
 
 #ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run24_const_st
@@ -1297,7 +1394,7 @@ static void record_run(rop_run_op *op, byte *d, int len)
     local.flags   = op->flags;
     local.dpos    = op->dpos;
     local.release = op->release;
-    local.opaque  = op->opaque;
+    local.opaque  = op->opaque;    
 
     op->runswap(&local, d, len);
 }
