@@ -112,7 +112,8 @@ gs_image_class_3_mono(gx_image_enum * penum)
 
         if (use_fast_code && penum->pcs != NULL &&
             penum->dev->color_info.num_components == 1 &&
-            penum->dev->color_info.depth == 1) {
+            penum->dev->color_info.depth == 1 &&
+            penum->bps == 8) {
             spp_out = penum->dev->color_info.num_components;
             penum->icc_setup.need_decode = false;
             /* Check if we need to do any decoding.  */
