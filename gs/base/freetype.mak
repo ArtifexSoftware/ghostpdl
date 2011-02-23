@@ -29,10 +29,9 @@ FTO_=$(O_)$(FTOBJ)
 
 # Define our local compiler alias
 # we must define FT2_BUILD_LIBRARY to get internal declarations
-# In the case of GS using Freetype, FT_CONFIG_OPTION_SYSTEM_ZLIB actually results i
-# Freetype using whichever zlib GS is using - normally the supported configuration
-# of the GS distributed zlib source
-FTCC=$(CC_) $(I_)$(FTSRCDIR)$(D)include$(_I) -DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON -DFT_CONFIG_OPTION_SYSTEM_ZLIB
+# If GS is using the system zlib, freetype should also do so,
+# FT_CONFIG_SYSTEM_ZLIB is set by the top makefile.
+FTCC=$(CC_) $(I_)$(FTSRCDIR)$(D)include$(_I) -DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON $(FT_CONFIG_SYSTEM_ZLIB)
 
 # Define the name of this makefile.
 FT_MAK=$(GLSRC)freetype.mak

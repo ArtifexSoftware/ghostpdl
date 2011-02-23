@@ -564,8 +564,21 @@ if test -z "$SHARE_ZLIB"; then
   for more information.
   ])
 fi
+
+dnl if GS is to use the system zlib, freetype
+dnl should do the same
+FT_SYS_ZLIB=""
+if test x$FT_BRIDGE != x0; then
+  if test xx$SHARE_FT != x1; then
+    if test x$SHARE_ZLIB != x0; then
+      FT_SYS_ZLIB="-DFT_CONFIG_OPTION_SYSTEM_ZLIB"
+    fi
+  fi
+fi
+
 AC_SUBST(SHARE_ZLIB)
 AC_SUBST(ZLIBDIR)
+AC_SUBST(FT_SYS_ZLIB)
 
 dnl png for the png output device; it also requires zlib
 LIBPNGDIR=src
