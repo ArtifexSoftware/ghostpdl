@@ -2806,14 +2806,6 @@ $(GLOBJ)gsromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h)
 
 # Define the ZLIB modules needed by mnkromfs here to factor it out of top makefiles
 # Also put the .h dependencies here for the same reason
-#MKROMFS_ZLIB_OBJ_1=
-#
-#MKROMFS_ZLIB_OBJS_0=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) \
-#	$(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) \
-#	$(GLOBJ)trees.$(OBJ)
-#
-#MKROMFS_ZLIB_OBJS=$(MKROMFS_ZLIB_OBJS_$(SHARE_ZLIB))
-
 MKROMFS_ZLIB_OBJS=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) \
 	$(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) \
 	$(GLOBJ)trees.$(OBJ)
