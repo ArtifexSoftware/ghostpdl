@@ -651,6 +651,10 @@
 					>
 				</File>
 				<File
+					RelativePath="base\gsroprun.c"
+					>
+				</File>
+				<File
 					RelativePath="base\gsroptab.c"
 					>
 				</File>
@@ -4644,6 +4648,18 @@
 				</File>
 				<File
 					RelativePath="base\gsrop.h"
+					>
+				</File>
+				<File
+					RelativePath="base\gsroprun.h"
+					>
+				</File>
+				<File
+					RelativePath="base\gsroprun1.h"
+					>
+				</File>
+				<File
+					RelativePath="base\gsroprun24.h"
 					>
 				</File>
 				<File
