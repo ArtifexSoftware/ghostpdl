@@ -1777,6 +1777,31 @@ $(DD)tiffsep1.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev $(minftrsz_h)
 	$(SETPDEV2) $(DD)tiffsep1 $(tiffsep_)
 	$(ADDMOD) $(DD)tiffsep1 -include $(DD)tiffs
 
+#
+# PLanar Interlaced Buffer device
+
+plib_=$(GLOBJ)gdevplib.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
+
+$(GLOBJ)gdevplib.$(OBJ) : $(GLSRC)gdevplib.c $(PDEVH)\
+ $(gdevmpla_h) $(gdevplnx_h) $(gdevppla_h)\
+ $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
+	$(GLCC) $(GLO_)gdevplib.$(OBJ) $(C_) $(GLSRC)gdevplib.c
+
+$(DD)plib.dev : $(DEVS_MAK) $(plib_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)plib $(plib_)
+
+$(DD)plibg.dev : $(DEVS_MAK) $(plib_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)plibg $(plib_)
+
+$(DD)plibm.dev : $(DEVS_MAK) $(plib_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)plibm $(plib_)
+
+$(DD)plibc.dev : $(DEVS_MAK) $(plib_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)plibc $(plib_)
+
+$(DD)plibk.dev : $(DEVS_MAK) $(plib_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)plibk $(plib_)
+
 ### ------------------------------- CUPS ------------------------------- ###
 lcups_dev=$(LCUPSGENDIR)$(D)lcups.dev
 lcupsi_dev=$(LCUPSIGENDIR)$(D)lcupsi.dev
@@ -1789,4 +1814,3 @@ $(DD)cups.dev : $(DEVS_MAK) $(lcups_dev) $(lcupsi_dev) $(cups_)
 
 $(GLOBJ)gdevcups.$(OBJ) : cups$(D)gdevcups.c $(std_h)
 	$(CUPS_CC) $(GLO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(I_)$(GLSRC) $(I_)$(GLOBJ) $(I_)$(LCUPSSRCDIR)$(D)libs $(LCUPSSRCDIR)$(D)gdevcups.c
-

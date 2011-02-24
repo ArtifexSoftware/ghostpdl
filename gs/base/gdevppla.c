@@ -76,7 +76,7 @@ gdev_prn_set_planar(gx_device_memory *mdev, const gx_device *tdev)
     gx_render_plane_t planes[4];
     int depth = tdev->color_info.depth / num_comp;
 
-    if (num_comp < 3 || num_comp > 4)
+    if (num_comp < 1 || num_comp > 4)
 	return_error(gs_error_rangecheck);
     /* Round up the depth per plane to a power of 2. */
     while (depth & (depth - 1))
@@ -115,12 +115,15 @@ gdev_prn_size_buf_planar(gx_device_buf_space_t *space, gx_device *target,
 			 int height, bool for_band)
 {
     gx_device_memory mdev;
+    int code;
 
     if (render_plane && render_plane->index >= 0)
 	return gx_default_size_buf_device(space, target, render_plane,
 					  height, for_band);
     mdev.color_info = target->color_info;
-    gdev_prn_set_planar(&mdev, target);
+    code = gdev_prn_set_planar(&mdev, target);
+    if (code < 0)
+        return code;
     if (gdev_mem_bits_size(&mdev, target->width, height, &(space->bits)) < 0)
 	return_error(gs_error_VMerror);
     space->line_ptrs = gdev_mem_line_ptrs_size(&mdev, target->width, height);

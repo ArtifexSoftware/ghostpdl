@@ -25,6 +25,7 @@
 /* procedures */
 static dev_proc_open_device(mem_planar_open);
 declare_mem_procs(mem_planar_copy_mono, mem_planar_copy_color, mem_planar_fill_rectangle);
+static dev_proc_copy_color(mem_planar_copy_color_24to8);
 static dev_proc_strip_tile_rectangle(mem_planar_strip_tile_rectangle);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 
@@ -72,13 +73,33 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
     mdev->plane_depth = same_depth;
     /* Change the drawing procedures. */
     set_dev_proc(mdev, open_device, mem_planar_open);
-    set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
-    set_dev_proc(mdev, copy_mono, mem_planar_copy_mono);
-    set_dev_proc(mdev, copy_color, mem_planar_copy_color);
-    set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
-    set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
-    set_dev_proc(mdev, strip_copy_rop, gx_default_strip_copy_rop);
-    set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
+    if (num_planes == 1) {
+        /* For 1 plane, just use a normal device */
+        const gx_device_memory *mdproto = gdev_mem_device_for_bits(mdev->color_info.depth);
+        
+        set_dev_proc(mdev, fill_rectangle, dev_proc(mdproto, fill_rectangle));
+        set_dev_proc(mdev, copy_mono,  dev_proc(mdproto, copy_mono));
+        set_dev_proc(mdev, copy_color, dev_proc(mdproto, copy_color));
+        set_dev_proc(mdev, copy_alpha, dev_proc(mdproto, copy_alpha));
+        set_dev_proc(mdev, strip_tile_rectangle, dev_proc(mdproto, strip_tile_rectangle));
+        set_dev_proc(mdev, strip_copy_rop, dev_proc(mdproto, strip_copy_rop));
+        set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
+    } else {
+        set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
+        set_dev_proc(mdev, copy_mono, mem_planar_copy_mono);
+        if ((mdev->color_info.depth == 24) &&
+            (mdev->num_planes == 3) &&
+            (mdev->planes[0].depth == 8) && (mdev->planes[0].shift == 16) &&
+            (mdev->planes[1].depth == 8) && (mdev->planes[1].shift == 8) &&
+            (mdev->planes[2].depth == 8) && (mdev->planes[2].shift == 0))
+            set_dev_proc(mdev, copy_color, mem_planar_copy_color_24to8);
+        else
+            set_dev_proc(mdev, copy_color, mem_planar_copy_color);
+        set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
+        set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
+        set_dev_proc(mdev, strip_copy_rop, gx_default_strip_copy_rop);
+        set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
+    }
     return 0;
 }
 
@@ -177,6 +198,78 @@ mem_planar_copy_mono(gx_device * dev, const byte * base, int sourcex,
             dev_proc(mdproto, copy_mono)
                 (dev, base, sourcex, sraster, id, x, y, w, h, c0, c1);
         mdev->line_ptrs += mdev->height;
+    }
+    MEM_RESTORE_PARAMS(mdev, save);
+    return 0;
+}
+
+/* Copy color: Special case the 24 -> 8+8+8 case. */
+static int
+mem_planar_copy_color_24to8(gx_device * dev, const byte * base, int sourcex,
+                            int sraster, gx_bitmap_id id,
+                            int x, int y, int w, int h)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+#define BUF_LONGS 100   /* arbitrary, >= 1 */
+#define BUF_BYTES (BUF_LONGS * ARCH_SIZEOF_LONG)
+    union b_ {
+        ulong l[BUF_LONGS];
+        byte b[BUF_BYTES];
+    } buf, buf1, buf2;
+    mem_save_params_t save;
+    const gx_device_memory *mdproto = gdev_mem_device_for_bits(8);
+    uint plane_raster = bitmap_raster(w<<3);
+    int br, bw, bh, cx, cy, cw, ch, ix, iy;
+
+    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
+    MEM_SAVE_PARAMS(mdev, save);
+    MEM_SET_PARAMS(mdev, 8);
+    if (plane_raster > BUF_BYTES) {
+        br = BUF_BYTES;
+        bw = BUF_BYTES;
+        bh = 1;
+    } else {
+        br = plane_raster;
+        bw = w;
+        bh = BUF_BYTES / plane_raster;
+    }
+    for (cy = y; cy < y + h; cy += ch) {
+        ch = min(bh, y + h - cy);
+        for (cx = x; cx < x + w; cx += cw) {
+            int sx = sourcex + cx - x;
+            const byte *source_base = base + sraster * (cy - y);
+
+            cw = min(bw, x + w - cx);
+            source_base += sx;
+            for (iy = 0; iy < ch; ++iy) {
+                const byte *sptr = source_base;
+                byte *dptr0 = buf.b  + br * iy;
+                byte *dptr1 = buf1.b + br * iy;
+                byte *dptr2 = buf2.b + br * iy;
+                ix = cw;
+                do {
+                    /* Use the temporary variables below to free the C compiler
+                     * to interleave load/stores for latencies sake despite the
+                     * pointer aliasing rules. */
+                    byte r = *sptr++;
+                    byte g = *sptr++;
+                    byte b = *sptr++;
+                    *dptr0++ = r;
+                    *dptr1++ = 255-g;
+                    *dptr2++ = b;
+                } while (--ix);
+                source_base += sraster;
+            }
+            dev_proc(mdproto, copy_color)
+                        (dev, buf.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
+            mdev->line_ptrs += mdev->height;
+            dev_proc(mdproto, copy_color)
+                    (dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
+            mdev->line_ptrs += mdev->height;
+            dev_proc(mdproto, copy_color)
+                    (dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
+            mdev->line_ptrs -= 2*mdev->height;
+        }
     }
     MEM_RESTORE_PARAMS(mdev, save);
     return 0;
