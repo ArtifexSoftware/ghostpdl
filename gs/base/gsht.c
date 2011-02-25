@@ -25,6 +25,9 @@
 #include "gxdevice.h"           /* for gzht.h */
 #include "gzht.h"
 #include "gswts.h"
+#include "gxfmap.h"             /* For effective transfer usage in threshold */
+
+#define TRANSFER_INVERSE_SIZE 1024
 
 /* Used in threshold from tiles construction */
 static const uint32_t bit_order[32]={
@@ -1364,11 +1367,155 @@ gx_set_effective_transfer(gs_state * pgs)
     gx_imager_set_effective_xfer((gs_imager_state *) pgs);
 }
 
+#define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
+/* This creates a 256 entry LUT to invert the effective transfer function so
+   that it is built into the threshold values.  This only works correctly
+   for monotonic curves. */
+static int
+gx_ht_construct_transfer_inverse(gs_memory_t *memory, byte *transfer_inverse, 
+                                 gs_imager_state * pis, int  plane_index,
+                                 bool *is_inverting) 
+{
+    frac frac_val;
+    float float_val;
+    frac *transfer_sampled;
+    int k, min_pos, max_pos, mid_pos, max_pos_start, min_pos_start;
+    bool done, hit;
+    frac min_val, max_val;
+    frac zero_val, one_val;
+    int offset;
+    frac prev_value;
+    bool is_monotonic = true;
+
+    is_monotonic = true;
+    /* First construct a representation of the forward curve */
+    transfer_sampled = (frac *)gs_malloc(memory, TRANSFER_INVERSE_SIZE, 
+                                         sizeof(frac), 
+                                         "gx_ht_construct_transfer_inverse");
+    if (transfer_sampled == NULL) {
+        return -1 ;         /* error if allocation failed   */
+    }
+    zero_val = gx_map_color_frac(pis, 0, effective_transfer[plane_index]);
+    one_val = gx_map_color_frac(pis, frac_1, effective_transfer[plane_index]);
+    if (zero_val > one_val) {
+        *is_inverting = true;
+    } else {
+        *is_inverting = false;
+    }
+    if (*is_inverting) {
+        min_pos_start = 0;
+        max_pos_start = TRANSFER_INVERSE_SIZE - 1;
+        offset = TRANSFER_INVERSE_SIZE - 1;
+        prev_value  = gx_map_color_frac(pis, frac_1, effective_transfer[plane_index]);
+        for (k = 0; k < TRANSFER_INVERSE_SIZE; k++) {
+            float_val = (float) (offset - k)/(float) (TRANSFER_INVERSE_SIZE - 1);
+            frac_val = float2frac(float_val);
+            transfer_sampled[k] = gx_map_color_frac(pis, frac_val, 
+                                            effective_transfer[plane_index]);
+            if (prev_value > transfer_sampled[k]) {
+                is_monotonic = false;            
+            }
+            prev_value = transfer_sampled[k];
+            /* Take note of any leading zeros and ending ones for the inversion */
+            if (transfer_sampled[k] == 0) min_pos_start = k;
+            if (transfer_sampled[k] == frac_1 && k < max_pos_start) max_pos_start = k;
+        }
+    } else {
+        min_pos_start = 0;
+        max_pos_start = TRANSFER_INVERSE_SIZE - 1;
+        prev_value  = gx_map_color_frac(pis, 0, effective_transfer[plane_index]);
+        for (k = 0; k < TRANSFER_INVERSE_SIZE; k++) {
+            float_val = (float) k / (float) (TRANSFER_INVERSE_SIZE - 1);
+            frac_val = float2frac(float_val);
+            transfer_sampled[k] = gx_map_color_frac(pis, frac_val, 
+                                            effective_transfer[plane_index]);
+            if (prev_value > transfer_sampled[k]) {
+                is_monotonic = false;            
+            }
+            prev_value = transfer_sampled[k];
+            /* Take note of any leading zeros and ending ones for the inversion */
+            if (transfer_sampled[k] == 0) min_pos_start = k;
+            if (transfer_sampled[k] == frac_1 && k < max_pos_start) max_pos_start = k;
+        }
+    }
+    if (!is_monotonic) {
+        gs_free_object(memory, transfer_sampled, "gx_ht_construct_transfer_inverse");
+        return -1;
+    }
+    /* Now run over our invertible range from min_pos to max_pos doing
+       a binary search with interpolation for the inversion */
+    for (k = 0; k < 256; k++) {
+        float_val = (float) k / 256.0;
+        frac_val = float2frac(float_val);
+        /* Find where this value occurs */
+        done = false;
+        hit = false;
+        max_pos = max_pos_start;
+        min_pos = min_pos_start;
+        while (!done) {
+            mid_pos = min_pos + (max_pos - min_pos) / 2;
+            if (frac_val > transfer_sampled[mid_pos]) {
+                min_pos = mid_pos;
+            } else if (frac_val < transfer_sampled[mid_pos]) {
+                max_pos = mid_pos;
+            } else {
+                done = true;
+                hit = true;
+            }
+            if (max_pos - min_pos == 1) {
+                done = true;
+            }
+        }
+        /* OK found the point go ahead and interpolate if needed */
+        if (*is_inverting) {
+            if (hit) {
+                transfer_inverse[255 - k] = 
+                    round((float) mid_pos * 255.0 / (float) (TRANSFER_INVERSE_SIZE - 1));            
+            } else {
+                /* Interpolate */
+                min_val = transfer_sampled[min_pos];
+                max_val = transfer_sampled[max_pos];
+                float_val = (float) min_pos + 
+                    (float) (max_pos - min_pos) * (float) (frac_val - min_val) /                         
+                    (float) (max_val - min_val);
+                transfer_inverse[255 - k] = 
+                    round(float_val * 255.0 / (float) (TRANSFER_INVERSE_SIZE - 1));            
+            }
+        } else {
+            if (hit) {
+                transfer_inverse[k] = 
+                    round((float) mid_pos * 255.0 / (float) (TRANSFER_INVERSE_SIZE - 1));            
+            } else {
+                /* Interpolate */
+                min_val = transfer_sampled[min_pos];
+                max_val = transfer_sampled[max_pos];
+                float_val = (float) min_pos + 
+                    (float) (max_pos - min_pos) * (float) (frac_val - min_val) /                         
+                    (float) (max_val - min_val);
+                transfer_inverse[k] = 
+                    round(float_val * 255.0 / (float) (TRANSFER_INVERSE_SIZE - 1));            
+            }
+        }
+    }
+    /* Make sure the end points are set */
+    if (*is_inverting) {
+        transfer_inverse[255] = 0;
+        transfer_inverse[0] = 255;
+    } else {
+        transfer_inverse[255] = 255;
+        transfer_inverse[0] = 0;
+    }
+    gs_free_object(memory, transfer_sampled, "gx_ht_construct_transfer_inverse");
+    return 0;
+}
+#undef round
+
 /* Lifted from threshold_from_order in gdevtsep.c.  This creates a threshold
    array from the tiles.  Threshold is allocated in non-gc memory and is
    not known to the gc */
 int
-gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index)
+gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, 
+                           const gs_imager_state * pis, int plane_index)
 {
     int i, j, l, prev_l;
     unsigned char *thresh;
@@ -1378,13 +1525,47 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index
     int t_level, t_level_adjust;
     int row, col;
     int delta, delta_sum = 0;
+    bool have_transfer = false;
+    byte *transfer_inverse = NULL;
+    int code;
+    byte init_value = 255;
+    bool is_inverting = false;
 
     if (d_order == NULL) return -1;
     if (d_order->threshold != NULL) return 0;
+    d_order->threshold_inverts = is_inverting;
     thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
                               "gx_ht_construct_threshold");
-    if( thresh == NULL ) {
+    if (thresh == NULL) {
         return -1 ;         /* error if allocation failed   */
+    }
+    /* Check if we need to apply a transfer function to the values */
+    if (pis->effective_transfer[plane_index]->proc != gs_identity_transfer) {
+        transfer_inverse = (byte *)gs_malloc(memory, 256, 1, 
+                                    "gx_ht_construct_threshold");
+        if (transfer_inverse == NULL) {
+            return -1 ;         /* error if allocation failed   */
+        }
+        /* Create an inverse of the transfer.  Hopefully it is invertible.  If
+           not, we will get some strange results... */
+        code = gx_ht_construct_transfer_inverse(memory, transfer_inverse, pis, 
+                                        plane_index, &is_inverting);
+        d_order->threshold_inverts = is_inverting;
+        if (code < 0) {
+            /* If this failed then we will go and use the non-threshold code */
+#ifdef DEBUG
+            gs_warn("Transfer function inversion for threshold matrix failed!");
+#endif
+            if (transfer_inverse != NULL) {
+               gs_free_object(memory, transfer_inverse, "gx_ht_construct_threshold");
+            }
+            return -1;
+        } else {
+            have_transfer = true;
+            init_value = transfer_inverse[255];
+        }
+    } else {
+        d_order->threshold_inverts = false;
     }
     /* Adjustments to ensure that we properly map our 256 levels into
       the number of shades that we have in our halftone screen.  For example
@@ -1406,7 +1587,7 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index
         return -1 ;         /* error if allocation failed   */
     }
     for( i = 0; i < d_order->num_bits; i++ ) {
-        thresh[i] = 255;
+        thresh[i] = init_value;
     }
     prev_l = 0;
     l = 1;
@@ -1424,6 +1605,10 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index
                 delta_sum += delta;
             } else {
                 t_level -= delta_sum;
+            }
+            /* If needed, map through the inverse of the transfer function */
+            if (have_transfer) {
+                t_level = transfer_inverse[t_level];
             }
             /* Loop over the number of dots that we have to set in going
                to this new level from the old level */
@@ -1452,6 +1637,9 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev, int plane_index
       }
    }
 #endif
+   if (transfer_inverse != NULL) {
+       gs_free_object(memory, transfer_inverse, "gx_ht_construct_threshold");
+   }
     return 0;
 }
 

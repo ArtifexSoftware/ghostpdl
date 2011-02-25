@@ -178,7 +178,10 @@ gs_image_class_3_mono(gx_image_enum * penum)
                 if (penum->pis != NULL && penum->pis->dev_ht != NULL) {
                     gx_ht_order *d_order =
                                     &(penum->pis->dev_ht->components[0].corder);
-                    code = gx_ht_construct_threshold(d_order, penum->dev, 0);
+                    /* This will fail if it has a transfer function that is not
+                       monotonic */
+                    code = gx_ht_construct_threshold(d_order, penum->dev, 
+                                                     penum->pis, 0);
                 } else {
                     code = -1;
                 }
@@ -966,7 +969,7 @@ threshold_row_byte(byte *contone, byte *threshold_strip, int contone_stride,
 static void
 threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
                   byte *halftone, int dithered_stride, int width,
-                  int num_rows, int offset_bits)
+                  int num_rows, int offset_bits, bool threshold_inverts)
 {
     int k, j;
     byte *contone_ptr;
@@ -988,10 +991,18 @@ threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
             if ( (k % 8) == 0) {
                 ht_index++;
             }
-            if (contone_ptr[k] < thresh_ptr[k]) {
-                halftone_ptr[ht_index] |=  bit_init;
+            if (threshold_inverts) {
+                if (contone_ptr[k] > thresh_ptr[k]) {
+                    halftone_ptr[ht_index] |=  bit_init;
+                } else {
+                    halftone_ptr[ht_index] &=  ~bit_init;
+                }
             } else {
-                halftone_ptr[ht_index] &=  ~bit_init;
+                if (contone_ptr[k] < thresh_ptr[k]) {
+                    halftone_ptr[ht_index] |=  bit_init;
+                } else {
+                    halftone_ptr[ht_index] &=  ~bit_init;
+                }
             }
             if (bit_init == 1) {
                 bit_init = 0x80;
@@ -1009,10 +1020,18 @@ threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
             if (((k - offset_bits) % 8) == 0) {
                 ht_index++;
             }
-            if (contone_ptr[k] < thresh_ptr[k]) {
-                halftone_ptr[ht_index] |=  bit_init;
+            if (threshold_inverts) {
+                if (contone_ptr[k] > thresh_ptr[k]) {
+                    halftone_ptr[ht_index] |=  bit_init;
+                } else {
+                    halftone_ptr[ht_index] &=  ~bit_init;
+                }
             } else {
-                halftone_ptr[ht_index] &=  ~bit_init;
+                if (contone_ptr[k] < thresh_ptr[k]) {
+                    halftone_ptr[ht_index] |=  bit_init;
+                } else {
+                    halftone_ptr[ht_index] &=  ~bit_init;
+                }
             }
             if (bit_init == 1) {
                 bit_init = 0x80;
@@ -1109,7 +1128,7 @@ threshold_16_SSE_unaligned(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 static void
 threshold_row_SSE(byte *contone,  byte *threshold_strip,  int contone_stride,
                   byte *halftone, int dithered_stride, int width,
-                  int num_rows, int offset_bits)
+                  int num_rows, int offset_bits, bool is_inverted)
 {
     byte *contone_ptr;
     byte *thresh_ptr;
@@ -1130,7 +1149,13 @@ threshold_row_SSE(byte *contone,  byte *threshold_strip,  int contone_stride,
                requires 128 bit alignment.  contone_ptr and thresh_ptr
                are set up so that after we move in by offset_bits elements
                then we are 128 bit aligned.  */
-            threshold_16_SSE_unaligned(contone_ptr, thresh_ptr, halftone_ptr);
+            if (is_inverted) {
+                threshold_16_SSE_unaligned(thresh_ptr, contone_ptr, 
+                                           halftone_ptr);
+            } else {
+                threshold_16_SSE_unaligned(contone_ptr, thresh_ptr, 
+                                           halftone_ptr);
+            }
             halftone_ptr += 2;
             thresh_ptr += offset_bits;
             contone_ptr += offset_bits;
@@ -1138,11 +1163,20 @@ threshold_row_SSE(byte *contone,  byte *threshold_strip,  int contone_stride,
         /* Now we should have 128 bit aligned with our input data. Iterate
            over sets of 16 going directly into our HT buffer.  Sources and
            halftone_ptr buffers should be padded to allow 15 bit overrun */
-        for (k = 0; k < num_tiles; k++) {
-            threshold_16_SSE(contone_ptr, thresh_ptr, halftone_ptr);
-            thresh_ptr += 16;
-            contone_ptr += 16;
-            halftone_ptr += 2;
+        if (is_inverted) {
+            for (k = 0; k < num_tiles; k++) {
+                threshold_16_SSE(thresh_ptr, contone_ptr, halftone_ptr);
+                thresh_ptr += 16;
+                contone_ptr += 16;
+                halftone_ptr += 2;
+            }
+        } else {
+            for (k = 0; k < num_tiles; k++) {
+                threshold_16_SSE(contone_ptr, thresh_ptr, halftone_ptr);
+                thresh_ptr += 16;
+                contone_ptr += 16;
+                halftone_ptr += 2;
+            }
         }
     }
 }
@@ -1152,7 +1186,7 @@ threshold_row_SSE(byte *contone,  byte *threshold_strip,  int contone_stride,
 static void
 threshold_landscape(byte *contone_align, byte *thresh_align,
                     ht_landscape_info_t ht_landscape, byte *halftone,
-                    int data_length)
+                    int data_length, bool is_inverted)
 {
     __align16 byte contone[16];
     int position_start, position, curr_position;
@@ -1171,7 +1205,6 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
     }
     thresh_ptr = thresh_align;
     halftone_ptr = halftone;
-
     /* Copy the widths to a local array, and truncate the last one (which may
      * be the first one!) if required. */
     k = 0;
@@ -1184,33 +1217,59 @@ threshold_landscape(byte *contone_align, byte *thresh_align,
             local_widths[0] -= k-16;
         }
     }
-
-    for (k = data_length; k > 0; k--) { /* Loop on rows */
-
-        contone_ptr = &(contone_align[position]); /* Point us to our row start */
-        curr_position = 0; /* We use this in keeping track of widths */
-        contone_out_posit = 0; /* Our index out */
-
-        for (j = num_contone; j > 0; j--) {
-            byte c = *contone_ptr;
-            for (w = local_widths[curr_position]; w > 0; w--) {
-                contone[contone_out_posit] = c;
-                contone_out_posit++;
+    /* Pull the is_inverted check out here and replicate to avoid doing check
+       within loop.  Need to check if this is worth the code replication.  Another
+       approach would be to use a procedure pointer */
+    if (is_inverted) {
+        for (k = data_length; k > 0; k--) { /* Loop on rows */
+            contone_ptr = &(contone_align[position]); /* Point us to our row start */
+            curr_position = 0; /* We use this in keeping track of widths */
+            contone_out_posit = 0; /* Our index out */
+            for (j = num_contone; j > 0; j--) {
+                byte c = *contone_ptr;
+                for (w = local_widths[curr_position]; w > 0; w--) {
+                    contone[contone_out_posit] = c;
+                    contone_out_posit++;
+                }
+                curr_position++; /* Move us to the next position in our width array */
+                contone_ptr++;   /* Move us to a new location in our contone buffer */
             }
-
-            curr_position++; /* Move us to the next position in our width array */
-            contone_ptr++;   /* Move us to a new location in our contone buffer */
+            /* Now we have our left justified and expanded contone data for a single
+               set of 16.  Go ahead and threshold these */
+    #ifdef HAVE_SSE2
+            threshold_16_SSE(thresh_ptr, &(contone[0]), halftone_ptr);
+    #else
+            threshold_16_bit(thresh_ptr, &(contone[0]), halftone_ptr);
+    #endif
+            thresh_ptr += 16;
+            position += 16;
+            halftone_ptr += 2;
         }
-        /* Now we have our left justified and expanded contone data for a single
-           set of 16.  Go ahead and threshold these */
-#ifdef HAVE_SSE2
-        threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
-#else
-        threshold_16_bit(&(contone[0]), thresh_ptr, halftone_ptr);
-#endif
-        thresh_ptr += 16;
-        position += 16;
-        halftone_ptr += 2;
+   } else {
+        for (k = data_length; k > 0; k--) { /* Loop on rows */
+            contone_ptr = &(contone_align[position]); /* Point us to our row start */
+            curr_position = 0; /* We use this in keeping track of widths */
+            contone_out_posit = 0; /* Our index out */
+            for (j = num_contone; j > 0; j--) {
+                byte c = *contone_ptr;
+                for (w = local_widths[curr_position]; w > 0; w--) {
+                    contone[contone_out_posit] = c;
+                    contone_out_posit++;
+                }
+                curr_position++; /* Move us to the next position in our width array */
+                contone_ptr++;   /* Move us to a new location in our contone buffer */
+            }
+            /* Now we have our left justified and expanded contone data for a single
+               set of 16.  Go ahead and threshold these */
+    #ifdef HAVE_SSE2
+            threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
+    #else
+            threshold_16_bit(&(contone[0]), thresh_ptr, halftone_ptr);
+    #endif
+            thresh_ptr += 16;
+            position += 16;
+            halftone_ptr += 2;
+        }
     }
 }
 
@@ -1605,11 +1664,11 @@ flush:
 #ifdef HAVE_SSE2
             threshold_row_SSE(contone_align, thresh_align, contone_stride,
                               halftone, dithered_stride, dest_width, vdi,
-                              offset_bits);
+                              offset_bits, d_order->threshold_inverts);
 #else
             threshold_row_bit(contone_align, thresh_align, contone_stride,
                               halftone, dithered_stride, dest_width, vdi,
-                              offset_bits);
+                              offset_bits, d_order->threshold_inverts);
 #endif
             /* Now do the copy mono operation */
             /* First the left remainder bits */
@@ -1708,7 +1767,8 @@ flush:
                 }
                 /* Apply the threshold operation */
                 threshold_landscape(contone_align, thresh_align,
-                                    penum->ht_landscape, halftone, data_length);
+                                    penum->ht_landscape, halftone, data_length,
+                                    d_order->threshold_inverts);
                 /* Perform the copy mono */
                 penum->ht_landscape.offset_set = false;
                 if (penum->ht_landscape.index < 0) {
