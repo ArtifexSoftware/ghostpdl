@@ -25,6 +25,7 @@
 #include "gsdevice.h"
 #include "gsstruct.h"		/* for gxalloc.h */
 #include "gspaint.h"
+#include "gsfont.h"
 #include "gxalloc.h"
 #include "gxstate.h"
 #include "gxdevice.h"
@@ -170,7 +171,7 @@ typedef struct pxl_interp_instance_s {
 
 
 /* Get implemtation's characteristics */
-const pl_interp_characteristics_t * /* always returns a descriptor */
+static const pl_interp_characteristics_t * /* always returns a descriptor */
 pxl_impl_characteristics(
   const pl_interp_implementation_t *impl     /* implementation of interpereter to alloc */
 )
