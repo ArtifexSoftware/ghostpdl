@@ -1895,7 +1895,7 @@ $(PSD)fapiu1.dev : $(INT_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(PSD)fapiu1 -link $(UFST_LIB)if_lib$(UFST_LIB_EXT) $(UFST_LIB)fco_lib$(UFST_LIB_EXT)
 	$(ADDMOD) $(PSD)fapiu1 -link $(UFST_LIB)tt_lib$(UFST_LIB_EXT) $(UFST_LIB)psi_lib$(UFST_LIB_EXT)
 
-$(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
+fapiufst_1 : $(PSSRC)fapiufst.c $(AK)\
  $(memory__h) $(stdio__h) $(math__h) $(strmio_h)\
  $(ierrors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) $(gp_h) $(gxfapiu_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
@@ -1905,7 +1905,22 @@ $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(AK)\
  $(UFST_ROOT)$(D)rts$(D)psi$(D)t1isfnt.h\
  $(UFST_ROOT)$(D)rts$(D)tt$(D)sfntenum.h\
  $(UFST_ROOT)$(D)rts$(D)tt$(D)ttpcleo.h
-	$(PSCC) $(UFST_CFLAGS) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
+	$(PSCC) $(UFST_CFLAGS) -DUFSTFONTDIR=$(UFSTROMFONTDIR) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
+
+fapiufst_0 : $(PSSRC)fapiufst.c $(AK)\
+ $(memory__h) $(stdio__h) $(math__h) $(strmio_h)\
+ $(ierrors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) $(gp_h) $(gxfapiu_h) \
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h\
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)cgmacros.h\
+ $(UFST_ROOT)$(D)rts$(D)psi$(D)t1isfnt.h\
+ $(UFST_ROOT)$(D)rts$(D)tt$(D)sfntenum.h\
+ $(UFST_ROOT)$(D)rts$(D)tt$(D)ttpcleo.h
+	$(PSCC) $(UFST_CFLAGS) -DUFSTFONTDIR=$(UFSTFONTDIR) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
+
+
+$(PSOBJ)fapiufst.$(OBJ) : fapiufst_$(COMPILE_INITS)
 
 # stub for UFST bridge :
 

@@ -1053,21 +1053,15 @@ profilebsc:
 UFST_ROOT=C:\ufst
 !endif
 
-!if "$(COMPILE_INITS)" == "1"
 UFST_ROMFS_ARGS=-b \
    -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
    -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
    -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
 
-UFST_CFLAGS=$(UFST_CFLAGS) /DUFSTFONTDIR=\\\"%%%%%rom%%%%%fontdata/\\\"
+UFSTROMFONTDIR=\\\"%%%%%rom%%%%%fontdata/\\\"
+UFSTFONTDIR="$(UFST_ROOT)/fontdata"
 
-!else
-UFST_ROMFS_ARGS=
-
-UFST_CFLAGS=$(UFST_CFLAGS) /DUFSTFONTDIR="$(UFST_ROOT)/fontdata"
-!endif
-
-UFSTBASEDEFS=UFST_BRIDGE=1 FT_BRIDGE=1 UFST_ROOT="$(UFST_ROOT)" UFST_ROMFS_ARGS="$(UFST_ROMFS_ARGS)" UFSTFONTDIR="$(UFSTFONTDIR)"
+UFSTBASEDEFS=UFST_BRIDGE=1 FT_BRIDGE=1 UFST_ROOT="$(UFST_ROOT)" UFST_ROMFS_ARGS="$(UFST_ROMFS_ARGS)" UFSTFONTDIR="$(UFSTFONTDIR)" UFSTROMFONTDIR="$(UFSTROMFONTDIR)"
 
 !ifdef WIN64
 UFSTDEBUGDEFS=BINDIR=.\ufstdebugbin GLGENDIR=.\ufstdebugobj64 GLOBJDIR=.\ufstdebugobj64 PSLIBDIR=.\lib PSGENDIR=.\ufstdebugobj64 PSOBJDIR=.\ufstdebugobj64 DEBUG=1 TDEBUG=1 SBRDIR=.\ufstdebugobj64

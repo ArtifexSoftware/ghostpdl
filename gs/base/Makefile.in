@@ -172,23 +172,16 @@ FT_CONFIG_SYSTEM_ZLIB=@FT_SYS_ZLIB@
 UFST_ROOT=@UFST_ROOT@
 UFST_LIB_EXT=@UFST_LIB_EXT@
 
-ifeq ($(UFST_BRIDGE), 1)
- ifeq ($(COMPILE_INITS), 1)
-   UFST_ROMFS_ARGS?=-b \
-     -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
-     -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
-     -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
-   UFSTFONTDIR?=%rom%fontdata/
- else
-   UFST_ROMFS_ARGS=
-   UFSTFONTDIR?=$(UFST_ROOT)/fontdata/
- endif
-else
- UFST_ROMFS_ARGS=
- UFSTFONTDIR=
-endif
+UFST_ROMFS_ARGS?=-b \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+ -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
 
-UFST_CFLAGS=@UFST_CFLAGS@ -DUFSTFONTDIR="\"$(UFSTFONTDIR)"\"
+UFSTROMFONTDIR=%rom%fontdata/
+UFSTFONTDIR?=$(UFST_ROOT)/fontdata/
+
+
+UFST_CFLAGS=@UFST_CFLAGS@
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
