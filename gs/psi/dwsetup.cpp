@@ -14,7 +14,7 @@
 // $Id$
 //
 //
-// This is the setup program for Win32 GPL Ghostscript
+// This is the setup program for Win32 and Win64 GPL Ghostscript
 //
 // The starting point is a self extracting zip archive
 // with the following contents:
@@ -33,7 +33,7 @@
 // For example, filelist.txt might contain:
 //   GPL Ghostscript 8.55
 //   gs8.55
-//   gs8.55\bin\gsdll32.dll
+//   gs8.55\bin\gsdll32.dll or gs8.55\bin\gsdll64.dll
 //   gs8.55\lib\gs_init.ps
 //
 // The default install directory is c:\gs.
@@ -751,7 +751,11 @@ install_prog()
 	strcpy(szDLL, g_szTargetDir);
 	strcat(szDLL, "\\");
 	strcat(szDLL, cinst.GetMainDir());
+#ifdef _WIN64
+	strcat(szDLL, "\\bin\\gsdll64.dll");
+#else
 	strcat(szDLL, "\\bin\\gsdll32.dll");
+#endif
 	if (!cinst.UpdateRegistryValue(regkey1, regkey2, "GS_DLL", szDLL)) {
 		gs_addmess("Failed to add registry value\n");
 		return FALSE;
