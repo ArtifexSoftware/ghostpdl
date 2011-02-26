@@ -81,12 +81,14 @@
  * expansion on each side (in user space) is
  *      K * line_width/2
  * where K is determined as follows:
- *      If the path is only a single line segment, K = 1;
- *      if triangular joins, K = 2;
- *      if miter joins, K = miter_limit;
- *      otherwise, K = 1.
+ *      For round or butt caps, E = 1
+ *      For square caps, E = sqrt(2)
+ *        If the path is only a single line segment, K = E;
+ *          if triangular joins, K = 2;
+ *          if miter joins, K = max(miter_limit, E);
+ *      otherwise, K = E.
  *
- * If the following conditions apply, K = 1 yields an exact result:
+ * If the following conditions apply, K = E yields an exact result:
  *	- The CTM is of the form [X 0 0 Y] or [0 X Y 0].
  *	- Square or round caps are used, or all subpaths are closed.
  *	- All segments (including the implicit segment created by
@@ -108,6 +110,11 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
     double cy = fabs(pis->ctm.xy) + fabs(pis->ctm.yy);
     double expand = pis->line_params.half_width;
     int result = 1;
+
+    /* Adjust the expansion (E) for square caps, if needed */
+    if (pis->line_params.start_cap == gs_cap_square ||
+	pis->line_params.end_cap == gs_cap_square)
+	    expand *= 1.414213562;
 
     /* Check for whether an exact result can be computed easily. */
     if (is_fzero2(pis->ctm.xy, pis->ctm.yx) ||
