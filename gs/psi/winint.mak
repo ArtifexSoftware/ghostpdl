@@ -33,7 +33,7 @@ WININT_MAK=$(PSSRC)winint.mak
 
 # Define the location of the WinZip self-extracting-archive-maker.
 !ifndef WINZIPSE_XE
-!if $(BUILD_SYSTEM) == 32
+!if $(BUILD_SYSTEM) == 64
 WINZIPSE_XE="C:\Program Files (x86)\WinZip Self-Extractor\WZIPSE32.EXE"
 !else
 WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
@@ -42,7 +42,7 @@ WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
 
 # Define the location of the NSIS makensis installer utility
 !ifndef MAKENSIS_XE
-!if $(BUILD_SYSTEM) == 32
+!if $(BUILD_SYSTEM) == 64
 MAKENSIS_XE="C:\Program Files (x86)\NSIS\makensis.exe"
 !else
 MAKENSIS_XE="C:\Program Files\NSIS\makensis.exe"
@@ -314,8 +314,13 @@ ZIP_RSP = $(PSOBJ)setupgs.rsp
 # Use a special icon WinZip SE can't handle 48 pixel 32-bit icons 
 # as used by Windows XP.
 archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
+!ifdef WIN64
+	$(ECHOGS_XE) -w $(ZIP_RSP) -q "-win64 -setup"
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -st -x 22 GPL Ghostscript $(GS_DOT_VERSION) for Win64 -x 22
+!else
 	$(ECHOGS_XE) -w $(ZIP_RSP) -q "-win32 -setup"
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -st -x 22 GPL Ghostscript $(GS_DOT_VERSION) for Win32 -x 22
+!endif
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -i -s $(PSOBJ)gswin16.ico
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -a -s $(PSOBJ)about.txt
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(PSOBJ)dialog.txt
