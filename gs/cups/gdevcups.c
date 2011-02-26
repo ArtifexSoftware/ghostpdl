@@ -2929,8 +2929,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #define stringoption(name, sname) \
   if ((code = param_read_string(plist, sname, &stringval)) < 0) \
   { \
-    dprintf2("ERROR: Error setting %s to \"%s\"...\n", sname, \
-             (char *)(stringval.data));			      \
+    dprintf1("ERROR: Error setting %s...\n", sname);	      \
     param_signal_error(plist, sname, code); \
     return (code); \
   } \
@@ -2944,7 +2943,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #define intoption(name, sname, type) \
   if ((code = param_read_int(plist, sname, &intval)) < 0) \
   { \
-    dprintf2("ERROR: Error setting %s to %d...\n", sname, (int)intval); \
+    dprintf1("ERROR: Error setting %s ...\n", sname); \
     param_signal_error(plist, sname, code); \
     return (code); \
   } \
@@ -2956,7 +2955,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #define floatoption(name, sname) \
   if ((code = param_read_float(plist, sname, &floatval)) < 0) \
   { \
-    dprintf2("ERROR: Error setting %s to %.4f...\n", sname, (float)floatval); \
+    dprintf1("ERROR: Error setting %s ...\n", sname); \
     param_signal_error(plist, sname, code); \
     return (code); \
   } \
@@ -2970,7 +2969,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   { \
     if ((code = param_read_null(plist, sname)) < 0) \
     { \
-      dprintf2("ERROR: Error setting %s to %d...\n", sname, (int)boolval); \
+      dprintf1("ERROR: Error setting %s ...\n", sname); \
       param_signal_error(plist, sname, code); \
       return (code); \
     } \
