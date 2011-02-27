@@ -967,10 +967,10 @@ currentdict /no_debug_dict undef
 /add_A85_param {
   dup /ASCII85Decode eq {
     1 index type /dicttype eq {
-      3 -1 roll dup length 1 add dict copy
+      exch dup length 1 add dict copy
       dup /PDFRules //true put
-      3 1 roll
-    } {
+      exch
+     } {
       //pdf_rules_dict exch
     } ifelse
   } if
