@@ -1151,16 +1151,11 @@ bool
 gx_has_transfer(const gs_imager_state *pis, int num_comps)
 {
     int k;
-    gs_state *pgs;
 
-    if (pis->is_gstate) {
-        pgs = (gs_state *)pis;
-        for (k = 0; k < num_comps; k++) {
-            if (pgs->effective_transfer[k]->proc != gs_identity_transfer) {
-                return(true);
-            }
+    for (k = 0; k < num_comps; k++) {
+        if (pis->effective_transfer[k]->proc != gs_identity_transfer) {
+            return(true);
         }
     }
     return(false);
 }
-
