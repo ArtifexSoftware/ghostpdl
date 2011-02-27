@@ -28,6 +28,7 @@
 #include "gxfmap.h"             /* For effective transfer usage in threshold */
 
 #define TRANSFER_INVERSE_SIZE 1024
+#define TRANSFER_IN_THRESHOLDS 0
 
 /* Used in threshold from tiles construction */
 static const uint32_t bit_order[32]={
@@ -1366,7 +1367,7 @@ gx_set_effective_transfer(gs_state * pgs)
 {
     gx_imager_set_effective_xfer((gs_imager_state *) pgs);
 }
-
+#if TRANSFER_IN_THRESHOLDS
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 /* This creates a 256 entry LUT to invert the effective transfer function so
    that it is built into the threshold values.  This only works correctly
@@ -1509,6 +1510,7 @@ gx_ht_construct_transfer_inverse(gs_memory_t *memory, byte *transfer_inverse,
     return 0;
 }
 #undef round
+#endif
 
 /* Lifted from threshold_from_order in gdevtsep.c.  This creates a threshold
    array from the tiles.  Threshold is allocated in non-gc memory and is
@@ -1539,6 +1541,8 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     if (thresh == NULL) {
         return -1 ;         /* error if allocation failed   */
     }
+    d_order->threshold_inverts = false;
+#if TRANSFER_IN_THRESHOLDS
     /* Check if we need to apply a transfer function to the values */
     if (pis->effective_transfer[plane_index]->proc != gs_identity_transfer) {
         transfer_inverse = (byte *)gs_malloc(memory, 256, 1, 
@@ -1567,6 +1571,7 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     } else {
         d_order->threshold_inverts = false;
     }
+#endif
     /* Adjustments to ensure that we properly map our 256 levels into
       the number of shades that we have in our halftone screen.  For example
       if we have a 16x16 screen, we have 257 shadings that we can represent
@@ -1614,7 +1619,7 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
                to this new level from the old level */
             for (j = d_order->levels[prev_l]; j < d_order->levels[l]; j++) {
                 gs_int_point ppt;
-                int code = d_order->procs->bit_index(d_order, j, &ppt);
+                code = d_order->procs->bit_index(d_order, j, &ppt);
                 if (code < 0)
                     return code;
                 row = ppt.y;
