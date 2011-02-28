@@ -1,0 +1,47 @@
+# Ignore editor backup files
+*~
+
+# Ignore bad merge files
+*.rej
+*.orig
+
+# Ignore Visual Studio local and binary files
+*.pdb
+*.ncb
+*.suo
+*.vcproj.*.user
+
+# Ignore the external symlink
+gs/
+
+# RJW: I copy GhostPDL.sln to something more memorable in each checkout
+# so VS2005 shows me a sensible 'Recent Projects' list. Ignore the copy.
+win32/GhostPDLGit.sln
+
+# Ignore all the object files
+language_switch/debugobj/
+language_switch/obj/
+language_switch/profobj/
+main/debugobj/
+main/obj/
+main/profobj/
+svg/debugobj/
+svg/obj/
+svg/profobj/
+xps/debugobj/
+xps/obj/
+xps/profobj/
+language_switch/debugobj64/
+language_switch/obj64/
+language_switch/profobj64/
+main/debugobj64/
+main/obj64/
+main/profobj64/
+svg/debugobj64/
+svg/obj64/
+svg/profobj64/
+xps/debugobj64/
+xps/obj64/
+xps/profobj64/
+cscope.*
+autom4te.cache

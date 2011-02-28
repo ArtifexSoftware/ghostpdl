@@ -1,0 +1,25 @@
+# Ignore editor backup files
+*~
+
+# Ignore bad merge files
+*.rej
+*.orig
+
+# Ignore Visual Studio local and binary files
+*.pdb
+*.ncb
+*.suo
+*.vcproj.*.user
+
+# Ignore the external symlink
+gs/
+
+# Ignore all the object files
+debugobj/
+obj/
+profobj/
+debugobj64/
+obj64/
+profobj64/
+cscope.*
+autom4te.cache
