@@ -1,4 +1,5 @@
 # Copyright (c) 2008, Till Kamppeter
+# Copyright (c) 2011, Richard Hughes
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -23,7 +24,7 @@
 #
 # $Id: pdftoraster.convs 8803 2008-06-24 14:16:29Z till $
 #
-# CUPS file conversion rules for pdftoraster filter
+# CUPS file conversion rules for gstoraster filter
 
-application/vnd.cups-pdf	application/vnd.cups-raster	66	pdftoraster
-
+application/vnd.cups-pdf	application/vnd.cups-raster	66	gstoraster
+application/vnd.cups-postscript	application/vnd.cups-raster	100	gstoraster

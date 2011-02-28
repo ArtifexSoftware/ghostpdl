@@ -435,6 +435,37 @@ AC_SUBST(HAVE_FONTCONFIG)
 AC_SUBST(FONTCONFIG_CFLAGS)
 AC_SUBST(FONTCONFIG_LIBS)
 
+dnl DBus support
+HAVE_DBUS=""
+DBUS_CFLAGS=""
+DBUS_LIBS=""
+AC_ARG_ENABLE([dbus], AC_HELP_STRING([--disable-dbus],
+    [Do not use dbus to communicate with external services]))
+if test "$enable_dbus" != "no"; then
+	if test "x$PKGCONFIG" != x; then
+		AC_MSG_CHECKING(for dbus with pkg-config)
+		if $PKGCONFIG --exists dbus-1; then
+			AC_MSG_RESULT(yes)
+			DBUS_CFLAGS="$CFLAGS `$PKGCONFIG --cflags dbus-1`"
+			DBUS_LIBS="`$PKGCONFIG --libs dbus-1`"
+			HAVE_DBUS=-DHAVE_DBUS
+		else
+			AC_MSG_RESULT(no)
+		fi
+	fi
+	if test -z "$HAVE_DBUS"; then
+		AC_CHECK_LIB([dbus], [dbus_message_iter_get_basic], [
+		  AC_CHECK_HEADER([dbus-1.0/dbus/dbus.h], [
+		    DBUS_LIBS="-ldbus-1 -lpthread -lrt"
+		    HAVE_DBUS="-DHAVE_DBUS"
+		  ])
+		])
+	fi
+fi
+AC_SUBST(HAVE_DBUS)
+AC_SUBST(DBUS_CFLAGS)
+AC_SUBST(DBUS_LIBS)
+
 AC_CHECK_LIB(dl, dlopen)
 
 AC_ARG_ENABLE([freetype], AC_HELP_STRING([--disable-freetype],
@@ -1482,6 +1513,6 @@ dnl --------------------------------------------------
 AC_SUBST(OPT_CFLAGS)
 AC_SUBST(DBG_CFLAGS)
 AC_SUBST(GCFLAGS)
-AC_OUTPUT(Makefile cups/pstopxl cups/pstoraster)
+AC_OUTPUT(Makefile cups/pstopxl)
 
-chmod +x cups/pstopxl cups/pstoraster
+chmod +x cups/pstopxl

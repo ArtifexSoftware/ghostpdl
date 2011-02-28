@@ -142,7 +142,7 @@ GENOPT=
 # -DHAVE_SSE2
 #       use sse2 intrinsics
 
-CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@ @HAVE_LIBIDN@ @HAVE_SETLOCALE@ @HAVE_SSE2@
+CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@ @HAVE_LIBIDN@ @HAVE_SETLOCALE@ @HAVE_SSE2@ @HAVE_DBUS@
 
 # Define the name of the executable file.
 
@@ -334,6 +334,10 @@ XCFLAGS=@DYNAMIC_FLAGS@
 # fontconfig flags, used by unix-aux.mak
 FONTCONFIG_CFLAGS=@FONTCONFIG_CFLAGS@
 FONTCONFIG_LIBS=@FONTCONFIG_LIBS@
+
+# DBus flags, used by cups.mak
+DBUS_CFLAGS=@DBUS_CFLAGS@
+DBUS_LIBS=@DBUS_LIBS@
 
 # defines from autoconf; note that we don't use these at present.
 ACDEFS=@DEFS@
