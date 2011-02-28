@@ -255,7 +255,7 @@ mem_planar_copy_color_24to8(gx_device * dev, const byte * base, int sourcex,
                     byte g = *sptr++;
                     byte b = *sptr++;
                     *dptr0++ = r;
-                    *dptr1++ = 255-g;
+                    *dptr1++ = g;
                     *dptr2++ = b;
                 } while (--ix);
                 source_base += sraster;
