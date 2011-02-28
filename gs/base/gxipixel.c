@@ -751,7 +751,7 @@ image_cache_decode(gx_image_enum *penum, byte input, byte *output)
             break;
         case sd_compute:
             temp = penum->map[0].decode_base +
-                (float) input * penum->map[0].decode_factor / 255.0f;
+                (float) input * penum->map[0].decode_factor;
             temp *= 255;
             if (temp > 255) temp = 255;
             if (temp < 0 ) temp = 0;
