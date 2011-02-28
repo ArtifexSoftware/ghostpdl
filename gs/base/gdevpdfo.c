@@ -384,6 +384,8 @@ static int cos_value_hash(cos_value_t *pcv0, gs_md5_state_t *md5, gs_md5_byte_t 
 
 	case COS_VALUE_OBJECT:
 	    code = pcv0->contents.object->cos_procs->hash(pcv0->contents.object, md5, hash, pdev);
+	    if (code < 0)
+		return code;
 	    break;
 	case COS_VALUE_RESOURCE:
 	    break;
