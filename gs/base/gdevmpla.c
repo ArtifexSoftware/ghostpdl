@@ -240,7 +240,7 @@ mem_planar_copy_color_24to8(gx_device * dev, const byte * base, int sourcex,
             const byte *source_base = base + sraster * (cy - y);
 
             cw = min(bw, x + w - cx);
-            source_base += sx;
+            source_base += sx * 3;
             for (iy = 0; iy < ch; ++iy) {
                 const byte *sptr = source_base;
                 byte *dptr0 = buf.b  + br * iy;
