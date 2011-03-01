@@ -1,4 +1,0 @@
-
-
-
-CONFDEFS?=-DHAVE_MKSTEMP
