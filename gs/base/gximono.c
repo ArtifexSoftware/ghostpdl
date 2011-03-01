@@ -994,18 +994,10 @@ threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
             if ( (k % 8) == 0) {
                 ht_index++;
             }
-            if (threshold_inverts) {
-                if (contone_ptr[k] > thresh_ptr[k]) {
-                    halftone_ptr[ht_index] |=  bit_init;
-                } else {
-                    halftone_ptr[ht_index] &=  ~bit_init;
-                }
+            if (contone_ptr[k] < thresh_ptr[k]) {
+                halftone_ptr[ht_index] |=  bit_init;
             } else {
-                if (contone_ptr[k] < thresh_ptr[k]) {
-                    halftone_ptr[ht_index] |=  bit_init;
-                } else {
-                    halftone_ptr[ht_index] &=  ~bit_init;
-                }
+                halftone_ptr[ht_index] &=  ~bit_init;
             }
             if (bit_init == 1) {
                 bit_init = 0x80;
