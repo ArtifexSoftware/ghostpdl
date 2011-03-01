@@ -24,7 +24,7 @@
 # derived from ghostscript's configure.ac.
 #
 
-AC_PREREQ([2.67])
+AC_PREREQ([2.61])
 AC_INIT
 AC_CONFIG_SRCDIR([pcl/pcjob.c])
 
