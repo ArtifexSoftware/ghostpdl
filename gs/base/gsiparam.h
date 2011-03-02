@@ -57,6 +57,17 @@ typedef struct gs_image_common_s {
   gs_public_st_simple(st_gs_image_common, gs_image_common_t,\
     "gs_image_common_t")
 
+/*  Parent image type enumerations.  Since type3 images can give rise to 
+    type 1 image types, we want to know the origin of these to avoid 
+    doing different halftone methods to the image and the mask.  */
+typedef enum {
+    gs_image_type1,
+    gs_image_type2,
+    gs_image_type3,
+    gs_image_type3x,
+    gs_image_type4
+} gs_image_parent_t;
+
 /*
  * Define the maximum number of components/planes in image data.
  * The +1 is for either color + alpha or mask + color.
@@ -207,6 +218,13 @@ typedef struct gs_image1_s {
      * components implied by the color space.
      */
     gs_image_alpha_t Alpha;
+    /*
+     * Define the parent image type that gave rise to this. 
+     * Used to avoid the use of mixed halftoning methods 
+     * between images and their masks, which
+     * can cause misalignment issues in pixel replications.
+     */
+    gs_image_parent_t image_parent_type;
 } gs_image1_t;
 
 /* The descriptor is public for soft masks. */

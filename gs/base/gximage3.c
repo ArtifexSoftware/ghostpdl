@@ -349,6 +349,7 @@ gx_begin_image3_generic(gx_device * dev,
 	*(gs_data_image_t *)&i_mask = pim->MaskDict;
 	i_mask.type = type1;
 	i_mask.BitsPerComponent = 1;
+        i_mask.image_parent_type = gs_image_type3;
     }
     {
 	gx_drawing_color dcolor;
@@ -379,6 +380,7 @@ gx_begin_image3_generic(gx_device * dev,
 
 	*(gs_pixel_image_t *)&i_pixel = *(const gs_pixel_image_t *)pim;
 	i_pixel.type = type1;
+        i_pixel.image_parent_type = gs_image_type3;
     }
     code = make_mcde(dev, pis, pmat, (const gs_image_common_t *)&i_pixel,
 		     prect, pdcolor, pcpath, mem, &penum->pixel_info,

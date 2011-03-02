@@ -72,6 +72,7 @@ gx_begin_image4(gx_device * dev,
     penum->alpha = gs_image_alpha_none;
     penum->masked = false;
     penum->adjust = fixed_0;
+    penum->image_parent_type = gs_image_type4;
     /* Check that MaskColor values are within the valid range. */
     {
 	bool opaque = false;

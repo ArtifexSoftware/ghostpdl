@@ -306,6 +306,7 @@ struct gx_image_enum_s {
     int ht_offset_bits; /* An offset adjustement to allow aligned copies */
     byte *thresh_buffer;    /* A buffer to hold threshold values for HT */
     int thresh_stride;
+    gs_image_parent_t image_parent_type;   /* Need to avoid threshold of type3 images */
     ht_landscape_info_t ht_landscape;
     gx_image_icc_setup_t icc_setup;
     gs_range_t *cie_range;   /* Needed potentially if CS was PS CIE based */

@@ -79,6 +79,7 @@ image2_set_data(const gs_image2_t * pim, image2_data_t * pid)
     pid->image.Width = pid->bbox.q.x - pid->bbox.p.x;
     pid->image.Height = pid->bbox.q.y - pid->bbox.p.y;
     pid->image.ImageMatrix = pim->ImageMatrix;
+    pid->image.image_parent_type = gs_image_type2;
     return 0;
 }
 

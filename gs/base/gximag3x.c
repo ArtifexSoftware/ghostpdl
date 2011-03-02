@@ -236,6 +236,7 @@ gx_begin_image3x_generic(gx_device * dev,
         gs_image_t_init(&mask[i].image, pmcs);
 	mask[i].image.ColorSpace = pmcs;
 	mask[i].image.adjust = false;
+        mask[i].image.image_parent_type = gs_image_type3x;
 	{
 	    const gx_image_type_t *type1 = mask[i].image.type;
 	    const gs_image3x_mask_t *pixm =
@@ -282,6 +283,7 @@ gx_begin_image3x_generic(gx_device * dev,
 
 	*(gs_pixel_image_t *)&pixel.image = *(const gs_pixel_image_t *)pim;
 	pixel.image.type = type1;
+        pixel.image.image_parent_type = gs_image_type3x;
     }
     code = make_mcde(dev, pis, pmat, (const gs_image_common_t *)&pixel.image,
 		     prect, pdcolor, pcpath, mem, &penum->pixel.info,

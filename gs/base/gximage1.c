@@ -56,6 +56,7 @@ gs_image_t_init_adjust(gs_image_t * pim, gs_color_space * color_space,
     pim->adjust = adjust;
     pim->type = (pim->ImageMask ? &gs_image_type_mask1 : &gs_image_type_1);
     pim->Alpha = gs_image_alpha_none;
+    pim->image_parent_type = gs_image_type1;
 }
 void
 gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s, bool adjust)
@@ -84,6 +85,7 @@ gx_begin_image1(gx_device * dev,
 	return code;
     penum->alpha = pim->Alpha;
     penum->use_mask_color = false;
+    penum->image_parent_type = pim->image_parent_type;
     penum->masked = pim->ImageMask;
     penum->adjust =
 	(pim->ImageMask && pim->adjust ? float2fixed(0.25) : fixed_0);

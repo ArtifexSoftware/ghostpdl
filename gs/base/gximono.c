@@ -108,13 +108,17 @@ gs_image_class_3_mono(gx_image_enum * penum)
         /* At this point in time, only use the ht approach if our device
            uses halftoning, and our source image is a reasonable size.  We
            probably don't want to do this if we have a bunch of tiny little
-           images.  Then the rect fill approach is probably not all that bad */
-
+           images.  Then the rect fill approach is probably not all that bad.
+           Also for now avoid images that include a type3 image mask.  Due
+           to the limited precision and mismatch of the stepping space in which 
+           the interpolations occur this can cause a minor mismatch at large
+           scalings */
         if (use_fast_code && penum->pcs != NULL &&
             penum->dev->color_info.num_components == 1 &&
             penum->dev->color_info.depth == 1 &&
             penum->bps == 8 && (penum->posture == image_portrait 
-            || penum->posture == image_landscape)) {
+            || penum->posture == image_landscape) && 
+            penum->image_parent_type == gs_image_type1) {
             spp_out = penum->dev->color_info.num_components;
             penum->icc_setup.need_decode = false;
             /* Check if we need to do any decoding.  */
