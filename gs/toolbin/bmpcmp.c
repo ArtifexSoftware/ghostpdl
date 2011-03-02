@@ -2062,7 +2062,7 @@ int main(int argc, char *argv[])
         {
             makeWindowTable(&params, s, bpp);
         }
-        map = Malloc(s*w*sizeof(unsigned char));
+        map = Malloc(s*h*sizeof(unsigned char));
         params.width  = w;
         params.height = h;
         params.span   = s;
