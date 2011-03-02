@@ -450,26 +450,16 @@ static void dump_band(int y, FILE *dump_file)
     if (dump_file == NULL)
         return;
     if (dump_nc == 3) {
-        if (dump_l2bits == 0) {
-            while (y--) {
-                int w = (dump_w+7)>>3;
-                while (w--) {
-                    fputc(*r++, dump_file);
-                }
-                r += bandBufferStride - ((dump_w+7)>>3);
+         while (y--) {
+            int w = dump_w;
+            while (w--) {
+                fputc(*r++, dump_file);
+                fputc(*g++, dump_file);
+                fputc(*b++, dump_file);
             }
-        } else {
-             while (y--) {
-                int w = dump_w;
-                while (w--) {
-                    fputc(*r++, dump_file);
-                    fputc(*g++, dump_file);
-                    fputc(*b++, dump_file);
-                }
-	        r += bandBufferStride*3-dump_w;
-	        g += bandBufferStride*3-dump_w;
-                b += bandBufferStride*3-dump_w;
-            }
+	    r += bandBufferStride*3-dump_w;
+	    g += bandBufferStride*3-dump_w;
+            b += bandBufferStride*3-dump_w;
 	}
     } else if (dump_nc == 4) {
         if (dump_l2bits == 0) {
@@ -514,12 +504,22 @@ static void dump_band(int y, FILE *dump_file)
 	    }
         }
     } else {
-        while (y--) {
-            int w = dump_w;
-            while (w--) {
-                fputc(*r++, dump_file);
+        if (dump_l2bits == 0) {
+            while (y--) {
+                int w = (dump_w+7)>>3;
+                while (w--) {
+                    fputc(*r++, dump_file);
+                }
+                r += bandBufferStride - ((dump_w+7)>>3);
             }
-            r += bandBufferStride - dump_w;
+        } else {
+            while (y--) {
+                int w = dump_w;
+                while (w--) {
+                    fputc(*r++, dump_file);
+                }
+                r += bandBufferStride - dump_w;
+            }
         }
     }
 }
