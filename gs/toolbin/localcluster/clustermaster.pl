@@ -11,6 +11,8 @@ use Data::Dumper;
 
 my $verbose=1;
 
+my $skip="CLUSTER_UNTESTED";
+
 
 my $runningSemaphore="./clustermaster.pid";
 my $queue="./queue.lst";
@@ -275,12 +277,17 @@ sub checkProblem {
     unlink $runningSemaphore;
     die "svn info failed";
   }
-  if ($currentRev1 != $newRev1 || $currentRev2 != $newRev2) {
+  my $rev=$newRev1;
+  $rev=$newRev2 if ($newRev2>$rev);
+  my $logMessage;
+  $logMessage.=`svn log ghostpdl -r$rev`;
+  $logMessage.=`svn log ghostpdl/gs -r$rev`;
+  if ($logMessage =~ m/$skip/) {
+    mydbg "  $skip found in r$rev, skipping";
+  } elsif ($currentRev1 != $newRev1 || $currentRev2 != $newRev2) {
 #   print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
     open(LOCK,">$lock") || die "can't write to $lock";
     flock(LOCK,LOCK_EX);
-    my $rev=$newRev1;
-    $rev=$newRev2 if ($newRev2>$rev);
     my $s="svn $rev";
     my $t=`grep "$s" $queue`;
     chomp $t;
@@ -601,10 +608,10 @@ if ($regression =~ m/svn (\d+)/) {
   chomp $currentRev1;
   chomp $currentRev2;
 
-  my $a=`svn update ghostpdl -r$rev --ignore-externals`;
-  my $b=`svn update ghostpdl/gs -r$rev`;
-  mydbg "svn update ghostpdl -r$rev --ignore-externals\n" if ($verbose);
-  mydbg "svn update ghostpdl/gs -r$rev\n" if ($verbose);
+  my $a=`svn cleanup ghostpdl ; svn update ghostpdl -r$rev --ignore-externals`;
+  my $b=`svn cleanup ghostpdl/gs ; svn update ghostpdl/gs -r$rev`;
+  mydbg "svn cleanup ghostpdl ; svn update ghostpdl -r$rev --ignore-externals\n" if ($verbose);
+  mydbg "svn cleanup ghostpdl/gs ; svn update ghostpdl/gs -r$rev\n" if ($verbose);
 
   $footer.="------------------------------------------------------------------------\n";
   $footer.=`svn log ghostpdl -r$rev | tail -n +2`;
@@ -657,10 +664,10 @@ if ($regression =~ m/svn (\d+)/) {
 
   if (length($product)) {
 # un-update the source so that if the regression fails were are back to the where we started
-    `svn update ghostpdl -r$currentRev1 --ignore-externals`;
-    `svn update ghostpdl/gs -r$currentRev2`;
-    mydbg "svn update ghostpdl -r$currentRev1 --ignore-externals\n";
-    mydbg "svn update ghostpdl/gs -r$currentRev2\n";
+    `svn cleanup ghostpdl ; svn update ghostpdl -r$currentRev1 --ignore-externals`;
+    `svn cleanup ghostpdl/gs ; svn update ghostpdl/gs -r$currentRev2`;
+    mydbg "svn cleanup ghostpdl ; svn update ghostpdl -r$currentRev1 --ignore-externals\n";
+    mydbg "svn cleanup ghostpdl/gs ; svn update ghostpdl/gs -r$currentRev2\n";
   } else {
     mydbg "no interesting files changed, skipping regression\n";
     $normalRegression=0;
@@ -734,6 +741,11 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
 #   my $t=time-stat("$_")->mtime;
 #   print "$_ $t\n";
     $machines{$_}=1 if (stat("$_") && (time-stat("$_")->mtime)<$maxTouchTime);
+    # set the status of all machines to idle, so that old messages don't confuse the dashboard
+    s/.up/.status/;
+    open(F,">$_");
+    print F "idle\n";
+    close(F);
   }
   foreach (keys %machines) {
     delete $machines{$_};
@@ -1438,9 +1450,9 @@ close(F9);
 #   `mail marcos.woehrmann\@artifex.com -s \"\`cat revision.gs\`\" <email.txt`;
 
     mydbg "test complete, performing final svn update\n";
-    mydbg "svn update ghostpdl -r$rev --ignore-externals\nsvn update ghostpdl/gs -r$rev\n";
-    `svn update ghostpdl -r$rev --ignore-externals`;
-    `svn update ghostpdl/gs -r$rev`;
+    mydbg "svn cleanup ghostpdl ; svn update ghostpdl -r$rev --ignore-externals\nsvn cleanup ghostpdl/gs ; svn update ghostpdl/gs -r$rev\n";
+    `svn cleanup ghostpdl ; svn update ghostpdl -r$rev --ignore-externals`;
+    `svn cleanup ghostpdl/gs ; svn update ghostpdl/gs -r$rev`;
 
     `./cp.all.sh`;
 mydbg("calling cachearchive.pl");
@@ -1462,7 +1474,7 @@ mydbg("finished cachearchive.pl");
   } elsif ($updateBaseline) {
   } elsif ($bmpcmp) {
     if (exists $emails{$userName}) {
-      `cp bmpcmpFinished.txt bmpcmpResults.txt`;
+      `mv bmpcmpResults.txt bmpcmpResults.txt.old`;
       `echo >>bmpcmpResults.txt`;
       `echo http://www.ghostscript.com/~regression/$userName >>bmpcmpResults.txt`;
       `echo >>bmpcmpResults.txt`;

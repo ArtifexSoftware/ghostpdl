@@ -249,7 +249,7 @@ openhtml();
 #close INDEX;
 
 # Open the index
-open(INDEX, "ls $indir/*.meta| sed s/\.\[0-9]\*\.meta// | sort -u |");
+open(INDEX, "ls $indir/*.00000.meta| sed s/\.\[0-9]\*\.meta// | sort -u |");
 
 # Now run through the list of files
 while (<INDEX>)
@@ -349,6 +349,7 @@ close INDEX;
 
 # List the errored files. If no stdout files this prints and error, but seems
 # to continue.
+`touch $indir/dummy.stdout.gz`;
 open(INDEX, "ls $indir/*.stdout.gz | sort -u |");
 
 # Now run through the list of files
@@ -356,6 +357,8 @@ print $html "<H1>Files that produced errors</H1></BR><DL>\n";
 while (<INDEX>)
 {
     chomp;
+
+    if ($_ ne "$indir/dummy.stdout.gz") {
 
     # Keep everything between the last / and .stdout.gz
     ($path,$_) = $_ =~ m/(.*)\/([^\/]+).stdout.gz/;
@@ -380,6 +383,7 @@ while (<INDEX>)
     print $html "<DD><A href=\"$framedir/stdout.txt\">stdout</A>\n";
     print $html "<A href=\"$framedir/stderr.txt\">stderr</A></DT>\n";
     $framenum++;
+    }
 }
 print $html "</DL>";
 

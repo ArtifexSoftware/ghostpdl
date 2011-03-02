@@ -390,6 +390,7 @@ foreach my $testSource (sort keys %testSource) {
         close(F);
         unlink "nightly_only.lst";
       }
+#     print STDERR Dumper(\%nightly_only);
     }
 
     my $t1=$testSource;
@@ -742,6 +743,19 @@ if (open (F,"<quickfiles.lst")) {
   close(F);
 }
 
+my %slowFiles;
+if (open (F,"<slowfiles.lst")) {
+  while(<F>) {
+    chomp;
+    $slowFiles{$_}=1;
+  }
+  close(F);
+}
+
+
+my @quickCommands;
+my @quickOutputFilenames;
+my @quickFilenames;
 my @commands;
 my @outputFilenames;
 my @filenames;
@@ -761,48 +775,55 @@ if ($bmpcmp) {
     my @a=split ' ';
     $start=1 if (m/ran \d+ tests in \d+ seconds/);
     if ($start && scalar(@a)>=4) {  # horrible, horrible hack
-    if (m/^(.+)\.(pdf\.p.mraw\.\d+\.[01]) (\S+) pdfwrite /) {
-#       print "$1 $2 $3 -- pdfwrite\n";
-      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1) if (!$done);
-print "$filename\t$cmd\n" if (!$done);
-    } elsif (m/^(.+)\.(p.mraw\.\d+\.[01]) (\S+)/) {
-#      print "$1 $2 $3\n";
-      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1) if (!$done);
-print "$filename\t$cmd\n" if (!$done);
-    } elsif (m/^(.+)\.(pam\.\d+\.[01]) (\S+)/) {
-#      print "$1 $2 $3\n";
-      ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1) if (!$done);
-print "$filename\t$cmd\n" if (!$done);
-    } elsif (m/errors:$/ || m/previous clusterpush/i) {
-      $done=1;
+      if (!$done) {
+        if (m/^(.+)\.(pdf\.p.mraw\.\d+\.[01]) (\S+) pdfwrite / ||
+            m/^(.+)\.(ps\.p.mraw\.\d+\.[01]) (\S+) ps2write / ||
+            m/^(.+)\.(p.mraw\.\d+\.[01]) (\S+)/  ||
+            m/^(.+)\.(pam\.\d+\.[01]) (\S+)/) {
+          ($cmd,$outputFilenames,$filename)=build($3,$1,$2,!$local,1);
+          if (exists $quickFiles{$filename}) {
+            push @quickCommands,$cmd;
+            push @quickOutputFilenames,$outputFilenames;
+            push @quickFilenames,$filename;
+          } else {
+            push @commands,$cmd;
+            push @outputFilenames,$outputFilenames;
+            push @filenames,$filename;
+          }
+        } elsif (m/errors:$/ || m/previous clusterpush/i) {
+          $done=1;
+        }
+      }
     }
-    }
-    
   }
   close(F);
 } else {
-foreach my $testfile (sort keys %testfiles) {
-  foreach my $test (@{$tests{$testfiles{$testfile}}}) {
-    if (($lowres==1  && ($test =~ m/\.72\./ || $test =~ m/\.75\./)) ||
-        ($highres==1 && ($test =~ m/\.300\./ || $test =~ m/\.600\./)) ||
-        ($lowres==0  && $highres==0)) {
-    my $t=$testfile.".".$test;
-    my $cmd="";
-    my $outputFilenames="";
-    my $filename="";
-    ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,!$local,0);
-    if (exists $quickFiles{$filename}) {
-      push @commands,$cmd;
-      push @outputFilenames,$outputFilenames;
-      push @filenames,$filename;
-    } else {
-      push @slowCommands,$cmd;
-      push @slowOutputFilenames,$outputFilenames;
-      push @slowFilenames,$filename;
-    }
+  foreach my $testfile (sort keys %testfiles) {
+    foreach my $test (@{$tests{$testfiles{$testfile}}}) {
+      if (($lowres==1  && ($test =~ m/\.72\./ || $test =~ m/\.75\./)) ||
+          ($highres==1 && ($test =~ m/\.300\./ || $test =~ m/\.600\./)) ||
+          ($lowres==0  && $highres==0)) {
+      my $t=$testfile.".".$test;
+      my $cmd="";
+      my $outputFilenames="";
+      my $filename="";
+      ($cmd,$outputFilenames,$filename)=build($testfiles{$testfile},$testfile,$test,!$local,0);
+      if (exists $quickFiles{$filename}) {
+        push @quickCommands,$cmd;
+        push @quickOutputFilenames,$outputFilenames;
+        push @quickFilenames,$filename;
+      } elsif (exists $slowFiles{$filename}) {
+        push @slowCommands,$cmd;
+        push @slowOutputFilenames,$outputFilenames;
+        push @slowFilenames,$filename;
+      } else {
+        push @commands,$cmd;
+        push @outputFilenames,$outputFilenames;
+        push @filenames,$filename;
+      }
+      }
     }
   }
-}
 }
 
 if (-e "gccwarnings" && !$bmpcmp && !$local && (scalar keys %products==0 || exists $products{'gs'})) {
@@ -823,17 +844,10 @@ while (scalar(@commands)) {
   print "$filename\t$command\n";
 }
 
-#while (scalar(@slowCommands)) {
-#  my $n=rand(scalar @slowCommands);
-#  my $filename=$slowFilenames[$n];  splice(@slowFilenames,$n,1);
-#  my $command=$slowCommands[$n];  splice(@slowCommands,$n,1);
-#  print "$filename\t$command\n";
-#}
-
-#while (scalar(@commands)) {
-#  my $n=rand(scalar @commands);
-#  my $filename=$filenames[$n];  splice(@filenames,$n,1);
-#  my $command=$commands[$n];  splice(@commands,$n,1);
-#  print "$filename\t$command\n";
-#}
+while (scalar(@quickCommands)) {
+  my $n=rand(scalar @quickCommands);
+  my $filename=$quickFilenames[$n];  splice(@quickFilenames,$n,1);
+  my $command=$quickCommands[$n];  splice(@quickCommands,$n,1);
+  print "$filename\t$command\n";
+}
 
