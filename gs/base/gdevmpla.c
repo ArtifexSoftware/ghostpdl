@@ -565,6 +565,25 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         )
         return_error(gs_error_rangecheck);
 
+    /* First off, see if we can satisfy get_bits_rectangle with just returning
+     * pointers to the existing data. */
+    {
+	gs_get_bits_params_t copy_params;
+	byte *base = scan_line_base(mdev, y);
+	int code;
+
+	copy_params.options =
+	    GB_COLORS_NATIVE | GB_PACKING_PLANAR | GB_ALPHA_NONE |
+	    (mdev->raster ==
+	     bitmap_raster(mdev->width * mdev->color_info.depth) ?
+	     GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
+	copy_params.raster = mdev->raster;
+	code = gx_get_bits_return_pointer(dev, x, h, params,
+					  &copy_params, base);
+	if (code >= 0)
+	    return code;
+    }
+
     /*
      * If the request is for exactly one plane, hand it off to a device
      * temporarily tweaked to return just that plane.

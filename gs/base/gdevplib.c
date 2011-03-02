@@ -22,6 +22,7 @@
 #include "gdevplnx.h"
 #include "gdevppla.h"
 #include "gdevplib.h" /* Band donor functions */
+#include "gdevmem.h"
 
 /* This file defines 5 different devices:
  *
@@ -219,7 +220,7 @@ void gs_band_donor_fin(void *opaque)
 struct gx_device_plib_s {
     gx_device_common;
     gx_prn_device_common;
-    /* Additional state for plib Digicolor device */
+    /* Additional state for plib device */
     void *opaque;
 };
 typedef struct gx_device_plib_s gx_device_plib;
@@ -636,11 +637,30 @@ plib_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
 }
 
 static int
-plib_get_bits_rectangle(gx_device *pdev, const gs_int_rect *prect,
-                          gs_get_bits_params_t *params, gs_int_rect **pprect)
+plib_get_bits_rectangle_mem(gx_device *pdev, const gs_int_rect *prect,
+                            gs_get_bits_params_t *params, gs_int_rect **pprect)
 {
-    /* Nothing to do - the bits will already be in the buffer */
-    return 0;
+    gx_device_memory *mdev = (gx_device_memory *)pdev;
+    int x = prect->p.x, w = prect->q.x - x, y = prect->p.y, h = prect->q.y - y;
+    /* First off, see if we can satisfy get_bits_rectangle with just returning
+     * pointers to the existing data. */
+    {
+	gs_get_bits_params_t copy_params;
+	byte *base = scan_line_base(mdev, y);
+	int code;
+
+	copy_params.options =
+	    GB_COLORS_NATIVE | GB_PACKING_PLANAR | GB_ALPHA_NONE |
+	    (mdev->raster ==
+	     bitmap_raster(mdev->width * mdev->color_info.depth) ?
+	     GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
+	copy_params.raster = mdev->raster;
+	code = gx_get_bits_return_pointer(pdev, x, h, params,
+					  &copy_params, base);
+	if (code >= 0)
+	    return code;
+    }
+    return mem_get_bits_rectangle(pdev, prect, params, pprect);
 }
 
 static int
@@ -650,14 +670,10 @@ plib_create_buf_device(gx_device **pbdev, gx_device *target, int y,
 {
     int code = gdev_prn_create_buf_planar(pbdev, target, y, render_plane,
                                           mem, band_complexity);
-
     if (code < 0)
         return code;
-    if (!gs_device_is_memory(*pbdev)) {
-        eprintf("Ray said this would never happen!");
-        abort();
-    }
-    (*pbdev)->procs.get_bits_rectangle = plib_get_bits_rectangle;
+    if ((*pbdev)->procs.get_bits_rectangle == mem_get_bits_rectangle)
+        (*pbdev)->procs.get_bits_rectangle = plib_get_bits_rectangle_mem;
     return 0;
 }
 
