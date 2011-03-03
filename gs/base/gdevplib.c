@@ -431,9 +431,11 @@ static void dump_start(int w, int h, int num_comps, int log2bits,
         fprintf(dump_file, "P6 %d %d 255\n", w, h);
     else if (dump_nc == 4) {
         if (log2bits == 0)
-            dprintf1("Width=%d\n", w);
+            fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
+                    "MAXVAL 1\nTUPLTYPE CMYK\nENDHDR\n", w, h);
         else
-            dprintf1("Width=%d\n", w);
+            fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
+                    "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
     } else if (log2bits == 0)
         fprintf(dump_file, "P4 %d %d\n", w, h);
     else
@@ -465,23 +467,20 @@ static void dump_band(int y, FILE *dump_file)
     } else if (dump_nc == 4) {
         if (dump_l2bits == 0) {
             while (y--) {
-                int w = (dump_w+7)>>3;
-                while (w--) {
+                int w = dump_w;
+                while (w) {
                     byte C = *r++;
                     byte M = *g++;
                     byte Y = *b++;
                     byte K = *k++;
                     int s;
-                    for (s=6; s>=0; s -= 2) {
-                        byte o = ((((C>>s)&2)<<6) |
-                                  (((M>>s)&2)<<5) |
-                                  (((Y>>s)&2)<<4) |
-                                  (((K>>s)&2)<<3) |
-                                  (((C>>s)&1)<<3) |
-                                  (((M>>s)&1)<<2) |
-                                  (((Y>>s)&1)<<1) |
-                                  (((K>>s)&1)));
-                        fputc(o, dump_file);
+                    for (s=7; s>=0; s--) {
+                        fputc((C>>s)&1, dump_file);
+                        fputc((M>>s)&1, dump_file);
+                        fputc((Y>>s)&1, dump_file);
+                        fputc((K>>s)&1, dump_file);
+                        w--;
+                        if (w == 0) break;
                     }
                 }
                 r += bandBufferStride*4-((dump_w+7)>>3);
