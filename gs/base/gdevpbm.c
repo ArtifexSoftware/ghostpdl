@@ -41,6 +41,7 @@
  *        otherwise PPM.
  *      pkm[raw] - computes internally in CMYK, outputs PPM (RGB).
  *      pksm[raw] - computes internally in CMYK, outputs 4 PBM pages.
+ *      pamcmyk4 - outputs CMYK as PAM 1-bit per color
  *      pamcmyk32 - outputs CMYK as PAM 8-bits per color
  *      pam - previous name for the pamcmyk32 device retained for backwards compatibility
  *      plan9bm - outputs Plan 9 bitmap format.
@@ -57,7 +58,7 @@
  *      ppmraw, pnmraw: 4(3x1), 8(3x2), 16(3x5), 24(3x8).  [3-24]
  *      pkm, pkmraw: 4(4x1), 8(4x2), 16(4x4), 32(4x8).  [4-32]
  *      pksm, pksmraw: ibid.
- *      pam: 32 (CMYK)
+ *      pam: 32 (CMYK), 4 (CMYK)
  */
 
 /* Structure for P*M devices, which extend the generic printer device. */
@@ -127,10 +128,7 @@ static dev_proc_print_page(pkm_print_page);
 static dev_proc_print_page(psm_print_page);
 static dev_proc_print_page(psm_print_page);
 static dev_proc_print_page(pam_print_page);
-
-static int pam_print_row(gx_device_printer * pdev, byte * data, int depth,
-               FILE * pstream);
-static int pam_print_page(gx_device_printer * pdev, FILE * pstream);
+static dev_proc_print_page(pam4_print_page);
 
 /* The device procedures */
 
@@ -207,6 +205,9 @@ pbm_prn_device(pkm_procs, "pksmraw", '4', 1, 4, 4, 1, 1, 0,
 const gx_device_pbm gs_pamcmyk32_device =
 pbm_prn_device(pam_procs, "pamcmyk32", '7', 1, 4, 32, 255, 255, 0,
                X_DPI, Y_DPI, pam_print_page);
+const gx_device_pbm gs_pamcmyk4_device =
+pbm_prn_device(pam_procs, "pamcmyk4", '7', 1, 4, 4, 1, 1, 0,
+               X_DPI, Y_DPI, pam4_print_page);
 /* Also keep the old device name so anyone using it won't be surprised */
 const gx_device_pbm gs_pam_device =
 pbm_prn_device(pam_procs, "pam", '7', 1, 4, 32, 255, 255, 0,
@@ -235,12 +236,12 @@ ppm_set_dev_procs(gx_device * pdev)
         set_dev_proc(pdev, begin_typed_image, pnm_begin_typed_image);
     }
     if (bdev->color_info.num_components == 4) {
-        if (bdev->magic == 7) {
-            set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
-            set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
-        } else if (bdev->color_info.depth == 4) {
+        if (bdev->color_info.depth == 4) {
             set_dev_proc(pdev, map_color_rgb, cmyk_1bit_map_color_rgb);
             set_dev_proc(pdev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
+        } else if (bdev->magic == 7) {
+            set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
+            set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
         } else {
             set_dev_proc(pdev, map_color_rgb, pkm_map_color_rgb);
             set_dev_proc(pdev, map_cmyk_color, pkm_map_cmyk_color);
@@ -1000,6 +1001,38 @@ pam_print_page(gx_device_printer * pdev, FILE * pstream)
 
     return pbm_print_page_loop(pdev, bdev->magic, pstream,
                                 pam_print_row);
+}
+
+static int
+pam4_print_row(gx_device_printer * pdev, byte * data, int depth,
+               FILE * pstream)
+{
+    int w, s;
+    if (depth == 4) {
+        for (w = pdev->width; w > 0;) {
+            byte C = *data++;
+            for (s = 7; s >= 0; s -= 4)
+            {
+                fputc((C>>s    )&1, pstream);
+                fputc((C>>(s-1))&1, pstream);
+                fputc((C>>(s-2))&1, pstream);
+                fputc((C>>(s-3))&1, pstream);
+                w--;
+                if (w == 0)
+                    break;
+            }
+        }
+    }
+    return 0;
+}
+
+static int
+pam4_print_page(gx_device_printer * pdev, FILE * pstream)
+{
+    gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
+
+    return pbm_print_page_loop(pdev, bdev->magic, pstream,
+                               pam4_print_row);
 }
 
 /* Print a faux CMYK page. */
