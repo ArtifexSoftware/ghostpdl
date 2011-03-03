@@ -7,54 +7,22 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# todo:
-#
-# allow option to be passed to ./autogen.sh (i.e. FT_BRIDGE=1)
-#
-# options: --retest : retest only those files that failed last time
-#          --minimal (X) : test only X percentage of files (x defaults to 10)
-#          --early (N) : stop test if more than N changes on a node (N defaults to 10)
-#          --bitmap (N) : generate bitmaps for files using bmpcmp up to N files foreach node (0 means all bitmaps, defaults to 10)
-#          --bmpcmp (N) : synomym for --bitmap
-
-#          --lowres
-#          --highres
-#          --abort
+# bmpcmp usage: [gs] [pcl] [xps] [gs] [bmpcmp] [lowres] [$user] | abort
 
 
 
 my %products=('abort' =>1,
               'bmpcmp' =>1,
-              'localbmpcmp' =>1,
               'gs' =>1,
               'pcl'=>1,
               'svg'=>1,
               'xps'=>1,
               'ls'=>1);
 
-my $res="";
-
-my $product=shift;
-if ($product && $product eq "lowres") {
-  $product=shift;
-  $res="lowres";
-}
-if ($product && $product eq "highres") {
-  $product=shift;
-  $res="highres";
-}
-my $localbmpcmp="";
-if ($product && $product eq "localbmpcmp") {
-  my $filename=shift;
-  die "filename required after localbmpcmp option" if (!$filename);
-  open (F,"<$filename") || die "file $filename not found";
-  while(<F>) {
-    $localbmpcmp.=$_;
-  }
-  close(F);
-}
 my $user;
+my $product="";
 my $command="";
+my $res="";
 my $t1;
 while ($t1=shift) {
   if ($t1 eq "lowres") {
@@ -63,6 +31,10 @@ while ($t1=shift) {
     $res="highres";
   } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
     $command.=$t1.' ';
+  } elsif (exists $products{$t1}) {
+    $product.=$t1.' ';
+  } elsif ($t1 =~ m/ /) {
+    $product.=$t1.' ';
   } else {
     $user=$t1;
   }
@@ -71,7 +43,8 @@ while ($t1=shift) {
 $product="" if (!$product);
 $user=""    if (!$user);
 
-#print "product=$product res=$res user=$user command=$command localbmpcmp=$localbmpcmp\n";  exit;
+
+#print "product=$product res=$res user=$user command=$command\n";  exit;
 
 unlink "cluster_command.run";
 
@@ -157,7 +130,6 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 open(F,">cluster_command.run");
 print F "$user $product $res\n";
 print F "$command\n";
-print F "$localbmpcmp" if ($localbmpcmp);
 close(F);
 
 $cmd="rsync -avxcz".

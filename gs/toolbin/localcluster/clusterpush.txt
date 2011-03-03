@@ -5,20 +5,24 @@ replacement for clusterpush.sh.
 
 Usage:
 
-  clusterpush.pl [type [user]]
+  clusterpush.pl [type] ['bmpcmp'] ['lowres'|'hires']  [user]
 
-type gs, pcl, xps, and/or ls (standing for language switch).  If you do
-not specify a type clusterpush.pl will guess what you want to do based
-on the current directory. You can specify a combination of types by
-enclosing them in quotes (e.g. clusterpush.pl "gs pcl").  You can also
-specify bmpcmp as the type to generate bitmaps that compare the results
-of the last clusterpush with the head code (see below for details).
 
-user is one of alex, chris, henrys, hintak, ken, marcos, masaki, mvrhel,
-ray, or tor.  If you don't specify 'user' clusterpush.pl uses the value
-of $USER.  This makes sense on Linux and Mac OS X and probably cygwin,
-but I'm not sure what happens when run under Windows.  If you prefer a
-different default username than the one listed above please let me know.
+Where type gs, pcl, xps, and/or ls (standing for language switch).
+If you do not specify a type clusterpush.pl will guess what you want to
+do based on the current directory.
+
+bmpcmp indicates that a bitmap comparison of your output to that of the
+last svn commit should be performed.
+
+lores or hires indicates to only perform a low-resolution or
+high-resolution cluster run; by default both are performed.
+
+user is your username, if you don't specify one clusterpush.pl uses the
+value of $USER.  This makes sense on Linux and Mac OS X and probably
+cygwin, but I'm not sure what happens when run under Windows.
+
+The order of the options is not important.
 
 You need to run clusterpush.pl from the top level directory (the same
 directory from where you normally run 'make').  Clusterpush prints and
@@ -52,12 +56,7 @@ emailed out passwords, contact me if you have misplaced your password.
 BTW, I consider the fact that can look at output from other users, e.g.
 <http://www.ghostscript.com/~regression/marcos>, a feature.
 
-I'll add an option to clusterpush.pl real soon now (tm) that will allow
-you specify a regression test and a bitmap comparison in one step,
-but for now you can queue both by calling clusterpush.pl twice:
+Starting with r12230 you can add bmpcmp to a normal clusterpush
+(i.e. 'clusterpush gs bmpcmp' or 'clusterpush gs pcl xps ls bmpcmp').
+This will queueu both jobs in the correct sequence.
 
- clusterpush.pl gs ; sleep 60 ; clusterpush.pl bmpcmp
-
-(the sleep 60 is required because the cluster master only checks for
-requests once a minute, and the second clusterpush request overwrites
-the first if it is run before the check happens).

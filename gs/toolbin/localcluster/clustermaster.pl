@@ -277,28 +277,34 @@ sub checkProblem {
     unlink $runningSemaphore;
     die "svn info failed";
   }
-  my $rev=$newRev1;
-  $rev=$newRev2 if ($newRev2>$rev);
-  my $logMessage;
-  $logMessage.=`svn log ghostpdl -r$rev`;
-  $logMessage.=`svn log ghostpdl/gs -r$rev`;
-  if ($logMessage =~ m/$skip/) {
-    mydbg "  $skip found in r$rev, skipping";
-  } elsif ($currentRev1 != $newRev1 || $currentRev2 != $newRev2) {
-#   print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
-    open(LOCK,">$lock") || die "can't write to $lock";
-    flock(LOCK,LOCK_EX);
-    my $s="svn $rev";
-    my $t=`grep "$s" $queue`;
-    chomp $t;
-#   print "grep '$s' returned: $t\n";
-    if (length($t)==0) {
-      mydbg "  grep '$s' returns no match, adding to queue\n";
-      open(F,">>$queue");
-      print F "$s\n";
-      close(F);
+  if ($currentRev1 != $newRev1 || $currentRev2 != $newRev2) {
+    my $rev=$newRev1;
+    $rev=$newRev2 if ($newRev2>$rev);
+    my $logMessage;
+    $logMessage.=`svn log ghostpdl -r$rev`;
+    $logMessage.=`svn log ghostpdl/gs -r$rev`;
+    if ($logMessage =~ m/$skip/) {
+      mydbg "  $skip found in r$rev, skipping";
+      mydbg "  svn cleanup ghostpdl ; svn update ghostpdl -r$rev --ignore-externals\n";
+      mydbg "  svn cleanup ghostpdl/gs ; svn update ghostpdl/gs -r$rev\n";
+      `svn cleanup ghostpdl ; svn update ghostpdl -r$rev --ignore-externals`;
+      `svn cleanup ghostpdl/gs ; svn update ghostpdl/gs -r$rev`;
+    } else {
+#     print "$currentRev1 $newRev1\n$currentRev2 $newRev2\n";
+      open(LOCK,">$lock") || die "can't write to $lock";
+      flock(LOCK,LOCK_EX);
+      my $s="svn $rev";
+      my $t=`grep "$s" $queue`;
+      chomp $t;
+#     print "grep '$s' returned: $t\n";
+      if (length($t)==0) {
+        mydbg "  grep '$s' returns no match, adding to queue\n";
+        open(F,">>$queue");
+        print F "$s\n";
+        close(F);
+      }
+      close(LOCK);
     }
-    close(LOCK);
   }
 }
 
@@ -364,12 +370,12 @@ if (0) {
     if (open(F,"<$usersDir/$user/gs.run")) {
       close(F);
       unlink "$usersDir/$user/gs.run";
-      $product="$user gs pcl xps svg ls";
+      $product="gs pcl xps svg ls";
     }
     if (open(F,"<$usersDir/$user/ghostpdl.run")) {
       close(F);
       unlink "$usersDir/$user/ghostpdl.run";
-      $product="$user gs pcl xps svg ls";
+      $product="gs pcl xps svg ls";
     }
     if (open(F,"<$usersDir/$user/ghostpdl/cluster_command.run")) {
       $product=<F>;
@@ -390,12 +396,14 @@ if (0) {
     $options="" if (!$options);
     if ($product) {
       $product =~ s/ +$//;
-      mydbg "  user $product\n";
+      $product =~ s/^ +//;
+      $product =~ m/(.+?) (.+)/;
+      $user=$1;
+      $product=$2;
+      mydbg "  user $user product $product\n";
       open(LOCK,">$lock") || die "can't write to $lock";
       flock(LOCK,LOCK_EX);
       if ($product =~  m/abort$/) {
-        if ($product =~ m/^(.+) /) {
-          $user = $1;
 mylog "  abort for user $user\n";
           if (open(F,"<$queue")) {
             my $first=1;
@@ -419,26 +427,41 @@ mydbg "  setting 'abort.job'\n";
             }
             close(F);
           }
-        }
       } else {
-        my $s="user $product";
-        my $t=`grep "$s" $queue`;
-        chomp $t;
-        mydbg "  grep '$s' returned: $t\n";
-        if (length($t)==0) {
-          mydbg "  grep '$s' returns no match, adding to queue\n";
-          open(F,">>$queue");
-          print F "$s $options\n";
-          close(F);
-          mydbg "  running: find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u\n";
-          `find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u`;
-          mydbg "  running: find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u\n";
-          `find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u`;
-          mydbg "  running: chmod -R +xr $usersDir/$user/ghostpdl\n";
-          `chmod -R +xr $usersDir/$user/ghostpdl`;
+
+sub addToQueue($$) {
+  my $user=shift;
+  my $product=shift;
+  while($product =~ s/  / /g) {
+  }
+  $product =~ s/^ +//;
+  $product =~ s/ +$//;
+  my $s="user $user $product";
+  my $t=`grep "$s" $queue`;
+  chomp $t;
+  mydbg "  grep '$s' returned: $t\n";
+  if (length($t)==0) {
+    mydbg "  grep '$s' returns no match, adding to queue\n";
+    open(F,">>$queue");
+    print F "$s $options\n";
+    close(F);
+    mydbg "  running: find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u\n";
+    `find $usersDir/$user/ghostpdl -name \\*.sh | xargs \$HOME/bin/flip -u`;
+    mydbg "  running: find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u\n";
+    `find $usersDir/$user/ghostpdl -name instcopy | xargs \$HOME/bin/flip -u`;
+    mydbg "  running: chmod -R +xr $usersDir/$user/ghostpdl\n";
+    `chmod -R +xr $usersDir/$user/ghostpdl`;
+  }
+}
+        if ($product =~ m/bmpcmp/) {
+          $product =~ s/bmpcmp//;
+          addToQueue($user,$product) if (length($product));
+          addToQueue($user,'bmpcmp');
+        } else {
+          addToQueue($user,$product);
         }
-        close(LOCK);
       }
+      close(LOCK);
     }
   }
   closedir DIR;
