@@ -40,7 +40,7 @@
 #include "gscie.h"
 
 #define RAW_HT_DUMP 0
-#define USE_FAST_CODE 0
+#define USE_FAST_CODE 1
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
 
 /* This should be moved someplace else later */
