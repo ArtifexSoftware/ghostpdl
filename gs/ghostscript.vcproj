@@ -1674,6 +1674,10 @@
 						>
 					</File>
 					<File
+						RelativePath="base\gdevplib.c"
+						>
+					</File>
+					<File
 						RelativePath="base\gdevplnx.c"
 						>
 					</File>
@@ -5747,6 +5751,10 @@
 					</File>
 					<File
 						RelativePath="base\gdevpdtx.h"
+						>
+					</File>
+					<File
+						RelativePath="base\gdevplib.h"
 						>
 					</File>
 					<File
