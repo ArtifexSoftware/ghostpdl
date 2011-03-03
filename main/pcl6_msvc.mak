@@ -378,6 +378,7 @@ DEVICE_DEVS=$(DD)\display.dev\
  $(DD)\pkmraw.dev $(DD)\ppmraw.dev $(DD)\pgmraw.dev $(DD)\pbmraw.dev\
  $(DD)\pcx16.dev $(DD)\pcx256.dev $(DD)\pcx24b.dev\
  $(DD)\cljet5.dev\
+ $(DD)\pamcmyk32.dev $(DD)\pamcmyk4.dev\
  $(DD)\pcxmono.dev $(DD)\pcxcmyk.dev $(DD)\pcxgray.dev\
  $(DD)\pbmraw.dev $(DD)\pgmraw.dev $(DD)\ppmraw.dev $(DD)\pkmraw.dev\
  $(DD)\pxlmono.dev $(DD)\pxlcolor.dev\
