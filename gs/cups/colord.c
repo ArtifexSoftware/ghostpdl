@@ -72,21 +72,6 @@ colord_get_qualifier_for_ppd (ppd_file_t *ppd)
   else
     q1_choice = "";
 
-  /* get colorspace */
-  if ((attr = ppdFindAttr (ppd, "cupsICCQualifier2", NULL)) != NULL &&
-      attr->value && attr->value[0])
-  {
-    snprintf (q_keyword, sizeof (q_keyword), "Default%s", attr->value);
-    q1_attr = ppdFindAttr (ppd, q_keyword, NULL);
-  }
-  else if ((q1_attr = ppdFindAttr (ppd, "DefaultColorModel", NULL)) == NULL)
-    q1_attr = ppdFindAttr (ppd, "DefaultColorSpace", NULL);
-
-  if (q1_attr && q1_attr->value && q1_attr->value[0])
-    q1_choice = q1_attr->value;
-  else
-    q1_choice = "";
-
   /* get media */
   if ((attr = ppdFindAttr(ppd, "cupsICCQualifier2", NULL)) != NULL &&
       attr->value && attr->value[0])
