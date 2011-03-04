@@ -1297,6 +1297,15 @@ flush:
             gx_ht_threshold_row_bit(contone_align, thresh_align, contone_stride,
                               halftone, dithered_stride, dest_width, vdi,
                               offset_bits);
+            /* FIXME: An improvement here would be to generate the initial
+             * offset_bits at the correct offset within the byte so that they
+             * align with the remainder of the line. This would mean not
+             * always packing them into the first offset_bits (in MSB order)
+             * of our 16 bit word, but rather into the last offset_bits
+             * (in MSB order) (except when the entire run is small!).
+             *
+             * This would enable us to do just one aligned copy_mono call for
+             * the entire scanline. */
             /* Now do the copy mono operation */
             /* First the left remainder bits */
             if (offset_bits > 0) {
