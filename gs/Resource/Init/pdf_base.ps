@@ -472,10 +472,10 @@ currentdict /token_nofail_dict .undef
 } bind def
 
 /oforce_recursive { % <any> oforce_recursive <any>
-  dup type /arraytype eq {    
+  dup type dup /arraytype eq exch /packedarraytype eq or {    
     dup rcheck {              % protect tint transform functions, etc.
       oforce                  % but dereference {1 0 R}
-      dup type /arraytype eq {
+      dup type dup /arraytype eq exch /packedarraytype eq or {
         [ exch { oforce_recursive } forall ]
       } {
         dup type /dicttype eq {
