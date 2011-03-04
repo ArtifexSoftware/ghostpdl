@@ -1513,6 +1513,11 @@ dnl --------------------------------------------------
 AC_SUBST(OPT_CFLAGS)
 AC_SUBST(DBG_CFLAGS)
 AC_SUBST(GCFLAGS)
-AC_OUTPUT(Makefile cups/pstopxl)
 
+AC_OUTPUT(Makefile)
+
+if ( test -d cups ); then
+AC_OUTPUT(cups/pstopxl)
 chmod +x cups/pstopxl
+fi
+
