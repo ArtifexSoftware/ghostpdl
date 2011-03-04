@@ -288,6 +288,19 @@ void gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s,
 #define gs_image_t_init_mask(pim, write_1s)\
   gs_image_t_init_mask_adjust(pim, write_1s, true)
 
+/* Used for bookkeeping ht buffer information in lanscape mode */
+typedef struct ht_landscape_info_s {
+    int count;
+    int widths[16];
+    int xstart;
+    int curr_pos;
+    int index;
+    int num_contones;
+    bool offset_set;
+    bool flipy;
+    int y_pos;
+} ht_landscape_info_t;
+
 
 /****** REMAINDER OF FILE UNDER CONSTRUCTION. PROCEED AT YOUR OWN RISK. ******/
 

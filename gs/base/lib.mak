@@ -458,6 +458,7 @@ gxcspace_h=$(GLSRC)gxcspace.h\
  $(gscspace_h) $(gsccolor_h) $(gscsel_h) $(gxfrac_h) $(gxcindex_h)
 gxht_h=$(GLSRC)gxht.h $(gsht1_h) $(gsrefct_h) $(gxhttype_h) $(gxtmap_h) $(gscspace_h)
 gxcie_h=$(GLSRC)gxcie.h $(gscie_h)
+gxht_thresh_h=$(GLSRC)gxht_thresh.h
 gxpcolor_h=$(GLSRC)gxpcolor.h\
  $(gspcolor_h) $(gxcspace_h) $(gxdevice_h) $(gxdevmem_h) $(gxpcache_h) $(gxblend_h)\
  $(gxcpath_h) $(gxdcolor_h) $(gxiclass_h) 
@@ -650,6 +651,10 @@ $(GLOBJ)gxhtbit.$(OBJ) : $(GLSRC)gxhtbit.c $(GXERR) $(memory__h)\
  $(gxbitmap_h) $(gxdht_h) $(gxdhtres_h) $(gxhttile_h) $(gxtmap_h)
 	$(GLCC) $(GLO_)gxhtbit.$(OBJ) $(C_) $(GLSRC)gxhtbit.c
 
+$(GLOBJ)gxht_thresh.$(OBJ) : $(GLSRC)gxht_thresh.c $(GXERR) $(memory__h)\
+ $(gx_h) $(gsiparam_h) $(gxht_thresh_h) $(math__h)
+	$(GLCC) $(GLO_)gxht_thresh.$(OBJ) $(C_) $(GLSRC)gxht_thresh.c
+
 $(GLOBJ)gxwts.$(OBJ) : $(GLSRC)gxwts.c $(GXERR) $(gxwts_h)\
  $(stdpre_h) $(memory__h) $(gxstate_h) $(gxht_h) $(math__h) $(gxdevcli_h)\
  $(gxdht_h)
@@ -685,7 +690,7 @@ $(GLOBJ)gximono.$(OBJ) : $(GLSRC)gximono.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
  $(gzht_h) $(vdtrace_h) $(gsicc_h) $(gsicc_cache_h)  $(gsicc_littlecms_h)\
- $(gxcie_h) $(gscie_h)
+ $(gxcie_h) $(gscie_h) $(gxht_thresh_h)
 	$(GLCC) $(GLO_)gximono.$(OBJ) $(C_) $(GLSRC)gximono.c
 
 $(GLOBJ)gximask.$(OBJ) : $(GLSRC)gximask.c $(GXERR) $(memory__h) $(gserrors_h)\
@@ -1131,7 +1136,8 @@ LIB1x=$(GLOBJ)gxacpath.$(OBJ) $(GLOBJ)gxbcache.$(OBJ) $(GLOBJ)gxccache.$(OBJ)
 LIB2x=$(GLOBJ)gxccman.$(OBJ) $(GLOBJ)gxchar.$(OBJ) $(GLOBJ)gxcht.$(OBJ)
 LIB3x=$(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)
 LIB4x=$(GLOBJ)gxdcconv.$(OBJ) $(GLOBJ)gxdcolor.$(OBJ) $(GLOBJ)gxhldevc.$(OBJ)
-LIB5x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxfdrop.$(OBJ) $(GLOBJ)gxht.$(OBJ) $(GLOBJ)gxhtbit.$(OBJ)
+LIB5x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxfdrop.$(OBJ) $(GLOBJ)gxht.$(OBJ) $(GLOBJ)gxhtbit.$(OBJ)\
+  $(GLOBJ)gxht_thresh.$(OBJ)
 LIB6x=$(GLOBJ)gxwts.$(OBJ) $(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximage.$(OBJ)
 LIB7x=$(GLOBJ)gximage1.$(OBJ) $(GLOBJ)gximono.$(OBJ) $(GLOBJ)gxipixel.$(OBJ) $(GLOBJ)gximask.$(OBJ)
 LIB8x=$(GLOBJ)gxi12bit.$(OBJ) $(GLOBJ)gxi16bit.$(OBJ) $(GLOBJ)gxiscale.$(OBJ) $(GLOBJ)gxpaint.$(OBJ) $(GLOBJ)gxpath.$(OBJ) $(GLOBJ)gxpath2.$(OBJ)
