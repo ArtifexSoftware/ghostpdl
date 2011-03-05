@@ -815,9 +815,10 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
   dprintf4("DEBUG2: PageSize = [ %d %d ], HWResolution = [ %d %d ]\n",
 	   cups->header.PageSize[0], cups->header.PageSize[1],
 	   cups->header.HWResolution[0], cups->header.HWResolution[1]);
-  dprintf4("DEBUG2: HWMargins = [ %.3f %.3f %.3f %.3f ]\n",
-	   pdev->HWMargins[0], pdev->HWMargins[1], pdev->HWMargins[2],
-	   pdev->HWMargins[3]);
+  if (size_set)
+    dprintf4("DEBUG2: HWMargins = [ %.3f %.3f %.3f %.3f ]\n",
+	     pdev->HWMargins[0], pdev->HWMargins[1], pdev->HWMargins[2],
+	     pdev->HWMargins[3]);
   dprintf6("DEBUG2: matrix = [ %.3f %.3f %.3f %.3f %.3f %.3f ]\n",
 	   pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
 #endif /* DEBUG */
