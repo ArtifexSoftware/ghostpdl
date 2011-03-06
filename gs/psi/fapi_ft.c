@@ -43,6 +43,7 @@
 #include FT_BBOX_H
 #include FT_OUTLINE_H
 #include FT_IMAGE_H
+#include FT_BITMAP_H
 
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
@@ -1283,8 +1284,15 @@ get_char_outline(FAPI_server *a_server, FAPI_path *a_path)
 static FAPI_retcode release_char_data(FAPI_server *a_server)
 {
     FF_server *s = (FF_server*)a_server;
-    FT_Done_Glyph(&s->outline_glyph->root);
-    FT_Done_Glyph(&s->bitmap_glyph->root);
+    
+    if (s->outline_glyph) {
+        FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
+    }
+    
+    if (s->bitmap_glyph) {
+        FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
+    }
+
     s->outline_glyph = NULL;
     s->bitmap_glyph = NULL;
     return 0;
