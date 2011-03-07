@@ -2702,7 +2702,7 @@ pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
     code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pis, mem, cdev);
     if (code < 0)
 	return code;
-    pdev->target = ndev;
+    gx_device_set_target((gx_device_forward *)pdev, ndev);
     return 0;
 }
 
@@ -4357,7 +4357,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     if (code < 0)
 	return code;
     gs_pdf14_device_copy_params((gx_device *)p14dev, target);
-    rc_assign(p14dev->target, target, "gs_pdf14_device_push");
+    gx_device_set_target((gx_device_forward *)p14dev, target);
     /* If we have a tag device then go ahead and do a special encoder
        decoder for the pdf14 device to make sure we maintain this
        information in the encoded color information.  We could use
@@ -5419,7 +5419,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     check_device_separable((gx_device *)pdev);
     gx_device_fill_in_procs((gx_device *)pdev);
     gs_pdf14_device_copy_params((gx_device *)pdev, target);
-    rc_assign(pdev->target, target, "pdf14_create_clist_device");
+    gx_device_set_target((gx_device_forward *)pdev, target);
     code = dev_proc((gx_device *) pdev, open_device) ((gx_device *) pdev);
     pdev->pclist_device = target;
 
@@ -6020,7 +6020,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
     code = dev_proc(pdev->target, create_compositor)
 			(pdev->target, pcdev, pct, pis, mem, cdev);
     if (*pcdev != pdev->target)
-	rc_assign(pdev->target, *pcdev, "pdf14_clist_create_compositor");
+	gx_device_set_target((gx_device_forward *)pdev, *pcdev);
     *pcdev = dev;
     return code;
 }
@@ -6054,7 +6054,7 @@ pdf14_clist_forward_create_compositor(gx_device	* dev, gx_device * * pcdev,
     code = dev_proc(tdev, create_compositor)(tdev, &ndev, pct, pis, mem, cdev);
     if (code < 0)
 	return code;
-    pdev->target = ndev;
+    gx_device_set_target((gx_device_forward *)pdev, ndev);
     return 0;
 }
 
