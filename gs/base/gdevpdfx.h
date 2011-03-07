@@ -698,6 +698,14 @@ struct gx_device_pdf_s {
     bool PreserveDeviceN;
     int PDFACompatibilityPolicy;
     bool DetectDuplicateImages;
+    bool AllowIncrementalCFF;
+    bool HighLevelDevice;
+    bool Type32ToUnicode;
+    bool WantsToUnicode;
+    bool AllowPSRepeatFunctions;
+    bool IsDistiller;
+    bool PreserveSMask;
+    bool PreserveTrMode;
 };
 
 #define is_in_page(pdev)\

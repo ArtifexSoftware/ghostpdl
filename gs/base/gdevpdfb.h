@@ -254,6 +254,14 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  true,				/* PreserveSeparation */
  true,				/* PreserveDeviceN */
  0,				/* PDFACompatibilityPolicy */
- true				/* DetectDuplicateImages */
+ true,				/* DetectDuplicateImages */
+ false,				/* AllowIncrementalCFF */
+ true,				/* HighLevelDevice */
+ false,				/* Type32ToUnicode */
+ !PDF_FOR_OPDFREAD,		/* WantsToUnicode */
+ PDF_FOR_OPDFREAD,		/* AllowPSRepeatFunctions */
+ !PDF_FOR_OPDFREAD,		/* IsDistiller */
+ !PDF_FOR_OPDFREAD,		/* PreserveSMask */
+ !PDF_FOR_OPDFREAD		/* PreserveTrMode */
 };
 
