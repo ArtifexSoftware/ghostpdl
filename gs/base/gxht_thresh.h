@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,13 +20,13 @@
 #define RAW_HT_DUMP 0
 
 #if RAW_HT_DUMP
-void gx_ht_threshold_row_byte(byte *contone, byte *threshold_strip, 
-                              int contone_stride, byte *halftone, 
+void gx_ht_threshold_row_byte(byte *contone, byte *threshold_strip,
+                              int contone_stride, byte *halftone,
                               int dithered_stride, int width, int num_rows);
 #endif
-void gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  
-                             int contone_stride, byte *halftone, 
-                             int dithered_stride, int width, int num_rows, 
+void gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,
+                             int contone_stride, byte *halftone,
+                             int dithered_stride, int width, int num_rows,
                              int offset_bits);
 void gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
                     ht_landscape_info_t ht_landscape, byte *halftone,
