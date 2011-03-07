@@ -1210,11 +1210,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 } else {
                     for (k = 0; k < data_length; k++) {
                         dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                        /* This could probably be done a bit better but
-                           reversed indexed images probably don't occur
-                           that often */
-                        memcpy(&(devc_contone[data_length - k]),
-                               dev_value, spp_out);
+                        memcpy(&(devc_contone[(data_length - k - 1) * spp_out]),
+                               dev_value, spp_out); 
                         dda_next(dda_ht);
                     }
                 }
