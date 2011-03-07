@@ -197,12 +197,52 @@ int
 gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    bool bt = true, bf = false, *bv;
     float cl = (float)pdev->CompatibilityLevel;
     int code;
     int cdv = CoreDistVersion;
 
     pdev->ParamCompatibilityLevel = cl;
     code = gdev_psdf_get_params(dev, plist);
+    if (code < 0)
+	return code;
+    /* Paramters describing device properties to PostScript */
+    code = param_write_bool(plist, "AllowIncrementalCFF", &bf);
+    if (code < 0)
+	return code;
+    code = param_write_bool(plist, "HighLevelDevice", &bt);
+    if (code < 0)
+	return code;
+    code = param_write_bool(plist, "Type32ToUnicode", &bf);
+    if (code < 0)
+	return code;
+    code = param_write_bool(plist, "WantsToUnicode", &bt);
+    if (code < 0)
+	return code;
+    /* Differences between ps2write and pdfwrite */
+    if (pdev->ForOPDFRead) {
+        code = param_write_bool(plist, "AllowPSRepeatFunctions", &bt);
+	if (code < 0)
+	    return code;
+	code = param_write_bool(plist, "IsDistiller", &bf);
+	if (code < 0)
+	    return code;
+	code = param_write_bool(plist, "PreserveSMask", &bf);
+	if (code < 0)
+	    return code;
+	code = param_write_bool(plist, "PreserveTrMode", &bf);
+    } else {
+	code = param_write_bool(plist, "AllowPSRepeatFunctions", &bf);
+	if (code < 0)
+	    return code;
+	code = param_write_bool(plist, "IsDistiller", &bt);
+	if (code < 0)
+	    return code;
+	code = param_write_bool(plist, "PreserveSMask", &bt);
+	if (code < 0)
+	    return code;
+	code = param_write_bool(plist, "PreserveTrMode", &bt);
+    }
     if (code < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
 	(code = param_write_float(plist, "CompatibilityLevel", &cl)) < 0 ||
@@ -213,7 +253,7 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 	 (code = param_write_null(plist, "pdfmark")) < 0) ||
 	(param_requested(plist, "DSC") > 0 &&
 	 (code = param_write_null(plist, "DSC")) < 0) ||
-	(code = gs_param_write_items(plist, pdev, NULL, pdf_param_items)) < 0
+	(code = gs_param_write_items(plist, pdev, NULL, pdf_param_items)) < 0 
 	)
     {}
     return code;
