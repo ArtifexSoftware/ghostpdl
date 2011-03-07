@@ -66,7 +66,7 @@ free_cont_list(gs_memory_t *mem, gx_san_trap_contact **list)
 
     for (t = *list; t != NULL; t = t1) {
 	t1 = t->link;
-	gs_free_object(mem, t, "free_trap_list");
+	gs_free_object(mem, t, "free_cont_list");
     }
     *list = 0;
 }

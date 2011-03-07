@@ -924,7 +924,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
         gscms_transform_color_buffer(penum->icc_link, &input_buff_desc,
                                     &output_buff_desc, (void*) temp_buffer,
                                     (void*) penum->color_cache->device_contone);
-        /* Check if we need to apply any transfer funcitons.  If so then do it now */
+        /* Check if we need to apply any transfer functions.  If so then do it now */
         if (has_transfer) {
             for (k = 0; k < num_entries; k++) {
                 byte_ptr =
