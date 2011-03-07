@@ -244,6 +244,8 @@ gs_image_class_3_mono(gx_image_enum * penum)
                        boundary after an offset to ensure that we can make use
                        of  the SSE2 operations for thresholding.  We do the
                        allocations now to avoid doing them with every line */
+                    /* Initialize the ht_landscape stuff to zero */
+                    memset(&(penum->ht_landscape), 0, sizeof(ht_landscape_info_t));
                     ox = dda_current(penum->dda.pixel0.x);
                     oy = dda_current(penum->dda.pixel0.y);
                     dev_width =
