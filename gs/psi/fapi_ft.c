@@ -830,11 +830,11 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
     FT_Error ft_error = 0;
     
     if (s->bitmap_glyph) {
-        FT_Done_Glyph(&s->bitmap_glyph->root);
+        FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
         s->bitmap_glyph = NULL;
     }
     if (s->outline_glyph) {
-        FT_Done_Glyph(&s->outline_glyph->root);
+        FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
         s->outline_glyph = NULL;
     }
     
