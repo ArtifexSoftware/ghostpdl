@@ -44,6 +44,12 @@
 #define USE_FAST_CODE 1
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
 
+/* Enable the following define to perform a little extra work to stop
+ * spurious valgrind errors. The code should perform perfectly even without
+ * this enabled, but enabling it makes debugging much easier.
+ */
+#define PACIFY_VALGRIND
+
 /* ------ Strategy procedure ------ */
 
 /* Check the prototype. */
@@ -224,9 +230,9 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
                     penum->ht_landscape.offset_set = false;
                     penum->ht_offset_bits = 0; /* Will get set in call to render */
-#ifdef DEBUG
-                    memset(penum->line, 0, 16 * penum->line_size);
-                    memset(penum->thresh_buffer, 0, 16 * penum->line_size);
+#if defined(DEBUG) || defined(PACIFY_VALGRIND)
+                    memset(penum->line, 0, 16 * penum->line_size + 16);
+                    memset(penum->thresh_buffer, 0, 16 * penum->line_size + 16);
                     memset(penum->ht_buffer, 0, penum->line_size * 2);
 #endif
                     code = 1;  /* Landscape support off for check in */
@@ -291,6 +297,11 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     if (penum->line == NULL || penum->thresh_buffer == NULL
                                 || penum->ht_buffer == NULL)
                         code = -1;
+#if defined(DEBUG) || defined(PACIFY_VALGRIND)
+                    memset(penum->line, 0, penum->line_size);
+                    memset(penum->thresh_buffer, 0, penum->line_size * max_height);
+                    memset(penum->ht_buffer, 0, penum->ht_stride * max_height);
+#endif
                 }
                 /* Precompute values needed for rasterizing. */
                 penum->dxx =
@@ -905,6 +916,12 @@ fill_threshhold_buffer(byte *dest_strip, byte *src_strip, int src_width,
     }
     /* Now the remainder */
     memcpy(ptr_out_temp, src_strip, right_width);
+#ifdef PACIFY_VALGRIND
+    ptr_out_temp += right_width;
+    ii = (dest_strip-ptr_out_temp) & 15;
+    if (ii > 0)
+        memset(ptr_out_temp, 0, ii);
+#endif
 }
 
 
@@ -972,7 +989,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int thresh_width, thresh_height;
     int dx, dy;
     int left_rem_end, left_width, right_tile_width;
-    int num_full_tiles, i;
+    int num_full_tiles;
     int dithered_stride;
     int position, k;
     int offset_bits = penum->ht_offset_bits;
