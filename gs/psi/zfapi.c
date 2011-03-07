@@ -2531,31 +2531,15 @@ retry_oversampling:
             goto retry_oversampling;
         }
 
-        if ((code = renderer_retcode(i_ctx_p, I, code)) < 0) {
-            return code;
-        }
     } else if (I->use_outline) {
-        if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &I->ff, &cr, &metrics))) < 0)
-            return code;
+    
+        code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
     } else {
 #if 0 /* Debug purpose only. */
         code = e_limitcheck;
 #else
         code = I->get_char_raster_metrics(I, &I->ff, &cr, &metrics);
 #endif
-        if (code > 0) {
-            os_ptr op = osp;
-            ref *proc;
-            if ((get_charstring(&I->ff, code - 1, &proc) >= 0) && (r_has_type(proc, t_array) || r_has_type(proc, t_mixedarray))) {
-                ref_assign(op, proc);
-                push_op_estack(zexec);  /* execute the operand */
-                return o_push_estack;
-            } else {
-                if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
-                   return code;
-            }
-        }
-        
         /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
          * so it's worth retrying as an outline glyph
          */
@@ -2572,11 +2556,26 @@ retry_oversampling:
             }
             if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &I->ff, &cr, &metrics))) < 0)
                 return code;
-        } else {
-            if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
-                return code;
         }
     }
+
+    /* This handles the situation where a charstring has been replaced with a PS procedure.
+     * against the rules, but not *that* rare.
+     * It's also something that GS does internally to simulate font styles.
+     */
+    if (code > 0) {
+        os_ptr op = osp;
+        ref *proc;
+        if ((get_charstring(&I->ff, code - 1, &proc) >= 0) && (r_has_type(proc, t_array) || r_has_type(proc, t_mixedarray))) {
+            ref_assign(op, proc);
+            push_op_estack(zexec);  /* execute the operand */
+            return o_push_estack;
+        } else {
+            if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
+               return code;
+        }
+    }
+
     compute_em_scale(pbfont, &metrics, FontMatrix_div, &em_scale_x, &em_scale_y);
     char_bbox.p.x = metrics.bbox_x0 / em_scale_x;
     char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
