@@ -115,6 +115,14 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("PreserveDeviceN", gs_param_type_bool, PreserveDeviceN),
     pi("PDFACompatibilityPolicy", gs_param_type_int, PDFACompatibilityPolicy),
     pi("DetectDuplicateImages", gs_param_type_bool, DetectDuplicateImages),
+    pi("AllowIncrementalCFF", gs_param_type_bool, AllowIncrementalCFF),
+    pi("HighLevelDevice", gs_param_type_bool, HighLevelDevice),
+    pi("Type32ToUnicode", gs_param_type_bool, Type32ToUnicode),
+    pi("WantsToUnicode", gs_param_type_bool, WantsToUnicode),
+    pi("AllowPSRepeatFunctions", gs_param_type_bool, AllowPSRepeatFunctions),
+    pi("IsDistiller", gs_param_type_bool, IsDistiller),
+    pi("PreserveSMask", gs_param_type_bool, PreserveSMask),
+    pi("PreserveTrMode", gs_param_type_bool, PreserveTrMode),
 #undef pi
     gs_param_item_end
 };
