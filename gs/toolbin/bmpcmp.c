@@ -851,6 +851,65 @@ static void *pnm_read(ImageReader *im,
     return bmp;
 }
 
+#ifdef HAVE_LIBPNG
+static void *png_read(ImageReader *im,
+                      int         *width,
+                      int         *height,
+                      int         *span,
+                      int         *bpp,
+                      int         *cmyk)
+{
+    png_structp png;
+    png_infop info;
+    int stride, w, h, y;
+    unsigned char *data;
+
+    /* There is only one image in each file */
+    if (ftell(im->file) != 0)
+        return NULL;
+
+    png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    info = png_create_info_struct(png);
+    if (setjmp(png_jmpbuf(png))) {
+        fprintf(stderr, "libpng failure\n");
+        exit(EXIT_FAILURE);
+    }
+
+    png_init_io(png, im->file);
+    png_set_sig_bytes(png, 0); /* we didn't read the signature */
+    png_read_info(png, info);
+
+    /* We only handle 8bpp GRAY and 32bpp RGBA */
+    png_set_expand(png);
+    png_set_packing(png);
+    png_set_strip_16(png);
+    if (png_get_color_type(png, info) == PNG_COLOR_TYPE_GRAY_ALPHA)
+        png_set_strip_alpha(png);
+    if (png_get_color_type(png, info) == PNG_COLOR_TYPE_RGB)
+        png_set_add_alpha(png, 0xff, PNG_FILLER_AFTER);
+
+    png_read_update_info(png, info);
+
+    w = png_get_image_width(png, info);
+    h = png_get_image_height(png, info);
+    stride = png_get_rowbytes(png, info);
+
+    data = malloc(h * stride);
+    for (y = 0; y < h; y++)
+        png_read_row(png, data + (h - y - 1) * stride, NULL);
+
+    png_read_end(png, NULL);
+    png_destroy_read_struct(&png, &info, NULL);
+
+    *width = w;
+    *height = h;
+    *span = stride;
+    *bpp = (stride * 8) / w;
+    *cmyk = 0;
+    return data;
+}
+#endif
+
 static void image_open(ImageReader *im,
                        char        *filename)
 {
@@ -869,6 +928,11 @@ static void image_open(ImageReader *im,
         /* Starts with a P! Must be a P?M file. */
         im->read = pnm_read;
         ungetc(0x50, im->file);
+#ifdef HAVE_LIBPNG
+    } else if (type == 137) {
+        im->read = png_read;
+        ungetc(137, im->file);
+#endif
     } else {
         type |= (fgetc(im->file)<<8);
         if (type == 0x4d42) { /* BM */
