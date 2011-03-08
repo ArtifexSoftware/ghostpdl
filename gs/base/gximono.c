@@ -231,11 +231,13 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     penum->ht_landscape.offset_set = false;
                     penum->ht_offset_bits = 0; /* Will get set in call to render */
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
-                    memset(penum->line, 0, 16 * penum->line_size + 16);
-                    memset(penum->thresh_buffer, 0, 16 * penum->line_size + 16);
-                    memset(penum->ht_buffer, 0, penum->line_size * 2);
+		    if (code >= 0) {
+                        memset(penum->line, 0, 16 * penum->line_size + 16);
+                        memset(penum->thresh_buffer, 0,
+                               16 * penum->line_size + 16);
+                        memset(penum->ht_buffer, 0, penum->line_size * 2);
+		    }
 #endif
-                    code = 1;  /* Landscape support off for check in */
                 } else {
                     /* In the portrait case we allocate a single line buffer
                        in device width, a threshold buffer of the same size
@@ -300,9 +302,13 @@ gs_image_class_3_mono(gx_image_enum * penum)
                                 || penum->ht_buffer == NULL)
                         code = -1;
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
-                    memset(penum->line, 0, penum->line_size);
-                    memset(penum->thresh_buffer, 0, penum->line_size * max_height);
-                    memset(penum->ht_buffer, 0, penum->ht_stride * max_height);
+		    else {
+                        memset(penum->line, 0, penum->line_size);
+                        memset(penum->thresh_buffer, 0,
+                               penum->line_size * max_height);
+                        memset(penum->ht_buffer, 0,
+                               penum->ht_stride * max_height);
+		    }
 #endif
                 }
                 /* Precompute values needed for rasterizing. */
