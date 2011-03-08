@@ -85,29 +85,23 @@ gx_ht_threshold_row_byte(byte *contone, byte *threshold_strip, int contone_strid
 #endif
 
 #ifndef HAVE_SSE2
-
 /* A simple case for use in the landscape mode. Could probably be coded up
    faster */
 static void
-threshold_16_bit(byte *contone_ptr_in, byte *thresh_ptr_in, byte *ht_data)
+threshold_16_bit(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 {
-    int k, j;
-    byte *contone_ptr = contone_ptr_in;
-    byte *thresh_ptr = thresh_ptr_in;
-    byte bit_init;
+    int j;
 
-    for (j = 0; j < 2; j++) {
-        bit_init = 0x80;
-        for (k = 0; k < 8; k++) {
-            if (contone_ptr[k] < thresh_ptr[k]) {
-                ht_data[j] |=  bit_init;
-            } else {
-                ht_data[j] &=  ~bit_init;
+    for (j = 2; j > 0; j--) {
+        byte h = 0;
+        byte bit_init = 0x80;
+        do {
+            if (*contone_ptr++ < *thresh_ptr++) {
+                h |=  bit_init;
             }
             bit_init >>= 1;
-        }
-        contone_ptr += 8;
-        thresh_ptr += 8;
+        } while (bit_init != 0);
+        *ht_data++ = h;
     }
 }
 #else
@@ -178,52 +172,58 @@ gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stri
     byte *thresh_ptr;
     byte *halftone_ptr;
     byte bit_init;
-    int ht_index;
 
     /* For the moment just do a very slow compare until we get
        get this working.  This could use some serious optimization */
+    width -= offset_bits;
     for (j = 0; j < num_rows; j++) {
+        byte h;
         contone_ptr = contone;
         thresh_ptr = threshold_strip + contone_stride * j;
         halftone_ptr = halftone + dithered_stride * j;
         /* First get the left remainder portion.  Put into MSBs of first byte */
         bit_init = 0x80;
-        ht_index = -1;
-        for (k = 0; k < offset_bits; k++) {
-            if ( (k % 8) == 0) {
-                ht_index++;
-            }
-            if (contone_ptr[k] < thresh_ptr[k]) {
-                halftone_ptr[ht_index] |=  bit_init;
-            } else {
-                halftone_ptr[ht_index] &=  ~bit_init;
-            }
-            if (bit_init == 1) {
-                bit_init = 0x80;
-            } else {
+        h = 0;
+        k = offset_bits;
+        if (k > 0) {
+            do {
+                if (*contone_ptr++ < *thresh_ptr++) {
+                    h |=  bit_init;
+                }
                 bit_init >>= 1;
-            }
-        }
-        bit_init = 0x80;
-        ht_index = -1;
-        if (offset_bits > 0) {
-            halftone_ptr += 2; /* Point to the next 16 bits of data */
+                if (bit_init == 0) {
+                    bit_init = 0x80;
+                    *halftone_ptr++ = h;
+                    h = 0;
+                }
+                k--;
+            } while (k > 0);
+            bit_init = 0x80;
+            *halftone_ptr++ = h;
+            h = 0;
+            if (offset_bits < 8)
+                *halftone_ptr++ = 0;
         }
         /* Now get the rest, which will be 16 bit aligned. */
-        for (k = offset_bits; k < width; k++) {
-            if (((k - offset_bits) % 8) == 0) {
-                ht_index++;
-            }
-            if (contone_ptr[k] < thresh_ptr[k]) {
-                halftone_ptr[ht_index] |=  bit_init;
-            } else {
-                halftone_ptr[ht_index] &=  ~bit_init;
-            }
-            if (bit_init == 1) {
-                bit_init = 0x80;
-            } else {
+        k = width;
+        if (k > 0) {
+            do {
+                if (*contone_ptr++ < *thresh_ptr++) {
+                    h |=  bit_init;
+                }
                 bit_init >>= 1;
+                if (bit_init == 0) {
+                    bit_init = 0x80;
+                    *halftone_ptr++ = h;
+                    h = 0;
+                }
+                k--;
+            } while (k > 0);
+            if (bit_init != 0x80) {
+                *halftone_ptr++ = h;
             }
+            if ((width & 15) < 8)
+                *halftone_ptr++ = 0;
         }
     }
 #else
@@ -246,7 +246,7 @@ gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stri
                requires 128 bit alignment.  contone_ptr and thresh_ptr
                are set up so that after we move in by offset_bits elements
                then we are 128 bit aligned.  */
-            threshold_16_SSE_unaligned(contone_ptr, thresh_ptr, 
+            threshold_16_SSE_unaligned(contone_ptr, thresh_ptr,
                                        halftone_ptr);
             halftone_ptr += 2;
             thresh_ptr += offset_bits;
