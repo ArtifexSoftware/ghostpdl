@@ -841,7 +841,9 @@ end readonly def
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and FontMatrixNonHV not and
     { 
-	currentdevice .devicename /pdfwrite eq 
+      % Check to see if the current device supports Tr
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark false}{3 1 roll cleartomark}ifelse
 	{
 		pdfwrite_textrenderingprocs TextRenderingMode get
 	}
