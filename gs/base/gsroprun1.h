@@ -83,25 +83,25 @@
  * is non zero. */
 #define SKEW_FETCH(S,s,SKEW) \
     do { S = RE((RE(s[0])<<SKEW) | (RE(s[1])>>(CHUNKSIZE-SKEW))); s++; } while (0)
-#define SAFE_SKEW_FETCH(S,s,SKEW) \
-    do { S = (SKEW?RE((RE(s[0])<<SKEW) | (RE(s[1])>>(CHUNKSIZE-SKEW))) : s[0]); s++; } while (0)
+#define SAFE_SKEW_FETCH(S,s,SKEW,L,R)                                    \
+    do { S = RE(((L) ? 0 : (RE(s[0])<<SKEW)) | ((R) ? 0 : (RE(s[1])>>(CHUNKSIZE-SKEW)))); s++; } while (0)
 
 #if defined(S_USED) && !defined(S_CONST)
 #define S_SKEW
-#define FETCH_S      SKEW_FETCH(S,s,s_skew)
-#define SAFE_FETCH_S SAFE_SKEW_FETCH(S,s,s_skew)
+#define FETCH_S           SKEW_FETCH(S,s,s_skew)
+#define SAFE_FETCH_S(L,R) SAFE_SKEW_FETCH(S,s,s_skew,L,R)
 #else /* !defined(S_USED) || defined(S_CONST) */
 #define FETCH_S
-#define SAFE_FETCH_S
+#define SAFE_FETCH_S(L,R)
 #endif /* !defined(S_USED) || defined(S_CONST) */
 
 #if defined(T_USED) && !defined(T_CONST)
 #define T_SKEW
-#define FETCH_T      SKEW_FETCH(T,t,t_skew)
-#define SAFE_FETCH_T SAFE_SKEW_FETCH(T,t,t_skew)
+#define FETCH_T           SKEW_FETCH(T,t,t_skew)
+#define SAFE_FETCH_T(L,R) SAFE_SKEW_FETCH(T,t,t_skew,L,R)
 #else /* !defined(T_USED) || defined(T_CONST) */
 #define FETCH_T
-#define SAFE_FETCH_T
+#define SAFE_FETCH_T(L,R)
 #endif /* !defined(T_USED) || defined(T_CONST) */
 
 static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
@@ -135,6 +135,9 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
 #define T 0
 #undef T_CONST
 #endif /* !defined(T_USED) */
+#if defined(S_SKEW) || defined(T_SKEW)
+    int skewflags = 0;
+#endif
     CHUNK        D;
     int          dpos = op->dpos;
     CHUNK       *d = (CHUNK *)(void *)d_;
@@ -152,6 +155,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
      * output bitmap on the right hand edge of the run. */
     lmask  = RE((CHUNKONES>>((CHUNKSIZE-1) & dpos)));
     rmask  = RE((CHUNKONES>>((CHUNKSIZE-1) & len)));
+    if (rmask == CHUNKONES) rmask = 0;
 
 #if defined(S_CONST) || defined(T_CONST)
     /* S and T should be supplied as 'depth' bits. Duplicate them up to be
@@ -210,47 +214,74 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
      * errors. RJW. */
 #ifdef S_SKEW
     {
+        int slen, slen2;
         int spos = op->s.b.pos;
         ADJUST_TO_CHUNK(s, spos);
         s_skew = spos - dpos;
         if (s_skew < 0) {
             s_skew += CHUNKSIZE;
             s--;
+            skewflags |= 1; /* Suppress reading off left edge */
+        }
+        /* We are allowed to read all the data bits, so: len - dpos + tpos
+         * We're allowed to read in CHUNKS, so: CHUNKUP(len-dpos+tpos).
+         * This code will actually read CHUNKUP(len)+CHUNKSIZE bits. If
+         * This is larger, then suppress. */
+        slen  = (len + s_skew    + CHUNKSIZE-1) & ~(CHUNKSIZE-1);
+        slen2 = (len + CHUNKSIZE + CHUNKSIZE-1) & ~(CHUNKSIZE-1);
+        if ((s_skew == 0) || (slen < slen2)) {
+            skewflags |= 4; /* Suppress reading off the right edge */
         }
     }
 #endif /* !defined(S_SKEW) */
 #ifdef T_SKEW
     {
+        int tlen, tlen2;
         int tpos = op->t.b.pos;
         ADJUST_TO_CHUNK(t, tpos);
         t_skew = tpos - dpos;
         if (t_skew < 0) {
             t_skew += CHUNKSIZE;
             t--;
+            skewflags |= 2; /* Suppress reading off left edge */
+        }
+        /* We are allowed to read all the data bits, so: len - dpos + tpos
+         * We're allowed to read in CHUNKS, so: CHUNKUP(len-dpos+tpos).
+         * This code will actually read CHUNKUP(len)+CHUNKSIZE bits. If
+         * This is larger, then suppress. */
+        tlen  = (len + t_skew    + CHUNKSIZE-1) & ~(CHUNKSIZE-1);
+        tlen2 = (len + CHUNKSIZE + CHUNKSIZE-1) & ~(CHUNKSIZE-1);
+        if ((t_skew == 0) || (tlen < tlen2)) {
+            skewflags |= 8; /* Suppress reading off the right edge */
         }
     }
 #endif /* !defined(T_SKEW) */
 
-    len -= CHUNKSIZE;
-    if (len < 0) {
+    len -= CHUNKSIZE; /* len = bytes to do - CHUNKSIZE */
+    /* len <= 0 means 1 word or less to do */
+    if (len <= 0) {
         /* Short case - starts and ends in the same chunk */
         lmask &= ~rmask; /* Combined mask = bits to alter */
-        SAFE_FETCH_S;
-        SAFE_FETCH_T;
+        SAFE_FETCH_S(skewflags & 1,skewflags & 4);
+        SAFE_FETCH_T(skewflags & 2,skewflags & 8);
         SPECIFIC_CODE(D, *d, S, T);
         *d = (*d & ~lmask) | (D & lmask);
         return;
     }
-    if (lmask != CHUNKONES) {
+    if ((lmask != CHUNKONES)
+#if defined(S_SKEW) || defined(T_SKEW)
+        || (skewflags & 3)
+#endif
+        ) {
         /* Unaligned left hand case */
-        SAFE_FETCH_S;
-        SAFE_FETCH_T;
+        SAFE_FETCH_S(skewflags & 1,s_skew == 0);
+        SAFE_FETCH_T(skewflags & 2,t_skew == 0);
         SPECIFIC_CODE(D, *d, S, T);
         *d = (*d & ~lmask) | (D & lmask);
         d++;
         len -= CHUNKSIZE;
     }
-    if (len >= 0) {
+    if (len > 0) {
         /* Simple middle case (complete destination chunks). */
 #ifdef S_SKEW
         if (s_skew == 0) {
@@ -260,7 +291,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
                     SPECIFIC_CODE(*d, *d, *s++, *t++);
                     d++;
                     len -= CHUNKSIZE;
-                } while (len >= 0);
+                } while (len > 0);
             } else
 #endif /* !defined(T_SKEW) */
             {
@@ -269,7 +300,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
                     SPECIFIC_CODE(*d, *d, *s++, T);
                     d++;
                     len -= CHUNKSIZE;
-                } while (len >= 0);
+                } while (len > 0);
             }
         } else
 #endif /* !defined(S_SKEW) */
@@ -281,7 +312,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
                     SPECIFIC_CODE(*d, *d, S, *t++);
                     d++;
                     len -= CHUNKSIZE;
-                } while (len >= 0);
+                } while (len > 0);
             } else
 #endif /* !defined(T_SKEW) */
             {
@@ -291,17 +322,15 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
                     SPECIFIC_CODE(*d, *d, S, T);
                     d++;
                     len -= CHUNKSIZE;
-                } while (len >= 0);
+                } while (len > 0);
             }
         }
     }
-    if (rmask != CHUNKONES) {
-        /* Unaligned right hand case */
-        SAFE_FETCH_S;
-        SAFE_FETCH_T;
-        SPECIFIC_CODE(D, *d, S, T);
-        *d = (*d & rmask) | (D & ~rmask);
-    }
+    /* Unaligned right hand case */
+    SAFE_FETCH_S(0,skewflags & 4);
+    SAFE_FETCH_T(0,skewflags & 8);
+    SPECIFIC_CODE(D, *d, S, T);
+    *d = (*d & rmask) | (D & ~rmask);
 }
 
 #undef ADJUST_TO_CHUNK
