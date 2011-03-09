@@ -48,7 +48,7 @@
  * spurious valgrind errors. The code should perform perfectly even without
  * this enabled, but enabling it makes debugging much easier.
  */
-#define PACIFY_VALGRIND
+/* #define PACIFY_VALGRIND */
 
 /* ------ Strategy procedure ------ */
 
@@ -81,14 +81,14 @@ gs_image_class_3_mono(gx_image_enum * penum)
            probably don't want to do this if we have a bunch of tiny little
            images.  Then the rect fill approach is probably not all that bad.
            Also for now avoid images that include a type3 image mask.  Due
-           to the limited precision and mismatch of the stepping space in which 
+           to the limited precision and mismatch of the stepping space in which
            the interpolations occur this can cause a minor mismatch at large
            scalings */
         if (use_fast_code && penum->pcs != NULL &&
             penum->dev->color_info.num_components == 1 &&
             penum->dev->color_info.depth == 1 &&
-            penum->bps == 8 && (penum->posture == image_portrait 
-            || penum->posture == image_landscape) && 
+            penum->bps == 8 && (penum->posture == image_portrait
+            || penum->posture == image_landscape) &&
             penum->image_parent_type == gs_image_type1) {
             spp_out = penum->dev->color_info.num_components;
             penum->icc_setup.need_decode = false;
@@ -122,7 +122,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
 
             penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
             penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
-            /* The effective transfer is built into the threshold array and 
+            /* The effective transfer is built into the threshold array and
                need require a special lookup to decode it */
             penum->icc_setup.has_transfer = gx_has_transfer(penum->pis,
                                     penum->dev->device_icc_profile->num_comps);
@@ -158,7 +158,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
                                     &(penum->pis->dev_ht->components[0].corder);
                     /* This will fail if it has a transfer function that is not
                        monotonic */
-                    code = gx_ht_construct_threshold(d_order, penum->dev, 
+                    code = gx_ht_construct_threshold(d_order, penum->dev,
                                                      penum->pis, 0);
                 } else {
                     code = -1;
@@ -230,14 +230,14 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
                     penum->ht_landscape.offset_set = false;
                     penum->ht_offset_bits = 0; /* Will get set in call to render */
+                    if (code >= 0) {
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
-		    if (code >= 0) {
                         memset(penum->line, 0, 16 * penum->line_size + 16);
+                        memset(penum->ht_buffer, 0, penum->line_size * 2);
                         memset(penum->thresh_buffer, 0,
                                16 * penum->line_size + 16);
-                        memset(penum->ht_buffer, 0, penum->line_size * 2);
-		    }
 #endif
+                    }
                 } else {
                     /* In the portrait case we allocate a single line buffer
                        in device width, a threshold buffer of the same size
@@ -301,15 +301,20 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     if (penum->line == NULL || penum->thresh_buffer == NULL
                                 || penum->ht_buffer == NULL)
                         code = -1;
+                    else {
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
-		    else {
                         memset(penum->line, 0, penum->line_size);
-                        memset(penum->thresh_buffer, 0,
-                               penum->line_size * max_height);
                         memset(penum->ht_buffer, 0,
                                penum->ht_stride * max_height);
-		    }
 #endif
+                        /* Ideally this memset should be in the above ifdef,
+                         * but it seems that currently it gives different
+                         * results if we don't blank the buffer. This probably
+                         * points to a bug elsewhere and should be
+                         * investigated. */
+                        memset(penum->thresh_buffer, 0,
+                               penum->line_size * max_height);
+                    }
                 }
                 /* Precompute values needed for rasterizing. */
                 penum->dxx =
@@ -1236,7 +1241,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     for (k = 0; k < data_length; k++) {
                         dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
                         memcpy(&(devc_contone[(data_length - k - 1) * spp_out]),
-                               dev_value, spp_out); 
+                               dev_value, spp_out);
                         dda_next(dda_ht);
                     }
                 }
