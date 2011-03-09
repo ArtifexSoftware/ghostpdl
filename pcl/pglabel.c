@@ -747,6 +747,11 @@ hpgl_print_char(
             double  run = pgls->g.character.direction.x,
 	            rise = pgls->g.character.direction.y;
 
+            /* gl/2 bitmap fonts are scaled in a left handed coordinate
+               system - so the "rise" direction is opposite.  */
+            if (font->scaling_technology == plfst_bitmap)
+                rise *= -1;
+            
 	    if (pgls->g.character.direction_relative)
 	        run *= pgls->g.P2.x - pgls->g.P1.x,
 		rise *= pgls->g.P2.y - pgls->g.P1.y;
