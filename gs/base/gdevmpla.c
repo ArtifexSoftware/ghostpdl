@@ -47,6 +47,7 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
     int same_depth = planes[0].depth;
     gx_color_index covered = 0;
     int pi;
+    const gx_device_memory *mdproto = gdev_mem_device_for_bits(mdev->color_info.depth);
 
     if (num_planes < 1 || num_planes > GX_DEVICE_COLOR_MAX_COMPONENTS)
         return_error(gs_error_rangecheck);
@@ -75,14 +76,11 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
     set_dev_proc(mdev, open_device, mem_planar_open);
     if (num_planes == 1) {
         /* For 1 plane, just use a normal device */
-        const gx_device_memory *mdproto = gdev_mem_device_for_bits(mdev->color_info.depth);
-        
         set_dev_proc(mdev, fill_rectangle, dev_proc(mdproto, fill_rectangle));
         set_dev_proc(mdev, copy_mono,  dev_proc(mdproto, copy_mono));
         set_dev_proc(mdev, copy_color, dev_proc(mdproto, copy_color));
         set_dev_proc(mdev, copy_alpha, dev_proc(mdproto, copy_alpha));
         set_dev_proc(mdev, strip_tile_rectangle, dev_proc(mdproto, strip_tile_rectangle));
-        set_dev_proc(mdev, strip_copy_rop, dev_proc(mdproto, strip_copy_rop));
         set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
     } else {
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
@@ -97,9 +95,9 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
             set_dev_proc(mdev, copy_color, mem_planar_copy_color);
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
         set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
-        set_dev_proc(mdev, strip_copy_rop, gx_default_strip_copy_rop);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     }
+    set_dev_proc(mdev, strip_copy_rop, dev_proc(mdproto, strip_copy_rop));
     return 0;
 }
 
@@ -568,20 +566,20 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     /* First off, see if we can satisfy get_bits_rectangle with just returning
      * pointers to the existing data. */
     {
-	gs_get_bits_params_t copy_params;
-	byte *base = scan_line_base(mdev, y);
-	int code;
+        gs_get_bits_params_t copy_params;
+        byte *base = scan_line_base(mdev, y);
+        int code;
 
-	copy_params.options =
-	    GB_COLORS_NATIVE | GB_PACKING_PLANAR | GB_ALPHA_NONE |
-	    (mdev->raster ==
-	     bitmap_raster(mdev->width * mdev->color_info.depth) ?
-	     GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
-	copy_params.raster = mdev->raster;
-	code = gx_get_bits_return_pointer(dev, x, h, params,
-					  &copy_params, base);
-	if (code >= 0)
-	    return code;
+        copy_params.options =
+            GB_COLORS_NATIVE | GB_PACKING_PLANAR | GB_ALPHA_NONE |
+            (mdev->raster ==
+             bitmap_raster(mdev->width * mdev->color_info.depth) ?
+             GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
+        copy_params.raster = mdev->raster;
+        code = gx_get_bits_return_pointer(dev, x, h, params,
+                                          &copy_params, base);
+        if (code >= 0)
+            return code;
     }
 
     /*
@@ -658,6 +656,7 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         int ddepth = mdev->color_info.depth;
         uint raster = bitmap_raster(ddepth * mdev->width);
         gs_get_bits_params_t dest_params;
+        int dest_bytes;
 
         if (raster > BUF_BYTES) {
             br = BUF_BYTES;
@@ -672,19 +671,33 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
             GB_COLORS_NATIVE | GB_PACKING_CHUNKY | GB_ALPHA_NONE |
             GB_RASTER_STANDARD;
         copy_params.raster = raster;
+        /* The options passed in from above may have GB_OFFSET_0, and what's
+         * more, the code below may insist on GB_OFFSET_0 being set. Hence we
+         * can't rely on x_offset to allow for the block size we are using.
+         * We'll have to adjust the pointer by steam. */
         dest_params = *params;
+        dest_params.x_offset = params->x_offset;
+        if (options & GB_COLORS_RGB)
+            dest_bytes = 3;
+        else if (options & GB_COLORS_CMYK)
+            dest_bytes = 4;
+        else if (options & GB_COLORS_GRAY)
+            dest_bytes = 1;
+        else
+            dest_bytes = mdev->color_info.depth / mdev->plane_depth;
+        /* We assume options & GB_DEPTH_8 */
         for (cy = y; cy < y + h; cy += ch) {
             ch = min(bh, y + h - cy);
             for (cx = x; cx < x + w; cx += cw) {
                 cw = min(bw, x + w - cx);
                 planar_to_chunky(mdev, cx, cy, cw, ch, 0, br, buf.b);
-                dest_params.x_offset = params->x_offset + cx - x;
                 code = gx_get_bits_copy(dev, 0, cw, ch, &dest_params,
                                         &copy_params, buf.b, br);
                 if (code < 0)
                     return code;
+                dest_params.data[0] += cw * dest_bytes;
             }
-            dest_params.data[0] += ch * raster;
+            dest_params.data[0] += ch * dest_params.raster - (w*dest_bytes);
         }
 #undef BUF_BYTES
 #undef BUF_LONGS
