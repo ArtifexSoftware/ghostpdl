@@ -1752,7 +1752,7 @@ $(DD)tiff48nc.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffrgb_) $(DD)tiffs.dev $(minf
 	$(SETPDEV2) $(DD)tiff48nc $(tiffrgb_)
 	$(ADDMOD) $(DD)tiff48nc -include $(DD)tiffs $(tiff_i_)
 
-$(GLOBJ)gdevtfnx.$(OBJ) : $(GLSRC)gdevtfnx.c $(PDEVH) $(stdint__h) $(gdevtifs_h)
+$(GLOBJ)gdevtfnx.$(OBJ) : $(GLSRC)gdevtfnx.c $(PDEVH) $(stdint__h) $(gdevtifs_h) $(gscms_h)
 	$(GLCC) $(I_)$(TI_)$(_I) $(GLO_)gdevtfnx.$(OBJ) $(C_) $(GLSRC)gdevtfnx.c
 
 # TIFF CMYK, no compression

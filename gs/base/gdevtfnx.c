@@ -17,6 +17,7 @@
 #include "stdint_.h"   /* for tiff.h */
 #include "gdevtifs.h"
 #include "gdevprn.h"
+#include "gscms.h"
 
 /*
  * Thanks to Alan Barclay <alan@escribe.co.uk> for donating the original
@@ -88,7 +89,18 @@ const gx_device_tiff gs_tiff48nc_device = {
 static void
 tiff_set_rgb_fields(gx_device_tiff *tfdev)
 {
-    TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+    /* Put in a switch statement in case we want to have others */
+    switch (tfdev->device_icc_profile->data_cs) {
+        case gsRGB:
+            TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+            break;
+        case gsCIELAB:
+            TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_ICCLAB);
+            break;
+        default:
+            TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+            break;
+    }        
     TIFFSetField(tfdev->tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
     TIFFSetField(tfdev->tif, TIFFTAG_SAMPLESPERPIXEL, 3);
 

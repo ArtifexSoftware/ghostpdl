@@ -772,6 +772,13 @@ gs_push_pdf14trans_device(gs_state * pgs)
      * and convert spot colors into process colors.
      */
     params.num_spot_colors = get_num_pdf14_spot_colors(pgs);
+    /* If we happen to be in a situation where we are going out to a device
+       whose profile is CIELAB then we will need to make sure that we
+       do our blending in RGB and convert to CIELAB when we do the put_image
+       command */
+    if (pgs->device->device_icc_profile->data_cs == gsCIELAB) {
+        params.iccprofile = pgs->icc_manager->default_rgb;
+    }
     /* Note: Other parameters not used */
     return gs_state_update_pdf14trans(pgs, &params);
 }

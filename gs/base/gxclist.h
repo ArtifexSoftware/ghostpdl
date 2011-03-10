@@ -184,6 +184,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 		/* Following are set when writing, read when reading. */\
 	gx_band_page_info_t page_info;	/* page information */\
 	int nbands;			/* # of bands */\
+        int64_t trans_dev_icc_hash;     /* A special hash code for des color */\
         clist_icctable_t *icc_table;    /* Table that keeps track of ICC profiles.\
                                            It relates the hashcode to the cfile\ 
                                            file location. */\

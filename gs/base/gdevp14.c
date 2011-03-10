@@ -1489,7 +1489,11 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     if (pcs == NULL)
 	return_error(gs_error_VMerror);
     /* Need to set this to avoid color management during the 
-       image color render operation */
+       image color render operation.  Exception is for the special case
+       when the destination was CIELAB.  Then we need to convert from 
+       default RGB to CIELAB in the put image operation.  That will happen
+       here as we should have set the profile for the pdf14 device to RGB
+       and the target will be CIELAB */
     pcs->cmm_icc_profile_data = dev->device_icc_profile;
     rc_increment(dev->device_icc_profile);
     gs_image_t_init_adjust(&image, pcs, false);
@@ -2490,8 +2494,10 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             *ptempdevproto = **pdevproto;
             /* PDF14 Device should inherent the ICC color info of the parent.
                If the parent does not have one, (and it should) then use
-               the default. */
-            if (dev->color_info.icc_profile == '\0') {
+               the default.   The default is also used if we have something
+               like CIELAB as a destination space. */
+            if (dev->color_info.icc_profile == '\0' || 
+                dev->device_icc_profile->data_cs == gsCIELAB) {
                 strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_RGB_ICC);
             } else {
                 strcpy(&(ptempdevproto->color_info.icc_profile[0]), dev->color_info.icc_profile);
@@ -4358,6 +4364,16 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
 	return code;
     gs_pdf14_device_copy_params((gx_device *)p14dev, target);
     gx_device_set_target((gx_device_forward *)p14dev, target);
+    /* If the target profile was CIELAB, then overide with default RGB for
+       proper blending.  During put_image we will convert from RGB to 
+       CIELAB.  Need to check that we have a default profile, which 
+       will not be the case if we are coming from the clist reader */
+    if (target->device_icc_profile->data_cs == gsCIELAB
+        && pis->icc_manager->default_rgb != NULL) {
+        rc_decrement(p14dev->device_icc_profile, "pdf14_create_clist_device");
+        p14dev->device_icc_profile = pis->icc_manager->default_rgb;
+        rc_increment(p14dev->device_icc_profile);
+    }
     /* If we have a tag device then go ahead and do a special encoder
        decoder for the pdf14 device to make sure we maintain this
        information in the encoded color information.  We could use
@@ -4477,8 +4493,25 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
 	default:			/* Should not occur. */
 	    break;
 	case PDF14_PUSH_DEVICE:
-	    put_value(pbuf, pparams->num_spot_colors);	    
-	    break;
+	    put_value(pbuf, pparams->num_spot_colors);	
+            /* If we happen to be going to a color space like CIELAB then
+               we are going to do our blending in default RGB and convert
+               to CIELAB at the end.  To do this, we need to store the 
+               default RGB profile in the clist so that we can grab it 
+               later on during the clist read back and put image command */
+            if (cdev->device_icc_profile->data_cs == gsCIELAB) {
+                /* Get the default RGB profile.  Set the device hash code
+                   so that we can extract it during the put_image operation. */
+                cdev->trans_dev_icc_hash = pparams->iccprofile->hashcode;
+                found_icc = 
+                    clist_icc_searchtable(cdev, pparams->iccprofile->hashcode);
+                if (!found_icc) {
+                    /* Add it to the table */
+                    clist_icc_addentry(cdev, pparams->iccprofile->hashcode, 
+                                       pparams->iccprofile);
+                }
+            }
+            break;
 	case PDF14_POP_DEVICE:
 	    code = 0;
 	    break;
@@ -5309,7 +5342,8 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
 	case PDF14_DeviceRGB:
 	    *pdevproto = (pdf14_clist_device *)&pdf14_clist_RGB_device;
             *ptempdevproto = **pdevproto;
-            if (dev->color_info.icc_profile == '\0') {
+            if (dev->color_info.icc_profile == '\0' || 
+                dev->device_icc_profile->data_cs == gsCIELAB) {
                 strcpy(&(ptempdevproto->color_info.icc_profile[0]), DEFAULT_RGB_ICC);
             } else {
                 strcpy(&(ptempdevproto->color_info.icc_profile[0]), 
@@ -5422,7 +5456,14 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     gx_device_set_target((gx_device_forward *)pdev, target);
     code = dev_proc((gx_device *) pdev, open_device) ((gx_device *) pdev);
     pdev->pclist_device = target;
-
+    /* If the target profile was CIELAB, then overide with default RGB for
+       proper blending.  During put_image we will convert from RGB to 
+       CIELAB */
+    if (target->device_icc_profile->data_cs == gsCIELAB) {
+        rc_decrement(pdev->device_icc_profile, "pdf14_create_clist_device");
+        pdev->device_icc_profile = pis->icc_manager->default_rgb;
+        rc_increment(pdev->device_icc_profile);
+    }
     pdev->my_encode_color = pdev->procs.encode_color;
     pdev->my_decode_color = pdev->procs.decode_color;
     pdev->my_get_color_mapping_procs = pdev->procs.get_color_mapping_procs;
@@ -6134,6 +6175,8 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     gs_imager_state new_is = *pis;
     int code;
     gs_pattern2_instance_t *pinst = NULL;
+    gx_device_forward * fdev = (gx_device_forward *)dev;
+    bool cs_change;
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
@@ -6151,8 +6194,14 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
        color space as well as the transparency.  Some of the shading code ignores 
        this, so we have to pass on the clist_writer device to enable proper 
        mapping to the transparency group color space. */
-    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor) && 
-        pdev->trans_group_parent_cmap_procs != NULL) {
+    /* Right now we only set the trans device if we are in a transparency group
+       with a color space different than the output device OR if we have a goofy 
+       device output profile like CIELAB.  In the CIELAB case, the profile for the 
+       PDF14 device will not match the target device profile */
+    cs_change = 
+        (fdev->target->device_icc_profile->hashcode != 
+         dev->device_icc_profile->hashcode);
+    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor) && cs_change) {
  	pinst =
 	    (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
            pinst->saved->has_transparency = true;
@@ -6558,7 +6607,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
     pdf14_device * p14dev = (pdf14_device *)tdev;
     gs_pdf14trans_t * pdf14pct = (gs_pdf14trans_t *) pcte;
     gs_devn_params * pclist_devn_params;
-
+    gx_device_clist_reader *pcrdev = (gx_device_clist_reader *)cdev;
     /*
      * We only handle the push/pop operations. Save and restore the color_info
      * field for the clist device.  (This is needed since the process color
@@ -6619,6 +6668,21 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 		    dev_proc(tdev, open_device) (tdev);
 		}
 	    }
+            /* Check if we need to swap out the ICC profile for the pdf14 
+               device.  This will occur if our source profile for our device
+               happens to be something like CIELAB.  Then we will blend in
+               RGB (unless a trans group is specified) */
+            if (cdev->device_icc_profile->data_cs == gsCIELAB) {
+                rc_decrement(tdev->device_icc_profile,
+                             "c_pdf14trans_clist_read_update");
+                tdev->device_icc_profile = gsicc_read_serial_icc(cdev, 
+                                        pcrdev->trans_dev_icc_hash);
+                /* Keep a pointer to the clist device */
+                tdev->device_icc_profile->dev = (gx_device *) cdev;
+                /* There is a question of how the profile should be ref counted.
+                   I have a concern that it should be initialized based 
+                   upon the device ref count */
+            }
 	    break;
 
 	case PDF14_POP_DEVICE:

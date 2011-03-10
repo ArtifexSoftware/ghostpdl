@@ -1126,6 +1126,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    bool use_rgb2dev_icc = false;
 
     for (i=0; i < ncomps; i++)
 	cm_comps[i] = 0;
@@ -1141,6 +1142,15 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
         i = pis->color_component_map.num_colorants - 1;
         for (; i >= 0; i--)
             cm_comps[i] = comp_value;
+        /* If our device space is CIELAB then we really want to treat this
+           as RGB during the fill up here of the separation value and then
+           go ahead and convert from RGB to CIELAB.  The PDF spec is not clear
+           on how addivite devices should behave with the ALL option but it
+           is clear from testing the AR 10 does simply do the RGB = 1 - INK
+           type of mapping */
+        if (dev->device_icc_profile->data_cs == gsCIELAB) {
+            use_rgb2dev_icc = true;
+        }
     }
     else {
         /* map to the color model */
@@ -1157,6 +1167,30 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
             cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
 	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
 
+    if (use_rgb2dev_icc && pis->icc_manager->default_rgb != NULL) {
+        /* After the transfer function go ahead and do the mapping from RGB to
+           the device profile. */
+        gsicc_link_t *icc_link;
+        gsicc_rendering_param_t rendering_params;
+        unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+
+        rendering_params.black_point_comp = BP_ON;
+        rendering_params.object_type = GS_PATH_TAG;
+        rendering_params.rendering_intent = pis->renderingintent;
+
+        icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_rgb, 
+                                          dev->device_icc_profile, 
+                                          &rendering_params, pis->memory, false);
+        /* Transform the color */
+        for (i = 0; i < ncomps; i++) {
+            psrc[i] = cv[i];
+        }
+        gscms_transform_color(icc_link, &(psrc[0]), &(psrc_cm[0]), 2, NULL);
+        gsicc_release_link(icc_link);
+        for (i = 0; i < ncomps; i++) {
+            cv[i] = psrc_cm[i];
+        }
+    }
     /* encode as a color index */
     color = dev_proc(dev, encode_color)(dev, cv);
 
@@ -1815,6 +1849,11 @@ gx_device_uses_std_cmap_procs(gx_device * dev)
                 break;
             case gsCMYK:
                 if (pprocs == &DeviceCMYK_procs) {
+                    return true;
+                }
+                break;
+            case gsCIELAB:
+                if (pprocs == &DeviceRGB_procs) {
                     return true;
                 }
                 break;

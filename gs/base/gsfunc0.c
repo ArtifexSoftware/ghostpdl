@@ -383,6 +383,7 @@ fn_Sd_evaluate_general(const gs_function_t * pfn_common, const float *in, float 
 		encoded[i] = enc;
 	} else {
 	    /* arg is guaranteed to be in bounds, ergo so is enc */
+		/* TODO: possible issue here.  if (pfn->params.Size[i] == 1 */
 	    encoded[i] = (arg - d0) * (pfn->params.Size[i] - 1) / (d1 - d0);
 	}
     }

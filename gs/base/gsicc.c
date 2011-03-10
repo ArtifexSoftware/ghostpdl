@@ -351,7 +351,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
         /* Transform the color */
         psrc_temp = &(psrc_cm[0]);
         gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
-}
+    }
 #ifdef DEBUG
     if (!icc_link->is_identity) {
         num_src_comps = pcs->cmm_icc_profile_data->num_comps;
