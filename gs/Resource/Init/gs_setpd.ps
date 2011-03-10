@@ -308,12 +308,16 @@ level2dict begin
       } forall
       % If the device is the distiller device, update distillerparams that
       % may have been changed by setdistillerparams
-      currentdevice .devicename /pdfwrite eq {
-	currentdistillerparams {
+      % Check to see if the current device supports Tr
+      currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark false}{3 1 roll cleartomark}ifelse
+%      currentdevice .devicename /pdfwrite eq 
+      {
+	  currentdistillerparams {
 	      % Stack: current key value
-	  2 index 2 index .knownget { 1 index ne } { //true } ifelse
-	  { 2 index 3 1 roll put } { pop pop } ifelse
-	} forall
+	    2 index 2 index .knownget { 1 index ne } { //true } ifelse
+	    { 2 index 3 1 roll put } { pop pop } ifelse
+	  } forall
       } if
 		% If the dictionary was global and is now local, copy
 		% any global subsidiary dictionaries to local VM.  This

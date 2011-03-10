@@ -260,7 +260,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  false,				/* Type32ToUnicode */
  !PDF_FOR_OPDFREAD,		/* WantsToUnicode */
  PDF_FOR_OPDFREAD,		/* AllowPSRepeatFunctions */
- !PDF_FOR_OPDFREAD,		/* IsDistiller */
+ true,				/* IsDistiller (true even for ps2write!) */
  !PDF_FOR_OPDFREAD,		/* PreserveSMask */
  !PDF_FOR_OPDFREAD		/* PreserveTrMode */
 };

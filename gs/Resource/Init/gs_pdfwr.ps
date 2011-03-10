@@ -257,7 +257,6 @@
   /PreserveOPIComments //true
   /PreserveOverprintSettings //true
   /UCRandBGInfo /Preserve
-
   /PreserveHalftoneInfo //true 
   /TransferFunctionInfo /Preserve 
   /MaxViewerMemorySize 8000000 
@@ -508,7 +507,9 @@ currentdict /.pdfmarkparams .undef
   % If the Creator is PScript5.dll, disable the 32 /FontType resource for
   % handling GlyphNames2Unicode. Since /FontType category can't redefine,
   % we can do only with redefining the operator 'resourcestatus'.
-  currentdevice .devicename /pdfwrite eq {
+  currentdevice 1 dict dup /Type32ToUnicode dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark //true}{3 1 roll cleartomark}ifelse not
+  {
     /Creator .knownget {
       (PScript5.dll) search {
         pop pop
@@ -695,7 +696,11 @@ currentdict /.pdf_hook_DSC_Creator undef
   /DSCEncodingToUnicode { }
 .dicttomark readonly def
 /.distillerdevice
- { currentdevice .devicename dup /pdfwrite eq exch /ps2write eq or
+ { 
+    % Check to see if the current device is a Distiller
+    % and return it if so.
+    currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
+    dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
     { currentdevice }
     { /pdfwrite finddevice }
    ifelse
@@ -727,13 +732,19 @@ currentdict /.pdf_hook_DSC_Creator undef
 %  def def currentdict end
 } odef
 /setdistillerparams {
-  currentdevice .devicename dup /pdfwrite ne exch /ps2write ne and {
+  % Check to see if the current device is a Distiller
+  currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse not
+  {
     /setdistillerparams /undefined signalerror
   } if
   .setdistillerparams
 } bind odef
 /currentdistillerparams {
-  currentdevice .devicename dup /pdfwrite ne exch /ps2write ne and {
+  % Check to see if the current device is a Distiller
+  currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse not
+  {
     /currentdistillerparams /undefined signalerror
   } if
   .currentdistillerparams
@@ -741,7 +752,11 @@ currentdict /.pdf_hook_DSC_Creator undef
 
 % Patch 'where' so that the distiller operators are only visible
 % if the pdfwrite device is the current one.
-{ currentdevice .devicename dup /pdfwrite eq exch /ps2write eq or{
+{ 
+  % Check to see if the current device is a Distiller
+  currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+  {
     .where
   } {
     .where pop dup //systemdict eq { pop //false } { //true } ifelse
@@ -756,7 +771,11 @@ currentdict /.pdf_hook_DSC_Creator undef
   /currentdistillerparams 1 index eq /setdistillerparams 2 index eq or 
   /pdfmark 2 index eq or {
     systemdict 2 index eq {	% only mask the operator in systemdict
-      known currentdevice .devicename dup /pdfwrite ne exch /ps2write ne and { pop //false } if
+      known 
+      % Check to see if the current device is a Distiller
+      currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse not
+      { pop false } if
     } {
       known
     } ifelse
@@ -800,9 +819,12 @@ currentdict /.pdf_hook_DSC_Creator undef
 {
   % Note, this may not work if the initial device is not pdfwrite
   % and may require the use of -dProvideUnicode on the command line.
-  currentdevice .devicename /pdfwrite eq
-  systemdict /ProvideUnicode .knownget not { //false } if or {
-    currentglobal //true setglobal
+  % Check to see if the current device wants ToUnicode info
+  currentdevice 1 dict dup /WantsToUnicode dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+  systemdict /ProvideUnicode .knownget not { //false } if or 
+  {
+    currentglobal true setglobal
     systemdict /.setupUnicodeDecoder known {
       /Unicode /Decoding resourcestatus {
         pop pop

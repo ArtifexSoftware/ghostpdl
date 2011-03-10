@@ -1563,7 +1563,10 @@ currentdict /last-ditch-bpc-csp undef
   } ifelse
   {	% We are doing transparency and SMask is present in the image
 	% stack: <imagemask> <SMask>
-    currentdevice .devicename /pdfwrite eq {
+    currentdevice 1 dict dup /PreserveSMask dup put .getdeviceparams
+    dup type /booleantype eq not {cleartomark false}{3 1 roll cleartomark}ifelse
+%    currentdevice .devicename /pdfwrite eq 
+    {
       pop	% pdfwrite will process SMask directly during 'doimage'
     } {
       .begintransparencymaskimage
@@ -1625,7 +1628,10 @@ currentdict /last-ditch-bpc-csp undef
 		% imagedict is currentdict, gets popped from dstack
   DataSource exch
   PDFusingtransparency
-  currentdevice .devicename /pdfwrite ne { 
+  currentdevice 1 dict dup /PreserveSMask dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark false}{3 1 roll cleartomark}ifelse not
+%  currentdevice .devicename /pdfwrite ne 
+  { 
     % This is a temporary workaround for the bug 689080,
     % which is done under a rush of 8.63 release.
     % The purpose is to disable a conversion of an image with soft mask

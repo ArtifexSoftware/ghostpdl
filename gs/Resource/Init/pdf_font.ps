@@ -495,7 +495,10 @@ currentdict end readonly def
 {
   % Currently pdfwrite is only device which can handle GlyphNames2Unicoide to 
   % generate a ToUnicode CMaps. So don't bother with other devices.
-  currentdevice .devicename /pdfwrite eq {
+  currentdevice 1 dict dup /WantsToUnicode dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark false}{3 1 roll cleartomark}ifelse
+%  currentdevice .devicename /pdfwrite eq 
+  {
     PDFDEBUG {
       (.processToUnicode beg) =
     } if
