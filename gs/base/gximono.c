@@ -306,14 +306,9 @@ gs_image_class_3_mono(gx_image_enum * penum)
                         memset(penum->line, 0, penum->line_size);
                         memset(penum->ht_buffer, 0,
                                penum->ht_stride * max_height);
-#endif
-                        /* Ideally this memset should be in the above ifdef,
-                         * but it seems that currently it gives different
-                         * results if we don't blank the buffer. This probably
-                         * points to a bug elsewhere and should be
-                         * investigated. */
                         memset(penum->thresh_buffer, 0,
                                penum->line_size * max_height);
+#endif
                     }
                 }
                 /* Precompute values needed for rasterizing. */
@@ -1326,6 +1321,8 @@ flush:
             fwrite(halftone,1,dest_width * vdi,fid);
             fclose(fid);
 #else
+            if (offset_bits > dest_width)
+                offset_bits = dest_width;
             gx_ht_threshold_row_bit(contone_align, thresh_align, contone_stride,
                               halftone, dithered_stride, dest_width, vdi,
                               offset_bits);
