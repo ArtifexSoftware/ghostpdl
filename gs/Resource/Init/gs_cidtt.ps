@@ -123,18 +123,18 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 } bind def
 
 /IsMyRecord      % <raw_record> -> <raw_record> bool
-{ dup type /dicttype eq { dup /FileType .knownget { /TrueType eq } { false } ifelse } { false } ifelse
+{ dup type /dicttype eq { dup /FileType .knownget { /TrueType eq } { //false } ifelse } { //false } ifelse
 } bind def
 
 /IsActive       % <record> IsActive <bool>
-{ pop true
+{ pop //true
 } bind def
 
 /CIDFontRecordVirtualMethods //RecordVirtualMethodsStub dup length 3 add dict copy begin
   /GetCSI //TranslateCSI def
   /IsActive //IsActive def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
-  { currentglobal 3 1 roll true setglobal
+  { currentglobal 3 1 roll //true setglobal
     //CIDFontOptions //complete_instance exec
     2 copy //GetSize exec
     4 3 roll setglobal
@@ -144,12 +144,12 @@ currentdict end def
 % Redefine the /CIDFont category :
 4 dict begin
   /CategoryName /CIDFont def
-  /IsMapFileOptional true def
+  /IsMapFileOptional //true def
   /VerifyMap  { pop } bind def
   /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
   { //IsMyRecord exec dup {
       pop dup /RecordVirtualMethods //CIDFontRecordVirtualMethods put
-      true
+      //true
     } if
   } bind def
 currentdict end

@@ -42,10 +42,10 @@ level2dict begin
 % However, Ed Taft of Adobe says their interpreters don't implement this
 % either, so we aren't going to worry about it for a while.
 
-currentglobal false setglobal systemdict begin
+currentglobal //false setglobal systemdict begin
   /localinstancedict 5 dict
   .forcedef	% localinstancedict is local, systemdict is global
-end true setglobal
+end //true setglobal
 /.emptydict 0 dict readonly def
 setglobal
 
@@ -131,9 +131,9 @@ setglobal
 /.getvminstance {	% <key> .getvminstance <instance> -true-
 			% <key> .getvminstance -false-
   .GetInstance {
-    dup 1 get 2 ne { true } { pop false } ifelse
+    dup 1 get 2 ne { //true } { pop //false } ifelse
   } {
-    false
+    //false
   } ifelse
 } bind def
 
@@ -177,7 +177,7 @@ setglobal
 	   { 2 index exch known and }
 	  forall
 	  not { /defineresource cvx /invalidaccess signaloperror } if
-	  true
+	  //true
 	} bind def
 
 .Instances end begin	% for the base case of findresource
@@ -254,7 +254,7 @@ def
       /resourcestatus cvx /typecheck signalerror
     } if
     2 copy .findcategory /ResourceStatus .resourceexec
-    { 4 2 roll pop pop true } { pop pop false } ifelse
+    { 4 2 roll pop pop //true } { pop pop //false } ifelse
   } stopped {
     % Although resourcestatus is an operator, Adobe uses executable name
     % for error reporting. CET 23-26
@@ -305,7 +305,7 @@ systemdict begin
      dup () ne {
      .file_name_directory_separator concatstrings
     } if
-    2 index exch false .file_name_combine not {
+    2 index exch //false .file_name_combine not {
       (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
       /.default_resource_dir cvx /configurationerror signalerror
     } if
@@ -337,7 +337,7 @@ end
 (x) pssystemparams /GenericResourcePathSep get
 (y) concatstrings concatstrings dup length              % (x]y) l1
 pssystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
-3 index true .file_name_combine not {
+3 index //true .file_name_combine not {
   exch
   (File name ) print print ( cant combine with ) print =
   /GenericResourceDir cvx /configurationerror signaloperror
@@ -373,7 +373,7 @@ status {
 
 % We're still running in Level 1 mode, so dictionaries won't expand.
 % Leave room for the /Category entry.
-/Category null
+/Category //null
 
 % Implement the body of Generic resourceforall for local, global, and
 % external cases.  'args' is [template proc scratch resdict].
@@ -383,7 +383,7 @@ status {
   } if
 	% Use .setstackprotect to prevent the stacks from being restored if
 	% an error occurs during execution of proc.
-  1 get false .setstackprotect exec true .setstackprotect
+  1 get //false .setstackprotect exec //true .setstackprotect
 } bind def
 /.localresourceforall {		% <key> <value> <args> .localr'forall -
   exch pop
@@ -417,8 +417,8 @@ status {
 	   { dup [ exch 0 -1 ]
 			% Stack: key value instance
 	     currentglobal
-	      { false setglobal 2 index UndefineResource	% remove local def if any
-		true setglobal
+	      { //false setglobal 2 index UndefineResource	% remove local def if any
+		//true setglobal
 		.Instances dup //.emptydict eq {
 		  pop 3 dict
 			% As noted above, Category dictionaries are read-only,
@@ -445,7 +445,7 @@ status {
 /UndefineResource
 	{  { dup 2 index .knownget
 	      { dup 1 get 1 ge
-		 { dup 0 null put 1 2 put pop pop }
+		 { dup 0 //null put 1 2 put pop pop }
 		 { pop exch .undef }
 		ifelse
 	      }
@@ -489,13 +489,13 @@ status {
 % We patch around this by using an intermediate .ResourceFileStatus procedure.
 /ResourceStatus {
 	dup .GetInstance {
-	  exch pop dup 1 get exch 2 get true
+	  exch pop dup 1 get exch 2 get //true
 	} {
 	  .ResourceFileStatus
 	} ifelse
 } bind
 /.ResourceFileStatus {
-	.ResourceFile { closefile 2 -1 true } { pop false } ifelse
+	.ResourceFile { closefile 2 -1 //true } { pop //false } ifelse
 } bind
 /ResourceForAll {
 		% Construct a new procedure to hold the arguments.
@@ -522,13 +522,13 @@ status {
         dup length 3 1 roll                              % args [ l (c/) (t)
         concatstrings                                    % args [ l (c/t)
 	[ 
-	  true /LIBPATH .systemvar 3 index
+	  //true /LIBPATH .systemvar 3 index
 	  .generate_dir_list_templates_with_length       % args (t) [ l [(pt) Lp ...]
 	    % also add on the Resources as specified by the GenericResourceDir
-          true [ currentsystemparams /GenericResourceDir get]
+          //true [ currentsystemparams /GenericResourceDir get]
 	  counttomark 1 add index .generate_dir_list_templates_with_length
             % Resource files on OpenVMS require a separate template (gs:[dir.*]*)
-          true [ currentsystemparams /GenericResourceDir get]
+          //true [ currentsystemparams /GenericResourceDir get]
 	  counttomark 1 add index .file_name_separator (*)
           concatstrings concatstrings .generate_dir_list_templates_with_length
 	  ] exch pop
@@ -599,14 +599,14 @@ status {
 	{ currentglobal
 	   { .Instances exch .knownget }
 	   { .LocalInstances 1 index .knownget
-	      { exch pop true }
+	      { exch pop //true }
 	      { .Instances exch .knownget }
 	     ifelse
 	   }
 	  ifelse
 	} bind
 /.CheckResource
-	{ true
+	{ //true
 	} bind
 /.vmused {
 		% - .vmused <usedvalue>
@@ -639,7 +639,7 @@ status {
 	{ dup .ResourceFile
 	   { exch pop currentglobal
 	      { .runresource }
-	      { true setglobal { .runresource } stopped false setglobal { stop } if }
+	      { //true setglobal { .runresource } stopped //false setglobal { stop } if }
 	     ifelse
 	   }
 	   { dup .undefinedresource
@@ -657,21 +657,21 @@ status {
           2 index exch cvs length add                           % key l2
           //.rfnstring exch 0 exch getinterval                  % key (relative_path)
           .libfile {
-            exch pop true
+            exch pop //true
           } {
             pop
             currentdict /ResourceFileName known {
 	      mark 1 index //.rfnstring { ResourceFileName } .internalstopped {
-	        cleartomark false
+	        cleartomark //false
 	      } {
 	        (r) { file } .internalstopped {
-	          cleartomark false
+	          cleartomark //false
 		} {
-	          exch pop exch pop true
+	          exch pop exch pop //true
 	        } ifelse
 	      } ifelse
 	     } {
-	       pop false
+	       pop //false
 	     } ifelse
           } ifelse
 	} bind
@@ -707,7 +707,7 @@ mark
    errordict /rangecheck 2 copy get
    errordict /rangecheck { pop stop } put	% pop the command
    mark 0 { {
-    dup .getiodevice dup null eq { pop } { exch } ifelse 1 add
+    dup .getiodevice dup //null eq { pop } { exch } ifelse 1 add
    } loop} .internalstopped
    pop pop pop .packtomark
    4 1 roll put
@@ -758,7 +758,7 @@ counttomark 2 idiv
 	  ifelse
 	} bind
    /ResourceStatus
-	{ .Instances exch known { 0 0 true } { false } ifelse } bind
+	{ .Instances exch known { 0 0 //true } { //false } ifelse } bind
    /ResourceForAll
 	/Generic .findcategory /ResourceForAll load end
 
@@ -832,14 +832,14 @@ counttomark 2 idiv
 % the Default keys.  This information must get saved and restored in
 % parallel with the local instance dictionary, so it must be stored in
 % local VM.
-userdict /.localcsdefaults false put
+userdict /.localcsdefaults //false put
 
 /DefineResource {
   2 copy /Generic /Category findresource /DefineResource get exec
   exch pop
   exch //.defaultcsnames exch .knownget {
     1 index .definedefaultcs
-    currentglobal not { .userdict /.localcsdefaults true put } if
+    currentglobal not { .userdict /.localcsdefaults //true put } if
   } if
 } bind
 
@@ -857,8 +857,8 @@ userdict /.localcsdefaults false put
 	.undefinedefaultcs
       } ifelse
 	% Recompute .localcsdefaults by scanning.  This is rarely needed.
-      .userdict /.localcsdefaults false //.defaultcsnames {
-	pop .LocalInstances exch known { pop true exit } if
+      .userdict /.localcsdefaults //false //.defaultcsnames {
+	pop .LocalInstances exch known { pop //true exit } if
       } forall put
     } ifelse
   } {
@@ -879,7 +879,7 @@ userdict /.localcsdefaults false put
 
 /.Instances mark
   EncodingDirectory
-   { dup length 256 eq { [ exch readonly 0 -1 ] } { pop [null 2 -1] } ifelse
+   { dup length 256 eq { [ exch readonly 0 -1 ] } { pop [//null 2 -1] } ifelse
    } forall
 .dicttomark
 
@@ -915,31 +915,31 @@ userdict /.localcsdefaults false put
     Fontmap 1 index .knownget {
       {
 	dup type /nametype eq {
-	  .fontstatus { pop null exit } if
+	  .fontstatus { pop //null exit } if
 	} {
 	  dup type /stringtype eq {
-	    findlibfile { closefile pop null exit } if pop
+	    findlibfile { closefile pop //null exit } if pop
 	  } {
 		% Procedure, assume success.
-	    pop null exit
+	    pop //null exit
 	  } ifelse
 	} ifelse
-      } forall dup null eq { pop true exit } if
+      } forall dup //null eq { pop //true exit } if
     } if
     dup / eq { //false exit } if  % / throws an error from findlibfile
 		% Convert names to strings; give up on other types.
     dup type /nametype eq { .namestring } if
-    dup type /stringtype ne { false exit } if
+    dup type /stringtype ne { //false exit } if
 		% Check the resource directory.
     dup .fonttempstring /FontResourceDir getsystemparam .genericrfn
     status {
-      pop pop pop pop true exit
+      pop pop pop pop //true exit
     } if
 		% Check for a file on the search path with the same name
 		% as the font.
-    findlibfile { closefile true exit } if
+    findlibfile { closefile //true exit } if
 		% Scan a FONTPATH directory and try again.
-    .scannextfontdir not { false exit } if
+    .scannextfontdir not { //false exit } if
   } loop
 } bind def
 
@@ -971,7 +971,7 @@ userdict /.localcsdefaults false put
 	/Generic /Category findresource /ResourceForAll get exec
 } bind
 /.ResourceFileStatus {
-	.fontstatus { pop 2 -1 true } { pop false } ifelse
+	.fontstatus { pop 2 -1 //true } { pop //false } ifelse
 } bind
 
 /.loadfontresource {
@@ -1003,8 +1003,8 @@ userdict /.localcsdefaults false put
     }
     { 2 index
 		% Make sure we create the array in global VM.
-      .currentglobal true .setglobal
-      [null 2 -1] exch .setglobal
+      .currentglobal //true .setglobal
+      [//null 2 -1] exch .setglobal
       .growput
     }
    ifelse

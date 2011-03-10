@@ -24,7 +24,7 @@ systemdict begin
 % of gs_init and convert it to a static array.
 /.getsearchabledevs { % - .getsearchabledevs [ list_of_strings ]
   //systemdict /.searchabledevs .knownget not {
-    .currentglobal true .setglobal
+    .currentglobal //true .setglobal
     mark (*) { 
       dup length string copy dup currentdevparams /Searchable
       .knownget { not { pop } if } { pop } ifelse
@@ -83,8 +83,8 @@ systemdict begin
     } ifelse
     % extract device portion (up to end of string or next %)
     (%) search { exch pop } if	% stack: opat proc scratch npat device
-    dup (*) search { pop pop pop true } { pop false } ifelse
-    1 index (?) search { pop pop pop true } { pop false } ifelse
+    dup (*) search { pop pop pop //true } { pop //false } ifelse
+    1 index (?) search { pop pop pop //true } { pop //false } ifelse
     or not {
       pop pop //filenameforall	% device with no wildcard
     } {
@@ -126,12 +126,12 @@ systemdict begin
 % redefine file to search all devices in order
 /file {
   dup 0 get (r) 0 get eq dup {
-    pop false				% success code
+    pop //false				% success code
     2 index 0 get 37 eq { [ () ] } { .getsearchabledevs } ifelse
     { 3 index concatstrings	% prepend the device
       {
         2 index //file } .internalstopped not {
-	4 1 roll pop pop pop true
+	4 1 roll pop pop pop //true
 	exit		% exit with success
       } {
         pop pop
@@ -149,11 +149,11 @@ systemdict begin
 
 % redefine deletefile to search all devices in order
 /deletefile {
-  false				% success code
+  //false			% success code
   1 index 0 get 37 eq { [ () ] } { .getsearchabledevs } ifelse
   { 2 index concatstrings	% prepend the device
     { //deletefile } .internalstopped exch pop not {
-      pop true exit		% exit with success
+      pop //true exit		% exit with success
     }
     if
   }
@@ -164,11 +164,11 @@ systemdict begin
 % redefine status to search all devices in order
 /status {
   dup type /stringtype eq {
-    false				% success code
+    //false			% success code
     1 index 0 get 37 eq { [ () ] } { .getsearchabledevs } ifelse
     { 2 index concatstrings	% prepend the device
       { //status } .internalstopped not {
-        { true 7 -2 roll pop pop true exit } % exit with success
+        { //true 7 -2 roll pop pop //true exit } % exit with success
 	if
       }
       if
@@ -185,12 +185,12 @@ systemdict begin
 
 % Also redefine renamefile to search all devices in order
 /renamefile {
-  false				% success code
+  //false			% success code
   2 index 0 get 37 eq { [ () ] } { .getsearchabledevs } ifelse
   { dup 4 index concatstrings	% prepend the device
     { (r) //file } .internalstopped
     not {
-      closefile exch pop true exit	% exit with success
+      closefile exch pop //true exit	% exit with success
     } {
       pop pop
     } ifelse

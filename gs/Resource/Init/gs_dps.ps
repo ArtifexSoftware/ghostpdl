@@ -49,7 +49,7 @@
 % Save copies of local dictionaries at the end of system initialization.
 % Also save the initial gstate.
 /.savelocalstate {
-  .currentglobal true .setglobal
+  .currentglobal //true .setglobal
   //systemdict /savedlocaldicts mark //systemdict {
     dup gcheck {
       pop pop
@@ -63,13 +63,13 @@
     } ifelse
   } forall .dicttomark readonly put
 		% Create localdicts for the current context.
-  false .setglobal
+  //false .setglobal
   userdict /localdicts mark savedlocaldicts {
     pop dup load
   } forall /internaldict dup load
   .dicttomark readonly put
 		% Save a copy of the initial gstate.
-  true .setglobal
+  //true .setglobal
   //systemdict /savedinitialgstate gstate readonly put
   .setglobal
 } .bind def
@@ -89,7 +89,7 @@
 /.initlocaldicts {		% - .initlocaldicts -
   -2 vmreclaim
   .currentglobal //systemdict begin
-  false .setglobal
+  //false .setglobal
 		% Since localdicts doesn't exist yet, references from
 		% systemdict to local objects won't get restored if
 		% a context switch happens in this code.  Therefore,
@@ -140,7 +140,7 @@
 /localfork {			% <mark> <obj1> ... <objN> <proc>
 				%   <stdin|null> <stdout|null>
 				%   localfork <context>
-  .currentglobal true .setglobal 3 index
+  .currentglobal //true .setglobal 3 index
   dup .proccheck not {
     pop .setglobal /localfork .systemvar /typecheck signalerror
   } if
@@ -157,7 +157,7 @@
   savedlocaldicts /userparams get userparams .copydict readonly pop
 } odef
 /fork {			% <mark> <obj1> ... <objN> <proc> fork <context>
-  .currentglobal false .setglobal 1 index
+  .currentglobal //false .setglobal 1 index
   dup .proccheck not {
     pop .setglobal /fork .systemvar /typecheck signalerror
   } if
@@ -182,8 +182,8 @@
 % ------ Device information ------ %
 
 /.deviceinfodict mark
-  /Colors null /GrayValues null /RedValues null /GreenValues null
-  /BlueValues null /ColorValues null
+  /Colors //null /GrayValues //null /RedValues //null /GreenValues //null
+  /BlueValues //null /ColorValues //null
 .dicttomark readonly def
 /deviceinfo {			% - deviceinfo <dict>
   currentdevice //.deviceinfodict .getdeviceparams .dicttomark
@@ -209,7 +209,7 @@
 % The current implementation allocates a 2-element array each time.
 % Perhaps we should change this to 2 separate parameters for X and Y?
 /.wtdict mark
-  /wtranslation null
+  /wtranslation //null
 .dicttomark readonly def
 /wtranslation {			% - wtranslation <x> <y>
   currentdevice //.wtdict .getdeviceparams exch pop exch pop aload pop

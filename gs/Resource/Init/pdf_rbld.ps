@@ -27,7 +27,7 @@
 % have had its end of lines converted between unix and dos versions.
 
 % if true --> we have an object with duplicate object and generation numbers.
-/dup_obj_gen_num false def
+/dup_obj_gen_num //false def
 
 % Note:  This procedure is also used by non-rebuild code.
 % Store a line in the xref array (Actually Objects and Generations arrays)
@@ -59,7 +59,7 @@
   } if
 	% Verify that the new values are for a new object.  If the current
 	% entry is null then we have a new entry.
-  Objects 4 index lget null eq {
+  Objects 4 index lget //null eq {
     ObjectStream 4 index 4 index cvx lput % Save ObjectStream object number
     Objects 4 index 3 index cvx lput	% Save object location
     Generations 4 index 2 index lput	% Save geenration number
@@ -76,7 +76,7 @@
       Generations 4 index 2 index lput	% Save geenration number
     } if
 	% Set error flag if we have equal object and generation numbers
-    Generations 4 index lget 1 index eq { /dup_obj_gen_num true def } if
+    Generations 4 index lget 1 index eq { /dup_obj_gen_num //true def } if
   } 8 -1 roll { ifelse } { pop if } ifelse  % Run 'else' only when rebuilding.
 } bind def
 
@@ -107,12 +107,12 @@
   {
     dup type			% stack:  type last token type
     4 -1 roll eq {		% stack:  last token bool
-      exch true			% desired object found - set exit status
+      exch //true		% desired object found - set exit status
     } {
-      pop pop false		% not type - clear stack, set exit status
+      pop pop //false		% not type - clear stack, set exit status
     } ifelse
   } {
-    pop false			% no token - pop type, set exit status
+    pop //false			% no token - pop type, set exit status
   } ifelse			% check if we got token
 } bind def
 
@@ -201,7 +201,7 @@
   //false				% Assume that startxref not present
   exch (startxref) { 
      search not { exit } if	% Exit loop when no more startxref's
-     pop 3 -1 roll pop true 3 1 roll	% Idicate that we have found starxref
+     pop 3 -1 roll pop //true 3 1 roll	% Idicate that we have found starxref
   } loop
   exch				% Exch last string and 'found' flag
   { 
@@ -273,7 +273,7 @@
 { % Initialize the Objects, Generations, etc. larrays
   initPDFobjects
   % reset duplicate object and generation numbers error flag
-  /dup_obj_gen_num false def
+  /dup_obj_gen_num //false def
   % Determine how many bytes are in the file after the final %%EOF
   /post_eof_count determine_post_eof_count def
   % Start at the beginning of the file

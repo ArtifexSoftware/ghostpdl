@@ -18,7 +18,7 @@
 % PDF drawing operations (graphics, text, and images).
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 GS_PDF_ProcSet begin
 pdfdict begin
@@ -118,7 +118,7 @@ pdfdict begin
 
 /.resolvefn4 {
   PDFfile fileposition exch             % filepos fndict
-  dup true resolvestream                % filepos fndict stream
+  dup //true resolvestream              % filepos fndict stream
   exch dup length dict copy             % filepos stream fndict2
   dup /Function undef                   % filepos stream fndict2
   exch dup token not {
@@ -142,7 +142,7 @@ pdfdict begin
 
 /resolvefunction {	% <fndict> resolvefunction <function>
   .resolvefn
-  PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { true } ifelse { (%Function: ) print dup === flush } if } if
+  PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Function: ) print dup === flush } if } if
 } bdef
 
 /resolvefnproc {	% <fndict> resolvefnproc <proc>
@@ -189,7 +189,7 @@ pdfdict begin
       oforce //shrdict 2 index .knownget { exec } if
     } forall .dicttomark
     dup /ShadingType get 4 ge {
-      dup dup true resolvestream
+      dup dup //true resolvestream
 		% Make a reusable stream so that the shading doesn't
 		% reposition PDFfile at unexpected times.
       /ReusableStreamDecode filter /DataSource exch put
@@ -203,7 +203,7 @@ pdfdict begin
   Page /Shading rget {
     resolveshading
   } {
-    null
+    //null
   }ifelse
 } bdef
 
@@ -541,7 +541,7 @@ def
 	% [save/restore]DefaultCS make sure that the SMask logic sees
 	% the Device* spaces, not CIEBased* that UseCIEColor may have
 	% established.
-  false .setuseciecolor		% SMask gets processed without UseCIEColor
+  //false .setuseciecolor	% SMask gets processed without UseCIEColor
   dup /Group oget /CS knownoget {
     resolvecolorspace dup setgcolorspace csput
     //true		% use currentcolorspace
@@ -555,7 +555,7 @@ def
     exch dup /Resources knownoget { oforce } { 2 dict } ifelse
     3 -1 roll dup /GroupGState .knownget { 2 index /GroupGState 3 -1 roll put} if
     /GroupExtGState .knownget { 1 index /GroupExtGState 3 -1 roll put} if
-    exch false resolvestream
+    exch //false resolvestream
     .execgroup .endtransparencymask
   } stopped {
     .discardtransparencymask stop
@@ -635,7 +635,7 @@ def
 		% maskdict is currentdict
   /DataSource DataSource mark
     /Intent 1
-    /AsyncRead true
+    /AsyncRead //true
   .dicttomark .reusablestreamdecode def
   PDFfile exch setfileposition
   currentdict end currentdict end
@@ -690,7 +690,7 @@ currentdict end readonly def
     PDFfile fileposition exch
     dup dup 1 oget
     mark exch { oforce } forall .dicttomark
-    dup dup true resolvestream
+    dup dup //true resolvestream
     /ReusableStreamDecode filter /DataSource exch put
     1 exch put
     exch PDFfile exch setfileposition
@@ -766,7 +766,7 @@ currentdict end readonly def
 		% The color lookup table is a stream.
 		% Get its contents.  Don't lose our place in PDFfile.
 		% Stack: Length /Indexed basespace hival lookup
-	PDFfile fileposition 5 1 roll true resolvestream
+	PDFfile fileposition 5 1 roll //true resolvestream
 		% Stack: Length filepos /Indexed basespace hival lookupstream
 	1 index 1 add
 		% Stack: Length filepos /Indexed basespace hival lookupstream len
@@ -828,7 +828,7 @@ currentdict end readonly def
 /cssubst {		% <csname> cssubst <cspace'> true
 			% <csname> cssubst false
   dup resolvecolorspace
-  dup 1 index ne { exch pop true } { pop pop false } ifelse
+  dup 1 index ne { exch pop //true } { pop pop //false } ifelse
 } bdef
 
 /csnames mark
@@ -867,19 +867,19 @@ currentdict end readonly def
 		% all the operands on the stack are used, and that
 		% if the top operand is a name, it's a Pattern resource.
   dup type /nametype eq
-    { Page /Pattern rget { resolvepattern } { null } ifelse }
+    { Page /Pattern rget { resolvepattern } { //null } ifelse }
   if
   dup type /dicttype eq {
 		% Check the PaintType, if any (shading patterns don't
 		% have one).
-    dup /PaintType knownoget { 2 eq } { false } ifelse
+    dup /PaintType knownoget { 2 eq } { //false } ifelse
   } {
     .pdfcount 1 gt
   } ifelse
 } bdef
 
 /.pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
-  PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { true } ifelse { (%Begin PaintProc) print dup === flush } if } if
+  PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Begin PaintProc) print dup === flush } if } if
   PDFfile fileposition 3 1 roll
   q
   1 index /PaintType oget 1 eq {
@@ -952,7 +952,7 @@ currentdict end readonly def
     /.pdfpaintproc cvx
   ] cvx put
   dup /.pattern_uses_transparency  1 index patternusestransparency put
-  PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { true } ifelse { (%Pattern: ) print dup === flush } if } if
+  PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Pattern: ) print dup === flush } if } if
 } bdef
 
 /ignore_color_op  (   **** Warning: Ignoring a color operation in a cached context.\n) readonly def
@@ -1542,7 +1542,7 @@ currentdict /last-ditch-bpc-csp undef
 		% maskdict is currentdict
     /DataSource DataSource mark
       /Intent 1
-      /AsyncRead true
+      /AsyncRead //true
     .dicttomark .reusablestreamdecode def
     PDFfile exch setfileposition
     currentdict end currentdict end
@@ -1559,7 +1559,7 @@ currentdict /last-ditch-bpc-csp undef
   PDFusingtransparency {
     currentdict /SMask knownoget
   } {
-    false
+    //false
   } ifelse
   {	% We are doing transparency and SMask is present in the image
 	% stack: <imagemask> <SMask>
@@ -1569,7 +1569,7 @@ currentdict /last-ditch-bpc-csp undef
       .begintransparencymaskimage
       PDFfile fileposition exch
       gsave //nodict begin
-      null /SoftMask gput
+      //null /SoftMask gput
       1 .setopacityalpha 1 .setshapealpha
       1 CA 1 ca
       /Compatible .setblendmode
@@ -1578,15 +1578,15 @@ currentdict /last-ditch-bpc-csp undef
       PDFfile exch setfileposition
       0 .endtransparencymask
     } ifelse
-    << /Subtype /Group /Isolated true 
-      /.image_with_SMask true % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c 
+    << /Subtype /Group /Isolated //true 
+      /.image_with_SMask //true % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c 
     >> 0 0 1 1 .begintransparencygroup
     doimage
     .endtransparencygroup
   } {
     SoftMask //null ne {
       % the image doesn't have an SMask, but the ExtGState does, force a group.
-      << /Subtype /Group /Isolated true >> 0 0 1 1 .begintransparencygroup
+      << /Subtype /Group /Isolated //true >> 0 0 1 1 .begintransparencygroup
       doimage
       .endtransparencygroup
     }
@@ -1634,13 +1634,13 @@ currentdict /last-ditch-bpc-csp undef
     % With this workaround the Matte color is not working (ignored).
     is_big_mask not 
   } {
-    true % pdfwrite doesn't need the workaround explained above,
-         % and cannot work with it. 
+    //true % pdfwrite doesn't need the workaround explained above,
+           % and cannot work with it. 
   } ifelse
  and {
     currentdict /SMask knownoget
   } {
-    false
+    //false
   } ifelse {
     makesoftmaskimage
   } {
@@ -1686,7 +1686,7 @@ currentdict /last-ditch-bpc-csp undef
   currentdict end { oforce } forall
   >>
   dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
-  3 index false /resolvestream cvx
+  3 index //false /resolvestream cvx
   /.paintform cvx
   ] cvx /PaintProc exch put
     % Adjust pdfemptycount since we have an extra dictionary on the stack
@@ -1709,7 +1709,7 @@ currentdict /last-ditch-bpc-csp undef
   DOPS
    {
      //_dops_save 0 save put
-     true resolvestream cvx exec
+     //true resolvestream cvx exec
      //_dops_save 0 get restore
    }
    { pop }
@@ -1839,7 +1839,7 @@ drawopdict begin
       exch //unabbrevkeydict 1 index .knownget { exch pop } if
       exch unabbrevvalue def
     } repeat pop
-    /IDFlag true def  % flag for stream processing.
+    /IDFlag //true def  % flag for stream processing.
     /File PDFsource def
     currentdict makeimagekeys
     OFFlevels length 0 eq {

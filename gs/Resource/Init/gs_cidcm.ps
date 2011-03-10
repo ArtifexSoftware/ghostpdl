@@ -16,7 +16,7 @@
 % $Id$
 % Extending Font resource category with CIDFont-CMap fonts.
 
-languagelevel 2 .setlanguagelevel currentglobal true setglobal
+languagelevel 2 .setlanguagelevel currentglobal //true setglobal
 
 
 % In the comments below, 'CSI' is an abbreviation/acronym for CIDSystemInfo.
@@ -45,7 +45,7 @@ languagelevel 2 .setlanguagelevel currentglobal true setglobal
 /period (.) 0 get def            % character code constant for '.'
 /CMap 10 dict def                % CSI cache for CMaps
 /CIDFont 10 dict def             % CSI cache for CIDFonts
-/enable_cache true def           % set false to disable cache
+/enable_cache //true def         % set false to disable cache
 
 % The folloving variables are just placeholders for ones to be set
 % dynamically :
@@ -169,7 +169,7 @@ currentdict end def
           exch                                % CSIs /InstName
           dup //path_buffer ResourceFileName  % CSIs /InstName (path)
           RESMPDEBUG { (cidcm GetCIDSystemInfo from file ) print dup = } if
-          currentglobal exch true setglobal   % CSIs /InstName g (path)
+          currentglobal exch //true setglobal % CSIs /InstName g (path)
           mark exch                           % CSIs /InstName g [ (path)
           { (r) file } stopped {
             cleartomark //.prs_empty
@@ -255,10 +255,10 @@ currentdict end def
       /CMap //GetCIDSystemInfo exec     % CSI-F CSI-M
       //IsCompatibleCSI exec            % bool
     } {
-      pop pop false
+      pop pop //false
     } ifelse
   } {
-    pop pop false
+    pop pop //false
   } ifelse
 } bind def
 
@@ -335,7 +335,7 @@ currentdict end def
 /ResourceStatus {  % <InstName> ResourceStatus <nStatus> <nSize> true
                    % <InstName> ResourceStatus false
   dup //ResourceStatus exec {                    
-    3 2 roll pop true                     % nStatus nSize true
+    3 2 roll pop //true                   % nStatus nSize true
   } {
     //IsComposedFont exec {               % /CIDFontName /CMapName 
       /CMap resourcestatus {              % /CIDFontName nStatusM nSizeM 
@@ -351,15 +351,15 @@ currentdict end def
           } {
             pop
           } ifelse                        % nSize
-          2 exch true                     % nStatus nSize true
+          2 exch //true                   % nStatus nSize true
         } {                        
-          pop pop pop false  % work around buggy resource file
+          pop pop pop //false  % work around buggy resource file
         } ifelse
       } {                            
-        pop pop pop false    % work around buggy resource file
+        pop pop pop //false    % work around buggy resource file
       } ifelse
     } {
-      false
+      //false
     } ifelse
   } ifelse
 } bind def
@@ -373,7 +373,7 @@ currentdict end def
   % about fonts, CMaps and CIDFonts.
   % These dictionaries must be created dynamically, to allow for a possible 
   % recursive call to resourceforall from the resourceforall procedure.
-  currentglobal false setglobal
+  currentglobal //false setglobal
   20 dict 20 dict 20 dict                  % (templ) proc (scr) g <<CIDFont>> <<CMap>> <<Fonts>>
   
 

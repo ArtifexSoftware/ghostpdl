@@ -42,11 +42,11 @@
 % the procset instance onto the dictionary stack.
 
 languagelevel 2 .setlanguagelevel
-currentglobal true setglobal
+currentglobal //true setglobal
 
 /MappedCategoryRedefiner 10 dict begin % The procset.
 
-currentpacking false setpacking
+currentpacking //false setpacking
 
 /InstanceEnumeratorPattern   %  - InstanceEnumeratorPattern ...
 {  
@@ -139,7 +139,7 @@ setpacking
   % because its elements may be in local VM.
 
   currentglobal 4 1 roll
-  false setglobal
+  //false setglobal
   currentdict                    % Category
   6 dict begin % the temporary dictionary
     /Category exch def
@@ -183,9 +183,9 @@ setpacking
   % Note that 2 topmost execstack elements are the execstack_lookup procedure and its caller.
   % We don't check them.
 
-  currentglobal false setglobal                    % <object> bGlobal
+  currentglobal //false setglobal                  % <object> bGlobal
   countexecstack array execstack                   % <object> bGlobal [execstack]
-  dup null exch                                    % <object> bGlobal [execstack] null [execstack]
+  dup //null exch                                  % <object> bGlobal [execstack] null [execstack]
   length 3 sub -1 0 {                              % <object> bGlobal [execstack] null i
     2 index exch get                               % <object> bGlobal [execstack] null proc
     dup type dup /packedarraytype eq exch /arraytype eq or {
@@ -211,7 +211,7 @@ setpacking
   exch pop exch setglobal exch pop                 % bResult
 } bind def
 
-currentpacking false setpacking
+currentpacking //false setpacking
 /MethodsToRedefine 5 dict begin
 
     % Procedures in this dictionary really are patterns for new category methods.
@@ -225,7 +225,7 @@ currentpacking false setpacking
       dup ResourceStatus exec {
         pop 2 lt
       } {
-        false
+        //false
       } ifelse                             % bInVirtualMemory
       { FindResource exec
       } {
@@ -234,7 +234,7 @@ currentpacking false setpacking
             1 index .getvminstance {       % /Name /Name <<record>> holder
               1 get 1 eq
             } {
-              true
+              //true
             } ifelse                       % /Name /Name <<record>> bStatusIs1
             4 1 roll                       % bStatusIs1 /Name /Name <<record>>
             dup /RecordVirtualMethods get /MakeInstance get exec
@@ -266,30 +266,30 @@ currentpacking false setpacking
       dup ResourceStatus exec {            % /Name status size
         1 index 2 lt {
           % In VM - return with it.
-          3 2 roll pop true
+          3 2 roll pop //true
         } {
           % Not in VM.
           exch pop exch                    % size /Name
           dup .map exch .knownget {        % size /Name <<record>>
             dup dup /RecordVirtualMethods get /IsActive get exec {
               3 2 roll pop                 % /Name <<record>>
-              dup /RecordVirtualMethods get /GetSize get exec 2 exch true
+              dup /RecordVirtualMethods get /GetSize get exec 2 exch //true
             } {                            % size /Name <<record>>
-              pop pop 2 exch true
+              pop pop 2 exch //true
             } ifelse
           } {                              % size /Name
-            pop 2 exch true
+            pop 2 exch //true
           } ifelse
         } ifelse
       } {                                  % /Name
         dup .map exch .knownget {          % /Name <<record>>
           dup dup /RecordVirtualMethods get /IsActive get exec {
-            dup /RecordVirtualMethods get /GetSize get exec 2 exch true
+            dup /RecordVirtualMethods get /GetSize get exec 2 exch //true
           } {                              % /Name <<record>>
-            pop pop false
+            pop pop //false
           } ifelse
         } {                                % /Name
-          pop false
+          pop //false
         } ifelse
       } ifelse
       RESMPDEBUG { (resmp ResourceStatus end) = } if
@@ -323,7 +323,7 @@ currentpacking false setpacking
       20 dict % IS - Instances Status
       4 1 roll                            % <<IS>> (templ) {proc} (sctarch)
       % Check if we are under another ResourceForAll :
-      /.DisableResourceOrdering //execstack_lookup exec null eq 4 1 roll
+      /.DisableResourceOrdering //execstack_lookup exec //null eq 4 1 roll
                                           % <<IS>> bOrder (templ) {proc} (sctarch)
 
       % Put underlying resources to the InstancesStatus dictionary :
@@ -377,7 +377,7 @@ currentpacking false setpacking
       dup .map exch .knownget {
         RESMPDEBUG { (resmp GetCIDSystemInfoFromMap : have a map record.) = } if
         dup /RecordVirtualMethods get /GetCSI get exec
-        dup null ne {
+        dup //null ne {
           RESMPDEBUG { (resmp GetCIDSystemInfoFromMap : retrieving a dict.) = } if
           exch
         } if
@@ -455,7 +455,7 @@ setpacking
       dup VerifyMap                            % <<map>>
     } {
       QUIET not {
-        currentdict /IsMapFileOptional .knownget not { false } if not {
+        currentdict /IsMapFileOptional .knownget not { //false } if not {
           (Warning: the map file ) print dup =string cvs print ( was not found.) =
         } if
       } if
@@ -470,11 +470,11 @@ setpacking
   % Preprocess entries :
   dup NewCategory /.PreprocessRecord get       % <<map>> <<map>> <<pr>>
   3 1 roll {                                   % <<pr>> <<map>> /Name raw_record
-    false 3 1 roll                             % <<pr>> <<map>> false /Name raw_record 
+    //false 3 1 roll                           % <<pr>> <<map>> false /Name raw_record 
     4 index {                                  % <<pr>> <<map>> false /Name raw_record i {pr}
       exch pop                                 % <<pr>> <<map>> false /Name raw_record {pr}
       exec {                                   % <<pr>> <<map>> false /Name record
-        3 -1 roll pop true 3 1 roll            % <<pr>> <<map>> true /Name record
+        3 -1 roll pop //true 3 1 roll          % <<pr>> <<map>> true /Name record
         exit
       } if                                     % <<pr>> <<map>> false /Name raw_record
     } forall
@@ -517,7 +517,7 @@ setpacking
       % This is some ugly, sorry.
     } if
     % Redefine the category :
-    NewCategory /.IsRedefinedWithMap true put
+    NewCategory /.IsRedefinedWithMap //true put
     CategoryName NewCategory /Category defineresource pop
   } if
   end % OptionsDict

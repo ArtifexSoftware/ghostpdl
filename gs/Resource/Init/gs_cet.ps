@@ -3,7 +3,7 @@
 % $Id$
 
 % do this in the server level so it is persistent across jobs
-true 0 startjob not {
+//true 0 startjob not {
   (*** Warning: CET startup is not in server default) = flush
 } if
 
@@ -12,7 +12,7 @@ true 0 startjob not {
 
 0 array 0 setdash % CET 09-08 wants local setdash
 
-currentglobal true setglobal
+currentglobal //true setglobal
 
 {
   systemdict dup dup dup
@@ -45,7 +45,7 @@ dup 7 -1 put
 
 % Some previously compile time options such as USE_ADOBE_CMYK_RGB
 % and GS_CHAR_FILL are now dynamic. Force CPSI compatibility.
-true .setCPSImode
+//true .setCPSImode
 
 setglobal
 
@@ -70,4 +70,4 @@ userdict /.smoothness currentsmoothness put
 } bind odef
 /currentsmoothness { userdict /.smoothness get } bind odef % for 09-55.PS, 09-57.PS .
 
-false 0 startjob pop		% re-enter encapsulated mode
+//false 0 startjob pop		% re-enter encapsulated mode

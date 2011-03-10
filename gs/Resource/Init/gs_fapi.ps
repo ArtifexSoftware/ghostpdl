@@ -16,7 +16,7 @@
 % $Id$
 % Redefine Font and CIDFont categories with FAPI-handeled fonts.
 
-systemdict /.FAPIavailable known { .FAPIavailable } { false } ifelse not {
+systemdict /.FAPIavailable known { .FAPIavailable } { //false } ifelse not {
   (%END FAPI) .skipeof
 } if
 
@@ -33,7 +33,7 @@ languagelevel 2 .setlanguagelevel
 /is_device_compatible_to_FAPI    % - is_device_compatible_to_FAPI <bool>
 { currentdevice //EmbedFontObjectsQuery .getdeviceparams               % <mark> <name> <value> ...
   dup mark eq {
-    pop true
+    pop //true
   } {
     exch pop exch pop 0 eq
   } ifelse
@@ -54,7 +54,7 @@ languagelevel 2 .setlanguagelevel
   %   } if
   % } repeat
   % dup mark eq {
-  %   pop true
+  %   pop //true
   % } if
 } bind def
 
@@ -126,7 +126,7 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 { exch begin
   //Config exch get
   /Path exch
-  Path false .file_name_combine not {
+  Path //false .file_name_combine not {
     exch
     (Can't combine paths ) print print ( and ) print =
     /RefinePath cvx /configurationerror signalerror
@@ -141,7 +141,7 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 } bind def
 
 /IsMyRecord      % <raw_record> -> <raw_record> bool
-{ dup type /dicttype eq { dup /FAPI known } { false } ifelse
+{ dup type /dicttype eq { dup /FAPI known } { //false } ifelse
 } bind def
 
 /IsActive       % <record> IsActive <bool>
@@ -151,7 +151,7 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 /FontRecordVirtualMethods //RecordVirtualMethodsStub dup length 2 add dict copy begin
   /IsActive //IsActive def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
-  { currentglobal 3 1 roll true setglobal
+  { currentglobal 3 1 roll //true setglobal
     //FontOptions //complete_instance exec
     2 copy //GetSize exec
     4 3 roll setglobal
@@ -162,7 +162,7 @@ currentdict end def
   /GetCSI //TranslateCSI def
   /IsActive //IsActive def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
-  { currentglobal 3 1 roll true setglobal
+  { currentglobal 3 1 roll //true setglobal
     //CIDFontOptions //complete_instance exec
     2 copy //GetSize exec
     4 3 roll setglobal
@@ -197,7 +197,7 @@ currentdict end def
         } ifelse
         findencoding                  
         exch dup token not {
-          null
+          //null
         } {
           dup type /nametype ne {
             /ReadFCOfontmap: cvx /rangecheck signalerror
@@ -211,7 +211,7 @@ currentdict end def
            /FAPI /UFST 
            /SubfontId counttomark 2 add -1 roll 
            /Decoding  counttomark 2 add -1 roll
-           dup null eq {
+           dup //null eq {
              pop pop
            } if
            /Encoding  counttomark 2 add -1 roll
@@ -261,7 +261,7 @@ currentdict end def
   /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
   { //IsMyRecord exec dup {
       pop dup /RecordVirtualMethods //FontRecordVirtualMethods put
-      true
+      //true
     } if
   } bind def
 currentdict end Redefine
@@ -274,7 +274,7 @@ currentdict end Redefine
   /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
   { //IsMyRecord exec dup {
       pop dup /RecordVirtualMethods //CIDFontRecordVirtualMethods put
-      true
+      //true
     } if
   } bind def
 currentdict end Redefine
@@ -328,7 +328,7 @@ bind def
 /FAPI_is_hook_disabled     % - FAPI_is_hook_disabled <bool>
 { % checks whether execution stack contains packedarray started with /FAPI_hook_disable .
   /FAPI_hook_disable /MappedCategoryRedefiner /ProcSet findresource /execstack_lookup get exec
-  null ne
+  //null ne
 } bind def
 
 /FAPIhook_aux  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
@@ -336,7 +336,7 @@ bind def
   { (FAPIhook ) print 1 index = } //FAPI_hook_debug exec
   dup /FAPI known {
     { //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get = } //FAPI_hook_debug exec
-    true //.FAPIrebuildfont //ChooseDecoding exec
+    //true //.FAPIrebuildfont //ChooseDecoding exec
   } {
     dup /PathLoad known dup {
       { (PathLoad known for the font ) print //PrintFontRef exec (.) = } //FAPI_hook_debug exec
@@ -344,7 +344,7 @@ bind def
       pop //FAPI_is_hook_disabled exec dup
       { pop
         { (FAPIhook is in .loadfont context for the font ) print //PrintFontRef exec (.) = } //FAPI_hook_debug exec
-        true
+        //true
       } if
     } ifelse
     { /HookDiskFonts } { /HookEmbeddedFonts } ifelse
@@ -352,12 +352,12 @@ bind def
 
     dup type /dicttype eq
     {
-      false exch
+      //false exch
       {
         3 index //GetFontType exec //FindInArray exec
         {
           2 index exch /FAPIPlugInReq exch put
-          pop true exit
+          pop //true exit
         }
         { pop } ifelse
       } forall
@@ -369,7 +369,7 @@ bind def
     { { (Trying to render the font ) print //PrintFontRef exec ( with FAPI...) = } //FAPI_hook_debug exec
       //.FAPIpassfont {
         { //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get = } //FAPI_hook_debug exec
-        false //.FAPIrebuildfont //ChooseDecoding exec
+        //false //.FAPIrebuildfont //ChooseDecoding exec
       } {
         { (Can't render ) print //PrintFontRef exec ( with FAPI, will do with native GS renderer.) = } //FAPI_hook_warn exec
       } ifelse

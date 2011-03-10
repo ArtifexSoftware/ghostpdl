@@ -21,7 +21,7 @@
 systemdict begin
 	% We make statusdict a little larger for Level 2 stuff.
 	% Note that it must be allocated in local VM.
- .currentglobal false .setglobal
+ .currentglobal //false .setglobal
  /statusdict 91 dict .forcedef		% statusdict is local, sys'dict global
 	% To support the Level 2 job control features,
 	% serverdict must also be in local VM.
@@ -146,15 +146,15 @@ readonly def
 	/sethardwareiomode     {pop} bind def
 /softwareiomode        0 def
 	/setsoftwareiomode     {pop} bind def
-/dosysstart        false def
+/dosysstart        //false def
 	/setdosysstart         {pop} bind def
-/allowjobreset      true def
+/allowjobreset      //true def
 	/setallowjobreset      {pop} bind def
 /defaultpaperfamily    0 def
 	/setdefaultpaperfamily {pop} bind def
 /defaultpapertray      0 def
 	/setdefaultpapertray   {pop} bind def
-/defaulttrayswitch false def
+/defaulttrayswitch //false def
 	/setdefaulttrayswitch  {pop} bind def
 
 % Tray and format selection
@@ -178,11 +178,11 @@ readonly def
 /paperfamily 0 def	% 0 is US, 1 is European
 /papertray 1 def
 	/setpapertray {statusdict exch /papertray exch put} bind def 
-/trayswitch false def	% paperout feeds from another tray
+/trayswitch //false def	% paperout feeds from another tray
 % We don't implement the (undocumented by Adobe) papersize 'operator',
 % because it's very awkward to make it interact properly with all the
 % different ways of setting the paper size.
-%/papersize {/letter true} bind def	% <name of paper size>, <short-edge-first-p>
+%/papersize {/letter //true} bind def	% <name of paper size>, <short-edge-first-p>
 /appletalktype (LaserWriter) def
 
 %%%%%% The following items are defined in the PostScript Language
@@ -192,7 +192,7 @@ readonly def
  /checkpassword {statusdict begin .password eq end} bind def
  /defaulttimeouts {statusdict begin .timeouts aload pop end} bind def
  /diskonline {
-    false (%disk*%) { pop not exit } 8192 string /IODevice resourceforall
+    //false (%disk*%) { pop not exit } 8192 string /IODevice resourceforall
  } bind def
  /diskstatus {10240 2097152 } bind odef %  - diskstatus <free> <total> (in 1024 byte pages)
 
@@ -201,13 +201,13 @@ readonly def
  /idlefonts {statusdict begin mark .idlefonts aload pop end} bind def
  /jobname () def
 %/jobtimeout
- /manualfeed false def
+ /manualfeed //false def
  /manualfeedtimeout 60 def
  /margins {statusdict begin .topmargin .leftmargin end} bind def
  /pagecount {4711} bind def
- /pagestackorder {false} bind def
+ /pagestackorder {//false} bind def
  /pagetype 0 def
- /prefeed false def
+ /prefeed //false def
  /printererror {pop pop} bind def
  /printername {statusdict /.printername get exch copy} bind def
  /processcolors /processcolors load def		% defined in systemdict
@@ -270,8 +270,8 @@ readonly def
 
  /setpassword
   {exch checkpassword
-    {statusdict exch /.password exch put true}
-    {pop false}
+    {statusdict exch /.password exch put //true}
+    {pop //false}
    ifelse} bind def
  /setprintername
   {dup length string copy statusdict exch /.printername exch put} bind def
@@ -303,7 +303,7 @@ readonly def
  } bind def
 /.password 0 def
 /.timeouts [0 60 30] def
-true setdostartpage
+//true setdostartpage
 mark setidlefonts
 0 setjobtimeout
 0 0 setmargins
@@ -315,13 +315,13 @@ end	% statusdict
 %%%%%% not in statusdict.
 
 systemdict begin
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 
-/devformat true def
+/devformat //true def
 /devforall {		% <pattern> <proc> <scratch> devforall -
   exch {
     1 index currentdevparams
-    /Type .knownget { /FileSystem eq } { false } ifelse
+    /Type .knownget { /FileSystem eq } { //false } ifelse
     { exec } { pop pop } ifelse
   } /exec load 3 packedarray cvx exch
   (*) 3 1 roll /IODevice resourceforall
@@ -329,8 +329,8 @@ systemdict begin
 
 /devstatus {		% <(%disk*%)> devstatus <searchable> <writable>
 			%   <hasNames> <mounted> <removable> <searchOrder>
-			%   <freePages> <size> true
-			% <string> devstatus false
+			%   <freePages> <size> //true
+			% <string> devstatus //false
   dup length 5 ge {
     dup 0 5 getinterval (%disk) eq {
       dup /IODevice resourcestatus {
@@ -343,15 +343,15 @@ systemdict begin
 	exch dup /SearchOrder get
 	exch dup /Free get
 	exch /LogicalSize get
-	9 -1 roll pop true
+	9 -1 roll pop //true
       } {
-	pop false
+	pop //false
       } ifelse
     } {
-      pop false
+      pop //false
     } ifelse
   } {
-    pop false
+    pop //false
   } ifelse
 } odef
 

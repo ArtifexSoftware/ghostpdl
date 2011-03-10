@@ -53,7 +53,7 @@
 /.init_otto_font_file {
   /FontSetInit /ProcSet findresource begin
   2 dict begin
-  /f exch def /cff null def
+  /f exch def /cff //null def
   card32 pop card16 6 { next pop } repeat dup {
 		% Stack: numtables tablesleft
     dup 0 eq {
@@ -432,11 +432,11 @@ def
 /charstringcount {	% <font> charstringcount <count> true
 			% <font> charstringcount <length> false
   /CharStringArray .knownget {
-    length true
+    length //true
   } {
 	% Hack: look for the next queued read.
     16#7fffffff offsets { pop .min } forall
-    pos sub false
+    pos sub //false
   } ifelse
 } bind def
 
@@ -504,7 +504,7 @@ def
 
 /readFDArray {		% <font> readFDArray -
   /FDarray Index exch pop exch
-  2 dict begin /f null def begin
+  2 dict begin /f //null def begin
   [ exch {
     dup length subfilefilter /f exch store
     10 dict begin
@@ -758,7 +758,7 @@ systemdict /OLDCFF known {
 
   /offsets 50 dict def
   /queued [] def
-  /opdict null def		% reserve a slot
+  /opdict //null def		% reserve a slot
 
   /fonts [ topdicts {
     0 () /SubFileDecode filter /f exch def

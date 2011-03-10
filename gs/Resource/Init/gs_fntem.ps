@@ -117,7 +117,7 @@ currentdict end def
 % GFlyph substitution table for narrow, wide, proportional glyphs - 
 % used with TrueTypes.
 
-currentpacking false setpacking
+currentpacking //false setpacking
 /SubstNWP << 
 
   % Array format : orig_type, beg_CID, end_CID, subst_beg_CID, subst_type
@@ -232,7 +232,7 @@ currentdict end def
   begin
   dup type /nametype ne { cvn } if
   dup NameKey exch def
-  currentglobal true setglobal
+  currentglobal //true setglobal
   make_procs TypeKey load .knownget {
     exec
   } { setglobal
@@ -322,10 +322,10 @@ currentdict end def
     } {
       dup //encodingnames
       exch .knownget {
-        { /Decoding findresource } stopped {pop pop true}{ exch pop 1 index exch /Decoding exch put false } ifelse
+        { /Decoding findresource } stopped {pop pop //true}{ exch pop 1 index exch /Decoding exch put //false } ifelse
       }
       {
-          true
+          //true
       } ifelse 
 
       {
@@ -384,10 +384,10 @@ currentdict end def
 } bind def
 
 /FindInArray    % <array> <elem> .array_find <bool>
-{ false 3 1 roll
+{ //false 3 1 roll
   exch {                      % false elem elem_i
     1 index eq {              % false elem
-       pop true exch
+       pop //true exch
     } if
   } forall
   pop
@@ -406,7 +406,7 @@ currentdict end def
   % appears only when type 32 fonts are disable (see .pdf_hook_DSC_Creator),
   % but an automatic disabling is not implemented yet.
 
-  currentglobal true setglobal exch
+  currentglobal //true setglobal exch
   dup /FontInfo known not {
     dup /FontInfo 1 dict put
   } if

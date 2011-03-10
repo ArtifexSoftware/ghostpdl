@@ -16,7 +16,7 @@
 % $Id$
 % Definitions for most of the PDF operators.
 
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 
 % Define pdfmark.  Don't allow it to be bound in.
 % Also don't define it in systemdict, because this leads some Adobe code
@@ -81,8 +81,8 @@ nodict readonly pop
   initgraphics
   //true .setaccuratecurves
   currentdict /ClipRect knownoget { aload pop rectclip } if
-  0 g  0 G  false op  false OP  0 OPM
-  1 ca  1 CA  null SMask  false AIS  /Compatible BM  true TK
+  0 g  0 G //false op //false OP  0 OPM
+  1 ca  1 CA //null SMask //false AIS  /Compatible BM //true TK
 } bdef
 
 /gput		% <value> <key> gput -
@@ -307,7 +307,7 @@ nodict readonly pop
   } ifelse
 } bdef
 /.settransparencymask {		% <paramdict> <masknum> .settransparencymask -
-  exch dup null eq {
+  exch dup //null eq {
     PDFusingtransparency {
       pop pop
     } {
@@ -388,7 +388,7 @@ nodict readonly pop
    } bdef
 end def
 /setgcolor	% (null | <color...>) <colorspace> setgcolor -
- { 1 index null eq
+ { 1 index //null eq
     { pop pop }
     { dup 0 get //Cdict exch get exec }
    ifelse
@@ -419,7 +419,7 @@ end def
 /fsexec		% <fillop|strokeop> fsexec -
  {
    SoftMask //null ne {
-     mark /Subtype /Group /Isolated true .dicttomark pathbbox .begintransparencygroup
+     mark /Subtype /Group /Isolated //true .dicttomark pathbbox .begintransparencygroup
    } if
    cvx exec
    SoftMask //null ne {
@@ -462,7 +462,7 @@ end def
 	 PDFusingtransparency {
 		% knockout trans group around the filled and stroked object
 		mark
-		/Isolated true /Knockout true
+		/Isolated //true /Knockout //true
 		.dicttomark
 		% strokepath will return empty path (no currentpoint) if nothing is stroked
 		gsave { strokepath pathbbox } stopped grestore not {
@@ -488,7 +488,7 @@ end def
 	 PDFusingtransparency {
 		% knockout trans group around the filled and stroked object
 		mark
-		/Isolated true /Knockout true
+		/Isolated //true /Knockout //true
 		.dicttomark
 		% strokepath will return empty path (no currentpoint) if nothing is stroked
 		gsave { strokepath pathbbox } stopped grestore not {
@@ -533,7 +533,7 @@ end readonly def
    /TextRise 0 def		% 0 Ts
    /WordSpacing 0 def		% 0 Tw
    /TextHScaling 1.0 def	% 100 Tz
-   /TextFont null def
+   /TextFont //null def
    /FontMatrixNonHV //false def
    /Show { showfirst } def
  } bdef
@@ -548,7 +548,7 @@ end readonly def
   TextMatrix concat
   TextHScaling 1 ne { TextHScaling 1 scale } if
   TextRise 0 ne { 0 TextRise translate } if
-  TextFont dup null eq { pop } { setfont } ifelse
+  TextFont dup //null eq { pop } { setfont } ifelse
 } bdef
 /settextstate {
 	% The text state can be set even outside BT/ET.
@@ -804,7 +804,7 @@ end readonly def
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show currentpoint 3 -1 roll 
 	  grestore gsave setstrokestate
-        false charpath 
+        //false charpath 
         % We need to make sure the matrix used for the stroke
         % and therefore stroke width does not include the 
         % Text Matrix Tm.
@@ -818,24 +818,24 @@ end readonly def
 	{ setfillstate show } bind
 	% Tr 4 - Fill, add to clip
 	{ gsave 0 .settextrenderingmode 
-	  setfillstate dup show grestore true charpath } bind
+	  setfillstate dup show grestore //true charpath } bind
 	% Tr 5 - Stroke, add to clip
 	{ gsave 1 .settextrenderingmode 
 	  setstrokestate dup .swapcolors show .swapcolors grestore
-	  true charpath } bind
+	  //true charpath } bind
 	% Tr 6 - Fill, stroke, add to clip
 	{ gsave 0 .settextrenderingmode 
 	  setfillstate dup show grestore gsave dup 
-	  setstrokestate false charpath 
+	  setstrokestate //false charpath 
         % We need to make sure the matrix used for the stroke
         % and therefore stroke width does not include the 
         % Text Matrix Tm.
         TextSaveMatrix setmatrix
         .swapcolors
         stroke .swapcolors grestore 
-	  true charpath } bind
+	  //true charpath } bind
 	% Tr 7 - Add to clip
-	{ true charpath } bind
+	{ //true charpath } bind
 ] readonly def
 
 /setshowstate
@@ -843,7 +843,7 @@ end readonly def
     { 
       % Check to see if the current device supports Tr
       currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
-      dup type /booleantype eq not {cleartomark false}{3 1 roll cleartomark}ifelse
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
 	{
 		pdfwrite_textrenderingprocs TextRenderingMode get
 	}
@@ -871,12 +871,12 @@ end readonly def
 		    % now set the currentpoint using the original matrix
 	            gsave
 	            setmatrix
-	            false charpath currentpoint newpath 
+	            //false charpath currentpoint newpath 
 	            grestore
 	            moveto
 	          }
 	        } {
-	          { false charpath textrenderingprocs TextRenderingMode get exec }
+	          { //false charpath textrenderingprocs TextRenderingMode get exec }
 	        } ifelse
 	      } ifelse
 	} ifelse

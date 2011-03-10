@@ -48,15 +48,15 @@
     dup 0 eq 1 index (O) 0 get eq or exch (t) 0 get eq or {
 		% If this is a font at all, it's a TrueType font.
       dup /FontType eq {
-        pop closefile 42 true
+        pop closefile 42 //true
       } {
-        dup /FontName eq { pop .findttfontname } { pop closefile false } ifelse
+        dup /FontName eq { pop .findttfontname } { pop closefile //false } ifelse
       } ifelse
     } {
 		% Not a TrueType font.
       .findnonttfontvalue
     } ifelse
-  } { pop closefile false } ifelse
+  } { pop closefile //false } ifelse
 } bind def
 
 % <file> .findttfontname <fname> true
@@ -71,11 +71,11 @@
     6 findname not {
       4 findname	% Try FullName
     } {
-      exch pop true
+      exch pop //true
     }
     ifelse
   } {
-    false
+    //false
   } ifelse
   f closefile end end
 } bind def
@@ -286,7 +286,7 @@ currentdict /tt_tag_dict .undef
 % <nametable> <nameid> findname false
 /findname {
   TTFDEBUG { (findname: ) print dup =only  } if
-  false 3 1 roll
+  //false 3 1 roll
   1 index length 0 gt {	% check for zero length name table 
     0 1 3 index 2 getu16 1 sub {
 		% Stack: false table id index
@@ -303,10 +303,10 @@ currentdict /tt_tag_dict .undef
 	      getinterval exch
 		  % Stack: false string record
 		  % Check for 8- vs. 16-bit characters.
-	  is2byte { true } { dup is2byte2 } ifelse { string2to1 } if true null 4 -1 roll exit
+	  is2byte { //true } { dup is2byte2 } ifelse { string2to1 } if //true //null 4 -1 roll exit
 	    } {
 	      pop pop pop pop
-	      false
+	      //false
 		  exit
 	    } ifelse
       } if pop
@@ -321,8 +321,8 @@ currentdict /tt_tag_dict .undef
 % <namerecord> is2byte <bool>
 /is2byte {
   dup 0 getu16 {
-    { pop true }		% Apple Unicode
-    { pop false }		% Macintosh Script manager
+    { pop //true }		% Apple Unicode
+    { pop //false }		% Macintosh Script manager
     { 1 getu16 1 eq }		% ISO
     { 1 getu16 1 eq }		% Microsoft
   } exch get exec
@@ -332,12 +332,12 @@ currentdict /tt_tag_dict .undef
 /is2byte2 {
   dup length 
   dup 2 mod 0 ne {
-    pop pop false
+    pop pop //false
   } {            % s l
-    true exch   % s b l
+    //true exch  % s b l
     1 sub 0 exch 2 exch {
       2 index exch get 0 ne {
-        pop false exit
+        pop //false exit
       } if
     } for
     exch pop
@@ -508,7 +508,7 @@ currentdict /tt_tag_dict .undef
 	  dup 0 ne { delta add 65535 and } if putglyph
 	} for
       } ifelse
-    } for glyphs /glyphs null def	% for GC
+    } for glyphs /glyphs //null def	% for GC
   } bind
   6 {		% Single interval lookup.
     dup 6 getu16a /firstcode exch def
@@ -940,7 +940,7 @@ mark
   /post tabdict /post .knownget { 
     dup 0 get /post_first_part exch def 
   } { 
-    null 
+    //null 
   } ifelse def
   load_stripped not {
     /locatable tabdict /loca get def
@@ -986,7 +986,7 @@ mark
 % - .getpost -
 % Uses post, defines glyphencoding
 /.getpost {
-  /glyphencoding post null eq {
+  /glyphencoding post //null eq {
     TTFDEBUG { (post missing) = flush } if [ ]
   } {
     postformats first_post_string 0 getu32 .knownget {
@@ -1028,7 +1028,7 @@ mark
     /FontInfo mark
   } ifelse
 		% Stack: ... /FontInfo mark key1 value1 ...
-  post null ne {
+  post //null ne {
     /ItalicAngle first_post_string 4 gets32 65536.0 div
     /isFixedPitch first_post_string 12 getu32 0 ne
     /UnderlinePosition first_post_string 8 gets16 upem div
@@ -1076,7 +1076,7 @@ mark
     (the file gs/lib/xlatmap must contain /TrueType key.) =
     /.pickcmap_with_xlatmap cvx /configurationerror signalerror
   } if
-  false
+  //false
   .xlatmap_dict /TrueType get 
   dup length 2 sub 0 exch 2 exch {                       % bool [] i
     2 copy get                                           % bool [] i ()
@@ -1116,7 +1116,7 @@ mark
           /cmaptab exch def                              % bool [] i PlatID SpecID (cmap) (cmapsub)
           5 index 5 index 1 add get                      % bool [] i PlatID SpecID (cmap) (cmapsub) /Decoding
           /Decoding exch def                             % bool [] i PlatID SpecID (cmap) (cmapsub)
-          7 -1 roll pop true 7 1 roll                    % true [] i PlatID SpecID (cmap) (cmapsub)
+          7 -1 roll pop //true 7 1 roll                  % true [] i PlatID SpecID (cmap) (cmapsub)
         } if
       } if
       pop                                                % true [] i PlatID SpecID (cmap)
@@ -1371,7 +1371,7 @@ mark
      % because glyphencoding is stubbed with an encoding, 
      % which maps char codes to glyph names.
   glyphencoding length 0 eq {
-    /have_post false def
+    /have_post //false def
     cmapsub 0 4 getinterval <00030001> eq {
     PDFDEBUG { (No post but have cmap 3.1, so use ISOLatin1Encoding) = } if
       /glyphencoding ISOLatin1Encoding dup length array copy def
@@ -1380,7 +1380,7 @@ mark
       /glyphencoding /.GS_extended_SymbolEncoding findencoding dup length array copy def
     } ifelse
   } {
-    /have_post true def
+    /have_post //true def
   } ifelse
 		% If necessary, fabricate additional glyphencoding entries
 		% to cover all of loca
@@ -1577,7 +1577,7 @@ currentdict /postalias undef
 % <plat+enc> .findcmap <subtable> true
 % <plat+enc> .findcmap false
 /.findcmap {
-  false exch tabdict /cmap get
+  //false exch tabdict /cmap get
 		% Some fonts have multiple cmaps with the same platform and
 		% encoding.  Use the first one we find.
   0 1 2 index 2 getu16a 1 sub {
@@ -1758,9 +1758,9 @@ currentdict /postalias undef
       .charkeys
       % check if the CharStrings dict contains glyphs needed by the
       % prebuilt_encoding otherwise try the 3,0 cmap.
-      prebuilt_encoding null ne {
-        false prebuilt_encoding {	% false means no missing glyphs
-	  4 index exch known not { pop true exit } if
+      prebuilt_encoding //null ne {
+        //false prebuilt_encoding {	% false means no missing glyphs
+	  4 index exch known not { pop //true exit } if
         } forall
         {
 	  (   **** Warning: Encoding derived from 'post' is incomplete.\n) pdfformaterror
@@ -1769,7 +1769,7 @@ currentdict /postalias undef
     } ifelse
   } {
     <00030001> .findcmap {
-      prebuilt_encoding null ne {
+      prebuilt_encoding //null ne {
         TTFDEBUG { (Using cmap 3.1 with prebuilt_encoding for non-symbolic.) = } if
 
         % The character code in /prebuilt_encoding[] is not guaranteed to be
@@ -1809,7 +1809,7 @@ currentdict /postalias undef
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
 	.romanmacdict .pdfmapchars 
         /Encoding
-        prebuilt_encoding null ne {
+        prebuilt_encoding //null ne {
           prebuilt_encoding
         } {
           /MacRomanEncodingForTrueType .findencoding

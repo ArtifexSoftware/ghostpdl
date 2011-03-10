@@ -27,7 +27,7 @@ languagelevel dup 2 .max .setlanguagelevel
 
 % ------ Idiom recognition ------ %
 
-/IdiomRecognition false .definepsuserparam
+/IdiomRecognition //false .definepsuserparam
 
 % Modify `bind' to apply idiom recognition afterwards.
 /.bindscratch 128 string def
@@ -36,13 +36,13 @@ languagelevel dup 2 .max .setlanguagelevel
 % where IdiomRecognition may not be defined.
 /.bind_ {		% <proc> .bind <proc'>
   //.bind currentuserparams /IdiomRecognition
-  .knownget not { false } if {
+  .knownget not { //false } if {
     (*) {
       /IdiomSet findresource
-      false exch {
-		% Stack: proc false dummykey [template substitute]
+      //false exch {
+		% Stack: proc //false dummykey [template substitute]
 	exch pop dup 1 get exch 0 get
-		% Stack: proc false substitute template
+		% Stack: proc //false substitute template
 	3 index .eqproc {
 	  2 index gcheck 1 index gcheck not and {
 	    pop
@@ -90,7 +90,7 @@ currentdict /.bind_ undef
   8 dict begin
   /HalftoneType 7 def
   /BitsPerSample exch def
-  dup null eq {
+  dup //null eq {
     pop 0
   } {
     /Height2 1 index def /Width2 2 index def mul
@@ -121,7 +121,7 @@ currentdict /.bind_ undef
 		% Note that since bytestrings don't implement getinterval,
 		% if filled is false, there is no way to tell how much
 		% was read.
-  true exch 0 1 2 index length 1 sub {
+  //true exch 0 1 2 index length 1 sub {
 		% Stack: source true str index
     3 index read not { pop exch not exch exit } if
     3 copy put pop pop
@@ -133,7 +133,7 @@ currentdict /.bind_ undef
 			% Keys: Width, Height, Thresholds, T'Function
   dup /Thresholds get
   1 index /Width get 2 index /Height get
-  null 8 .makehalftone7
+  //null 8 .makehalftone7
 } bind def
 
 /.sethalftone10 {	% <dict> <dict> .sethalftone10 <setdict> <dict5>
@@ -155,7 +155,7 @@ currentdict /.bind_ undef
   3 index /Width2 .knownget {  % 2-rectangle case
     4 index /Height2 get
   } {			% 1-rectangle case
-    null
+    //null
   } ifelse 16 .makehalftone7
 } bind def
 
@@ -354,13 +354,13 @@ systemdict /.shadingtypes mark		% not ll3dict
 
 systemdict /.reuseparamdict mark
   /Intent 2
-  /AsyncRead false
-  /CloseSource true
+  /AsyncRead //false
+  /CloseSource //true
 .dicttomark readonly put
 /.buildshading {	% <shadingdict> .buildshading <shading>
   dup rcheck not {
       % Adobe seems to access ColorSpace first and CET 12-14c checks this.
-      /$error .systemvar /errorinfo [ /ColorSpace null ] put
+      /$error .systemvar /errorinfo [ /ColorSpace //null ] put
       /shfill .systemvar /invalidaccess signalerror
   } if
         % Unfortunately, we always need to make the DataSource reusable,

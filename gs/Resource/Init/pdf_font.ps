@@ -37,7 +37,7 @@
 % since there is no other way to get a reasonable result.
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 GS_PDF_ProcSet begin
 pdfdict begin
@@ -54,7 +54,7 @@ pdfdict begin
 /updateencoding {	% <encoding|null> <differences> updateencoding <enc'>
 	% Calculate the length of the result.
   % in case the incoming Encoding is null, use .notdefEncoding
-  exch dup null eq { pop .notdefEncoding } if
+  exch dup //null eq { pop .notdefEncoding } if
   0 0 3 index {
     dup type /nametype ne { exch pop oforce } { pop 1 add } ifelse
     % Differences list may not be in order, update the largest_index
@@ -178,7 +178,7 @@ currentdict /known_symbolic_fonts undef
 % Encoding. We want to use the Width that was associated with the
 % one specified in the Encoding::Differences list.
 /match_in_diff     % <Differences> <index> <glyphname> match_in_diff <bool>
-{ false 4 1 roll 0 4 -1 roll	% stack: false index glyphname at_index==0 Differences
+{ //false 4 1 roll 0 4 -1 roll	% stack: false index glyphname at_index==0 Differences
   { exch 1 index type /nametype ne {
       % stack: false index glyphname Diff_element at_index 
       pop	% Diff_element is new at_index
@@ -187,7 +187,7 @@ currentdict /known_symbolic_fonts undef
       exch 2 index eq {
         % stack: false index glyphname at_index 
 	dup 3 index eq {
-          true 5 1 roll	% stack: true false index glyphname at_index
+          //true 5 1 roll % stack: true false index glyphname at_index
           pop exit
         } if
       } if
@@ -389,12 +389,12 @@ currentdict end readonly def
 
 /copy&def    % <key> <value> <bool> copy&def -
 {
-  { true
+  { //true
   } {
     currentdict gcheck { 
       dup gcheck not
     } {
-      false
+      //false
     } ifelse
   } ifelse
   { currentglobal currentdict gcheck setglobal 
@@ -435,7 +435,7 @@ currentdict end readonly def
       1 index length 0 eq {
         % A single pair.
         exch pop exch pop exch pop exch        % e [] i (values) offset
-        4 index null ne {
+        4 index //null ne {
           4 index length 1 index gt {
             4 index exch get
           } if
@@ -444,7 +444,7 @@ currentdict end readonly def
         PDFDEBUG {
           ( defined single: ) print 1 index =string cvs print ( ) print dup //== exec
         } if
-        false copy&def                         % e [] i
+        //false copy&def                       % e [] i
         pop                                    % e []
       } {
         % A range.                             % e [] i offset key_size value_size (keys) (values)
@@ -463,14 +463,14 @@ currentdict end readonly def
           3 2 roll 6 index idiv 5 index mul    % e [] i offset key_size value_size (keys) (values) keyL keyH J
           3 index exch 6 index getinterval     % e [] i offset key_size value_size (keys) (values) keyL keyH (valueL)
           3 1 roll 1 exch {                    % e [] i offset key_size value_size (keys) (values) (value) k
-            9 index null ne {
+            9 index //null ne {
               9 index exch get                 % e [] i offset key_size value_size (keys) (values) (value) name
             } if                               % e [] i offset key_size value_size (keys) (values) (value) cid|name
             1 index                            % e [] i offset key_size value_size (keys) (values) (value) cid|name (value)
             PDFDEBUG {
               ( defined from range: ) print 1 index =string cvs print ( ) print dup //== exec
             } if
-            true copy&def                      % e [] i offset key_size value_size (keys) (values) (value)
+            //true copy&def                    % e [] i offset key_size value_size (keys) (values) (value)
             % Assuming the lowest byte of 'value' changes, others don't.
             dup dup length 1 sub               % e [] i offset key_size value_size (keys) (values) (value) (value) l
             2 copy get                         % e [] i offset key_size value_size (keys) (values) (value) (value) l v
@@ -537,12 +537,12 @@ currentdict end readonly def
           setglobal
         } if
         dup /GlyphNames2Unicode .knownget not {
-          true				    % No existing G2U, make one
+          //true			    % No existing G2U, make one
         } {
           dup wcheck {
-            false			    % Existing, writeable G2U, don't make new one
+            //false			    % Existing, writeable G2U, don't make new one
           } {
-            pop true			    % Existing read only G2U, make new one
+            pop //true			    % Existing read only G2U, make new one
           } ifelse
         } ifelse
 
@@ -593,7 +593,7 @@ currentdict end readonly def
 
 
 /.pdforigfontcache_g 20 dict def
-currentglobal false setglobal
+currentglobal //false setglobal
 systemdict /.pdforigfontcache_l 20 dict .forceput
 setglobal
 
@@ -623,9 +623,9 @@ setglobal
 
 /.remove_font_name_prefix {  % <name>  .remove_font_name_prefix <name>
   dup .namestring (+) search {
-    true exch
+    //true exch
     { dup 65 lt exch 90 gt or {
-        pop false exit
+        pop //false exit
       } if
     } forall
     { pop exch pop cvn
@@ -694,7 +694,7 @@ setglobal
 		% If this is a small-caps font, replace the CharString
 		% entries for a..z.
       exch /Flags oget 16#20000 and 0 ne {
-	true .copyfontdict
+	//true .copyfontdict
 	dup /CharStrings 2 copy get dup length dict .copydict
 	% stack: font-res fontname font font /CharStrings CharStringsdict
 	5 index /FirstChar get 97 .max
@@ -715,7 +715,7 @@ setglobal
 	} for put
       } if
       dup /FontName get 2 index ne {
-        true .copyfontdict
+        //true .copyfontdict
         2 copy exch /FontName exch put
       } if
       exch pop .completefont
@@ -741,7 +741,7 @@ setglobal
 % Adobe Acrobat doesn't skip space characters after eexec
 /eexec_pdf_param_dict mark
   .eexec_param_dict {} forall
-  /keep_spaces true
+  /keep_spaces //true
 .dicttomark readonly def
 
 % When Type 1 font reading procedure is executing, a copy of this dictionary is current.
@@ -1007,7 +1007,7 @@ currentdict /eexec_pdf_param_dict .undef
       ( for ) print 1 index =only (.) = flush
     } if
     exch 3 1 roll pdffindfont
-    true .copyfontdict
+    //true .copyfontdict
     2 copy exch /FontName exch put
     exch pop .completefont
   } {
@@ -1067,7 +1067,7 @@ currentdict /eexec_pdf_param_dict .undef
 .dicttomark def
 
 /makeIdentityCMap {		% <cmapname> <wmode> .makeIdentityCMap -
-  .currentglobal true .setglobal 3 1 roll
+  .currentglobal //true .setglobal 3 1 roll
   /CIDInit /ProcSet findresource begin
   12 dict begin
     begincmap
@@ -1168,10 +1168,10 @@ currentdict /CMap_read_dict undef
   ]			% subfonts
   .composefontdict  % composefont must insert FontInfo dictionary - see gs_cmap.ps .
 		    % Stack: fontres name font
-  3 copy exch pop null .processToUnicode
+  3 copy exch pop //null .processToUnicode
   exch pop .completefont % Stack: fontres font
   1 index /FontMatrix knownoget {
-    dup aload pop true {0 0 1 0 0 1} {3 -1 roll eq and} forall {
+    dup aload pop //true {0 0 1 0 0 1} {3 -1 roll eq and} forall {
       1 index exch makefont exch /FontName get exch 
       exch pop .completefont
     } {
@@ -1265,7 +1265,7 @@ currentdict /CMap_read_dict undef
       /arraytype   {
          [
            [Mi Mi Mi1 length itemSize idiv add 1 sub]
-           true
+           //true
            [
              0 itemSize Mi1 length 1 sub {
                [ exch 1 1 index itemSize add 1 sub { Mi1 exch get } for ]
@@ -1277,7 +1277,7 @@ currentdict /CMap_read_dict undef
       /integertype {
          [
            [Mi Mi1]
-           false
+           //false
            [[ i 2 add 1 i 1 add itemSize add { M exch get } for ]]
          ]
          /i i 2 add itemSize add def
@@ -1303,14 +1303,14 @@ currentdict /CMap_read_dict undef
   {
     { 
       dup 0 get {} forall      % Stack: <cid> <entry> <cid_0> <cid_1>
-      3 index lt { pop pop false exit } if
-      2 index exch sub dup 0 lt { pop pop false exit } if
+      3 index lt { pop pop //false exit } if
+      2 index exch sub dup 0 lt { pop pop //false exit } if
       1 index 1 get not { pop 0 } if
-      exch 2 get exch get true exit
+      exch 2 get exch get //true exit
     } loop
     { exit } if
   } forall
-  dup type /arraytype eq { exch pop true } { pop false } ifelse
+  dup type /arraytype eq { exch pop //true } { pop //false } ifelse
 } def
 
 
@@ -1429,9 +1429,9 @@ currentdict /CMap_read_dict undef
   dup 2 index length exch sub exch getinterval
   1 index eq {
     length 1 index length exch sub
-    0 exch getinterval true
+    0 exch getinterval //true
   } {
-    pop false
+    pop //false
   } ifelse
 } bind def
 
@@ -1459,12 +1459,12 @@ currentdict /CMap_read_dict undef
       exch begin
         dup 256 idiv tmpstr exch 0 exch put
         256 mod tmpstr exch 1 exch put
-        rootfont /WMode known { rootfont /WMode get 1 eq } { false } ifelse
+        rootfont /WMode known { rootfont /WMode get 1 eq } { //false } ifelse
         { basefont-V } { basefont-H } ifelse setfont
         strokewidth setlinewidth
         1 setlinejoin
         newpath
-        0 0 moveto tmpstr false charpath stroke
+        0 0 moveto tmpstr //false charpath stroke
         0 0 moveto tmpstr show
         currentpoint setcharwidth
       end
@@ -1541,7 +1541,7 @@ currentdict /CMap_read_dict undef
     dup /Identity eq {
       pop
     } {
-      true resolvestream
+      //true resolvestream
 		% Stack: filepos fontres font mapstream
 	% Can't know the length of the decompressed stream, so allocate a big buffer...
       dup 65534 string readstring {

@@ -18,18 +18,18 @@
 % PDF file- and page-level operations.
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 pdfdict begin
 
 % Patch in an obsolete variable used by some third-party software.
-/#? false def
+/#? //false def
 
 % Test whether the current output device handles pdfmark.
-/.writepdfmarkdict 1 dict dup /pdfmark null put readonly def
+/.writepdfmarkdict 1 dict dup /pdfmark //null put readonly def
 /.writepdfmarks {	% - .writepdfmarks <bool>
   currentdevice //.writepdfmarkdict .getdeviceparams
-  mark eq { false } { pop pop true } ifelse
+  mark eq { //false } { pop pop //true } ifelse
   systemdict /DOPDFMARKS known or 
 } bind def
 
@@ -105,8 +105,8 @@ systemdict begin
 /run {
   dup type /filetype ne { (r) file } if
   % skip leading whitespace characters (actually anything less than or equal to <sp>)
-  { dup ( ) .peekstring not { false exit } if
-    dup 0 get 32 le { pop dup read pop pop } { true exit } ifelse
+  { dup ( ) .peekstring not { //false exit } if
+    dup 0 get 32 le { pop dup read pop pop } { //true exit } ifelse
   } loop
   exch pop
   {
@@ -132,7 +132,7 @@ systemdict begin
 	    } ifelse
 	    dup (%stdin) (r) file eq {
 	      % Copy PDF from stdin to temporary file then run it.
-	      null (w+) /.tempfile .systemvar exec exch 3 1 roll
+	      //null (w+) /.tempfile .systemvar exec exch 3 1 roll
 	      % stack: tempname stdin tempfile
 	      64000 string
 	      {
@@ -175,10 +175,10 @@ currentdict /runpdfstring .undef
 	% but the improvement is significant.
    /PDFTopSave save def
    0 setobjectformat
-   /Page# null def
-   /Page null def
+   /Page# //null def
+   /Page //null def
    /DSCPageCount 0 def
-   /PDFSave null def
+   /PDFSave //null def
    GS_PDF_ProcSet begin
    pdfdict begin
    pdfopen begin
@@ -361,7 +361,7 @@ pdfdict begin
 /lineeq			% <filestr> <conststr> lineeq <bool>
  { anchorsearch
     { pop { ( ) anchorsearch not { () eq exit } if pop } loop }
-    { pop false }
+    { pop //false }
    ifelse
  } bind def
 /linene { lineeq not } bind def
@@ -379,7 +379,7 @@ pdfdict begin
      token pop			% entry count
      % remaining must be whitespace only (otherwise this xref Size was invalid.
      exch dup length 0 ne {
-       false 1 index { 32 gt { pop true exit } if } forall {
+       //false 1 index { 32 gt { pop //true exit } if } forall {
          (   **** Warning: xref subsection header has extra characters.\n)
          pdfformaterror
          /setxrefentry cvx /syntaxerror signalerror
@@ -505,7 +505,7 @@ pdfdict begin
    dup /Size get growPDFobjects
 	% Create a stream for the XRef data
    PDFfile token pop pop		% Skip over 'stream'
-   dup stream false resolvestream
+   dup stream //false resolvestream
    	% Stack: <XRefdict> <xref stream>
 	% The Index array defines the ranges of object numbers in the
 	% XRef stream.  Each value pair is consists of starting object
@@ -598,7 +598,7 @@ pdfdict begin
 	% as in that case color substitution is presumably desired even
 	% if the file does not request it.
    currentpagedevice /UseCIEColor .knownget dup { pop } if not
-    { .currentglobal false .setglobal
+    { .currentglobal //false .setglobal
       /DefaultGray { /DeviceGray } cvlit /ColorSpace defineresource pop
       /DefaultRGB { /DeviceRGB } cvlit /ColorSpace defineresource pop
       /DefaultCMYK { /DeviceCMYK } cvlit /ColorSpace defineresource pop
@@ -694,9 +694,9 @@ pdfdict begin
         {	% Use stop context since we may get an error if object is invalid
           dup Objects exch lget 	% Get the object location
 	  PDFoffset add dup 3 index ge	% Compare object location to file size
-	  { pop true }			% Rebuild if location not in file
+	  { pop //true }			% Rebuild if location not in file
 	  { PDFfile exch setfileposition % Go to the object location
-	    true			% Stack:  <filesize> <obj num> <true>
+	    //true			% Stack:  <filesize> <obj num> <true>
 	    PDFfile token pop		% Read object number from file
 	    2 index eq {		% Verify object number
 	      PDFfile token pop		% Read generation number from file
@@ -705,13 +705,13 @@ pdfdict begin
 	      eq { 			% Verify generation number
 	        PDFfile token pop
 	        /obj eq { % Verify 'obj' text
-		  pop false		% We have valid object, do not rebuild
+		  pop //false		% We have valid object, do not rebuild
 	        } if
 	      } if
 	    } if
 	  } ifelse
 	} .internalstopped
-	{ true } if			% If we stop then we need to rebuild
+	{ //true } if			% If we stop then we need to rebuild
 	% Stack:  <filesize> <obj num> <need rebuild flag>
 	{ 
 	  (   **** Warning:  File has an invalid xref entry:  )
@@ -749,14 +749,14 @@ pdfdict begin
 		% Guess whether the output device is a printer.
      /Printed currentpagedevice /OutputFile known def
    } ifelse
-   /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
+   /PSLevel1 where { pop } { /PSLevel1 //false def } ifelse
    % NB: PDFfile is used outside of the PDF code to determine that a
    % PDF job is being processed; to not change or hide this key.
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
-   /Repaired false def
+   /Repaired //false def
    /NeedAppearances //false def
-   currentglobal true .setglobal globaldict begin
+   currentglobal //true .setglobal globaldict begin
    /UndefProcList 0 dict def
    end .setglobal
    PDFfile dup 0 setfileposition
@@ -767,9 +767,9 @@ pdfdict begin
    % some badly formed PDF's (Visioneer) have something other than EOL
    % after the version number. If we get an error, shorten the string
    % and try again.
-   false exch		% error encountered
+   //false exch		% error encountered
    { { cvr } stopped
-     { exch pop true exch 0 1 index length 1 sub dup 0 eq
+     { exch pop //true exch 0 1 index length 1 sub dup 0 eq
        { pop 0 exit } if	% exit if string now empty
        getinterval		% trim character from right end and retry
      }
@@ -880,7 +880,7 @@ pdfdict begin
         % Stack: eofpos
 	% Check for whether this is, in fact, a valid PDF file.
   dup PDFfilelen exch sub dup dup 7 gt exch 5 lt or {
-    pop true
+    pop //true
   } {
     string PDFfile exch readstring pop
     dup (%%EOF\n) eq exch dup (%%EOF\r) eq
@@ -891,7 +891,7 @@ pdfdict begin
   } if
   PDFfile exch setfileposition
 	% Now read the startxref and xref start position.
-  prevline token not { null } if dup type /integertype eq {
+  prevline token not { //null } if dup type /integertype eq {
     exch pop cvi		% xref start position
     exch PDFfile exch setfileposition
     prevline dup (startxref) linene {
@@ -923,7 +923,7 @@ pdfdict begin
 } bind def
 /pdfformaterror {	% <string> pdfformaterror -
   stderrprint
-  /Repaired true store
+  /Repaired //true store
 } bind def
 
 /knownoget_safe
@@ -931,12 +931,12 @@ pdfdict begin
 } odef
 
 /printProducer {
-  Trailer /Info { knownoget_safe } stopped { pop pop false } if {
-    /Producer knownoget not { null } if
+  Trailer /Info { knownoget_safe } stopped { pop pop //false } if {
+    /Producer knownoget not { //null } if
   } {
-    null
+    //null
   } ifelse
-  dup null eq {
+  dup //null eq {
     pop
   } {
     (   **** The file was produced by: \n   **** >>>> ) stderrprint
@@ -1036,7 +1036,7 @@ pdfdict begin
 			% <pagedict> <key> pget -false-
  {
    2 copy knownoget
-    { exch pop exch pop true }
+    { exch pop exch pop //true }
     { exch /Parent knownoget
       { exch pget }
 	% finally see if the key is (misplaced) in the Root Catalog dict
@@ -1162,7 +1162,7 @@ pdfdict begin
 		% some files distributed by Adobe lack the Type key
 		% in some of the Pages nodes!  Instead, we check for Kids.
       dup oforce /Kids knownoget not { exit } if
-      exch pop null
+      exch pop //null
       0 1 3 index length 1 sub {
          2 index exch get
 	 dup oforce dup /Kids known { /Count oget } { pop 1 } ifelse
@@ -1171,7 +1171,7 @@ pdfdict begin
 	 5 -1 roll exch sub 4 1 roll pop
       } for exch pop
 		% Stack: index null|noderef
-      dup null eq { pop pop 1 null exit } if
+      dup //null eq { pop pop 1 //null exit } if
     } loop
 } bind def
 
@@ -1198,9 +1198,9 @@ pdfdict begin
 /pdfgetpage		% <int> pdfgetpage <pagedict>
  { PageIndex 1 index 1 sub dup 65533 lt
     { get }
-    { pop pop null }
+    { pop pop //null }
    ifelse
-   dup null ne
+   dup //null ne
     { exch pop oforce }
     { pop pdffindpage }
    ifelse
@@ -1253,9 +1253,9 @@ pdfdict begin
 /resolvedest {		% <name|string|other> resolvedest <other|null>
   dup type /nametype eq {
     Trailer /Root oget /Dests knownoget {
-      exch knownoget not { null } if
+      exch knownoget not { //null } if
     } {
-      pop null
+      pop //null
     } ifelse
   } {
     dup type /stringtype eq {
@@ -1263,10 +1263,10 @@ pdfdict begin
 	/Dests knownoget {
 	  exch nameoget
 	} {
-	  pop null
+	  pop //null
 	} ifelse
       } {
-	pop null
+	pop //null
       } ifelse
     } if
   } ifelse
@@ -1295,9 +1295,9 @@ pdfdict begin
 	aload pop
 	3 1 roll
 	2 copy 7 -1 roll 1 and 0 ne { exch } if	4 2 roll    % odd rotation switches x<->y
-	2 { dup null eq { pop 0 } if exch } repeat	    % replace nulls with 0
+	2 { dup //null eq { pop 0 } if exch } repeat	    % replace nulls with 0
 	7 -1 roll transform				    % transform coordinates
-	2 { 3 -1 roll null eq { pop null } if exch } repeat % put the nulls back
+	2 { 3 -1 roll //null eq { pop //null } if exch } repeat % put the nulls back
 	3 -1 roll
 	4 array astore
     } bind def
@@ -1314,11 +1314,11 @@ end readonly def
 			%   ([/Page <n>] /View <view> | ) <link|outline>
   dup /Dest knownoget
     { resolvedest
-      dup type /dicttype eq { /D knownoget not { null } if } if
-      dup null eq
+      dup type /dicttype eq { /D knownoget not { //null } if } if
+      dup //null eq
        { pop }
        { dup 0 oget
-	 false % don't have a page# and transformation matrix (yet)
+	 //false % don't have a page# and transformation matrix (yet)
 	 1 index type /dicttype eq {
 	   1 index /Type knownoget {
              /Page eq {
@@ -1328,7 +1328,7 @@ end readonly def
                pdfpagenumber
                /FirstPage where {pop dup FirstPage lt {/rangecheck signalerror} if} if
                /LastPage where {pop dup LastPage gt {/rangecheck signalerror} if} if
-               true % now we have a page# and a transformation matrix
+               //true % now we have a page# and a transformation matrix
              } if
            } if
          } if
@@ -1509,7 +1509,7 @@ end readonly def
     3 -1 roll exch div 3 1 roll div .min
     PDFDEBUG { (    Scale by ) print dup = flush } if
   } {
-    //systemdict /NoUserUnit .knownget not { false } if {
+    //systemdict /NoUserUnit .knownget not { //false } if {
       1
     } {
       1 index /UserUnit knownoget {
@@ -1561,7 +1561,7 @@ currentdict /PDF2PS_matrix_key undef
   6 dict begin		% for setpagedevice
 	% Stack: pdfpagedict
   % UseCIEColor is always true for PDF; see the comment in runpdf above
-  /UseCIEColor true def
+  /UseCIEColor //true def
   /Orientation 0 def
   currentpagedevice
 	% Stack: pdfpagedict currentpagedevicedict
@@ -1580,7 +1580,7 @@ currentdict /PDF2PS_matrix_key undef
     4 -1 roll ne { exch } if
   } {
     % Set the page size.
-    //systemdict /NoUserUnit .knownget not { false } if not {
+    //systemdict /NoUserUnit .knownget not { //false } if not {
       3 index /UserUnit knownoget {
         dup 4 -1 roll mul 3 1 roll mul
       } if
@@ -1748,7 +1748,7 @@ currentdict /PDF2PS_matrix_key undef
   gsave		% preserve gstate for Annotations later
   /Contents knownoget not { 0 array } if
   dup type /arraytype ne { 1 array astore } if {
-    oforce false resolvestream pdfopdict .pdfrun
+    oforce //false resolvestream pdfopdict .pdfrun
   } forall
   % check for extra garbage on the ostack and clean it up
   count pdfemptycount sub dup 0 ne {
@@ -2080,7 +2080,7 @@ currentdict /PDF2PS_matrix_key undef
 %
 /pdfshowpage_setcspacesub
   {
-    false
+    //false
       { /DefaultGray /DefaultRGB /DefaultCMYK }
       {
         dup 3 index /ColorSpace //rget exec

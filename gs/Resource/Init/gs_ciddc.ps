@@ -17,7 +17,7 @@
 % Define SubstCID, Decoding and CIDDecoding resource categories and related procsets.
 
 languagelevel 2 .setlanguagelevel
-currentglobal true setglobal
+currentglobal //true setglobal
 
 %----------------ParseDecoding procset----------------------------
 
@@ -55,11 +55,11 @@ dup /InstanceType /dicttype put
   /defineresource { pop pop } bind
   /dict {}
   /def { pop pop } bind
-  /dup null
+  /dup //null
   /begin { pop } bind
   /end {}
-  /currentdict null
-  /CMapName null
+  /currentdict //null
+  /CMapName //null
   /usecmap { pop } bind
   /begincmap {}
   /endcmap {}
@@ -202,7 +202,7 @@ begin
 
   /FindResource      % <name> FindResource <dict>
   { currentglobal exch                               % bGlobal /InstName
-    true setglobal
+    //true setglobal
     dup //.MakeInstance exec                         % bGlobal /InstName <Inst>
     DefineResource                                   % bGlobal <Inst>
     exch setglobal                                   % <Inst>

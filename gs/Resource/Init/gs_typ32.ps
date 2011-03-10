@@ -45,7 +45,7 @@ systemdict /.makeglyph32 .undef
 		% Stack: metrics bitmap cid font metstr buffer bitbuf
     mark /Columns 8 index dup 4 get exch 2 get sub
       /Rows 10 index dup 5 get exch 3 get sub
-      /K -1 /EndOfBlock true /BlackIs1 true
+      /K -1 /EndOfBlock //true /BlackIs1 //true
     .dicttomark /CCITTFaxEncode filter
 		% Stack: metrics bitmap cid font metstr buffer filter
     dup 6 index writestring closefile
@@ -117,9 +117,9 @@ end		% .cidfonttypes
   dup () eq {
     pop pop pop
   } {
-    mark /Columns 6 index /Rows 7 index /K -1 /EndOfBlock false /BlackIs1 true
-    .dicttomark /CCITTFaxDecode filter 4 index 4 index true
-		% Stack: font cid w h llx lly filter w h true
+    mark /Columns 6 index /Rows 7 index /K -1 /EndOfBlock //false /BlackIs1 //true
+    .dicttomark /CCITTFaxDecode filter 4 index 4 index //true
+		% Stack: font cid w h llx lly filter w h //true
     [ 1 0 0 1 11 -2 roll exch neg exch neg ] 5 -1 roll imagemask
   } ifelse
   pop pop pop pop

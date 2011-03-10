@@ -23,7 +23,7 @@
 % making marks on the page.
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 pdfdict begin
 
@@ -126,22 +126,22 @@ pdfdict begin
     (   **** Unknown operator: ') pdfformaterror
     dup =string cvs pdfformaterror 
     % Attempt a retry scan of the element after changing to PDFScanInvNum
-    << /PDFScanInvNum true >> setuserparams
+    << /PDFScanInvNum //true >> setuserparams
     =string cvs
     token pop exch pop dup type
     dup /integertype eq exch /realtype eq or {
       exch pop exch pop
       (', processed as number, value: ) pdfformaterror
       dup =string cvs pdfformaterror (\n) pdfformaterror
-     << /PDFScanInvNum null >> setuserparams    % reset to default scanning rules
-      false 	% suppress any stack cleanup
+     << /PDFScanInvNum //null >> setuserparams    % reset to default scanning rules
+      //false 	% suppress any stack cleanup
     } {
       % error was non-recoverable with modified scanning rules
     ('\n) pdfformaterror
-      true
+      //true
     } ifelse
   } {
-    true
+    //true
   } ifelse
   { % clean up the operand stack if this was non-recoverable
   pop pop count exch sub { pop } repeat	% pop all the operands
@@ -157,7 +157,7 @@ pdfdict begin
       } {
         dup ==only
         (    step # ) print PDFtokencount =only 
-	( ? ) print flush 1 false .outputpage
+	( ? ) print flush 1 //false .outputpage
 	(%stdin) (r) file 255 string readline {
 	  token {
             exch pop pdfdict /PDFSTEPcount 3 -1 roll .forceput
@@ -165,7 +165,7 @@ pdfdict begin
 	    pdfdict /PDFSTEPcount 1 .forceput
 	  } ifelse % token
 	} {
-	  pop /PDFSTEP false def	 % EOF on stdin
+	  pop /PDFSTEP //false def	 % EOF on stdin
 	} ifelse % readline
       } ifelse % PDFSTEPcount > 1
     } {
@@ -197,8 +197,8 @@ pdfdict begin
     } ifelse
   } ifelse
 } bind def
-/PDFScanRules_true << /PDFScanRules true >> def
-/PDFScanRules_null << /PDFScanRules null >> def
+/PDFScanRules_true << /PDFScanRules //true >> def
+/PDFScanRules_null << /PDFScanRules //null >> def
 /.pdfrun {			% <file> <opdict> .pdfrun -
 	% Construct a procedure with the stack depth, file and opdict
 	% bound into it.
@@ -404,7 +404,7 @@ currentdict /token_nofail_dict .undef
   /ObjectStream larray def
   /Objects larray def
   /Generations lstring def
-  .currentglobal true .setglobal
+  .currentglobal //true .setglobal
   /GlobalObjects 20 dict def
   .setglobal
   /IsGlobal lstring def
@@ -441,17 +441,17 @@ currentdict /token_nofail_dict .undef
     dup type /integertype eq {		% Check if an integer
 		% Check whether the object is in GlobalObjects.
       pop IsGlobal 1 index lget 0 eq {	% 0 --> Not in GlabalObjects
-	pop false			% The object is not resolved
+	pop //false			% The object is not resolved
       } {				% The object is in GlobalObjects
 		% Update Objects from GlobalObjects
 	PDFDEBUG { (%Global=>local: ) print dup //== exec } if
-	GlobalObjects 1 index get dup Objects 4 1 roll lput true
+	GlobalObjects 1 index get dup Objects 4 1 roll lput //true
       } ifelse
     } {				% Else object is executable but not integer
-      exch pop true		% Therefore must be executable dict. (stream)
+      exch pop //true		% Therefore must be executable dict. (stream)
     } ifelse
   } {				% Else object is not executable.
-    exch pop true		% Therefore it must have been resolved.
+    exch pop //true		% Therefore it must have been resolved.
   } ifelse
 } bind def
 /oforce /exec load def
@@ -520,7 +520,7 @@ currentdict /token_nofail_dict .undef
 % Per the specification, we convert these to nulls.
 /F {		% <file#> <object#> <generation#> F <object>
 		% Some PDF 1.1 files use F as a synonym for f!
-   .pdfcount 3 lt { f } { pop pop pop null } ifelse
+   .pdfcount 3 lt { f } { pop pop pop //null } ifelse
 } bind def
 
 % Verify the generation number for a specified object
@@ -528,7 +528,7 @@ currentdict /token_nofail_dict .undef
 % If the value in Generations is zero then the object is free.
 /checkgeneration {  % <object#> <generation#> checkgeneration <object#> <OK>
   Generations 2 index lget 1 sub 1 index eq {	% If generation # match ...
-    pop true					% Then return true
+    pop //true					% Then return true
   } {					% Else not a match ...
     QUIET not {				% Create warning message if not QUIET
       Generations 2 index lget 0 eq {	% Check if object is free ...
@@ -549,7 +549,7 @@ currentdict /token_nofail_dict .undef
     % We should return false for an incorrect generation number, however
     % we are simply printing a warning and then returning true.  This makes
     % Ghostscript tolerant of of bad generation numbers.
-    true
+    //true
   } ifelse
 } bind def
 /R {		% <object#> <generation#> R <object>
@@ -584,7 +584,7 @@ currentdict /token_nofail_dict .undef
     } if
     Objects exch 2 index lput
   } {
-    pop pop null
+    pop pop //null
   } ifelse
 } bind def
 
@@ -607,7 +607,7 @@ currentdict /token_nofail_dict .undef
   0 resolveR	% Get the objectstream dict, all objstrms use 0 as the gen #
   dup /First get		% Save location of first object onto the stack
   1 index /N get		% Save number of objects onto the stack
-  2 index false resolvestream	% Convert stream dict into a stream
+  2 index //false resolvestream	% Convert stream dict into a stream
   /ReusableStreamDecode filter	% We need to be able to position stream
 		% Objectstreams begin with list of object numbers and locations
 		% Create two arrays to hold object numbers and stream location
@@ -680,7 +680,7 @@ currentdict /token_nofail_dict .undef
 } bind def
 
 /no_debug_dict <<
-  /PDFDEBUG false
+  /PDFDEBUG //false
 >> readonly def
 
 % Resolve all objects in an object stream
@@ -692,7 +692,7 @@ currentdict /token_nofail_dict .undef
     /resolveobjectstream cvx /typecheck signalerror
   } if
   dup /N get			% Save number of objects onto the stack
-  1 index false resolvestream	% Convert stream dict into a stream
+  1 index //false resolvestream	% Convert stream dict into a stream
   /ReusableStreamDecode filter	% We need to be able to position stream
 		% Objectstreams begin with list of object numbers and locations
   1 index array			% Create array for holding object number
@@ -806,12 +806,12 @@ currentdict /no_debug_dict undef
           resolved? {             % If object has already been resolved ...
             exch pop              % Remove object pos from stack.
           } {
-            pop pop null          % Pop objpos and obj#, put null for object
+            pop pop //null        % Pop objpos and obj#, put null for object
           } ifelse
         } ifelse
       } {                         % Else the generation number is wrong
               % Don't cache if the generation # is wrong.
-          pop pop null            % Pop objpos and obj#, put null for object
+          pop pop //null          % Pop objpos and obj#, put null for object
       } ifelse                    % ifelse generation number is correct
       exch PDFfile exch setfileposition   % Return to original file position
     } ifelse
@@ -1000,7 +1000,7 @@ currentdict /pdf_rules_dict undef
   dup /JBIG2Globals knownoget {
     % make global ctx
     PDFfile fileposition exch % resolvestream is not reentrant
-    true resolvestream 		% stack after: PDFfileposition -file-
+    //true resolvestream 		% stack after: PDFfileposition -file-
     % Read the data in a loop until EOF to so we can move the strings into a bytestring
     [ { counttomark 1 add index 60000 string readstring not { exit } if } loop ]
     exch pop 0 1 index { length add } forall	% compute the total length
@@ -1113,7 +1113,7 @@ currentdict /pdf_rules_dict undef
 
 /.branchget {		%  <key> <leafkey> <kids> .branchget <obj|null>
   dup length 0 eq {
-    pop pop pop null
+    pop pop pop //null
   } {
     dup length -1 bitshift 2 copy oget
 			% Stack: key leafkey kids mid kids[mid]

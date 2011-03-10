@@ -17,7 +17,7 @@
 % ICCBased color space method dictionaries.
 % This assumes gs_ciecs2.ps has already been processed.
 
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 
 % gs_res.ps uses these entries in colorspacedict
 % to populate the ColorSpaceFamily resource, so we need
@@ -61,7 +61,7 @@ systemdict begin
     } forall
     pop				% discard length of bytestring
     % make a seekable -file- out of the bytestring
-    mark /AsyncRead true .dicttomark /ReusableStreamDecode filter
+    mark /AsyncRead //true .dicttomark /ReusableStreamDecode filter
     % stack: --file-- (%%BeginICCProfile: ...) --icc_subfile-- 
     /DeviceCMYK setcolorspace
     << /DataSource 3 -1 roll
@@ -84,7 +84,7 @@ systemdict begin
 % Merge ProcessICCcomment with existing handler
 /.ProcessICCcomment load /exec load
 currentuserparams /ProcessDSCComment get 
-dup null eq {pop {pop pop}} if /exec load
+dup //null eq {pop {pop pop}} if /exec load
 4 array astore cvx readonly
 << /ProcessDSCComment 3 -1 roll >> setuserparams
 

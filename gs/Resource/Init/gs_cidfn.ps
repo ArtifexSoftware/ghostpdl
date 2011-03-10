@@ -26,9 +26,9 @@
   1 index /FID known {
     1 index /FontType get ne {
       /definefont cvx /invalidfont signalerror
-    } if false
+    } if //false
   } {
-    1 index /FontType 3 -1 roll put true
+    1 index /FontType 3 -1 roll put //true
   } ifelse
 } bind def
 
@@ -203,7 +203,7 @@ pop		% .cidfonttypes
     /GlyphData 0 def
     exch pop 3 -1 roll pop exch
 		% Stack: pos length
-    /DataSource currentfile 2 index () .subfiledecode true .reusablestream def
+    /DataSource currentfile 2 index () .subfiledecode //true .reusablestream def
     currentfile 3 1 roll add setfileposition
   } ifelse
   /SubrCache 10 dict def
@@ -291,12 +291,12 @@ currentdict end
 (%Type9BuildGlyph) cvn {	% <cidfont> <cid> %Type9BuildGlyph -
   .currentglobal 3 1 roll 1 index gcheck .setglobal
   1 index begin
-  dup .readglyphdata dup null eq {
+  dup .readglyphdata dup //null eq {
 		% Substitute CID 0. **** WRONG ****
     pop pop 0 .readglyphdata
   } if
 		% Stack: cidfont cid subfont charstring
-  dup null eq { pop pop pop pop } {	%**** WRONG ****
+  dup //null eq { pop pop pop pop } {	%**** WRONG ****
     4 -1 roll pop
     3 1 roll exch dup 4 -1 roll 0 0 moveto
     3 index /FontType get 2 eq { .type2execchar } { .type1execchar } ifelse
@@ -329,7 +329,7 @@ languagelevel exch 2 .setlanguagelevel
 % protected font downloader defines a CIDInit ProcSet that will be
 % loaded from the filesystem later, so we must check specifically
 % for the ProcSet being defined in VM.
-/CIDInit /ProcSet 2 copy resourcestatus { pop 0 eq } { false } ifelse {
+/CIDInit /ProcSet 2 copy resourcestatus { pop 0 eq } { //false } ifelse {
   pop pop findresource dup length 4 index length add dict .copydict
   4 -1 roll exch .copydict
 } {
@@ -342,7 +342,7 @@ languagelevel exch 2 .setlanguagelevel
 % category with only a CIDFontType and no FontType.
 /.buildcidfont {		% <name> <fontdict> .buildcidfont
 				%   <name> <cidfont>
-  systemdict /ProvideUnicode .knownget not { false } if {
+  systemdict /ProvideUnicode .knownget not { //false } if {
     /FontEmulationProcs /ProcSet findresource
     /ProvideUnicodeDecoding get exec
   } if
@@ -374,7 +374,7 @@ dup /.LoadResource {
   currentglobal {
     .loadcidfontresource
   } {
-    true setglobal {.loadcidfontresource} stopped false setglobal {stop} if
+    //true setglobal {.loadcidfontresource} stopped //false setglobal {stop} if
   } ifelse
 } bind put
 
@@ -397,12 +397,12 @@ dup /.CheckResource {
 	% Allow a string, an array of strings, or (as of Adobe release 3011)
 	% a dictionary.
   dup type dup dup /stringtype eq exch /dicttype eq or {
-    pop true
+    pop //true
   } {
     dup /arraytype eq exch /packedarraytype eq or {
-      true exch { type /stringtype eq and } forall
+      //true exch { type /stringtype eq and } forall
     } {
-      false
+      //false
     } ifelse
   } ifelse
 } bind put

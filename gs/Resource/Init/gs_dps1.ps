@@ -33,7 +33,7 @@ end				% level2dict
 systemdict begin
 
 /SharedFontDirectory .FontDirectory .gcheck
- { .currentglobal false .setglobal
+ { .currentglobal //false .setglobal
    /LocalFontDirectory .FontDirectory dup maxlength dict copy
    .forcedef	% LocalFontDirectory is local, systemdict is global
    .setglobal .FontDirectory

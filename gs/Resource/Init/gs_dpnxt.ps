@@ -53,20 +53,20 @@ counttomark { counttomark 1 sub def } repeat pop
     exch pop 1 index { 1 add } if
 	% Stack: ... string alpha? nprocs
     dup 1 eq {
-      pop false		% only 1 procedure, multiproc is irrelevant
+      pop //false	% only 1 procedure, multiproc is irrelevant
     } {
-      dup array 4 1 roll 3 add 2 roll astore 3 1 roll true
+      dup array 4 1 roll 3 add 2 roll astore 3 1 roll //true
     } ifelse
   } {
 	% multiproc = false.
-    pop pop false
+    pop pop //false
   } ifelse
 	% Map the rectangle to device coordinates.
 	% Stack: x y w h proc(s) str alpha? multi?
   8 -4 roll matrix .sizeimagebox pop 8 4 roll
 	% Make sure we allocate the operand array in local VM
 	% to avoid a possible invalidaccess.
-  .currentglobal false .setglobal 9 1 roll
+  .currentglobal //false .setglobal 9 1 roll
   exch { 1 } { 0 } ifelse exch		% alpha is last, if present
   exch 4 1 roll 8 array astore exch .setglobal
   {	% Read out a block of scan lines and pass them to the procedure.
@@ -109,7 +109,7 @@ img_utils_dict begin
 /.alphaimage  where
   {
     pop
-    .currentglobal true .setglobal
+    .currentglobal //true .setglobal
     /alphaimage
       {
         //true

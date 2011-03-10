@@ -37,14 +37,14 @@
 .dicttomark readonly def
 
 % This procedure is called whenever a DSC comment is found by the interpreter
-/do_parse_dsc false def
+/do_parse_dsc //false def
 /parse_dsc {				% <file> <DSC string> [<prev proc>]
 					%   parse_dsc -
 	% Run any previously installed parser.
-  0 get dup null eq { pop } { 3 copy exec pop } ifelse
+  0 get dup //null eq { pop } { 3 copy exec pop } ifelse
 
   do_parse_dsc {			% Check if this parser is enabled
-    currentglobal true setglobal	% Go to global VM, save old state
+    currentglobal //true setglobal	% Go to global VM, save old state
     3 1 roll				% Put old VM state under <file> <string>
     dsc_dict exch			% <VM state> <file> <dict> <string>
     .parse_dsc_comments			% <VM state> <file> <dict> <DSC name>
@@ -61,20 +61,20 @@
 % Check whether the currently installed parser is the one defined in this file.
 /.using_parse_dsc {			% - .using_parse_dsc <proc> <using?>
   currentuserparams /ProcessDSCComment get
-  dup null eq { pop {{//null} //parse_dsc exec} } if
+  dup //null eq { pop {{//null} //parse_dsc exec} } if
   dup length 3 eq {
     dup dup length 1 sub get /parse_dsc load eq
   } {
-    false
+    //false
   } ifelse
 } bind def
 
 % Establish a binding for dsc_dict.
-userdict /dsc_dict null put
+userdict /dsc_dict //null put
 
 % - dsc_init -
 /dsc_init {				% Initialize DSC parser
-  currentglobal true setglobal
+  currentglobal //true setglobal
   /dsc_dict 50 dict store		% Size must be large enough for all DSC values
   dsc_dict .initialize_dsc_parser
   .using_parse_dsc {
@@ -89,7 +89,7 @@ userdict /dsc_dict null put
     setuserparams
   } ifelse
   setglobal
-  /do_parse_dsc true def
+  /do_parse_dsc //true def
 } bind def
 
 
@@ -107,12 +107,12 @@ userdict /dsc_dict null put
   .using_parse_dsc {
 	% Restore the parser we encapsulated.
     0 get 0 get
-    currentglobal true setglobal exch
+    currentglobal //true setglobal exch
     << /ProcessDSCComment 3 -1 roll >>
     exch setglobal setuserparams
   } {
     pop
   } ifelse
 	% If we couldn't restore the old parser, at least disable ours.
-  /do_parse_dsc false def
+  /do_parse_dsc //false def
 } bind def

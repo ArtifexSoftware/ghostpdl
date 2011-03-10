@@ -41,9 +41,9 @@
     counttomark
     4 eq {
       5 -1 roll pop % remove mark
-      true
+      //true
     } {
-      cleartomark false
+      cleartomark //false
     } ifelse
 } bind def
 
@@ -89,11 +89,11 @@
 	  % Warn if some of the EPS file will be clipped
 	  clippath pathbbox newpath
 	  { % context for exit
-	    5 -1 roll lt { 6 { pop } repeat true exit } if
-	    4 -1 roll lt { 4 { pop } repeat true exit } if
-	    3 -1 roll gt { 2 { pop } repeat true exit } if
-	    exch gt { true exit } if
-	    false exit
+	    5 -1 roll lt { 6 { pop } repeat //true exit } if
+	    4 -1 roll lt { 4 { pop } repeat //true exit } if
+	    3 -1 roll gt { 2 { pop } repeat //true exit } if
+	    exch gt { //true exit } if
+	    //false exit
 	  } loop
 	  QUIET not and /EPSBoundingBoxState .systemvar 1 and 1 eq and {
 	    (\n   **** Warning: Some of the BoundingBox for the EPS file will be clipped.) =
@@ -143,7 +143,7 @@
     % Merge ProcessEPSComment with existing handler
     /ProcessEPSComment load /exec load
     currentuserparams /ProcessDSCComment get 
-    dup null eq {pop {pop pop}} if /exec load
+    dup //null eq {pop {pop pop}} if /exec load
     4 array astore cvx readonly
     << /ProcessDSCComment 3 -1 roll >> setuserparams
   } if
@@ -209,8 +209,8 @@
  { dup type /filetype ne { (r) file } if
 		% Check for MS-DOS EPSF file (see Red Book p. 729).
  dup (    ) .peekstring 
-  { .epsfheader eq { dup (    ) readstring exch pop } { false } ifelse }
-  { pop false }
+  { .epsfheader eq { dup (    ) readstring exch pop } { //false } ifelse }
+  { pop //false }
  ifelse
 		% Stack: file true/false
     {		% This block is executed if the file is MS-DOS EPSF.

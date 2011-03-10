@@ -25,7 +25,7 @@
 % AES-256 encryption.
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 pdfdict begin
 
@@ -95,7 +95,7 @@ pdfdict begin
 
 % <string> contains_non_ascii <bool>
 /contains_non_ascii {
-  false exch { 128 ge { pop true exit } if } forall
+  //false exch { 128 ge { pop //true exit } if } forall
 } bind def
 
 
@@ -168,7 +168,7 @@ def
      % R being >= 4.
      4 ge {
        /EncryptMetadata knownoget	% Get EncryptMetadata (if present)
-       not { true } if			% Default is true
+       not { //true } if		% Default is true
        not {				% If EncryptMetadata is false
          <ff ff ff ff> concatstrings	% Add 0xFFFFFFFF to working string
        } if
@@ -250,9 +250,9 @@ def
   Trailer /Encrypt oget /U oget
 
   0 2 index length getinterval eq {
-    true
+    //true
   } {
-    pop false
+    pop //false
   } ifelse
 } bind def
 
@@ -328,7 +328,7 @@ def
     U 0 48 getinterval concatstrings sha256
 
     16 string Trailer /Encrypt oget /OE oget concatstrings
-    << /Key 4 -1 roll /Padding false >> aesdecode true
+    << /Key 4 -1 roll /Padding //false >> aesdecode //true
   } {
     % Step 4.
     Password U 32 8 getinterval concatstrings sha256
@@ -337,9 +337,9 @@ def
       Password U 40 8 getinterval concatstrings sha256
 
       16 string Trailer /Encrypt oget /UE oget concatstrings
-      << /Key 4 -1 roll /Padding false >> aesdecode true
+      << /Key 4 -1 roll /Padding //false >> aesdecode //true
     } {
-      false
+      //false
     } ifelse
   } ifelse
 
@@ -352,7 +352,7 @@ def
     % vector of zero", since the two are equivalent for a single-
     % block message.  We use the latter.
     16 string Trailer /Encrypt oget /Perms oget concatstrings
-    << /Key 4 index /Padding false >> aesdecode
+    << /Key 4 index /Padding //false >> aesdecode
 
     9 3 getinterval (adb) eq not {
       (   **** Failed to decrypt Perms string.\n) pdfformaterror
@@ -383,7 +383,7 @@ def
   dup dup 2 ge exch 4 le and {
     pop
     dup pdf_check_pre_r5_user_password {
-      exch pop true
+      exch pop //true
     } {
       pdf_check_pre_r5_owner_password
     } ifelse
@@ -392,7 +392,7 @@ def
       pop
       % First, try the password as UTF-8.
       dup pdf_check_r5_password {
-        exch pop true
+        exch pop //true
       } {
         % The password didn't work as UTF-8, so maybe it's in the
         % locale character set instead.  If possible, convert it to
@@ -400,7 +400,7 @@ def
         /.locale_to_utf8 where {
           pop .locale_to_utf8 pdf_check_r5_password
         } {
-          pop false
+          pop //false
         } ifelse
       } ifelse
     } {
@@ -519,8 +519,8 @@ def
 } bind def
 
 % As .pdfrun, but decrypt strings with key <key>.
-/PDFScanRules_true << /PDFScanRules true >> def
-/PDFScanRules_null << /PDFScanRules null >> def
+/PDFScanRules_true << /PDFScanRules //true >> def
+/PDFScanRules_null << /PDFScanRules //null >> def
 /.decpdfrun			% <file> <keystring> <opdict> .decpdfrun -
  {     % Construct a procedure with the file, opdict and key bound into it.
    2 index cvlit mark
@@ -643,7 +643,7 @@ currentdict /PDFScanRules_null undef
       } if
 	% Check EncryptMeta.  stack: object object key Encrypt R
       exch dup /EncryptMetadata knownoget % Get EncryptMetadata (if present)
-      not { true } if			% If not present default = true
+      not { //true } if			% If not present default = true
       not				% Check if EncryptMetadata = false
       {					% if false we need to check the stream type
 	3 index /Type knownoget		% Get stream type (if present)

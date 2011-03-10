@@ -43,7 +43,7 @@ if pop
 % Acquire userdict, and set its length if necessary.
 /userdict where
  { pop userdict maxlength 0 eq }
- { true }
+ { //true }
 ifelse
 systemdict exch
  {		% userdict wasn't already set up by iinit.c.
@@ -55,11 +55,11 @@ if begin
 
 % Define dummy local/global operators if needed.
 systemdict /.setglobal known
- { true .setglobal
+ { //true .setglobal
  }
  { /.setglobal { pop } bind def
-   /.currentglobal { false } bind def
-   /.gcheck { pop false } bind def
+   /.currentglobal { //false } bind def
+   /.gcheck { pop //false } bind def
  }
 ifelse
 
@@ -78,7 +78,7 @@ systemdict /.languagelevel known not { /.languagelevel 1 def } if
 % /DEFAULTPAPERSIZE (a4) def
 
 % Turn on array packing for the rest of initialization.
-true setpacking
+//true setpacking
 
 % Define the old MS-DOS EOF character as a no-op.
 % This is a hack to get around the absurd habit of MS-DOS editors
@@ -110,13 +110,13 @@ counttomark array astore exch pop % ']' isn't defined yet
 
 currentdict /PDFSTEP known /PDFSTEP exch def
 % if PDFSTEP is on, turn on PDFDEBUG
-PDFSTEP { /PDFDEBUG true def } if
+PDFSTEP { /PDFDEBUG //true def } if
 
   /VMDEBUG
     INITDEBUG {{print mark
             systemdict /level2dict known
-	     { .currentglobal dup false .setglobal vmstatus
-	       true .setglobal vmstatus 3 -1 roll pop
+	     { .currentglobal dup //false .setglobal vmstatus
+	       //true .setglobal vmstatus 3 -1 roll pop
 	       6 -2 roll pop .setglobal
 	     }
 	     { vmstatus 3 -1 roll pop
@@ -165,7 +165,7 @@ currentdict /NOTRANSPARENCY known   /NOTRANSPARENCY exch def
 currentdict /DOPS known   /DOPS exch def
 currentdict /NOSUBSTDEVICECOLORS known   /NOSUBSTDEVICECOLORS exch def
 % The default value of ORIENT1 is true, not false.
-currentdict /ORIENT1 known not { /ORIENT1 true def } if
+currentdict /ORIENT1 known not { /ORIENT1 //true def } if
 currentdict /OSTACKPRINT known   /OSTACKPRINT exch def
 currentdict /OUTPUTFILE known	% obsolete
  { /OutputFile /OUTPUTFILE load def
@@ -173,9 +173,9 @@ currentdict /OUTPUTFILE known	% obsolete
  } if
 currentdict /QUIET known   /QUIET exch def
 % DELAYSAFER is effectively the same as newer NOSAFER
-currentdict /DELAYSAFER known { /DELAYSAFER true def /NOSAFER true def } if
+currentdict /DELAYSAFER known { /DELAYSAFER //true def /NOSAFER //true def } if
 /SAFER currentdict /NOSAFER known {
-  false
+  //false
 } {
   currentdict /SAFER known
   currentdict /PARANOIDSAFER known or	% PARANOIDSAFER is equivalent
@@ -288,7 +288,7 @@ QUIET not { printgreeting flush } if
 
 % If we're delaying binding, remember everything that needs to be bound later.
 DELAYBIND NOBIND not and
- { .currentglobal false .setglobal
+ { .currentglobal //false .setglobal
    systemdict /.delaybind 2000 array .forceput
    .setglobal
    userdict /.delaycount 0 put
@@ -317,7 +317,7 @@ currentdict /hwsizedict .undef
  { //null .getdeviceparams
  } bind odef
 /.putdeviceprops
- { //null true counttomark 1 add 3 roll .putdeviceparams
+ { //null //true counttomark 1 add 3 roll .putdeviceparams
    dup type /booleantype ne
     { dup mark eq { /unknown /rangecheck } if
       counttomark 4 add 1 roll cleartomark pop pop pop
@@ -337,8 +337,8 @@ currentdict /hwsizedict .undef
 
 % Utility for removing all entries from a dictionary
 /.PurgeDict   % <dict> .PurgeDict -
-{ { true
-    1 index { pop exch pop false exit
+{ { //true
+    1 index { pop exch pop //false exit
     } forall
     { exit
     } if
@@ -397,10 +397,10 @@ userdict /#copies 1 put
 	  exch get exec
 	} odef
 /.echo /echo load def
-userdict /.echo.mode true put
+userdict /.echo.mode //true put
 /echo	{dup /.echo.mode exch store .echo} odef
 /.eexec_param_dict mark
-  /eexec true
+  /eexec //true
   /seed 55665
 .dicttomark readonly def
 /eexec {
@@ -425,7 +425,7 @@ userdict /.echo.mode true put
 	     ifelse
 	   }
 	  ifelse
-          currentoverprint false setoverprint 1 setgray .fillpage setoverprint
+          currentoverprint //false setoverprint 1 setgray .fillpage setoverprint
           exec
 	} odef
 % To satisfy the Genoa FTS, executive must be a procedure, not an operator.
@@ -466,7 +466,7 @@ userdict /.echo.mode true put
 	dup 0 //identmatrix putinterval
 } odef
 /languagelevel 1 def		% gs_lev2.ps may change this
-/makeimagedevice { false makewordimagedevice } odef
+/makeimagedevice { //false makewordimagedevice } odef
 /matrix	{ 6 array identmatrix } odef
 % .promptmsg is redefined if the interpreter includes readline support.
 /.promptmsg {
@@ -483,7 +483,7 @@ userdict /.echo.mode true put
 		% We must close the file when execution terminates,
 		% regardless of the state of the stack,
 		% and then propagate an error, if any.
-	  cvx null {.runexec} .errorexec
+	  cvx //null {.runexec} .errorexec
 	} odef
 % Execute a file.
 % Level 2 uses 2 .stop to clear the e-stack for a successful startjob:
@@ -498,7 +498,7 @@ userdict /.echo.mode true put
 	% If we got back here from a startjob, just keep going.
 	% startjob replaces the null on the o-stack with a procedure
 	% to be executed when we get back here.
-  dup //null ne { exec true } { pop false } ifelse
+  dup //null ne { exec //true } { pop //false } ifelse
 } bind def
 /.runexec2 {		% <continue> <file|fileproc> .runexec2 -
   exch {
@@ -557,10 +557,10 @@ odef
 } odef
 /showpage {
 	0 .endpage .doneshowpage {
-	  .currentnumcopies true .outputpage
+	  .currentnumcopies //true .outputpage
 	  (>>showpage, press <return> to continue<<\n) .confirm
 	  initgraphics
-          currentoverprint false setoverprint 1 setcolor
+          currentoverprint //false setoverprint 1 setcolor
           .fillpage
           setoverprint 0 setcolor
 	}
@@ -598,12 +598,12 @@ currentdict /.typenames .undef
 % We make a procedure for creating it, since we must create a new one
 % for each context with private local VM.
 /.makeinternaldict {
-  .currentglobal true .setglobal
+  .currentglobal //true .setglobal
     [ /dup .systemvar 1183615869 /eq .systemvar
 	[ /pop .systemvar //null ] cvx
-	false .setglobal
+	//false .setglobal
 	dup 1 10 dict .forceput	% proc is global, dict is local
-	true .setglobal
+	//true .setglobal
 	[ /internaldict /cvx .systemvar /invalidaccess /signalerror cvx ] cvx
       /ifelse .systemvar
     ] cvx executeonly
@@ -629,7 +629,7 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 /copystring
 	{ dup length string copy } bind def
 /findlibfile {
-  .systemvmlibfile { dup .filename pop exch true } { false } ifelse
+  .systemvmlibfile { dup .filename pop exch //true } { //false } ifelse
 } odef
 /.growdictlength	% get size for growing a dictionary
 	{ length 3 mul 2 idiv 1 add
@@ -648,7 +648,7 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
   pop
 } {
   /.localvmarray {
-    .currentglobal false .setglobal
+    .currentglobal //false .setglobal
     exch array exch .setglobal
   } bind def
 } ifelse
@@ -656,7 +656,7 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
   pop
 } {
   /.localvmdict {
-    .currentglobal false .setglobal
+    .currentglobal //false .setglobal
     exch dict exch .setglobal
   } bind def
 } ifelse
@@ -702,7 +702,7 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 
 % The following procedures are documented.
 /copydevice {		% <device> copydevice <newdevice>
-  false .copydevice2
+  //false .copydevice2
 } odef
 /finddevice {		% <devicename> finddevice <device>
   /devicedict .systemvar exch get
@@ -710,7 +710,7 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 		% This is the first request for this type of device.
 		% Create a default instance now.
 		% Stack: [proto null]
-    .currentglobal true .setglobal exch
+    .currentglobal //true .setglobal exch
     dup dup 0 get copydevice 1 exch put
     exch .setglobal
   } if 1 get
@@ -756,10 +756,10 @@ userdict /.currentresourcefile //null put
 /shellarguments		% -> shell_arguments true (or) false
 	{ /ARGUMENTS where
 	   { /ARGUMENTS get dup type /arraytype eq
-	      { aload pop /ARGUMENTS //null store true }
-	      { pop false }
+	      { aload pop /ARGUMENTS //null store //true }
+	      { pop //false }
 	     ifelse }
-	   { false } ifelse
+	   { //false } ifelse
 	} bind def
 /.confirm {
   DISPLAYING NOPAUSE not TTYPAUSE or and {
@@ -776,7 +776,7 @@ userdict /.currentresourcefile //null put
   TTYPAUSE {
     (/dev/tty) (r) file dup read pop pop closefile
   } {
-    .echo.mode false echo
+    .echo.mode //false echo
     (%stdin) (r) file dup read {
       dup (\n) 0 get eq { pop pop } { unread } ifelse
     } {
@@ -790,7 +790,7 @@ userdict /.currentresourcefile //null put
 % This is called with a procedure or executable file on the operand stack.
 /.execute {		% <obj> .execute <stopped>
   stopped $error /newerror get and
-   { /handleerror .systemvar exec flush true } { false } ifelse
+   { /handleerror .systemvar exec flush //true } { //false } ifelse
 } bind def
 /execute {		% <obj> execute -
   .execute pop
@@ -870,13 +870,13 @@ userdict /.currentresourcefile //null put
 /.errorhandler		% <command> <errorname> .errorhandler -
   {		% Detect an internal 'stopped'.
     1 .instopped { //null eq { pop pop stop } if } if
-    (I) false .setdebug
-    $error /.inerror get 1 .instopped { pop } { pop true } ifelse
+    (I) //false .setdebug
+    $error /.inerror get 1 .instopped { pop } { pop //true } ifelse
      { .unstoppederrorhandler
      } if	% detect error recursion
-    $error /globalmode .currentglobal false .setglobal put
-    $error /.inerror true put
-    $error /newerror true put
+    $error /globalmode .currentglobal //false .setglobal put
+    $error /.inerror //true put
+    $error /newerror //true put
     $error exch /errorname exch put
     $error exch /command exch put
     $error /errorinfo known not { $error /errorinfo //null put } if
@@ -909,7 +909,7 @@ userdict /.currentresourcefile //null put
 		% During initialization, we don't reset the allocation
 		% mode on errors.
     $error /globalmode get $error /.nosetlocal get and .setglobal
-    $error /.inerror false put
+    $error /.inerror //false put
     stop
   } bind def
 % Define the standard handleerror.  We break out the printing procedure
@@ -944,7 +944,7 @@ userdict /.currentresourcefile //null put
        ifelse
        .clearerror flush
      }
-     { % newerror is false, test to see if user has set handleerror to a different
+     { % newerror is //false, test to see if user has set handleerror to a different
        % routine, if so execute it, otherwise, just return.  This code deals with the
        % Genoa issue of setting /handleerror, and then calling it, without an error
        % being set.  We were erroring in this case, due to /command load failing.
@@ -952,7 +952,7 @@ userdict /.currentresourcefile //null put
         //JOBSERVER {
 	    /errordict .systemvar /handleerror get /.GShandleerror .systemvar ne
 	} {
-	    false
+	    //false
 	} ifelse
          { /errordict .systemvar begin /handleerror load .internalstopped pop end
          }
@@ -1007,8 +1007,8 @@ userdict /.currentresourcefile //null put
 
        (\nOperand stack:) OSTACKPRINT /.printostack /ostack 4 index exec
        (\nExecution stack:) ESTACKPRINT /.printestack /estack 4 index exec
-       (\nBacktrace:) true /.printbacktrace /backtrace 4 index exec
-       (\nDictionary stack:) false /.printdstack /dstack 4 index exec
+       (\nBacktrace:) //true /.printbacktrace /backtrace 4 index exec
+       (\nDictionary stack:) //false /.printdstack /dstack 4 index exec
        () =
        pop	% printing procedure
 
@@ -1041,14 +1041,14 @@ userdict /.currentresourcefile //null put
    } bind def
 % Define a procedure for clearing the error indication.
 /.clearerror
- { $error /newerror false put
+ { $error /newerror //false put
    $error /errorname //null put
    $error /errorinfo //null put
    0 .setoserrno
  } bind def
 
 % Define $error.  This must be in local VM.
-.currentglobal false .setglobal
+.currentglobal //false .setglobal
 /$error 40 dict .forcedef	% $error is local, systemdict is global
 		% newerror, errorname, command, errorinfo,
 		% ostack, estack, dstack, recordstacks,
@@ -1056,12 +1056,12 @@ userdict /.currentresourcefile //null put
 		% .inerror, .nosetlocal, position,
 		% plus extra space for badly designed error handers.
 $error begin
-  /newerror false def
-  /recordstacks true def
-  /binary false def
+  /newerror //false def
+  /recordstacks //true def
+  /binary //false def
   /globalmode .currentglobal def
-  /.inerror false def
-  /.nosetlocal true def
+  /.inerror //false def
+  /.nosetlocal //true def
   /position //null def
   /errorinfo //null def
 end
@@ -1085,7 +1085,7 @@ end
  { errordict exch .registererror2
  } bind def
 /.registererror2	% <dict> <name> .registererror -
- { .currentglobal true .setglobal	% create procs in global VM
+ { .currentglobal //true .setglobal	% create procs in global VM
    3 1 roll
    mark 1 index systemdict /.errorhandler get /exec load .packtomark cvx put
    .setglobal
@@ -1206,7 +1206,7 @@ end
 (END PROCS) VMDEBUG
 
 % Define the font directory.
-/FontDirectory false .setglobal 100 dict true .setglobal
+/FontDirectory //false .setglobal 100 dict //true .setglobal
 .forcedef		% FontDirectory is local, systemdict is global
 
 % Define the encoding dictionary.
@@ -1350,11 +1350,11 @@ devicedict /Default devicedict .defaultdevicename get put
 /.setloresscreen {	% <dpi> .setloresscreen -
   .setloreshalftone
   0 array cvx settransfer	% Genoa CET won't accept a packed array!
-  /setstrokeadjust where { pop true setstrokeadjust } if
+  /setstrokeadjust where { pop //true setstrokeadjust } if
 } bind def
 % Use a 45-degree spot screen for high-resolution devices.
 % The PS3 CET insists that the screen be an array and not a packedarray (!).
-currentpacking false setpacking
+currentpacking //false setpacking
 /.linescreen
 % The following screen algorithm is used by permission of the author.
     { ((C) 1989 Berthold K.P. Horn) pop
@@ -1417,12 +1417,12 @@ setpacking
 	  { COLORSCREEN }
 	  { 3 index }
 	 ifelse
-	 dup false ne
+	 dup //false ne
 	  { 4 1 roll 3 copy 6 copy 13 -1 roll
 	% For really high-quality screening on printers, we need to
 	% give each plane its own screen angle.  Unfortunately,
 	% this currently has very large space and time costs.
-	    true eq		% true => different angles,
+	    //true eq		% true => different angles,
 				% 0 => same angles
 	     { { 45 90 15 75 } { 3 1 roll exch pop 12 3 roll } forall
 	     }
@@ -1466,7 +1466,7 @@ setpacking
   ifelse
   settransfer
   /setstrokeadjust where
-  { pop false setstrokeadjust }
+  { pop //false setstrokeadjust }
   if
 
   % Increase fill adjustment so that we effectively use Adobe's
@@ -1493,15 +1493,15 @@ setpacking
 /.getdefaulthalftone {
   % try the device to see if it has a default halftone
   { currentdevice /HalftoneDefault gsgetdeviceprop } .internalstopped
-  { pop pop false }		% no device property
-  { dup type /dicttype eq { true } { pop false } ifelse }
+  { pop pop //false }		% no device property
+  { dup type /dicttype eq { //true } { pop //false } ifelse }
   ifelse
   % stack: <halftonedict> true    if default found
   %         false		  not found
   dup not
   { % device did not provide a default, try Resource
     pop { /Default /Halftone /findresource .systemvar exec } .internalstopped 
-    { pop pop false } { true } ifelse
+    { pop pop //false } { //true } ifelse
   }
   if
 } bind def
@@ -1654,7 +1654,7 @@ setpacking
   } {
     2 index {                                      % ... {} b [dl] (templ) (ffn) (d)
       1 index                                      % ... {} b [dl] (templ) (ffn) (d) (ffn)
-      false .file_name_combine {                   % ... {} b [dl] (templ) (ffn) (dffn)
+      //false .file_name_combine {                 % ... {} b [dl] (templ) (ffn) (dffn)
         5 index exec                               % ... (t1) ?l1 {} b [dl] (templ) (ffn)
       } {                                          % ... {} b [dl] (templ) (ffn) (d) (ffn)
         pop pop                                    % ... {} b [dl] (templ) (ffn)
@@ -1862,7 +1862,7 @@ ifelse
 % If the initial device parameters are invalid, the setdevice may fail.
 % Trap this and produce a reasonable error message.
 { setdevice }		% does an erasepage
-INITDEBUG { exec false } { .internalstopped } ifelse {
+INITDEBUG { exec //false } { .internalstopped } ifelse {
   (**** Unable to open the initial device, quitting.) = flush 1 .quit
 } if
 
@@ -1958,7 +1958,7 @@ gsave
    count 3 ge {
      dup mark eq {
        2 index countdictstack eq {
-          1 index /lucas where { /lucas get eq } { pop false } ifelse {
+          1 index /lucas where { /lucas get eq } { pop //false } ifelse {
             stop
          } if
        } if
@@ -1971,9 +1971,9 @@ gsave
 systemdict /EPSBoundingBoxInit known { EPSBoundingBoxInit } if
 
 % If we want a "safer" system, disable some obvious ways to cause havoc.
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 /SAFETY 2 dict
-  dup /safe false put
+  dup /safe //false put
   dup /tempfiles 10 dict readonly put
 readonly def
 .setglobal
@@ -1998,7 +1998,7 @@ readonly def
             concatstrings concatstrings .generate_dir_list_templates
         } if
       ]
-      /LockFilePermissions true
+      /LockFilePermissions //true
     >> setuserparams
   }
   if
@@ -2007,7 +2007,7 @@ readonly def
   % properties and pagedevice .LockSafetyParams in agreement even
   % after a restore that changes the value to false.
   currentglobal currentpagedevice gcheck setglobal % use correct VM space
-  << /.LockSafetyParams true >> setpagedevice
+  << /.LockSafetyParams //true >> setpagedevice
   setglobal
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
@@ -2044,7 +2044,7 @@ readonly def
 % the file can be deleted later, even if SAFER is set.
 /.tempfile {
   .tempfile	% filename file
-  //SAFETY /tempfiles get 2 .argindex true .forceput
+  //SAFETY /tempfiles get 2 .argindex //true .forceput
 } .bind executeonly odef
 
 % If we are running in SAFER mode, lock things down
@@ -2074,7 +2074,7 @@ SAFER { .setsafe } if
 
 % Turn off array packing, since some PostScript code assumes that
 % procedures are writable.
-false setpacking
+//false setpacking
 
 (END INIT) VMDEBUG
 
@@ -2090,13 +2090,13 @@ false setpacking
   } repeat pop
 	% Turn on idiom recognition, if available.
   currentuserparams /IdiomRecognition known {
-    /IdiomRecognition true .definepsuserparam
+    /IdiomRecognition //true .definepsuserparam
   } if
   psuserparams readonly pop
   systemdict /.definepsuserparam undef
 	% Save a copy of userparams for use with save/restore
 	% (and, if implemented, context switching).
-  .currentglobal false .setglobal
+  .currentglobal //false .setglobal
      mark userparams { } forall .dicttomark readonly
      /userparams exch .forcedef		% systemdict is read-only
   .setglobal
@@ -2124,8 +2124,8 @@ false setpacking
 } if
 
 % Establish local VM as the default.
-false /setglobal where { pop setglobal } { .setglobal } ifelse
-$error /.nosetlocal false put
+//false /setglobal where { pop setglobal } { .setglobal } ifelse
+$error /.nosetlocal //false put
 
 (END GLOBAL) VMDEBUG
 
@@ -2189,6 +2189,6 @@ WRITESYSTEMDICT not { systemdict readonly pop } if
 % devices without spot color support. Once Ghostscript can
 % support DeviceN and spot color separations this will need to
 % be 'true' in some cases.
-userdict /AGM_preserve_spots false put
+userdict /AGM_preserve_spots //false put
 
 % The interpreter will run the initial procedure (start).

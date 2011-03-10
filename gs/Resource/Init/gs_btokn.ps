@@ -20,7 +20,7 @@
 
 % Define whether or not to allow writing dictionaries.
 % This is a non-standard feature!
-/WRITEDICTS false def
+/WRITEDICTS //false def
 
 languagelevel 1 .setlanguagelevel
 level2dict begin
@@ -163,8 +163,8 @@ mark
   /booleantype 1 index
   /nametype { length add } bind
   /stringtype 1 index
-  /arraytype null
-  /dicttype null
+  /arraytype //null
+  /dicttype //null
 .dicttomark def
 /.cntobj {	% <<arguments and results as for procedures in cntdict>>
   dup type //cntdict exch get exec
@@ -295,7 +295,7 @@ cntdict /dicttype {
   3 copy exch
 		% We must allocate the array in local VM
 		% to avoid a possible invalidaccess.
-  .currentglobal false .setglobal exch 1 array astore exch .setglobal
+  .currentglobal //false .setglobal exch 1 array astore exch .setglobal
   .writeobjects pop pop pop
 } .bind def
 
@@ -313,7 +313,7 @@ cntdict /dicttype {
       dup { .objectprinttest } .internalstopped {
 	pop 100 string cvs
       } if
-      false ] 250 printobject
+      //false ] 250 printobject
     }
     //.printerror	% known to be a procedure
     ifelse

@@ -28,7 +28,7 @@
 % gs_lev2.ps and gs_ll3.ps have also been modified so that they no longer
 % attempt to execute these PostScript files.
 %
-.currentglobal true .setglobal
+.currentglobal //true .setglobal
 systemdict begin
 
 %
@@ -94,7 +94,7 @@ end % colorspacedict
 %
 /..nosubstdevicetest
 {
-  false mark 3 -1 roll
+  //false mark 3 -1 roll
   % If we have already recorded this space, don't repeat it.
   systemdict /..page_default_spaces get 1 index known {
     cleartomark
@@ -106,7 +106,7 @@ end % colorspacedict
         pop 0 eq {
 		  % Default* defined by defineresource
           systemdict /..page_default_spaces get 1 index //true put
-		  dup /ColorSpace findresource 4 2 roll pop pop true 
+		  dup /ColorSpace findresource 4 2 roll pop pop //true 
         }{
           cleartomark
         } ifelse
@@ -165,8 +165,8 @@ bind def
 % <color_space> <color_space_name> cs_substitute_DeviceRGB_for_PDFX_or_PDFA <color_space1> <color_space2>
 %
 /cs_substitute_DeviceRGB_for_PDFX_or_PDFA
-{ systemdict /PDFX .knownget not { false } if
-  systemdict /PDFA .knownget not { false } if
+{ systemdict /PDFX .knownget not { //false } if
+  systemdict /PDFA .knownget not { //false } if
   or {
     dup /ColorSpace resourcestatus {
       pop pop

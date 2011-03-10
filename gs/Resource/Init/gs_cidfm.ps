@@ -62,7 +62,7 @@ languagelevel 2 .setlanguagelevel
   } bind def
 
   /IsActive % <record> IsActive <bool>
-  { pop true
+  { pop //true
   } bind def
 
 currentdict end def
@@ -72,8 +72,8 @@ currentdict end def
   dup length dict copy                  % <<map>>
   dup length dict                       % <<map>> <<temp>>
   { % Choose a random record :
-    true 2 index {                      % <<map>> <<temp>> true /Name /Subs
-      3 2 roll pop false exit           % <<map>> <<temp>> /Name /Subs false
+    //true 2 index {                    % <<map>> <<temp>> true /Name /Subs
+      3 2 roll pop //false exit         % <<map>> <<temp>> /Name /Subs false
     } forall
     { exit                              % <<map>> <<temp>>
     } if                                % <<map>> <<temp>> /Name /Subs
@@ -98,8 +98,8 @@ currentdict end def
     } loop
     % Not cycled, now purge the <<temp>> :
     { % Choose a random record :
-      true 1 index {                    % <<map>> <<temp>> true /Name /Subs
-        3 2 roll pop false exit         % <<map>> <<temp>> /Name /Subs false
+      //true 1 index {                  % <<map>> <<temp>> true /Name /Subs
+        3 2 roll pop //false exit       % <<map>> <<temp>> /Name /Subs false
       } forall
       { exit                            % <<map>> <<temp>>
       } if                              % <<map>> <<temp>> /Name /Subs
@@ -116,9 +116,9 @@ currentdict end def
     /Substitute exch def
     /RecordVirtualMethods //RecordVirtualMethods def
     currentdict end
-    true
+    //true
   } {
-    false
+    //false
   } ifelse
 } bind def
 

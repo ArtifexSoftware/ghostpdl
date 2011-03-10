@@ -75,7 +75,7 @@ level2dict begin
 % be changed. Also be careful to preserve 'executable' state.
 /.copyparam {			% <value> .copyparam <value'>
   dup type /arraytype eq {
-    .currentglobal true .setglobal exch 
+    .currentglobal //true .setglobal exch 
     dup wcheck exch dup xcheck exch		% original attributes
     dup length array exch dup {	% stack: destination_array original_array original_array
       dup type /arraytype eq {
@@ -98,7 +98,7 @@ level2dict begin
   } if
   dup type /stringtype eq {
     dup wcheck exch	% save attr for setting readonly
-    .currentglobal true .setglobal
+    .currentglobal //true .setglobal
     1 index length string exch .setglobal
     copy exch not { readonly } if
   } if
@@ -273,7 +273,7 @@ end
   /MaxUPathItem 0 .definepsuserparam
 
 % File Access Permission parameters
-  .currentglobal true .setglobal
+  .currentglobal //true .setglobal
   /.checkFilePermitparams {
     type /arraytype eq {
       currentuserparams /LockFilePermissions get {
@@ -289,7 +289,7 @@ end
       5 { pop } repeat /setuserparams /typecheck signalerror
     }
     ifelse
-    true
+    //true
   } .bind def
 % Initialize the File Permission access control to wide open
 % These will only be accessed via current/set userparams.
@@ -312,7 +312,7 @@ pssystemparams begin
   /CurUPathCache 0 .forcedef
   /CurScreenStorage 0 .forcedef
   /CurSourceList 0 .forcedef
-  /DoPrintErrors false .forcedef
+  /DoPrintErrors //false .forcedef
   /JobTimeout 0 .forcedef
   /LicenseID (LN-001) .forcedef     % bogus
   /MaxDisplayList 140000 .forcedef
@@ -332,28 +332,28 @@ end
 % %ProcessComment and %ProcessDSCComment are known to the interpreter.
 % These procedures take the file and comment string and file as operands.
 /.checkprocesscomment {
-  dup null eq {
-    pop true
+  dup //null eq {
+    pop //true
   } {
     dup xcheck {
       type dup /arraytype eq exch /packedarraytype eq or
     } {
-      pop false
+      pop //false
     } ifelse
   } ifelse
 } .bind def
-/ProcessComment null .definepsuserparam
+/ProcessComment //null .definepsuserparam
 psuserparams /ProcessComment {.checkprocesscomment} put
 (%ProcessComment) cvn {
   /ProcessComment getuserparam
-  dup null eq { pop pop pop } { exec } ifelse
+  dup //null eq { pop pop pop } { exec } ifelse
 } bind def
-/ProcessDSCComment null .definepsuserparam
+/ProcessDSCComment //null .definepsuserparam
 psuserparams /ProcessDSCComment {.checkprocesscomment} put
-/.loadingfont false def
+/.loadingfont //false def
 (%ProcessDSCComment) cvn {
   /ProcessDSCComment getuserparam
-  dup null eq .loadingfont or { pop pop pop } { exec } ifelse
+  dup //null eq .loadingfont or { pop pop pop } { exec } ifelse
 } bind def
 
 % ------ Miscellaneous ------ %
@@ -392,7 +392,7 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 .wheredict /setcolor {
   /FreeHandDict .where {
     /FreeHandDict get currentdict eq {
-      pop currentdict /setcolor known { currentdict true } { false } ifelse
+      pop currentdict /setcolor known { currentdict //true } { //false } ifelse
     } {
       .where
     } ifelse
@@ -515,7 +515,7 @@ end		% serverdict
 
 systemdict begin
 /quit {				% - quit -
-  //systemdict begin serverdict /.jobsave get null eq
+  //systemdict begin serverdict /.jobsave get //null eq
    { end //quit }
    { /quit .systemvar /invalidaccess /signalerror load end exec }
   ifelse
@@ -547,7 +547,7 @@ end		% serverdict
 
 /.dict1 { exch mark 3 1 roll .dicttomark } bind def
 
-currentglobal false setglobal 25 dict exch setglobal begin
+currentglobal //false setglobal 25 dict exch setglobal begin
 currentsystemparams
 
 % The following do not depend on the presence of setpagedevice.
@@ -718,7 +718,7 @@ currentdict end
 /devforall {		% <proc> <scratch> devforall -
   exch {
     1 index currentdevparams
-    /Type .knownget { /FileSystem eq } { false } ifelse
+    /Type .knownget { /FileSystem eq } { //false } ifelse
     { exec } { pop pop } ifelse
   } /exec load 3 packedarray cvx exch
   (*) 3 1 roll /IODevice resourceforall
@@ -739,15 +739,15 @@ currentdict end
 	exch dup /SearchOrder get
 	exch dup /Free get
 	exch /LogicalSize get
-	9 -1 roll pop true
+	9 -1 roll pop //true
       } {
-	pop false
+	pop //false
       } ifelse
     } {
-      pop false
+      pop //false
     } ifelse
   } {
-    pop false
+    pop //false
   } ifelse
 } odef
 
@@ -782,9 +782,9 @@ end
 	2 index /GetHalftoneName get exec dup type /nametype eq { .namestring } if
 	concatstrings concatstrings cvn	% stack: intentname procset crdname
 	dup /ColorRendering resourcestatus {
-	    pop pop exch pop exch pop true
+	    pop pop exch pop exch pop //true
 	} {
-	    pop /GetSubstituteCRD get exec false
+	    pop /GetSubstituteCRD get exec //false
 	} ifelse
     } .errorexec
 } odef
@@ -793,7 +793,7 @@ end
 
 /GetPageDeviceName {		% - GetPageDeviceName <name>
   currentpagedevice dup /PageDeviceName .knownget {
-    exch pop dup null eq { pop /none } if
+    exch pop dup //null eq { pop /none } if
   } {
     pop /none
   } ifelse
@@ -930,7 +930,7 @@ mark
   exch 3 index sub exch 2 index sub rectclip
   dup /PaintProc get
   1 index /Implementation known not {
-    1 index dup /Implementation null .forceput readonly pop
+    1 index dup /Implementation //null .forceput readonly pop
   } if
   exec
 } .bind odef	% must bind .forceput
@@ -957,7 +957,7 @@ def
   //.patterntypes 2 .argindex /PatternType get .knownget not {
       /makepattern .systemvar /rangecheck signalerror
   } if
-  .currentglobal false .setglobal exch
+  .currentglobal //false .setglobal exch
 		% Stack: proto matrix global buildproc
   3 index dup length 1 add dict .copydict
 		% Stack: proto matrix global buildproc newdict
@@ -987,7 +987,7 @@ def
 
 % The following functions emulate the actions of findcmykcustomcolor and
 % setcustomcolor.  These functions are described in Adobe's TN 5044.  That
-% same document also says "The following “operators” are not defined in the
+% same document also says "The following ï¿½operatorsï¿½ are not defined in the
 % PostScript Language Reference Manual, but should be used as pseudo-operators
 % in your PostScript language output. Separation applications from Adobe
 % Systems and other vendors will redefine these convention operators to
