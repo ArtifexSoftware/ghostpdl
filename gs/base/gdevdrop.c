@@ -576,7 +576,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 
     /* We know the device is a memory device, so we can store the
      * result directly into its scan lines, unless it is planar. */
-    pack = (tdev->num_planes == 1 ?
+    pack = (tdev->num_planes <= 1 ?
             ((dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color &&
               rop_depth == 24) ?
               pack_cmyk_1bit_from_standard : pack_from_standard) :
