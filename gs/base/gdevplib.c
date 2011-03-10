@@ -280,39 +280,39 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
         NULL, /* get_xfont_device */ \
         NULL, /* map_rgb_alpha_color */ \
         gx_page_device_get_page_device, \
-	NULL,	/* get_alpha_bits */\
-	NULL,	/* copy_alpha */\
-	NULL,	/* get_band */\
-	NULL,	/* copy_rop */\
-	NULL,	/* fill_path */\
-	NULL,	/* stroke_path */\
-	NULL,	/* fill_mask */\
-	NULL,	/* fill_trapezoid */\
-	NULL,	/* fill_parallelogram */\
-	NULL,	/* fill_triangle */\
-	NULL,	/* draw_thin_line */\
-	NULL,	/* begin_image */\
-	NULL,	/* image_data */\
-	NULL,	/* end_image */\
-	NULL,	/* strip_tile_rectangle */\
-	NULL,	/* strip_copy_rop */\
-	NULL,	/* get_clipping_box */\
-	NULL,	/* begin_typed_image */\
-	NULL,	/* get_bits_rectangle */\
-	NULL,	/* map_color_rgb_alpha */\
-	NULL,	/* create_compositor */\
-	NULL,	/* get_hardware_params */\
-	NULL,	/* text_begin */\
-	NULL,	/* finish_copydevice */\
-	NULL,	/* begin_transparency_group */\
-	NULL,	/* end_transparency_group */\
-	NULL,	/* begin_transparency_mask */\
-	NULL,	/* end_transparency_mask */\
-	NULL,	/* discard_transparency_layer */\
-	NULL,	/* get_color_mapping_procs */\
-	NULL,	/* get_color_comp_index */\
-	p_map_rgb_color, /* encode_color */\
-	p_map_color_rgb	/* decode_color */\
+        NULL,   /* get_alpha_bits */\
+        NULL,   /* copy_alpha */\
+        NULL,   /* get_band */\
+        NULL,   /* copy_rop */\
+        NULL,   /* fill_path */\
+        NULL,   /* stroke_path */\
+        NULL,   /* fill_mask */\
+        NULL,   /* fill_trapezoid */\
+        NULL,   /* fill_parallelogram */\
+        NULL,   /* fill_triangle */\
+        NULL,   /* draw_thin_line */\
+        NULL,   /* begin_image */\
+        NULL,   /* image_data */\
+        NULL,   /* end_image */\
+        NULL,   /* strip_tile_rectangle */\
+        NULL,   /* strip_copy_rop */\
+        NULL,   /* get_clipping_box */\
+        NULL,   /* begin_typed_image */\
+        NULL,   /* get_bits_rectangle */\
+        NULL,   /* map_color_rgb_alpha */\
+        NULL,   /* create_compositor */\
+        NULL,   /* get_hardware_params */\
+        NULL,   /* text_begin */\
+        NULL,   /* finish_copydevice */\
+        NULL,   /* begin_transparency_group */\
+        NULL,   /* end_transparency_group */\
+        NULL,   /* begin_transparency_mask */\
+        NULL,   /* end_transparency_mask */\
+        NULL,   /* discard_transparency_layer */\
+        NULL,   /* get_color_mapping_procs */\
+        NULL,   /* get_color_comp_index */\
+        p_map_rgb_color, /* encode_color */\
+        p_map_color_rgb /* decode_color */\
 }
 
 static const gx_device_procs plibm_procs =
@@ -340,47 +340,47 @@ static const gx_device_procs plibk_procs =
  */
 #define plib_prn_device(procs, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
 {       std_device_full_body_type(gx_device_plib, &procs, dev_name, &st_device_printer,\
-	  (int)((float)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10 + 0.5),\
-	  (int)((float)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10 + 0.5),\
-	  X_DPI, Y_DPI,\
-	  num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
-	  (float)(0), (float)(0),\
-	  (float)(0), (float)(0),\
-	  (float)(0), (float)(0)\
-	),\
-	 { 0 },		/* std_procs */\
-	 { 0 },		/* skip */\
-	 { print_page,\
-	   gx_default_print_page_copies,\
-	   { gx_default_create_buf_device,\
-	     gx_default_size_buf_device,\
-	     gx_default_setup_buf_device,\
-	     gx_default_destroy_buf_device\
-	   },\
-	   gdev_prn_default_get_space_params,\
-	   gx_default_start_render_thread,\
-	   gx_default_open_render_device,\
-	   gx_default_close_render_device,\
-	   gx_default_buffer_page\
-	 },\
-	 { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
-	     { 0, /* page_uses_transparency */\
+          (int)((float)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10 + 0.5),\
+          (int)((float)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10 + 0.5),\
+          X_DPI, Y_DPI,\
+          num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
+          (float)(0), (float)(0),\
+          (float)(0), (float)(0),\
+          (float)(0), (float)(0)\
+        ),\
+         { 0 },         /* std_procs */\
+         { 0 },         /* skip */\
+         { print_page,\
+           gx_default_print_page_copies,\
+           { gx_default_create_buf_device,\
+             gx_default_size_buf_device,\
+             gx_default_setup_buf_device,\
+             gx_default_destroy_buf_device\
+           },\
+           gdev_prn_default_get_space_params,\
+           gx_default_start_render_thread,\
+           gx_default_open_render_device,\
+           gx_default_close_render_device,\
+           gx_default_buffer_page\
+         },\
+         { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
+             { 0, /* page_uses_transparency */\
                0, /* Bandwidth */\
                MINBANDHEIGHT, /* BandHeight */\
                0 /* BandBufferSpace */},\
-	   0/*false*/,	/* params_are_read_only */\
-	   BandingAlways	/* banding_type */\
-	 },\
-	 { 0 },		/* fname */\
-	0/*false*/,	/* OpenOutputFile */\
-	0/*false*/,	/* ReopenPerPage */\
-	0/*false*/,	/* page_uses_transparency */\
-	0/*false*/, -1,	/* Duplex[_set] */\
-	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
-	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
-	0, 		/* num_render_threads_requested */\
-	{ 0 },	/* save_procs_while_delaying_erasepage */\
-	{ 0 }	/* ... orig_procs */}
+           0/*false*/,  /* params_are_read_only */\
+           BandingAlways        /* banding_type */\
+         },\
+         { 0 },         /* fname */\
+        0/*false*/,     /* OpenOutputFile */\
+        0/*false*/,     /* ReopenPerPage */\
+        0/*false*/,     /* page_uses_transparency */\
+        0/*false*/, -1, /* Duplex[_set] */\
+        0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
+        0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
+        0,              /* num_render_threads_requested */\
+        { 0 },  /* save_procs_while_delaying_erasepage */\
+        { 0 }   /* ... orig_procs */}
 
 /* The device descriptors themselves */
 const gx_device_plib gs_plib_device =
@@ -460,10 +460,10 @@ static void dump_band(int y, FILE *dump_file)
                 fputc(*g++, dump_file);
                 fputc(*b++, dump_file);
             }
-	    r += bandBufferStride*3-dump_w;
-	    g += bandBufferStride*3-dump_w;
+            r += bandBufferStride*3-dump_w;
+            g += bandBufferStride*3-dump_w;
             b += bandBufferStride*3-dump_w;
-	}
+        }
     } else if (dump_nc == 4) {
         if (dump_l2bits == 0) {
             while (y--) {
@@ -487,7 +487,7 @@ static void dump_band(int y, FILE *dump_file)
                 g += bandBufferStride*4-((dump_w+7)>>3);
                 b += bandBufferStride*4-((dump_w+7)>>3);
                 k += bandBufferStride*4-((dump_w+7)>>3);
-	    }
+            }
         } else {
             while (y--) {
                 int w = dump_w;
@@ -501,7 +501,7 @@ static void dump_band(int y, FILE *dump_file)
                 g += bandBufferStride*4-dump_w;
                 b += bandBufferStride*4-dump_w;
                 k += bandBufferStride*4-dump_w;
-	    }
+            }
         }
     } else {
         if (dump_l2bits == 0) {
@@ -546,7 +546,7 @@ plib_put_params(gx_device * pdev, gs_param_list * plist)
         ppdev->space_params.band.BandHeight = bandHeight;
     }
     if (ecode >= 0)
-	ecode = code;
+        ecode = code;
     return ecode;
 }
 
@@ -566,24 +566,24 @@ set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
     int pi;
 
     if (num_planes) {
-	if (base && !mdev->plane_depth)
-	    return_error(gs_error_rangecheck);
-	planes = mdev->planes;
+        if (base && !mdev->plane_depth)
+            return_error(gs_error_rangecheck);
+        planes = mdev->planes;
     } else {
-	planes = &plane1;
-	plane1.depth = mdev->color_info.depth;
-	num_planes = 1;
+        planes = &plane1;
+        plane1.depth = mdev->color_info.depth;
+        num_planes = 1;
     }
 
     for (pi = 0; pi < num_planes; ++pi) {
-	byte **pend = line_ptrs + setup_height;
-	byte *scan_line = base;
+        byte **pend = line_ptrs + setup_height;
+        byte *scan_line = base;
 
-	while (line_ptrs < pend) {
-	    *line_ptrs++ = scan_line;
-	    scan_line += raster * num_planes;
-	}
-	base += raster;
+        while (line_ptrs < pend) {
+            *line_ptrs++ = scan_line;
+            scan_line += raster * num_planes;
+        }
+        base += raster;
     }
 
     return 0;
@@ -603,26 +603,26 @@ plib_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
 
     if (line_ptrs == NULL) {
         /* Free any existing line pointers array */
-	if (mdev->line_ptrs != NULL)
-	    gs_free_object(mdev->line_pointer_memory, mdev->line_ptrs,
-		       "mem_close");
-	/*
-	 * Allocate line pointers now; free them when we close the device.
-	 * Note that for multi-planar devices, we have to allocate using
-	 * full_height rather than setup_height.
-	 */
-	line_ptrs = (byte **)
-	    gs_alloc_byte_array(mdev->memory,
-				(mdev->num_planes ?
-				 full_height * mdev->num_planes :
-				 setup_height),
-				sizeof(byte *), "setup_buf_device");
-	if (line_ptrs == 0)
-	    return_error(gs_error_VMerror);
-	mdev->line_pointer_memory = mdev->memory;
-	mdev->foreign_line_pointers = false;
-	mdev->line_ptrs = line_ptrs;
-	mdev->raster = bandBufferStride * mdev->num_planes;
+        if (mdev->line_ptrs != NULL)
+            gs_free_object(mdev->line_pointer_memory, mdev->line_ptrs,
+                       "mem_close");
+        /*
+         * Allocate line pointers now; free them when we close the device.
+         * Note that for multi-planar devices, we have to allocate using
+         * full_height rather than setup_height.
+         */
+        line_ptrs = (byte **)
+            gs_alloc_byte_array(mdev->memory,
+                                (mdev->num_planes ?
+                                 full_height * mdev->num_planes :
+                                 setup_height),
+                                sizeof(byte *), "setup_buf_device");
+        if (line_ptrs == 0)
+            return_error(gs_error_VMerror);
+        mdev->line_pointer_memory = mdev->memory;
+        mdev->foreign_line_pointers = false;
+        mdev->line_ptrs = line_ptrs;
+        mdev->raster = bandBufferStride * mdev->num_planes;
     }
     mdev->height = full_height;
     code = set_line_ptrs(mdev,
@@ -644,20 +644,20 @@ plib_get_bits_rectangle_mem(gx_device *pdev, const gs_int_rect *prect,
     /* First off, see if we can satisfy get_bits_rectangle with just returning
      * pointers to the existing data. */
     {
-	gs_get_bits_params_t copy_params;
-	byte *base = scan_line_base(mdev, y);
-	int code;
+        gs_get_bits_params_t copy_params;
+        byte *base = scan_line_base(mdev, y);
+        int code;
 
-	copy_params.options =
-	    GB_COLORS_NATIVE | GB_PACKING_PLANAR | GB_ALPHA_NONE |
-	    (mdev->raster ==
-	     bitmap_raster(mdev->width * mdev->color_info.depth) ?
-	     GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
-	copy_params.raster = mdev->raster;
-	code = gx_get_bits_return_pointer(pdev, x, h, params,
-					  &copy_params, base);
-	if (code >= 0)
-	    return code;
+        copy_params.options =
+            GB_COLORS_NATIVE | GB_PACKING_PLANAR | GB_ALPHA_NONE |
+            (mdev->raster ==
+             bitmap_raster(mdev->width * mdev->color_info.depth) ?
+             GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
+        copy_params.raster = mdev->raster;
+        code = gx_get_bits_return_pointer(pdev, x, h, params,
+                                          &copy_params, base);
+        if (code >= 0)
+            return code;
     }
     return mem_get_bits_rectangle(pdev, prect, params, pprect);
 }
@@ -770,7 +770,7 @@ plibg_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-/* Map a color tuple back to an RGB color. */
+/* Map an rgb color tuple back to an RGB color. */
 static int
 plib_map_color_rgb(gx_device * dev, gx_color_index color,
                   gx_color_value prgb[3])
@@ -788,23 +788,28 @@ plib_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-/* Map a color tuple back to a CMYK color. */
+/* Map a cmyk color tuple back to an RGB color. */
 static int
 plibc_map_color_cmyk(gx_device * dev, gx_color_index color,
-                       gx_color_value pcmyk[4])
+                       gx_color_value prgb[4])
 {
     uint bitspercolor = dev->color_info.depth / 4;
     uint colormask = (1 << bitspercolor) - 1;
     uint max_cmyk = dev->color_info.max_color;
+    uint c, m, y, k;
 
-    pcmyk[0] = ((color >> (bitspercolor * 3)) & colormask) *
-        (ulong) gx_max_color_value / max_cmyk;
-    pcmyk[1] = ((color >> (bitspercolor * 2)) & colormask) *
-        (ulong) gx_max_color_value / max_cmyk;
-    pcmyk[2] = ((color >> bitspercolor) & colormask) *
-        (ulong) gx_max_color_value / max_cmyk;
-    pcmyk[3] = (color & colormask) *
-        (ulong) gx_max_color_value / max_cmyk;
+#define cvalue(c) ((gx_color_value)((ulong)(c) * gx_max_color_value / colormask))
+
+    k = color & colormask;
+    color >>= bitspercolor;
+    y = color & colormask;
+    color >>= bitspercolor;
+    m = color & colormask;
+    c = color >> bitspercolor;
+    k = colormask-k;
+    prgb[0] = cvalue((colormask - c) * k / colormask);
+    prgb[1] = cvalue((colormask - m) * k / colormask);
+    prgb[2] = cvalue((colormask - y) * k / colormask);
     return 0;
 }
 
@@ -816,7 +821,7 @@ plibc_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_index color =
     (((((((gx_color_index) cv[0] >> drop) << bpc) +
-	(cv[1] >> drop)) << bpc) +
+        (cv[1] >> drop)) << bpc) +
       (cv[2] >> drop)) << bpc) +
     (cv[3] >> drop);
 
