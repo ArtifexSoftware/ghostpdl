@@ -1813,15 +1813,19 @@ currentdict /PDF2PS_matrix_key undef
 % Check if transparency is specified in an ExtGState dict
 /extgstateusestransparency {	% <gstate dict> extgstateusestransparency <bool>
   //false exch		% Assume no transparency
-  {			% establish loop context
-    dup /BM knownoget { dup /Normal ne exch /Compatible ne and
-	                    { pop not exit } if
-                          } if
-    dup /ca knownoget { 1 ne { pop not exit } if } if
-    dup /CA knownoget { 1 ne { pop not exit } if } if
-    dup /SMask knownoget { /None ne { pop not exit } if } if
-    pop exit
-  } loop
+  dup //null eq {
+    pop % bug 692050
+  } {
+    {			% establish loop context
+      dup /BM knownoget { 
+        dup /Normal ne exch /Compatible ne and { pop not exit } if
+      } if
+      dup /ca knownoget { 1 ne { pop not exit } if } if
+      dup /CA knownoget { 1 ne { pop not exit } if } if
+      dup /SMask knownoget { /None ne { pop not exit } if } if
+      pop exit
+    } loop
+  } ifelse
 } bind def
 
 % Check if transparency is used in a Pattern
