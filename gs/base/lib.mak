@@ -2793,19 +2793,20 @@ $(GLD)romfs1.dev : $(LIB_MAK) $(ECHO_XE) $(romfs_)
 $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHO_XE) 
 	$(SETMOD) $(GLD)romfs0 
 
-gsromfs1_ : $(MKROMFS_XE) $(PS_ROMFS_DEPS) 
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c \
+$(GLGEN)gsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) 
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
-gsromfs1_1 : $(MKROMFS_XE) $(PS_ROMFS_DEPS) 
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1.c \
+$(GLGEN)gsromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) 
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_1.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
-$(GLGEN)gsromfs1.c : gsromfs1_$(UFST_BRIDGE)
+$(GLGEN)gsromfs1.c : $(GLGEN)gsromfs1_$(UFST_BRIDGE).c
+	$(CP_) $(GLGEN)gsromfs1_$(UFST_BRIDGE).c $(GLGEN)gsromfs1.c
 
 # the following module is only included if the romfs.dev FEATURE is enabled
 $(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \
