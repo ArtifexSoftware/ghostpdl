@@ -18,6 +18,7 @@
 #  define gsht_thresh_INCLUDED
 
 #define RAW_HT_DUMP 0
+/* #define PACIFY_VALGRIND */
 
 #if RAW_HT_DUMP
 void gx_ht_threshold_row_byte(byte *contone, byte *threshold_strip,
@@ -31,5 +32,7 @@ void gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,
 void gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
                     ht_landscape_info_t ht_landscape, byte *halftone,
                     int data_length);
+
+int gxht_thresh_image_init(gx_image_enum *penum);
 #endif /* gshtx_INCLUDED */
 

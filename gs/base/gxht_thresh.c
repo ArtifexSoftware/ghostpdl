@@ -16,9 +16,15 @@
 
 #include "memory_.h"
 #include "gx.h"
+#include "gxistate.h"
 #include "gsiparam.h"
-#include "gxht_thresh.h"
 #include "math_.h"
+#include "gxfixed.h"  /* needed for gximage.h */
+#include "gximage.h"
+#include "gxdevice.h"
+#include "gxdht.h"
+#include "gxht_thresh.h"
+#include "gzht.h"
 
 #ifndef __WIN32__
 #define __align16  __attribute__((align(16)))
@@ -325,4 +331,167 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
         position += 16;
         halftone_ptr += 2;
     }
+}
+
+int
+gxht_thresh_image_init(gx_image_enum *penum)
+{
+    int code = 0;
+    fixed ox, oy;
+    int temp;
+    int dev_width, max_height;
+    int spp_out;
+
+    if (gx_device_must_halftone(penum->dev)) {
+        if (penum->pis != NULL && penum->pis->dev_ht != NULL) {
+            gx_ht_order *d_order = &(penum->pis->dev_ht->components[0].corder);
+            code = gx_ht_construct_threshold(d_order, penum->dev, penum->pis, 0);
+        } else {
+            return -1;
+        }
+    }
+    spp_out = penum->dev->color_info.num_components;
+    /* If the image is landscaped then we want to maintain a buffer
+       that is sufficiently large so that we can hold a byte
+       of halftoned data along the column.  This way we avoid doing
+       multiple writes into the same position over and over.
+       The size of the buffer we need depends upon the bitdepth of
+       the output device, the number of device coloranants and the
+       number of  colorants in the source space.  Note we will
+       need to eventually  consider  multi-level halftone case
+       here too.  For now, to make use of the SSE2 stuff, we would
+       like to have 16 bytes of data to process at a time.  So we
+       will collect the columns of data in a buffer that is 16 wide.
+       We will also keep track of the widths of each column.  When
+       the total width count reaches 16, we will create our
+       threshold array and apply it.  We may have one column that is
+       buffered between calls in this case.  Also if a call is made
+       with h=0 we will flush the buffer as we are at the end of the
+       data.  */
+    if (penum->posture == image_landscape) {
+        int col_length = 
+            fixed2int_var_rounded(any_abs(penum->x_extent.y)) * spp_out;
+        ox = dda_current(penum->dda.pixel0.x);
+        oy = dda_current(penum->dda.pixel0.y);
+        temp = (int) ceil((float) col_length/16.0);
+        penum->line_size = temp * 16;  /* The stride */
+        /* Now we need at most 16 of these */
+        penum->line = gs_alloc_bytes(penum->memory,
+                                     16 * penum->line_size + 16,
+                                     "gxht_thresh");
+        /* Same with this */
+        penum->thresh_buffer = gs_alloc_bytes(penum->memory,
+                                   penum->line_size * 16  + 16,
+                                   "gxht_thresh");
+        /* That maps into 2 bytes of Halftone data */
+        penum->ht_buffer = gs_alloc_bytes(penum->memory,
+                                       penum->line_size * 2,
+                                       "gxht_thresh");
+        penum->ht_stride = penum->line_size;
+        if (penum->line == NULL || penum->thresh_buffer == NULL
+                    || penum->ht_buffer == NULL)
+            return -1;
+        penum->ht_landscape.count = 0;
+        penum->ht_landscape.num_contones = 0;
+        if (penum->y_extent.x < 0) {
+            /* Going right to left */
+            penum->ht_landscape.curr_pos = 15;
+            penum->ht_landscape.index = -1;
+        } else {
+            /* Going left to right */
+            penum->ht_landscape.curr_pos = 0;
+            penum->ht_landscape.index = 1;
+        }
+        if (penum->x_extent.y < 0) {
+            penum->ht_landscape.flipy = true;
+            penum->ht_landscape.y_pos =
+                fixed2int_pixround_perfect(dda_current(penum->dda.pixel0.y) + penum->x_extent.y);
+        } else {
+            penum->ht_landscape.flipy = false;
+            penum->ht_landscape.y_pos =
+                fixed2int_pixround_perfect(dda_current(penum->dda.pixel0.y));
+        }
+        memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
+        penum->ht_landscape.offset_set = false;
+        penum->ht_offset_bits = 0; /* Will get set in call to render */
+        if (code >= 0) {
+#if defined(DEBUG) || defined(PACIFY_VALGRIND)
+            memset(penum->line, 0, 16 * penum->line_size + 16);
+            memset(penum->ht_buffer, 0, penum->line_size * 2);
+            memset(penum->thresh_buffer, 0, 16 * penum->line_size + 16);
+#endif
+        }
+    } else {
+        /* In the portrait case we allocate a single line buffer
+           in device width, a threshold buffer of the same size
+           and possibly wider and the buffer for the halftoned
+           bits. We have to do a bit of work to enable 16 byte
+           boundary after an offset to ensure that we can make use
+           of  the SSE2 operations for thresholding.  We do the
+           allocations now to avoid doing them with every line */
+        /* Initialize the ht_landscape stuff to zero */
+        memset(&(penum->ht_landscape), 0, sizeof(ht_landscape_info_t));
+        ox = dda_current(penum->dda.pixel0.x);
+        oy = dda_current(penum->dda.pixel0.y);
+        dev_width =
+           (int) fabs((long) fixed2long_pixround(ox + penum->x_extent.x) -
+                    fixed2long_pixround(ox));
+        /* Get the bit position so that we can do a copy_mono for
+           the left remainder and then 16 bit aligned copies for the
+           rest.  The right remainder will be OK as it will land in
+           the MSBit positions. Note the #define chunk bits16 in
+           gdevm1.c.  Allow also for a 15 sample over run.
+        */
+        penum->ht_offset_bits = (-fixed2int_var_pixround(ox)) & 15;
+        if (penum->ht_offset_bits > 0) {
+            penum->ht_stride = ((7 + (dev_width + 4) * spp_out) / 8) +
+                                ARCH_SIZEOF_LONG;
+        } else {
+            penum->ht_stride = ((7 + (dev_width + 2) * spp_out) / 8) +
+                            ARCH_SIZEOF_LONG;
+        }
+        /* We want to figure out the maximum height that we may
+           have in taking a single source row and going to device
+           space */
+        max_height = (int) ceil(fixed2float(any_abs(penum->dst_height)) /
+                                            (float) penum->Height);
+        penum->ht_buffer = gs_alloc_bytes(penum->memory,
+                                          penum->ht_stride * max_height,
+                                          "gxht_thresh");
+        /* We want to have 128 bit alignement for our contone and
+           threshold strips so that we can use SSE operations
+           in the threshold operation.  Add in a minor buffer and offset
+           to ensure this.  If gs_alloc_bytes provides at least 16
+           bit alignment so we may need to move 14 bytes.  However, the
+           HT process is split in two operations.  One that involves
+           the HT of a left remainder and the rest which ensures that
+           we pack in the HT data in the bits with no skew for a fast
+           copy into the gdevm1 device (16 bit copies).  So, we
+           need to account for those pixels which occur first and which
+           are NOT aligned for the contone buffer.  After we offset
+           by this remainder portion we should be 128 bit aligned.
+           Also allow a 15 sample over run during the execution.  */
+        temp = (int) ceil((float) ((dev_width + 15.0) * spp_out + 15.0)/16.0);
+        penum->line_size = temp * 16;  /* The stride */
+        penum->line = gs_alloc_bytes(penum->memory, penum->line_size, 
+                                     "gxht_thresh");
+        penum->thresh_buffer = gs_alloc_bytes(penum->memory, 
+                                              penum->line_size * max_height,
+                                              "gxht_thresh");
+        if (penum->line == NULL || penum->thresh_buffer == NULL || 
+            penum->ht_buffer == NULL) {
+            return -1;
+        } else {
+#if defined(DEBUG) || defined(PACIFY_VALGRIND)
+            memset(penum->line, 0, penum->line_size);
+            memset(penum->ht_buffer, 0,
+                   penum->ht_stride * max_height);
+            memset(penum->thresh_buffer, 0,
+                   penum->line_size * max_height);
+#endif
+        }
+    }
+    /* Precompute values needed for rasterizing. */
+    penum->dxx = float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
+    return code;
 }

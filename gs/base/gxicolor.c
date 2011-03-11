@@ -38,6 +38,8 @@
 #include "gsicc_littlecms.h"
 #include "gxcie.h"
 #include "gscie.h"
+#include "gxht_thresh.h"
+
 
 typedef union {
     byte v[GS_IMAGE_MAX_COLOR_COMPONENTS];
@@ -54,11 +56,14 @@ iclass_proc(gs_image_class_4_color);
 
 static irender_proc(image_render_color_DeviceN);
 static irender_proc(image_render_color_icc);
+static irender_proc(image_render_color_thresh);
 
 irender_proc_t
 gs_image_class_4_color(gx_image_enum * penum)
 {
     bool std_cmap_procs;
+    int code;
+    bool use_fast_thresh = false;
 
     if (penum->use_mask_color) {
 	/*
@@ -113,7 +118,7 @@ gs_image_class_4_color(gx_image_enum * penum)
             if ( penum->map[k].decoding != sd_none ) {
                 penum->icc_setup.need_decode = true;
                 break;
-}
+            }
         }
         /* Define the rendering intents */
         rendering_params.black_point_comp = BP_ON;
@@ -146,6 +151,18 @@ gs_image_class_4_color(gx_image_enum * penum)
                 penum->cie_range = get_cie_range(penum->pcs);
             }
         }
+        /* Decide if we are going to do thresholding during rendering */
+        if (gx_device_must_halftone(penum->dev) && use_fast_thresh && 
+            penum->dev->color_info.num_components == 1 &&
+            penum->dev->color_info.depth == 1 &&
+            penum->bps == 8 && (penum->posture == image_portrait
+            || penum->posture == image_landscape) &&
+            penum->image_parent_type == gs_image_type1) {
+            code = gxht_thresh_image_init(penum);
+            if (code > 0) {
+                 return &image_render_color_thresh;
+            }
+        }
         return &image_render_color_icc;
     }
 }
@@ -176,7 +193,7 @@ rescale_input_color(gs_range range, float input)
 /* This one includes an extra adjustment for the CIE PS color space 
    non standard range */
 static void 
-decode_row_cie(const gx_image_enum *penum, byte *psrc, int spp, byte *pdes, 
+decode_row_cie(const gx_image_enum *penum, const byte *psrc, int spp, byte *pdes, 
                 byte *bufend, gs_range range_array[])
 {
     byte *curr_pos = pdes;
@@ -215,7 +232,7 @@ decode_row_cie(const gx_image_enum *penum, byte *psrc, int spp, byte *pdes,
 }
 
 static void 
-decode_row(const gx_image_enum *penum, byte *psrc, int spp, byte *pdes, 
+decode_row(const gx_image_enum *penum, const byte *psrc, int spp, byte *pdes, 
                 byte *bufend)
 {
     byte *curr_pos = pdes;
@@ -250,80 +267,47 @@ decode_row(const gx_image_enum *penum, byte *psrc, int spp, byte *pdes,
     }
 }
 
-/* Render a color image with 8 or fewer bits per sample using ICC profile. */
+/* Common code shared amongst the thresholding and non thresholding color image
+   renderers */
 static int
-image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x,
-		   uint w, int h, gx_device * dev)
+image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w, 
+                     gx_device *dev, int *spp_cm_out, byte **psrc_cm, 
+                     byte **psrc_cm_start, byte **psrc_decode, byte **bufend)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
     const gs_imager_state *pis = penum->pis;
-    gs_logical_operation_t lop = penum->log_op;
-    gx_dda_fixed_point pnext;
-    image_posture posture = penum->posture;
-    fixed xprev, yprev;
-    fixed pdyx, pdyy;		/* edge of parallelogram */
-    int vci, vdi;
     const gs_color_space *pcs;
-    gx_device_color devc1;
-    gx_device_color devc2;
-    gx_device_color *pdevc;
-    gx_device_color *pdevc_next;
-    gx_device_color *ptemp;
-    int spp = penum->spp;
-    const byte *psrc_initial = buffer + data_x * spp;
-    const byte *psrc = psrc_initial;
-    const byte *rsrc = psrc + spp; /* psrc + spp at start of run */
-    fixed xrun;			/* x ditto */
-    fixed yrun;			/* y ditto */
-    int irun;			/* int x/rrun */
-    color_samples run;		/* run value */
-    color_samples next;		/* next sample value */
-    byte *bufend;
-    int code = 0, mcode = 0;
+    bool need_decode = penum->icc_setup.need_decode;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
-    unsigned char *psrc_cm, *psrc_cm_start, *psrc_decode;
-    int k;
-    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    int spp_cm, num_pixels;
-    gx_color_index color;
-    bool need_decode = penum->icc_setup.need_decode;
-    bool must_halftone = penum->icc_setup.must_halftone;
-    bool has_transfer = penum->icc_setup.has_transfer;
-
+    int num_pixels, spp_cm;
+    int spp = penum->spp;
+    
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
     }
-    /* Needed for device N */
-    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
         pcs = penum->pcs->icc_equivalent;
     } else {
         pcs = penum->pcs;
     }
-    pdevc = &devc1;
-    pdevc_next = &devc2;
-    /* These used to be set by init clues */
-    pdevc->type = gx_dc_type_none;
-    pdevc_next->type = gx_dc_type_none;
-    if (h == 0)
-	return 0;
     /* If the link is the identity, then we don't need to do any color 
        conversions except for potentially a decode. */
     if (penum->icc_link->is_identity && !need_decode) {
         /* Fastest case.  No decode or CM needed */
-        psrc_cm = (unsigned char *) psrc;
+        *psrc_cm = (unsigned char *) psrc;
         spp_cm = spp;
-        bufend = psrc_cm +  w;
-        psrc_cm_start = NULL;
+        *bufend = *psrc_cm +  w;
+        *psrc_cm_start = NULL;
     } else {
         spp_cm = dev->device_icc_profile->num_comps;
-        psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, "image_render_color_icc");
-        psrc_cm_start = psrc_cm;
-        bufend = psrc_cm +  w * spp_cm/spp;
+        *psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp, 
+                                  "image_render_color_icc");
+        *psrc_cm_start = *psrc_cm;
+        *bufend = *psrc_cm +  w * spp_cm/spp;
         if (penum->icc_link->is_identity) {
             /* decode only. no CM.  This is slow but does not happen that often */
-            decode_row(penum, psrc, spp, psrc_cm, bufend);    
+            decode_row(penum, psrc, spp, *psrc_cm, *bufend);    
         } else {
             /* Set up the buffer descriptors. */
             num_pixels = w/spp;
@@ -340,26 +324,90 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
                less than or equal to the new one.  */
             if (need_decode) {
                 /* Need decode and CM.  This is slow but does not happen that often */
-                psrc_decode = gs_alloc_bytes(pis->memory,  w, "image_render_color_icc");
+                *psrc_decode = gs_alloc_bytes(pis->memory,  w, 
+                                              "image_render_color_icc");
                 if (penum->cie_range == NULL) {
-                    decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
+                    decode_row(penum, psrc, spp, *psrc_decode, (*psrc_decode)+w);
                 } else {
                     /* Decode needs to include adjustment for CIE range */
-                    decode_row_cie(penum, psrc, spp, psrc_decode, 
-                                    psrc_decode+w, penum->cie_range);
+                    decode_row_cie(penum, psrc, spp, *psrc_decode, 
+                                    (*psrc_decode)+w, penum->cie_range);
                 }
                 gscms_transform_color_buffer(penum->icc_link, &input_buff_desc, 
-                                        &output_buff_desc, (void*) psrc_decode, 
-                                        (void*) psrc_cm);
-                gs_free_object(pis->memory, (byte *)psrc_decode, "image_render_color_icc");
+                                        &output_buff_desc, (void*) *psrc_decode, 
+                                        (void*) *psrc_cm);
+                gs_free_object(pis->memory, (byte *) *psrc_decode, 
+                               "image_render_color_icc");
             } else {
                 /* CM only. No decode */
                 gscms_transform_color_buffer(penum->icc_link, &input_buff_desc, 
                                             &output_buff_desc, (void*) psrc, 
-                                            (void*) psrc_cm);
+                                            (void*) *psrc_cm);
             }
         }
     }
+    *spp_cm_out = spp_cm;
+    return 0;
+}
+
+static int
+image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int data_x,
+		   uint w, int h, gx_device * dev)
+{
+
+
+return 0;
+}
+
+/* Render a color image with 8 or fewer bits per sample using ICC profile. */
+static int
+image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x,
+		   uint w, int h, gx_device * dev)
+{
+    const gx_image_enum *const penum = penum_orig; /* const within proc */
+    const gs_imager_state *pis = penum->pis;
+    gs_logical_operation_t lop = penum->log_op;
+    gx_dda_fixed_point pnext;
+    image_posture posture = penum->posture;
+    fixed xprev, yprev;
+    fixed pdyx, pdyy;		/* edge of parallelogram */
+    int vci, vdi;
+    gx_device_color devc1;
+    gx_device_color devc2;
+    gx_device_color *pdevc;
+    gx_device_color *pdevc_next;
+    gx_device_color *ptemp;
+    int spp = penum->spp;
+    const byte *psrc_initial = buffer + data_x * spp;
+    const byte *psrc = psrc_initial;
+    const byte *rsrc = psrc + spp; /* psrc + spp at start of run */
+    fixed xrun;			/* x ditto */
+    fixed yrun;			/* y ditto */
+    int irun;			/* int x/rrun */
+    color_samples run;		/* run value */
+    color_samples next;		/* next sample value */
+    byte *bufend = NULL;
+    int code = 0, mcode = 0;
+    byte *psrc_cm = NULL, *psrc_cm_start = NULL, *psrc_decode = NULL;
+    int k;
+    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int spp_cm = 0;
+    gx_color_index color;
+    bool must_halftone = penum->icc_setup.must_halftone;
+    bool has_transfer = penum->icc_setup.has_transfer;
+
+    pdevc = &devc1;
+    pdevc_next = &devc2;
+    /* These used to be set by init clues */
+    pdevc->type = gx_dc_type_none;
+    pdevc_next->type = gx_dc_type_none;
+    if (h == 0)
+	return 0;
+    code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm, 
+                                &psrc_cm_start, &psrc_decode, &bufend);
+    if (code < 0) return code;
+    /* Needed for device N */
+    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     pnext = penum->dda.pixel0;
     xrun = xprev = dda_current(pnext.x);
     yrun = yprev = dda_current(pnext.y);
@@ -516,7 +564,7 @@ err:
     penum_orig->used.x = (rsrc - spp - psrc_initial) / spp;
     penum_orig->used.y = 0;
     return code;
-	    }
+}
 
 /* Render a color image for deviceN source color with no ICC profile.  This   
    is also used if the image has any masking (type4 image) since we will not 

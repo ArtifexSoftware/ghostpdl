@@ -652,7 +652,8 @@ $(GLOBJ)gxhtbit.$(OBJ) : $(GLSRC)gxhtbit.c $(GXERR) $(memory__h)\
 	$(GLCC) $(GLO_)gxhtbit.$(OBJ) $(C_) $(GLSRC)gxhtbit.c
 
 $(GLOBJ)gxht_thresh.$(OBJ) : $(GLSRC)gxht_thresh.c $(GXERR) $(memory__h)\
- $(gx_h) $(gsiparam_h) $(gxht_thresh_h) $(math__h)
+ $(gx_h) $(gxistate_h) $(gsiparam_h) $(math__h) $(gxfixed_h) $(gximage_h)\
+ $(gxdevice_h) $(gxdht_h) $(gxht_thresh_h) $(gzht_h)
 	$(GLCC) $(GLO_)gxht_thresh.$(OBJ) $(C_) $(GLSRC)gxht_thresh.c
 
 $(GLOBJ)gxwts.$(OBJ) : $(GLSRC)gxwts.c $(GXERR) $(gxwts_h)\
@@ -2337,7 +2338,7 @@ $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gxdevice_h) $(gxcmap_h) $(gxdcconv_h) $(gxdcolor_h)\
  $(gxistate_h) $(gxdevmem_h) $(gxcpath_h) $(gximage_h)\
  $(gsicc_h) $(gsicc_cache_h) $(gsicc_littlecms_h) $(gxcie_h)\
- $(gscie_h)
+ $(gscie_h) $(gxht_thresh_h)
 	$(GLCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
