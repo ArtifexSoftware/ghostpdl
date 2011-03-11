@@ -177,7 +177,7 @@ struct pcl_state_s {
     bool            underline_floating;
     float           underline_position;	/* distance from baseline */
 
-    const pcl_text_parsing_method_t *   text_parsing_method;
+    pcl_text_parsing_method_t    text_parsing_method;
 
     int             text_path;		/* 0, 1, -1 */
 

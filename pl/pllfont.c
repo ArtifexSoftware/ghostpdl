@@ -168,8 +168,8 @@ check_resident_fonts(pl_dict_t *pfontdict, gs_memory_t *mem)
             int j;
             dprintf2("%s (entry %d) not found\n", resident_table[i].full_font_name, i);
             dprintf("pxl unicode name:");
-            for (j = 0;
-                 j < sizeof(resident_table[i].unicode_fontname);
+            for (j = 0; 
+                 j < countof(resident_table[i].unicode_fontname); 
                  j++)
                 dprintf1("'%c'", resident_table[i].unicode_fontname[j]);
             dprintf("\n");

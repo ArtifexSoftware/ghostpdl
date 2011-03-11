@@ -37,12 +37,6 @@
 #include "gxfont.h"             /* for setting next_char proc */
 #include "gxstate.h"
 
-/* Define the text parsing methods. */
-static const pcl_text_parsing_method_t pcl_tpm_0 = pcl_tpm_0_data,
-                                        pcl_tpm_21 = pcl_tpm_21_data,
-                                        pcl_tpm_31 = pcl_tpm_31_data,
-                                        pcl_tpm_38 = pcl_tpm_38_data;
-
 /* pseudo-"dots" (actually 1/300" units) used in underline only */
 #define dots(n)     ((float)(7200 / 300 * n))
 
@@ -226,12 +220,12 @@ get_next_char(
         return 2;
     *pis_space = false;
     *unstyled_substitution = false;
-    chr = *pb++;
-    len--;
-    if (pcl_char_is_2_byte(chr, pcs->text_parsing_method) && (len > 0)) {
-        chr = (chr << 8) + *pb++;
-        len--;
+    chr = pcl_char_get_char(pcs->text_parsing_method, &pb, len);
+    /* invalid char: pb has not been incremented */
+    if (pb == *ppb) {
+        pb++;
     }
+    len -= (pb - *ppb);
     *ppb = pb;
     *plen = len;
     *porig_char = chr;
@@ -317,6 +311,162 @@ get_next_char(
     *pis_space = true;
     *pchr = 0xffff;
     return 0;
+}
+/* 
+ * return length of multibyte sequence from starting byte 
+ * replacement of macro pcl_char_is_2_byte, UTF-8 sequence length may be up to 6 bytes
+ *
+ * Returns 0 for invalid byte, byte length > 0 of multibyte character sequence 
+ */
+int
+pcl_char_bytelen(byte ch, pcl_text_parsing_method_t tpm)
+{
+
+    int bytelen = 1;
+
+	switch(tpm) {
+	default:
+		/* byte length defaults to 1 */
+		break;
+
+	case tpm_21_DBCS7:
+		/* 0x21-0xff are double-byte */
+		bytelen = (ch < 0x21) ? 1 : 2;
+		break;
+
+	case tpm_31_sjis:
+		/* 0x81-0x9f, 0xe0-0xfc are double-byte */
+		bytelen = (ch < 0x81 || (ch > 0x9f && ch < 0xe0) || ch > 0xfc) ? 1 : 2;
+		break;
+
+	case tpm_38_DBCS8:
+		/* 0x80-0xff are double-byte */
+		bytelen = (ch < 0x80) ? 1 : 2;
+		break;
+        case tpm_83_utf8:
+        case tpm_1008_utf8:
+	    if (ch < 0x80) {
+		/* 0xxxxxxx */
+	        bytelen = 1;
+		break;
+	    }
+	    if (ch < 0xc2) {
+	        bytelen = 0;	/* illegal */
+		break;
+	    }
+	    if (ch < 0xe0) {
+		/* 110XXXXx 10xxxxxx */
+	        bytelen = 2;
+		break;
+	    }
+	    if (ch < 0xf0) {
+	        /* 1110XXXX 10Xxxxxx 10xxxxxx */
+	        bytelen = 3;
+		break;
+	    }
+	    if (ch < 0xf8) {
+		/* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
+	        bytelen = 4;
+		break;
+	    }
+	    if (ch < 0xfc) {
+		/* 111110XX 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+	        bytelen = 5;
+		break;
+	    }
+	    if (ch < 0xfe) {
+		/* 1111110X 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+	        bytelen = 6;
+		break;
+	    }
+	    bytelen = 0;	/* illegal */
+	    break;
+	}
+	return bytelen;
+}
+/* 
+ * convert multibyte sequence to unicode (16-bit)
+ * Both the string pointer and the length are modified.
+ *
+ * Returns 0 for invalid byte, byte length > 0 of multibyte character sequence 
+ */
+gs_char
+pcl_char_get_char(pcl_text_parsing_method_t tpm, const byte ** psrc, int src_len)
+/* src_len minimum 1 */
+{
+    gs_char chr;
+    const byte * src = *psrc;
+    int bytelen = pcl_char_bytelen(src[0], tpm);
+    if (bytelen == 0 || bytelen > src_len)
+    {
+        return INVALID_UC;
+    }
+    switch(tpm) {
+    default:
+        chr = src[0];
+	break;
+
+    case tpm_21_DBCS7:
+	/* 0x21-0xff are double-byte */
+	chr = (src[0] < 0x21) ? src[0] : (src[0] << 8 | src[1]);
+	break;
+
+    case tpm_31_sjis:
+	/* 0x81-0x9f, 0xe0-0xfc are double-byte */
+	chr = (src[0] < 0x81 || (src[0] > 0x9f && src[0] < 0xe0) || src[0] > 0xfc) ? src[0] : (src[0] << 8 | src[1]);
+	break;
+
+    case tpm_38_DBCS8:
+	/* 0x80-0xff are double-byte */
+	chr = (src[0] < 0x80) ? src[0] : (src[0] << 8 | src[1]);
+	break;
+    case tpm_83_utf8:
+    case tpm_1008_utf8:
+	if (src[0] < 0x80) {
+	    /* 0xxxxxxx */
+	    chr = src[0];
+	    break;
+	}
+	if (src[0] < 0xc2) {
+            chr = INVALID_UC;
+	    break;
+	}
+	if (src[0] < 0xe0) {
+	    /* 110XXXXx 10xxxxxx */
+	    chr = (src[0] & 0x1f);
+	    chr = (chr << 6) | (src[1] & 0x3f);
+	    break;
+	}
+	if (src[0] < 0xf0) {
+	    /* 1110XXXX 10Xxxxxx 10xxxxxx */
+	    chr = (src[0] & 0x0f);
+	    chr = (chr << 6) | (src[1] & 0x3f);
+	    chr = (chr << 6) | (src[2] & 0x3f);
+	    break;
+	}
+	if (src[0] < 0xf8) {
+	    /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
+	    /* chr is 16 bit: overflow */
+            chr = INVALID_UC;
+	    break;
+	}
+	if (src[0] < 0xfc) {
+	    /* 111110XX 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+	    /* chr is 16 bit: overflow */
+            chr = INVALID_UC;
+	    break;
+	}
+	if (src[0] < 0xfe) {
+	    /* 1111110X 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+	    /* chr is 16 bit: overflow */
+            chr = INVALID_UC;
+	    break;
+	}
+	chr = INVALID_UC;
+	break;
+    }
+    *psrc += bytelen;
+    return chr;
 }
 
 /*
@@ -979,19 +1129,27 @@ pcl_text_parsing_method(
     switch (int_arg(pargs)) {
 
       case 0: case 1:
-        pcs->text_parsing_method = &pcl_tpm_0;
+        pcs->text_parsing_method = tpm_0_SBCS;
         break;
 
       case 21:
-        pcs->text_parsing_method = &pcl_tpm_21;
+        pcs->text_parsing_method = tpm_21_DBCS7;
         break;
 
       case 31:
-        pcs->text_parsing_method = &pcl_tpm_31;
+        pcs->text_parsing_method = tpm_31_sjis;
         break;
 
       case 38:
-        pcs->text_parsing_method = &pcl_tpm_38;
+        pcs->text_parsing_method = tpm_38_DBCS8;
+        break;
+
+      case 83:
+        pcs->text_parsing_method = tpm_83_utf8;
+        break;
+
+      case 1008:
+        pcs->text_parsing_method = tpm_1008_utf8;
         break;
 
       default:
@@ -1096,10 +1254,10 @@ pctext_do_reset(
 
     if ((type & mask) != 0) {
         pcs->underline_enabled = false;
-        pcs->last_was_BS = false;
-        pcs->last_width = inch2coord(1.0 / 10.0);
-        pcs->text_parsing_method = &pcl_tpm_0;
-        pcs->text_path = 0;
+	pcs->last_was_BS = false;
+	pcs->last_width = inch2coord(1.0 / 10.0);
+        pcs->text_parsing_method = tpm_0_SBCS;
+	pcs->text_path = 0;
     }
 }
 

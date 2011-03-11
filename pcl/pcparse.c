@@ -234,6 +234,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 {	const byte *p = pr->ptr;
 	const byte *rlimit = pr->limit;
 	int code = 0;
+	int bytelen = 0;
 	bool in_macro = pcs->defining_macro;
 	/* Record how much of the input we've copied into a macro */
 	/* in the process of being defined. */
@@ -427,18 +428,22 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			      goto x;
 			  }
 			chr = *++p;
-			/* check for double byte scanning */
-			if ( pcl_char_is_2_byte(chr, pcs->text_parsing_method ) ) {
-			    /* we need to have at least 2 bytes - check if we need more data */
-			    if ( p >= rlimit ) {
+			/* check for multi-byte scanning */
+			bytelen = pcl_char_bytelen( chr, pcs->text_parsing_method );
+			if ( bytelen == 0 ) {
+			    bytelen = 1;	/* invalid utf-8 leading char */
+			}
+			if ( bytelen > 1 ) {
+			    /* check if we need more data */
+			    if ( (p + bytelen - 1) > rlimit ) {
 				--p;
 				goto x;
 			    }
 			    if_debug2('i', "%x%x\n", p[0], p[1]);
-			    code = pcl_text(p, 2, pcs, false);
+			    code = pcl_text(p, bytelen, pcs, false);
 			    if ( code < 0 ) goto x;
-			    /* now pass over the second byte */
-			    p++;
+			    /* now pass over the remaining bytes */
+			    p += (bytelen - 1);
 			    cdefn = NULL;
 			} else if ( chr != ESC )
 			  {	if_debug1('i',
