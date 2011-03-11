@@ -181,17 +181,25 @@ struct sfnts_reader_s {
     byte (*rbyte)(sfnts_reader *r);
     ushort (*rword)(sfnts_reader *r);
     ulong (*rlong)(sfnts_reader *r);
-    void (*rstring)(sfnts_reader *r, byte *v, int length);
+    int (*rstring)(sfnts_reader *r, byte *v, int length);
     void (*seek)(sfnts_reader *r, ulong pos);
 };
 
 static void sfnts_next_elem(sfnts_reader *r)
-{   ref s;
+{
+    ref s;
+    int code;
 
     if (r->error)
         return;
     r->index++;
-    r->error |= (array_get(r->memory, r->sfnts, r->index, &s) < 0);
+    code = array_get(r->memory, r->sfnts, r->index, &s);
+    if (code == e_rangecheck) {
+        r->error |= 2;
+    }
+    else if (code < 0) {
+        r->error |= 1;
+    }
     if (r->error)
         return;
     r->p = s.value.const_bytes;
@@ -218,19 +226,23 @@ static ulong sfnts_reader_rlong(sfnts_reader *r)
            (sfnts_reader_rbyte_inline(r) << 8) + sfnts_reader_rbyte_inline(r);
 }
 
-static void sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
-{   if (length < 0)
-        return;
+static int sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
+{
+    int rlength = length;
+    
+    if (length <= 0)
+        return(0);
     while (!r->error) {
         int l = min(length, r->length - r->offset);
         memcpy(v, r->p + r->offset, l);
         length -= l;
         r->offset += l;
         if (length <= 0)
-            return;
+            return(rlength);
         v += l;
         sfnts_next_elem(r);
     }
+    return(rlength - length);
 }
 
 static void sfnts_reader_seek(sfnts_reader *r, ulong pos)
@@ -327,7 +339,7 @@ static void sfnt_copy_table(sfnts_reader *r, sfnts_writer *w, int length)
 
     while (length > 0 && !r->error) {
         int l = min(length, sizeof(buf));
-        r->rstring(r, buf, l);
+        (void)r->rstring(r, buf, l);
         w->wstring(w, buf, l);
         length -= l;
     }
@@ -353,7 +365,7 @@ static ulong sfnts_copy_except_glyf(sfnts_reader *r, sfnts_writer *w)
     for (i = 0; i < num_tables; i++) {
         if (r->error)
             return 0;
-        r->rstring(r, tables[i].tag, 4);
+        (void)r->rstring(r, tables[i].tag, 4);
         tables[i].checkSum = r->rlong(r);
         tables[i].offset = r->rlong(r);
         tables[i].length = r->rlong(r);
@@ -642,10 +654,8 @@ static float FAPI_FF_get_float(FAPI_font *ff, fapi_font_feature var_id, int inde
                 }
                 else {
                     FontMatrix_div = (ff->is_cid && !IsCIDFont(pbfont) ? 1000 : 1);
-                   
                     mptr = &(pbfont->base->FontMatrix);
                 }
-                   
                 switch(index) {
                     case 0 : return mptr->xx / FontMatrix_div;
                     case 1 : return mptr->xy / FontMatrix_div;
@@ -1063,18 +1073,27 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
                     memcpy(buf, data_ptr + mc, min(glyph_length, buf_length)/* safety */);
             } else {
                 gs_font_type42 *pfont42 = (gs_font_type42 *)ff->client_font_data;
-                ulong offset0;
+                ulong offset0, length_read;
                 bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0);
 
                 glyph_length = (error ? -1 : pfont42->data.len_glyphs[char_code]);
+                
                 if (buf != 0 && !error) {
                     sfnts_reader r;
                     sfnts_reader_init(&r, pdr);
 
                     r.seek(&r, offset0);
-                    r.rstring(&r, buf, min(glyph_length, buf_length)/* safety */);
-                    if (r.error)
+                    length_read = r.rstring(&r, buf, min(glyph_length, buf_length)/* safety */);
+                    if (r.error == 1) {
                         glyph_length = -1;
+                    }
+                    /* r.error == 2 means a rangecheck, and probably means that the
+                     * font is broken, and the final glyph length is longer than the data available for it.
+                     * In which case we need to return the number of bytes read.
+                     */
+                    if (r.error == 2) {
+                        glyph_length = length_read;
+                    }
                 }
             }
         }
@@ -2570,11 +2589,11 @@ retry_oversampling:
             ref_assign(op, proc);
             push_op_estack(zexec);  /* execute the operand */
             return o_push_estack;
-        } else {
-            if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
-               return code;
         }
     }
+    
+    if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
+       return code;
 
     compute_em_scale(pbfont, &metrics, FontMatrix_div, &em_scale_x, &em_scale_y);
     char_bbox.p.x = metrics.bbox_x0 / em_scale_x;

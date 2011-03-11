@@ -210,7 +210,9 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
         buffer = gs_malloc ((gs_memory_t *)a_info->fapi_font->memory, length, 1, "get_fapi_glyph_data");
         if (!buffer)
             return FT_Err_Out_Of_Memory;
-        if (ff->get_glyph(ff, a_index, buffer, length) == 65535) {
+            
+        length = ff->get_glyph(ff, a_index, buffer, length);
+        if (length == 65535) {
             gs_free ((gs_memory_t *)a_info->fapi_font->memory, buffer, 0, 0, "get_fapi_glyph_data");
             return FT_Err_Invalid_Glyph_Index;
         }
@@ -245,7 +247,8 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
             }
             a_info->glyph_data_length = length;
             ff->char_data = saved_char_data;
-            if ((ff->get_glyph(ff, a_index, a_info->glyph_data, length)) == -1)
+            length = ff->get_glyph(ff, a_index, a_info->glyph_data, length);
+            if (length == -1)
                 return FT_Err_Invalid_File_Format;
         }
 
