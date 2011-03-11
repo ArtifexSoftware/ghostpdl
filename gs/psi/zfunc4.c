@@ -377,9 +377,10 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	    /* Check for { proc } repeat | {proc} if | {proc1} {proc2} ifelse */
 	    if (resolves_to_oper(i_ctx_p, &elt2, zrepeat)) {
 		gs_c_param_list list;
-		int AllowRepeat;
+		int AllowRepeat = 0;
 
 		/* Check if the device allows the use of repeat in functions */
+		/* We can't handle 'repeat' with pdfwrite since it emits FunctionType 4 */
 		gs_c_param_list_write(&list, i_ctx_p->pgs->device->memory);
 		code = gs_getdeviceparams(i_ctx_p->pgs->device, (gs_param_list *)&list);
 		if (code < 0)
@@ -392,10 +393,6 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		    return code;
 		gs_c_param_list_release(&list);
 
-#if 0
-		/* We can't handle 'repeat' with pdfwrite since it emits FunctionType 4 */
-		if (strcmp(i_ctx_p->pgs->device->dname, "pdfwrite") == 0)
-#endif
 		if (!AllowRepeat)
 		    return_error(e_rangecheck);
 		if (ops) {
