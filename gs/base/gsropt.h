@@ -370,12 +370,11 @@ void rop_release_run_op(rop_run_op *op);
                                          } while (0==1)
 
 #ifdef _MSC_VER /* Are we using MSVC? */
-
-#if defined(_M_IX86) || defined(_M_AMD64) /* Are we on an x86? */
-
-#include "intrin.h"
-#define ENDIAN_SWAP_INT _byteswap_ulong
-
+#  if defined(_M_IX86) || defined(_M_AMD64) /* Are we on an x86? */
+#    if MSC_VER >= 1400  /* old versions have _byteswap_ulong() in stdlib.h */
+#      include "intrin.h"
+#    endif
+#  define ENDIAN_SWAP_INT _byteswap_ulong
 #endif
 
 #elif defined(__GNUC__) /* Are we using GCC? */
