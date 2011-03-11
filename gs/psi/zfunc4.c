@@ -25,9 +25,8 @@
 #include "iname.h"
 #include "dstack.h"
 #include "ialloc.h"
-#include "gzstate.h"	    /* these are needed to check if device is pdfwrite */
-#include "gxdevcli.h"	    /* these are needed to check if device is pdfwrite */
-#include "string_.h"	    /* these are needed to check if device is pdfwrite */
+#include "gzstate.h"	    /* these are needed to check device parameters */
+#include "gsparam.h"	    /* these are needed to check device parameters */
 #include "zfunc.h"
 #include "zcolor.h"
 
@@ -377,8 +376,27 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		return code;
 	    /* Check for { proc } repeat | {proc} if | {proc1} {proc2} ifelse */
 	    if (resolves_to_oper(i_ctx_p, &elt2, zrepeat)) {
+		gs_c_param_list list;
+		int AllowRepeat;
+
+		/* Check if the device allows the use of repeat in functions */
+		gs_c_param_list_write(&list, i_ctx_p->pgs->device->memory);
+		code = gs_getdeviceparams(i_ctx_p->pgs->device, (gs_param_list *)&list);
+		if (code < 0)
+		    return code;
+		gs_c_param_list_read(&list);
+		code = param_read_bool((gs_param_list *)&list,
+		    "AllowPSRepeatFunctions",
+		    &AllowRepeat);
+		if (code < 0)
+		    return code;
+		gs_c_param_list_release(&list);
+
+#if 0
 		/* We can't handle 'repeat' with pdfwrite since it emits FunctionType 4 */
 		if (strcmp(i_ctx_p->pgs->device->dname, "pdfwrite") == 0)
+#endif
+		if (!AllowRepeat)
 		    return_error(e_rangecheck);
 		if (ops) {
 		    *p = PtCr_repeat;
