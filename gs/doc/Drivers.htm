@@ -3010,6 +3010,59 @@ the driver return the CRD or the procedure address only if specifically
 requested (<code>param_requested(...)</code> &gt; 0); otherwise, errors
 will occur.
 
+<h4><a name="Device parameters affecting interpretation"></a>Device parameters affecting interpretation</h4>
+
+<p>
+Some parameters have been defined for high level device drivers which affect
+the operation of the interpreter. These are documented here so that other devices
+requiring the same behaviour can use these parameters.
+
+<dt><b><em>/HighLevelDevice</em></b>
+<dd>True if the device is a high level device. no defined use yet.
+</dd>
+
+<dt><b><em>/AllowIncrementalCFF</em></b>
+<dd>Pdfwrite relies on font processing occuring in a particular order, which 
+may not happen if CFF fonts are downloaded incrementally. Defining this 
+parameter to true will prevent incremental CFF downloading (may raise an error
+during processing).
+</dd>
+
+<dt><b><em>/AllowPSRepeatFuncs</em></b>
+<dd>Pdfwrite emits functions as type 4, and as a result can't convert PostScript
+functions using the repeat operator into PDF functions. Defining this parameter
+as true will cause such functions to raise an error during processing.
+</dd>
+
+<dt><b><em>/IsDistiller</em></b>
+<dd>Defining this parameter as true will result in the operators relating to 
+'distillerparams' being defined (setdistillerparams/currentdistillerparams).
+Some PostScript files behave differently if these operators are present (e.g.
+rotating the page) so this parameter may be true even if the device is not
+strictly a Distiller. For example ps2write defines this parameter to be
+true.
+</dd>
+
+<dt><b><em>/PreserveSMask</em></b>
+<dd>If this parameter is true then the PDF interpreter will not convert SMask
+(soft mask, ie transparent) images into opaque images. This should be set to true
+for devices which can handle transparency (e.g. pdfwrite)
+</dd>
+
+<dt><b><em>/PreserveTrMode</em></b>
+<dd>If this parameter is true then the PDF interpreter will not handle Text
+Rendering modes by degenerating into a sequence of text operations, but will
+instead set the Tr mode, and emit the text once. This value should be true
+for devices which can handle PDF text rendering modes directly.
+</dd>
+
+<dt><b><em>/WantsToUnicode</em></b>
+<dd>In general, Unicode values are not of interest to rendering devices, but
+for high level devices, they can be extremely valuable. If this parameter is
+defined as true then ToUnicode CMaps and GlyphName2Unicode tables will be
+processed and stored.
+</dd>
+
 <h3><a name="External_fonts"></a>External fonts</h3>
 
 <p>

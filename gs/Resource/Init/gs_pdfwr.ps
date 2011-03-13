@@ -507,8 +507,8 @@ currentdict /.pdfmarkparams .undef
   % If the Creator is PScript5.dll, disable the 32 /FontType resource for
   % handling GlyphNames2Unicode. Since /FontType category can't redefine,
   % we can do only with redefining the operator 'resourcestatus'.
-  currentdevice 1 dict dup /Type32ToUnicode dup put .getdeviceparams
-  dup type /booleantype eq not {cleartomark //true}{3 1 roll cleartomark}ifelse not
+  currentdevice 1 dict dup /WantsToUnicode dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark //true}{3 1 roll cleartomark}ifelse
   {
     /Creator .knownget {
       (PScript5.dll) search {

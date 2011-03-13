@@ -257,7 +257,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  true,				/* DetectDuplicateImages */
  false,				/* AllowIncrementalCFF */
  true,				/* HighLevelDevice */
- false,				/* Type32ToUnicode */
  !PDF_FOR_OPDFREAD,		/* WantsToUnicode */
  PDF_FOR_OPDFREAD,		/* AllowPSRepeatFunctions */
  true,				/* IsDistiller (true even for ps2write!) */

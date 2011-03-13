@@ -117,7 +117,6 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("DetectDuplicateImages", gs_param_type_bool, DetectDuplicateImages),
     pi("AllowIncrementalCFF", gs_param_type_bool, AllowIncrementalCFF),
     pi("HighLevelDevice", gs_param_type_bool, HighLevelDevice),
-    pi("Type32ToUnicode", gs_param_type_bool, Type32ToUnicode),
     pi("WantsToUnicode", gs_param_type_bool, WantsToUnicode),
     pi("AllowPSRepeatFunctions", gs_param_type_bool, AllowPSRepeatFunctions),
     pi("IsDistiller", gs_param_type_bool, IsDistiller),
