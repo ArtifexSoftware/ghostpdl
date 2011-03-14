@@ -1213,6 +1213,8 @@ flush:
                     dx = penum->ht_landscape.xstart % thresh_width;
                 }
                 dy = (penum->dev->band_offset_y + penum->ht_landscape.y_pos) % thresh_height;
+                if (dy < 0)
+                    dy += thresh_height;
                 /* Left remainder part */
                 left_rem_end = min(dx + 16, thresh_width);
                 left_width = left_rem_end - dx;
