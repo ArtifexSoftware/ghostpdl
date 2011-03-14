@@ -48,6 +48,7 @@
  * spurious valgrind errors. The code should perform perfectly even without
  * this enabled, but enabling it makes debugging much easier.
  */
+/* #define PACIFY_VALGRIND */
 
 /* ------ Strategy procedure ------ */
 
@@ -1251,6 +1252,11 @@ flush:
                     }
                     /* Now the remainder */
                     memcpy(ptr_out_temp, row_ptr, right_tile_width);
+#ifdef PACIFY_VALGRIND
+		    ptr_out_temp += right_tile_width;
+		    if (ptr_out_temp < ptr_out + 16)
+                        memset(ptr_out_temp, 0, ptr_out + 16 - ptr_out_temp);
+#endif
                     ptr_out += 16;
                 }
                 if (replicate_tile) {

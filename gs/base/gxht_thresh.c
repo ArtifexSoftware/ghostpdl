@@ -26,6 +26,12 @@
 #include "gxht_thresh.h"
 #include "gzht.h"
 
+/* Enable the following define to perform a little extra work to stop
+ * spurious valgrind errors. The code should perform perfectly even without
+ * this enabled, but enabling it makes debugging much easier.
+ */
+/* #define PACIFY_VALGRIND */
+
 #ifndef __WIN32__
 #define __align16  __attribute__((align(16)))
 #else
@@ -285,6 +291,9 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
     int num_contone = ht_landscape.num_contones;
     int k, j, w, contone_out_posit;
     byte *contone_ptr, *thresh_ptr, *halftone_ptr;
+#ifdef PACIFY_VALGRIND
+    int extra = 0;
+#endif
 
     /* Work through chunks of 16.  */
     /* Data may have come in left to right or right to left. */
@@ -307,6 +316,11 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
             local_widths[0] -= k-16;
         }
     }
+#ifdef PACIFY_VALGRIND
+    if (k < 16) {
+        extra = 16 - k;
+    }
+#endif
     for (k = data_length; k > 0; k--) { /* Loop on rows */
         contone_ptr = &(contone_align[position]); /* Point us to our row start */
         curr_position = 0; /* We use this in keeping track of widths */
@@ -317,6 +331,10 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
                 contone[contone_out_posit] = c;
                 contone_out_posit++;
             }
+#ifdef PACIFY_VALGRIND
+	    if (extra)
+                memset(contone+contone_out_posit, 0, extra);
+#endif
             curr_position++; /* Move us to the next position in our width array */
             contone_ptr++;   /* Move us to a new location in our contone buffer */
         }
