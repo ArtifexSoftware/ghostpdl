@@ -1228,9 +1228,9 @@ pl_pre_finish_page(pl_interp_instance_t *interp, void *closure)
     /* nothing to do now if we are in range */
     if ( pti->page_count >= pti->first_page && pti->page_count <= pti->last_page )
         return 0;
-    /* past page count we return an error so the interpreter will exit early */
+
     if ( pti->page_count > pti->last_page )
-        return -1;
+        return e_ExitLanguage;
     /* finally if the next page is out of range -- must be before
        the first page if we are here.  We have to render the page
        but can optimize by downgrading the resolution. */
