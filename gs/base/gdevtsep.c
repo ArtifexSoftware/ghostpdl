@@ -140,9 +140,6 @@ tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
-    if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
-        return_error(gs_error_rangecheck);  /* this will overflow max_long */
-
     code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
         return code;
