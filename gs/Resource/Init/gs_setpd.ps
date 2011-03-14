@@ -858,7 +858,11 @@ SETPDDEBUG { (Installing.) = pstack flush } if
 		% We must install the new page device dictionary
 		% before calling the Install procedure.
   dup .setpagedevice
+  currentdevice 1 dict dup /HighLevelDevice dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark //true}{3 1 roll cleartomark not}ifelse
+  {
   .setdefaulthalftone	% Set the default screen before calling Install.
+  } if
   dup /Install .knownget {
     { .execinstall } stopped {
       pop % Install procedure failed. One element will have been left on the stack.

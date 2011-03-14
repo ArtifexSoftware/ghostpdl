@@ -3018,7 +3018,12 @@ the operation of the interpreter. These are documented here so that other device
 requiring the same behaviour can use these parameters.
 
 <dt><b><em>/HighLevelDevice</em></b>
-<dd>True if the device is a high level device. no defined use yet.
+<dd>True if the device is a high level device. Currently this controls haltone emission
+during setpagedevice. Normally setpagdevice resets the halftone to a default value, which is
+unfortunate for high-level devices such as ps2write and pdfwrite, as they are unable to tell
+that this is caused by setpagdevice rather than a halftone set by the input file. In order to prevent 
+spurious default halftones being embedded in the output, if /HighLevelDevice is present and
+true in the device paramters, then the default halftone will not be set during setpagedevice.
 </dd>
 
 <dt><b><em>/AllowIncrementalCFF</em></b>
