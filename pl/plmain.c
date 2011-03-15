@@ -40,6 +40,12 @@
 #include "pltoputl.h"
 #include "plapi.h"
 #include "gslibctx.h"
+/* includes for the display device */
+#include "gdevdevn.h"
+#include "gsequivc.h"
+#include "gdevdsp.h"
+#include "gdevdsp2.h"
+
 #if defined(DEBUG) && defined(ALLOW_VD_TRACE)
 #include "dwtrace.h"
 #include "vdtrace.h"
@@ -211,9 +217,10 @@ close_job(pl_main_universe_t *universe, pl_main_instance_t *pti)
  * Here is the real main program.
  */
 GSDLLEXPORT int GSDLLAPI
-pl_main(
+pl_main_aux(
     int                 argc,
-    char *        argv[]
+    char *        argv[],
+    void *disp
 )
 {
     gs_memory_t *           mem;
@@ -330,8 +337,18 @@ pl_main(
         if (!filename)
             break;  /* no nore files to process */
 
+	/* If the display device is selected (default), set up the callback */
+	if (strcmp(inst.device->dname, "display") == 0) {
+	    gx_device_display *ddev; 
+	    if (!disp) {
+		errprintf(mem, "Display device selected, but no display device configured.\n");
+		return -1;
+	    }
+	    ddev = (gx_device_display *)inst.device;
+	    ddev->callback = (display_callback *)disp;
+	}
 
-        /* open file for reading - NB we should respect the minimum
+	/* open file for reading - NB we should respect the minimum
            requirements specified by each implementation in the
            characteristics structure */
         if (pl_main_cursor_open(mem, &r, filename, buf, sizeof(buf)) < 0) {
@@ -494,6 +511,16 @@ pl_main(
     return 0;
 }
 
+GSDLLEXPORT int GSDLLAPI
+pl_main(
+    int                 argc,
+    char *        argv[]
+)
+{
+    pl_main_aux(argc, argv, NULL);
+
+}
+
 /* --------- Functions operating on pl_main_universe_t ----- */
 /* Init main_universe from pdl_implementation */
 int   /* 0 ok, else -1 error */
@@ -505,6 +532,7 @@ pl_main_universe_init(
                                pdl_implementation[], /* implementations to choose from */
         pl_interp_instance_t   *pjl_instance,        /* pjl to
                                                         reference */
+
         pl_main_instance_t     *inst,                /* instance for pre/post print */
         pl_page_action_t       pl_pre_finish_page,   /* pre-page action */
         pl_page_action_t       pl_post_finish_page   /* post-page action */

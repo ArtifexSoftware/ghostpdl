@@ -77,4 +77,7 @@
 GSDLLEXPORT int GSDLLAPI 
 pl_main(int argc, char *argv[]);
 
+GSDLLEXPORT int GSDLLAPI 
+pl_main_aux(int argc, char *argv[], void *disp);
+
 #endif				/* plapi_INCLUDED */
