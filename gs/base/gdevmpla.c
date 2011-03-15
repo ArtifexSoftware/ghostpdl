@@ -26,6 +26,7 @@
 static dev_proc_open_device(mem_planar_open);
 declare_mem_procs(mem_planar_copy_mono, mem_planar_copy_color, mem_planar_fill_rectangle);
 static dev_proc_copy_color(mem_planar_copy_color_24to8);
+static dev_proc_copy_color(mem_planar_copy_color_4to1);
 static dev_proc_strip_tile_rectangle(mem_planar_strip_tile_rectangle);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 
@@ -91,6 +92,13 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
             (mdev->planes[1].depth == 8) && (mdev->planes[1].shift == 8) &&
             (mdev->planes[2].depth == 8) && (mdev->planes[2].shift == 0))
             set_dev_proc(mdev, copy_color, mem_planar_copy_color_24to8);
+        else if ((mdev->color_info.depth == 4) &&
+                 (mdev->num_planes == 4) &&
+                 (mdev->planes[0].depth == 1) && (mdev->planes[0].shift == 3) &&
+                 (mdev->planes[1].depth == 1) && (mdev->planes[1].shift == 2) &&
+                 (mdev->planes[2].depth == 1) && (mdev->planes[2].shift == 1) &&
+                 (mdev->planes[3].depth == 1) && (mdev->planes[3].shift == 0))
+            set_dev_proc(mdev, copy_color, mem_planar_copy_color_4to1);
         else
             set_dev_proc(mdev, copy_color, mem_planar_copy_color);
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
@@ -267,6 +275,181 @@ mem_planar_copy_color_24to8(gx_device * dev, const byte * base, int sourcex,
             dev_proc(mdproto, copy_color)
                     (dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch);
             mdev->line_ptrs -= 2*mdev->height;
+        }
+    }
+    MEM_RESTORE_PARAMS(mdev, save);
+    return 0;
+}
+
+/* Copy color: Special case the 4 -> 1+1+1+1 case. */
+static int
+mem_planar_copy_color_4to1(gx_device * dev, const byte * base, int sourcex,
+                            int sraster, gx_bitmap_id id,
+                            int x, int y, int w, int h)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+#define BUF_LONGS 100   /* arbitrary, >= 1 */
+#define BUF_BYTES (BUF_LONGS * ARCH_SIZEOF_LONG)
+    union b_ {
+        ulong l[BUF_LONGS];
+        byte b[BUF_BYTES];
+    } buf0, buf1, buf2, buf3;
+    mem_save_params_t save;
+    const gx_device_memory *mdproto = gdev_mem_device_for_bits(1);
+    uint plane_raster = bitmap_raster(w);
+    int br, bw, bh, cx, cy, cw, ch, ix, iy;
+
+    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
+    MEM_SAVE_PARAMS(mdev, save);
+    MEM_SET_PARAMS(mdev, 1);
+    if (plane_raster > BUF_BYTES) {
+        br = BUF_BYTES;
+        bw = BUF_BYTES<<3;
+        bh = 1;
+    } else {
+        br = plane_raster;
+        bw = w;
+        bh = BUF_BYTES / plane_raster;
+    }
+    for (cy = y; cy < y + h; cy += ch) {
+        ch = min(bh, y + h - cy);
+        for (cx = x; cx < x + w; cx += cw) {
+            int sx = sourcex + cx - x;
+            const byte *source_base = base + sraster * (cy - y) + (sx>>1);
+
+            cw = min(bw, x + w - cx);
+            if ((sx & 1) == 0) {
+                for (iy = 0; iy < ch; ++iy) {
+                    const byte *sptr = source_base;
+                    byte *dptr0 = buf0.b + br * iy;
+                    byte *dptr1 = buf1.b + br * iy;
+                    byte *dptr2 = buf2.b + br * iy;
+                    byte *dptr3 = buf3.b + br * iy;
+                    byte roll = 0x80;
+                    byte bc = 0;
+                    byte bm = 0;
+                    byte by = 0;
+                    byte bk = 0;
+                    ix = cw;
+                    do {
+                        byte b = *sptr++;
+                        if (b & 0x80)
+                            bc |= roll;
+                        if (b & 0x40)
+                            bm |= roll;
+                        if (b & 0x20)
+                            by |= roll;
+                        if (b & 0x10)
+                            bk |= roll;
+                        roll >>= 1;
+                        if (b & 0x08)
+                            bc |= roll;
+                        if (b & 0x04)
+                            bm |= roll;
+                        if (b & 0x02)
+                            by |= roll;
+                        if (b & 0x01)
+                            bk |= roll;
+                        roll >>= 1;
+                        if (roll == 0) {
+                            *dptr0++ = bc;
+                            *dptr1++ = bm;
+                            *dptr2++ = by;
+                            *dptr3++ = bk;
+                            bc = 0;
+                            bm = 0;
+                            by = 0;
+                            bk = 0;
+                            roll = 0x80;
+                        }
+                        ix -= 2;
+                    } while (ix > 0);
+                    if (roll != 0x80) {
+                        *dptr0++ = bc;
+                        *dptr1++ = bm;
+                        *dptr2++ = by;
+                        *dptr3++ = bk;
+                    }
+                    source_base += sraster;
+                }
+            } else {
+                for (iy = 0; iy < ch; ++iy) {
+                    const byte *sptr = source_base;
+                    byte *dptr0 = buf0.b + br * iy;
+                    byte *dptr1 = buf1.b + br * iy;
+                    byte *dptr2 = buf2.b + br * iy;
+                    byte *dptr3 = buf3.b + br * iy;
+                    byte roll = 0x80;
+                    byte bc = 0;
+                    byte bm = 0;
+                    byte by = 0;
+                    byte bk = 0;
+                    byte b = *sptr++;
+                    ix = cw;
+                    goto loop_entry;
+                    do {
+                        b = *sptr++;
+                        if (b & 0x80)
+                            bc |= roll;
+                        if (b & 0x40)
+                            bm |= roll;
+                        if (b & 0x20)
+                            by |= roll;
+                        if (b & 0x10)
+                            bk |= roll;
+                        roll >>= 1;
+                        if (roll == 0) {
+                            *dptr0++ = bc;
+                            *dptr1++ = bm;
+                            *dptr2++ = by;
+                            *dptr3++ = bk;
+                            bc = 0;
+                            bm = 0;
+                            by = 0;
+                            bk = 0;
+                            roll = 0x80;
+                        }
+loop_entry:
+                        if (b & 0x08)
+                            bc |= roll;
+                        if (b & 0x04)
+                            bm |= roll;
+                        if (b & 0x02)
+                            by |= roll;
+                        if (b & 0x01)
+                            bk |= roll;
+                        roll >>= 1;
+                        ix -= 2;
+                    } while (ix >= 0); /* ix == -2 means 1 extra done */
+                    if ((ix == -2) && (roll == 0x40)) {
+                        /* We did an extra one, and it was the last thing
+                         * we did. Nothing to store. */
+                    } else {
+                        /* Flush the stored bytes */
+                        *dptr0++ = bc;
+                        *dptr1++ = bm;
+                        *dptr2++ = by;
+                        *dptr3++ = bk;
+                    }
+                    source_base += sraster;
+                }
+            }
+            dev_proc(mdproto, copy_mono)
+                        (dev, buf0.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                         (gx_color_index)0, (gx_color_index)1);
+            mdev->line_ptrs += mdev->height;
+            dev_proc(mdproto, copy_mono)
+                        (dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                         (gx_color_index)0, (gx_color_index)1);
+            mdev->line_ptrs += mdev->height;
+            dev_proc(mdproto, copy_mono)
+                        (dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                         (gx_color_index)0, (gx_color_index)1);
+            mdev->line_ptrs += mdev->height;
+            dev_proc(mdproto, copy_mono)
+                        (dev, buf3.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                         (gx_color_index)0, (gx_color_index)1);
+            mdev->line_ptrs -= 3*mdev->height;
         }
     }
     MEM_RESTORE_PARAMS(mdev, save);
