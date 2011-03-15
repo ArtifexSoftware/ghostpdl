@@ -53,9 +53,6 @@
 #include "gdevdevn.h"
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
-#if 0
-#include "gsequivc.h"
-#endif
 
 /* ------ Pseudo-errors used internally ------ */
 /* Copied from gs/psi/ierrors.h */
