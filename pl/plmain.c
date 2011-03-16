@@ -517,8 +517,7 @@ pl_main(
     char *        argv[]
 )
 {
-    pl_main_aux(argc, argv, NULL);
-
+    return pl_main_aux(argc, argv, NULL);
 }
 
 /* --------- Functions operating on pl_main_universe_t ----- */
