@@ -302,7 +302,15 @@ fill_with_rule(gs_state * pgs, int rule)
     if (pgs->in_charpath)
 	code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
 				     pgs->in_charpath);
-    else if (gs_is_null_device(pgs->device)) {
+            /* If we're rendering a glyph cached, the show machinery decides
+             * whether to actually image it on the output or not, but uncached
+             * will render directly to the output, so for text rendering
+             * mode 3, we have to short circuit it here, but keep the
+             * current point
+             */
+    else if (gs_is_null_device(pgs->device)
+            || (pgs->show_gstate && pgs->text_rendering_mode == 3
+            && pgs->in_cachedevice == CACHE_DEVICE_NOT_CACHING)) {
 	/* Handle separately to prevent gs_state_color_load - bug 688308. */
 	gs_newpath(pgs);
 	code = 0;
