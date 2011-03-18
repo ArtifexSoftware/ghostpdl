@@ -124,6 +124,7 @@ gx_image1_sget(gs_image_common_t *pic, stream *s,
     pim->type = &gs_image_type_1;
     pim->ImageMask = false;
     pim->Alpha = code;
+    pim->image_parent_type = gs_image_type1;
     return 0;
 }
 

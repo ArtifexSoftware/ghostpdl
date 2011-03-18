@@ -37,6 +37,13 @@ typedef struct gs_image4_s {
      */
     bool MaskColor_is_range;
     uint MaskColor[GS_IMAGE_MAX_COMPONENTS * 2];
+    /*
+     * Define the parent image type that gave rise to this. 
+     * Used to avoid the use of mixed halftoning methods 
+     * between images and their masks, which
+     * can cause misalignment issues in pixel replications.
+     */
+    gs_image_parent_t image_parent_type;
 } gs_image4_t;
 
 #define private_st_gs_image4()	/* in gximage4.c */\

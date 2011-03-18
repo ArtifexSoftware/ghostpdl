@@ -53,6 +53,7 @@ gs_image4_t_init(gs_image4_t * pim, gs_color_space * color_space)
     gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);
     pim->type = &gs_image_type_4;
     pim->MaskColor_is_range = false;
+    pim->image_parent_type = gs_image_type4;
 }
 
 /* Start processing an ImageType 4 image. */
@@ -151,6 +152,7 @@ gx_image4_sget(gs_image_common_t *pic, stream *s,
         if (code < 0)
 	    return code;
     }
+    pim->image_parent_type = gs_image_type4;
     return 0;
 }
 
