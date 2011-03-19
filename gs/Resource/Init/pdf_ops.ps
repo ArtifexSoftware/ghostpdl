@@ -985,7 +985,26 @@ end readonly def
    currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke .swapcolors
    setmatrix moveto
  } bdef
-/tB { gsave tf grestore tS } bdef
+
+% Handle transparency the same as /B operator
+/tB {
+       PDFusingtransparency {
+	  % knockout trans group around the filled and stroked object
+	  mark
+	  /Isolated //true /Knockout //true
+	  .dicttomark
+	  1 .setopacityalpha 
+	  % While text will always have a currentpoint, strokepath seems to mess with it.
+	  % we get the currentpoint, then use moveto to restore it for pathbbox
+	  gsave currentpoint strokepath moveto pathbbox grestore
+	  .begintransparencygroup
+	  gsave tf grestore tS
+	  .endtransparencygroup
+	} {
+	  gsave tf grestore tS
+	} ifelse
+} bdef
+
 % This does the wrong thing if there have been multiple text operations
 % within a single BT/ET pair, but it's a start.
 /tW { } bdef
