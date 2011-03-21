@@ -640,6 +640,7 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
     buf->saved = NULL;
     result->stack = buf;
     result->maskbuf = pdf14_mask_element_new(memory);
+    result->maskbuf->rc_mask = pdf14_rcmask_new(memory);
     result->n_chan = n_chan;
     result->memory = memory;
     result->rect = *rect;
@@ -1121,6 +1122,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
         } else {
             /* Assign as mask buffer */
             ctx->maskbuf = pdf14_mask_element_new(ctx->memory);
+            ctx->maskbuf->rc_mask = pdf14_rcmask_new(ctx->memory);
             ctx->maskbuf->rc_mask->mask_buf = tos;
         }
         ctx->smask_blend = false;  /* just in case */
@@ -1221,6 +1223,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
          tos->n_planes = 1;
         /* Assign as reference counted mask buffer */
         ctx->maskbuf = pdf14_mask_element_new(ctx->memory);
+        ctx->maskbuf->rc_mask = pdf14_rcmask_new(ctx->memory);
         ctx->maskbuf->rc_mask->mask_buf = tos;
      }
     return 0;
@@ -1234,7 +1237,7 @@ pdf14_mask_element_new(gs_memory_t *memory)
     result = gs_alloc_struct(memory, pdf14_mask_t, &st_pdf14_mask,
 			     "pdf14_mask_element_new");
     /* Get the reference counted mask */
-    result->rc_mask = pdf14_rcmask_new(memory);
+    result->rc_mask = NULL;
     result->previous = NULL;
     result->memory = memory;
     return(result);
@@ -6663,8 +6666,15 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 				 &p14dev->devn_params.separations); */
 		p14dev->devn_params.separations =
 		    pclist_devn_params->pdf14_separations;
-		if ( num_comp != p14dev->color_info.num_components) {
-		    dev_proc(tdev, open_device) (tdev);
+		if (num_comp != p14dev->color_info.num_components) {
+                    /* When the pdf14 device is opened it creates a context
+                       and some soft mask related objects.  The push device
+                       compositor action will have already created these but
+                       they are the wrong size.  We must destroy them though
+                       before reopening the device */
+                    if (p14dev->ctx != NULL) {
+                        pdf14_ctx_free(p14dev->ctx);
+                    }
 		    dev_proc(tdev, open_device) (tdev);
 		}
 	    }
