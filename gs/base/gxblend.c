@@ -1463,7 +1463,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
    /* clist_band_count is incremented at every pdf14putimage */
    /* Useful for catching this thing and only dumping */
    /* during a particular band if we have a large file */
-   // if (clist_band_count != 1) return; 
+   /* if (clist_band_count != 65) return; */
     buff_ptr = Buffer;
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,max_bands);

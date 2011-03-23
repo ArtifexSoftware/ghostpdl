@@ -526,6 +526,144 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     return code;
 }
 
+/* A self referencing function to copy the color list */
+static int
+copy_color_list(compressed_color_list_t *src_color_list, 
+                compressed_color_list_t *des_color_list, gs_memory_t *memory)
+{
+    int k;
+    int num_sub_levels = src_color_list->num_sub_level_ptrs;
+
+    if (num_sub_levels > 0) {
+        for (k = 0; k < num_sub_levels; k++) {
+            des_color_list->u.sub_level_ptrs[k] = 
+                alloc_compressed_color_list_elem(memory,
+                                    des_color_list->level_num_comp - 1);
+            if (des_color_list->u.sub_level_ptrs[k] == NULL) {
+                return gs_rethrow(-1, "copy_color_list allocation error");
+            }
+            des_color_list->u.sub_level_ptrs[k]->first_bit_map = 
+                src_color_list->u.sub_level_ptrs[k]->first_bit_map;
+            des_color_list->u.sub_level_ptrs[k]->num_sub_level_ptrs = 
+                src_color_list->u.sub_level_ptrs[k]->num_sub_level_ptrs;
+            copy_color_list(src_color_list->u.sub_level_ptrs[k], 
+                            des_color_list->u.sub_level_ptrs[k], memory);
+        }
+    } else {
+        /* Allocate and copy the data */
+         memcpy(&(des_color_list->u.comp_data[0]), 
+                &(src_color_list->u.comp_data[0]),
+                size_of(comp_bit_map_list_t)*NUM_ENCODE_LIST_ITEMS);
+    }
+    return 0;
+}
+
+/* Free the copied deviceN parameters */
+void
+devn_free_params(gx_device *thread_cdev)
+{
+    gs_devn_params *devn_params;
+    int k;
+
+    devn_params = dev_proc(thread_cdev, ret_devn_params)(thread_cdev);
+    if (devn_params == NULL) return;
+
+    for (k = 0; k < devn_params->separations.num_separations; k++) {
+        gs_free_object(thread_cdev->memory, 
+                       devn_params->separations.names[k].data,
+                       "devn_free_params");
+    }
+    free_compressed_color_list(thread_cdev->memory, 
+                               devn_params->compressed_color_list);
+    for (k = 0; k < devn_params->pdf14_separations.num_separations; k++) {
+        gs_free_object(thread_cdev->memory, 
+                       devn_params->pdf14_separations.names[k].data,
+                       "devn_free_params");
+    }
+    free_compressed_color_list(thread_cdev->memory, 
+                               devn_params->pdf14_compressed_color_list);
+}
+
+/* This is used to copy the deviceN parameters from the parent clist device to the
+   individual thread clist devices for multi-threaded rendering */
+int
+devn_copy_params(gx_device * psrcdev, gx_device * pdesdev)
+{
+    gs_devn_params *src_devn_params, *des_devn_params;
+    int code = 0;
+    int k;
+    compressed_color_list_t *src_color_list, *des_color_list;
+
+    /* Get pointers to the parameters */
+    src_devn_params = dev_proc(psrcdev, ret_devn_params)(psrcdev);
+    des_devn_params = dev_proc(pdesdev, ret_devn_params)(pdesdev);
+    /* First the easy items */
+    des_devn_params->bitspercomponent = src_devn_params->bitspercomponent;
+    des_devn_params->max_separations = src_devn_params->max_separations;
+    des_devn_params->num_separation_order_names = 
+        src_devn_params->num_separation_order_names;
+    des_devn_params->num_std_colorant_names = 
+        src_devn_params->num_std_colorant_names;
+    des_devn_params->page_spot_colors = src_devn_params->page_spot_colors;
+    des_devn_params->std_colorant_names = src_devn_params->std_colorant_names;
+    des_devn_params->separations.num_separations 
+        = src_devn_params->separations.num_separations; 
+    /* Now the more complex structures */
+    /* Spot color names */
+    for (k = 0; k < des_devn_params->separations.num_separations; k++) {
+        byte * sep_name;
+        int name_size = src_devn_params->separations.names[k].size;
+        sep_name = (byte *)gs_alloc_bytes(pdesdev->memory->stable_memory, 
+                                          name_size, "devn_copy_params");
+        memcpy(sep_name, src_devn_params->separations.names[k].data, name_size);
+        des_devn_params->separations.names[k].size = name_size;
+        des_devn_params->separations.names[k].data = sep_name;
+    }
+    /* Order map */
+    memcpy(des_devn_params->separation_order_map, 
+           src_devn_params->separation_order_map, sizeof(gs_separation_map));
+    /* Compressed color list.  A messy structure that has a union that 
+       includes a linked list item */
+    src_color_list = src_devn_params->compressed_color_list;
+    if (src_color_list != NULL) {
+        /* Take care of the initial one. Others are done recursively */
+        des_color_list = alloc_compressed_color_list_elem(pdesdev->memory, 
+                                                          TOP_ENCODED_LEVEL);
+        des_color_list->first_bit_map = src_color_list->first_bit_map;
+        des_color_list->num_sub_level_ptrs = src_color_list->num_sub_level_ptrs;
+        code = copy_color_list(src_color_list, des_color_list, pdesdev->memory);
+        des_devn_params->compressed_color_list = des_color_list;
+    } else {
+        des_devn_params->compressed_color_list = NULL;
+    }
+    /* Handle the PDF14 items if they are there */
+    des_devn_params->pdf14_separations.num_separations 
+        = src_devn_params->pdf14_separations.num_separations; 
+    for (k = 0; k < des_devn_params->pdf14_separations.num_separations; k++) {
+        byte * sep_name;
+        int name_size = src_devn_params->pdf14_separations.names[k].size;
+        sep_name = (byte *)gs_alloc_bytes(pdesdev->memory->stable_memory, 
+                                          name_size, "devn_copy_params");
+        memcpy(sep_name, src_devn_params->pdf14_separations.names[k].data, 
+               name_size);
+        des_devn_params->pdf14_separations.names[k].size = name_size;
+        des_devn_params->pdf14_separations.names[k].data = sep_name;
+    }
+    src_color_list = src_devn_params->pdf14_compressed_color_list;
+    if (src_color_list != NULL) {
+        /* Take care of the initial one. Others are done recursively */
+        des_color_list = alloc_compressed_color_list_elem(pdesdev->memory, 
+                                                          TOP_ENCODED_LEVEL);
+        des_color_list->first_bit_map = src_color_list->first_bit_map;
+        des_color_list->num_sub_level_ptrs = src_color_list->num_sub_level_ptrs;
+        code = copy_color_list(src_color_list, des_color_list, pdesdev->memory);
+        des_devn_params->pdf14_compressed_color_list = des_color_list;
+    } else {
+        des_devn_params->pdf14_compressed_color_list = NULL;
+    }
+    return code;
+}
+
 /*
  * Utility routine for handling DeviceN related parameters in a
  * standard raster printer type device.
@@ -675,8 +813,8 @@ compressed_color_list_t *
 alloc_compressed_color_list_elem(gs_memory_t * mem, int num_comps)
 {
     compressed_color_list_t * plist =
-        gs_alloc_struct(mem, compressed_color_list_t, &st_compressed_color_list,
-			       "alloc_compressed_color_list");
+        gs_alloc_struct(mem->stable_memory, compressed_color_list_t, 
+                        &st_compressed_color_list, "alloc_compressed_color_list");
     if (plist != NULL) {
 	/* Initialize the data in the element. */
 	memset(plist, 0, size_of(*plist));
@@ -699,10 +837,12 @@ free_compressed_color_list(gs_memory_t * mem,
 	return;
 
     /* Discard the sub levels. */
+    /* Allocation for this object is done in stable memory.  Make sure
+       that is done here too */
     for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++)
-       free_compressed_color_list(mem, pcomp_list->u.sub_level_ptrs[i]);
-
-    gs_free_object(mem, pcomp_list, "free_compressed_color_list");
+       free_compressed_color_list(mem->stable_memory, 
+                                  pcomp_list->u.sub_level_ptrs[i]);
+    gs_free_object(mem->stable_memory, pcomp_list, "free_compressed_color_list");
     return;
 }
 

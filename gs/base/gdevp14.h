@@ -103,7 +103,6 @@ struct pdf14_mask_s {
 typedef struct pdf14_parent_color_s pdf14_parent_color_t;
 
 struct pdf14_parent_color_s {
-
     int num_components;
     bool isadditive;
     gx_color_polarity_t polarity;
@@ -114,13 +113,14 @@ struct pdf14_parent_color_s {
     uint max_color; /* Causes issues if these are not maintained */
     const gx_color_map_procs *(*get_cmap_procs)(const gs_imager_state *,
 						     const gx_device *);
-    const gx_cm_color_map_procs *(*parent_color_mapping_procs)(const gx_device *);
+    gx_cm_color_map_procs *(*parent_color_mapping_procs)(const gx_device *);
+    gx_color_index (*encode)(gx_device *, const gx_color_value value[]);
+    int (*decode)(gx_device *, gx_color_index, gx_color_value *);
     int (*parent_color_comp_index)(gx_device *, const char *, int, int); 
     const pdf14_procs_t * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
     cmm_profile_t *icc_profile;  /* Opaque to GC.  Allocated in non-gc memory */
     pdf14_parent_color_t *previous;
- 
 };
 
 typedef struct pdf14_ctx_s pdf14_ctx;
@@ -224,10 +224,11 @@ typedef struct pdf14_device_s {
     float alpha; /* alpha = opacity * shape */
     gs_blend_mode_t blend_mode;
     bool text_knockout;
-	bool overprint;
-	bool overprint_mode;
-	gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
+    bool overprint;
+    bool overprint_mode;
+    gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
     gx_device * pclist_device;
+    bool free_devicen;                  /* Used to avoid freeing a deviceN parameter from target clist device */
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_imager_state *,
 						     const gx_device *);
     gx_device_color_info saved_target_color_info;

@@ -551,7 +551,8 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
                    really shared amongst threads like the links are.  Hence
                    the memory is for the local thread's chunk */
                 cms_input_profile = 
-                    gsicc_get_profile_handle_clist(gs_input_profile, memory);
+                    gsicc_get_profile_handle_clist(gs_input_profile, 
+                                                   gs_input_profile->memory);
                 gs_input_profile->profile_handle = cms_input_profile;
             } else {
                 /* Cant create the link.  No profile present, 
@@ -577,7 +578,8 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
                 /* ICC profile should be in clist. This is
                    the first call to it. */
                 cms_output_profile = 
-                    gsicc_get_profile_handle_clist(gs_output_profile, cache_mem);
+                    gsicc_get_profile_handle_clist(gs_output_profile, 
+                                                   gs_output_profile->memory);
                 gs_output_profile->profile_handle = cms_output_profile;
             } else {
                 /* Cant create the link.  No profile present, 

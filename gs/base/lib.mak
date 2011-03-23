@@ -1827,7 +1827,8 @@ $(GLOBJ)gxclzlib.$(OBJ) : $(GLSRC)gxclzlib.c $(std_h)\
 # Support for multi-threaded rendering from the clist. The chunk memory wrapper
 # is used to prevent mutex (locking) contention among threads. The underlying
 # memory allocator must implement the mutex (non-gc memory is usually gsmalloc)
-$(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h) $(gxsync_h) $(gxclthrd_h)
+$(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h) $(gxsync_h) $(gxclthrd_h)\
+	$(gdevdevn_h)
 	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
 
 $(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(gx_h) $(gsstype_h) $(gserrors_h)\

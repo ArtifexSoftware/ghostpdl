@@ -334,6 +334,9 @@ RELOC_PTRS_END
 static void
 tiffsep_device_finalize(void *vpdev)
 {
+    /* We need to deallocate the compressed_color_list.  
+       and the names. */
+    devn_free_params((gx_device*) vpdev);
     gx_device_finalize(vpdev);
 }
 

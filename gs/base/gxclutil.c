@@ -577,8 +577,7 @@ cmd_put_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    }
 	}
 	/* Now send one of the two command forms */
-	if (use_delta && ((delta_bytes < num_bytes - bytes_dropped))
-            || ((num_bytes - bytes_dropped) < 0)) {
+	if (use_delta && delta_bytes < (num_bytes - bytes_dropped)) {
 	    code = set_cmd_put_op(dp, cldev, pcls,
 	    				op_delta, delta_bytes + 1);
 	    if (code < 0)

@@ -30,6 +30,7 @@
 #include "gsmchunk.h"
 #include "gsmemlok.h"
 #include "gxclthrd.h"
+#include "gdevdevn.h"
 
 /* Forward reference prototypes */
 static int clist_start_render_thread(gx_device *dev, int thread_index, int band);
@@ -51,6 +52,7 @@ clist_setup_render_threads(gx_device *dev, int y)
     int i, code, band;
     int band_count = cdev->nbands;
     char fmode[4];
+    gs_devn_params *pclist_devn_params;
 
     crdev->num_render_threads = pdev->num_render_threads_requested;
 
@@ -149,6 +151,13 @@ clist_setup_render_threads(gx_device *dev, int y)
         ndev->PageCount = dev->PageCount;       /* copy to prevent mismatch error */
         if ((code = gs_putdeviceparams(ndev, (gs_param_list *)&paramlist)) < 0)
             break;
+        /* In the case of a separation device, we need to make sure we get the
+           devn params copied over */
+        pclist_devn_params = dev_proc(dev, ret_devn_params)(dev);
+        if (pclist_devn_params != NULL) {
+            code = devn_copy_params(dev, (gx_device*) ncdev);
+            if (code < 0) return_error(gs_error_VMerror);
+        }
         /* A question is, can the clist instances share the device profile.  
            Only doing reads of this from different threads */
         ncdev->device_icc_profile = cdev->device_icc_profile;
@@ -293,7 +302,9 @@ clist_teardown_render_threads(gx_device *dev)
             gdev_prn_free_memory((gx_device *)thread_cdev);
             /* Decrement the rc count on the icc profile */
             rc_decrement(thread_cdev->device_icc_profile,"clist_teardown_render_threads");
-            /* Free the device copy this thread used */
+            /* Free the device copy this thread used.  Note that the 
+               deviceN stuff if was allocated and copied earlier for the device
+               will be freed with this call */
             gs_free_object(thread->memory, thread_cdev, "clist_teardown_render_threads");
 #ifdef DEBUG
             if (gs_debug[':'])

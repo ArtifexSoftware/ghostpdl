@@ -168,6 +168,7 @@ static  dev_proc_pattern_manage(pdf14_pattern_manage);
 static int pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev);
 static	dev_proc_push_transparency_state(pdf14_push_transparency_state);
 static	dev_proc_pop_transparency_state(pdf14_pop_transparency_state);
+static  dev_proc_ret_devn_params(pdf14_ret_devn_params);
 
 static	const gx_color_map_procs *
     pdf14_get_cmap_procs(const gs_imager_state *, const gx_device *);
@@ -241,7 +242,7 @@ static	const gx_color_map_procs *
 	NULL,				/* fill_linear_color_trapezoid */\
 	NULL,				/* fill_linear_color_triangle */\
 	gx_forward_update_spot_equivalent_colors,	/* update spot */\
-        NULL,                           /* DevN params */\
+        pdf14_ret_devn_params,          /* DevN params */\
         NULL,                           /* fill page */\
         pdf14_push_transparency_state,\
         pdf14_pop_transparency_state\
@@ -540,6 +541,8 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->parent_color_info_procs->parent_color_comp_index = NULL;
     result->parent_color_info_procs->icc_profile = NULL;
     result->parent_color_info_procs->previous = NULL;
+    result->parent_color_info_procs->encode = NULL;
+    result->parent_color_info_procs->decode = NULL;    
     if (height <= 0) {
 	/* Empty clipping - will skip all drawings. */
 	result->planestride = 0;
@@ -1309,6 +1312,7 @@ pdf14_open(gx_device *dev)
 	pdev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, dev->memory);
     if (pdev->ctx == NULL)
 	return_error(gs_error_VMerror);
+    pdev->free_devicen = true;
     return 0;
 }
 
@@ -2648,6 +2652,13 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
 		new_is.log_op = rop3_default;
 		p14dev->pdf14_procs->put_image(pdev, &new_is, p14dev->target);
 	    }
+            /* Before we disable the device release any deviceN structures.
+               free_devicen is set if the pdf14 device had inherited its 
+               deviceN parameters from the target clist device.  In this
+               case they should not be freed */
+            if (p14dev->free_devicen) {
+                devn_free_params(pdev);
+            }
 	    pdf14_disable_device(pdev);
 	    pdf14_close(pdev);
 	    break;
@@ -3049,6 +3060,9 @@ pdf14_end_transparency_group(gx_device *dev,
 	    parent_color->parent_color_comp_index = NULL;
 	    parent_color->parent_color_mapping_procs = NULL;
         if (parent_color->icc_profile != NULL) {
+            /* make sure to decrement the device profile.  If it was allocated
+               with the push then it will be freed. */
+            rc_decrement(dev->device_icc_profile,"pdf14_end_transparency_group");
             dev->device_icc_profile = parent_color->icc_profile;
             rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_group");
             parent_color->icc_profile = NULL;
@@ -3153,8 +3167,13 @@ pdf14_update_device_color_procs(gx_device *dev,
                     if (iccprofile == NULL)
                         return gs_rethrow(-1,"ICC data not found in clist");
                     /* Keep a pointer to the clist device */
-                    iccprofile->dev = (gx_device *) pcrdev;
-                } 
+                    iccprofile->dev = (gx_device *) pcrdev;                    
+                } else {
+                    /* Go ahead and rc increment right now.  This way when
+                       we pop, we will make sure to decrement and avoid a
+                       leak for the above profile that we just created */
+                    rc_increment(iccprofile);
+                }
                 new_num_comps = iccprofile->num_comps;
                 new_depth = new_num_comps * 8;
                 if (new_num_comps == 4) {
@@ -3214,14 +3233,25 @@ pdf14_update_device_color_procs(gx_device *dev,
                             GX_DEVICE_COLOR_MAX_COMPONENTS);
         parent_color_info->max_color = pdev->color_info.max_color;
         parent_color_info->max_gray = pdev->color_info.max_gray;
-
+        parent_color_info->encode = pdev->procs.encode_color;
+        parent_color_info->decode = pdev->procs.decode_color;
         /* Don't increment the space since we are going to remove it from the 
            ICC manager anyway.  */
         if (group_color == ICC && iccprofile != NULL) {
             parent_color_info->icc_profile = dev->device_icc_profile;
         }
-
         /* Set new information */
+        /* If we are in a soft mask and we are using compressed color
+           encoding, then go ahead and update the encoder and decoder. */
+        if (pdev->procs.encode_color == pdf14_compressed_encode_color &&
+            new_num_comps == 1) {
+            pdev->procs.decode_color = pdevproto->static_procs->decode_color;
+            if (has_tags) {
+                pdev->procs.encode_color = pdf14_encode_color_tag;
+            } else {
+                pdev->procs.encode_color = pdevproto->static_procs->encode_color;
+            }
+        }
         pis->get_cmap_procs = pdf14_get_cmap_procs_group;
         gx_set_cmap_procs(pis, dev);
         pdev->procs.get_color_mapping_procs = 
@@ -3247,6 +3277,9 @@ pdf14_update_device_color_procs(gx_device *dev,
            in the ICC manager, since that is the profile that is used for the
            PDF14 device */
         if (group_color == ICC && iccprofile != NULL) {
+            /* iccprofile was incremented above if we had not just created
+               it.  when we do the pop we will decrement and if we just
+               created it, it will be destroyed */
             dev->device_icc_profile = iccprofile;
             rc_increment(parent_color_info->icc_profile);
         }
@@ -3411,6 +3444,24 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             memset(&(pdev->color_info.comp_shift),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
             memcpy(&(pdev->color_info.comp_bits),comp_bits,4);
             memcpy(&(pdev->color_info.comp_shift),comp_shift,4);
+            /* If we have a compressed color codec, and we are doing a soft mask
+               push operation then go ahead and update the color encode and
+               decode for the pdf14 device to not used compressed color
+               encoding while in the soft mask.  We will just check for gray
+               and compressed.  Note that we probably don't have_tags if we
+               are dealing with compressed color.  But is is possible so 
+               we add it in to catch for future use. */
+            if (pdev->procs.encode_color == pdf14_compressed_encode_color &&
+                new_num_comps == 1) {
+                pdev->procs.decode_color = 
+                    pdevproto->static_procs->decode_color;
+                if (has_tags) {
+                    pdev->procs.encode_color = pdf14_encode_color_tag;
+                } else {
+                    pdev->procs.encode_color = 
+                        pdevproto->static_procs->encode_color;
+                }
+            }
             cldev->clist_color_info.depth = pdev->color_info.depth;
             cldev->clist_color_info.polarity = pdev->color_info.polarity;
             cldev->clist_color_info.num_components = pdev->color_info.num_components;
@@ -3456,6 +3507,8 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
         pdev->pdf14_procs = parent_color->unpack_procs;
         pdev->color_info.max_color = parent_color->max_color;
         pdev->color_info.max_gray = parent_color->max_gray;
+        pdev->procs.encode_color = parent_color->encode;
+        pdev->procs.decode_color = parent_color->decode;
         memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),
                             GX_DEVICE_COLOR_MAX_COMPONENTS);
         memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),
@@ -3520,6 +3573,8 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     new_parent_color->depth = pdev->color_info.depth;
     new_parent_color->max_color = pdev->color_info.max_color;
     new_parent_color->max_gray = pdev->color_info.max_gray;
+    new_parent_color->decode = pdev->procs.decode_color;
+    new_parent_color->encode = pdev->procs.encode_color;
     memcpy(&(new_parent_color->comp_bits),&(pdev->color_info.comp_bits),
                         GX_DEVICE_COLOR_MAX_COMPONENTS);
     memcpy(&(new_parent_color->comp_shift),&(pdev->color_info.comp_shift),
@@ -3643,26 +3698,29 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
         if (!(parent_color->parent_color_mapping_procs == NULL && 
             parent_color->parent_color_comp_index == NULL)) {
             pis->get_cmap_procs = parent_color->get_cmap_procs;
-                gx_set_cmap_procs(pis, dev);
-                pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
-                pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
-                pdev->color_info.polarity = parent_color->polarity;
-                pdev->color_info.num_components = parent_color->num_components;
-                pdev->color_info.depth = parent_color->depth;
-                pdev->blend_procs = parent_color->parent_blending_procs;
-                pdev->ctx->additive = parent_color->isadditive;
-                pdev->pdf14_procs = parent_color->unpack_procs;
+            gx_set_cmap_procs(pis, dev);
+            pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
+            pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+            pdev->color_info.polarity = parent_color->polarity;
+            pdev->color_info.num_components = parent_color->num_components;
+            pdev->color_info.depth = parent_color->depth;
+            pdev->blend_procs = parent_color->parent_blending_procs;
+            pdev->ctx->additive = parent_color->isadditive;
+            pdev->pdf14_procs = parent_color->unpack_procs;
             pdev->color_info.max_color = parent_color->max_color;
             pdev->color_info.max_gray = parent_color->max_gray;
-                parent_color->get_cmap_procs = NULL;
-                parent_color->parent_color_comp_index = NULL;
-                parent_color->parent_color_mapping_procs = NULL;
+            parent_color->get_cmap_procs = NULL;
+            parent_color->parent_color_comp_index = NULL;
+            parent_color->parent_color_mapping_procs = NULL;
+            pdev->procs.encode_color = parent_color->encode;
+            pdev->procs.decode_color = parent_color->decode;
             memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),
                                 GX_DEVICE_COLOR_MAX_COMPONENTS);
             memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),
                                 GX_DEVICE_COLOR_MAX_COMPONENTS);
             /* Take care of the ICC profile */
             if (parent_color->icc_profile != NULL) {
+                rc_decrement(dev->device_icc_profile,"pdf14_end_transparency_mask");
                 dev->device_icc_profile = parent_color->icc_profile;
                 rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_mask");
                 parent_color->icc_profile = NULL;
@@ -5650,7 +5708,7 @@ get_param_compressed_color_list_elem(pdf14_clist_device * pdev,
 			       	pkeyname_list);
     }
 
-    return 0;;
+    return 0;
 }
 #undef put_data
 
@@ -5725,6 +5783,17 @@ put_param_compressed_color_list_elem(gx_device * pdev,
     return 0;;
 }
 #undef get_data
+
+/*
+ * devicen params
+ */
+gs_devn_params *
+pdf14_ret_devn_params(gx_device *pdev)
+{
+    pdf14_device *p14dev = (pdf14_device *)pdev;
+
+    return(&(p14dev->devn_params));
+}
 
 /*
  * Convert a list of spot color names into a set of device parameters.
@@ -6657,15 +6726,14 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 		        p14dev->devn_params.num_std_colorant_names +
 		        p14dev->devn_params.page_spot_colors;
                 }
- 		/* Transfer the data for the compressed color encoding. */
-		/* free_compressed_color_list(p14dev->memory,
-			p14dev->devn_params.compressed_color_list); */
+ 		/* Transfer the data for the compressed color encoding. 
+                   But we have to free what may be there before we do this */
+                devn_free_params((gx_device*) p14dev);
 		p14dev->devn_params.compressed_color_list =
 		    pclist_devn_params->pdf14_compressed_color_list;
-		/* free_separation_names(p14dev->memory,
-				 &p14dev->devn_params.separations); */
 		p14dev->devn_params.separations =
 		    pclist_devn_params->pdf14_separations;
+                p14dev->free_devicen = false;  /* to avoid freeing the clist ones */
 		if (num_comp != p14dev->color_info.num_components) {
                     /* When the pdf14 device is opened it creates a context
                        and some soft mask related objects.  The push device

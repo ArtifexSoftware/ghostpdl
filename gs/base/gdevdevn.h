@@ -257,6 +257,28 @@ int check_pcm_and_separation_names(const gx_device * dev,
 		const gs_devn_params * pparams, const char * pname,
 		int name_size, int component_type);
 
+/* 
+ * This routine copies over the gs_devn_params from one device to another.  
+   This is needed when we launch multi-threaded rendering for separation 
+   devices 
+ *
+ * Parameters :
+ *      psrcdev - pointer to source device.
+ *      pdesdev - pointer to destination device.
+ * 
+ * Returns 0 if all allocations were fine.
+ */
+int devn_copy_params(gx_device * psrcdev, gx_device * pdesdev);
+
+/* 
+ * This routine frees the gs_devn_params objects 
+ *
+ * Parameters :
+ *      dev - pointer to device.
+ * 
+ */
+void devn_free_params(gx_device *dev);
+
 /*
  * This routine will extract a specified set of bits from a buffer and pack
  * them into a given buffer.
