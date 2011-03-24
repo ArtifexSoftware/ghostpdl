@@ -1917,7 +1917,7 @@ fapiufst_0 : $(PSSRC)fapiufst.c $(AK)\
  $(UFST_ROOT)$(D)rts$(D)psi$(D)t1isfnt.h\
  $(UFST_ROOT)$(D)rts$(D)tt$(D)sfntenum.h\
  $(UFST_ROOT)$(D)rts$(D)tt$(D)ttpcleo.h
-	$(PSCC) $(UFST_CFLAGS) -DUFSTFONTDIR=$(UFSTFONTDIR) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
+	$(PSCC) $(UFST_CFLAGS) -DUFSTFONTDIR=$(UFSTDISCFONTDIR) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
 
 
 $(PSOBJ)fapiufst.$(OBJ) : fapiufst_$(COMPILE_INITS)

@@ -160,8 +160,10 @@ ifeq ($(PL_SCALER), ufst)
                      -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
                      -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
     UFSTFONTDIR?=%rom%fontdata/
+    UFSTROMFONTDIR=\"%rom%fontdata/\"
   else
     UFSTFONTDIR?=/usr/local/fontdata5.0/
+    UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
   endif
   EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
 endif # PL_SCALER

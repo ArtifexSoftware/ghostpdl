@@ -178,7 +178,7 @@ UFST_ROMFS_ARGS?=-b \
  -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
 
 UFSTROMFONTDIR=\"%rom%fontdata/\"
-UFSTFONTDIR?=\"$(UFST_ROOT)/fontdata/\"
+UFSTDISCFONTDIR?=\"$(UFST_ROOT)/fontdata/\"
 
 
 UFST_CFLAGS=@UFST_CFLAGS@

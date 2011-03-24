@@ -115,15 +115,21 @@ BAND_LIST_STORAGE=file
 COMPILE_INITS=1
 !endif
 
-!ifdef UFST_BRIDGE
-!if "$(UFST_BRIDGE)"=="1"
-FT_BRIDGE=0
-!endif
-!endif
-
 !ifndef FT_BRIDGE
 FT_BRIDGE=1
 !endif
+
+SHARE_FT=0
+
+!ifndef FTSRCDIR
+FTSRCDIR=$(GLSRCDIR)/../freetype
+!endif
+
+!ifndef FT_CFLAGS
+FT_CFLAGS=-I$(FTSRCDIR)/include
+!endif
+
+FT_LIBS=""
 
 !ifndef APP_CCC
 APP_CCC=$(CC_) -I..\pl -I..\gs\base -I.\obj $(C_)
@@ -166,8 +172,10 @@ PXL_FONT_SCALER=$(PL_SCALER)
 
 !if "$(COMPILE_INITS)" == "1"
 UFSTFONTDIR=%rom%fontdata/
+UFSTROMFONTDIR=\\\"%%%%%rom%%%%%fontdata/\\\"
 !else
 UFSTFONTDIR=../fontdata/
+UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
 !endif
 
 !ifndef UFST_ROOT
@@ -177,10 +185,8 @@ UFST_ROOT="../ufst"
 FAPI_DEFS= -DUFST_BRIDGE=1 -DUFST_LIB_EXT=.lib -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
 !endif
 
-!if $(FT_BRIDGE)!=1
 UFST_BRIDGE=1
 UFST_LIB_EXT=.lib
-!endif
 
 # specify agfa library locations and includes.
 UFST_LIB=$(UFST_ROOT)\rts\lib
