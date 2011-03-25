@@ -73,6 +73,7 @@
 #include "store.h"
 #include "gspath.h"
 #include "gzpath.h"
+#include "gzcpath.h"
 #include "gsropt.h"
 #include "gsiparam.h"
 #include "gxxfont.h"
@@ -121,6 +122,8 @@ typedef struct {
 
 #define X_DPI           300
 #define Y_DPI           300
+
+#define MAX_PATH_POINTS 1000
 
 /* driver */
 typedef struct  gx_device_opvp_s {
@@ -2058,6 +2061,12 @@ opvp_open(gx_device *dev)
             if (pdev->bbox_device->memory == NULL) {
                 pdev->bbox_device->memory = gs_memory_stable(dev->memory);
             }
+#if GS_VERSION_MAJOR >= 9
+            if (pdev->bbox_device->device_icc_profile == NULL) {
+                pdev->bbox_device->device_icc_profile =
+                  pdev->device_icc_profile;
+            }
+#endif
         }
 #endif
         outputFD = fileno(pdev->file);
@@ -3425,6 +3434,62 @@ oprp_put_params(gx_device *dev, gs_param_list *plist)
     return gdev_prn_put_params(dev, plist);
 }
 
+static int checkPath(const gx_path *ppath)
+{
+    unsigned int npoints = 0;
+    fixed vs[6];
+    int op;
+    gs_path_enum path;
+
+    gx_path_enum_init(&path, ppath);
+
+    while ((op = gx_path_enum_next(&path, (gs_fixed_point *)vs)) != 0) {
+	switch (op) {
+	case gs_pe_lineto:
+	case gs_pe_moveto:
+            npoints += 1;
+	    break;
+	case gs_pe_curveto:
+            npoints += 3;
+	    break;
+	case gs_pe_closepath:
+	    break;
+	default:
+	    break;
+	}
+        if (npoints > MAX_PATH_POINTS) {
+            return 0;
+        }
+
+    }
+    return 1;
+}
+
+static int checkCPath(const gx_clip_path *pcpath)
+{
+    const gx_clip_list *list;
+    const gx_clip_rect *prect;
+    int npoints;
+
+    if (pcpath == 0) return 1;
+    if (pcpath->path_valid) {
+        return checkPath(&pcpath->path);
+    }
+    list = gx_cpath_list(pcpath);
+    prect = list->head;
+    if (prect == 0) {
+        prect = &list->single;
+    }
+    npoints = 0;
+    for (;prect != 0;prect = prect->next) {
+        npoints += 4;
+        if (npoints > MAX_PATH_POINTS) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 /*
  * fill path
  */
@@ -3440,6 +3505,10 @@ opvp_fill_path(
     bool draw_image = false;
     gs_fixed_rect inner, outer;
 
+    /* check if paths are too complex */
+    if (!checkPath(ppath) || !checkCPath(pxpath)) {
+	return gx_default_fill_path(dev, pis, ppath, params, pdevc, pxpath);
+    }
     /* check clippath support */
     if (!(apiEntry->opvpSetClipPath)) {
         /* get clipping box area */
@@ -3475,6 +3544,11 @@ opvp_stroke_path(
     bool draw_image = false;
     gs_fixed_rect inner, outer;
 
+    /* check if paths are too complex */
+    if (!checkPath(ppath) || !checkCPath(pxpath)) {
+	return gx_default_stroke_path(dev, pis, ppath,
+				      params, pdcolor, pxpath);
+    }
     /* check clippath support */
     if (!(apiEntry->opvpSetClipPath)) {
         /* get clipping box area */
@@ -3560,6 +3634,14 @@ opvp_begin_image(
     float mag[2] = {1, 1};
     const gs_color_space *pcs = pim->ColorSpace;
 
+    /* check if paths are too complex */
+    if (!checkCPath(pcpath)) {
+        return gx_default_begin_image(
+                    dev, pis, pim, format,
+                    prect, pdcolor, pcpath,
+                    mem, pinfo);
+    }
+
     color_index = 0;
 
     vinfo = gs_alloc_struct(mem, gdev_vector_image_enum_t,
@@ -3609,7 +3691,11 @@ opvp_begin_image(
                                byte2frac((*(p + 1 + (count * 4)))),
                                byte2frac((*(p + 2 + (count * 4)))),
                                byte2frac((*(p + 3 + (count * 4)))),
+#if GS_VERSION_MAJOR >= 9
                                pis, rgb, mem);
+#else
+                               pis, rgb);
+#endif
                             *(palette + 0 + (count * 3)) = frac2byte(rgb[0]);
                             *(palette + 1 + (count * 3)) = frac2byte(rgb[1]);
                             *(palette + 2 + (count * 3)) = frac2byte(rgb[2]);
