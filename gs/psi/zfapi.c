@@ -2446,7 +2446,12 @@ retry_oversampling:
 #endif
 
     /* Provide glyph data for renderer : */
-    if (!I->ff.is_cid) {
+    /* Occasionally, char_name is already a glyph index to pass to the rendering engine
+     * so don't treat it as a name object.
+     * I believe this will only happen with a TTF/Type42, but checking the object type
+     * is cheap, and covers all font type eventualities.
+     */
+    if (!I->ff.is_cid && r_has_type(&char_name, t_name)) {
         ref sname;
         name_string_ref(imemory, &char_name, &sname);
         I->ff.char_data = sname.value.const_bytes;
