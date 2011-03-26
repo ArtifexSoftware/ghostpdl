@@ -108,11 +108,11 @@ static pdf14_mask_t * pdf14_mask_element_new(gs_memory_t * memory);
 /* Buffer stack	data structure */
 gs_private_st_ptrs5(st_pdf14_buf, pdf14_buf, "pdf14_buf",
 		    pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs,
-		    saved, data, transfer_fn, maskbuf, parent_color_info_procs);
+		    saved, data, transfer_fn, mask_stack, parent_color_info_procs);
 
 gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
-		    stack, maskbuf);
+		    stack, mask_stack);
 
 gs_private_st_ptrs1(st_pdf14_clr, pdf14_parent_color_t, "pdf14_clr",
 		    pdf14_clr_enum_ptrs, pdf14_clr_reloc_ptrs, previous);
@@ -530,7 +530,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->n_planes = n_planes;
     result->rowstride = rowstride;
     result->transfer_fn = NULL;
-    result->maskbuf = NULL;
+    result->mask_stack = NULL;
     result->idle = idle;
     result->mask_id = 0;
     new_parent_color = gs_alloc_struct(memory, pdf14_parent_color_t, &st_pdf14_clr,
@@ -577,7 +577,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
 static	void
 pdf14_buf_free(pdf14_buf *buf, gs_memory_t *memory)
 {
-    gs_free_object(memory, buf->maskbuf, "pdf14_buf_free");
+    gs_free_object(memory, buf->mask_stack, "pdf14_buf_free");
     gs_free_object(memory, buf->transfer_fn, "pdf14_buf_free");
     gs_free_object(memory, buf->data, "pdf14_buf_free");
     gs_free_object(memory, buf->parent_color_info_procs, "pdf14_buf_free");
@@ -642,8 +642,8 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
     }
     buf->saved = NULL;
     result->stack = buf;
-    result->maskbuf = pdf14_mask_element_new(memory);
-    result->maskbuf->rc_mask = pdf14_rcmask_new(memory);
+    result->mask_stack = pdf14_mask_element_new(memory);
+    result->mask_stack->rc_mask = pdf14_rcmask_new(memory);
     result->n_chan = n_chan;
     result->memory = memory;
     result->rect = *rect;
@@ -658,10 +658,10 @@ pdf14_ctx_free(pdf14_ctx *ctx)
 {
     pdf14_buf *buf, *next;
 
-    if (ctx->maskbuf) {
+    if (ctx->mask_stack) {
 	/* A mask was created but was not used in this band. */
-        rc_decrement(ctx->maskbuf->rc_mask, "pdf14_ctx_free");
-        gs_free_object(ctx->memory,ctx->maskbuf,"pdf14_ctx_free");
+        rc_decrement(ctx->mask_stack->rc_mask, "pdf14_ctx_free");
+        gs_free_object(ctx->memory,ctx->mask_stack,"pdf14_ctx_free");
     }
     for (buf = ctx->stack; buf != NULL; buf = next) {
 	next = buf->saved;
@@ -732,9 +732,9 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     buf->shape = shape;
     buf->blend_mode = blend_mode;
     buf->mask_id = mask_id;
-    buf->maskbuf = ctx->maskbuf; /* Save becasuse the group rendering may set up 
-				    another (nested) mask. */
-    ctx->maskbuf = NULL; /* Clean the mask field for rendering this group. 
+    buf->mask_stack = ctx->mask_stack; /* Save becasuse the group rendering may 
+                                          set up another (nested) mask. */
+    ctx->mask_stack = NULL; /* Clean the mask field for rendering this group. 
 			    See pdf14_pop_transparency_group how to handle it. */
     buf->saved = tos;
     ctx->stack = buf;
@@ -769,7 +769,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
-    pdf14_mask_t *mask_stack = tos->maskbuf;
+    pdf14_mask_t *mask_stack = tos->mask_stack;
     pdf14_buf *maskbuf;
     int x0, x1, y0, y1;
     byte *new_data_buf = NULL;
@@ -792,7 +792,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     y1 = min(tos->rect.q.y, nos->rect.q.y);
     x0 = max(tos->rect.p.x, nos->rect.p.x);
     x1 = min(tos->rect.q.x, nos->rect.q.x);
-    if (ctx->maskbuf) {
+    if (ctx->mask_stack) {
 	/* This can occur when we have a situation where we are ending out of 
            a group that has internal to it a soft mask and another group.  
            The soft mask left over from the previous trans group pop is put 
@@ -800,14 +800,14 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
            push occurs to use it.  If one does not occur, but instead we find 
            ourselves popping from a parent group, then this softmask is no 
            longer needed.  We will rc_decrement and set it to NULL. */
-        rc_decrement(ctx->maskbuf->rc_mask, "pdf14_pop_transparency_group");
-        if (ctx->maskbuf->rc_mask == NULL ){
-            gs_free_object(ctx->memory, ctx->maskbuf, "pdf14_pop_transparency_group");
+        rc_decrement(ctx->mask_stack->rc_mask, "pdf14_pop_transparency_group");
+        if (ctx->mask_stack->rc_mask == NULL ){
+            gs_free_object(ctx->memory, ctx->mask_stack, "pdf14_pop_transparency_group");
         }
-	ctx->maskbuf = NULL;
+	ctx->mask_stack = NULL;
     }
-    ctx->maskbuf = mask_stack;  /* Restore the mask saved by pdf14_push_transparency_group. */
-    tos->maskbuf = NULL;        /* Clean the pointer sinse the mask ownership is now passed to ctx. */
+    ctx->mask_stack = mask_stack;  /* Restore the mask saved by pdf14_push_transparency_group. */
+    tos->mask_stack = NULL;        /* Clean the pointer sinse the mask ownership is now passed to ctx. */
     if (tos->idle)
 	goto exit;
     if (maskbuf != NULL && maskbuf->data == NULL && maskbuf->alpha == 255)
@@ -990,22 +990,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
                     idle, replacing);
     ctx->smask_depth += 1;
 
-#if 0
-    if (replacing && ctx->maskbuf != NULL) {
-	if (ctx->maskbuf->maskbuf != NULL) {
-	    /* Pass here when a mask of an image
-	       is being replaced with the containing group's mask.
-	       It looks as the image's mask covers some band,
-	       but the image itself does not.
-	       We believe it must not happen,
-	       but provide a cleanup for safety.
-	    */
-	    pdf14_buf_free(ctx->maskbuf->maskbuf, ctx->memory);
-	}
-	pdf14_buf_free(ctx->maskbuf, ctx->memory);
-	ctx->maskbuf = NULL;
-    }
-#endif
     /* An optimization to consider is that if the SubType is Alpha
        then we really should only be allocating the alpha band and
        only draw with that channel.  Current architecture makes that 
@@ -1028,10 +1012,10 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     {	/* If replacing=false, we start the mask for an image with SMask.
 	   In this case the image's SMask temporary replaces the 
 	   mask of the containing group. Save the containing droup's mask 
-           in buf->maskbuf */
-	buf->maskbuf = ctx->maskbuf;
-        if (buf->maskbuf){
-            rc_increment(buf->maskbuf->rc_mask);
+           in buf->mask_stack */
+	buf->mask_stack = ctx->mask_stack;
+        if (buf->mask_stack){
+            rc_increment(buf->mask_stack->rc_mask);
         }
     }
 #if RAW_DUMP
@@ -1096,21 +1080,22 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
     if_debug1('v', "[v]pdf14_pop_transparency_mask, idle=%d\n", tos->idle);
     ctx->stack = tos->saved;
     tos->saved = NULL;  /* To avoid issues with GC */
-    if (tos->maskbuf) {
-        /* During the soft mask push, the maskbuf was copied (not moved) from 
-           the ctx to the tos maskbuf. We are done with this now so it is safe to 
+    if (tos->mask_stack) {
+        /* During the soft mask push, the mask_stack was copied (not moved) from 
+           the ctx to the tos mask_stack. We are done with this now so it is safe to 
            just set to NULL.  However, before we do that we must perform 
            rc decrement to match the increment that occured was made.  Also, 
            if this is the last ref count of the rc_mask, we should free the 
            buffer now since no other groups need it. */
-        rc_decrement(tos->maskbuf->rc_mask, "pdf14_pop_transparency_mask(tos->maskbuf->rc_mask)");
-        if (tos->maskbuf->rc_mask) {
-            if (tos->maskbuf->rc_mask->rc.ref_count == 1){
-                rc_decrement(tos->maskbuf->rc_mask, 
-                            "pdf14_pop_transparency_mask(tos->maskbuf->rc_mask)");
+        rc_decrement(tos->mask_stack->rc_mask, 
+                     "pdf14_pop_transparency_mask(tos->mask_stack->rc_mask)");
+        if (tos->mask_stack->rc_mask) {
+            if (tos->mask_stack->rc_mask->rc.ref_count == 1){
+                rc_decrement(tos->mask_stack->rc_mask, 
+                            "pdf14_pop_transparency_mask(tos->mask_stack->rc_mask)");
             }
         }
-	tos->maskbuf = NULL;
+	tos->mask_stack = NULL;
     }
     if (tos->data == NULL ) {
         /* This can occur in clist rendering if the soft mask does
@@ -1121,12 +1106,12 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
            255 */
         if (tos->alpha == 255) {
 	    pdf14_buf_free(tos, ctx->memory);
-	    ctx->maskbuf = NULL;
+	    ctx->mask_stack = NULL;
         } else {
             /* Assign as mask buffer */
-            ctx->maskbuf = pdf14_mask_element_new(ctx->memory);
-            ctx->maskbuf->rc_mask = pdf14_rcmask_new(ctx->memory);
-            ctx->maskbuf->rc_mask->mask_buf = tos;
+            ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
+            ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
+            ctx->mask_stack->rc_mask->mask_buf = tos;
         }
         ctx->smask_blend = false;  /* just in case */
     } else {
@@ -1225,9 +1210,9 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
          tos->n_chan = 1;
          tos->n_planes = 1;
         /* Assign as reference counted mask buffer */
-        ctx->maskbuf = pdf14_mask_element_new(ctx->memory);
-        ctx->maskbuf->rc_mask = pdf14_rcmask_new(ctx->memory);
-        ctx->maskbuf->rc_mask->mask_buf = tos;
+        ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
+        ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
+        ctx->mask_stack->rc_mask->mask_buf = tos;
      }
     return 0;
 }
@@ -1261,12 +1246,12 @@ pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
     /* We need to push the current mask buffer   */
     /* Allocate a new element for the stack.
        Don't do anything if there is no mask present.*/
-    if ( ctx->maskbuf != NULL ) { 
+    if ( ctx->mask_stack != NULL ) { 
         new_mask = pdf14_mask_element_new(ctx->memory);
         /* Duplicate and make the link */
-        new_mask->rc_mask = ctx->maskbuf->rc_mask;
+        new_mask->rc_mask = ctx->mask_stack->rc_mask;
         rc_increment(new_mask->rc_mask);
-        ctx->maskbuf->previous = new_mask;
+        ctx->mask_stack->previous = new_mask;
     }
  return(0);
 }
@@ -1285,15 +1270,23 @@ pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
     /* rc decrement the current link after we break it from
        the list, then free the stack element.  Don't do
        anything if there is no mask present. */
-    if ( ctx->maskbuf != NULL ) {
-        old_mask = ctx->maskbuf;
-        ctx->maskbuf = ctx->maskbuf->previous;
+    if ( ctx->mask_stack != NULL ) {
+        old_mask = ctx->mask_stack;
+        ctx->mask_stack = ctx->mask_stack->previous;
         if (old_mask->rc_mask) {
             rc_decrement(old_mask->rc_mask, "pdf14_pop_transparency_state");
         }
         gs_free_object(old_mask->memory, old_mask, "pdf14_pop_transparency_state");
+        /* We need to have some special handling here for when we have nested
+           soft masks.  There may be a copy in the stack that we may need to
+           adjust. */
+        if (ctx->smask_depth > 0) {
+            if (ctx->stack != NULL && ctx->stack->mask_stack != NULL) {
+                ctx->stack->mask_stack = ctx->mask_stack;
+            }
+        } 
     }
- return(0);
+  return(0);
 }
 
 static	int

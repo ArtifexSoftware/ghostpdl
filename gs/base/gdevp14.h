@@ -151,7 +151,7 @@ struct pdf14_buf_s {
     byte *data;
     byte *transfer_fn;
     gs_int_rect bbox;
-    pdf14_mask_t *maskbuf;
+    pdf14_mask_t *mask_stack;
     bool idle;
 
     gs_transparency_mask_subtype_t SMask_SubType;
@@ -169,7 +169,7 @@ typedef struct pdf14_smaskcolor_s {
 
 struct pdf14_ctx_s {
     pdf14_buf *stack;
-    pdf14_mask_t *maskbuf;
+    pdf14_mask_t *mask_stack;
     gs_memory_t *memory;
     gs_int_rect rect;
     bool additive;
