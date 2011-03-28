@@ -1,4 +1,11 @@
  
+GhostPDL Release 9.0.2 (March 2011)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Revised approach for applying a halftone to sampled image data
+  for monochrome output devices.
+
+
 GhostPDL Release 9.0.1 (February 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
