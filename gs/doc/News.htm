@@ -56,43 +56,36 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.01"></a>Version 9.01 (2011-02-07)</h3>
+<h2><a name="Version9.02"></a>Version 9.02 (2011-03-28)</h3>
 
-<p>This is the second release in the stable 9.x series.
+<p>This is the third release in the stable 9.x series.
+
+<p>This a an "out of order" release, primarily to ensure the
+GPL Ghostscript release remains in version "lock-step" with the
+Artifex commercial release.
 
 <p> Highlights in this release include:
 
-<p> A new, robust CFF parser implemented in C (replacing the previous
-Poscript one),
+<p>For monochrome devices, there is a new halftone technique for sampled
+image data. The existing technique is very efficient (and is is still used)
+for large areas of color, such as an area fill, but encountered performance
+problems dealing with sampled image data where a given colour value only
+covered a few pixels at a time. The new approach applies the halftone threshold
+array directly to the image samples.
 
-<p> tiffscaled device - this renders internally as tiffgray, but then
-downsamples by an integer scale factor (specified by -dDownScaleFactor=n)
-and error diffuses to 1bpp output. The tiffscaled device also implements
-limited minimum feature size functionality; by setting -dMinFeatureSize
-to 1, 2 or 3, the device output is guaranteed to generate minimum dot
-sizes as multiples of the final resolution, useful for devices that
-offer finer position control than dot size control.
-
-<p> Add DSC compatible output in ps2write.
-
-<p> Windows makefiles now support 64 bit builds on 64 bit systems.
-
-<p> A number of performance, memory use, and stability improvements with the new
-features introduced in 9.00, plus the usual bug fixes.
-
-<p> We have also dropped support for Watcom and Borland development environments.
-These had not been maintained for some time, and were suffering "bit rot".
-
+<p> Further performance, memory use, and stability improvements with the new
+features introduced in 9.00, as well as Unix/Linux build fixes, plus the usual
+assorted bug fixes.
 
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.01_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.02_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
 No recorded incompatible changes.
 
-<h3><a name="9.01_changelog"></a>Changelog</h3>
+<h3><a name="9.02_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
@@ -117,7 +110,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.01, 7 February 2011
+<small>Ghostscript version 9.02, 28 March 2011
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
