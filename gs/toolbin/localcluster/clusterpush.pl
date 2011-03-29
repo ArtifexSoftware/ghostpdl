@@ -13,6 +13,7 @@ my $verbose=0;
 
 my %products=('abort' =>1,
               'bmpcmp' =>1,
+              'bmpcmphead' =>1,
               'gs' =>1,
               'pcl'=>1,
               'svg'=>1,
