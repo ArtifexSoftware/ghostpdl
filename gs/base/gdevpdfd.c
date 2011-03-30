@@ -543,7 +543,7 @@ lcvd_dev_spec_op(gx_device *pdev1, int dev_spec_op,
         case gxdso_pattern_handles_clip_path:
             return 0;
     }
-    return gs_error_undefined;
+    return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
 }
 static int 
 lcvd_close_device_with_writing(gx_device *pdev)

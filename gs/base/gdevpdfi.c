@@ -1482,5 +1482,5 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
 	       and the clipping device has to be set up. */
 	    return 0;
     }
-    return_error(gs_error_unregistered);
+    return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
 }

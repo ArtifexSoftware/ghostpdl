@@ -128,6 +128,8 @@ gx_device_forward_color_procs(gx_device_forward * dev)
     set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
     set_dev_proc(dev, encode_color, gx_forward_encode_color);
     set_dev_proc(dev, decode_color, gx_forward_decode_color);
+    /* Not strictly a color proc, but affected by it */
+    fill_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
 }
 
 int
@@ -769,17 +771,13 @@ gx_forward_dev_spec_op(gx_device * dev, int dev_spec_op, void *data, int size)
        so this function is unapplicable to clist. */
     if (tdev == 0) {
 	if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path) {
-	    if (dev->procs.fill_path == gx_default_fill_path)
-		return 1;
+	    return (dev->procs.fill_path == gx_default_fill_path);
 	}
-	return 0;
-    } else {
-	if (dev_spec_op == gxdso_pattern_handles_clip_path) {
-	    if (dev->procs.fill_path == gx_default_fill_path)
-		return 0;
-	}
-	return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
+    } else if (dev_spec_op == gxdso_pattern_handles_clip_path) {
+	if (dev->procs.fill_path == gx_default_fill_path)
+	    return 0;
     }
+    return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
 }
 
 int
