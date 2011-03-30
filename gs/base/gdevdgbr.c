@@ -20,6 +20,7 @@
 #include "gxgetbit.h"
 #include "gxlum.h"
 #include "gdevmem.h"
+#include "gxdevsop.h"
 
 int
 gx_no_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
@@ -543,10 +544,13 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
 	    (options & GB_ALIGN_STANDARD ?
 	     bitmap_raster(end_byte << 3) : end_byte);
     }
-    /* Check for the one special case we care about. */
+    /* Check for the one special case we care about, namely that we have a
+     * device that uses cmyk_1bit_map_cmyk_color, or equivalent. We do not
+     * check function pointers directly, as this is defeated by forwarding
+     * devices, but rather use a dev_spec_op. */
     if (((options & (GB_COLORS_RGB | GB_ALPHA_FIRST | GB_ALPHA_LAST))
 	   == GB_COLORS_RGB) &&
-	dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color) {
+	(dev_proc(dev, dev_spec_op)(dev, gxdso_is_std_cmyk_1bit, NULL, 0) > 0)) {
 	gx_get_bits_copy_cmyk_1bit(dest_line, raster,
 				   src_line, dev_raster,
 				   src_bit_offset & 7, w, h);

@@ -179,6 +179,14 @@ enum {
      */
     gxdso_pattern_handles_clip_path,
 
+    /* gxdso_is_std_cmyk_1bit:
+     *     data = NULL
+     *     size = 0
+     * Returns 1 if the device is a 'standard' 1bit per component cmyk device.
+     * (standard means, 'maps colors equivalently to cmyk_1bit_map_cmyk_color')
+     */
+    gxdso_is_std_cmyk_1bit,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

@@ -917,6 +917,8 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:
             return (pdev->procs.fill_path == gx_default_fill_path);
+        case gxdso_is_std_cmyk_1bit:
+            return (pdev->procs.map_cmyk_color == cmyk_1bit_map_cmyk_color);
     }
     return gs_error_undefined;
 }

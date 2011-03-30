@@ -31,6 +31,7 @@
 #include "gzcpath.h"
 #include "stream.h"
 #include "gsserial.h"
+#include "gxdevsop.h"
 
 /* Statistics */
 #ifdef DEBUG
@@ -54,8 +55,8 @@ colored_halftone_colors_used(gx_device_clist_writer *cldev,
      * We only know how to compute an accurate color set for the
      * standard CMYK color mapping function.
      */
-    if (dev_proc(cldev, map_cmyk_color) != cmyk_1bit_map_cmyk_color)
-	return ((gx_color_index)1 << cldev->color_info.depth) - 1;  /* What about tranparency?  Need to check this */
+    if (dev_proc(cldev, dev_spec_op)(cldev, gxdso_is_std_cmyk_1bit, NULL, 0) <= 0)
+	return ((gx_color_index)1 << cldev->color_info.depth) - 1;  /* What about transparency?  Need to check this */
     /*
      * Note that c_base[0], and the low-order bit of plane_mask,
      * correspond to cyan: this requires reversing the bit order of

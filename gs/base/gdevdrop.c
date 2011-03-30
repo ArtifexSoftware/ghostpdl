@@ -25,6 +25,7 @@
 #include "gxgetbit.h"
 #include "gdevmem.h"            /* for mem_default_strip_copy_rop prototype */
 #include "gdevmrop.h"
+#include "gxdevsop.h"
 
 /*
  * Define the maximum amount of space we are willing to allocate for a
@@ -578,11 +579,16 @@ mem_default_strip_copy_rop(gx_device * dev,
 
     /* We know the device is a memory device, so we can store the
      * result directly into its scan lines, unless it is planar. */
-    pack = (tdev->num_planes <= 1 ?
-            ((dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color &&
-              rop_depth == 24) ?
-              pack_cmyk_1bit_from_standard : pack_from_standard) :
-            pack_planar_from_standard);
+    if (tdev->num_planes <= 1) {
+        if ((rop_depth == 24) && (dev_proc(dev, dev_spec_op)(dev,
+                                      gxdso_is_std_cmyk_1bit, NULL, 0) > 0)) {
+            pack = pack_cmyk_1bit_from_standard;
+        } else {
+            pack = pack_from_standard;
+        }
+    } else {
+        pack = pack_planar_from_standard;
+    }
 #ifdef DEBUG
     if (gs_debug_c('b'))
         trace_copy_rop("mem_default_strip_copy_rop",
