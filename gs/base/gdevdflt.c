@@ -656,7 +656,6 @@ gx_device_fill_in_procs(register gx_device * dev)
           dev->color_info.gray_index == GX_CINFO_COMP_NO_INDEX     )  )
 	dev->color_info.opmode = GX_CINFO_OPMODE_NOT;
 
-    fill_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
     fill_dev_proc(dev, include_color_space, gx_default_include_color_space);
     fill_dev_proc(dev, fill_linear_color_scanline, gx_default_fill_linear_color_scanline);
@@ -665,6 +664,11 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, update_spot_equivalent_colors, gx_default_update_spot_equivalent_colors);
     fill_dev_proc(dev, ret_devn_params, gx_default_ret_devn_params);
     fill_dev_proc(dev, fillpage, gx_default_fillpage);
+    /* NOT push_transparency_state */
+    /* NOT pop_transparency_state */
+    /* NOT put_image */
+    fill_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
+    /* NOT copy_plane */
 }
 
 int

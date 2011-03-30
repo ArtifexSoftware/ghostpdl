@@ -1430,6 +1430,13 @@ typedef struct gs_devn_params_s gs_devn_params;
 #define dev_proc_dev_spec_op(proc)\
   dev_t_proc_dev_spec_op(proc, gx_device)
 
+#define dev_t_proc_copy_plane(proc, dev_t)\
+  int proc(dev_t *dev,\
+    const byte *data, int data_x, int raster, gx_bitmap_id id,\
+    int x, int y, int width, int height, int plane)
+#define dev_proc_copy_plane(proc)\
+  dev_t_proc_copy_plane(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1499,6 +1506,7 @@ typedef struct gs_devn_params_s gs_devn_params;
         dev_t_proc_pop_transparency_state((*pop_transparency_state), dev_t); \
         dev_t_proc_put_image((*put_image), dev_t); \
         dev_t_proc_dev_spec_op((*dev_spec_op), dev_t); \
+        dev_t_proc_copy_plane((*copy_plane), dev_t); \
 }
 
 /*

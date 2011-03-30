@@ -27,6 +27,7 @@ static dev_proc_open_device(mem_planar_open);
 declare_mem_procs(mem_planar_copy_mono, mem_planar_copy_color, mem_planar_fill_rectangle);
 static dev_proc_copy_color(mem_planar_copy_color_24to8);
 static dev_proc_copy_color(mem_planar_copy_color_4to1);
+static dev_proc_copy_plane(mem_planar_copy_plane);
 static dev_proc_strip_tile_rectangle(mem_planar_strip_tile_rectangle);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 
@@ -102,6 +103,7 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
         else
             set_dev_proc(mdev, copy_color, mem_planar_copy_color);
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
+        set_dev_proc(mdev, copy_plane, mem_planar_copy_plane);
         set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     }
@@ -558,6 +560,33 @@ mem_planar_copy_color(gx_device * dev, const byte * base, int sourcex,
     return 0;
 #undef BUF_BYTES
 #undef BUF_LONGS
+}
+
+/* Copy a given bitmap into a bitmap. */
+static int
+mem_planar_copy_plane(gx_device * dev, const byte * base, int sourcex,
+                      int sraster, gx_bitmap_id id,
+                      int x, int y, int w, int h, int plane)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+    int plane_depth;
+    mem_save_params_t save;
+    const gx_device_memory *mdproto;
+
+    if ((plane < 0) || (plane >= mdev->num_planes))
+        return gs_error_rangecheck;
+    MEM_SAVE_PARAMS(mdev, save);
+    plane_depth = mdev->planes[plane].depth;
+    mdproto = gdev_mem_device_for_bits(plane_depth);
+    if (plane_depth == 1)
+        dev_proc(mdproto, copy_mono)(dev, base, sourcex, sraster, id,
+                                     x, y, w, h,
+                                     (gx_color_index)0, (gx_color_index)1);
+    else
+        dev_proc(mdproto, copy_color)(dev, base, sourcex, sraster,
+                                      id, x, y, w, h);
+    MEM_RESTORE_PARAMS(mdev, save);
+    return 0;
 }
 
 static int
