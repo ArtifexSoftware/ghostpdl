@@ -320,6 +320,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 
     while ((us && un > 0) || (is && *is))
     {
+        int char_code = '?';
         int code_count = 1;
         int glyph_count = 1;
 
@@ -333,32 +334,26 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
         if (glyph_count < 1)
             glyph_count = 1;
 
-        while (code_count > 0 || glyph_count > 0)
+        while (code_count--)
         {
-            int char_code = '?';
+            if (us && un > 0)
+            {
+                int t = xps_utf8_to_ucs(&char_code, us, un);
+                if (t < 0)
+                    return gs_rethrow(-1, "error decoding UTF-8 string");
+                us += t; un -= t;
+            }
+        }
+
+        while (glyph_count--)
+        {
             int glyph_index = -1;
             float u_offset = 0.0;
             float v_offset = 0.0;
             float advance;
 
-            if (glyph_count)
-            {
-                if (is && *is)
-                    is = xps_parse_glyph_index(is, &glyph_index);
-                glyph_count --;
-            }
-
-            if (code_count)
-            {
-                if (us && un > 0)
-                {
-                    int t = xps_utf8_to_ucs(&char_code, us, un);
-                    if (t < 0)
-                        return gs_rethrow(-1, "error decoding UTF-8 string");
-                    us += t; un -= t;
-                }
-                code_count --;
-            }
+            if (is && *is)
+                is = xps_parse_glyph_index(is, &glyph_index);
 
             if (glyph_index == -1)
                 glyph_index = xps_encode_font_char(font, char_code);
@@ -377,12 +372,6 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
                 if (*is == ';')
                     is ++;
             }
-
-#if 0
-            dprintf6("glyph mapping (%d:%d)%d,%g,%g,%g\n",
-                    code_count, glyph_count, glyph_index,
-                    advance, u_offset, v_offset);
-#endif
 
             if (bidi_level & 1)
                 u_offset = -mtx.hadv * 100 - u_offset;
