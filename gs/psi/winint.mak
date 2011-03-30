@@ -337,10 +337,8 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 #	-del $(PSOBJ)about.txt
 #	-del $(PSOBJ)dialog.txt
 
-nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib
-	copy $(PSSRC)nsisinst.nsi nsisinst.nsi
-	$(MAKENSIS_XE) nsisinst.nsi
-	-del nsisinst.nsi
+nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib $(ICONS)
+	$(MAKENSIS_XE) -NOCD -DTARGET=$(ZIPTARGET) -DVERSION=$(GS_DOT_VERSION) $(PSSRC)nsisinst.nsi
 
 # -------------------- Distribution source archive ------------------- #
 # This creates a zip file containing the files needed to build 
