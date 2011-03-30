@@ -85,14 +85,19 @@ dnl --------------------------------------------------
 HAVE_SSE2=""
 AC_COMPILE_IFELSE([
 #include <emmintrin.h>
-],HAVE_SSE2="-DHAVE_SSE2")
+int main (int argc, char *argv[])
+{
+  __m128i input1;
+  return(0);
+}
+],HAVE_SSE2="-DHAVE_SSE2", HAVE_SSE2="")
 
 AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
        [Do not use sse2 instrinsics]), [
              if test "x$enable_sse2" = xno; then
                 HAVE_SSE2=""
              fi])
-
+ 
 AC_SUBST(HAVE_SSE2)
 
 AC_OUTPUT(config.mak)

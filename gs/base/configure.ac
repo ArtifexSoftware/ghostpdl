@@ -1519,6 +1519,11 @@ dnl --------------------------------------------------
 HAVE_SSE2=""
 AC_COMPILE_IFELSE([
 #include <emmintrin.h>
+int main (int argc, char *argv[])
+{
+  __m128i input1;
+  return(0);
+}
 ],HAVE_SSE2="-DHAVE_SSE2")
 
 AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
