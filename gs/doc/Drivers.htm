@@ -3121,10 +3121,41 @@ The latter is the default implementation.
 
 <dl>
 <dt><code>void (*get_clipping_box)(gx_device&nbsp;*dev,
-gs_fixed_rect&nbsp;*pbox))</code> <b><em>[OPTIONAL]</em></b>
+gs_fixed_rect&nbsp;*pbox)</code> <b><em>[OPTIONAL]</em></b>
 <dd>Stores in <code>*pbox</code> a rectangle that defines the device's
 clipping region.  For all but a few specialized devices, this is
 <em>((0,0),(width,height))</em>.
+</dl>
+
+<h3><a name="DevSpecOp"></a>Device Specific Operations</h3>
+
+<p>In order to enable the provision of operations that make sense only
+to a small range of devices/callers, we provide an extensible function. The
+operation to perform is specified by an integer, taken from an enumeration
+in <a href="../base/gxdevsop.h">gxdevsop.h</a>.
+
+<p>A typical user of this function might make a call to detect whether
+a device works in a particular way (such as whether it has a particular
+color mapping) to enable an optimisation elsewhere. Sometimes it may be used
+to detect a particular piece of functionality (such as whether
+<code>copy_plane</code> is supported); in other cases it may be used both
+to detect the presence of other functionality and to perform functions as
+well (such as with the pdf specific pattern management calls - moved
+here from their own dedicated device function).</p>
+
+<p>This function is designed to be easy to chain through multiple levels of
+device without each intermediate device needing to know about the full
+range of operations it may be asked to perform.</p>
+
+<dl>
+<dt><code>int (*dev_spec_op)(gx_device&nbsp;*dev, int&nbsp;dso,
+void&nbsp;*data, int&nbsp;size)</code> <b><em>[OPTIONAL]</em></b>
+<dd>Perform device specific operation <code>dso</code>. Returns
+<code>gs_error_undefined</code> for an unknown (or unsupported operation),
+other </code>negative values for errors, and (<code>dso</code> specific)
+non-negative values to indicate success. For details of the meanings of
+<code>dso</code>, <code>data</code> and <code>size</code>, see
+<a href="../base/gxdevsop.h">gxdevsop.h</a>.
 </dl>
 
 <hr>
