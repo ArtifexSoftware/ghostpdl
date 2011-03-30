@@ -36,6 +36,7 @@
 #include "gsutil.h"
 #include "gdevpdtf.h"
 #include "gdevpdts.h"
+#include "gxdevsop.h"
 
 /* ---------------- Drawing ---------------- */
 
@@ -527,12 +528,22 @@ lcvd_get_clipping_box_shifted_from_mdev(gx_device *dev, gs_fixed_rect *pbox)
     pbox->q.y += ofs;
 }
 static int 
-lcvd_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
-		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+lcvd_dev_spec_op(gx_device *pdev1, int dev_spec_op,
+		void *data, int size)
 {
-    if (function == pattern_manage__shading_area)
-	return 1; /* Request shading area. */
-    return 0;
+    switch (dev_spec_op) {
+        case gxdso_pattern_shading_area:
+            return 1; /* Request shading area. */
+        case gxdso_pattern_can_accum:
+        case gxdso_pattern_start_accum:
+        case gxdso_pattern_finish_accum:
+        case gxdso_pattern_load:
+        case gxdso_pattern_is_cpath_accum:
+        case gxdso_pattern_shfill_doesnt_need_path:
+        case gxdso_pattern_handles_clip_path:
+            return 0;
+    }
+    return gs_error_undefined;
 }
 static int 
 lcvd_close_device_with_writing(gx_device *pdev)
@@ -827,19 +838,19 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 	inst.template.BBox.q.y = cvd->mdev.height;
 	inst.template.XStep = (float)cvd->mdev.width;
 	inst.template.YStep = (float)cvd->mdev.height;
-	code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
-	    id, &inst, pattern_manage__start_accum);
+	code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev, 
+	    gxdso_pattern_start_accum, &inst, id);
 	if (code >= 0) {
 	    stream_puts(pdev->strm, "W n\n");
 	    code = write_image(pdev, &cvd->mdev, NULL);
 	}
 	pres = pdev->accumulating_substream_resource;
 	if (code >= 0)
-	    code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
-		id, &inst, pattern_manage__finish_accum);
+	    code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev, 
+		gxdso_pattern_finish_accum, &inst, id);
 	if (code >= 0)
-	    code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
-		id, &inst, pattern_manage__load);
+	    code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev, 
+		gxdso_pattern_load, &inst, id);
 	if (code >= 0)
 	    code = pdf_cs_Pattern_colored(pdev, &v);
 	if (code >= 0) {
@@ -980,7 +991,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
 	dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted;
 	dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_shifted_from_mdev;
     }
-    dev_proc(&cvd->mdev, pattern_manage) = lcvd_pattern_manage;
+    dev_proc(&cvd->mdev, dev_spec_op) = lcvd_dev_spec_op;
     dev_proc(&cvd->mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
     cvd->m = *m;
     if (write_on_close) {

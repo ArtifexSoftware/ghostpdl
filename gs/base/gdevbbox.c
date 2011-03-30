@@ -276,7 +276,7 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target, gs_memory_t *mem)
 	set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
 	set_dev_proc(dev, encode_color, gx_forward_encode_color);
 	set_dev_proc(dev, decode_color, gx_forward_decode_color);
-	set_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
+	set_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
 	set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
 	set_dev_proc(dev, include_color_space, gx_forward_include_color_space);
 	set_dev_proc(dev, update_spot_equivalent_colors,

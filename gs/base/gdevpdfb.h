@@ -83,7 +83,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
   NULL,				/* get_color_comp_index */
   NULL,				/* encode_color */
   NULL,				/* decode_color */
-  gdev_pdf_pattern_manage, 	/* pattern_manage */
+  NULL, 			/* pattern_manage */
   gdev_pdf_fill_rectangle_hl_color, 	/* fill_rectangle_hl_color */
   gdev_pdf_include_color_space, 	/* include_color_space */
   NULL,				/* fill_linear_color_scanline */
@@ -91,7 +91,11 @@ const gx_device_pdf PDF_DEVICE_IDENT =
   NULL,				/* fill_linear_color_triangle */
   NULL,				/* update_spot_equivalent_colors */
   NULL,				/* ret_devn_params */
-  gdev_pdf_fillpage		/* fillpage */
+  gdev_pdf_fillpage,		/* fillpage */
+  NULL,				/* push_transparency_state */
+  NULL,				/* pop_transparency_state */
+  NULL,				/* put_image */
+  gdev_pdf_dev_spec_op		/* dev_spec_op */
  },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
  PDF_FOR_OPDFREAD,		/* is_ps2write */

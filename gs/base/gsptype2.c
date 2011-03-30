@@ -27,6 +27,7 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gzstate.h"
+#include "gxdevsop.h"
 
 /* GC descriptors */
 private_st_pattern2_template();
@@ -208,15 +209,15 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
 /* Fill a rectangle with a PatternType 2 color. */
 /* WARNING: This function doesn't account the shading BBox
    to allow the clipent to optimize the clipping 
-   with changing the order of clip patrhs and rects.
-   The client must clip with the shading BBOx before calling this function. */
+   with changing the order of clip paths and rects.
+   The client must clip with the shading BBox before calling this function. */
 static int
 gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
                               int w, int h, gx_device * dev,
                               gs_logical_operation_t lop,
                               const gx_rop_source_t * source)
 {
-    if (dev_proc(dev, pattern_manage)(dev, gs_no_id, NULL, pattern_manage__is_cpath_accum)) {
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_is_cpath_accum, NULL, 0)) {
 	/* Performing a conversion of imagemask into a clipping path.
 	   Fall back to the device procedure. */
 	return dev_proc(dev, fill_rectangle)(dev, x, y, w, h, (gx_color_index)0/*any*/);
@@ -329,7 +330,7 @@ gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev,
                               gx_clip_path *cpath_local, const gx_clip_path **ppcpath1)
 {
     if (gx_dc_is_pattern2_color(pdevc) && gx_dc_pattern2_color_has_bbox(pdevc) &&
-            (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__shading_area) == 0) {
+            (*dev_proc(pdev, dev_spec_op))(pdev, gxdso_pattern_shading_area, NULL, 0) == 0) {
         gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
         gx_path box_path;
         gs_memory_t *mem = (*ppcpath1 != NULL ? (*ppcpath1)->path.memory : pdev->memory);
@@ -360,7 +361,7 @@ gx_dc_pattern2_clip_with_bbox_simple(const gx_device_color * pdevc, gx_device * 
     int code = 0;
 
     if (gx_dc_is_pattern2_color(pdevc) && gx_dc_pattern2_color_has_bbox(pdevc) &&
-	    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__shading_area) == 0) {
+	    (*dev_proc(pdev, dev_spec_op))(pdev, gxdso_pattern_shading_area, NULL, 0) == 0) {
 	gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
 	gx_path box_path;
 	gs_memory_t *mem = cpath_local->path.memory;
@@ -383,7 +384,7 @@ int
 gx_dc_pattern2_is_rectangular_cell(const gx_device_color * pdevc, gx_device * pdev, gs_fixed_rect *rect)
 {
     if (gx_dc_is_pattern2_color(pdevc) && gx_dc_pattern2_color_has_bbox(pdevc) &&
-	    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__shading_area) == 0) {
+	    (*dev_proc(pdev, dev_spec_op))(pdev, gxdso_pattern_shading_area, NULL, 0) == 0) {
 	gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
 	const gs_shading_t *psh = pinst->template.Shading;
 	gs_fixed_point p, q; 

@@ -87,7 +87,7 @@ static const gx_device_tile_clip gs_tile_clip_device =
   gx_forward_get_color_comp_index,
   gx_forward_encode_color,
   gx_forward_decode_color,
-  gx_forward_pattern_manage,
+  NULL,                 /* pattern_manage */
   gx_forward_fill_rectangle_hl_color,
   gx_forward_include_color_space,
   gx_forward_fill_linear_color_scanline,
@@ -97,7 +97,9 @@ static const gx_device_tile_clip gs_tile_clip_device =
   gx_forward_ret_devn_params,
   gx_forward_fillpage,
   NULL,                      /* push_transparency_state */
-  NULL                       /* pop_transparency_state */
+  NULL,                      /* pop_transparency_state */
+  NULL,                      /* put_image */
+  gx_forward_dev_spec_op
  }
 };
 

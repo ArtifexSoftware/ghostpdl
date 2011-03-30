@@ -39,6 +39,7 @@
 #include "gzstate.h"
 #include "memory_.h"
 #include "gdevp14.h"
+#include "gxdevsop.h"
 
 /* Imported from gspcolor.c */
 extern const gs_color_space_type gs_color_space_type_Pattern;
@@ -204,8 +205,8 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 
     check_estack(6);
     if (pgs->have_pattern_streams) {
-	code = dev_proc(cdev, pattern_manage)(cdev, pinst->id, pinst, 
-				pattern_manage__can_accum);
+	code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pattern_can_accum,
+				pinst, pinst->id);
 	if (code < 0)
 	    return code;
 	internal_accum = (code == 0);
@@ -268,8 +269,8 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 	    gs_grestore(pgs);
 	    return code;
 	}
-	code = dev_proc(cdev, pattern_manage)(cdev, pinst->id, pinst, 
-				pattern_manage__start_accum);
+	code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pattern_start_accum, 
+				pinst, pinst->id);
 	if (code < 0) {
 	    gs_grestore(pgs);
 	    return code;
@@ -341,8 +342,8 @@ pattern_paint_cleanup(i_ctx_t *i_ctx_p)
     gx_unset_dev_color(igs);	/* dev_color may need updating if GC ran */
     if (pdev == NULL) {
 	gx_device *cdev = gs_currentdevice_inline(igs);
-	int code1 = dev_proc(cdev, pattern_manage)(cdev, gx_no_bitmap_id, NULL, 
-				pattern_manage__finish_accum);
+	int code1 = dev_proc(cdev, dev_spec_op)(cdev,
+			gxdso_pattern_finish_accum, NULL, gx_no_bitmap_id);
 	
 	if (code == 0 && code1 < 0)
 	    code = code1;

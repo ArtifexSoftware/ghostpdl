@@ -51,6 +51,7 @@
 #include "stdint_.h"
 #include "vdtrace.h"
 #include "gsstate.h"            /* for gs_currentcpsimode */
+#include "gxdevsop.h"
 /*
 #include "gxfilltr.h" - Do not remove this comment. "gxfilltr.h" is included below.
 #include "gxfillsl.h" - Do not remove this comment. "gxfillsl.h" is included below.
@@ -625,7 +626,8 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
             cb.q.x = fixed2int_pixround(clip_box.q.x);
             cb.q.y = fixed2int_pixround(clip_box.q.y);
             if (gx_dc_is_pattern2_color(pdevc) &&
-                    (*dev_proc(pdev, pattern_manage))(pdev, gs_no_id, NULL, pattern_manage__handles_clip_path) > 0) {
+                    (*dev_proc(pdev, dev_spec_op))(pdev,
+                         gxdso_pattern_handles_clip_path, NULL, 0) > 0) {
                 /* A special interaction with clist writer device :
                    pass the intersected clipping path. It uses an unusual call to
                    fill_path with NULL device color. */
@@ -634,8 +636,8 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
             } else {
                 gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
                 dev = (gx_device *)&cdev;
-                if ((*dev_proc(pdev, pattern_manage))(pdev,
-                        gs_no_id, NULL, pattern_manage__shading_area) > 0)
+                if ((*dev_proc(pdev, dev_spec_op))(pdev,
+                        gxdso_pattern_shading_area, NULL, 0) > 0)
                     set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
                 code = 0;
             }

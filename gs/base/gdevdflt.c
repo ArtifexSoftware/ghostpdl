@@ -18,6 +18,7 @@
 #include "gsropt.h"
 #include "gxcomp.h"
 #include "gxdevice.h"
+#include "gxdevsop.h"
 
 /* ---------------- Default device procedures ---------------- */
 
@@ -655,7 +656,7 @@ gx_device_fill_in_procs(register gx_device * dev)
           dev->color_info.gray_index == GX_CINFO_COMP_NO_INDEX     )  )
 	dev->color_info.opmode = GX_CINFO_OPMODE_NOT;
 
-    fill_dev_proc(dev, pattern_manage, gx_default_pattern_manage);
+    fill_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
     fill_dev_proc(dev, include_color_space, gx_default_include_color_space);
     fill_dev_proc(dev, fill_linear_color_scanline, gx_default_fill_linear_color_scanline);
@@ -903,14 +904,21 @@ gx_default_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 }
 
 int
-gx_default_pattern_manage(gx_device *pdev, gx_bitmap_id id,
-		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
-    if (function == pattern_manage__shfill_doesnt_need_path) {
-	if (pdev->procs.fill_path == gx_default_fill_path)
-	    return 1;
+    switch(dev_spec_op) {
+        case gxdso_pattern_can_accum:
+        case gxdso_pattern_start_accum:
+        case gxdso_pattern_finish_accum:
+        case gxdso_pattern_load:
+        case gxdso_pattern_shading_area:
+        case gxdso_pattern_is_cpath_accum:
+        case gxdso_pattern_handles_clip_path:
+            return 0;
+        case gxdso_pattern_shfill_doesnt_need_path:
+            return (pdev->procs.fill_path == gx_default_fill_path);
     }
-    return 0;
+    return gs_error_undefined;
 }
 
 int

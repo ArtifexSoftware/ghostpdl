@@ -408,9 +408,11 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
     const byte *sp = src;
     int x, plane;
 
-    if (pdepth == 1 && dev->color_info.num_components == 4)
-        return pack_planar_cmyk_1bit_from_standard(dev, y, destx, src, width,
-                                                   depth, src_depth);
+    if (pdepth == 1 && dev->color_info.num_components == 4) {
+        pack_planar_cmyk_1bit_from_standard(dev, y, destx, src, width,
+                                            depth, src_depth);
+        return;
+    }
 
     for (plane = 0; plane < dev->num_planes; plane++) {
         byte *dest = scan_line_base(dev, y + plane * dev->height);

@@ -27,6 +27,7 @@
 #include "gxpaint.h"		/* (requires gx_path) */
 #include "gxshade.h"
 #include "gscie.h"
+#include "gxdevsop.h"
 
 /* setsmoothness */
 int
@@ -95,8 +96,8 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 				  pgs->device, gs_color_select_texture);
     if (code >= 0) {
 	gx_device *dev = pgs->device;
-	bool need_path = !dev_proc(dev, pattern_manage)(dev, gs_no_id, NULL,
-		pattern_manage__shfill_doesnt_need_path);
+	bool need_path = !dev_proc(dev, dev_spec_op)(dev,
+                             gxdso_pattern_shfill_doesnt_need_path, NULL, 0);
 
 	if (need_path) {
     	    gx_path cpath;

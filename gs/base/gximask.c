@@ -24,6 +24,7 @@
 #include "gximask.h"
 #include "gzacpath.h"
 #include "gzcpath.h"
+#include "gxdevsop.h"
 
 
 /* Functions for masked fill optimization. */
@@ -37,7 +38,7 @@ gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const g
 			   gs_memory_t *mem, gx_device **cdev)
 {
     if (gx_dc_is_pattern2_color(pdevc) || gx_dc_is_pattern1_color_clist_based(pdevc)) {
-	if (!dev_proc(dev, pattern_manage)(dev, gs_no_id, NULL, pattern_manage__can_accum)) {
+	if (!dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_can_accum, NULL, gs_no_id)) {
 	    extern_st(st_device_cpath_accum);
 	    gx_device_cpath_accum *pcdev =  gs_alloc_struct(mem, 
 		    gx_device_cpath_accum, &st_device_cpath_accum, "gx_image_fill_masked_start");

@@ -39,6 +39,7 @@
 #include "gsimage.h"
 #include "gsiparm4.h"
 #include "gsovrc.h"
+#include "gxdevsop.h"
 
 /* Temporary switches for experimanting with Adobe compatibility. */
 #define ADJUST_SCALE_FOR_THIN_LINES 0	/* Old code = 0 */
@@ -1204,7 +1205,7 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
 	gx_color_tile *ctile = &pcache->tiles[id % pcache->num_tiles];
 	bool internal_accum = true;
 	if (pis->have_pattern_streams) {
-	    int code = dev_proc(dev, pattern_manage)(dev, id, NULL, pattern_manage__load);
+	    int code = dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_load, NULL, id);
 	    internal_accum = (code == 0);
 	    if (code < 0)
 		return false;

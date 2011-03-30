@@ -14,6 +14,7 @@
 /* XPS interpreter - tiles for pattern rendering */
 
 #include "ghostxps.h"
+#include "gxdevsop.h"
 
 /*
  * Parse a tiling brush (visual and image brushes at this time) common
@@ -153,8 +154,8 @@ xps_high_level_pattern(xps_context_t *ctx)
         gs_grestore(ctx->pgs);
         return code;
     }
-    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, pinst->id, pinst,
-        pattern_manage__start_accum);
+    code = dev_proc(ctx->pgs->device, dev_spec_op)(ctx->pgs->device,
+                                gxdso_pattern_start_accum, pinst, pinst->id);
     if (code < 0) {
         gs_grestore(ctx->pgs);
         return code;
@@ -170,8 +171,8 @@ xps_high_level_pattern(xps_context_t *ctx)
     if (code < 0)
         return code;
 
-    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, gx_no_bitmap_id, NULL,
-        pattern_manage__finish_accum);
+    code = dev_proc(ctx->pgs->device, dev_spec_op)(ctx->pgs->device,
+                          gxdso_pattern_finish_accum, NULL, gx_no_bitmap_id);
 
     return code;
 }
@@ -188,8 +189,8 @@ xps_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
      * that is 'behind' that, the actual output device, so we use the one from
      * the saved XPS graphics state.
      */
-    code = dev_proc(ctx->pgs->device, pattern_manage)(ctx->pgs->device, ppat->uid.id, ppat,
-                                pattern_manage__can_accum);
+    code = dev_proc(ctx->pgs->device, dev_spec_op)(ctx->pgs->device,
+                                gxdso_pattern_can_accum, ppat, ppat->uid.id);
 
     if (code == 1) {
         /* Device handles high-level patterns, so return 'remap'.

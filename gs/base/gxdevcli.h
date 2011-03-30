@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
   
    This software is provided AS-IS with no warranty, either express or
@@ -1248,10 +1248,14 @@ typedef struct gs_param_list_s gs_param_list;
   1 - the device handles high level patterns.
   0 - the device needs low level pattern tiles.
   <0 - error.
+
+  THIS IS NOW DEPRECATED, AND UNUSED. DO NOT USE THIS. USE THIS NOT. THIS
+  IS NOT TO BE USED.
+
+  Pattern Management is now done using the dev_spec_op calls.
 */
 
-		/* High level device support. */
-
+/* High level device support. */
 typedef enum {
     pattern_manage__can_accum,
     pattern_manage__start_accum,
@@ -1421,6 +1425,11 @@ typedef struct gs_devn_params_s gs_devn_params;
 #define dev_proc_put_image(proc)\
   dev_t_proc_put_image(proc, gx_device)
 
+#define dev_t_proc_dev_spec_op(proc, dev_t)\
+  int proc(gx_device *dev, int op, void *data, int datasize)
+#define dev_proc_dev_spec_op(proc)\
+  dev_t_proc_dev_spec_op(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1489,6 +1498,7 @@ typedef struct gs_devn_params_s gs_devn_params;
         dev_t_proc_push_transparency_state((*push_transparency_state), dev_t); \
         dev_t_proc_pop_transparency_state((*pop_transparency_state), dev_t); \
         dev_t_proc_put_image((*put_image), dev_t); \
+        dev_t_proc_dev_spec_op((*dev_spec_op), dev_t); \
 }
 
 /*

@@ -770,7 +770,6 @@ dev_proc_get_params(gdev_pdf_get_params);
 dev_proc_put_params(gdev_pdf_put_params);
     /* In gdevpdft.c */
 dev_proc_text_begin(gdev_pdf_text_begin);
-dev_proc_pattern_manage(gdev_pdf_pattern_manage);
 dev_proc_fill_rectangle_hl_color(gdev_pdf_fill_rectangle_hl_color);
     /* In gdevpdfv.c */
 dev_proc_include_color_space(gdev_pdf_include_color_space);
@@ -781,6 +780,7 @@ dev_proc_end_transparency_group(gdev_pdf_end_transparency_group);
 dev_proc_begin_transparency_mask(gdev_pdf_begin_transparency_mask);
 dev_proc_end_transparency_mask(gdev_pdf_end_transparency_mask);
 dev_proc_discard_transparency_layer(gdev_pdf_discard_transparency_layer);
+dev_proc_dev_spec_op(gdev_pdf_dev_spec_op);
 
 /* ================ Utility procedures ================ */
 

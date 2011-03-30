@@ -55,6 +55,7 @@
 #include "gxiclass.h"
 #include "gximage.h"
 #include "gsmatrix.h"
+#include "gxdevsop.h"
 
 #if RAW_DUMP
 unsigned int global_index = 0;
@@ -164,7 +165,7 @@ static	dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
 static	dev_proc_end_transparency_group(pdf14_end_transparency_group);
 static	dev_proc_begin_transparency_mask(pdf14_begin_transparency_mask);
 static	dev_proc_end_transparency_mask(pdf14_end_transparency_mask);
-static  dev_proc_pattern_manage(pdf14_pattern_manage);
+static  dev_proc_dev_spec_op(pdf14_dev_spec_op);
 static int pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev);
 static	dev_proc_push_transparency_state(pdf14_push_transparency_state);
 static	dev_proc_pop_transparency_state(pdf14_pop_transparency_state);
@@ -235,7 +236,7 @@ static	const gx_color_map_procs *
 	get_color_comp_index,		/* get_color_comp_index */\
 	encode_color,			/* encode_color */\
 	decode_color,			/* decode_color */\
-	pdf14_pattern_manage,		/* pattern_manage */\
+	NULL,                           /* pattern_manage */\
 	NULL,				/* fill_rectangle_hl_color */\
 	NULL,				/* include_color_space */\
 	NULL,				/* fill_linear_color_scanline */\
@@ -244,8 +245,10 @@ static	const gx_color_map_procs *
 	gx_forward_update_spot_equivalent_colors,	/* update spot */\
         pdf14_ret_devn_params,          /* DevN params */\
         NULL,                           /* fill page */\
-        pdf14_push_transparency_state,\
-        pdf14_pop_transparency_state\
+        pdf14_push_transparency_state,  /* push_transparency_state */\
+        pdf14_pop_transparency_state,   /* pop_transparency_state */\
+        NULL,                           /* put_image */\
+        pdf14_dev_spec_op               /* dev_spec_op */\
 }
 
 static	const gx_device_procs pdf14_Gray_procs =
@@ -4390,12 +4393,12 @@ pdf14_get_cmap_procs_group(const gs_imager_state *pis, const gx_device * dev)
 
 
 static int 
-pdf14_pattern_manage(gx_device *pdev, gx_bitmap_id id,
-		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
+		  void *data, int size)
 {
-    if (function == pattern_manage__shfill_doesnt_need_path)
+    if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
 	return 1;
-    return gx_default_pattern_manage(pdev, id, pinst, function);
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
 int
@@ -5226,7 +5229,7 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
 	get_color_comp_index,		/* get_color_comp_index */\
 	encode_color,			/* encode_color */\
 	decode_color,			/* decode_color */\
-	clist_pattern_manage,	/* pattern_manage */\
+	NULL,                           /* pattern_manage */\
 	NULL,				/* fill_rectangle_hl_color */\
 	NULL,				/* include_color_space */\
 	NULL,				/* fill_linear_color_scanline */\
@@ -5236,7 +5239,9 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
 	gx_forward_ret_devn_params,	/* gx_forward_ret_devn_params */\
 	gx_forward_fillpage,\
         pdf14_push_transparency_state,\
-        pdf14_pop_transparency_state\
+        pdf14_pop_transparency_state,\
+        NULL,                           /* put_image */\
+        pdf14_dev_spec_op\
 }
 
 static	dev_proc_create_compositor(pdf14_clist_create_compositor);

@@ -29,6 +29,7 @@
 #include "gzstate.h"
 #include "gsutil.h"
 #include "vdtrace.h"
+#include "gxdevsop.h"
 
 /*
   The main internal invariant for the gs_image machinery is
@@ -634,7 +635,7 @@ gs_image_next_planes(gs_image_enum * penum,
 }
 
 /* Clean up after processing an image. */
-/* Public for ghotpcl. */
+/* Public for ghostpcl. */
 int
 gs_image_cleanup(gs_image_enum * penum, gs_state *pgs)
 {
@@ -642,8 +643,8 @@ gs_image_cleanup(gs_image_enum * penum, gs_state *pgs)
 
     free_row_buffers(penum, penum->num_planes, "gs_image_cleanup(row)");
     if (penum->info != 0) {
-	if (dev_proc(penum->info->dev, pattern_manage)(penum->info->dev, 
-		    gs_no_id, NULL, pattern_manage__is_cpath_accum)) {
+	if (dev_proc(penum->info->dev, dev_spec_op)(penum->info->dev, 
+		    gxdso_pattern_is_cpath_accum, NULL, 0)) {
 	    /* Performing a conversion of imagemask into a clipping path. */
 	    gx_device *cdev = penum->info->dev;
 

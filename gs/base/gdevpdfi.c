@@ -32,7 +32,7 @@
 #include "gxpcolor.h"
 #include "gxcolor2.h"
 #include "gxhldevc.h"
-
+#include "gxdevsop.h"
 
 /* Forward references */
 static image_enum_proc_plane_data(pdf_image_plane_data);
@@ -1011,19 +1011,19 @@ use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
     inst.template.BBox.q.y = 1;
     inst.template.XStep = 2; /* Set 2 times bigger step against artifacts. */
     inst.template.YStep = 2;
-    code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
-	id, &inst, pattern_manage__start_accum);
+    code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev, 
+	gxdso_pattern_start_accum, &inst, id);
     if (code >= 0)
 	pprintld1(pdev->strm, "/R%ld Do\n", pdf_resource_id(pres1));
     pres = pdev->accumulating_substream_resource;
     if (code >= 0)
 	code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres1);
     if (code >= 0)
-	code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
-	    id, &inst, pattern_manage__finish_accum);
+	code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev, 
+	    gxdso_pattern_finish_accum, &inst, id);
     if (code >= 0)
-	code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
-	    id, &inst, pattern_manage__load);
+	code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev, 
+	    gxdso_pattern_load, &inst, id);
     if (code >= 0) {
 	stream_puts(pdev->strm, "q ");
 	code = pdf_cs_Pattern_colored(pdev, &v);
@@ -1399,21 +1399,22 @@ check_unsubstituted1(gx_device_pdf * pdev, pdf_resource_t *pres0)
 }
 
 /*
-   The pattern management device method.
+   The device specific operations - just pattern management.
    See gxdevcli.h about return codes.
  */
 int
-gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
-		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
 {   
     gx_device_pdf *pdev = (gx_device_pdf *)pdev1;
     int code;
     pdf_resource_t *pres, *pres1;
+    gx_bitmap_id id = (gx_bitmap_id)size;
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)data;
 
-    switch (function) {
-	case pattern_manage__can_accum:
+    switch (dev_spec_op) {
+	case gxdso_pattern_can_accum:
 	    return 1;
-	case pattern_manage__start_accum:
+	case gxdso_pattern_start_accum:
 	    code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false, 
 		    pdev->CompressFonts/* Have no better switch.*/);
 	    if (code < 0)
@@ -1426,7 +1427,7 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
 		     72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
 	    return 1;
-	case pattern_manage__finish_accum:
+	case gxdso_pattern_finish_accum:
 	    code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
 	    if (code < 0)
 		return code;
@@ -1456,7 +1457,7 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    } else if (pres->object->id < 0)
 		pdf_reserve_object_id(pdev, pres, 0);
 	    return 1;
-	case pattern_manage__load:
+	case gxdso_pattern_load:
 	    pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);
 	    if (pres == 0)
 		return gs_error_undefined;
@@ -1466,16 +1467,16 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
 	    if (code < 0)
 		return code;
 	    return 1;
-	case pattern_manage__shading_area:
+	case gxdso_pattern_shading_area:
 	    return 0;
-	case pattern_manage__is_cpath_accum:
+	case gxdso_pattern_is_cpath_accum:
 	    return 0;
-	case pattern_manage__shfill_doesnt_need_path:
+	case gxdso_pattern_shfill_doesnt_need_path:
 	    return 0; /* gdev_pdf_fill_path still does need a path. */
-	case pattern_manage__handles_clip_path:
+	case gxdso_pattern_handles_clip_path:
 	    /* This is important when the default implementation of 
 	       of fill_path is called due to a failure in setcolor
-	       or so, for example when a shading is incorfect. 
+	       or so, for example when a shading is incorrect. 
 	       The test case is the unfixed (buggy) Genoa test 446-01.ps . 
 	       In this case pdfwrite converts the object into rectangles,
 	       and the clipping device has to be set up. */
@@ -1483,4 +1484,3 @@ gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
     }
     return_error(gs_error_unregistered);
 }
-

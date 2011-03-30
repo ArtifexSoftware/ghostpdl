@@ -20,6 +20,7 @@
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"
 #include "gxclpath.h"
+#include "gxdevsop.h"
 
 
 /* ---------------- Writing utilities ---------------- */
@@ -471,14 +472,16 @@ clist_fill_linear_color_triangle(gx_device * dev, const gs_fill_attributes *fa,
 
 
 int 
-clist_pattern_manage(gx_device *pdev, gx_bitmap_id id,
-		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
-    if (function == pattern_manage__handles_clip_path)
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)data; 
+    gx_bitmap_id id = (gx_bitmap_id)size;
+
+    if (dev_spec_op == gxdso_pattern_handles_clip_path)
 	return 1;
-    if (function == pattern_manage__shfill_doesnt_need_path)
+    if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
 	return 1;
-    return gx_default_pattern_manage(pdev, id, pinst, function);
+    return gx_default_dev_spec_op(pdev, dev_spec_op, pinst, id);
 }
 
 #define dev_proc_pattern_manage(proc)\

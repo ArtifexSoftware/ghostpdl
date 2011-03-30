@@ -17,6 +17,7 @@
 #include "gxdevice.h"
 #include "gxcmap.h"
 #include "memory_.h"
+#include "gxdevsop.h"
 
 /* ---------------- Forwarding procedures ---------------- */
 
@@ -103,7 +104,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
     fill_dev_proc(dev, encode_color, gx_forward_encode_color);
     fill_dev_proc(dev, decode_color, gx_forward_decode_color);
-    fill_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
+    fill_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
     fill_dev_proc(dev, include_color_space, gx_forward_include_color_space);
     fill_dev_proc(dev, fill_linear_color_scanline, gx_forward_fill_linear_color_scanline);
@@ -759,8 +760,7 @@ gx_forward_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value c
 }
 
 int
-gx_forward_pattern_manage(gx_device * dev, gx_bitmap_id id,
-		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+gx_forward_dev_spec_op(gx_device * dev, int dev_spec_op, void *data, int size)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
@@ -768,17 +768,17 @@ gx_forward_pattern_manage(gx_device * dev, gx_bitmap_id id,
     /* Note that clist sets fdev->target == fdev, 
        so this function is unapplicable to clist. */
     if (tdev == 0) {
-	if (function == pattern_manage__shfill_doesnt_need_path) {
+	if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path) {
 	    if (dev->procs.fill_path == gx_default_fill_path)
 		return 1;
 	}
 	return 0;
     } else {
-	if (function == pattern_manage__handles_clip_path) {
+	if (dev_spec_op == gxdso_pattern_handles_clip_path) {
 	    if (dev->procs.fill_path == gx_default_fill_path)
 		return 0;
 	}
-	return dev_proc(tdev, pattern_manage)(tdev, id, pinst, function);
+	return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
     }
 }
 
@@ -967,9 +967,19 @@ static dev_proc_strip_copy_rop(null_strip_copy_rop);
 	gx_default_DevGray_get_color_comp_index,/* get_color_comp_index */\
 	gx_default_gray_fast_encode,		/* encode_color */\
 	null_decode_color,		/* decode_color */\
-	gx_default_pattern_manage,\
+	NULL, /* pattern_manage */\
 	gx_default_fill_rectangle_hl_color,\
-	gx_default_include_color_space\
+	gx_default_include_color_space,\
+        NULL, /* fill_line_sl */\
+        NULL, /* fill_line_tr */\
+        NULL, /* fill_line_tri */\
+        NULL, /* up_spot_eq_col */\
+        NULL, /* ret_devn_params */\
+        NULL, /* fillpage */\
+        NULL, /* push_transparency_state */\
+        NULL, /* pop_transparency_state */\
+        NULL, /* put_image */\
+        gx_default_dev_spec_op /* dev_spec_op */\
 }
 
 const gx_device_null gs_null_device = {

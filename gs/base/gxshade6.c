@@ -35,6 +35,7 @@
 #include "math_.h"
 #include "vdtrace.h"
 #include "gsicc_cache.h"
+#include "gxdevsop.h"
 
 #define VD_TRACE_TENSOR_PATCH 1
 
@@ -3168,8 +3169,8 @@ int
 mesh_triangle(patch_fill_state_t *pfs,
         const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
-    if ((*dev_proc(pfs->dev, pattern_manage))(pfs->dev,
-            gs_no_id, NULL, pattern_manage__shading_area) > 0) {
+    if ((*dev_proc(pfs->dev, dev_spec_op))(pfs->dev,
+            gxdso_pattern_shading_area, NULL, 0) > 0) {
         /* Inform the device with the shading coverage area.
            First compute the sign of the area, because
            all areas to be clipped in same direction. */
@@ -4228,8 +4229,8 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     make_tensor_patch(pfs, &p, curve, interior);
     pfs->unlinear = !is_linear_color_applicable(pfs);
     pfs->linear_color = false;
-    if ((*dev_proc(pfs->dev, pattern_manage))(pfs->dev,
-            gs_no_id, NULL, pattern_manage__shading_area) > 0) {
+    if ((*dev_proc(pfs->dev, dev_spec_op))(pfs->dev,
+            gxdso_pattern_shading_area, NULL, 0) > 0) {
         /* Inform the device with the shading coverage area.
            First compute the sign of the area, because
            all areas to be clipped in same direction. */

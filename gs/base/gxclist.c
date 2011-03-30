@@ -180,7 +180,7 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_get_color_comp_index,
     gx_forward_encode_color,
     gx_forward_decode_color,
-    clist_pattern_manage,
+    NULL,                       /* pattern_manage */
     gx_default_fill_rectangle_hl_color,
     gx_default_include_color_space,
     gx_default_fill_linear_color_scanline,
@@ -191,7 +191,8 @@ const gx_device_procs gs_clist_device_procs = {
     clist_fillpage,
     NULL,                      /* push_transparency_state */
     NULL,                      /* pop_transparency_state */
-    NULL                       /* put_image */
+    NULL,                      /* put_image */
+    clist_dev_spec_op
 };
 
 /*------------------- Choose the implementation -----------------------

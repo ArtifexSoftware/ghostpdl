@@ -32,6 +32,7 @@
 #include "gxclist.h"
 #include "gxcldev.h"
 #include "gzstate.h"
+#include "gxdevsop.h"
 
 #if RAW_PATTERN_DUMP
 unsigned int global_pat_index = 0;
@@ -220,8 +221,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
      * cannot accumulate the pattern stream.      
      */
     if (pinst->saved->have_pattern_streams == 0 && (*dev_proc(pinst->saved->device, 
-	pattern_manage))((gx_device *)pinst->saved->device, 
-	0, pinst, pattern_manage__can_accum) == 1)
+	dev_spec_op))((gx_device *)pinst->saved->device, 
+	gxdso_pattern_can_accum, pinst, 0) == 1)
 	force_no_clist = 1;
     /* Do not allow pattern to be a clist if it uses transparency.  We
        will want to fix this at some point */

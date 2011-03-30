@@ -27,12 +27,13 @@
 #include "gxpaint.h"
 #include "gzcpath.h"
 #include "gzacpath.h"
+#include "gxdevsop.h"
 
 /* Device procedures */
 static dev_proc_open_device(accum_open_device);
 static dev_proc_close_device(accum_close);
 static dev_proc_fill_rectangle(accum_fill_rectangle);
-static dev_proc_pattern_manage(accum_pattern_manage);
+static dev_proc_dev_spec_op(accum_dev_spec_op);
 
 /* GC information */
 extern_st(st_clip_list);
@@ -108,7 +109,19 @@ static const gx_device_cpath_accum gs_cpath_accum_device =
   NULL, /* get_color_comp_index */
   NULL,	/* encode_color */
   NULL,	/* decode_color */
-  accum_pattern_manage
+  NULL, /* pattern_manage */
+  NULL, /* fill_rectangle_hl_color */
+  NULL, /* ics */
+  NULL, /* fill_lin_tri */
+  NULL, /* fill_lin_tri */
+  NULL, /* fill_lin_tri */
+  NULL, /* up_spot_eq_col */
+  NULL, /* ret_dev */
+  NULL, /* fillpage */
+  NULL, /* push_transparency_state */
+  NULL, /* pop_transparency_state */
+  NULL, /* put_image */
+  accum_dev_spec_op
  }
 };
 
@@ -299,12 +312,22 @@ accum_close(gx_device * dev)
    See gxdevcli.h about return codes.
  */
 int
-accum_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
-		gs_pattern1_instance_t *pinst, pattern_manage_t function)
-{   
-    if (function == pattern_manage__is_cpath_accum)
-	return 1;
-    return 0;
+accum_dev_spec_op(gx_device *pdev1, int dev_spec_op,
+		void *data, int size)
+{
+    switch (dev_spec_op) {
+        case gxdso_pattern_is_cpath_accum:
+            return 1;
+        case gxdso_pattern_can_accum:
+        case gxdso_pattern_start_accum:
+        case gxdso_pattern_finish_accum:
+        case gxdso_pattern_load:
+        case gxdso_pattern_shading_area:
+        case gxdso_pattern_shfill_doesnt_need_path:
+        case gxdso_pattern_handles_clip_path:
+            return 0;
+    }
+    return gs_error_undefined;
 }
 
 
