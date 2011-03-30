@@ -16,8 +16,8 @@
 # Major and minor version numbers.
 # MINOR0 is different from MINOR only if MINOR is a single digit.
 GS_VERSION_MAJOR=9
-GS_VERSION_MINOR=02
-GS_VERSION_MINOR0=02
+GS_VERSION_MINOR=03
+GS_VERSION_MINOR0=03
 # Revision date: year x 10000 + month x 100 + day.
 GS_REVISIONDATE=20110330
 # Derived values
