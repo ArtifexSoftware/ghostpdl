@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version9.02">Version 9.02 (2011-03-28)</a>
+<li><a href="#Version9.02">Version 9.02 (2011-03-30)</a>
 <li><a href="#Version9.01">Version 9.01 (2011-02-07)</a>
 <li><a href="#Version9.00">Version 9.00 (2010-09-14)</a>
 </ul></blockquote>
@@ -63,7 +63,7 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-<h2><a name="Version9.02"></a>Version 9.02 (2011-02-07)</h3>
+<h2><a name="Version9.02"></a>Version 9.02 (2011-03-30)</h3>
 
 <p>This is the third release in the stable 9.x series.
 
@@ -93,6 +93,23 @@ please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 No recorded incompatible changes.
 
 
+
+<p><strong><a name="2011-03-30T064801.334550Z"></a>
+2011-03-30T06:48:01.334550Z chrisl</strong></p>
+<blockquote>
+<pre>
+Extend the SSE2 check in both configure scripts.
+
+The check now attempts to declare a variable of a type missing in older
+versions of gcc.
+
+Bug 692102
+
+No cluster differences expected.
+
+</pre>
+<p>[base/configure.ac /trunk/ghostpdl/configure.ac]</p>
+</blockquote>
 
 <p><strong><a name="2011-03-28T084948.387061Z"></a>
 2011-03-28T08:49:48.387061Z Chris Liddell</strong></p>
@@ -15050,7 +15067,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.02, 28 March 2011
+<small>Ghostscript version 9.02, 30 March 2011
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
