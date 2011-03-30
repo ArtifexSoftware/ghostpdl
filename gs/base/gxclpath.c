@@ -55,7 +55,8 @@ colored_halftone_colors_used(gx_device_clist_writer *cldev,
      * We only know how to compute an accurate color set for the
      * standard CMYK color mapping function.
      */
-    if (dev_proc(cldev, dev_spec_op)(cldev, gxdso_is_std_cmyk_1bit, NULL, 0) <= 0)
+    if (dev_proc(cldev, dev_spec_op)((gx_device *)cldev,
+                                     gxdso_is_std_cmyk_1bit, NULL, 0) <= 0)
 	return ((gx_color_index)1 << cldev->color_info.depth) - 1;  /* What about transparency?  Need to check this */
     /*
      * Note that c_base[0], and the low-order bit of plane_mask,
