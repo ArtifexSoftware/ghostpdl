@@ -398,12 +398,13 @@ hpgl_IR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* get the PCL picture frame coordinates */
 	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
 	hpgl_args_setup(&args);
-	hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
-			  rptxy[0] / 100.0);
-
-	hpgl_args_add_int(&args, win.p.y + (win.q.y - win.p.y) *
-			  rptxy[1] / 100.0);
-
+        if ( i != 0 )
+          {
+            hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
+                              rptxy[0] / 100.0);
+            hpgl_args_add_int(&args, win.p.y + (win.q.y - win.p.y) *
+                              rptxy[1] / 100.0);
+          }
 	if ( i == 4 )
 	  {
 	    hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
