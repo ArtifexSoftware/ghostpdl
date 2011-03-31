@@ -44,10 +44,20 @@ CRCCheck on
 ; for detecting if running on x64 machine.
 !include "x64.nsh"
 
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_TEXT "Generate cidfmap for Windows CJK TrueType fonts"
+!define MUI_FINISHPAGE_RUN_FUNCTION CJKGen
+; !define MUI_FINISHPAGE_RUN_NOTCHECKED
+!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\doc\Readme.htm"
+; MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
+!define MUI_FINISHPAGE_LINK          "Visit the Ghostscript web site"
+!define MUI_FINISHPAGE_LINK_LOCATION http://www.ghostscript.com/
+
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
 
 !insertmacro MUI_LANGUAGE "English"
 
@@ -125,9 +135,11 @@ Function .onInstSuccess
     CreateDirectory "$SMPROGRAMS\Ghostscript"
     CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript ${VERSION}.LNK" "$INSTDIR\bin\gswin${WINTYPE}.exe" '"-I$INSTDIR\lib;$INSTDIR\..\fonts"'
     CreateShortCut "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${VERSION}.LNK" "$INSTDIR\doc\Readme.htm"
-    MessageBox MB_YESNO "Use Windows TrueType fonts for Chinese, Japanese and Korean?" /SD IDYES IDNO NoCJKFONTMAP
-       ExecWait '"$INSTDIR\bin\gswin${WINTYPE}c.exe" -q -dBATCH -sFONTDIR="$FONTS" -sCIDFMAP="$INSTDIR\lib\cidfmap" "$INSTDIR\lib\mkcidfm.ps"'
-    NoCJKFONTMAP:
+    CreateShortCut "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${VERSION}.LNK" "$INSTDIR\uninstgs.exe"
+FunctionEnd
+
+Function CJKGen
+        ExecWait '"$INSTDIR\bin\gswin${WINTYPE}c.exe" -q -dBATCH -sFONTDIR="$FONTS" -sCIDFMAP="$INSTDIR\lib\cidfmap" "$INSTDIR\lib\mkcidfm.ps"'
 FunctionEnd
 
 Function .onInit
@@ -159,6 +171,7 @@ Section Uninstall
 SetShellVarContext all
 Delete   "$SMPROGRAMS\Ghostscript\Ghostscript ${VERSION}.LNK"
 Delete   "$SMPROGRAMS\Ghostscript\Ghostscript Readme ${VERSION}.LNK"
+Delete   "$SMPROGRAMS\Ghostscript\Uninstall Ghostscript ${VERSION}.LNK"
 RMDir    "$SMPROGRAMS\Ghostscript"
 Delete   "$INSTDIR\uninstgs.exe"
 !if "${WINTYPE}" == "64"
