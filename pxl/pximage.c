@@ -765,9 +765,11 @@ pxReadRastPattern(px_args_t *par, px_state_t *pxs)
 	if ( par->source.available == 0 && par->pv[1]->value.i != 0 )
 	  return pxNeedData;
         /* emulate hp bug */
-        if ( par->pv[2]->value.i == eDeltaRowCompression )
-            input_per_row = pxenum->benum.data_per_row;
-
+        {
+            pxeCompressMode_t c = par->pv[2]->value.i;
+            if ( c == eDeltaRowCompression || c == eJPEGCompression )
+                input_per_row = pxenum->benum.data_per_row;
+        }
 	for ( ; ; )
 	  { 
 	    byte *data = pxenum->pattern->data +
