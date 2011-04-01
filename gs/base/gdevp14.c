@@ -1985,6 +1985,9 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
     
     memset(&(white[0]), 255, num_comp);
+    if (pdev->ctx->smask_depth > 0) {
+        memset(&(white[0]), 0, num_comp);
+    }
 
     for (j = 0; j < h; ++j, aa_row += aa_raster) {
 	dst_ptr = line;
