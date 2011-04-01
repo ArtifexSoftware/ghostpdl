@@ -253,7 +253,7 @@ gx_forward_copy_alpha(gx_device * dev, const byte * data, int data_x,
 
     if (tdev == 0)
 	return_error(gs_error_Fatal);
-    return dev_proc(tdev, copy_mono)
+    return dev_proc(tdev, copy_alpha)
 	(tdev, data, data_x, raster, id, x, y, width, height, color, depth);
 }
 

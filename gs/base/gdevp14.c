@@ -170,6 +170,7 @@ static int pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev);
 static	dev_proc_push_transparency_state(pdf14_push_transparency_state);
 static	dev_proc_pop_transparency_state(pdf14_pop_transparency_state);
 static  dev_proc_ret_devn_params(pdf14_ret_devn_params);
+static  dev_proc_copy_alpha(pdf14_copy_alpha);
 
 static	const gx_color_map_procs *
     pdf14_get_cmap_procs(const gs_imager_state *, const gx_device *);
@@ -204,7 +205,7 @@ static	const gx_color_map_procs *
 	NULL,				/* map_rgb_alpha_color */\
 	NULL,				/* get_page_device */\
 	NULL,				/* get_alpha_bits */\
-	NULL,				/* copy_alpha */\
+	pdf14_copy_alpha,		/* copy_alpha */\
 	NULL,				/* get_band */\
 	NULL,				/* copy_rop */\
 	pdf14_fill_path,		/* fill_path */\
@@ -1912,6 +1913,168 @@ pdf14_stroke_path(gx_device *dev, const	gs_imager_state	*pis,
     pdf14_set_marking_params(dev, pis);
     return gx_default_stroke_path(dev, &new_is, ppath, params, pdcolor,
 				  pcpath);
+}
+
+static int
+pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
+	   int aa_raster, gx_bitmap_id id, int x, int y, int w, int h,
+		      gx_color_index color, int depth)
+{
+ /* Because of the way that alpha blending occurs in the pdf14 device,
+    we have to take care in doing the copy alpha operation.  We could 
+    end up with some weird renderings if the blend mode is set to 
+    something odd.  What we want is to go ahead and just do our own
+    blending here and now in the color planes and not mix up the
+    anti-aliasing blending with any of the transparency group blendings. */
+
+    const byte *aa_row;
+    pdf14_device *pdev = (pdf14_device *)dev;
+    pdf14_buf *buf = pdev->ctx->stack;
+    int i, j, k;
+    byte *line, *dst_ptr;
+    byte src[PDF14_MAX_PLANES];
+    byte dst[PDF14_MAX_PLANES];
+    byte src_aa[PDF14_MAX_PLANES];
+    gs_blend_mode_t blend_mode = pdev->blend_mode;
+    bool additive = pdev->ctx->additive;
+    int rowstride = buf->rowstride;
+    int planestride = buf->planestride;
+    gs_object_tag_type_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
+    bool has_alpha_g = buf->has_alpha_g;
+    bool has_shape = buf->has_shape;
+    bool has_tags = buf->has_tags;
+    int num_chan = buf->n_chan;
+    int num_comp = num_chan - 1;
+    int shape_off = num_chan * planestride;
+    int alpha_g_off = shape_off + (has_shape ? planestride : 0);
+    int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
+    bool overprint = pdev->overprint;
+    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index comps;
+    byte shape = 0; /* Quiet compiler. */
+    byte src_alpha;
+    int alpha2_aa, alpha_aa, sx;
+    int alpha_aa_act;
+    byte *src_use;
+    byte white[PDF14_MAX_PLANES];
+
+    if (buf->data == NULL)
+	return 0;
+    aa_row = data;
+    if (has_tags) {
+        curr_tag = (color >> (num_comp*8)) & 0xff; 
+    }
+    pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
+    src_alpha = src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
+    if (has_shape)
+	shape = (byte)floor (255 * pdev->shape + 0.5);
+    if (x < buf->rect.p.x) {
+        w += x - buf->rect.p.x;
+        x = buf->rect.p.x;
+    }
+    if (y < buf->rect.p.y) {
+      h += y - buf->rect.p.y;
+      y = buf->rect.p.y;
+    }
+    if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
+    if (y + h > buf->rect.q.y) h = buf->rect.q.y - y;
+    if (x < buf->bbox.p.x) buf->bbox.p.x = x;
+    if (y < buf->bbox.p.y) buf->bbox.p.y = y;
+    if (x + w > buf->bbox.q.x) buf->bbox.q.x = x + w;
+    if (y + h > buf->bbox.q.y) buf->bbox.q.y = y + h;
+    line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
+    
+    memset(&(white[0]), 255, num_comp);
+
+    for (j = 0; j < h; ++j, aa_row += aa_raster) {
+	dst_ptr = line;
+        sx = data_x;
+	for (i = 0; i < w; ++i, ++sx) {
+	    /* Complement the components for subtractive color spaces */
+	    if (additive) {
+		for (k = 0; k < num_chan; ++k)
+		    dst[k] = dst_ptr[k * planestride];
+	    } else { /* Complement the components for subtractive color spaces */
+		for (k = 0; k < num_comp; ++k)
+		    dst[k] = 255 - dst_ptr[k * planestride];
+		dst[num_comp] = dst_ptr[num_comp * planestride];
+	    }
+            /* Get the aa alpha from the buffer */
+            if (depth == 2) {	/* map 0 - 3 to 0 - 15 */
+                alpha_aa = ((aa_row[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 5;
+            } else {
+                alpha2_aa = aa_row[sx >> 1],
+                alpha_aa = (sx & 1 ? alpha2_aa & 0xf : alpha2_aa >> 4);
+            }            
+            /* Apply the alpha value if needed, updating our source color
+               Note that we probably could do this better */
+	    if (!(alpha_aa == 0 || alpha_aa == 15)) {
+                if (dst[num_comp] == 0) {  /* nothing at destination yet */
+	            alpha_aa_act =  (255 * alpha_aa) / 15;
+                    for (k = 0; k < num_comp; ++k) {
+                        src_aa[k] = ((float) alpha_aa_act * (float) src[k] 
+                                 + (float) white[k] * (255.0 -  (float) alpha_aa_act))/255.0;
+                    }
+                    src_use = &(src_aa[0]);
+                    src_aa[num_comp] = src_alpha;
+                } else {
+	            alpha_aa_act =  (255 * alpha_aa) / 15;
+                    for (k = 0; k < num_comp; ++k) {
+                        src_aa[k] = ((float) alpha_aa_act * (float) src[k] 
+                                 + (float) dst[k] * (255.0 -  (float) alpha_aa_act))/255.0;
+                    }
+                    src_use = &(src_aa[0]);
+                    src_aa[num_comp] = src_alpha;
+                }
+            } else {
+                src_use = &(src[0]);
+            }
+            if (alpha_aa != 0) {
+                /* Then do what ever composing we need to do */
+	        art_pdf_composite_pixel_alpha_8(dst, src_use, num_comp,
+			   		     blend_mode, pdev->blend_procs);
+	        /* Complement the results for subtractive color spaces */
+	        if (additive) {
+		    for (k = 0; k < num_chan; ++k)
+		        dst_ptr[k * planestride] = dst[k];
+	        } else {
+	            if (overprint) {
+	                for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+	                    if ((comps & 0x1) != 0) {
+                                dst_ptr[k * planestride] = 255 - dst[k];
+	                    }
+	                }
+	                /* The alpha channel */
+	                dst_ptr[num_comp * planestride] = dst[num_comp];
+                    } else {
+		        for (k = 0; k < num_comp; ++k)
+		            dst_ptr[k * planestride] = 255 - dst[k];
+	                /* The alpha channel */
+                        dst_ptr[num_comp * planestride] = dst[num_comp];
+                    }
+                }
+	        if (has_alpha_g) {
+		    int tmp = (255 - dst_ptr[alpha_g_off]) * (255 - src_alpha) + 0x80;
+		    dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+	        }
+	        if (has_shape) {
+		    int tmp = (255 - dst_ptr[shape_off]) * (255 - shape) + 0x80;
+		    dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+	        }
+                if (has_tags) {
+                    /* If alpha is 100% then set to pure path, else or */
+                    if (dst[num_comp] == 255) { 
+                        dst_ptr[tag_off] = curr_tag;
+                    } else {
+                        dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
+                    }
+                }
+            }
+	    ++dst_ptr;
+	}
+	line += rowstride;
+    }
+    return 0;
 }
 
 static	int
@@ -3811,22 +3974,22 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 			   		 blend_mode, pdev->blend_procs);
 	    /* Complement the results for subtractive color spaces */
 	    if (additive) {
-			for (k = 0; k < num_chan; ++k)
-				dst_ptr[k * planestride] = dst[k];
+		for (k = 0; k < num_chan; ++k)
+			dst_ptr[k * planestride] = dst[k];
 		} else {
-			if (overprint) {
-				for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-					if ((comps & 0x1) != 0) {
-						dst_ptr[k * planestride] = 255 - dst[k];
-					}
-				}
-				/* The alpha channel */
-				dst_ptr[num_comp * planestride] = dst[num_comp];
-			} else {
-				for (k = 0; k < num_comp; ++k)
-					dst_ptr[k * planestride] = 255 - dst[k];
-				dst_ptr[num_comp * planestride] = dst[num_comp];
-			}
+		    if (overprint) {
+		        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+			        if ((comps & 0x1) != 0) {
+				        dst_ptr[k * planestride] = 255 - dst[k];
+			        }
+		        }
+		        /* The alpha channel */
+		        dst_ptr[num_comp * planestride] = dst[num_comp];
+		    } else {
+	                for (k = 0; k < num_comp; ++k)
+		                dst_ptr[k * planestride] = 255 - dst[k];
+	                dst_ptr[num_comp * planestride] = dst[num_comp];
+		    }
 	    }
 	    if (has_alpha_g) {
 		int tmp = (255 - dst_ptr[alpha_g_off]) * (255 - src_alpha) + 0x80;
@@ -4451,6 +4614,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pis);
     p14dev->trans_group_parent_cmap_procs = NULL;
+    /* In case we have alphabits set */
+    p14dev->color_info.anti_alias = target->color_info.anti_alias;
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
     dump_raw_buffer(p14dev->ctx->stack->rect.q.y-p14dev->ctx->stack->rect.p.y, 
@@ -5196,12 +5361,12 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
 	gx_forward_get_xfont_device,	/* get_xfont_device */\
 	NULL,				/* map_rgb_alpha_color */\
 	gx_forward_get_page_device,	/* get_page_device */\
-	gx_forward_get_alpha_bits,	/* get_alpha_bits */\
-	NULL,				/* copy_alpha */\
+	NULL,	                        /* get_alpha_bits */\
+	gx_forward_copy_alpha,		/* copy_alpha */\
 	gx_forward_get_band,		/* get_band */\
 	gx_forward_copy_rop,		/* copy_rop */\
 	pdf14_clist_fill_path,		/* fill_path */\
-	pdf14_clist_stroke_path,		/* stroke_path */\
+	pdf14_clist_stroke_path,	/* stroke_path */\
 	gx_forward_fill_mask,		/* fill_mask */\
 	gx_forward_fill_trapezoid,	/* fill_trapezoid */\
 	gx_forward_fill_parallelogram,	/* fill_parallelogram */\
@@ -6564,6 +6729,9 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
 	    }
 	    p14dev->saved_target_color_info = dev->color_info;
 	    dev->color_info = (*pcdev)->color_info;
+            /* Make sure that we keep the anti-alias information though */
+            dev->color_info.anti_alias = p14dev->saved_target_color_info.anti_alias;
+            p14dev->color_info.anti_alias = dev->color_info.anti_alias;
 	    p14dev->saved_target_encode_color = dev->procs.encode_color;
 	    p14dev->saved_target_decode_color = dev->procs.decode_color;
 	    dev->procs.encode_color = p14dev->procs.encode_color = 
