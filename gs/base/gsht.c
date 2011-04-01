@@ -1584,13 +1584,6 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     hsize = d_order->num_levels;
     nshades = hsize * max_value + 1;
 
-    if (d_order == NULL) return -1;
-    if (d_order->threshold != NULL) return 0;
-    thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
-                               "gx_ht_construct_threshold");
-    if( thresh == NULL ) {
-        return -1 ;         /* error if allocation failed   */
-    }
     for( i = 0; i < d_order->num_bits; i++ ) {
         thresh[i] = init_value;
     }
