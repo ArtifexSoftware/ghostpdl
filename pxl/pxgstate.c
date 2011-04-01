@@ -28,6 +28,7 @@
 #include "gscoord.h"
 #include "gxcspace.h"			/* must precede gscolor2.h */
 #include "gscie.h"
+#include "gsicc.h"
 #include "gsicc_manage.h"
 #include "gsimage.h"
 #include "gspath.h"
@@ -333,6 +334,7 @@ px_image_color_space(gs_image_t *pim,
 	pbase_pcs = gs_cspace_new_DeviceGray(pgs->memory);
 #ifdef ICCBRANCH
         pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
+        pbase_pcs->type = &gs_color_space_type_ICC;
         rc_increment(pbase_pcs->cmm_icc_profile_data);
 #endif
 	break;
@@ -340,6 +342,7 @@ px_image_color_space(gs_image_t *pim,
         pbase_pcs = gs_cspace_new_DeviceRGB(pgs->memory);
 #ifdef ICCBRANCH
         pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
+        pbase_pcs->type = &gs_color_space_type_ICC;
         rc_increment(pbase_pcs->cmm_icc_profile_data);
 #endif
         break;
@@ -351,6 +354,7 @@ px_image_color_space(gs_image_t *pim,
         cie_space = true;
 #ifdef ICCBRANCH
         pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
+        pbase_pcs->type = &gs_color_space_type_ICC;
         rc_increment(pbase_pcs->cmm_icc_profile_data);
 #endif
 	break;
