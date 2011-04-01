@@ -93,7 +93,7 @@ $(LCMSGEN)lcms_1.dev : $(TOP_MAKEFILES) $(LCMS_MAK) $(ECHOGS_XE)
 $(LCMSGEN)lcms_0.dev : $(TOP_MAKEFILES) $(LCMS_MAK) $(ECHOGS_XE) $(lcms_OBJS)
 	$(SETMOD) $(LCMSGEN)lcms_0 $(lcms_OBJS)
 
-# explicit rules for building the source files. 
+# explicit rules for building the source files.
 
 $(LCMSOBJ)cmscnvrt.$(OBJ) : $(LCMSSRC)cmscnvrt.c $(lcms_HDRS)
 	$(LCMS_CC) $(LCMSO_)cmscnvrt.$(OBJ) $(C_) $(LCMSSRC)cmscnvrt.c

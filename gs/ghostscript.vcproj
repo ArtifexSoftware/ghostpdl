@@ -2081,7 +2081,11 @@
 							>
 						</File>
 						<File
-							RelativePath=".\base\gsicc_littlecms.c"
+							RelativePath=".\base\gsicc_lcms.c"
+							>
+						</File>
+						<File
+							RelativePath=".\base\gsicc_lcms2.c"
 							>
 						</File>
 						<File
@@ -5854,19 +5858,23 @@
 					Name="icc"
 					>
 					<File
+						RelativePath=".\base\gsicc_cache.h"
+						>
+					</File>
+					<File
+						RelativePath=".\base\gsicc_cms.h"
+						>
+					</File>
+					<File
 						RelativePath=".\base\gsicc_create.h"
 						>
 					</File>
 					<File
-						RelativePath=".\base\gsicc_littlecms.h"
+						RelativePath=".\base\gsicc_manage.h"
 						>
 					</File>
 					<File
 						RelativePath=".\base\gsicc_profilecache.h"
-						>
-					</File>
-					<File
-						RelativePath=".\base\gsiccmanage.h"
 						>
 					</File>
 				</Filter>

@@ -115,6 +115,14 @@ PNGSRCDIR=libpng
 # See lcms.mak for more information
 LCMSSRCDIR=lcms
 
+# Define the directory where the lcms2 source is stored.
+# See lcms2.mak for more information
+LCMS2SRCDIR=lcms2
+
+# Which CMS are we using?
+# Options are currently lcms or lcms2
+WHICH_CMS=lcms2
+
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
@@ -453,7 +461,7 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 !include "$(GLSRCDIR)\zlib.mak"
 !include "$(GLSRCDIR)\png.mak"
 !include "$(GLSRCDIR)\jbig2.mak"
-!include "$(GLSRCDIR)\lcms.mak"
+!include "$(GLSRCDIR)\$(WHICH_CMS).mak"
 !include "$(GLSRCDIR)\devs.mak"
 !include "$(GLSRCDIR)\pcwin.mak"
 !include "$(GLSRCDIR)\contrib.mak"

@@ -35,6 +35,11 @@ CCAUX=$(CC)
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
 CC_SHARED=$(CC_)
 
+# Which CMS are we using?
+# Options are currently lcms or lcms2
+
+WHICH_CMS=lcms
+
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/lib.mak
@@ -45,7 +50,7 @@ include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak
 include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
-include $(GLSRCDIR)/lcms.mak
+include $(GLSRCDIR)/$(WHICH_CMS).mak
 include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/tiff.mak
 include $(GLSRCDIR)/devs.mak

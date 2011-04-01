@@ -171,6 +171,16 @@ JBIG2SRCDIR=jbig2dec
 
 LCMSSRCDIR=lcms
 
+# Define the directory where the lcms2 source is stored.
+# See lcms2.mak for more information
+
+LCMS2SRCDIR=lcms2
+
+# Which CMS are we using?
+# Options are currently lcms or lcms2
+
+WHICH_CMS=lcms
+
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.

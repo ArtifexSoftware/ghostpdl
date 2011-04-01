@@ -33,7 +33,6 @@ PSJBIG2CC=$(CC_) $(I_)$(JB2I_) $(II)$(PSI_)$(_I) $(JB2CF_) $(PSF_)
 PSJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
 PSLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(LDF_JB2I_) $(II)$(PSI_)$(_I) $(JB2CF_) $(PSF_)
 PSLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
-PSLCMSCC=$(CC_) $(I_)$(LCMSSRCDIR)$(D)include $(II)$(PSI_)$(_I) $(PSF_)
 
 # All top-level makefiles define PSD.
 #PSD=$(PSGEN)

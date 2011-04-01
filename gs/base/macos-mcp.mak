@@ -119,6 +119,16 @@ JPXSRCDIR=jasper
 
 LCMSSRCDIR=lcms
 
+# Define the directory where the lcms2 source is stored.
+# See lcms2.mak for more information
+
+LCMS2SRCDIR=lcms2
+
+# Which CMS are we using?
+# Options are currently lcms or lcms2
+
+WHICH_CMS=lcms
+
 # IJS has not been ported to MacOS Classic. If you do the port,
 # you'll need to set these values. You'll also need to
 # include the ijs.mak makefile (right after icclib.mak).

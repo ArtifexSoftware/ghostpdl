@@ -648,8 +648,19 @@ AC_CHECK_LIB(lcms, cmsCreateXYZProfile, [
 	])
 fi
 
+AC_MSG_CHECKING([for local lcms2 library source])
+LCMS2DIR=lcms2
+if test -f $LCMS2DIR/include/lcms2.h; then
+	AC_MSG_RESULT([yes])
+else
+AC_CHECK_LIB(lcms2, cmsCreateXYZProfile, [
+	  AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR=""])
+	])
+fi
+
 AC_SUBST(SHARELCMS)
 AC_SUBST(LCMSDIR)
+AC_SUBST(LCMS2DIR)
 
 dnl look for libtiff, it also requires lib
 dnl png for the png output device; it also requires zlib

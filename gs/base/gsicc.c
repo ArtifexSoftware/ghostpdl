@@ -26,7 +26,7 @@
 #include "gzstate.h"
 #include "gsicc.h"
 #include "gsicc_cache.h"
-#include "gsicc_littlecms.h"
+#include "gsicc_cms.h"
 #include "gxdevice.h"
 
 #define SAVEICCPROFILE 0

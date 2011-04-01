@@ -176,6 +176,13 @@ JPXSRCDIR=jasper
 LCMSSRCDIR=lcms
 !endif
 
+# Define the directory where the lcms2 source is stored.
+# See lcms2.mak for more information
+
+!ifndef LCMS2SRCDIR
+LCMS2SRCDIR=lcms2
+!endif
+
 # Define the directory where the imdi library source is stored.
 # See devs.mak for more information
 

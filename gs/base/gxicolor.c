@@ -35,7 +35,7 @@
 #include "gximage.h"
 #include "gsicc.h"
 #include "gsicc_cache.h"
-#include "gsicc_littlecms.h"
+#include "gsicc_cms.h"
 #include "gxcie.h"
 #include "gscie.h"
 #include "gxht_thresh.h"

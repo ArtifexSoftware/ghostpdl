@@ -41,7 +41,7 @@
   "srgb.icc", "sgray.icc"
 #define GSICC_NUMBER_STANDARD_PROFILES 2
 
-#include "gsicc_littlecms.h"
+#include "gsicc_cms.h"
 
 /* Prototypes */
 void gsicc_profile_reference(cmm_profile_t *icc_profile, int delta);

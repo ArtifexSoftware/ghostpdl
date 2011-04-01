@@ -261,6 +261,11 @@ ICCSRCDIR=icclib
 # options for lcms color management library
 SHARE_LCMS=@SHARELCMS@
 LCMSSRCDIR=@LCMSDIR@
+LCMS2SRCDIR=@LCMS2DIR@
+
+# Which CMS are we using?
+# Options are currently lcms or lcms2
+WHICH_CMS=lcms
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
@@ -567,7 +572,7 @@ include $(GLSRCDIR)/jasper.mak
 include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/icclib.mak
-include $(GLSRCDIR)/lcms.mak
+include $(GLSRCDIR)/$(WHICH_CMS).mak
 include $(GLSRCDIR)/ijs.mak
 @LCUPSINCLUDE@
 @LCUPSIINCLUDE@

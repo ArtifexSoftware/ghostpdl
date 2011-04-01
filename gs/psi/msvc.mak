@@ -311,6 +311,12 @@ JPX_LIB=jasper
 LCMSSRCDIR=lcms
 !endif
 
+# Define the directory where the lcms2 source is stored.
+# See lcms2.mak for more information
+!ifndef LCMS2SRCDIR
+LCMS2SRCDIR=lcms2
+!endif
+
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.

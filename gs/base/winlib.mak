@@ -109,6 +109,11 @@ UFST_LIB_EXT=.lib
 FT_BRIDGE = 0
 !endif
 
+# Which CMS are we using?
+!ifndef WHICH_CMS
+WHICH_CMS=lcms
+!endif
+
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
@@ -136,7 +141,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\ldf_jb2.mak
 !include $(GLSRCDIR)\lwf_jp2.mak
 !include $(GLSRCDIR)\icclib.mak
-!include $(GLSRCDIR)\lcms.mak
+!include $(GLSRCDIR)\$(WHICH_CMS).mak
 !include $(GLSRCDIR)\ijs.mak
 !include $(GLSRCDIR)\lcups.mak
 !include $(GLSRCDIR)\lcupsi.mak

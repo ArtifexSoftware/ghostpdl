@@ -83,6 +83,11 @@ SHARE_LIBPNG=0
 LCMSSRCDIR=..\gs\lcms
 !endif
 
+# Specify the location of lcms2
+!ifndef LCMS2SRCDIR
+LCMS2SRCDIR=..\gs\lcms2
+!endif
+
 # Specify the location of imdi
 !ifndef IMDISRCDIR
 IMDISRCDIR=..\gs\imdi

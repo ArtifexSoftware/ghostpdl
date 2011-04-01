@@ -58,6 +58,9 @@ SHARE_LIBPNG?=0
 LCMSSRCDIR?=../gs/lcms
 SHARE_LCMS?=0
 
+# Specify the location of lcms2
+LCMS2SRCDIR?=../gs/lcms2
+
 # Specify the location of imdi
 IMDISRCDIR?=../gs/imdi
 

@@ -38,7 +38,7 @@
 #include "gscspace.h"
 #include "gscindex.h"
 #include "gsicc_cache.h"
-#include "gsicc_littlecms.h"
+#include "gsicc_cms.h"
 
 /* Structure descriptors */
 private_st_gx_image_enum();

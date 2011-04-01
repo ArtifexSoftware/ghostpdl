@@ -24,7 +24,7 @@ GLOBJ=$(GLOBJDIR)$(D)
 GLO_=$(O_)$(GLOBJ)
 GLI_=$(GLGENDIR) $(II)$(GLSRCDIR)
 GLF_=
-GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_)
+GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_) -DWHICH_CMS="$(WHICH_CMS)"
 GLCC=$(CC_) $(GLCCFLAGS)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
@@ -39,6 +39,11 @@ GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
 GLLCMSCC=$(CC) $(CFLAGS) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
 lcms_h=$(LCMSSRCDIR)$(D)include$(D)lcms.h
 icc34_h=$(LCMSSRCDIR)$(D)include$(D)icc34.h
+# We can't use $(CC_) for GLLCMS2CC becuase that includes /Za on
+# msvc builds, and lcms configures itself to depend on msvc extensions
+# (inline asm, including windows.h) when compiled under msvc.
+GLLCMS2CC=$(CC) $(GCFLAGS) $(I_)$(GLI_) $(II)$(LCMS2SRCDIR)$(D)include$(_I) $(GLF_)
+lcms2_h=$(LCMS2SRCDIR)$(D)include$(D)lcms2.h
 
 # All top-level makefiles define GLD.
 #GLD=$(GLGEN)
@@ -690,7 +695,7 @@ $(GLOBJ)gximono.$(OBJ) : $(GLSRC)gximono.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gdevmem_h) $(gsccolor_h) $(gspaint_h) $(gsutil_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
- $(gzht_h) $(vdtrace_h) $(gsicc_h) $(gsicc_cache_h)  $(gsicc_littlecms_h)\
+ $(gzht_h) $(vdtrace_h) $(gsicc_h) $(gsicc_cache_h)  $(gsicc_cms_h)\
  $(gxcie_h) $(gscie_h) $(gxht_thresh_h) $(gxdda_h)
 	$(GLCC) $(GLO_)gximono.$(OBJ) $(C_) $(GLSRC)gximono.c
 
@@ -712,7 +717,7 @@ $(GLOBJ)gxi12bit.$(OBJ) : $(GLSRC)gxi12bit.c $(GXERR)\
  $(gsccolor_h) $(gspaint_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
- $(gxmatrix_h)  $(vdtrace_h) $(gsicc_h) $(gsicc_cache_h) $(gsicc_littlecms_h)\
+ $(gxmatrix_h)  $(vdtrace_h) $(gsicc_h) $(gsicc_cache_h) $(gsicc_cms_h)\
  $(gxcie_h) $(gscie_h)
 	$(GLCC) $(GLO_)gxi12bit.$(OBJ) $(C_) $(GLSRC)gxi12bit.c
 
@@ -2338,7 +2343,7 @@ $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gsccolor_h) $(gspaint_h) $(gzstate_h)\
  $(gxdevice_h) $(gxcmap_h) $(gxdcconv_h) $(gxdcolor_h)\
  $(gxistate_h) $(gxdevmem_h) $(gxcpath_h) $(gximage_h)\
- $(gsicc_h) $(gsicc_cache_h) $(gsicc_littlecms_h) $(gxcie_h)\
+ $(gsicc_h) $(gsicc_cache_h) $(gsicc_cms_h) $(gxcie_h)\
  $(gscie_h) $(gxht_thresh_h)
 	$(GLCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
 
@@ -2495,26 +2500,27 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
 # ---------------- ICCBased color ---------------- #
 
 gsicc_=$(GLOBJ)gsicc_manage.$(OBJ) $(GLOBJ)gsicc_cache.$(OBJ)\
- $(GLOBJ)gsicc_littlecms.$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
+ $(GLOBJ)gsicc_$(WHICH_CMS).$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
  $(GLOBJ)gsicc_create.$(OBJ)
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
- $(GLD)cielib.dev $(LCMSGENDIR)$(D)lcms.dev
+ $(GLD)cielib.dev $(LCMSGENDIR)$(D)$(WHICH_CMS).dev
 	$(SETMOD) $(GLD)sicclib $(sicclib_)
 	$(ADDMOD) $(GLD)sicclib $(gsicc_)
-	$(ADDMOD) $(GLD)sicclib -include $(LCMSGENDIR)$(D)lcms.dev
+	$(ADDMOD) $(GLD)sicclib -include $(LCMSGENDIR)$(D)$(WHICH_CMS).dev
 
 $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
- $(gzstate_h) $(gsicc_h) $(gsicc_cache_h) $(gsicc_littlecms_h)
+ $(gzstate_h) $(gsicc_h) $(gsicc_cache_h) $(gsicc_lcms_h) $(gsicc_lcms2_h)
 	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
 
 gscms_h=$(std_h) $(stdpre_h) $(gstypes_h) $(gsutil_h)\
  $(gsdevice_h) $(stdint_h) $(gxsync_h)
-gsicc_littlecms_h=$(GLSRC)gsicc_littlecms.h $(gxcvalue_h) $(gscms_h)\
+gsicc_cms_h=$(GLSRC)gsicc_cms.h $(gxcvalue_h) $(gscms_h)\
  $(std_h) $(gsmemory_h)
-gsicc_manage_h=$(GLSRC)gsicc_manage.h $(gsicc_littlecms_h)
+gsicc_manage_h=$(GLSRC)gsicc_manage.h $(gsicc_cms_h) $(gsicc_lcms_h)\
+ $(gsicc_lcms2_h)
 gsicc_cache_h=$(GLSRC)gsicc_cache.h
 gsicc_profilecache_h=$(GLSRC)gsicc_profilecache.h
 
@@ -2538,9 +2544,13 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(GX) $(std_h)\
  $(gserrors_h)
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 	
-$(GLOBJ)gsicc_littlecms.$(OBJ) : $(GLSRC)gsicc_littlecms.c\
- $(gsicc_littlecms_h) $(gserror_h) $(gslibctx_h)
-	$(GLLCMSCC) $(GLO_)gsicc_littlecms.$(OBJ) $(C_) $(GLSRC)gsicc_littlecms.c
+$(GLOBJ)gsicc_lcms.$(OBJ) : $(GLSRC)gsicc_lcms.c\
+ $(gsicc_cms_h) $(lcms_h) $(gserror_h) $(gslibctx_h)
+	$(GLLCMSCC) $(GLO_)gsicc_lcms.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
+
+$(GLOBJ)gsicc_lcms2.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
+ $(gsicc_cms_h) $(lcms2_h) $(gserror_h) $(gslibctx_h)
+	$(GLLCMS2CC) $(GLO_)gsicc_lcms2.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
 	
 # Note that gsicc_create requires compile with lcms to obtain icc34.h 
 # header file that is used for creating ICC structures from PS objects.
