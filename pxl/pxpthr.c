@@ -154,9 +154,7 @@ pxPassthrough_init(px_state_t *pxs)
         return code;
     /* Also, check if the device profile was set int the global_pcs pgs.
        If not then initialize. Fix for seg fault with T427.BIN */
-#ifdef ICCBRANCH
     gsicc_init_device_profile(global_pcs->pgs, gs_currentdevice(pxs->pgs));
-#endif
     /* yet another reset with the new page device */
     pcl_do_resets(global_pcs, pcl_reset_initial);
     /* set the parser state and initialize the pcl parser */

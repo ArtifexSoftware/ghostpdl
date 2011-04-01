@@ -332,19 +332,15 @@ px_image_color_space(gs_image_t *pim,
     switch ( params->color_space ) {
     case eGray:
 	pbase_pcs = gs_cspace_new_DeviceGray(pgs->memory);
-#ifdef ICCBRANCH
         pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
         pbase_pcs->type = &gs_color_space_type_ICC;
         rc_increment(pbase_pcs->cmm_icc_profile_data);
-#endif
 	break;
     case eRGB:
         pbase_pcs = gs_cspace_new_DeviceRGB(pgs->memory);
-#ifdef ICCBRANCH
         pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
         pbase_pcs->type = &gs_color_space_type_ICC;
         rc_increment(pbase_pcs->cmm_icc_profile_data);
-#endif
         break;
     case eSRGB:
     case eCRGB:
@@ -352,11 +348,9 @@ px_image_color_space(gs_image_t *pim,
             /* should not happen */
             return_error(errorInsufficientMemory);
         cie_space = true;
-#ifdef ICCBRANCH
         pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
         pbase_pcs->type = &gs_color_space_type_ICC;
         rc_increment(pbase_pcs->cmm_icc_profile_data);
-#endif
 	break;
     default:
 	return_error(errorIllegalAttributeValue);

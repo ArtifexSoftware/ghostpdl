@@ -245,9 +245,9 @@ pcl_impl_allocate_interp_instance(
 						   "pcl_allocate_interp_instance(pcl_interp_instance_t)"
 						   );
     gs_state *pgs = gs_state_alloc(mem);    
-#ifdef ICCBRANCH
+
     gsicc_init_iccmanager(pgs);
-#endif
+
     /* If allocation error, deallocate & return */
     if (!pcli || !pgs) {
 	if (pcli)
@@ -373,12 +373,12 @@ pcl_impl_set_device(
     stage = Ssetdevice;
     if ((code = gs_setdevice_no_erase(pcli->pcs.pgs, device)) < 0)	/* can't erase yet */
         goto pisdEnd;
-#ifdef ICCBRANCH
+
     /* Initialize device ICC profile  */
     code = gsicc_init_device_profile(pcli->pcs.pgs, device);
     if (code < 0)
         return code;
-#endif
+
     stage = Sinitg;
     /* Do inits of gstate that may be reset by setdevice */
     /* PCL no longer uses the graphic library transparency mechanism */

@@ -99,9 +99,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
             sizeof(xps_context_t), "xps_imp_allocate_interp_instance");
 
     pgs = gs_state_alloc(pmem);
-#ifdef ICCBRANCH
     gsicc_init_iccmanager(pgs);
-#endif
     memset(ctx, 0, sizeof(xps_context_t));
 
     if (!instance || !ctx || !pgs)
@@ -190,11 +188,9 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
 
     gs_opendevice(pdevice);
 
-#ifdef ICCBRANCH
     code = gsicc_init_device_profile(ctx->pgs, pdevice);
     if (code < 0)
         return code;
-#endif
 
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)

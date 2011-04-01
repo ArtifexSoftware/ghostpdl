@@ -234,9 +234,7 @@ pxl_impl_allocate_interp_instance(
 	    px_state_release(pxs);
 	  return gs_error_VMerror;
 	}
-#ifdef ICCBRANCH
         gsicc_init_iccmanager(pgs);
-#endif
 
 	/* Setup pointers to allocated mem within instance */
 	pxli->memory = mem;
@@ -330,11 +328,9 @@ pxl_impl_set_device(
 	if ((code = gs_setdevice_no_erase(pxli->pgs, device)) < 0)	/* can't erase yet */
 	  goto pisdEnd;
         /* Initialize device ICC profile  */
-#ifdef ICCBRANCH
         code = gsicc_init_device_profile(pxli->pgs, device);
         if (code < 0)
             return code;
-#endif
 	/* Init XL graphics */
 	stage = Sinitg;
 	if ((code = px_initgraphics(pxli->pxs)) < 0)
