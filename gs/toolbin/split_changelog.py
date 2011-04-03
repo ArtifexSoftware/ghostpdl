@@ -103,6 +103,7 @@ def write_header(file, details=True):
 	file.write('   "http://www.w3.org/TR/html4/strict.dtd">\n')
 	file.write('<html>\n')
 	file.write('<head>\n')
+	file.write('<meta http-equiv="content-type" content="text/html; charset=utf-8">\n')
 	file.write('<title>')
 	file.write('Ghostscript change history')
 	if details:
