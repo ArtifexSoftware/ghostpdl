@@ -13094,7 +13094,7 @@ Update change logs for 8.63rc3.
 2008-07-29T20:35:41.916113Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Fix problem with NumRenderingThreads>0 with devices that request data from
+Fix problem with NumRenderingThreads&gt;0 with devices that request data from
 the bottom up such as the 'bmp*' devices. Bug 689985.
 </pre>
 <p>[src/gxclthrd.c]</p>
@@ -14916,7 +14916,7 @@ path exactly as PDF needs. Bug 689812.
 <pre>
 Eliminate leaks caused by lost 'maskbuf' elements. Only the uppermost
 maskbuf is (currently) used by the pop_transparency_group that applies
-the mask, but the chain of maskbuf->maskbuf elements was never freed.
+the mask, but the chain of maskbuf-&gt;maskbuf elements was never freed.
 This also improves performance (at least for the test case of bug
 689534). Customer #870.
 </pre>
@@ -16273,7 +16273,7 @@ Bug 689706.
 <blockquote>
 <pre>
 Improve Halftone tile cache efficiency. Make default cache large enough
-on default 32-bit (LARGE) configuration to allow for > 256 cache tiles
+on default 32-bit (LARGE) configuration to allow for &gt; 256 cache tiles
 when using the 'ht_ccsto.ps' 167x167 Threshold array. Change cache
 lookup logic to eliminate collisions when the number of cache slots
 exceeds the number of levels (the normal case). Remove duplicated
@@ -16441,7 +16441,7 @@ Fix (TT): Fix a bug in /getinterval_from_stringarray
 2008-01-28T08:50:10.139318Z Igor Melichev</strong> (<a href="Details8.htm#2008-01-28T085010.139318Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (clist & transparency) : Improve the compositor queue logic (continued).
+Fix (clist &amp; transparency) : Improve the compositor queue logic (continued).
 
 </pre>
 <p>[src/gdevp14.c]</p>
@@ -16451,7 +16451,7 @@ Fix (clist & transparency) : Improve the compositor queue logic (continued).
 2008-01-28T08:45:21.850870Z Igor Melichev</strong> (<a href="Details8.htm#2008-01-28T084521.850870Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (clist & transparency) : Improve the compositor queue logic.
+Fix (clist &amp; transparency) : Improve the compositor queue logic.
 
 </pre>
 <p>[src/gxclrast.c]</p>
@@ -16481,7 +16481,7 @@ Fix (Font renderer) : Horizontal metrics sometimes applied with WMode 1 fonts.
 2008-01-23T21:13:16.354024Z Igor Melichev</strong> (<a href="Details8.htm#2008-01-23T211316.354024Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (clist & transparency) : Inconsisting compressed color index info.
+Fix (clist &amp; transparency) : Inconsisting compressed color index info.
 
 </pre>
 <p>[src/gdevp14.c]</p>
@@ -17180,7 +17180,7 @@ long to avoid portability problems when reading and writing. Bug 689604.
 2007-12-11T16:54:05.187153Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
-Replaced C++ comments with C comments (// -> /* */).
+Replaced C++ comments with C comments (// -&gt; /* */).
 </pre>
 <p>[imdi/imdi.c imdi/imdi_tab.c imdi/imdi_gen.c imdi/cctiff.c]</p>
 </blockquote>
@@ -18003,7 +18003,7 @@ MSVC 6 'vcvars32.bat' instead. This can be manually set if needed.
 Batch file to create MSVC solution and projects.
 
 Usage:
-msvcxml gs obj\ld.tr > ghostscript.sln
+msvcxml gs obj\ld.tr &gt; ghostscript.sln
 
 This is the first attempt, and very poor.
 </pre>
@@ -18585,7 +18585,7 @@ it back to "null" before returning. Thanks to SaGS for the patch. Bug 688598.
 2007-10-28T14:19:46.108672Z Alex Cherepanov</strong> (<a href="Details8.htm#2007-10-28T141946.108672Z">details</a>)</p>
 <blockquote>
 <pre>
-Stop reading the xref+trailer at the closing ">>" because PDF 1.7 Reference
+Stop reading the xref+trailer at the closing "&gt;&gt;" because PDF 1.7 Reference
 made "startxref" optional in some cases. Thanks to SaGS for thr patch.
 Bug 688283.
 
@@ -19444,7 +19444,7 @@ Banding : Extend clist language with trapezoids, linear color trapezoids and lin
 2007-09-14T05:23:52.359324Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Add recognition of a CFF file fith the extended header = <01000C02>.
+Add recognition of a CFF file fith the extended header = &lt;01000C02&gt;.
 Bug 689449, customer 1110.
 
 </pre>
@@ -21195,7 +21195,7 @@ Bug 689315, attachment 3108.
 2007-07-03T12:00:18.641724Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix a harmless typo, replace bitwise '&' with logical '&&' in a couple of
+Fix a harmless typo, replace bitwise '&amp;' with logical '&amp;&amp;' in a couple of
 logical expressions. Bug 689315, attachment 3115.
 
 </pre>
@@ -21624,7 +21624,7 @@ Changing from using log10(x) / Log10(2) to iLog2(x) to compute the base 2 log.
 <blockquote>
 <pre>
 Fixes for ulong overflow in memory device buffer sizing that caused
-problems with very large (>4Gb on 32-bit machines) page buffer sizes
+problems with very large (&gt;4Gb on 32-bit machines) page buffer sizes
 not invoking clist mode. Also the internal 'mask' image allocation
 in ImageType3 would silently wrap around, causing SEGV crashes.
 
@@ -21632,7 +21632,7 @@ Lastly, the tiff*nc devices are fixed so that they never write to
 file when the file will exceed 2Gb (max signed int) since the device
 uses 'ftell' to calculate offsets in the file. This last case could
 be fixed to use 64 bit file I/O or at least to keep an internal
-offset so that multipage tiffs could be > 2Gb as long as each page
+offset so that multipage tiffs could be &gt; 2Gb as long as each page
 was less than 2Gb. Other TIFF devices that compress were not changed
 since the probability of overflow is less and we don't want to be
 overly agressive about throwing a 'rangecheck' on the basis of the
@@ -21849,7 +21849,7 @@ this field is enumerated by GC. Bug 689002.
 2007-06-10T20:12:02.226861Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix processing of very small PDF files ( < 1024 bytes) that was broken by
+Fix processing of very small PDF files ( &lt; 1024 bytes) that was broken by
 rev. 7834 that increased the size of look-ahead buffer to 1024 bytes.
 
 </pre>
@@ -21894,7 +21894,7 @@ problems in the components that has not been compiled by Borland C before.
 2007-06-09T12:08:12.529992Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix incorrect decompression of large files (>= 16M) by JPXDecode filter
+Fix incorrect decompression of large files (&gt;= 16M) by JPXDecode filter
 on Windows. Don't open the temporary file in text mode.
 
 </pre>
@@ -23154,7 +23154,7 @@ Support for the CUPS Raster output device in the lib/*.ps files
 2007-05-08T17:30:26.894961Z Till Kamppeter</strong></p>
 <blockquote>
 <pre>
-src/version.mak --> src/version.mak.in (part of build system patch)
+src/version.mak --&gt; src/version.mak.in (part of build system patch)
 </pre>
 <p>[src/version.mak.in src/version.mak]</p>
 </blockquote>
@@ -23651,7 +23651,7 @@ Fix (TT fonts) : A faster seeking through 'sfnts' array.
 2007-04-21T02:33:44.148360Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix all warnings generated by MSVC 6 & 7 except the warnings matching
+Fix all warnings generated by MSVC 6 &amp; 7 except the warnings matching
 "C4018|C4244|jbig2dec|jasper" regular expression.
 
 </pre>
@@ -25259,7 +25259,7 @@ Fix (graphics) : Imprecise current point after drawing an arc.
 2007-02-26T16:24:17.305323Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix indeterministic behavior of fuzzy.c with -w > 1. Initialize the rest of
+Fix indeterministic behavior of fuzzy.c with -w &gt; 1. Initialize the rest of
 the window buffer that would be uninitialized before half_win lines is read.
 </pre>
 <p>[toolbin/tests/fuzzy.c]</p>
@@ -26186,7 +26186,7 @@ Fix (memory management) : Propagate error codes from mark_allocated.
 <pre>
 Bring TrueType font recognition in .loadfontfile procedure up to
 the level of resourcefont procedure in the PDF interpreter. Identify
-files starting with <00010000>, (true), (typ1), (ttcf) as TrueType
+files starting with &lt;00010000&gt;, (true), (typ1), (ttcf) as TrueType
 fonts.
 
 </pre>
@@ -27106,7 +27106,7 @@ chooses a likely target and job size, generates comparefiles.* and
 testing.cfg.* for each node, then submits the job.
 
 Output is returned as a file in the launch directory 
-'run_regression..e<jobid>' when the run is finished.
+'run_regression..e&lt;jobid&gt;' when the run is finished.
 </pre>
 <p>[toolbin/tests/run_parallel]</p>
 </blockquote>
@@ -27728,9 +27728,9 @@ Add a simple (one line) file that can be used bwtween files on the command line
 or files run with the 'run' operator to execute the systemdict version of the
 ^D (ctrl-D) action to end an encapsulated job and start a new one.
 
-This is needed since some PS files redefine <04> to a no-op (such as the PS CET
+This is needed since some PS files redefine &lt;04&gt; to a no-op (such as the PS CET
 and the PSCRIPT5 Windows driver). This can be used with or without -dJOBSERVER,
-but <04> is a no-op unless -dJOBSERVER is used.
+but &lt;04&gt; is a no-op unless -dJOBSERVER is used.
 </pre>
 <p>[lib/jobseparator.ps]</p>
 </blockquote>
@@ -28241,7 +28241,7 @@ Fix : Wrong current point after uappend.
 <blockquote>
 <pre>
 CET 20-01-2 is re-classified AOK; CPSI modifies the content of the array
-arguments, if any, when operator >> fails. Ghostscript matches Tek and
+arguments, if any, when operator &gt;&gt; fails. Ghostscript matches Tek and
 Distiller 5. This is a bug in CPSI we don't want to reproduce.
 </pre>
 <p>[doc/pscet_status.txt]</p>
@@ -28615,7 +28615,7 @@ fixes and analysis from Peter.
 <blockquote>
 <pre>
 Fixes a bug that could cause a SEGV when reading binary token arrays on
-systems where sizeof(ref) > 8 (e.g. 64-bit systems).
+systems where sizeof(ref) &gt; 8 (e.g. 64-bit systems).
 </pre>
 <p>[src/iscanbin.c]</p>
 </blockquote>
@@ -29540,7 +29540,7 @@ Fix : When filling a path with a shading, the filling rule was missed.
 <blockquote>
 <pre>
 Add prototypes for _ftelli64 and _fseeki64 for MSVC 6 builds. Allows
-> 2Gb clist when building with MSVC 6. Bug 688394 for customer 330.
+&gt; 2Gb clist when building with MSVC 6. Bug 688394 for customer 330.
 
 </pre>
 <p>[src/gp_mswin.c]</p>
@@ -29797,7 +29797,7 @@ discrepancy in PS3 CET 31-01-2.
 2006-10-26T04:39:35.686300Z L. Peter Deutsch</strong></p>
 <blockquote>
 <pre>
-Replace inexact decimal literals in the HSB<->RGB algorithms with more exact
+Replace inexact decimal literals in the HSB&lt;-&gt;RGB algorithms with more exact
 computed values, so that (e.g.) 0.2 1 1 sethsbcolor currenthsbcolor returns
 0.2 1 1.  Fixes problems in PS3 CET 09-41-4.
 </pre>
@@ -30306,7 +30306,7 @@ Bug 688911.
 <pre>
 Use open_device procedure to identify the type of the device instead of the
 standard gs_object_type() because gs_cpath_accum_device is allocaded on
-the stack i.e. has no block header with a descriptor but has dev->memory set
+the stack i.e. has no block header with a descriptor but has dev-&gt;memory set
 like a heap-allocated device. Bug 688874.
 
 </pre>
@@ -30664,7 +30664,7 @@ Bug 688882.
 2006-09-14T17:19:41.966384Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Pacify Valgrind. Initialize penum->planes[i].source.data in gsimage.c
+Pacify Valgrind. Initialize penum-&gt;planes[i].source.data in gsimage.c
 These pointers are enumerated during garbage collection.
 Bug 688886.
 </pre>
@@ -30844,7 +30844,7 @@ latter.)
 2006-09-10T22:24:31.060699Z leonardo</strong> (<a href="Details8.htm#2006-09-10T222431.060699Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix : pfont->uid.xvalues uses a wrong allocator 
+Fix : pfont-&gt;uid.xvalues uses a wrong allocator 
 
 </pre>
 <p>[src/zbfont.c]</p>
@@ -31085,7 +31085,7 @@ PDF interpreter is not included, but pdfwrite is.
 2006-08-29T04:23:40.404599Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Set s->position to aero initially so that sftell before any other operation
+Set s-&gt;position to aero initially so that sftell before any other operation
 will be correct. Reformat prototypes in strmio.h to single line format.
 </pre>
 <p>[src/strmio.c src/strmio.h]</p>
@@ -31649,7 +31649,7 @@ a typecheck error if the 'key' argument was a null.
 2006-08-03T05:10:23.146390Z L. Peter Deutsch</strong></p>
 <blockquote>
 <pre>
-On Level >=2 systems, makes .undef a synonym for undef rather than vice
+On Level &gt;=2 systems, makes .undef a synonym for undef rather than vice
 versa, to produce Adobe-compatible stack traces on errors.
 </pre>
 <p>[src/zdict.c lib/gs_dps1.ps]</p>
@@ -31669,7 +31669,7 @@ have zero length.
 2006-08-02T21:10:17.237822Z L. Peter Deutsch</strong></p>
 <blockquote>
 <pre>
-On Level >=2 systems, makes .dicttomark a synonym for >> rather than vice
+On Level &gt;=2 systems, makes .dicttomark a synonym for &gt;&gt; rather than vice
 versa, to produce Adobe-compatible stack traces on errors.
 </pre>
 <p>[src/zdict.c lib/gs_lev2.ps]</p>
@@ -31709,8 +31709,8 @@ syntaxerror.
 2006-08-02T18:05:32.494329Z L. Peter Deutsch</strong></p>
 <blockquote>
 <pre>
-Changes cvs for reals: '<int>e<expt>' is no longer changed to
-'<int>.0e<expt>', and 0.0001 (a boundary case) now converts to '0.0001'
+Changes cvs for reals: '&lt;int&gt;e&lt;expt&gt;' is no longer changed to
+'&lt;int&gt;.0e&lt;expt&gt;', and 0.0001 (a boundary case) now converts to '0.0001'
 rather than '1.0e+04'.  THIS IS A NON-BACKWARD-COMPATIBLE CHANGE for
 compatibility with Adobe interpreters.
 </pre>
@@ -32317,7 +32317,7 @@ page size. Bug 688744, customer 384.
 2006-07-06T00:24:31.497014Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Modify cmap table handling routines to support a large ( >= 64K ) table
+Modify cmap table handling routines to support a large ( &gt;= 64K ) table
 represented as an array of strings.
 Bug 688688, customer 562.
 
@@ -34262,8 +34262,8 @@ specifies lossless encoding and overrides any quality setting.
 <blockquote>
 <pre>
 Change ASCII85Decode EOD handling to make sure that the EOD characters are
-consumed before we provide the last bit of data to the caller. The ~> sequence
-(actually could be <cr> <lf> ~ <cr> <lf> > ) left in the currentfile would
+consumed before we provide the last bit of data to the caller. The ~&gt; sequence
+(actually could be &lt;cr&gt; &lt;lf&gt; ~ &lt;cr&gt; &lt;lf&gt; &gt; ) left in the currentfile would
 cause an /undefined error. Bug 688618.
 
 </pre>
@@ -34514,8 +34514,8 @@ Correct double "" typo that made 'usage:' not work.
 2006-03-29T19:39:10.090689Z Raph Levien</strong></p>
 <blockquote>
 <pre>
-Adds -o<fn> switch to command, which is essentially an alias for 
--sOutputFile=<fn>, -dNOPAUSE, and -dBATCH.
+Adds -o&lt;fn&gt; switch to command, which is essentially an alias for 
+-sOutputFile=&lt;fn&gt;, -dNOPAUSE, and -dBATCH.
 </pre>
 <p>[src/imainarg.c]</p>
 </blockquote>
@@ -35679,7 +35679,7 @@ Bug 688536.
 2006-02-09T06:03:12.845053Z Ray Johnston</strong> (<a href="Details8.htm#2006-02-09T060312.845053Z">details</a>)</p>
 <blockquote>
 <pre>
-Clamp bbox rectangle to avoid q<p case that the rect_intersect macro allows
+Clamp bbox rectangle to avoid q&lt;p case that the rect_intersect macro allows
 to avoid allocating transparency buffer that has an incorrect (way too large)
 size. Bug 688546.
 
@@ -35747,7 +35747,7 @@ Bug 688385 from customer 1110.
 2006-02-08T13:52:40.832268Z Alex Cherepanov</strong> (<a href="Details8.htm#2006-02-08T135240.832268Z">details</a>)</p>
 <blockquote>
 <pre>
-Consume EOD character in the Hex stream when the stream length is > 0.
+Consume EOD character in the Hex stream when the stream length is &gt; 0.
 Bug 688512 from customer 232.
 
 </pre>
@@ -36675,7 +36675,7 @@ Correct a typo in the usage.
 2006-01-19T00:18:05.626817Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Accept '-r <revision number>' as well as a date spec to the 
+Accept '-r &lt;revision number&gt;' as well as a date spec to the 
 update_specific script. Bug 688498.
 </pre>
 <p>[toolbin/tests/update_specific]</p>
@@ -36727,7 +36727,7 @@ the PDF Length or 'endstream' to terminate the data. Bug 687435 for customers
 2006-01-17T13:43:24.915413Z leonardo</strong> (<a href="Details8.htm#2006-01-17T134324.915413Z">details</a>)</p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : Loss of graphics with GraphicsAlphaBits > 1.
+Fix (pdfwrite) : Loss of graphics with GraphicsAlphaBits &gt; 1.
 
 </pre>
 <p>[src/gdevpsdu.c src/gdevabuf.c src/gspaint.c]</p>
@@ -37854,7 +37854,7 @@ THIS IS INCOMPATIBLE CHANGE.
 Adobe Distiller 5 generates metadata according to Adobe XMP speification
 iff the distiller parameter ParseDSCCommentsForDocInfo or PreserveEPSInfo is true.
 Old versions of Ghostscript does not do that.
-New versions of Ghostscript do when CompatibilityLevel >= 1.4 (default).
+New versions of Ghostscript do when CompatibilityLevel &gt;= 1.4 (default).
 Generated PDF documents become longer in about 1.5 kilobytes.
 
 See the documentation change about new command line options and distiller parameters.
@@ -38012,7 +38012,7 @@ Update doc files and version files for 8.53 release.</pre>
 2005-10-20 19:42 Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Remove trailing ^M (<cr>) characters.</pre>
+Remove trailing ^M (&lt;cr&gt;) characters.</pre>
 <p>[src/gdevbmp.c 1.12, src/slzwd.c 1.7]</p>
 </blockquote>
 
@@ -40218,7 +40218,7 @@ ps2write : A named resource maintenance.
 2005-06-04 15:21 Dan Coby</strong></p>
 <blockquote>
 <pre>
-Removed extra && and space from last commit (fix for 687973).</pre>
+Removed extra &amp;&amp; and space from last commit (fix for 687973).</pre>
 <p>[src/scfd.c 1.8]</p>
 </blockquote>
 
@@ -40558,7 +40558,7 @@ Fix (pdfwrite) : Properly encrypt the document Info values.
 <blockquote>
 <pre>
 Fix overly agressive xref format checking that was tripped up by double
-<cr> instead of <cr><lf>. Bug 688082 for customer 580.
+&lt;cr&gt; instead of &lt;cr&gt;&lt;lf&gt;. Bug 688082 for customer 580.
 
 </pre>
 <p>[lib/pdf_main.ps 1.97]</p>
@@ -44120,7 +44120,7 @@ this should probably be moved to the pdf.dev</pre>
 2004-11-19 04:39 Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Add some missing initializers for glyph_data_t->memory. Related to the
+Add some missing initializers for glyph_data_t-&gt;memory. Related to the
 687459 fix.</pre>
 <p>[src/gdevpsf1.c 1.18, src/gdevpsf2.c 1.33, src/gdevpsfu.c 1.12, src/gsfcid.c 1.13, src/gstype42.c 1.48, src/gxfcopy.c 1.54, src/gxtype1.c 1.41, src/zchar1.c 1.42, src/zfcid0.c 1.25, src/zfcid1.c 1.23]</p>
 </blockquote>
@@ -46587,7 +46587,7 @@ Implementation of 687496 transparency and CMYK support.
 <blockquote>
 <pre>
 Add PDFSTEP debug aid. Prints a step number at end of PDFDEBUG line, and
-sync's the display, then reads a number of steps to skip (<cr> == single
+sync's the display, then reads a number of steps to skip (&lt;cr&gt; == single
 step). This is rudimentary but somewhat useful. Invoked with -dPDFSTEP.</pre>
 <p>[lib/pdf_base.ps 1.44]</p>
 </blockquote>
@@ -47025,7 +47025,7 @@ ps2write step 35 : Fixing more problems with color spaces.
 2004-07-14 17:57 Igor Melichev</strong> (<a href="Details8.htm#2004-07-14_1757">details</a>)</p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : Don't write DeviceN, DevicePixel colors with CompatibilityLevel<=1.2 .
+Fix (pdfwrite) : Don't write DeviceN, DevicePixel colors with CompatibilityLevel&lt;=1.2 .
 
 </pre>
 <p>[src/gdevpdfc.c 1.47, src/gdevpdfg.c 1.56]</p>
@@ -47035,7 +47035,7 @@ Fix (pdfwrite) : Don't write DeviceN, DevicePixel colors with CompatibilityLevel
 2004-07-14 15:59 Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Include string_.h for missing prototypes of strlen() &c. Bug 687541.</pre>
+Include string_.h for missing prototypes of strlen() &amp;c. Bug 687541.</pre>
 <p>[src/gscdevn.c 1.20, src/gsfcmap.c 1.23, src/gsht1.c 1.14, src/int.mak 1.127, src/lib.mak 1.188, src/zfile1.c 1.12]</p>
 </blockquote>
 
@@ -47132,7 +47132,7 @@ ps2write step 29 : The inplementation of FunctionType 4 was wrong.
 2004-07-13 12:38 Igor Melichev</strong> (<a href="Details8.htm#2004-07-13_1238">details</a>)</p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : Don't write shadings with CompatibilityLevel<=1.2 .
+Fix (pdfwrite) : Don't write shadings with CompatibilityLevel&lt;=1.2 .
 
 </pre>
 <p>[src/gdevpdfd.c 1.41, src/gdevpdfg.c 1.55]</p>
@@ -47743,7 +47743,7 @@ Fix bug 687521</pre>
 <pre>
 Fixed CMYK to RGB conversion.
 
-Used in rop code where RGB -> CMYK -> RGB needs to work correctly
+Used in rop code where RGB -&gt; CMYK -&gt; RGB needs to work correctly
 in the black and white cases.</pre>
 <p>[src/gdevbit.c 1.10]</p>
 </blockquote>
@@ -48586,7 +48586,7 @@ Fix for 687453 Problem with overprinting and shading.
 <pre>
 Add /WhiteIsOpaque page device parameter to provide user interface to the
 corresponding bbox device flag. Fix a bug introduced in gdevbbox.c v.1.9
-(for bug 645531) that left bdev->white and bdev->black uninitialized,
+(for bug 645531) that left bdev-&gt;white and bdev-&gt;black uninitialized,
 resulting in black objects skipped as white.
 Fix bugs 687410, 687478</pre>
 <p>[src/gdevbbox.c 1.17, doc/Devices.htm 1.74]</p>
@@ -49460,7 +49460,7 @@ quality, and fixes bug 687368.</pre>
 2004-04-02 14:21 Igor Melichev</strong> (<a href="Details8.htm#2004-04-02_1421">details</a>)</p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : /XObject <<-1 0 R>> was written to a pattern dictionary.
+Fix (pdfwrite) : /XObject &lt;&lt;-1 0 R&gt;&gt; was written to a pattern dictionary.
 
 </pre>
 <p>[src/gdevpdfj.c 1.30]</p>
@@ -49876,7 +49876,7 @@ still incorrect.</pre>
 2004-03-15 09:54 Igor Melichev</strong> (<a href="Details8.htm#2004-03-15_0954">details</a>)</p>
 <blockquote>
 <pre>
-MSVC compiler: allowing Precompiled Headers, Incremental Compilation, Edit & Continue.
+MSVC compiler: allowing Precompiled Headers, Incremental Compilation, Edit &amp; Continue.
 
 </pre>
 <p>[src/msvccmd.mak 1.16]</p>
@@ -52583,7 +52583,7 @@ allow "readonly" directories to be amended. Bug #674421.</pre>
 2004-01-02 20:53 Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Remove spurious ^M (ctrl-M == <cr>) characters from the source -- probably
+Remove spurious ^M (ctrl-M == &lt;cr&gt;) characters from the source -- probably
 caused by a Windows user performing an update from a file that was not
 correctly recognized as DOS vs. UNIX line endings by cvs.</pre>
 <p>[src/idict.c 1.10]</p>
@@ -53585,7 +53585,7 @@ the the definition of CCAUX. This works around a problem building on cygwin.
 2003-12-04 16:57 Igor Melichev</strong> (<a href="Details8.htm#2003-12-04_1657">details</a>)</p>
 <blockquote>
 <pre>
-Fix : (type 1 hinter) Invalid contours with <=2 segments caused an infinite loop.
+Fix : (type 1 hinter) Invalid contours with &lt;=2 segments caused an infinite loop.
 
 </pre>
 <p>[src/gxhintn.c 1.37]</p>
@@ -53744,7 +53744,7 @@ Typedef uint64_t from 'unsigned __int64' on win32. From Alex Cherpanov's patch f
 2003-11-27 22:32 Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Add support to pnm images with max_pixel_value < (1<<depth)-1
+Add support to pnm images with max_pixel_value &lt; (1&lt;&lt;depth)-1
 Fix bug 687139.
 </pre>
 <p>[toolbin/tests/fuzzy.c 1.13]</p>
@@ -54026,7 +54026,7 @@ by the user while investigating 687131.
 Fix the logic that conditionally disables interpolation. The previous only
 worked if the max_gray was set to the same as max_color, but the macro
 dci_std_color_max_gray set max_gray to 0 if the number of components was
-> 1. Detected with bug #687147 for customer #750.
+&gt; 1. Detected with bug #687147 for customer #750.
 </pre>
 <p>[src/gxiscale.c 1.8]</p>
 </blockquote>
@@ -54238,7 +54238,7 @@ Correct spelling and wording.
 2003-11-03 02:39 Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Initialize cc->pair field for the external fonts, forgotten
+Initialize cc-&gt;pair field for the external fonts, forgotten
 during the switch to new TrueType interpreter (NEW_TT_INTERPRETER).
 Fix bug 687116
 </pre>
@@ -54732,7 +54732,7 @@ Fix : Disable the grid fitting while charproc accumulation.
 <blockquote>
 <pre>
 Don't cache glyphs with a suspect bounding box. The patch tests for
-(urx!=0 && llx==urx) || (ury!=0 && lly==ury) but suggestions of a
+(urx!=0 &amp;&amp; llx==urx) || (ury!=0 &amp;&amp; lly==ury) but suggestions of a
 better test are always welcome.
 Fix bug 687015 from customer 440
 </pre>
@@ -54745,7 +54745,7 @@ Fix bug 687015 from customer 440
 <pre>
 Return correct /DeviceGray color space from currentcolorspace operator
 inside PaintProc of the uncolored pattern and cache device (bug 627169).
-Use igs->color_space to track the current color space.
+Use igs-&gt;color_space to track the current color space.
 Fix bug 687080 from customer 710.
 
 </pre>
@@ -55036,7 +55036,7 @@ Implementing a bridge to the True Type bytecode interpreter (step 17).
 2003-10-09 22:26 Dan Coby</strong></p>
 <blockquote>
 <pre>
-Fix for 687055 pdfwrite should not fail with <</ProcessColorModel /DeviceN>>
+Fix for 687055 pdfwrite should not fail with &lt;&lt;/ProcessColorModel /DeviceN&gt;&gt;
 setpagedevice.  This change adds support for the DeviceN process color
 model to the pdfwrite device.  The DeviceN process color model is treated
 like the DeviceCMYK process color model except for the name.
@@ -56071,7 +56071,7 @@ This commit is part of extending support for high level colors to
 high level devices.  In general, additions have been made to the
 device colors to include the high level color values used to create
 the device color.  A flag was also added to indicate if the color
-information (in dev_color->ccolor) is valid.  There are also two
+information (in dev_color-&gt;ccolor) is valid.  There are also two
 files being added to provide support for saving and comparing the
 high level color information.
 </pre>
@@ -57449,7 +57449,7 @@ Fix : gs/Resource/Decoding/Unicode contained wrong codes for Cyrillic and Hebrew
 2003-06-22 11:15 igor</strong></p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : pdev->black and pdev->white were not set when ProcessColorModel changes.
+Fix (pdfwrite) : pdev-&gt;black and pdev-&gt;white were not set when ProcessColorModel changes.
 Bug 686921 "/ProcessColorModel /DeviceCMYK causes black page".
 </pre>
 <p>[src/gdevpdfg.c 1.33]</p>
@@ -57497,7 +57497,7 @@ gsapi_run_string* and gsdll_run_cont() calls. Fixes bug 686925.
 2003-06-20 13:20 giles</strong> (<a href="Details8.htm#2003-06-20_1320">details</a>)</p>
 <blockquote>
 <pre>
-Remove <limit.h> inclusions as it defines types that conflict with our
+Remove &lt;limit.h&gt; inclusions as it defines types that conflict with our
 std*.h on HPUX and probably other systems. Fix for bug 686920.
 
 Also correct the copyright dates for gxhintn.c.
@@ -58469,7 +58469,7 @@ corrects the problem.
 <p><strong><a name="2003-05-15_1846"></a>
 2003-05-15 18:46 Alex Cherepanov</strong></p>
 <blockquote><pre>
-Fix negative shift count in operator << .
+Fix negative shift count in operator &lt;&lt; .
 On 80x86 processors the shift argument is implicitly masked by 31.
 Fixes bug #686743.
 </pre></blockquote>
@@ -58573,7 +58573,7 @@ Add recent new files to the developer documentation.
 <p><strong><a name="2003-05-08_1104"></a>
 2003-05-08 11:04 Igor Melichev</strong></p>
 <blockquote><pre>
-Fix (type 1 hinter) : Overshoot thresholds were wrongly computed with TextAlphaBits > 1.
+Fix (type 1 hinter) : Overshoot thresholds were wrongly computed with TextAlphaBits &gt; 1.
 </pre></blockquote>
 
 <p><strong><a name="2003-05-08_1033"></a>
@@ -59921,7 +59921,7 @@ Correct typo somehow a /* comment crept in -- changed to %
 <blockquote><pre>
 Add .endjob procedure for use by job servers. Remainder of job encapsulation
 and documentation to follow later. Also fix potential "invalidrestore"
-problem with "exitserver" and "true <passwd> startjob" caused by stuff left
+problem with "exitserver" and "true &lt;passwd&gt; startjob" caused by stuff left
 on the opstack or dictstack.
 </pre></blockquote>
 
@@ -60288,7 +60288,7 @@ Created for completeness and convenience to Windows users.
 <p><strong><a name="2003-02-05_1345"></a>
 2003-02-05 13:45 Ralph Giles</strong></p>
 <blockquote><pre>
-Remove documentation about the Pn() macros for K&R compatibility. They
+Remove documentation about the Pn() macros for K&amp;R compatibility. They
 were entirely removed prior to the 8.00 release.
 </pre></blockquote>
 
@@ -60527,7 +60527,7 @@ pdfwrite : Implementing DW2 and W2.
 2003-01-28 19:09 Ray Johnston</strong> (<a href="Details8.htm#2003-01-28_1909">details</a>)</p>
 <blockquote><pre>
 Fix regression of 119-01.ps caused by previous patch while retaining the
-fix for #667658 when CR and/or LF comes between the '~' and the '>'.
+fix for #667658 when CR and/or LF comes between the '~' and the '&gt;'.
 
 </pre></blockquote>
 
@@ -60551,8 +60551,8 @@ commit of the AlignToPixels feature.
 <p><strong><a name="2003-01-26_1145"></a>
 2003-01-26 11:45 jeong</strong></p>
 <blockquote><pre>
-If s_A85D_process encounters CR/LF between '~' and '>', it returns ioerror.
-Now it is changed to ignore CR and/or LF before '>', and works fine.
+If s_A85D_process encounters CR/LF between '~' and '&gt;', it returns ioerror.
+Now it is changed to ignore CR and/or LF before '&gt;', and works fine.
 Fixes SF#667658.
 </pre></blockquote>
 
@@ -61412,7 +61412,7 @@ Fix : Improving the vd_trace interface.
 2002-12-15 19:04 Igor Melichev</strong> (<a href="Details8.htm#2002-12-15_1904">details</a>)</p>
 <blockquote><pre>
 Fix (pdfwrite) : Text matrix was wrongly computed.
-Source Forge bug "[ 651643 ] PS->PDF changes font slant".
+Source Forge bug "[ 651643 ] PS-&gt;PDF changes font slant".
 
 </pre></blockquote>
 
@@ -61989,7 +61989,7 @@ with setvmthreshold and vmreclaim. With default settings pdfwrite now works
 faster. SourceForge bug "[ 621243 ] (pdfwrite) slow mahle.pdf"
 (zvmem2.c [1.7]: 2002/11/20 18:56:56 igor)
 	- Bring /SubstituteFont procedure prototype up to the standard:
-&lt;name&gt; SubstituteFont &lt;name&gt; . Do traditional GS font
+&amp;lt;name&amp;gt; SubstituteFont &amp;lt;name&amp;gt; . Do traditional GS font
 substitution after the standard font substitution. Use no-op standard font
 substitution for backward compatibility. Bug #637424 Customer #71
 (lib/gs_fonts.ps [1.24]: 2002/11/21 04:43:58 alexcher)

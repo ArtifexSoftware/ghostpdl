@@ -16666,7 +16666,7 @@ Update change logs for 8.63rc3.
 2008-07-29T20:35:41.916113Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Fix problem with NumRenderingThreads>0 with devices that request data from
+Fix problem with NumRenderingThreads&gt;0 with devices that request data from
 the bottom up such as the 'bmp*' devices. Bug 689985.
 </pre>
 <p>[src/gxclthrd.c]</p>
@@ -16691,7 +16691,7 @@ In this case, the flag internal_accum is set, we create the pattern accumulator
 device and open it:
 
     if (internal_accum) {
-	gs_memory_t *storage_memory = gstate_pattern_cache(pgs)->memory;
+	gs_memory_t *storage_memory = gstate_pattern_cache(pgs)-&gt;memory;
 
 	pdev = gx_pattern_accum_alloc(imemory, storage_memory, pinst,
 "pattern_paint_prepare");
@@ -16723,7 +16723,7 @@ In pattern_paint_finish we do this:
     if (pdev != NULL) {
 	gx_color_tile *ctile;
 	int code = gx_pattern_cache_add_entry((gs_imager_state *)igs,
-					  pdev, &ctile);
+					  pdev, &amp;ctile);
 
 That is, if the structure *isn't* NULL we do something with it, we ignore it if
 it is NULL. Either way we then do this:
@@ -16854,19 +16854,19 @@ DETAILS :
 
 In the old code :
 
-    new_height < max_ulong/(mem_space + (new_height * pdf14_trans_buffer_size))
+    new_height &lt; max_ulong/(mem_space + (new_height * pdf14_trans_buffer_size))
 
 Where pdf14_trans_buffer_size is (raster * NUM_PDF14_BUFFERS).
 
 equivalent to :
 
     
-    new_height * (mem_space + (new_height * (raster * NUM_PDF14_BUFFERS))) < max_ulong
+    new_height * (mem_space + (new_height * (raster * NUM_PDF14_BUFFERS))) &lt; max_ulong
 
 
 equivalent to :
 
-    new_height * mem_space + new_height * new_height * raster * NUM_PDF14_BUFFERS < max_ulong
+    new_height * mem_space + new_height * new_height * raster * NUM_PDF14_BUFFERS &lt; max_ulong
 
 
 So it counts new_height quadratically, but it must be the linear multiple by the raster.
@@ -17218,7 +17218,7 @@ the clist writer does need a tile id
 for choosing an entry of an internal hash table.
 
 Actually the failure happens due to a strange check 
-"tile->id != gx_no_bitmap_id" in 
+"tile-&gt;id != gx_no_bitmap_id" in 
 clist_strip_tile_rectangle in gxclrect.c ln 479.
 It is not clear what it was intended for.
 When a tile id is zerfo, the check skips writing tile size to clist,
@@ -17532,7 +17532,7 @@ Fix warnings from the JPX decoder when using Visual Studio 9.
 
 Details:
 A compiler warning was disabled if the MSVC_VERSION variable was exactly 8, changed to
->7 so that it is also disabled for later versions of the compiler
+&gt;7 so that it is also disabled for later versions of the compiler
 
 </pre>
 <p>[src/msvccmd.mak]</p>
@@ -19092,7 +19092,7 @@ path exactly as PDF needs. Bug 689812.
 <pre>
 Eliminate leaks caused by lost 'maskbuf' elements. Only the uppermost
 maskbuf is (currently) used by the pop_transparency_group that applies
-the mask, but the chain of maskbuf->maskbuf elements was never freed.
+the mask, but the chain of maskbuf-&gt;maskbuf elements was never freed.
 This also improves performance (at least for the test case of bug
 689534). Customer #870.
 </pre>
@@ -19116,7 +19116,7 @@ and likely this one is not the last.
 This change is important for bug 689579.
 Here is a test for debugging it :
 
-<<
+&lt;&lt;
   /PaintType 1
   /PatternType 1
   /TilingType 1
@@ -19150,7 +19150,7 @@ Here is a test for debugging it :
     end
     %.break
   } 
->>
+&gt;&gt;
 [1 0 0 1 0 0]
 makepattern
 /Star4 exch def
@@ -20564,13 +20564,13 @@ but implementation details differ.
 The old code maitains a flag cropping_by_y in the clist writer,
 which triggers a cropping of objects by the Y axis.
 The old code isn't perfect, because 
-it first crops by [cdev->cropping_min, cdev->cropping_max],
-and then by [0, cdev->height].
+it first crops by [cdev-&gt;cropping_min, cdev-&gt;cropping_max],
+and then by [0, cdev-&gt;height].
 
 In the new code we unite both croppings into a single one.
 For doing that we remove the flag, and provide 
-the right interval [cdev->cropping_min, cdev->cropping_max]
-in any case. Initially it is [0, cdev->height},
+the right interval [cdev-&gt;cropping_min, cdev-&gt;cropping_max]
+in any case. Initially it is [0, cdev-&gt;height},
 and it is narrowed when a shading bbox is set.
 To restore the initial cropping after the shading
 is complete, we maintain 2 new fields 
@@ -21440,7 +21440,7 @@ time1.pdf
 <blockquote>
 <pre>
 Improve Halftone tile cache efficiency. Make default cache large enough
-on default 32-bit (LARGE) configuration to allow for > 256 cache tiles
+on default 32-bit (LARGE) configuration to allow for &gt; 256 cache tiles
 when using the 'ht_ccsto.ps' 167x167 Threshold array. Change cache
 lookup logic to eliminate collisions when the number of cache slots
 exceeds the number of levels (the normal case). Remove duplicated
@@ -21696,7 +21696,7 @@ but the default put_params tested for this. The rangecheck would show up
 on 32-bit devices, such as tiff32nc when running:
    "currentpagedevice setpagedevice"
 Note that the value returned for ColorValues was platform dependent since
-it previously set ColorValues to 1<<depth, but 1<<32 is not -1 on any
+it previously set ColorValues to 1&lt;&lt;depth, but 1&lt;&lt;32 is not -1 on any
 platform (that I know of).
 </pre>
 <p>[src/gsdparam.c]</p>
@@ -21821,7 +21821,7 @@ unembedded "Times New Roman", external font resource should be used
 without randomization prefix.
 
 To avoid the confusion between embedded and unembedded fonts with
-same name, pfont->is_resource flag (=0 embedded, =1 unembedded)
+same name, pfont-&gt;is_resource flag (=0 embedded, =1 unembedded)
 is checked during font object resolution. Even if a cached font
 object with same name is found, it is ignored if it is embedded
 font. To execute this check in PostScript space (pdf_font.ps),
@@ -21869,7 +21869,7 @@ be parsed correctly) is closed.
 2008-01-28T08:50:10.139318Z Igor Melichev</strong></p>
 <blockquote>
 <pre>
-Fix (clist & transparency) : Improve the compositor queue logic (continued).
+Fix (clist &amp; transparency) : Improve the compositor queue logic (continued).
 
 DETAILS :
 
@@ -21913,7 +21913,7 @@ in the Comment #8 of the bug report.
 2008-01-28T08:45:21.850870Z Igor Melichev</strong></p>
 <blockquote>
 <pre>
-Fix (clist & transparency) : Improve the compositor queue logic.
+Fix (clist &amp; transparency) : Improve the compositor queue logic.
 
 DETAILS :
 
@@ -21989,7 +21989,7 @@ Using the 'replacing' flag, pdf14_push_transparency_mask either replaces
 the old mask buffer, or creates a new one as a temporary substitution for
 an image with a soft mask. In the second case the group mask is
 saved in the last transparency stack element in the field 
-buf->maskbuf. After rendering the image's group 
+buf-&gt;maskbuf. After rendering the image's group 
 the function pdf14_pop_transparency_group restores 
 the saved mask buffer, as it was set in the transparency context
 before starting the image's mask. For more details see
@@ -22039,7 +22039,7 @@ because only an .h file is included into the Type 1 font renderer.
 2008-01-23T21:13:16.354024Z Igor Melichev</strong></p>
 <blockquote>
 <pre>
-Fix (clist & transparency) : Inconsisting compressed color index info.
+Fix (clist &amp; transparency) : Inconsisting compressed color index info.
 
 DETAILS :
 
@@ -22157,7 +22157,7 @@ DETAILS :
 
 Bug 689660 "memory deallication problems with shadings".
 
-The old code used pdev->memory for temporary storing 
+The old code used pdev-&gt;memory for temporary storing 
 an intersection of clipping path with shading bbox.
 This is the global memory space.
 However if the intersection is trivial,
@@ -23098,7 +23098,7 @@ so the compiler should warn if this loses precision.
 2007-12-11T16:54:05.187153Z Marcos H. Woehrmann</strong></p>
 <blockquote>
 <pre>
-Replaced C++ comments with C comments (// -> /* */).
+Replaced C++ comments with C comments (// -&gt; /* */).
 </pre>
 <p>[imdi/imdi.c imdi/imdi_tab.c imdi/imdi_gen.c imdi/cctiff.c]</p>
 </blockquote>
@@ -23199,7 +23199,7 @@ tables.Required now that these are parameters to the text
 region decoder.
 
 (jbig2_symbol_dict.c) 'jbig2_decode_symbol_dict', when we
-encounter refinement/aggregation with REFAGGNINST > 1, instead of
+encounter refinement/aggregation with REFAGGNINST &gt; 1, instead of
 flagging an error create a Jbig2TextRegionParams structure (if
 not already present), initialise the arithmetic decoder tables, and
 call the text region decoder to create the bitmap. If we already
@@ -24162,7 +24162,7 @@ MSVC 6 'vcvars32.bat' instead. This can be manually set if needed.
 Batch file to create MSVC solution and projects.
 
 Usage:
-msvcxml gs obj\ld.tr > ghostscript.sln
+msvcxml gs obj\ld.tr &gt; ghostscript.sln
 
 This is the first attempt, and very poor.
 </pre>
@@ -24376,7 +24376,7 @@ and the letter was prematurely reset. It caused some commands were not written
 to clist file while the page closes. With the test case (pbmraw -r300 012-01.ps)
 it missed cmd_opv_ext_put_halftone and did not miss cmd_opv_ext_put_drawing_color
 with color index type == ht_binary. It caused the crash in gx_dc_ht_binary_readdue to 
-pis->dev_ht was not set. (cmd_opv_ext_put_halftone does set, but it was missed).
+pis-&gt;dev_ht was not set. (cmd_opv_ext_put_halftone does set, but it was missed).
 
 The log message of the revision 8365 reads :
 "This change is algorithmically equivalent for release build."
@@ -24619,7 +24619,7 @@ could not have their content modified after the object was completed.
 
 DETAILS:
 Bug #689104 "Overwriting transformation /Matrix in XObject previously
-created with /BP & /EP pdfmarks".
+created with /BP &amp; /EP pdfmarks".
 
 Some pdfmarks, such as /BP create named objects. These can accumulate
 information until a matching pdfmark (/EP in this case) completes the
@@ -25037,7 +25037,7 @@ gs_lev2.ps).
 2007-10-28T14:19:46.108672Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Stop reading the xref+trailer at the closing ">>" because PDF 1.7 Reference
+Stop reading the xref+trailer at the closing "&gt;&gt;" because PDF 1.7 Reference
 made "startxref" optional in some cases. Thanks to SaGS for thr patch.
 Bug 688283.
 
@@ -25823,8 +25823,8 @@ The main change is gdevp14.c ln 550.
 Others prevent an access to the buffer when it is not allocated.
 
 Note that in some cases the new check is excessive
-because (width <= 0 || height <= 0) normally means no buffer.
-We check for (buf->data == NULL) anyway to simplify the sefity proof
+because (width &lt;= 0 || height &lt;= 0) normally means no buffer.
+We check for (buf-&gt;data == NULL) anyway to simplify the sefity proof
 and documentation.
 
 </pre>
@@ -26567,7 +26567,7 @@ The fix simply delays writing the phase after the color is written.
 2007-09-14T05:23:52.359324Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Add recognition of a CFF file fith the extended header = <01000C02>.
+Add recognition of a CFF file fith the extended header = &lt;01000C02&gt;.
 Bug 689449, customer 1110.
 
 </pre>
@@ -26646,7 +26646,7 @@ descendants, and we must therefore output one or more type 1 fonts to do the job
     and the TEXT_FROM_GLYPHS operation to mark the font usage, and create an 'encoded'
     string for output.
 
-    If font->procs.next_char_glyph returns a glyph name index, then we simply add it to
+    If font-&gt;procs.next_char_glyph returns a glyph name index, then we simply add it to
     our list, if it returns a character code (a CMap can map a character code in the type
     0 font to a character code in a descendant font) then we use the descendant font
     'procs.encode_char' to get a glyph.
@@ -26678,8 +26678,8 @@ descendants, and we must therefore output one or more type 1 fonts to do the job
 5. Finally, the routine pdf_make_text_glyphs_table_unencoded, which calls
    reserve_char_code_in_pdfont also did not previously expect to be called with multiple
    glyphs. The loop below do_unkown has been modified to use a local variable, instead of
-   pdfont->u.simple.last_reserved_char. THis means that, should an error occur, the value
-   of pdfont->u.simple.last_reserved_char will not be modified.
+   pdfont-&gt;u.simple.last_reserved_char. THis means that, should an error occur, the value
+   of pdfont-&gt;u.simple.last_reserved_char will not be modified.
 
 
 </pre>
@@ -26749,7 +26749,7 @@ Fix (TT fonts) : Suppress loading trailing data after chosen cmap subtable.
 DETAILS:
 
 The current cmap selector/loader tries to load a subtable
-for Microsoft platform && UCS2 encoding with anything
+for Microsoft platform &amp;&amp; UCS2 encoding with anything
 in trailer, although only MS+UCS2 subtable is used.
 Thus, if the cmap table has several additional subtables
 after MS+UCS2 subtable (e.g. multiple 16bit cmap subtable
@@ -27000,7 +27000,7 @@ Part #1: pdfwrite fixes (gdevpdti.c, gdevpdte.c, gdevpdtt.h, gdevpdtt.c :
 
 - Generalize pdfwrite computations for glyph widths and placement, 
   which currently assume an [s 0 0 s tx ty]-type original (= ignoring 
-  changes made by makefont & similar) FontMatrix, to work with an 
+  changes made by makefont &amp; similar) FontMatrix, to work with an 
   arbitrary matrix.
 
 - Fix: the "wy" operand of "d0"/"d1" in Type 3 charproc streams must 
@@ -27247,7 +27247,7 @@ This change is equivalent to Alex's patch
 expect the better documentation. 
 See comment in code.
 
-The old code accessed pfont->data.defaultWidthX,
+The old code accessed pfont-&gt;data.defaultWidthX,
 which is never used or initialized elsewhere with a Type 1 font,
 because defaultWidthX is a Type 2 feature.
 
@@ -27476,7 +27476,7 @@ Artifex customer #330
 DETAILS:
 
 Rather than rely on the hack in gx_cie_to_xyz_alloc that sets the
-pis->cie_render to ~0, we establish a separate boolean for this,
+pis-&gt;cie_render to ~0, we establish a separate boolean for this,
 cie_to_xyz which indicates that we don't need a CRD (gxistate.h,
 gsistate.c, gsciemap.c, gscie.c). Note that the gx_cie_to_xyz_alloc
 function is also used in the lab_range function in gdevpdfk.c
@@ -27509,7 +27509,7 @@ export in the future. For the short term clients can 'clone'
 this small function if needed into their own color callback
 processing.
 
-Note that -dUseCIEColor (or << /UseCIEColor true >> setpagedevice
+Note that -dUseCIEColor (or &lt;&lt; /UseCIEColor true &gt;&gt; setpagedevice
 PostScript sequence) will mean that all Device* colorspaces also
 get mapped through the Default* colorspaces to XYZ (DeviceGray,
 DeviceRGB and DeviceCMYK).
@@ -27750,7 +27750,7 @@ DETAILS:
 
 Although the patch submitted by the reporter did appear to fix the problem,
 it was more masking it than fixing it. While the analysis of the problem
-being that ss->Items was too small was correct, the real cause was a rounding
+being that ss-&gt;Items was too small was correct, the real cause was a rounding
 problem in siscale.c/contrib_pixels(). The problem did not happen on my Mac,
 but was reproduced up on peeves because of differnces in the way the two
 systems perform rounding.
@@ -27790,11 +27790,11 @@ with forwarding methods in pdf14_clist_*_device.
 
 2. (gdevp14.c) The old code sets the lop_pdf14 flag to
 the clist reader's imager state. Particularly
-it may be set when calling p14dev->pdf14_procs->put_image.
+it may be set when calling p14dev-&gt;pdf14_procs-&gt;put_image.
 It causes gx_image_enum_begin to fail,
 and the image silently dissappers from the output.
 We fixed it with resetting the flag immediately before
-calling p14dev->pdf14_procs->put_image.
+calling p14dev-&gt;pdf14_procs-&gt;put_image.
 A better way would be to synchronize log_op
 in clist_create_compositor, but we don't like to
 write it to all bands as other compoitor commands do.
@@ -27810,7 +27810,7 @@ causing an almost white page instead blue axial and radial shadings.
 It defines 3 components instead the correct value 4 (3 colored and 1 gray).
 
 5. (gdevp14.c) During the clist playback the new code does not change color_info
-for the clist writer (p14dev->target->color_info). We marked this change
+for the clist writer (p14dev-&gt;target-&gt;color_info). We marked this change
 with the comment :
 /* Disabled because *p14dev has no forwarding methods during the clist playback. */
 We ise #if 0 because we're not sure why the old code does so.
@@ -28780,7 +28780,7 @@ Banding : Extend clist language with trapezoids, linear color trapezoids and lin
 
 DETAILS :
 
-1. Use fa->clip for a better Y-range for computing which bands are covered with fill_linear_color_triangle.
+1. Use fa-&gt;clip for a better Y-range for computing which bands are covered with fill_linear_color_triangle.
 
 2. Provide a right raster op for linear color methods. Currently this change isn't
 important because shadings don't use untrivial raster ops.
@@ -28889,7 +28889,7 @@ There are few things, which need further improvements :
 1. A better compression for frac31 values in clist. 
    Such values usually have many zeros in ending bits.
 
-2. Crop bands with ybot, ytop, fa->ystart, fa->yend in
+2. Crop bands with ybot, ytop, fa-&gt;ystart, fa-&gt;yend in
    clist_write_fill_trapezoid.
 
 3. The clist reader must handle cases when linear color functions return 0.
@@ -29187,7 +29187,7 @@ Bug 689315, attachment 3108.
 2007-07-03T12:00:18.641724Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix a harmless typo, replace bitwise '&' with logical '&&' in a couple of
+Fix a harmless typo, replace bitwise '&amp;' with logical '&amp;&amp;' in a couple of
 logical expressions. Bug 689315, attachment 3115.
 
 </pre>
@@ -29514,14 +29514,14 @@ with macros that don't include goto or return statements.
 
 Besides that, the pattern :
 
-		if (code < 0) {
+		if (code &lt; 0) {
 		    band_code = code;
 		    goto error_in_rect; /* ERROR_RECT(code); */
  		}
 
 is replaced with the smaller one :
 
-		if (code < 0 && SET_BAND_CODE(code))
+		if (code &lt; 0 &amp;&amp; SET_BAND_CODE(code))
 		    goto error_in_rect;
 
 for a better readability.
@@ -29845,7 +29845,7 @@ Making change to conform to gs style.
 <blockquote>
 <pre>
 Fixes for ulong overflow in memory device buffer sizing that caused
-problems with very large (>4Gb on 32-bit machines) page buffer sizes
+problems with very large (&gt;4Gb on 32-bit machines) page buffer sizes
 not invoking clist mode. Also the internal 'mask' image allocation
 in ImageType3 would silently wrap around, causing SEGV crashes.
 
@@ -29853,7 +29853,7 @@ Lastly, the tiff*nc devices are fixed so that they never write to
 file when the file will exceed 2Gb (max signed int) since the device
 uses 'ftell' to calculate offsets in the file. This last case could
 be fixed to use 64 bit file I/O or at least to keep an internal
-offset so that multipage tiffs could be > 2Gb as long as each page
+offset so that multipage tiffs could be &gt; 2Gb as long as each page
 was less than 2Gb. Other TIFF devices that compress were not changed
 since the probability of overflow is less and we don't want to be
 overly agressive about throwing a 'rangecheck' on the basis of the
@@ -30124,7 +30124,7 @@ this field is enumerated by GC. Bug 689002.
 2007-06-10T20:12:02.226861Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix processing of very small PDF files ( < 1024 bytes) that was broken by
+Fix processing of very small PDF files ( &lt; 1024 bytes) that was broken by
 rev. 7834 that increased the size of look-ahead buffer to 1024 bytes.
 
 </pre>
@@ -30183,7 +30183,7 @@ on Windows helps to separatr MSVC errors from Microsoft SDK quirks.
 2007-06-09T12:08:12.529992Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix incorrect decompression of large files (>= 16M) by JPXDecode filter
+Fix incorrect decompression of large files (&gt;= 16M) by JPXDecode filter
 on Windows. Don't open the temporary file in text mode.
 
 </pre>
@@ -30372,7 +30372,7 @@ Minor changes :
 4. We're not sure why lcvd_get_clipping_box_from_target was used sometimes.
    It looks incorrect. Replaced with lcvd_get_clipping_box_shifted_from_mdev. 
 
-5. gx_cpath_scale_exp2_shared didn't scale list->xmin, list->xmax.
+5. gx_cpath_scale_exp2_shared didn't scale list-&gt;xmin, list-&gt;xmax.
 
 6. gx_cpath_copy is defined and not used.
    Saving it from a dead branch, because it may be useful in future.
@@ -31874,7 +31874,7 @@ with the following line:
 2007-05-08T17:30:26.894961Z Till Kamppeter</strong></p>
 <blockquote>
 <pre>
-src/version.mak --> src/version.mak.in (part of build system patch)
+src/version.mak --&gt; src/version.mak.in (part of build system patch)
 </pre>
 <p>[src/version.mak.in src/version.mak]</p>
 </blockquote>
@@ -32786,7 +32786,7 @@ beheaves at it did before and starts the search from the beginning.
 
 Otherwise it does one of:
 - search forward from the mru string (possibly returning data from 
-  it, without actually skipping anything), if new position >= 
+  it, without actually skipping anything), if new position &gt;= 
   current's string starting position;
 - search backwards from current string if requested position is in 
   the 2nd half of the fragment before the current string;
@@ -32804,7 +32804,7 @@ which are not 'ref'.
 2007-04-21T02:33:44.148360Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix all warnings generated by MSVC 6 & 7 except the warnings matching
+Fix all warnings generated by MSVC 6 &amp; 7 except the warnings matching
 "C4018|C4244|jbig2dec|jasper" regular expression.
 
 </pre>
@@ -34644,7 +34644,7 @@ DETAILS :
 2. For proper lock count on memory errors, don't call Context_Destroy 
    if Context_Create was not called.
 
-3. In ttobjs.c don't use exec->current_face for accessing ttfMemory,
+3. In ttobjs.c don't use exec-&gt;current_face for accessing ttfMemory,
    because PCL closes fonts when they are not active
    in the TT interpreter. The new field Execution_Context::memory
    works for that.  
@@ -34934,7 +34934,7 @@ DETAILS :
 2. gs_imager_arc_add made private because it changes the interface
    and none of our interpreters call it.
 
-3. pis->subpath_start is set from arc if a path starts with an arc.
+3. pis-&gt;subpath_start is set from arc if a path starts with an arc.
 
 </pre>
 <p>[doc/pscet_status.txt src/gspath1.c src/gspath.h]</p>
@@ -34944,7 +34944,7 @@ DETAILS :
 2007-02-26T16:24:17.305323Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Fix indeterministic behavior of fuzzy.c with -w > 1. Initialize the rest of
+Fix indeterministic behavior of fuzzy.c with -w &gt; 1. Initialize the rest of
 the window buffer that would be uninitialized before half_win lines is read.
 </pre>
 <p>[toolbin/tests/fuzzy.c]</p>
@@ -35567,10 +35567,10 @@ Debugged with this :
 (ASDFGGH) show
 showpage
 
-In fraction_matrix__set the old code computed this->bitshift = 137,
+In fraction_matrix__set the old code computed this-&gt;bitshift = 137,
 and then 
 
-	this->denominator = 1 << this->bitshift 
+	this-&gt;denominator = 1 &lt;&lt; this-&gt;bitshift 
 	
 gave a nonsnse result 512. 
 Here is the assembler code for the latter statement built with MSVC8 :
@@ -35710,9 +35710,9 @@ instead the continuation operator.
 
 Left hand type casts :
 
-	*(op_proc_t *)&penum->enum_client_data = zshow
+	*(op_proc_t *)&amp;penum-&gt;enum_client_data = zshow
 
-used to quiet MSVC compiler warnings about function<-->data casts.
+used to quiet MSVC compiler warnings about function&lt;--&gt;data casts.
 
 </pre>
 <p>[src/gstext.c src/zchar.c src/gxtext.h]</p>
@@ -35865,15 +35865,15 @@ DETAILS :
 
 This change is algorithmically eauivalent :
 
-    <00030001> .findcmap {
+    &lt;00030001&gt; .findcmap {
       something1
     } {
       something2
-      <00010000> .findcmap {
+      &lt;00010000&gt; .findcmap {
         something3
       } {
         something4
-        <00030001> .findcmap {      %removed
+        &lt;00030001&gt; .findcmap {      %removed
           UNREACHABLE               %removed
         } {                         %removed
           somthing5
@@ -36168,7 +36168,7 @@ Others just an interface changes for passing error codes.
 <pre>
 Bring TrueType font recognition in .loadfontfile procedure up to
 the level of resourcefont procedure in the PDF interpreter. Identify
-files starting with <00010000>, (true), (typ1), (ttcf) as TrueType
+files starting with &lt;00010000&gt;, (true), (typ1), (ttcf) as TrueType
 fonts.
 
 </pre>
@@ -37169,7 +37169,7 @@ but CET 16-01.PS still has problems.
 1. 'e2' was wrong - Debugged with a.pdf .
 2. (optimization) Return if no nesting contours.
    nesting_sum works for that.
-3. Removed the check "this->subglyph_count <= 1",
+3. Removed the check "this-&gt;subglyph_count &lt;= 1",
    which was entirely wrong.   
 4. In zchar1.c restoring Raph's trick about 
     using even-odd filling rule in the CPSI compatible mode.
@@ -37413,7 +37413,7 @@ chooses a likely target and job size, generates comparefiles.* and
 testing.cfg.* for each node, then submits the job.
 
 Output is returned as a file in the launch directory 
-'run_regression..e<jobid>' when the run is finished.
+'run_regression..e&lt;jobid&gt;' when the run is finished.
 </pre>
 <p>[toolbin/tests/run_parallel]</p>
 </blockquote>
@@ -37549,7 +37549,7 @@ Also the old code did an unuseful call to get_metrics
 when WMode=1 and the vertical metric presents in the font.
 
 The function gs_type42_default_get_metrics has been removed
-due to low use. The new code replaces it with pfont->data.get_metrics.
+due to low use. The new code replaces it with pfont-&gt;data.get_metrics.
 We didn't find calls to it from the PCL code.
 
 </pre>
@@ -37982,10 +37982,10 @@ DETAILS :
 
 The bug has been introduced when we implemented the current point in 'double'.
 It caused an inconsistent result when 'show' follows 'clippath',
-because 'show' still uses pgs->ppath->position.
+because 'show' still uses pgs-&gt;ppath-&gt;position.
 Debugged with CET 13-22.ps page 6, the item much13. 
 
-We would like to avoid the usage of pgs->ppath->position,
+We would like to avoid the usage of pgs-&gt;ppath-&gt;position,
 but currently we nave no time for a complete analyzis.
 Delaying it for better times. See bug 689031.
 
@@ -38248,9 +38248,9 @@ Add a simple (one line) file that can be used bwtween files on the command line
 or files run with the 'run' operator to execute the systemdict version of the
 ^D (ctrl-D) action to end an encapsulated job and start a new one.
 
-This is needed since some PS files redefine <04> to a no-op (such as the PS CET
+This is needed since some PS files redefine &lt;04&gt; to a no-op (such as the PS CET
 and the PSCRIPT5 Windows driver). This can be used with or without -dJOBSERVER,
-but <04> is a no-op unless -dJOBSERVER is used.
+but &lt;04&gt; is a no-op unless -dJOBSERVER is used.
 </pre>
 <p>[lib/jobseparator.ps]</p>
 </blockquote>
@@ -38878,7 +38878,7 @@ CPSI does so, and we follow it.
 <blockquote>
 <pre>
 CET 20-01-2 is re-classified AOK; CPSI modifies the content of the array
-arguments, if any, when operator >> fails. Ghostscript matches Tek and
+arguments, if any, when operator &gt;&gt; fails. Ghostscript matches Tek and
 Distiller 5. This is a bug in CPSI we don't want to reproduce.
 </pre>
 <p>[doc/pscet_status.txt]</p>
@@ -39265,7 +39265,7 @@ fixes and analysis from Peter.
 <blockquote>
 <pre>
 Fixes a bug that could cause a SEGV when reading binary token arrays on
-systems where sizeof(ref) > 8 (e.g. 64-bit systems).
+systems where sizeof(ref) &gt; 8 (e.g. 64-bit systems).
 </pre>
 <p>[src/iscanbin.c]</p>
 </blockquote>
@@ -40009,7 +40009,7 @@ DETAILS :
 Due to a misprint, the old code wrongly computed the average color 
 from 3 colors of triangle vertices.
 
-Minor change : pfs->color_stack_limit is int rather than a pointer,
+Minor change : pfs-&gt;color_stack_limit is int rather than a pointer,
 so NULLL isn't a good initilizer.
 
 </pre>
@@ -40585,7 +40585,7 @@ DETAILS :
    See commet in code.
    This is the real fix for the problem.
 
-4. pcpath->rule sometimes was not initialized when pcpath->path_valid is true (gxcpath.c)
+4. pcpath-&gt;rule sometimes was not initialized when pcpath-&gt;path_valid is true (gxcpath.c)
 
 We don't like that gx_default_fill_path creates a big clipping path,
 which then converts into a path, which then is being intersected 
@@ -40610,14 +40610,14 @@ Due to a short time frame we need to make this patch smaller and simpler.
 <blockquote>
 <pre>
 Add prototypes for _ftelli64 and _fseeki64 for MSVC 6 builds. Allows
-> 2Gb clist when building with MSVC 6. Bug 688394 for customer 330.
+&gt; 2Gb clist when building with MSVC 6. Bug 688394 for customer 330.
 
 DETAILS:
 
 Even though the functions are in the run time library (at least with
 service pack 6), they aren't documented and aren't in the include
 files. Without the prototypes, the functions are presumed to return
-and 'int' so the sign gets extended for offsets > 0x7ffffff.
+and 'int' so the sign gets extended for offsets &gt; 0x7ffffff.
 
 Tested with customer's file at 180dpi where the clist size gets up
 to 2.7Gb.
@@ -40815,7 +40815,7 @@ Fix : MSVC warning.
 
 DETAILS :
 
-char** --> char*
+char** --&gt; char*
 Don't know how it compiles with various compilers.
 In any case it was definitely wrong.
 
@@ -40954,7 +40954,7 @@ discrepancy in PS3 CET 31-01-2.
 2006-10-26T04:39:35.686300Z L. Peter Deutsch</strong></p>
 <blockquote>
 <pre>
-Replace inexact decimal literals in the HSB<->RGB algorithms with more exact
+Replace inexact decimal literals in the HSB&lt;-&gt;RGB algorithms with more exact
 computed values, so that (e.g.) 0.2 1 1 sethsbcolor currenthsbcolor returns
 0.2 1 1.  Fixes problems in PS3 CET 09-41-4.
 </pre>
@@ -41473,7 +41473,7 @@ DETAILS :
 
 2. Fixing an antique bug, which persists since the repository was created.
    When computing the orientation of an isolated zero length stroke
-   (near the code "const segment *end = psub->last;"),
+   (near the code "const segment *end = psub-&gt;last;"),
    the old code erroneusely takes the direction to
    the last point of the previous subpath. 
    With recent changes it caused a wrong longitude adjustment
@@ -41722,7 +41722,7 @@ Bug 688911.
 <pre>
 Use open_device procedure to identify the type of the device instead of the
 standard gs_object_type() because gs_cpath_accum_device is allocaded on
-the stack i.e. has no block header with a descriptor but has dev->memory set
+the stack i.e. has no block header with a descriptor but has dev-&gt;memory set
 like a heap-allocated device. Bug 688874.
 
 </pre>
@@ -41739,7 +41739,7 @@ DETAILS :
 
 Bug 688873 "pdfwrite :Valgrind reports uninitialized data".
 
-The old code checked penum->text.x_widths, penum->text.y_widths
+The old code checked penum-&gt;text.x_widths, penum-&gt;text.y_widths
 and shifted them forth and back when they are uninitialized.
 It was not harmful because those pointers were not defererenced.
 Also space.s_char was checked when unitialized. 
@@ -42237,7 +42237,7 @@ Bug 688882.
 2006-09-14T17:19:41.966384Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Pacify Valgrind. Initialize penum->planes[i].source.data in gsimage.c
+Pacify Valgrind. Initialize penum-&gt;planes[i].source.data in gsimage.c
 These pointers are enumerated during garbage collection.
 Bug 688886.
 </pre>
@@ -42489,11 +42489,11 @@ latter.)
 2006-09-10T22:24:31.060699Z leonardo</strong></p>
 <blockquote>
 <pre>
-Fix : pfont->uid.xvalues uses a wrong allocator 
+Fix : pfont-&gt;uid.xvalues uses a wrong allocator 
 
 DETAILS :
 
-Bug 688883 "pfont->uid.xvalues uses a wrong allocator".
+Bug 688883 "pfont-&gt;uid.xvalues uses a wrong allocator".
 
 In the old code build_gs_simple_font allocates uid in the current memory, 
 but few moments later build_gs_sub_font changes the current space to the space 
@@ -42641,10 +42641,10 @@ The new code (as Adobe compatibile) chooses the direction of the last segment
 (before the corner).
 
 In the old code of gx_stroke_path_only_aux we don't understand the branch
-"if (pgs_lp->dot_length != 0) break;"
+"if (pgs_lp-&gt;dot_length != 0) break;"
 It look contradicting to the comment above it.
 Leaving it as it is, but the condition has been changed to 
-(pgs_lp->dot_length != 0 && pseg->type != s_dash)
+(pgs_lp-&gt;dot_length != 0 &amp;&amp; pseg-&gt;type != s_dash)
 to comply with the new logic. Likely dot_length is now a rudiment.
 
 The old code arbitrary applied a horizontal stroke adjustment for 
@@ -42877,7 +42877,7 @@ PDF interpreter is not included, but pdfwrite is.
 2006-08-29T04:23:40.404599Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Set s->position to aero initially so that sftell before any other operation
+Set s-&gt;position to aero initially so that sftell before any other operation
 will be correct. Reformat prototypes in strmio.h to single line format.
 </pre>
 <p>[src/strmio.c src/strmio.h]</p>
@@ -43605,7 +43605,7 @@ a typecheck error if the 'key' argument was a null.
 2006-08-03T05:10:23.146390Z L. Peter Deutsch</strong></p>
 <blockquote>
 <pre>
-On Level >=2 systems, makes .undef a synonym for undef rather than vice
+On Level &gt;=2 systems, makes .undef a synonym for undef rather than vice
 versa, to produce Adobe-compatible stack traces on errors.
 </pre>
 <p>[src/zdict.c lib/gs_dps1.ps]</p>
@@ -43625,7 +43625,7 @@ have zero length.
 2006-08-02T21:10:17.237822Z L. Peter Deutsch</strong></p>
 <blockquote>
 <pre>
-On Level >=2 systems, makes .dicttomark a synonym for >> rather than vice
+On Level &gt;=2 systems, makes .dicttomark a synonym for &gt;&gt; rather than vice
 versa, to produce Adobe-compatible stack traces on errors.
 </pre>
 <p>[src/zdict.c lib/gs_lev2.ps]</p>
@@ -43686,8 +43686,8 @@ syntaxerror.
 2006-08-02T18:05:32.494329Z L. Peter Deutsch</strong></p>
 <blockquote>
 <pre>
-Changes cvs for reals: '<int>e<expt>' is no longer changed to
-'<int>.0e<expt>', and 0.0001 (a boundary case) now converts to '0.0001'
+Changes cvs for reals: '&lt;int&gt;e&lt;expt&gt;' is no longer changed to
+'&lt;int&gt;.0e&lt;expt&gt;', and 0.0001 (a boundary case) now converts to '0.0001'
 rather than '1.0e+04'.  THIS IS A NON-BACKWARD-COMPATIBLE CHANGE for
 compatibility with Adobe interpreters.
 </pre>
@@ -43810,7 +43810,7 @@ Closes bug 688794.
 
 DETAILS:
 
-An <int> in the Ghostscript ps interpreter is a C long, and so on 64 bit Linux, for example, it will be 64 bits, which in these instances require more than 8 characters for representation in hex. We use 32 characters (128 bits of hex) to be on the safe side.
+An &lt;int&gt; in the Ghostscript ps interpreter is a C long, and so on 64 bit Linux, for example, it will be 64 bits, which in these instances require more than 8 characters for representation in hex. We use 32 characters (128 bits of hex) to be on the safe side.
 
 The PLRM says the size of an int is implementation dependent. It can also be argued that it assumes this is 32 bits. In fact, one of the Genoa tests fails with longer ints. We choose to follow the clearest statement here, that the size is up to us.
 </pre>
@@ -44441,10 +44441,10 @@ DETAILS:
 
 That wasn't enough ?
 
-One hack is that the s->file pointer in the stream_s is used to hold the pointer
+One hack is that the s-&gt;file pointer in the stream_s is used to hold the pointer
 to the node header in the %rom% file system. This seemed to make some sense.
 Unlike the FILE * structure (which is somewhat opaque), there is no dynamic
-state info in a node -- the s->position and read pointer within cbuf are enough
+state info in a node -- the s-&gt;position and read pointer within cbuf are enough
 to allow read_process, seek, and available procs to operate.
 
 The buffer is slighty larger than the ROMFS_BLOCKSIZE to allow for some data
@@ -44455,13 +44455,13 @@ also means that each 'block' is always at or near the front of cbuf. After
 a seek, the block will load at the beginning of cbuf (assuming we did not
 already have the requested pos in the buffer).
 
-As with 'file' type streams, the s->read_id is bumped so that the stream
+As with 'file' type streams, the s-&gt;read_id is bumped so that the stream
 access functions will see the file as 'invalid' (read_id won't match rsize).
 The cbuf is also freed when the file is closed (to prevent leaks in a non
 GC memory system).
 
 NOTE: IT IS THE CALLER'S RESPONSIBILITY TO FREE THE STREAM RETURNED BY THE
-romfs_open_file() function using the memory in the s->memory allocator. In
+romfs_open_file() function using the memory in the s-&gt;memory allocator. In
 PostScript, since the -file- ref can be passed around among objects, the
 GC is relied upon to free when no further references exist.
 
@@ -44500,7 +44500,7 @@ page size. Bug 688744, customer 384.
 2006-07-06T00:24:31.497014Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Modify cmap table handling routines to support a large ( >= 64K ) table
+Modify cmap table handling routines to support a large ( &gt;= 64K ) table
 represented as an array of strings.
 Bug 688688, customer 562.
 
@@ -44676,7 +44676,7 @@ there is any other documentation needed. Also this fixes #201952 which
 was previously closed as WONTFIX.
 
 Note that with -dJOBSERVER Ghostscript (unlike ghostpcl) will run the
--c string or the files on the command line or the input to the GS>
+-c string or the files on the command line or the input to the GS&gt;
 prompt as an encapsulated job and multiple files on the command line
 will NOT be treated as separate jobs. File that contain a ^D (0x04)
 at the end _WILL_ restore the VM state and start a new encapsulated
@@ -44895,7 +44895,7 @@ DETAILS:
 
 This wasn't a very big change, but by avoiding going to the OS
 for 'seek' operations, the Windoze performance was improved
->40 fold. On linux this doesn't make any improvement but the
+&gt;40 fold. On linux this doesn't make any improvement but the
 OS must be a lot more efficient (I'm actually surprised by
 this). The time for the customer file with 688758 runs in
 10 seconds (at 40dpi x11) on peeves before and after the fix.
@@ -44931,7 +44931,7 @@ It hapens while rendering the text :
 
 /TT5 1 Tf
 0.365 0 TD
-<0001>Tj
+&lt;0001&gt;Tj
 
 Probably the problem happens because 2 font descriptors (43 0 obj and 38 0 obj, 
 which correspond to local font names /TT4 and /TT5) refer to same single font data 39 0 obj. 
@@ -45306,7 +45306,7 @@ Rather font renderers usually cache font objects,
 the data format accommodation appears too expensive.
 
 Main change : 
-1. FAPI_do_char uses I->face to check whether
+1. FAPI_do_char uses I-&gt;face to check whether
    it is same font-matrix request as for a previous call.
    If so, it uses the old font object stored in the renderer.
 
@@ -47136,10 +47136,10 @@ ColorImageAutoFilterStrategy, GrayImageAutoFilterStrategy (gdevpsdp.c).
 and using that filter for lossless compression instead FlateEncode/LZWEncode
 when it is available, depending on ColorImageAutoFilterStrategy, GrayImageAutoFilterStrategy.
 
-5. With CompatibilityLevel>=1.5, with 1bpp images we choose JBIG2Encode instead 
+5. With CompatibilityLevel&gt;=1.5, with 1bpp images we choose JBIG2Encode instead 
 FlateEncode/LZWEncode when it is available.
 
-Thus, when Luratech filters are available, with CompatibilityLevel>=1.5,
+Thus, when Luratech filters are available, with CompatibilityLevel&gt;=1.5,
 Luratech filters work by default.
 
 EXPECTED DIFFERENCES :
@@ -47187,8 +47187,8 @@ specifies lossless encoding and overrides any quality setting.
 <blockquote>
 <pre>
 Change ASCII85Decode EOD handling to make sure that the EOD characters are
-consumed before we provide the last bit of data to the caller. The ~> sequence
-(actually could be <cr> <lf> ~ <cr> <lf> > ) left in the currentfile would
+consumed before we provide the last bit of data to the caller. The ~&gt; sequence
+(actually could be &lt;cr&gt; &lt;lf&gt; ~ &lt;cr&gt; &lt;lf&gt; &gt; ) left in the currentfile would
 cause an /undefined error. Bug 688618.
 
 DETAILS:
@@ -47209,8 +47209,8 @@ word of data if the complete EOD isn't in the tail of the buffer.
 
 If the EOD sequence seen in the tail is preceded by the 'real' EOD before
 the tail in the current buffer, the "false positive" does no harm. Similarly
-if there is a malformed EOD '~' not followed by '>' (possibly with intervening
-<cr><lf>) the error condition will still be detected when the '~' is actually
+if there is a malformed EOD '~' not followed by '&gt;' (possibly with intervening
+&lt;cr&gt;&lt;lf&gt;) the error condition will still be detected when the '~' is actually
 parsed in the deocder.
 
 EXPECTED DIFFRENCES:
@@ -47751,8 +47751,8 @@ Correct double "" typo that made 'usage:' not work.
 2006-03-29T19:39:10.090689Z Raph Levien</strong></p>
 <blockquote>
 <pre>
-Adds -o<fn> switch to command, which is essentially an alias for 
--sOutputFile=<fn>, -dNOPAUSE, and -dBATCH.
+Adds -o&lt;fn&gt; switch to command, which is essentially an alias for 
+-sOutputFile=&lt;fn&gt;, -dNOPAUSE, and -dBATCH.
 </pre>
 <p>[src/imainarg.c]</p>
 </blockquote>
@@ -48003,10 +48003,10 @@ To build Ghostscript with new filters, specify
 "JBIG2_LIB=luratech JPX_LIB=luratech" in the command line when running 'make' utility.
 Use this Postscript prefix to invoke new filters :
 
-<< /ColorImageFilter /JPXEncode
+&lt;&lt; /ColorImageFilter /JPXEncode
    /GrayImageFilter /JPXEncode
    /MonoImageFilter /JBIG2Encode
->> setdistillerparams
+&gt;&gt; setdistillerparams
 
 JPXEncode requires CompatibilityLevel=1.5 , 
 JBIG2Encode requires CompatibilityLevel=1.4 . 
@@ -48498,7 +48498,7 @@ Bug 688572
 
 DETAILS:
 The following code doesn't initialize all the fields in the stream structure.
-stream s; sread_string(&s, ...); but it initializes enough fields to be mostly
+stream s; sread_string(&amp;s, ...); but it initializes enough fields to be mostly
 working. The bug has been detected by Valgrind.
 
 
@@ -49686,7 +49686,7 @@ None
 2006-02-09T06:03:12.845053Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Clamp bbox rectangle to avoid q<p case that the rect_intersect macro allows
+Clamp bbox rectangle to avoid q&lt;p case that the rect_intersect macro allows
 to avoid allocating transparency buffer that has an incorrect (way too large)
 size. Bug 688546.
 
@@ -49812,7 +49812,7 @@ None
 2006-02-08T13:52:40.832268Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Consume EOD character in the Hex stream when the stream length is > 0.
+Consume EOD character in the Hex stream when the stream length is &gt; 0.
 Bug 688512 from customer 232.
 
 DETAILS :
@@ -50378,7 +50378,7 @@ DETAILS :
 
 Bug 688527 "A crash (a null pointer deref) in gx_add_char_bits".
 
-Type 3 fonts are not included into the dir->orig_fonts list.
+Type 3 fonts are not included into the dir-&gt;orig_fonts list.
 So the list may be empty.
 
 EXPECTED DIFFERENCES :
@@ -50979,7 +50979,7 @@ Fix (pdfwrite) : Incorrect computation of a FMapType 9 text size.
 
 DETAILS :
 
-The old code didn't update pte->current_font before calling pdf_update_text_state,
+The old code didn't update pte-&gt;current_font before calling pdf_update_text_state,
 and the matrix computation in scan_cmap_text was bug-to-bug compatible.
 
 This is a preparation for fixing the bug 687875 
@@ -51229,7 +51229,7 @@ PDFXTrimBoxtoMediaBoxOffset
 	NOTE:This setting is ignored if PDFXNoTrimBoxError is true.
 [end quote]
 
-<http://partners.adobe.com/public/developer/en/acrobat/sdk/pdf/pdf_creation_apis_and_specs/PDFCreationSettings.pdf>
+&lt;http://partners.adobe.com/public/developer/en/acrobat/sdk/pdf/pdf_creation_apis_and_specs/PDFCreationSettings.pdf&gt;
 
 EXPECTED DIFFERENCES :
 
@@ -51287,7 +51287,7 @@ Correct a typo in the usage.
 2006-01-19T00:18:05.626817Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Accept '-r <revision number>' as well as a date spec to the 
+Accept '-r &lt;revision number&gt;' as well as a date spec to the 
 update_specific script. Bug 688498.
 </pre>
 <p>[toolbin/tests/update_specific]</p>
@@ -51359,14 +51359,14 @@ None. (according to Alex).
 2006-01-17T13:43:24.915413Z leonardo</strong></p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : Loss of graphics with GraphicsAlphaBits > 1.
+Fix (pdfwrite) : Loss of graphics with GraphicsAlphaBits &gt; 1.
 
 DETAILS :
 
 Bug 688417 "Setting -dGraphicsAlphaBits when using -sDEVICE=pdfwrite causes loss of graphics".
 
 1. Propagate error codes from psdf_get_bits through alpha buffer device methods.
-2. Print error message in psdf_get_bits if GraphicsAlphaBits > 1.
+2. Print error message in psdf_get_bits if GraphicsAlphaBits &gt; 1.
 
 EXPECTED DIFFERENCES :
 
@@ -52079,8 +52079,8 @@ Bug 687986
 DETAILS :
 This is a partial fix for a dead code. The patch fixes simple typos in 16-bit
 code, which are difficult to spot because of the nested macroses.  Assignment
-ss->prev[0] = s0 is needed because the code for handling leftover bytes uses
-ss->prev[0]. The filter still falls into an infinite loop sometimes, but this
+ss-&gt;prev[0] = s0 is needed because the code for handling leftover bytes uses
+ss-&gt;prev[0]. The filter still falls into an infinite loop sometimes, but this
 fix doesn't address this problem.
 </pre>
 <p>[src/spdiff.c]</p>
@@ -52154,7 +52154,7 @@ Fix (pdfwrite) : Can't skip identity ToUnicode CMap for a composite font.
 
 DETAILS :
 
-Bug 688447 "ps->pdf korean english mixed text fails to text extract english correctly.".
+Bug 688447 "ps-&gt;pdf korean english mixed text fails to text extract english correctly.".
 
 Not sure why old code skips identity ToUnicode CMap -
 likely it was taken from scratch and now appears incorrect.
@@ -52828,7 +52828,7 @@ Fix bug 687938
 DETAILS :
 This problem is caused by a TrueType font that has no PostScript font name,
 for instance urdunast.ttf. GS 8.10 added Unicode to ASCII conversion for the
-font name but the code assumed that the name length > 0 . This patch skips
+font name but the code assumed that the name length &gt; 0 . This patch skips
 Unicode to ASCII conversion for empty names.
 </pre>
 <p>[lib/gs_fonts.ps]</p>
@@ -52958,7 +52958,7 @@ for generating an instance id for the font.
 5. The new function pdf_font_metadata perform the main work.
 
 Foe now pdf_write_font_metadata uses some inaccurate coding with
-copy&replace. Doing so because we don't know the final structure yet.
+copy&amp;replace. Doing so because we don't know the final structure yet.
 Will factor out common subfunctions later.
 
 EXPECTED DIFFERENCES :
@@ -53208,7 +53208,7 @@ THIS IS INCOMPATIBLE CHANGE.
 Adobe Distiller 5 generates metadata according to Adobe XMP speification
 iff the distiller parameter ParseDSCCommentsForDocInfo or PreserveEPSInfo is true.
 Old versions of Ghostscript does not do that.
-New versions of Ghostscript do when CompatibilityLevel >= 1.4 (default).
+New versions of Ghostscript do when CompatibilityLevel &gt;= 1.4 (default).
 Generated PDF documents become longer in about 1.5 kilobytes.
 
 See the documentation change about new command line options and distiller parameters.
@@ -53267,7 +53267,7 @@ To provide a compatibility to PDF 1.1,
 the old code implemented a special mechanizm for transmitting resources of
 a Type 3 font to pages, which use the font.
 
-This patch disables that mechanizm when CompatibilityLevel >= 1.2 in gdevpdte.c .
+This patch disables that mechanizm when CompatibilityLevel &gt;= 1.2 in gdevpdte.c .
 Instead that it creates Resources of a Type 3 font as a cos_dict_t instance
 in gdevpdtf.h, gdevpdtt.c, and writes it out when the font is being written
 in gdevpdtw.c .
@@ -53309,7 +53309,7 @@ data, and the boolean false.
 
 When 'last' was true if the count was 0, the previous code would not return
 CALLC status which is needed to call the procedure with the 'false' status.
-If ss->eof is already true, then the call has already been done.
+If ss-&gt;eof is already true, then the call has already been done.
 
 This condition is not checked in any of the Genoa test suites.
 
@@ -53447,7 +53447,7 @@ Update doc files and version files for 8.53 release.</pre>
 2005-10-20 19:42 Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Remove trailing ^M (<cr>) characters.</pre>
+Remove trailing ^M (&lt;cr&gt;) characters.</pre>
 <p>[src/gdevbmp.c 1.12, src/slzwd.c 1.7]</p>
 </blockquote>
 
@@ -53609,7 +53609,7 @@ Bug 688308 "Error: undefined; OffendingCommand: .type1execchar".
 The test case executes cshow or kshow with intrevene changing
 the current color space, causing a color load callout from fill_with_rule
 _after_ the callout completes. After that the check
-ctile->depth == dev->color_info.depth in gx_pattern_cache_lookup fails
+ctile-&gt;depth == dev-&gt;color_info.depth in gx_pattern_cache_lookup fails
 (not sure why - probably due to gsave-grestore in the pattern procedure).
 This patch skips entire character drawing when the device is null,
 so that those cumbersome stuff isn't envolved.
@@ -53773,7 +53773,7 @@ The time consumption for the test case of the bug 688255 is dropped in about 100
 4. Write the bbox to clist in c_pdf14trans_write and read it in c_pdf14trans_read.
 5. The pdf14 compositor needs CTM to transform the group bbox to the device space.
    Forced the writing of CTM to clist before writing the compositor in clist_create_compositor.
-   (Sorry, it appears some ugly due to pcte->type->procs.write creates a body
+   (Sorry, it appears some ugly due to pcte-&gt;type-&gt;procs.write creates a body
    of a command, but we need to create a set of two commands;
    Another minor optimization - a narrowing the set of bands - is delayed,
    see comments in code in clist_create_compositor) (gxclimag.c).
@@ -55416,7 +55416,7 @@ DETAILS:
 
 Following Russell Lang's suggestion, the zpeekstring function appeared to
 have been (at one time) designed so that EOFC returned an empty string, but
-the check for requested len > bsize had priority, and when the file was
+the check for requested len &gt; bsize had priority, and when the file was
 closed, the 'bsize' was reset to 0. I removed the "HACK" check to after the
 check for status == EOFC.</pre>
 <p>[src/zfileio.c 1.18]</p>
@@ -55629,7 +55629,7 @@ It defines a new distiller parameter HaveTransparency.
 When it is false (default), the behavior is equivalent to the old one -
 the transparency is being converted into a plane image.
 
-The value true only works with CompatibilityLevel>=1.4 .
+The value true only works with CompatibilityLevel&gt;=1.4 .
 In this case transparency is being written to output as high level objects.
 The writtemn objects are not necesserily repear the structure of the
 input document, because the PDF interpreter performs some simplifications,
@@ -56726,7 +56726,7 @@ DETAILS :
 Bug 687712 "ps2pdf silently generates bad PDF in 1.2 mode".
 
 The old code reserved an objewct id for a color space when starting its creation.
-If the creation fails (for example, with CompatibilityLevel <= 1.2),
+If the creation fails (for example, with CompatibilityLevel &lt;= 1.2),
 the related graphics is being converted into low level objects.
 In that case the reserved object id doesn't appear in the output PDF,
 causing an incorrect xerf.
@@ -57039,7 +57039,7 @@ DETAILS :
 
 Bug 688170 "ps2write : text displacement".
 An imprecise text width happened when distillation uses a low resolution
-to convert a font into a bitmap font. Important for CompatibilityLevel <= 1.2 .
+to convert a font into a bitmap font. Important for CompatibilityLevel &lt;= 1.2 .
 
 EXPECTED DIFFERENCES :
 
@@ -57094,7 +57094,7 @@ Note that the default smoothness is set to 0.02 in lib/gs_ll3.ps and unless
 this is set smaller with the setsmoothness operator (or the PDF 'SM' op),
 the max_error used in src/gxshade.c may still be too large to see REALLY
 smooth gradients. The next part of the changes is to modify the setting
-of max_error when the device has > 256 levels.</pre>
+of max_error when the device has &gt; 256 levels.</pre>
 <p>[src/gxdevcli.h 1.39]</p>
 </blockquote>
 
@@ -57120,7 +57120,7 @@ DETAILS:
 
 The problem was caused by an error in evaluting a sampled function with
 32 bits per component.  The maximum value for a sample was calculated
-as being (1 << bps) - 1.  This calculation has a problem on x86 CPUs
+as being (1 &lt;&lt; bps) - 1.  This calculation has a problem on x86 CPUs
 when bps is 32.  No shifting is done and the result ends up being 0
 instead of 0xffffffff.
 
@@ -57266,10 +57266,10 @@ DETAILS:
 
 The problem is an error in the file.  The file contains an Indexed color space:
  [ /Indexed /DeviceGray 255 (\000%Mr\r2[\300\320\303\000\b\f\021\026\034"\)UMB9
-\201%Ns\r2[\016\035,:\036-<KYh=L[ix\207\\kz\210\227\246{\212\231\247\266\305
+\201%Ns\r2[\016\035,:\036-&lt;KYh=L[ix\207\\kz\210\227\246{\212\231\247\266\305
 \267\306\325\005\024"1@O$3AP_mCQ`o~\214bp\177\216\234\253\200\217\236\255\273
 \312\256\275\314\332\351\n\031\(6ET\)8GUdsHWft\203gv\204\223\242\261\206\225
-\262\301\317\245\263\321\340_Ul[<K\020=-iYM\\Lz\210x{\212\231\247\266\213\232
+\262\301\317\245\263\321\340_Ul[&lt;K\020=-iYM\\Lz\210x{\212\231\247\266\213\232
 \243\267\306\325\252\271\251\326\345\364\025\0363AP/CQ`o~Sbk\177\216\227r\200
 \217\236\255\273\221\237\256\275\314\332\257\276\310\334\352\371$8G4...) ]
 
@@ -57600,7 +57600,7 @@ Bug 687472 barcode wrongly converted to type3 font
    Replaced with the original font matrix.
    (debugged with Bug687472.ps).
 
-3. pcp->font was not adjusted when desided to start a new font due to
+3. pcp-&gt;font was not adjusted when desided to start a new font due to
    a new glyph variation obtained. Due to that some glyphs
    were replaced with wrong glyph variations
    (debugged with Bug687660a.ps, page 4, the text
@@ -57686,7 +57686,7 @@ Fix : A global restore was applied at save level 1.
 DETAILS :
 
 Bug 688157 "'invalidrestore' in pkmraw -r72 -Z?$@ tpc2.ps".
-Bug 688161 "A dangling pointer with pkmraw -r72 -Z?$@ -c false 0 startjob pop -f - <113-01.ps".
+Bug 688161 "A dangling pointer with pkmraw -r72 -Z?$@ -c false 0 startjob pop -f - &lt;113-01.ps".
 
 The last patch appears incorrect. This one fixes that.
 
@@ -57696,8 +57696,8 @@ the global restore was applied at the level 1.
 This happened because the last but one patch
 appears incomplete - after that change the check for 'global'
 in alloc_is_since_save become incorrect.
-It assumed that mem->saved == save && mem->saved->save_level == 1 implies
-save->state.save_level == 0. But with the last but one patch not it doesn't.
+It assumed that mem-&gt;saved == save &amp;&amp; mem-&gt;saved-&gt;save_level == 1 implies
+save-&gt;state.save_level == 0. But with the last but one patch not it doesn't.
 
 Bug 688161 happened due to same check, because alloc_is_since_save
 is also used in restore_fix_stack to fix string and file objects,
@@ -57715,7 +57715,7 @@ which unwinded the file object, and caused a heap inconsistency
 due to estack keeps the unwinded file object.
 
 This change replaces it with (as we believe) the correct and simple check :
-  save->state.save_level == 0 /* Restoring to save level 0 */
+  save-&gt;state.save_level == 0 /* Restoring to save level 0 */
 which restores the consistency of restore_fix_stack to restore_check_stack.
 
 EXPECTED DIFFERENCES :
@@ -57899,7 +57899,7 @@ http://ghostscript.com/pipermail/gs-cvs/2005-June/005567.html
 appears incomplete.
 This ine fixes that.
 
-1. gs_image_common_init must not change penum->memory since it is set by
+1. gs_image_common_init must not change penum-&gt;memory since it is set by
    gs_image_enum_alloc for a compatibility with gs_image_cleanup_and_free_enum.
 
 2. gs_image_enum_init is removed from the graphics library interface
@@ -58510,7 +58510,7 @@ None.</pre>
 2005-06-04 15:21 Dan Coby</strong></p>
 <blockquote>
 <pre>
-Removed extra && and space from last commit (fix for 687973).</pre>
+Removed extra &amp;&amp; and space from last commit (fix for 687973).</pre>
 <p>[src/scfd.c 1.8]</p>
 </blockquote>
 
@@ -58828,7 +58828,7 @@ Fix (pdfwrite, ps2write) : Wrong shading coordinates when converting to PDF 1.2 
 
 DETAILS :
 
-1. Do not write "W n" when cvd->has_background == true,
+1. Do not write "W n" when cvd-&gt;has_background == true,
   because we do not write a clipping path in this case.
 
 2. When a shading is being converted into a bitmap with a downsampling,
@@ -58933,7 +58933,7 @@ depending on the glyph size.
 This patch clips Type 3 and Type 10 charactrers when rendering with no cache,
 and behaves as the old code with other font types.
 We doing so to optimze the performance using the assumption that
-"outline" (FontType != 3 && FontType != 10) fonts must not paint outside FontBBox,
+"outline" (FontType != 3 &amp;&amp; FontType != 10) fonts must not paint outside FontBBox,
 which to be used for clipping in those cases.
 Besides that, the patch rounds Type 3 and Type 10 charactrer
 coordinates when renderingh with no cache, to provide
@@ -59206,7 +59206,7 @@ DETAILS :
 4. Resolve SpotFunction independently on IsObjRef.
 5. Resolve TransferFunction for some halftone types.
 6. Convert HalftoneType 6 into HalftoneType 3.
-7. Ignore HalftoneType > 6 (which are not allowed in Postscript level 2) and print a warning.
+7. Ignore HalftoneType &gt; 6 (which are not allowed in Postscript level 2) and print a warning.
    We would like to convert them, but it's too complex.
 
 Debugged with 258-01.ps, 476-01.ps .
@@ -59367,7 +59367,7 @@ None.</pre>
 <blockquote>
 <pre>
 Fix overly agressive xref format checking that was tripped up by double
-<cr> instead of <cr><lf>. Bug 688082 for customer 580.
+&lt;cr&gt; instead of &lt;cr&gt;&lt;lf&gt;. Bug 688082 for customer 580.
 
 DETAILS:
 
@@ -59541,7 +59541,7 @@ Fix for customer 562.
 DETAILS:
 
 while a multiple string approach had been previously implemented to allow
-CIDCount > 32767, with 65536 a 'rangecheck in --string-- would result
+CIDCount &gt; 32767, with 65536 a 'rangecheck in --string-- would result
 when trying to create a string of 65538 bytes (32769 * 2). I chose a
 arbitrary break point of 22000 CID's so that three strings would be
 enough for 66000 total.</pre>
@@ -59667,7 +59667,7 @@ Bug 688045 "gs 8.51 cannot create encrypted pdf file correctly".
    setting a proper context for other changes.
 
 2. pdf_write_embedded_font must not set DATA_STREAM_ENCRYPT
-   because the font object is being written into the temporary file pdev->streams.
+   because the font object is being written into the temporary file pdev-&gt;streams.
    It will be encrypted when copyed from the temporary file to the output file.
    See comment in pdf_begin_encrypt.
 
@@ -60459,7 +60459,7 @@ this was to only write the three halftones and to use the 'Green'
 halftone (arbitrarily) for Default.
 
 After fixing the SEGV, another problem surfaced because the object
-dictionary was not being terminated with the ">>".
+dictionary was not being terminated with the "&gt;&gt;".
 
 Since I suspected that the threshold_halftone writers were also
 broken I tested with 258-01.ps and found more problems. This
@@ -60581,10 +60581,10 @@ DETAILS
 2. The ljet4 device now contains ManualFeed and MediaPosition fields,
    with appropriate putparams logic to set them.
 
-3. The MediaPosition and ManualFeed strings now create an ESC & l H
+3. The MediaPosition and ManualFeed strings now create an ESC &amp; l H
    init string, according to the following logic. ManualFeed sends
-   ESC & l 2 H; if ManualFeed is false (or not set), then MediaPosition
-   0 sends ESC & l 5 H, and MediaPosition1 sends ESC & l 1 H. If none
+   ESC &amp; l 2 H; if ManualFeed is false (or not set), then MediaPosition
+   0 sends ESC &amp; l 5 H, and MediaPosition1 sends ESC &amp; l 1 H. If none
    of these are set, then no extra init string is generated.
 
    Obviously, for this feature to be useful, there needs to be an
@@ -60983,7 +60983,7 @@ ps2write : Convert shadings into a clipped image (continued 5).
 DETAILS :
 
 1. Fixed the problem with
-<</PatternImagemask false /MaxClipPathSize 12000 /MaxShadingBitmapSize 100000000>>,
+&lt;&lt;/PatternImagemask false /MaxClipPathSize 12000 /MaxShadingBitmapSize 100000000&gt;&gt;,
 which was mentioned in the last log message.
 
 The shading and masked image conversion now looks complete.
@@ -61041,7 +61041,7 @@ Implement a downsampling when converting a shading into bitmap.
    but in production we use only integers being a power of 2.
 
 6. There is a problem with
-   <</PatternImagemask false /MaxClipPathSize 12000 /MaxShadingBitmapSize 100000000>>
+   &lt;&lt;/PatternImagemask false /MaxClipPathSize 12000 /MaxShadingBitmapSize 100000000&gt;&gt;
    The problem happens when dividing the scaled bitmap in smaller ones
    due to clip path overflow. This mode to be debugged separately.
    For now set either smaller bitmap size of bigger clip path size.
@@ -61170,7 +61170,7 @@ for additional details.
    after a type 4 image has been processed with pdf_setup_masked_image_converter.
 4. Added a branch into pdf_begin_typed_image to work with
    pdf_setup_masked_image_converter when
-   pdev->OrderResources && !pdev->PatternImagemask.
+   pdev-&gt;OrderResources &amp;&amp; !pdev-&gt;PatternImagemask.
 
 We still use OrderResources as a general switch for the ps2write mode.
 To be improved later.
@@ -61796,29 +61796,29 @@ This change is algorythmically equivalent.
 
 The old code applies macros to generate 3 expressions like this :
 
-(8 >= ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) :
-(10))) ? (((pcrd->caches.EncodeABC[0].fixeds.ints.values)
-[((tabc[0]) >> ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10)))] +
-(frac)(((long)((pcrd->caches.EncodeABC[0].fixeds.ints.values)
-[((tabc[0]) >> ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10))) + 1] -
-(pcrd->caches.EncodeABC[0].fixeds.ints.values)[((tabc[0]) >> ((((1 << 2) * 8 - 9 - 2) < (10)) ?
-((1 << 2) * 8 - 9 - 2) : (10)))]) * ((int)(tabc[0]) & ((1 << ((((1 << 2) * 8 - 9 - 2) < (10)) ?
-((1 << 2) * 8 - 9 - 2) : (10))) - 1))) >> (((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) :
-(10))))) << (8 - ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10)))) :
-(((pcrd->caches.EncodeABC[0].fixeds.ints.values)
-[((tabc[0]) >> ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10)))] +
-(frac)(((long)((pcrd->caches.EncodeABC[0].fixeds.ints.values)
-[((tabc[0]) >> ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10))) + 1] -
-(pcrd->caches.EncodeABC[0].fixeds.ints.values)
-[((tabc[0]) >> ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10)))]) *
-((int)(tabc[0]) & ((1 << ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) :
-(10))) - 1))) >> -(8 - ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) :
-(10))))) >> (((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10))))
+(8 &gt;= ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) :
+(10))) ? (((pcrd-&gt;caches.EncodeABC[0].fixeds.ints.values)
+[((tabc[0]) &gt;&gt; ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10)))] +
+(frac)(((long)((pcrd-&gt;caches.EncodeABC[0].fixeds.ints.values)
+[((tabc[0]) &gt;&gt; ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10))) + 1] -
+(pcrd-&gt;caches.EncodeABC[0].fixeds.ints.values)[((tabc[0]) &gt;&gt; ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ?
+((1 &lt;&lt; 2) * 8 - 9 - 2) : (10)))]) * ((int)(tabc[0]) &amp; ((1 &lt;&lt; ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ?
+((1 &lt;&lt; 2) * 8 - 9 - 2) : (10))) - 1))) &gt;&gt; (((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) :
+(10))))) &lt;&lt; (8 - ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10)))) :
+(((pcrd-&gt;caches.EncodeABC[0].fixeds.ints.values)
+[((tabc[0]) &gt;&gt; ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10)))] +
+(frac)(((long)((pcrd-&gt;caches.EncodeABC[0].fixeds.ints.values)
+[((tabc[0]) &gt;&gt; ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10))) + 1] -
+(pcrd-&gt;caches.EncodeABC[0].fixeds.ints.values)
+[((tabc[0]) &gt;&gt; ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10)))]) *
+((int)(tabc[0]) &amp; ((1 &lt;&lt; ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) :
+(10))) - 1))) &gt;&gt; -(8 - ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) :
+(10))))) &gt;&gt; (((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10))))
 
 (the other 2 ones replace "[0]" with "[1]" and "[2]").
 
 We gues that MSVC8 is not enough intelligent to prove that the static (sub)expression
-((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10))
+((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10))
 is always within the interval [0, 10] and therefore it claims a possible error.
 This patch replaces it with a dynamic constant 's',
 so that the warning doesn't appear.
@@ -61828,15 +61828,15 @@ good coding style since humans need to read the code sometimes.
 For ones who wish a further simplification,
 we're happy to bring some useful definitions :
 
-XXX = ((((1 << 2) * 8 - 9 - 2) < (10)) ? ((1 << 2) * 8 - 9 - 2) : (10))
-YYY = ((int)(tabc[0]) & ((1 << XXX) - 1))
-ZZZ = ((tabc[0]) >> XXX)
-TTT = (pcrd->caches.EncodeABC[0].fixeds.ints.values)
+XXX = ((((1 &lt;&lt; 2) * 8 - 9 - 2) &lt; (10)) ? ((1 &lt;&lt; 2) * 8 - 9 - 2) : (10))
+YYY = ((int)(tabc[0]) &amp; ((1 &lt;&lt; XXX) - 1))
+ZZZ = ((tabc[0]) &gt;&gt; XXX)
+TTT = (pcrd-&gt;caches.EncodeABC[0].fixeds.ints.values)
 
 Using them the expression reduces to :
 
-(8 >= XXX) ? ((TTT[ZZZ] + (frac)(((long)(TTT[ZZZ + 1] - TTT[ZZZ]) * YYY) >> (XXX))) << (8 - XXX))
-           : ((TTT[ZZZ] + (frac)(((long)(TTT[ZZZ + 1] - TTT[ZZZ]) * YYY) >> (XXX))) >> -(8 - XXX))
+(8 &gt;= XXX) ? ((TTT[ZZZ] + (frac)(((long)(TTT[ZZZ + 1] - TTT[ZZZ]) * YYY) &gt;&gt; (XXX))) &lt;&lt; (8 - XXX))
+           : ((TTT[ZZZ] + (frac)(((long)(TTT[ZZZ + 1] - TTT[ZZZ]) * YYY) &gt;&gt; (XXX))) &gt;&gt; -(8 - XXX))
 
 EXPECTED DIFFERENCES :
 
@@ -62630,9 +62630,9 @@ to comply with the stub in psdf_setup_image_colors_filter.
 4. Multiple bugs (mainly the order of bits in the stream,
 and row to tyte alignment) have bin fixed in s_image_to_mask_process.
 
-5. We continue to use pdev->OrderResources as a general switch
+5. We continue to use pdev-&gt;OrderResources as a general switch
 for the ps2write mode, rather it's not fully correct.
-The new code will be useful for pdfwrite with CompatibilityLevel < 1.3,
+The new code will be useful for pdfwrite with CompatibilityLevel &lt; 1.3,
 so later we'll need to remove the switch from pdf_begin_typed_image.
 
 EXPECTED DIFFERENCES :
@@ -62652,7 +62652,7 @@ DETAILS :
 1. The old code assumes a constraint explained in the comment :
 	/* SRZB 2001-04-25/Bl
 	 * Since psdf_setup_image_filters may change the color space
-	 * (in case of pdev->params.ConvertCMYKImagesToRGB == true),
+	 * (in case of pdev-&gt;params.ConvertCMYKImagesToRGB == true),
 	 * we postpone the selection of the PDF color space to here:
 	 */
 Implement this dependence implicitly with defining a new function
@@ -62985,11 +62985,11 @@ Note it's a completely different way than image type 3.
 
 9. pdf_begin_typed_image now creates 4th alternative image stream with
    applying the image_to_mask filter - see the branch
-   "if (pic->type->index == 4 && pdev->CompatibilityLevel < 1.3)".
+   "if (pic-&gt;type-&gt;index == 4 &amp;&amp; pdev-&gt;CompatibilityLevel &lt; 1.3)".
    See comment in there.
 
 10. pdf_image_end_image_data handles the 4th stream
-   with the branch "if (pie->writer.alt_writer_count == 2)".
+   with the branch "if (pie-&gt;writer.alt_writer_count == 2)".
 
 11. pdf_choose_compression_cos preserves the 4th alternative stream (gdevpdfj.c).
 
@@ -66599,7 +66599,7 @@ this should probably be moved to the pdf.dev</pre>
 2004-11-19 04:39 Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Add some missing initializers for glyph_data_t->memory. Related to the
+Add some missing initializers for glyph_data_t-&gt;memory. Related to the
 687459 fix.</pre>
 <p>[src/gdevpsf1.c 1.18, src/gdevpsf2.c 1.33, src/gdevpsfu.c 1.12, src/gsfcid.c 1.13, src/gstype42.c 1.48, src/gxfcopy.c 1.54, src/gxtype1.c 1.41, src/zchar1.c 1.42, src/zfcid0.c 1.25, src/zfcid1.c 1.23]</p>
 </blockquote>
@@ -66750,11 +66750,11 @@ any other problems (regression test passed).
 A 'memory' element was added to the gs_glyph_data_s structure so
 that the 'bits' can be allocated using the desired memory (stable
 memory in the case that we are using the cache). This was deemed
-preferable to always using the pfont->memory->stable_memory since
+preferable to always using the pfont-&gt;memory-&gt;stable_memory since
 changing to this might cause other problems. This did create a
 fair number of changes since every place the get_outline was used,
 the glyph_data structure needed to have the 'memory' element set.
-We could have used 'NULL' to signal pfont->memory, but this might
+We could have used 'NULL' to signal pfont-&gt;memory, but this might
 have masked uninitialized memory issues that can be tracked with
 tools such as valgrind.
 
@@ -68152,7 +68152,7 @@ Since this was UMR related, and affected the clist mode, the jpeg device
 and the pswrite device (and possibly some pdfwrite data), this would be
 different on different platforms.
 
-The premature 'CloseTarget' action when the stream->close_strm was not
+The premature 'CloseTarget' action when the stream-&gt;close_strm was not
 initialized as 0 (false) would show up as a SEGV when the -Z@ was used.
 Other problems that this patch fixes are not linked to a test file at
 the current time.
@@ -68904,7 +68904,7 @@ which effectively caused the replaced metric to be ignored with CIDFontType 0 fo
    in the descendent type 1 or 2 font rather than in the parent type 9 font.
 
    1.1. A Type 9 font needs to be accessed via a descendent Type 1|2 font
-        in pfont->procs.glyph_info. Added a new field gs_type1_data_s::parent,
+        in pfont-&gt;procs.glyph_info. Added a new field gs_type1_data_s::parent,
         and provided an access through it with a new function gs_font_parent.
 
    1.2. Metrics|Metrics2 is now accessed through gs_font_parent.
@@ -69788,7 +69788,7 @@ DETAILS :
 1. constant_color_quadrangle painted a triangle when the quadrangle is degenerate.
 2. rangecheck happened if the path lies entirely within an Extend area of an axial shading.
 3. Due to a poor precision of t0, t1, Extend areas were painted when they have a zero width.
-Bug 687646  <pdfwrite : A strange shading in "Clarke Tate Manns Chinese.ai" >.
+Bug 687646  &lt;pdfwrite : A strange shading in "Clarke Tate Manns Chinese.ai" &gt;.
 
 EXPECTED DIFFERENCES :
 
@@ -69921,7 +69921,7 @@ install-time on unix. Closes bug 686863.
 
 DETAILS:
 
-The autoconf build supports a --with-gs=<name> option for setting the
+The autoconf build supports a --with-gs=&lt;name&gt; option for setting the
 name of the Ghostscript executable, which is stored in the makefiles as
 '$(GS)', but scripts such at ps2pdf that expect to make invoke
 Ghostscript made no use of this variable, causing version skew at best,
@@ -70637,7 +70637,7 @@ Fix half-toning for display device, bug 687629.
 
 DETAILS:
 Prior to DeviceN, dither_gray/max_gray were used if ncomp==1.
-With DeviceN, dither_gray/max_gray are used if gray_index >= 0.
+With DeviceN, dither_gray/max_gray are used if gray_index &gt;= 0.
 The display device was not correctly setting gray_index for
 native 1-bit/pixel format.</pre>
 <p>[src/gdevdsp.c 1.27]</p>
@@ -70992,7 +70992,7 @@ These are with ai2.pdf and dina3_watermark.pdf.</pre>
 <blockquote>
 <pre>
 Add PDFSTEP debug aid. Prints a step number at end of PDFDEBUG line, and
-sync's the display, then reads a number of steps to skip (<cr> == single
+sync's the display, then reads a number of steps to skip (&lt;cr&gt; == single
 step). This is rudimentary but somewhat useful. Invoked with -dPDFSTEP.</pre>
 <p>[lib/pdf_base.ps 1.44]</p>
 </blockquote>
@@ -71499,7 +71499,7 @@ Fix : gs_function_is_monotonic computed an unused auxiliary result (continued 4)
 
 DETAILS :
 
-FunctionType 3 did not account stitches with reversed interval boundaries : lower > upper.
+FunctionType 3 did not account stitches with reversed interval boundaries : lower &gt; upper.
 Also added a tolerance to a small noise.
 687573 Error: /rangecheck in --.shfill--
 
@@ -71818,7 +71818,7 @@ None.</pre>
 2004-07-14 17:57 Igor Melichev</strong></p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : Don't write DeviceN, DevicePixel colors with CompatibilityLevel<=1.2 .
+Fix (pdfwrite) : Don't write DeviceN, DevicePixel colors with CompatibilityLevel&lt;=1.2 .
 
 DETAILS :
 
@@ -71834,7 +71834,7 @@ None.</pre>
 2004-07-14 15:59 Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Include string_.h for missing prototypes of strlen() &c. Bug 687541.</pre>
+Include string_.h for missing prototypes of strlen() &amp;c. Bug 687541.</pre>
 <p>[src/gscdevn.c 1.20, src/gsfcmap.c 1.23, src/gsht1.c 1.14, src/int.mak 1.127, src/lib.mak 1.188, src/zfile1.c 1.12]</p>
 </blockquote>
 
@@ -72018,7 +72018,7 @@ None.</pre>
 2004-07-13 12:38 Igor Melichev</strong></p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : Don't write shadings with CompatibilityLevel<=1.2 .
+Fix (pdfwrite) : Don't write shadings with CompatibilityLevel&lt;=1.2 .
 
 DETAILS :
 
@@ -72438,9 +72438,9 @@ waiting on the thread handle was Ok because the thread
 was still running, but by the time CloseHandle ran the
 thread handle was invalid.
 
-IODevices are effectively static, so iodev->state is initialized
+IODevices are effectively static, so iodev-&gt;state is initialized
 once at the start of the interpreter.  There is no need to
-test if iodev->state is valid.</pre>
+test if iodev-&gt;state is valid.</pre>
 <p>[src/gp_msprn.c 1.4]</p>
 </blockquote>
 
@@ -73144,7 +73144,7 @@ Fix bug 687521</pre>
 <pre>
 Fixed CMYK to RGB conversion.
 
-Used in rop code where RGB -> CMYK -> RGB needs to work correctly
+Used in rop code where RGB -&gt; CMYK -&gt; RGB needs to work correctly
 in the black and white cases.</pre>
 <p>[src/gdevbit.c 1.10]</p>
 </blockquote>
@@ -73356,7 +73356,7 @@ Bug 687507 "pdfwrite device closes with -15".
 causing the search to skip some items. As a consequence,
 some strings were added to the table many times, causing
 a groth of the table while CFF size estimation iterations,
-and psf_write_type2_font returned error due to "offset > End_offset".
+and psf_write_type2_font returned error due to "offset &gt; End_offset".
 
 2. If an error happened writing a font after pdf_begin_fontfile is done,
 unconditionally call pdf_end_fontfile to provide a consistent stream state.
@@ -73436,7 +73436,7 @@ and the hinting is disabled by one axis,
 random hints could appear,
 causing indeterministic effects.
 
-2. this->grid_fit_x ans this->grid_fit_y were erroneusely exchanged.
+2. this-&gt;grid_fit_x ans this-&gt;grid_fit_y were erroneusely exchanged.
 
 EXPECTED DIFFERENCES :
 
@@ -73469,7 +73469,7 @@ DETAILS :
 Bug 687419 "poor font rendering on X11 with gs 8.14".
 
 The intention of this change is to improve the rendering quality
-with TextAlphaBits > 1, but actually it modifies glyph rendering in all cases.
+with TextAlphaBits &gt; 1, but actually it modifies glyph rendering in all cases.
 
 1.
 The test file of the bug 687419 shows that we had 3
@@ -73577,11 +73577,11 @@ Fix (pdfwrite) : 1. After used a process color, continue using it for same clien
 DETAILS :
 
 1. Bug 687197 "ps2pdf creates incorrect PDF".
-Defined nad maintained new flags pdev->fill_used_process_color and pdev->stroke_used_process_color
+Defined nad maintained new flags pdev-&gt;fill_used_process_color and pdev-&gt;stroke_used_process_color
 for vector devices. The function pdf_reset_color use them when the cclient color space
 isn't embeddable.
 
-2. Occasionally found that pdf_set_initial_color set saved colors to pdev->vg_initial
+2. Occasionally found that pdf_set_initial_color set saved colors to pdev-&gt;vg_initial
 rather than to argument pointers. This could loose some color commands with a small probability,
 so that some objects could get a wrong color.
 
@@ -74263,7 +74263,7 @@ PDF Type 3 fonts, and the text may be broken into smaller pieces.
 Particularly this happens with the test file of the bug 687472.
 Viewers must account that implementing the text serchability.
 
-A new array pdfont->u.simple.s.type3.cached is used to remember whether
+A new array pdfont-&gt;u.simple.s.type3.cached is used to remember whether
 a charproc uses setcachedevice[2]. If a character used it at ones,
 we assume that all further its occurances to do same.
 We think that this assumption is implied by PLRM.
@@ -74594,7 +74594,7 @@ was missing from the sh (shfill) handler.</pre>
 <pre>
 Add /WhiteIsOpaque page device parameter to provide user interface to the
 corresponding bbox device flag. Fix a bug introduced in gdevbbox.c v.1.9
-(for bug 645531) that left bdev->white and bdev->black uninitialized,
+(for bug 645531) that left bdev-&gt;white and bdev-&gt;black uninitialized,
 resulting in black objects skipped as white.
 Fix bugs 687410, 687478</pre>
 <p>[src/gdevbbox.c 1.17, doc/Devices.htm 1.74]</p>
@@ -74812,7 +74812,7 @@ DETAILS :
 
 This is a continuation to the previous patch :
   4. Optimized for constant color :
-    Fix : pfs->monotonic_color was not properly restored.
+    Fix : pfs-&gt;monotonic_color was not properly restored.
 
 EXPECTED DIFFERENCES :
 
@@ -74965,7 +74965,7 @@ DETAILS :
 
 1. A continuation for the bug in LAZY_WEDGES of the step 65 :
 "color was desynchronized with vertices when filling a wedge." :
-open_wedge_median did not set l->from_last_side.
+open_wedge_median did not set l-&gt;from_last_side.
 
 2. A bug : Color linearity check missed the shading function linearity check.
 Debugged with "MLC2\PROB322-shadings\Clarke Tate Manns Chinese-1.ai.pdf"
@@ -75950,7 +75950,7 @@ between the operations.
 
 PostScript snippet to test this:
 
-<< /CompatibilityLevel 1.4 >> setpagedevice
+&lt;&lt; /CompatibilityLevel 1.4 &gt;&gt; setpagedevice
 	% work around rectfill mapping directly to device fill_rectangle
 /rectfill { gsave 4 2 roll moveto 1 index 0 rlineto
   0 exch rlineto neg 0 rlineto closepath fill grestore
@@ -76130,7 +76130,7 @@ quality, and fixes bug 687368.</pre>
 2004-04-02 14:21 Igor Melichev</strong></p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : /XObject <<-1 0 R>> was written to a pattern dictionary.
+Fix (pdfwrite) : /XObject &lt;&lt;-1 0 R&gt;&gt; was written to a pattern dictionary.
 
 DETAILS :
 
@@ -76291,7 +76291,7 @@ DETAILS :
    during the advance glyph raster cache lookup.
 
 2. Removed
-     if (pgs->in_cachedevice)
+     if (pgs-&gt;in_cachedevice)
  	return_error(gs_error_undefined);
    from gs_setcolor,
    because I can't guess it's reason/purpose.
@@ -76299,15 +76299,15 @@ DETAILS :
 
 3. The assertion also failed with
    "-dTextAlphaBits=4 -dLastPage=1 comparefiles\xgfddg.pdf".
-   In gx_add_cached_char added the case "cc->pair == NULL" :
+   In gx_add_cached_char added the case "cc-&gt;pair == NULL" :
 	    /* gx_show_text_retry could reset it when bbox_draw
 	       discovered an insufficient FontBBox and enlarged it.
 	       Glyph raster params could change then. */
 
-4. gx_show_text_retry must reset penum->pair due to possible FontBBox change,
+4. gx_show_text_retry must reset penum-&gt;pair due to possible FontBBox change,
    see (3).
 
-5. The cc_set_pair macro to be applied for changing cc->pair
+5. The cc_set_pair macro to be applied for changing cc-&gt;pair
    to provide consistent data for font_dir_reloc_ptrs.
 
 EXPECTED DIFFERENCES :
@@ -76582,7 +76582,7 @@ outputs.
 The file is generating an invalid shading dictionary.  Specifically
 it generates:
 
-sh:  << /Coords [0 0 0 1] /ColorSpace [/DeviceCMYK] /Function <<
+sh:  &lt;&lt; /Coords [0 0 0 1] /ColorSpace [/DeviceCMYK] /Function &lt;&lt;
 /BitsPerSample 8 /Ra
 nge [0 1] /FunctionType 0 /Domain [0 1] /DataSource
 (\200\200\200\201\201\202\202\203
@@ -76609,14 +76609,14 @@ nge [0 1] /FunctionType 0 /Domain [0 1] /DataSource
 55\356\356\357\357\360\360\361\361\362\362\363\363\364\364\365\365\366\366\3
 67\367\37
 0\370\371\371\372\372\373\373\374\374\375\375\376\376\377) /Order 1 /Size
-[256] >> /S
-hadingType 2 >>
+[256] &gt;&gt; /S
+hadingType 2 &gt;&gt;
 
 The file was sent into Adobe Distiller 6.0.  Inside the resulting
 PDF file there is a very different shading dictionary:  Specifically:
 
-/sh: << /ColorSpace [/Separation /MEZZO__1 /DeviceCMYK -array-] /Coords [0 0
-0 1] /Function << /Decode [0 1] /FilePosition 460412 /Range [0 1] /Filter
+/sh: &lt;&lt; /ColorSpace [/Separation /MEZZO__1 /DeviceCMYK -array-] /Coords [0 0
+0 1] /Function &lt;&lt; /Decode [0 1] /FilePosition 460412 /Range [0 1] /Filter
 /FlateDecode /BitsPerSample 8 /Encode [0 255] /Length 255 /FunctionType 0
 /File -file- /Domain [0 1] /DataSource
 (\200\200\200\201\201\202\202\203\203\204\204\205\205\206\206\207\207\210\21
@@ -76632,7 +76632,7 @@ PDF file there is a very different shading dictionary:  Specifically:
 6\336\337\337\340\340\341\341\342\342\343\343\344\344\345\345\346\346\347\34
 7\350\350\351\351\352\352\353\353\354\354\355\355\356\356\357\357\360\360\36
 1\361\362\362\363\363\364\364\365\365\366\366\367\367\370\370\371\371\372\37
-2\373\373\374\374\375\375\376\376\377) /Size [256] >> /ShadingType 2 >>
+2\373\373\374\374\375\375\376\376\377) /Size [256] &gt;&gt; /ShadingType 2 &gt;&gt;
 
 This dictionary has a Separation color space.  The given function
 is a reasonable function to use with the Separation color space.
@@ -76908,8 +76908,8 @@ modified after the function is build. Likely this must not cause
 problems due to gs/lib caches the stream with ReusableStreamDecode.
 Also we don't know practical cases.
 POLE_CACHE_IGNORE 1 avoids this problem with some slowdown,
-(the slowdown exponentially grows with >=3 arguments,
-but again we don't know practical examples with >=3 arguments).
+(the slowdown exponentially grows with &gt;=3 arguments,
+but again we don't know practical examples with &gt;=3 arguments).
 
 The configuration flag POLE_CACHE allows to revert to the old code.
 
@@ -77091,7 +77091,7 @@ still incorrect.</pre>
 2004-03-15 09:54 Igor Melichev</strong></p>
 <blockquote>
 <pre>
-MSVC compiler: allowing Precompiled Headers, Incremental Compilation, Edit & Continue.
+MSVC compiler: allowing Precompiled Headers, Incremental Compilation, Edit &amp; Continue.
 
 DETAILS :
 
@@ -77103,7 +77103,7 @@ For best results should reorganize gs header files.
 
 Incremental Compilation speeds up the rebuilding after editing source code.
 
-Edit&Continue is a powerful tool for debugging. Together with incremental compilation
+Edit&amp;Continue is a powerful tool for debugging. Together with incremental compilation
 it allows to regenerate the object code during a debug session,
 and continue the debugging with the new code without restarting the program.
 Press F10 after you changes source code and enjoy.
@@ -77181,8 +77181,8 @@ To reproduce the crash apply the patch of the bug 687351 to lib/pdf_font.ps
 6. Implemented a dynamic expansion of CIDMap for copied fonts.
 7. In font copies CIDMap used the code 0xFFFF for representing unmapped glyphs.
 8. Inserted the comment into gdevpdtf.c :
-    /* fixme : Likely pdfont->u.cidfont.CIDToGIDMap duplicates
-       pdfont->FontDescriptor->base_font->copied->client_data->CIDMap.
+    /* fixme : Likely pdfont-&gt;u.cidfont.CIDToGIDMap duplicates
+       pdfont-&gt;FontDescriptor-&gt;base_font-&gt;copied-&gt;client_data-&gt;CIDMap.
        Only difference is 0xFFFF designates unmapped CIDs.
      */
 9. same_cid0_hinting must not check FDBytes (gxfcopy.c).
@@ -77236,14 +77236,14 @@ Implementing current point with double precision.
 
 DETAILS :
 
-The old code stores the current point in pgs->ppath->position
+The old code stores the current point in pgs-&gt;ppath-&gt;position
 with the 'fixed' representation in the device space coordinates.
 This appears insufficiently precise if a document constructs a path
 with multiple 'rlineto' or 'rcurveto'. A significant to error accumulation happens.
 
-We implement the current point with 'double', duplicating pgs->ppath->position
+We implement the current point with 'double', duplicating pgs-&gt;ppath-&gt;position
 with the new field gs_imager_state::current_point.
-We can't replace pgs->ppath->position with the new one due to several reasons :
+We can't replace pgs-&gt;ppath-&gt;position with the new one due to several reasons :
 
 - Sometimes (in the text processing, in arc processing and in reversepath)
   a new current point is computed when imager state is not accessible.
@@ -77262,9 +77262,9 @@ due to pixel rounding, but it would be useful to improve arc, arcn, arct, arcto.
 However an improvement of arc operations isn't a high priority,
 and after this patch becomes a local change.
 
-We removed ppath->outside_position, because
-pgs->current_point now effectively handles this feature.
-Due to that the rounded pgs->current_point may be unequal to pgs->ppath->position
+We removed ppath-&gt;outside_position, because
+pgs-&gt;current_point now effectively handles this feature.
+Due to that the rounded pgs-&gt;current_point may be unequal to pgs-&gt;ppath-&gt;position
 when the current point is outside the range.
 
 The configuration flag PRECISE_CURRENTPOINT defined in gxstate.h
@@ -77418,11 +77418,11 @@ EncryptMetadata is an undocumented feature of PDF 1.4.  This
 implies that this action needs to be done for values of R in the
 Encrypt dictionary of 3 or higher.  However testing with Acrobat
 5.0 and Acrobat 6.0 shows that this is not done for R = 3.  Thus
-we check for R >= 4.
+we check for R &gt;= 4.
 
 2.  Testing with Acrobat 5.0 and 6.0 has verified that the encryption
 of metadata streams is controlled by EncryptMetadata in both versions.
-Thus we check for PDF 1.4 and higher (R >= 3) and if so then we check
+Thus we check for PDF 1.4 and higher (R &gt;= 3) and if so then we check
 the stream type and the EncryptMetadata flag to determine if a stream
 needs to be decrypted.</pre>
 <p>[lib/pdf_sec.ps 1.15]</p>
@@ -78239,7 +78239,7 @@ Fix (TT grid fitting) : AlignToPixels=0 aligned to pixels.
 
 DETAILS :
 
-Bug 687318 'A poor TT grid fitting with TextAlphaBits>1".
+Bug 687318 'A poor TT grid fitting with TextAlphaBits&gt;1".
 This patch doesn't close the bug.
 An StdHW, StdVW reconstruction is necesseary for perfect result.
 AlignToPixels=0 still gives a varying stem width.
@@ -78565,7 +78565,7 @@ It reduces the number of constant color triangles to fill.
 
 Since this algorithm consumes an exponential RAM of the wedge nesting,
 we restrict the wedge nesting with 9. For doing that we enforce
-subdivision of large patches into chunks with <=512 pixels length sides
+subdivision of large patches into chunks with &lt;=512 pixels length sides
 - see LAZY_WEDGES_MAX_LEVEL.
 
 EXPECTED DIFFERENCES :
@@ -79141,7 +79141,7 @@ DETAILS :
 
 This fixes an unintentional regression in gxshade4.c,
 which appeared from a recent patch.
-Also it optimises the access to pis->smoothness.
+Also it optimises the access to pis-&gt;smoothness.
 
 EXPECTED DIFFERENCES :
 
@@ -80244,21 +80244,21 @@ Here is the analyzis of the old rounding :
 
 We must paint pixels with index i such that
 
-    Xl <= i + 0.5 < Xr
+    Xl &lt;= i + 0.5 &lt; Xr
 
 The condition is is equivalent to
 
-    Xl - 0.5 <= i < Xr - 0.5
+    Xl - 0.5 &lt;= i &lt; Xr - 0.5
 
 which is equivalent to
 
-    (is_integer(Xl - 0.5) ? Xl - 0.5 : ceil(Xl - 0.5)) <= i <
+    (is_integer(Xl - 0.5) ? Xl - 0.5 : ceil(Xl - 0.5)) &lt;= i &lt;
     (is_integer(Xr - 0.5) ? Xr - 0.5 : floor(Xr - 0.5) + 1)
 
-(the last '+1" happens due to the strong comparizon '<')
+(the last '+1" happens due to the strong comparizon '&lt;')
 which is equivalent to
 
-    ceil(Xl - 0.5) <= i < ceil(Xr - 0.5)
+    ceil(Xl - 0.5) &lt;= i &lt; ceil(Xr - 0.5)
 
 trap_line represents the intersectiion coordinate as a rational value :
 
@@ -80279,11 +80279,11 @@ Then
     Xl = xl' - 0.5 + 2e - fl
     Xr = xr' - 0.5 + 2e - fr
 
-    ceil(xl' - 0.5 + 2e - fl - 0.5) <= i < ceil(xr' - 0.5 + 2e - fr - 0.5)
+    ceil(xl' - 0.5 + 2e - fl - 0.5) &lt;= i &lt; ceil(xr' - 0.5 + 2e - fr - 0.5)
 
 which is equivalent to
 
-    ceil(xl' + 2e - fl) - 1 <= i < ceil(xr' + 2e - fr) - 1
+    ceil(xl' + 2e - fl) - 1 &lt;= i &lt; ceil(xr' + 2e - fr) - 1
 
 We have :
 
@@ -80293,32 +80293,32 @@ We have :
 
     (is_integer(xl' + 2e - fl) ? xl' + 2e - fl - 1 : floor(xl' + 2e - fl))
 
-Since -e <= fl < 0, it is equal to
+Since -e &lt;= fl &lt; 0, it is equal to
 
-    (is_integer(xl' + e) && e == fl ? xl' + 2e - fl - 1 : floor(xl' + 2e - fl)) ==
+    (is_integer(xl' + e) &amp;&amp; e == fl ? xl' + 2e - fl - 1 : floor(xl' + 2e - fl)) ==
 
-    (is_integer(xl' + e) && e == fl ? xl' + e - 1 :
-     is_integer(xl' + e) && e != fl ? floor(xl' + 2e - fl)
-    !is_integer(xl' + e) && e != fl ? floor(xl' + 2e - fl)
-    !is_integer(xl' + e) && e == fl ? floor(xl' + 2e - fl))  ==
+    (is_integer(xl' + e) &amp;&amp; e == fl ? xl' + e - 1 :
+     is_integer(xl' + e) &amp;&amp; e != fl ? floor(xl' + 2e - fl)
+    !is_integer(xl' + e) &amp;&amp; e != fl ? floor(xl' + 2e - fl)
+    !is_integer(xl' + e) &amp;&amp; e == fl ? floor(xl' + 2e - fl))  ==
 
-    (is_integer(xl' + e) && e == fl ? xl' + e - 1 :
-     is_integer(xl' + e) && e != fl ? xl' + e :
-    !is_integer(xl' + e) && e != fl ? floor(xl' + e)
-    !is_integer(xl' + e) && e == fl ? floor(xl' + e))  ==
+    (is_integer(xl' + e) &amp;&amp; e == fl ? xl' + e - 1 :
+     is_integer(xl' + e) &amp;&amp; e != fl ? xl' + e :
+    !is_integer(xl' + e) &amp;&amp; e != fl ? floor(xl' + e)
+    !is_integer(xl' + e) &amp;&amp; e == fl ? floor(xl' + e))  ==
 
-    (is_integer(xl' + e) && e == fl ? xl' + e - 1 : floor(xl'))
+    (is_integer(xl' + e) &amp;&amp; e == fl ? xl' + e - 1 : floor(xl'))
 
 And the condition is equivalent to
 
-    (is_integer(xl' + e) && e == fl ? xl' + e - 1 : floor(xl')) <= i <
-    (is_integer(xr' + e) && e == fr ? xl' + e - 1 : floor(xr'))
+    (is_integer(xl' + e) &amp;&amp; e == fl ? xl' + e - 1 : floor(xl')) &lt;= i &lt;
+    (is_integer(xr' + e) &amp;&amp; e == fr ? xl' + e - 1 : floor(xr'))
 
 But the old code computes
 
-    floor(xl') <= i < floor(xr'))
+    floor(xl') &lt;= i &lt; floor(xr'))
 
-Thus when is_integer(xl' + e) && e == fl,
+Thus when is_integer(xl' + e) &amp;&amp; e == fl,
 it wrongly shifts the rounded boundary in 1 pixel to the left.
 
 EXPECTED DIFFERENCES :
@@ -82082,7 +82082,7 @@ DETAILS :
 3. Cleaned the inner loop with moving out the computations if ybot, ytop.
    This change is algorithmically equivalent.
 
-4. Moved the (ybot < ytop) check outside the trapezoid loop.
+4. Moved the (ybot &lt; ytop) check outside the trapezoid loop.
    This change is algorithmically equivalent.
 
 5. Inserted 'const' into loop_fill_trap_np.
@@ -84214,7 +84214,7 @@ pdfwrite : Implementing the PDF 1.4 encryption, step 13.
 
 DETAILS :
 
-1. Disable Encryption version 2 revision 2 with KeyLength > 40
+1. Disable Encryption version 2 revision 2 with KeyLength &gt; 40
    due to an incompatibility to many viewers.
 2. Improves the error message format.
 
@@ -86123,7 +86123,7 @@ The patch
 http://www.ghostscript.com/pipermail/gs-cvs/2004-January/003988.html
 appears incomplete, because it works only with
 
-	<< /EncodeColorImages false >> setdistillerparams
+	&lt;&lt; /EncodeColorImages false &gt;&gt; setdistillerparams
 
 The problem happens due to Decode arrays considered always unequal.
 This patch :
@@ -86203,7 +86203,7 @@ Ghostscript is rejecting the test file because the parameter is not
 defined.  The RangeCheck error message is the result of the following
 piece of code in zfilter.c:
 
-  if ((code = dict_int_param(op, "EODCount", 0, max_int, -1, &count)) < 0)
+  if ((code = dict_int_param(op, "EODCount", 0, max_int, -1, &amp;count)) &lt; 0)
 	 return code;
 
 This sets a default value of -1 for EODCount and then checks it
@@ -86321,13 +86321,13 @@ pdfwrite : Implementing the PDF 1.4 encryption, step 9.
 
 DETAILS :
 
-This fixes the key length problem with << /V 2 /R 3 >> .
+This fixes the key length problem with &lt;&lt; /V 2 /R 3 &gt;&gt; .
 
-With << /V 2 /R 2 >> the patched version is still incompatible to Adobe
+With &lt;&lt; /V 2 /R 2 &gt;&gt; the patched version is still incompatible to Adobe
 when Length is not 40, but it appears compatible to XPDF.
 
 This revision can go to beta.
-Use << /V 2 /R 2 /Length 40 >> or << /V 2 /R 3 /Length not40 >>
+Use &lt;&lt; /V 2 /R 2 /Length 40 &gt;&gt; or &lt;&lt; /V 2 /R 3 /Length not40 &gt;&gt;
 - they both should work.
 
 EXPECTED DIFFERENCES :
@@ -86344,10 +86344,10 @@ Fix (PDF interpreter) Bug in encryption revision 3.
 
 DETAILS :
 
-It wrongly generated the encryption key with << /V 2 /R 3 >> .
+It wrongly generated the encryption key with &lt;&lt; /V 2 /R 3 &gt;&gt; .
 
-With << /V 2 /R 3 >> the patched version is compatible to Adobe.
-With << /V 2 /R 2 >> the patched version is still incompatible to Adobe
+With &lt;&lt; /V 2 /R 3 &gt;&gt; the patched version is compatible to Adobe.
+With &lt;&lt; /V 2 /R 2 &gt;&gt; the patched version is still incompatible to Adobe
 when Length is not 40, but it appears compatible to XPDF.
 
 EXPECTED DIFFERENCES :
@@ -86614,7 +86614,7 @@ See comment in pdf_compute_fileID.
 A new function s_MD5E_make_stream is defined
 to simplify internal interfaces.
 
-I'm not sure about the trick "s->strm = s" in s_MD5E_make_stream.
+I'm not sure about the trick "s-&gt;strm = s" in s_MD5E_make_stream.
 Want an approval.
 
 EXPECTED DIFFERENCES :
@@ -86736,7 +86736,7 @@ inline images. See gs\doc\Ps2pdf.htm . Use it to disable
 inline images if the source document contains multiple redundant
 small images.
 
-A new vitrtual function cos_object_t::cos_procs->equal is implemented
+A new vitrtual function cos_object_t::cos_procs-&gt;equal is implemented
 for object comparizon. But the current implementation is restricted
 with current needs. Particularly it doesn't implement cos arrays,
 and assumes equal stream segmentation for equal streams.
@@ -87610,7 +87610,7 @@ allow "readonly" directories to be amended. Bug #674421.</pre>
 2004-01-02 20:53 Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Remove spurious ^M (ctrl-M == <cr>) characters from the source -- probably
+Remove spurious ^M (ctrl-M == &lt;cr&gt;) characters from the source -- probably
 caused by a Windows user performing an update from a file that was not
 correctly recognized as DOS vs. UNIX line endings by cvs.</pre>
 <p>[src/idict.c 1.10]</p>
@@ -87712,7 +87712,7 @@ DETAILS :
 I can't guess why it was done depending on path. It looks wrong
 and gives a different result when recomputed from type1execchar
 when the path is reset.
-Also penum->current_font to be used rather that pgs->font due to composite fonts.
+Also penum-&gt;current_font to be used rather that pgs-&gt;font due to composite fonts.
 Bug 687209 "assertion failure when open postscript file".
 
 EXPECTED DIFFERENCES :
@@ -88190,7 +88190,7 @@ DETAILS:
 
 The 'rotate' variable was input to the 'make_adjustment_matrix' function,
 but the matrix could be rotated even when rotate==0. Instead bias the
-best_mismatch value when the matrix is rotated (pmat->xx == 0).</pre>
+best_mismatch value when the matrix is rotated (pmat-&gt;xx == 0).</pre>
 <p>[src/zmedia2.c 1.14]</p>
 </blockquote>
 
@@ -88599,7 +88599,7 @@ setpagedevice to set .LockSafetyParams. Eventually setpagedevice results
 in a call to gs_setdevice_no_init, but the reference count to the current
 device is 1 so even though the device is not being changed, the device
 was being closed (which freed the buffer and line pointers). Usually
-the currentdevice reference count is > 1 since there is more than one
+the currentdevice reference count is &gt; 1 since there is more than one
 gstate containing a pointer to the device.
 
 This has been broken since 8.10 when version 1.19 was released with
@@ -88922,15 +88922,15 @@ DETAILS :
 
 This change is algorithmically equivalent due to algebraic laws.
 
-Thesis : (coord_near(x2, x0) && coords_in_order(x0, x1, x2)) implies
+Thesis : (coord_near(x2, x0) &amp;&amp; coords_in_order(x0, x1, x2)) implies
 coord_near(x2, x1).
 
 Proof:
 
 case 1:
-	x0 >= x1 >= x2 ==> abs(x2 - x1) <= abs(x2 - x0);
+	x0 &gt;= x1 &gt;= x2 ==&gt; abs(x2 - x1) &lt;= abs(x2 - x0);
 case 2:
-	x0 >= x1 >= x2 ==> abs(x2 - x1) <= abs(x2 - x0);
+	x0 &gt;= x1 &gt;= x2 ==&gt; abs(x2 - x1) &lt;= abs(x2 - x0);
 
 Therefore coord_near(x2, x1) doesn't need to check and has been removed.
 Same for Y.
@@ -89017,7 +89017,7 @@ DETAILS :
 This change modifies a disabled code only.
 
 This patch provides more compatibility of the
-CURVED_TRAPEZOID_FILL & FLATTENED_CURVE_ITERATOR0_COMPATIBLE build
+CURVED_TRAPEZOID_FILL &amp; FLATTENED_CURVE_ITERATOR0_COMPATIBLE build
 to the old code. Doing it with implementing the new function
 gx_flattened_curve_iterator__prev.
 
@@ -89047,7 +89047,7 @@ and in other files.
 The fragment INTERTRAP_STEM_BUG is an attempt to improve a
 serif suppression while dropout prevention. The coded condition
 isn't perfect. It is disabled. A better way would be to depend on
-Y projection contiguity, checking sect->y0, sect->y1.
+Y projection contiguity, checking sect-&gt;y0, sect-&gt;y1.
 Keeping it to simplify further experimenting.
 
 EXPECTED DIFFERENCES :
@@ -89451,7 +89451,7 @@ that can support it.
 2003-12-04 16:57 Igor Melichev</strong></p>
 <blockquote>
 <pre>
-Fix : (type 1 hinter) Invalid contours with <=2 segments caused an infinite loop.
+Fix : (type 1 hinter) Invalid contours with &lt;=2 segments caused an infinite loop.
 
 DETAILS :
 
@@ -89472,7 +89472,7 @@ Generalize the trapezoid fillling algorithm for curves, step 3.
 
 DETAILS :
 
-Improved the CURVED_TRAPEZOID_FILL & FLATTENED_CURVE_ITERATOR0_COMPATIBLE build.
+Improved the CURVED_TRAPEZOID_FILL &amp; FLATTENED_CURVE_ITERATOR0_COMPATIBLE build.
 This change modifies a disabled code only.
 
 EXPECTED DIFFERENCES :
@@ -89559,10 +89559,10 @@ Fix : an access to uninitialized data in zbfont.c .
 
 DETAILS :
 
-Type 11 fonts got an occasional indeterministic data to pdata->Encoding,
-which were inaccurately checked for r_size() <= 256.
+Type 11 fonts got an occasional indeterministic data to pdata-&gt;Encoding,
+which were inaccurately checked for r_size() &lt;= 256.
 
-We're keeping the check "r_size(pfe) <= 256" for backward compatibility,
+We're keeping the check "r_size(pfe) &lt;= 256" for backward compatibility,
 rather we're unclear about it's purpose. It shouldn't be harmful.
 
 EXPECTED DIFFERENCES :
@@ -89580,7 +89580,7 @@ Fix : an access to uninitialized data in gxcpath.c .
 
 DETAILS :
 
-pcpath->path_list was not reset when it is replaced with a rectangle and freed.
+pcpath-&gt;path_list was not reset when it is replaced with a rectangle and freed.
 Bug 687178 "Infinite loop in ialloc_validate_memory".
 
 EXPECTED DIFFERENCES :
@@ -89695,7 +89695,7 @@ Typedef uint64_t from 'unsigned __int64' on win32. From Alex Cherpanov's patch f
 2003-11-27 22:32 Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Add support to pnm images with max_pixel_value < (1<<depth)-1
+Add support to pnm images with max_pixel_value &lt; (1&lt;&lt;depth)-1
 Fix bug 687139.
 </pre>
 <p>[toolbin/tests/fuzzy.c 1.13]</p>
@@ -90127,7 +90127,7 @@ by the user while investigating 687131.
 Fix the logic that conditionally disables interpolation. The previous only
 worked if the max_gray was set to the same as max_color, but the macro
 dci_std_color_max_gray set max_gray to 0 if the number of components was
-> 1. Detected with bug #687147 for customer #750.
+&gt; 1. Detected with bug #687147 for customer #750.
 </pre>
 <p>[src/gxiscale.c 1.8]</p>
 </blockquote>
@@ -90163,12 +90163,12 @@ The old code wrote UCR (undercolor removal) functions with mapping 0 to 0.00392,
 causing a solid black to convert to a non-solid color with pkmraw device.
 The fix reduces the sample range to [0:254] and generates an appropriate Decode array.
 
-Bug 687109 "PDF-->pkmraw: 0 0 0 RG isn't solid:.
+Bug 687109 "PDF--&gt;pkmraw: 0 0 0 RG isn't solid:.
 Bug 687138 "pdfwrite is adding poor UCR functions to output files".
 
 EXPECTED DIFFERENCES :
 
-This patch causes multiple differences with pdfwrite->pkmraw.
+This patch causes multiple differences with pdfwrite-&gt;pkmraw.
 The change to pdfwrite definitely is a progression,
 but it discovers a new bug 687146 "(pdfwrite) CalRGB wrongly converts to ICCBased".
 
@@ -90270,7 +90270,7 @@ Vu989qfj.pdf
 xgfddg.pdf
 xngnews.pdf
 
-pdfwrite->pkmraw 300dpi :
+pdfwrite-&gt;pkmraw 300dpi :
 
 0.pdf
 01_001.pdf
@@ -90416,7 +90416,7 @@ DETAILS :
 
 This continues fixing the bug 686885 "bad paths in pdf".
 
-If !pcpath->path_valid, we convert the pcpath->rect_list to a path,
+If !pcpath-&gt;path_valid, we convert the pcpath-&gt;rect_list to a path,
 storing it into the clip path list element.
 
 EXPECTED DIFFERENCES :
@@ -90884,7 +90884,7 @@ Correct spelling and wording.
 2003-11-03 02:39 Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Initialize cc->pair field for the external fonts, forgotten
+Initialize cc-&gt;pair field for the external fonts, forgotten
 during the switch to new TrueType interpreter (NEW_TT_INTERPRETER).
 Fix bug 687116
 </pre>
@@ -91597,7 +91597,7 @@ but there is no idea how to improve it.
 
 EXPECTED DIFFERENCES :
 
-With -Z? the old code failed with pdfwrite->ppmraw with the following tests :
+With -Z? the old code failed with pdfwrite-&gt;ppmraw with the following tests :
 
 040-01.ps
 091-01.ps
@@ -91671,7 +91671,7 @@ Altona.Page_3.2002-09-27.pdf
 ICPconcept.pdf
 Testform.v1.0.2.pdf
 
-pdfwrite->raster, 72dpi :
+pdfwrite-&gt;raster, 72dpi :
 Altona.Page_3.2002-09-27.pdf
 ICPconcept.pdf
 japan-.ps
@@ -91679,7 +91679,7 @@ japan.ps
 Testform.v1.0.2.pdf
 Type11CDevProc.ps
 
-pdfwrite->raster, 300dpi :
+pdfwrite-&gt;raster, 300dpi :
 Altona.Page_3.2002-09-27.pdf
 ICPconcept.pdf
 japan-.ps
@@ -92057,7 +92057,7 @@ should percept this change as algorithmically equivalent.
 
 The core of the change is explained in the comment inserted into gdevpdtt.c :
 
-    if (pdev->font3 != 0) {
+    if (pdev-&gt;font3 != 0) {
 	/* A text operation happens while accumulating a charproc.
 	   This is a case when source document uses a Type 3 font,
 	   which's charproc uses another font.
@@ -92069,7 +92069,7 @@ The core of the change is explained in the comment inserted into gdevpdtt.c :
 	   and therefore the font may look too small while the source charproc
 	   interpretation. The document tpc2.ps of the bug 687087 is an example.
 	*/
-	penum->device_disabled_grid_fitting = true;
+	penum-&gt;device_disabled_grid_fitting = true;
     }
 
 It is implemented with defining the new field device_disabled_grid_fitting
@@ -92108,7 +92108,7 @@ rather the glyph still converts to outline.
 <blockquote>
 <pre>
 Don't cache glyphs with a suspect bounding box. The patch tests for
-(urx!=0 && llx==urx) || (ury!=0 && lly==ury) but suggestions of a
+(urx!=0 &amp;&amp; llx==urx) || (ury!=0 &amp;&amp; lly==ury) but suggestions of a
 better test are allways welcome.
 Fix bug 687015 from customer 440
 </pre>
@@ -92121,16 +92121,16 @@ Fix bug 687015 from customer 440
 <pre>
 Return correct /DeviceGray color space from currentcolorspace operator
 inside PaintProc of the uncolored pattern and cache device (bug 627169).
-Use igs->color_space to track the current color space.
+Use igs-&gt;color_space to track the current color space.
 Fix bug 687080 from customer 710.
 
 DETAILS:
 
 The problem in bug 687080 is definitely a conflict about the current
 color space while the PaintProc is being executed.  There are two
-color space indicators: pgs->color_space and igs->colorspace.  Most
+color space indicators: pgs-&gt;color_space and igs-&gt;colorspace.  Most
 of the time these two agree and there is no problem.  However during
-pattern accumulation pgs->color_space has been temporarily changed
+pattern accumulation pgs-&gt;color_space has been temporarily changed
 from a pattern color space to DeviceGray.  This causes a problem
 when the currentcmyk operator is called.  Currently, before this fix,
 it calls currentcolor which returns a DeviceGray color.  Then a
@@ -92138,7 +92138,7 @@ color to CMYK routine is called based upon the color space being
 a pattern color space.  This then fails since it has the wrong input
 color values.
 
-The fix looks at the current color space, in pgs->color_space,
+The fix looks at the current color space, in pgs-&gt;color_space,
 and is special casing DeviceGray.  The fix should work better than
 the current logic.  The only problem area would likely be if we have
 other 'temporary' color spaces besides DeviceGray.  I do not know of
@@ -92734,7 +92734,7 @@ None.
 2003-10-09 22:26 Dan Coby</strong></p>
 <blockquote>
 <pre>
-Fix for 687055 pdfwrite should not fail with <</ProcessColorModel /DeviceN>>
+Fix for 687055 pdfwrite should not fail with &lt;&lt;/ProcessColorModel /DeviceN&gt;&gt;
 setpagedevice.  This change adds support for the DeviceN process color
 model to the pdfwrite device.  The DeviceN process color model is treated
 like the DeviceCMYK process color model except for the name.
@@ -93237,7 +93237,7 @@ DETAILS :
 
 This bug only has an effect when same font renders to devices
 with different alpha bits. It can cause rendering a cached charascter
-with a wrong size (devided or multiplied by 1<<alpha_bits).
+with a wrong size (devided or multiplied by 1&lt;&lt;alpha_bits).
 
 EXPECTED DIFFERENCES :
 
@@ -93444,7 +93444,7 @@ The bug appeared in gxchar.c revision 1.21.
 
 EXPECTED DIFFERENCES :
 
-None, because the test tool doesn't test TextAlphaBits > 1.
+None, because the test tool doesn't test TextAlphaBits &gt; 1.
 </pre>
 <p>[src/gxchar.c 1.32]</p>
 </blockquote>
@@ -93693,7 +93693,7 @@ It defines a new gs_text_process return value TEXT_PROCESS_CDEVPROC,
 which allows a device to request a special interpreter callout
 for executing CDevProc. The processing is some tricky :
 we apply zchar_set_cache to prepare interpreter stacks,
-and hook its results in pte->procs->set_cache .
+and hook its results in pte-&gt;procs-&gt;set_cache .
 
 This patch handles CDevProc only for CIDFontType 2.
 Other font types should be a separate patch.
@@ -94226,7 +94226,7 @@ where KEEP_OLD_HINTER is undefined.
 This change is algorithmically equivalent,
 because the new hinter worked instead the old one. Only exception is
 the change to gstype1.c ln 370 : the condition t1_hinter__is_x_fitting(h)
-is waeker than the old pcis->fh.use_x_hints, because
+is waeker than the old pcis-&gt;fh.use_x_hints, because
 the new hinter applies an X-grid fitting with a slightly sloped transforms.
 
 The change to gdevpsfx.c define local arrays for storing hints.
@@ -94517,7 +94517,7 @@ This commit is part of extending support for high level colors to
 high level devices.  In general, additions have been made to the
 device colors to include the high level color values used to create
 the device color.  A flag was also added to indicate if the color
-information (in dev_color->ccolor) is valid.  There are also two
+information (in dev_color-&gt;ccolor) is valid.  There are also two
 files being added to provide support for saving and comparing the
 high level color information.
 </pre>
@@ -95485,8 +95485,8 @@ filter implementation. Closes bug 686979.
 
 DETAILS:
 
-Filter implementations can be called with <source> <paramdict> or just
-with <source> on the stack. Previously our jbig2 decode filter only
+Filter implementations can be called with &lt;source&gt; &lt;paramdict&gt; or just
+with &lt;source&gt; on the stack. Previously our jbig2 decode filter only
 supported the former. This went undetected because previous files we'd
 encountered from the CVISION and Adobe encoders included a /JBIG2Globals
 filter parameter even if it was empty. The file submitted with the bug
@@ -96200,7 +96200,7 @@ Fix : gs/Resource/Decoding/Unicode contained wrong codes for Cyrillic and Herbre
 2003-06-22 11:15 igor</strong></p>
 <blockquote>
 <pre>
-Fix (pdfwrite) : pdev->black and pdev->white were not set when ProcessColorModel changes.
+Fix (pdfwrite) : pdev-&gt;black and pdev-&gt;white were not set when ProcessColorModel changes.
 Bug 686921 "/ProcessColorModel /DeviceCMYK causes black page".
 </pre>
 <p>[src/gdevpdfg.c 1.33]</p>
@@ -96248,7 +96248,7 @@ gsapi_run_string* and gsdll_run_cont() calls. Fixes bug 686925.
 2003-06-20 13:20 giles</strong></p>
 <blockquote>
 <pre>
-Remove <limit.h> inclusions as it defines types that conflict with our
+Remove &lt;limit.h&gt; inclusions as it defines types that conflict with our
 std*.h on HPUX and probably other systems. Fix for bug 686920.
 
 Also correct the copyright dates for gxhintn.c.
@@ -96264,7 +96264,7 @@ MIN_LONG) I simply defined it at the top of the file.
 The test used should work on all 2's complement systems and would
 probably fail miserably on anything else. It was the most portable
 define I could come up with. A less assuming variant
-((long)(ARCH_MAX_ULONG>>1)+1) also works but generates a warning about
+((long)(ARCH_MAX_ULONG&gt;&gt;1)+1) also works but generates a warning about
 the overflow.
 
 genarch.c could of course test a variety of candidates and look for the
@@ -96654,7 +96654,7 @@ be ignored". PLRM3 says nothing about GDBytes entry but it seems logical that
 the entry is no longer needed when the structure it describes is ignored.
 
 Old code used 0 as a default GDBytes value but required explicit specification
-to be > 0. New code permits explicit 0 value because "Acrobat PDFMaker 5.0 for
+to be &gt; 0. New code permits explicit 0 value because "Acrobat PDFMaker 5.0 for
 Word" generates it.
 </pre>
 <p>[src/zfcid.c 1.14]</p>
@@ -96710,7 +96710,7 @@ If an Encoding is specified with a symbolic TrueType font,
 its character names to be used for generating CharStrings.
 The old code uses SymbolEncoding instead, missing some characters.
 
-Fixes the bug 686912 "PDF interpreter problem with True Type & Encoding".
+Fixes the bug 686912 "PDF interpreter problem with True Type &amp; Encoding".
 </pre>
 <p>[lib/gs_ttf.ps 1.30, lib/pdf_font.ps 1.56]</p>
 </blockquote>
@@ -96734,7 +96734,7 @@ This patch mixes several changes :
 
 - The text decomposition in gdevpdtc.c mixed font indices of various font descendents.
 
-- font->procs.get_glyph_info sometimes received glyph indices
+- font-&gt;procs.get_glyph_info sometimes received glyph indices
   instead glyph names or CIDs. This happened with subglyphs of a CIDFontType 2 glyph.
   This patch improves the semantics of gs_glyph with distinguishing
   CIDs and GIDs with a new tag in the 2nd high order bit.
@@ -97336,7 +97336,7 @@ release instructions does not work for this diff. Instead the xml
 changelong was generated with hand-picked dates:
 
 	cvs2cl.pl --xml --utc -T --follow trunk --usermap authors \
-		--log-opts "-d'2002-11-21<2003-06-21'" -f doc/changelog.xml
+		--log-opts "-d'2002-11-21&lt;2003-06-21'" -f doc/changelog.xml
 </pre></blockquote>
 
 <p><strong><a name="2003-05-20_2329"></a>
@@ -97731,7 +97731,7 @@ the o_stack pointer instead of directly setting the pointer.
 <p><strong><a name="2003-05-15_1846"></a>
 2003-05-15 18:46 Alex Cherepanov</strong></p>
 <blockquote><pre>
-Fix negative shift count in operator << .
+Fix negative shift count in operator &lt;&lt; .
 On 80x86 processors the shift argument is implicitely masked by 31.
 Fixes bug #686743.
 </pre></blockquote>
@@ -97760,7 +97760,7 @@ to a gray background which is not commonly used on web
 pages.  By writing a white bKGD chunk, PNG files will display
 correctly against a white background in MSIE.
 If a solid color for a web page background is used
-with <body bgcolor="#CCCC00">, then PNG images appearing
+with &lt;body bgcolor="#CCCC00"&gt;, then PNG images appearing
 on that page would need to be created with
 -dBackgroundColor=16#CCCC00.
 For textured background there is no hope.
@@ -97895,7 +97895,7 @@ Add recent new files to the developer documentation.
 <p><strong><a name="2003-05-08_1104"></a>
 2003-05-08 11:04 Igor Melichev</strong></p>
 <blockquote><pre>
-Fix (type 1 hinter) : Overshoot thresholds were wrongly computed with TextAlphaBits > 1.
+Fix (type 1 hinter) : Overshoot thresholds were wrongly computed with TextAlphaBits &gt; 1.
 </pre></blockquote>
 
 <p><strong><a name="2003-05-08_1033"></a>
@@ -98873,8 +98873,8 @@ D. The functions gp_pathstring_not_bare, gp_file_name_references_parent,
 
 E. New operators added to maintain the new logics :
 
-   <string> <string> <bool> .file_name_combine <string> true
-   <string> <string> <bool> .file_name_combine <string> <string> false
+   &lt;string&gt; &lt;string&gt; &lt;bool&gt; .file_name_combine &lt;string&gt; true
+   &lt;string&gt; &lt;string&gt; &lt;bool&gt; .file_name_combine &lt;string&gt; &lt;string&gt; false
 
       Combine a file name with a prefix.
       The first argument is a prefix, the second is a file name.
@@ -98883,30 +98883,30 @@ E. New operators added to maintain the new logics :
       but if it starts with cwd reference, the starting
       cwd reference persists.
 
-      If the <bool> argument is true, it considered to use the
+      If the &lt;bool&gt; argument is true, it considered to use the
       "no sibling" mode. It prevents reduction of
       (x/../y) to (y) for any x != y. With false such reduction
-      is allowed. The <bool> argument appears a rudinemt from
+      is allowed. The &lt;bool&gt; argument appears a rudinemt from
       a dead branch. The new code always sets it to false.
 
       On success, the result is a combined, reduced path and false.
       On failure, the argument strings left on operand stack,
       followed with false.
 
-   - .file_name_separator <string>
+   - .file_name_separator &lt;string&gt;
 
       Returns a readonly string, which represents a separator
       which is used in file names between directory item and file item.
       Used for making the default value of GenericResourcePathSep.
 
-   - .file_name_directory_separator <string>
+   - .file_name_directory_separator &lt;string&gt;
 
       Returns a readonly string, which represents a separator
       which is used in file names between two directory items.
       Used for making the default value of GenericResourceDir
       and FontResourceDir.
 
-   - .file_name_current <string>
+   - .file_name_current &lt;string&gt;
 
       Returns a readonly string, which represents a reference
       to current working directory. Used for making the default
@@ -99314,14 +99314,14 @@ Improve previous patch to work from within encapsulated job framework.
 
 DETAILS:
 
-If gs is started with:  gs -c false 0 startjob pop - < /dev/null
+If gs is started with:  gs -c false 0 startjob pop - &lt; /dev/null
 
 then the previous patch would result in:
 
 	Unrecoverable error: invalidaccess in quit
 
 since the systemdict /quit is defined to cause this error from within an
-encapsulated job. This patch detects the .jobsavelevel > 0 and uses 'stop'
+encapsulated job. This patch detects the .jobsavelevel &gt; 0 and uses 'stop'
 instead, which quits gs without a spurious error message.
 </pre></blockquote>
 
@@ -99572,7 +99572,7 @@ pdfwrite : Fixing the bug 653140 "use NeverEmbed to restrict CIDFont embedding"
 
 DETAILS :
 
-The important change is setting pfont->font_name for CID fonts.
+The important change is setting pfont-&gt;font_name for CID fonts.
 Before now it contained empty string. Other changes are minor
 and only provide a data transfer.
 </pre></blockquote>
@@ -99708,7 +99708,7 @@ Bugzilla Bug 686759 "pdf to pdf doesnt work".
 DETAILS :
 
 The previous patch appears wrong and caused a regression
-due to the change to "have_cmap = no_generate && !writing_cid,"
+due to the change to "have_cmap = no_generate &amp;&amp; !writing_cid,"
 in gdevpsft.c . This patch unwinds it. Also the log message
 of the previous patch is fully wrong. The CID font in the test document
 for 686759 does not contain cmap and the cmap must not
@@ -99823,8 +99823,8 @@ If a file is in the search list, but the access isn't permitted,
 
 Minor changes :
 - some C-style cleanup in gpmisc.c ;
-- don't compile i_ctx_p->filearg with NEW_COMBINE_PATH 1;
-- don't compile i_ctx_p->starting_arg_file with NEW_COMBINE_PATH 0;
+- don't compile i_ctx_p-&gt;filearg with NEW_COMBINE_PATH 1;
+- don't compile i_ctx_p-&gt;starting_arg_file with NEW_COMBINE_PATH 0;
 - a check for parents in check_file_permissions was buggy.
 </pre></blockquote>
 
@@ -100288,7 +100288,7 @@ C. The functions gp_pathstring_not_bare, gp_file_name_references_parent,
 
 D. New operators added to maintain the new logics :
 
-   <string> <string> .file_name_combine <string>
+   &lt;string&gt; &lt;string&gt; .file_name_combine &lt;string&gt;
 
       Combine a file name with a prefix.
       The first argument is a prefix, the second is a file name.
@@ -100297,25 +100297,25 @@ D. New operators added to maintain the new logics :
       but if it starts with cwd reference, the starting
       cwd reference persists.
 
-   - .file_name_separator <string>
+   - .file_name_separator &lt;string&gt;
 
       Returns a readonly string, which represents a separator
       which is used in file names between directory item and file item.
       Used for making the default value of GenericResourcePathSep.
 
-   - .file_name_directory_separator <string>
+   - .file_name_directory_separator &lt;string&gt;
 
       Returns a readonly string, which represents a separator
       which is used in file names between two directory items.
       Used for making the default value of GenericResourceDir.
 
-   - .file_name_parent <string>
+   - .file_name_parent &lt;string&gt;
 
       Returns a readonly string, which represents a parent reference.
       Used for making the default value of GenericResourceDir
       and GenericResourceDir.
 
-   <string> .file_name_parents <integer>
+   &lt;string&gt; .file_name_parents &lt;integer&gt;
 
       Returns an integer equal to the length of maximal
       anchor substring, which includes parent references and separators only.
@@ -100507,7 +100507,7 @@ Correct typo somehow a /* comment crept in -- changed to %
 <blockquote><pre>
 Add .endjob procedure for use by job servers. Remainder of job encapsulation
 and documentation to follow later. Also fix potential "invalidrestore"
-problem with "extiserver" and "true <passwd> startjob" caused by stuff left
+problem with "extiserver" and "true &lt;passwd&gt; startjob" caused by stuff left
 on the opstack or dictstack.
 </pre></blockquote>
 
@@ -100839,8 +100839,8 @@ showpage
 
 with the cidfmap file like this :
 
-/ShinGo-Bold << /FileType /TrueType /Path (f:/WIN2000/Fonts/batang.ttf) /SubfontID 0 /CSI [(Japan1) 2] >> ;
-/CIDTTEMUL << /FileType /TrueType /Path (f:/WIN2000/Fonts/mshei.ttf) /SubfontID 0 /CSI [(Japan1) 2] >> ;
+/ShinGo-Bold &lt;&lt; /FileType /TrueType /Path (f:/WIN2000/Fonts/batang.ttf) /SubfontID 0 /CSI [(Japan1) 2] &gt;&gt; ;
+/CIDTTEMUL &lt;&lt; /FileType /TrueType /Path (f:/WIN2000/Fonts/mshei.ttf) /SubfontID 0 /CSI [(Japan1) 2] &gt;&gt; ;
 
 The effect is indeterministic.
 When I build GS with regenerate gs_init.c,
@@ -100923,7 +100923,7 @@ The macro gx_color_device_was meant for situations in which the device
 was known to be a color device and it was needed to know if halftoning
 was required.  With the 8.00 changes in the graphics library, the
 one situation that it was being used is incorrect.  The macro was also
-wrong since it was checking dev->color_info.max_gray.  It should have
+wrong since it was checking dev-&gt;color_info.max_gray.  It should have
 been checking color_info.max_color.  The macro was removed.  Please
 use gx_device_must_halftone in its place.
 </pre></blockquote>
@@ -101199,7 +101199,7 @@ Created for completeness and convenience to Windows users.
 <p><strong><a name="2003-02-05_1345"></a>
 2003-02-05 13:45 Ralph Giles</strong></p>
 <blockquote><pre>
-Remove documentation about the Pn() macros for K&R compatibility. They
+Remove documentation about the Pn() macros for K&amp;R compatibility. They
 were entirely removed prior to the 8.00 release.
 </pre></blockquote>
 
@@ -101645,7 +101645,7 @@ All these 3 solutions are temporary and to be improved later.
 To involve the new feature, create a new file gs/lib/cidttmap,
 and put records to there of the following format :
 
-/ShinGo-Bold  << /FileType /TrueType /Path (F:/WIN2000/Fonts/PMINGLIU.TTF) /CSI [(Japan1) 2] /SubstNWP /Japan1 >> ;
+/ShinGo-Bold  &lt;&lt; /FileType /TrueType /Path (F:/WIN2000/Fonts/PMINGLIU.TTF) /CSI [(Japan1) 2] /SubstNWP /Japan1 &gt;&gt; ;
 
 It is similar to gs/lib/FAPIcidfmap, see Use.htm about the latter.
 
@@ -101710,12 +101710,12 @@ differently due to a bug the test file. See SF bug #674418.
 2003-01-28 19:09 Ray Johnston</strong></p>
 <blockquote><pre>
 Fix regression of 119-01.ps caused by previous patch while retaining the
-fix for #667658 when CR and/or LF comes between the '~' and the '>'.
+fix for #667658 when CR and/or LF comes between the '~' and the '&gt;'.
 
 DETAILS:
 
 The logic was also fixed so that if the end of buffer is reached while
-searching for the '>' character (past CR and/or LF) no error would be
+searching for the '&gt;' character (past CR and/or LF) no error would be
 issued unless we have the 'last' condition indicating that no more data
 is available.
 
@@ -101747,8 +101747,8 @@ commit of the AlignToPixels feature.
 <p><strong><a name="2003-01-26_1145"></a>
 2003-01-26 11:45 jeong</strong></p>
 <blockquote><pre>
-If s_A85D_process encounters CR/LF between '~' and '>', it returns ioerror.
-Now it is changed to ignore CR and/or LF before '>', and works fine.
+If s_A85D_process encounters CR/LF between '~' and '&gt;', it returns ioerror.
+Now it is changed to ignore CR and/or LF before '&gt;', and works fine.
 Fixes SF#667658.
 </pre></blockquote>
 
@@ -101793,7 +101793,7 @@ a glyph in cache. Therefore show_proceed and
 set_cache_device were reorganized with a new function
 compute_glyph_raster_params. The new algorithm uses a
 slightly different (and more complicated) logics
-for computation and initialization of penum->origin.
+for computation and initialization of penum-&gt;origin.
 It was well tested, but in case of problems please
 consider it as a weak point.
 </pre></blockquote>
@@ -101992,10 +101992,10 @@ Fixes SourceForge bug #657289, SEGV on Alpha in DSC parser.
 DETAILS:
 A %%Page line with mismatched parentheses around the page label
 was ignored, but parser state was updated to scanning pages, not
-setup section.  This resulted in access to dsc->page[-1] which
+setup section.  This resulted in access to dsc-&gt;page[-1] which
 is invalid and caused a SEGV on Alpha.  The updated code now
-checks that dsc->page_count is non-zero before accessing
-dsc- >page[dsc->page_count-1].  It also makes a second attempt
+checks that dsc-&gt;page_count is non-zero before accessing
+dsc- &gt;page[dsc-&gt;page_count-1].  It also makes a second attempt
 at finding the page ordinal at the end of a line like:
 %%Page: (label with closing parentheses 1
 Other parser updates include support for DCS2 files (which is
@@ -102507,7 +102507,7 @@ DETAILS:
 With NEW_TYPE1_HINTER = 0 the new code must be equivalent to old one.
 
 We disable grid fitting if an axis is too sloped
-(if tan(angle) > 1/10 ).
+(if tan(angle) &gt; 1/10 ).
 </pre></blockquote>
 
 <p><strong><a name="2003-01-11_1746"></a>
@@ -103372,7 +103372,7 @@ It doesn't affect the current GS build because vtrace.h is currently never inclu
 2002-12-15 19:04 Igor Melichev</strong></p>
 <blockquote><pre>
 Fix (pdfwrite) : Text matrix was wrongly computed.
-Source Forge bug "[ 651643 ] PS->PDF changes font slant".
+Source Forge bug "[ 651643 ] PS-&gt;PDF changes font slant".
 
 DETAILS:
 
@@ -104130,7 +104130,7 @@ with setvmthreshold and vmreclaim. With default settings pdfwrite now works
 faster. SourceForge bug "[ 621243 ] (pdfwrite) slow mahle.pdf"
 (zvmem2.c [1.7]: 2002/11/20 18:56:56 igor)
 	- Bring /SubstituteFont procedure prototype up to the standard:
-&lt;name&gt; SubstituteFont &lt;name&gt; . Do traditional GS font
+&amp;lt;name&amp;gt; SubstituteFont &amp;lt;name&amp;gt; . Do traditional GS font
 substitution after the standard font substitution. Use no-op standard font
 substitution for backward compatibility. Bug #637424 Customer #71
 (lib/gs_fonts.ps [1.24]: 2002/11/21 04:43:58 alexcher)
