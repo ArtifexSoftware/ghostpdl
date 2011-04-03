@@ -3017,6 +3017,7 @@ Some parameters have been defined for high level device drivers which affect
 the operation of the interpreter. These are documented here so that other devices
 requiring the same behaviour can use these parameters.
 
+<blockquote><dl>
 <dt><b><em>/HighLevelDevice</em></b>
 <dd>True if the device is a high level device. Currently this controls haltone emission
 during setpagedevice. Normally setpagdevice resets the halftone to a default value, which is
@@ -3067,6 +3068,7 @@ for high level devices, they can be extremely valuable. If this parameter is
 defined as true then ToUnicode CMaps and GlyphName2Unicode tables will be
 processed and stored.
 </dd>
+</dl></blockquote>
 
 <h3><a name="External_fonts"></a>External fonts</h3>
 
@@ -3152,7 +3154,7 @@ range of operations it may be asked to perform.</p>
 void&nbsp;*data, int&nbsp;size)</code> <b><em>[OPTIONAL]</em></b>
 <dd>Perform device specific operation <code>dso</code>. Returns
 <code>gs_error_undefined</code> for an unknown (or unsupported operation),
-other </code>negative values for errors, and (<code>dso</code> specific)
+other negative values for errors, and (<code>dso</code> specific)
 non-negative values to indicate success. For details of the meanings of
 <code>dso</code>, <code>data</code> and <code>size</code>, see
 <a href="../base/gxdevsop.h">gxdevsop.h</a>.
