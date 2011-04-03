@@ -51,7 +51,7 @@ tt
 code
 {
   color: rgb(40%,24%,24%);
-  text-weight: bold;
+  font-weight: bold;
 }
 
 a > tt, a > b > tt
