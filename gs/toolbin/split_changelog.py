@@ -28,7 +28,8 @@ def html_escape(string):
   table = { '&': '&amp;',
             '"': '&quot;',
             '>': '&gt;',
-            '<': '&lt;'}
+            '<': '&lt;',
+            '$': '&#36;'}
   new = []
   for char in string:
     new.append(table.get(char,char))
