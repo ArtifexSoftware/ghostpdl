@@ -273,7 +273,7 @@ proc mergehist {news changes histn tmph details detailn tmpd} {
 	puts $tmph $l
     }
     
-    puts $tmph "<small>Ghostscript version $nver, $nday $nmonthname $nyear"
+    puts $tmph "<small>Ghostscript version $nver, $nday $nmonthname $nyear</small>"
     while {[gets $histn l] >= 0} {
 	puts $tmph $l
     }
@@ -289,7 +289,7 @@ proc mergehist {news changes histn tmph details detailn tmpd} {
 	puts $tmpd $l
     }
     
-    puts $tmpd "<small>Ghostscript version $nver, $nday $nmonthname $nyear"
+    puts $tmpd "<small>Ghostscript version $nver, $nday $nmonthname $nyear</small>"
     while {[gets $detailn l] >= 0} {
 	puts $tmpd $l
     }
