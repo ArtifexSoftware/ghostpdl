@@ -3212,14 +3212,14 @@ least one valid entry into the /InputAttributes dictionary; if all are
 /configurationerror.
 
 <blockquote><code>
-&lt;&lt; /InputAttributes<br />
-&nbsp;&nbsp;currentpagedevice /InputAttributes get<br />
-&nbsp;&nbsp;dup { pop 1 index exch null put } forall<br />
-<br />
-&nbsp;&nbsp;dup 0 &lt;&lt; /PageSize [612 792] &gt;&gt; put<br />
-&nbsp;&nbsp;dup 1 &lt;&lt; /PageSize [612 792] &gt;&gt; put<br />
-&nbsp;&nbsp;dup 2 &lt;&lt; /PageSize [792 1224] &gt;&gt; put<br />
-&gt;&gt; setpagedevice<br />
+&lt;&lt; /InputAttributes<br>
+&nbsp;&nbsp;currentpagedevice /InputAttributes get<br>
+&nbsp;&nbsp;dup { pop 1 index exch null put } forall<br>
+<br>
+&nbsp;&nbsp;dup 0 &lt;&lt; /PageSize [612 792] &gt;&gt; put<br>
+&nbsp;&nbsp;dup 1 &lt;&lt; /PageSize [612 792] &gt;&gt; put<br>
+&nbsp;&nbsp;dup 2 &lt;&lt; /PageSize [792 1224] &gt;&gt; put<br>
+&gt;&gt; setpagedevice<br>
 </code></blockquote>
 
 <p>After this code runs, then requesting a letter page size (612x792
@@ -3270,25 +3270,25 @@ while trays 1 and 2 are short-edge, the following code outline should
 select the appropriate rotation:
 
 <blockquote><code>
-my_put_params(gx_device *pdev, gs_param_list *plist) {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;my_device *dev = (my_device *)pdev;<br />
-&nbsp;&nbsp;&nbsp;&nbsp;int MediaSource = dev-&gt;myMediaSource;<br />
-<br />
-&nbsp;&nbsp;&nbsp;&nbsp;code = param_read_int(plist, "%MediaSource", &amp;MediaSource);<br />
-<br />
-&nbsp;&nbsp;&nbsp;&nbsp;switch (MediaSource) {<br />
-&nbsp;&nbsp;&nbsp;&nbsp;case 0:<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gx_device_req_leadingedge(dev, 1);<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
-&nbsp;&nbsp;&nbsp;&nbsp;case 1:<br />
-&nbsp;&nbsp;&nbsp;&nbsp;case 2:<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gx_device_req_leadingedge(dev, 0);<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br />
-&nbsp;&nbsp;&nbsp;&nbsp;}<br />
-&nbsp;&nbsp;&nbsp;&nbsp;...call default put_params, which makes the change...<br />
-<br />
-&nbsp;&nbsp;&nbsp;&nbsp;dev-&gt;myMediaSource = MediaSource;<br />
-&nbsp;&nbsp;&nbsp;&nbsp;return 0;<br />
+my_put_params(gx_device *pdev, gs_param_list *plist) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;my_device *dev = (my_device *)pdev;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int MediaSource = dev-&gt;myMediaSource;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;code = param_read_int(plist, "%MediaSource", &amp;MediaSource);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;switch (MediaSource) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;case 0:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gx_device_req_leadingedge(dev, 1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;case 1:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;case 2:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gx_device_req_leadingedge(dev, 0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;...call default put_params, which makes the change...<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dev-&gt;myMediaSource = MediaSource;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return 0;<br>
 }
 </code></blockquote>
 
