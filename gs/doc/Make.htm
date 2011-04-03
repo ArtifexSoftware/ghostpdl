@@ -175,16 +175,16 @@ gzip-compressed tar files (*<code>.tar.gz</code>) and zip files
 files:
 
 <blockquote>
-<code>ghostscript-</code>#.##<b><tt>.tar.gz</tt></b><br>
-<code>ghostscript-fonts-std-</code>#.##<b><tt>.tar.gz</tt></b><br>
-<code>ghostscript-fonts-other-</code>#.##<b><tt>.tar.gz</tt></b>
+<code>ghostscript-</code>#.##<code>.tar.gz</code><br>
+<code>ghostscript-fonts-std-</code>#.##<code>.tar.gz</code><br>
+<code>ghostscript-fonts-other-</code>#.##<code>.tar.gz</code>
 </blockquote>
 
 <p>For recent versions of Ghostscript there are also zip files
 
 <blockquote>
-<code>gs</code>###<b><tt>src.zip</tt></b><br>
-<code>gs</code>###<b><tt>w32.exe</tt></b>
+<code>gs</code>###<code>src.zip</code><br>
+<code>gs</code>###<code>w32.exe</code>
 </blockquote>
 
 <p>
@@ -258,7 +258,7 @@ compressed tar files, with a single command:
 <p>
 The <code>tar</code> program automatically preserves directory structure
 in extracting files.  The Ghostscript source archive puts all files under a
-directory <code>gs</code>#.##, so using <b><tt>tar</tt></b> to unpack a
+directory <code>gs</code>#.##, so using <code>tar</code> to unpack a
 compressed archive should always properly create that directory, which we
 will call the "gs directory".  Make sure you're positioned in the
 <b><em>parent</em></b> of the gs directory <b><em>before</em></b> unpacking
@@ -301,7 +301,7 @@ class="offsite">http://www.info-zip.org/pub/infozip/UnZip.html</a>
 </blockquote>
 
 <p>
-Unlike <code>pkunzip</code>, InfoZIP <b><tt>unzip</tt></b> automatically
+Unlike <code>pkunzip</code>, InfoZIP <code>unzip</code> automatically
 preserves the directory structure of extracted files.  So if you have a zip
 archive <code>MyArchive.zip</code>:
 
@@ -341,23 +341,23 @@ gs directory the current directory.
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr>	<th align=left valign=top>2-step:
 	<td>&nbsp;&nbsp;&nbsp;
-	<td><code>gzip -d ghostscript-</code>#.##<b><tt>.tar.gz</tt></b><br><b><tt>tar -xf ghostscript-</tt></b>#.##<b><tt>.tar</tt></b>
+	<td><code>gzip -d ghostscript-</code>#.##<code>.tar.gz</code><br><code>tar -xf ghostscript-</code>#.##<code>.tar</code>
 <tr><td>
 <tr>	<th align=left valign=top>Pipe:
 	<td>&nbsp;
-	<td><code>gzip -d -c ghostscript-</code>#.##<b><tt>.tar.gz | tar -xf -</tt></b>
+	<td><code>gzip -d -c ghostscript-</code>#.##<code>.tar.gz | tar -xf -</code>
 <tr><td>
 <tr>	<th align=left valign=top>GNU <code>tar</code>:
 	<td>&nbsp;
-	<td><code>tar -zxf ghostscript-</code>#.##<b><tt>.tar.gz</tt></b>
+	<td><code>tar -zxf ghostscript-</code>#.##<code>.tar.gz</code>
 <tr><td>
 <tr>	<th align=left valign=top><code>pkunzip</code>:
 	<td>&nbsp;
-	<td><code>pkunzip -d gs</code>###<b><tt>sr1.zip</tt></b><br><b><tt>pkunzip -d gs</tt></b>###<b><tt>sr2.zip</tt></b><br>...
+	<td><code>pkunzip -d gs</code>###<code>sr1.zip</code><br><code>pkunzip -d gs</code>###<code>sr2.zip</code><br>...
 <tr><td>
 <tr>	<th align=left valign=top><tt>unzip</tt>:
 	<td>&nbsp;
-	<td><code>unzip gs</code>###<b><tt>src.zip</tt></b>
+	<td><code>unzip gs</code>###<code>src.zip</code>
 </table></blockquote>
 
 <p>
@@ -544,13 +544,13 @@ You must edit the platform-specific makefile to change any of these:
 <li>The locations to install Ghostscript files (<code>prefix</code> etc.)
 <li>The default search paths for the initialization and font files
 (<code>GS_LIB_DEFAULT</code> macro)
-<li>The debugging options (<code>DEBUG</code> and <b><tt>TDEBUG</tt></b>
+<li>The debugging options (<code>DEBUG</code> and <code>TDEBUG</code>
 macros)
 <li>Which optional features to include (<code>FEATURE_DEVS</code>)
 <li>Which device drivers to include (<code>DEVICE_DEVS</code> and
 <code>DEVICE_DEVS</code>{<em>1--20</em>} macros)
 <li>Default resolution parameters for some printer drivers
-(<code>devs.mak</code> or <b><tt>contrib.mak</tt></b>, whichever defines
+(<code>devs.mak</code> or <code>contrib.mak</code>, whichever defines
 the driver)
 
 </ul>
@@ -559,7 +559,7 @@ the driver)
 The <a href="#Platform-specific_makefiles">platform-specific makefiles</a>
 include comments describing all these except the
 <code>DEVICE_DEVS</code> options.  These are described in
-<code>devs.mak</code> and <b><tt>contrib.mak</tt></b>, even though the
+<code>devs.mak</code> and <code>contrib.mak</code>, even though the
 file that must be edited to select them is the <a
 href="#Platform-specific_makefiles">platform-specific makefile</a>.
 
@@ -581,7 +581,7 @@ the form
 
 <blockquote>
 <code>FEATURE_DEVS=</code><em>{list of features}</em><br>
-<code>DEVICE_DEVS</code>*<b><tt>=</tt></b><em>{list of devices}</em>
+<code>DEVICE_DEVS</code>*<code>=</code><em>{list of devices}</em>
 </blockquote>
 
 <p>
@@ -629,8 +629,8 @@ select an output device</a> at run time using the
 you can't fit all the devices on a single line, you may add lines defining
 
 <blockquote>
-<code>DEVICE_DEVS1=$(DD)</code><em>{dev11}</em><b><tt>.dev</tt></b> ... <b><tt>$(DD)</tt></b><em>{dev1n}</em><b><tt>.dev</tt></b>
-<br><code>DEVICE_DEVS2=$(DD)</code><em>{dev21}</em><b><tt>.dev</tt></b> ... <b><tt>$(DD)</tt></b><em>{dev2n}</em><b><tt>.dev</tt></b>
+<code>DEVICE_DEVS1=$(DD)</code><em>{dev11}</em><code>.dev</code> ... <code>$(DD)</code><em>{dev1n}</em><code>.dev</code>
+<br><code>DEVICE_DEVS2=$(DD)</code><em>{dev21}</em><code>.dev</code> ... <code>$(DD)</code><em>{dev2n}</em><code>.dev</code>
 </blockquote>
 
 <p>
@@ -639,16 +639,16 @@ on some platforms they don't work.
 
 <p>
 Note that if you want to include a driver named <em>xxx</em>, you must put
-<code>$(DD)</code><em>xxx</em><b><tt>.dev</tt></b> in
+<code>$(DD)</code><em>xxx</em><code>.dev</code> in
 <code>DEVICE_DEVS</code>*.  Similarly, if you want to include a feature
 related to the PostScript or PDF language interpreters (PostScript level
 1 .. 3, or other language features such as the ability to read EPSF files or
 TrueType font files), you must represent it as
-<code>$(PSD)</code><em>xxx</em><b><tt>.dev</tt></b>.  If you are linking
+<code>$(PSD)</code><em>xxx</em><code>.dev</code>.  If you are linking
 only the graphics library -- not the language interpreter(s) -- with an
 application and want to include optional graphics library features such as
 CIE color, you represent them as
-<code>$(GLD)</code><em>xxx</em><b><tt>.dev</tt></b>.
+<code>$(GLD)</code><em>xxx</em><code>.dev</code>.
 
 <h4><a name="Precompiled_data"></a>Precompiled run-time data</h4>
 
@@ -664,7 +664,7 @@ Ghostscript into ROM.
 <p>
 By default, most top level make files now default to compiling the initialization
 files (<code>lib/gs_init.ps</code>, etc.) into the executable. To disable this,
-change the <code>1</code> to a <b><tt>0</tt></b> in the line
+change the <code>1</code> to a <code>0</code> in the line
 
 <blockquote><code>
 COMPILE_INITS=1
@@ -836,7 +836,7 @@ cross-compilers that generate code for machine <b>Y</b>, you must first
 perform several extra steps on some machine <b>Z</b> (not necessarily of the
 same type as either <b>X</b><em>i</em> or <b>Y</b>).  First of all, choose a makefile
 appropriate for <b>Z</b> and edit it to reflect the run-time options you
-wish to include (<code>FEATURE_DEVS</code>, <b><tt>DEVICE_DEVS*</tt></b>,
+wish to include (<code>FEATURE_DEVS</code>, <code>DEVICE_DEVS*</code>,
 and any other relevant options), just as for non-cross-compilation.
 
 <p>
@@ -1074,7 +1074,7 @@ incorrect code for the construct <code>!file_is_valid()</code>.  Do not
 attempt to compile Ghostscript with these compilers.  If you want to report
 this bug to Borland, send them the result of compiling
 <code>ziodev.c</code> and tell them to look at the code generated for
-<code>file_is_valid()</code> and <b><tt>!file_is_valid()</tt></b>.  We
+<code>file_is_valid()</code> and <code>!file_is_valid()</code>.  We
 don't know whether Borland C++ 5.02 still has this problem. The problem 
 does not appear to exist in Borland C++Builder 4 or 5.</li>
 
@@ -1087,7 +1087,7 @@ prevent attempts to compile 16 bit code when <tt><strong>BUILDER_VERSION = 5</st
 <li>Note that under Borland C++Builder 5,&nbsp; MAKE
 does not stop when <tt><strong>_genarch.bat</strong></tt> should be run as described
 above. It is necessary for the user to Abort the make by pressing Control-C. You should
-then run &quot;<code>_genarch.bat</code>&quot;, wait until <b><tt>genarch</tt></b> has
+then run &quot;<code>_genarch.bat</code>&quot;, wait until <code>genarch</code> has
 finished and then exit MS Windows. Then type &quot;<code>make</code>&quot; again to
 restart the make process. All targets are built succesfully if this step is ignored. <tt><strong>I
 don't know if the targets are correct although they seem to run OK.</strong></tt></li>
@@ -1145,15 +1145,15 @@ which are present and not likely to change.
   We are working to reduce the number of the warning messages. 
 <p>To run Ghostscript inside of Developer Studio, it is necessary to specify the 
   name of the executable program . Select <code>Project/Settings</code>. Select 
-  the <code>Debug</code> tab. Then for <b><tt>Executable for debug session:</tt></b> 
+  the <code>Debug</code> tab. Then for <code>Executable for debug session:</code> 
   specify <code>bin/gswin32.exe</code> 
 <p>To use all of the features of Microsoft Developer Studio for debugging, and 
   modifying Ghostscriptt, you need to finish the remaining steps. 
 <p>To add the Ghostscript DLL to the project, select <code>Project/Settings</code>. 
-  Select the <code>Debug</code> tab. Change the <b><tt>Category</tt></b> to 
-  <code>Additional DLLs</code>. Then specify <b><tt>bin/gsdll32.dll</tt></b>. 
+  Select the <code>Debug</code> tab. Change the <code>Category</code> to 
+  <code>Additional DLLs</code>. Then specify <code>bin/gsdll32.dll</code>. 
 <p> To specify the Ghostscript program arguments, select <code>Project/Settings</code>. 
-  Select the <code>Debug</code> tab. Change the <b><tt>Category</tt></b> to 
+  Select the <code>Debug</code> tab. Change the <code>Category</code> to 
   <code>General</code>. Then specify the desired program arguments. For example, 
   specifying: <code>examples/tiger.eps</code> will result in the tiger example 
   file being displayed when Ghostscript is executed. . 
@@ -1166,14 +1166,14 @@ which are present and not likely to change.
   </code></blockquote>
 <p>Please note the double quotes around the value for <code>GS_LIB_DEFAULT</code>
   and the addition of <code>./lib;./fonts;</code> to its definition. This uses
-  the local (within the project) copy of the <code>lib</code> and <b><tt>fonts</tt></b>
+  the local (within the project) copy of the <code>lib</code> and <code>fonts</code>
   directories. This is convenient if any changes need to be made in these directories.
 
 <p> Setting <code>DEBUG=1</code> includes debugging features in the build:
 <ul>
 <li> It defines the C preprocessor symbol <code>DEBUG</code>. The latter includes
    tracing and self-validation code fragments into compilation.
-   Particularly it enables the <code>-Z</code> and <b><tt>-T</tt></b>
+   Particularly it enables the <code>-Z</code> and <code>-T</code>
    switches in Ghostscript.
 <li> It compiles code fragments for the C stack overflow checks.
 </ul>
@@ -1184,7 +1184,7 @@ which are present and not likely to change.
 includes symbol table information for the debugger.
 Code becomes substantially slower and larger.
 
-<p> An optional setting <code>DEBUGSYM=1</code> is only useful with <b><tt>TDEBUG=0</tt></b>
+<p> An optional setting <code>DEBUGSYM=1</code> is only useful with <code>TDEBUG=0</code>
 for advanced developers. It includes symbol table information for the debugger
 in an optimized (release) build.
 <em>
@@ -1200,8 +1200,8 @@ significantly misleading. For general MSVC users we recommend TDEBUG=1.
   based on the version of nmake.  If this doesn't work it will default
   to version 6.x.  
   If you are not using version 6.x then before building, in <code>psi\msvc32.mak</code> 
-  find the line "<code>#MSVC_VERSION=6</code>" and change it to "<b><tt>MSVC_VERSION=4</tt></b>", 
-  "<code>MSVC_VERSION=5</code>", "<b><tt>MSVC_VERSION=7</tt></b>"
+  find the line "<code>#MSVC_VERSION=6</code>" and change it to "<code>MSVC_VERSION=4</code>", 
+  "<code>MSVC_VERSION=5</code>", "<code>MSVC_VERSION=7</code>"
   or "<code>MSVC_VERSION=8</code>". . 
 <p>In some cases the location of the Microsoft Developer Studio, needs to be changed. 
   The location of Microsoft Developer Studio is defined by the value of <code>DEVSTUDIO</code>. 
@@ -1212,7 +1212,7 @@ significantly misleading. For general MSVC users we recommend TDEBUG=1.
   location of the Microsoft Visual C++ executables (cl.exe, link.exe, nmake.exe, 
   rc.exe) in your PATH definition and the LIB and INCLUDE environment variables 
   are set to point to the Microsoft Visual C++ directories. If this is true then 
-  the value for <code>DEVSTUDIO</code> can be changed to empty. I.e. <b><tt>DEVSTUDIO=</tt></b>
+  the value for <code>DEVSTUDIO</code> can be changed to empty. I.e. <code>DEVSTUDIO=</code>
 <p> If PATH, LIB, and INCLUDE are not correctly set then the value for <code>DEVSTUDIO</code> 
   needs to be defined. For example, for version 6.0, the default definition for 
   the location for the Microsoft Developer Studio is: <code>DEVSTUDIO=C:\Program 
@@ -1247,7 +1247,7 @@ This command line can also be put into a batch file.
   different compilers and operating systems supported by Ghostscript. 
 <p>
 The Microsoft VC++ 5.0 compiler locks up when compiling
-<code>gxi12bit.c</code> with <b><tt>/O2</tt></b>.  Compile this file
+<code>gxi12bit.c</code> with <code>/O2</code>.  Compile this file
 without <code>/O2</code>.
 
 <p> The Microsoft VC++ 5.0 compiler produces a non-working executable if compiling 
@@ -1326,7 +1326,7 @@ http://www.info-zip.org/pub/infozip/Zip.html</a>.  This is free.
 
 <p>
 You will have to edit <code>psi/winint.mak</code> to define
-<code>WINZIPSE_XE</code> and <b><tt>ZIP_XE</tt></b> respectively as the
+<code>WINZIPSE_XE</code> and <code>ZIP_XE</code> respectively as the
 path names of these programs.  See <a href="Release.htm">Release.htm</a> for
 the detailed procedure.
 
@@ -1338,8 +1338,8 @@ To use the Watcom compiler, add to <code>AUTOEXEC.BAT</code> the line
 <code>AUTOEXEC.BAT</code> also contains a line of the form
 "<code>set&nbsp;WATCOM=</code><em>{wcdir}</em>" where <em>{wcdir}</em> is
 the directory where you installed the Watcom tools, and that the setting of
-<code>PATH</code> includes <em>{wcdir}</em><b><tt>\binnt</tt></b> (or
-<code>%WATCOM%\binnt</code>) before <em>{wcdir}</em><b><tt>\binw</tt></b>
+<code>PATH</code> includes <em>{wcdir}</em><code>\binnt</code> (or
+<code>%WATCOM%\binnt</code>) before <em>{wcdir}</em><code>\binw</code>
 (or <code>%WATCOM%\binw</code>).  Then to create
 "<code>makefile</code>":
 
@@ -1375,8 +1375,8 @@ using the Cygwin32 gcc compiler, GNU <code>make</code>, and the
 changes:
 
 <ul>
-<li>Add "<code>b</code>" to the call to <b><tt>fopen</tt></b> in <b><tt>gp_open_scratch</tt></b>
-<li>Mirror the <code>gp_ntfs</code> logic for <b><tt>gp_pathstring_not_bare</tt></b>
+<li>Add "<code>b</code>" to the call to <code>fopen</code> in <code>gp_open_scratch</code>
+<li>Mirror the <code>gp_ntfs</code> logic for <code>gp_pathstring_not_bare</code>
 </ul>
 
 <p>
@@ -1409,21 +1409,21 @@ following small changes in the makefiles:
 
 <ul>
 <li>Find and change the second occurrence of
-"<code>COMPILE_FULL_OPTIMIZED</code>" to "<b><tt>/O2</tt></b>" in file
-<code>msvccmd.mak</code>.  <li>Override "<b><tt>TDEBUG</tt></b>",
-"<code>COMP</code>", and "<b><tt>COMPAUX</tt></b>" when invoking
+"<code>COMPILE_FULL_OPTIMIZED</code>" to "<code>/O2</code>" in file
+<code>msvccmd.mak</code>.  <li>Override "<code>TDEBUG</code>",
+"<code>COMP</code>", and "<code>COMPAUX</code>" when invoking
 <code>nmake</code>.
 </ul>
 
 <p>
 More specifically, use "<code>TDEBUG=0</code>" and set both
-"<code>COMP</code>" and "<b><tt>COMPAUX</tt></b>" to the full path of
+"<code>COMP</code>" and "<code>COMPAUX</code>" to the full path of
 <code>icl</code> (for example
 "<code>COMP=C:\intel\compiler45\bin\icl</code>" if the Intel&nbsp;C/C++
 compiler V4.5 was installed to <code>C:\intel</code>). It is suggested
 that you use a batch file to launch <code>nmake</code>, since the command
 line processes the "<code>=</code>" on its own. Also, you may need to
-execute <code>vcvars32.bat</code> and <b><tt>iccvars.bat</tt></b> to
+execute <code>vcvars32.bat</code> and <code>iccvars.bat</code> to
 register the proper paths for the compiler, its include files and its
 libraries.
 
@@ -1641,10 +1641,10 @@ version.
 
 <p>
 (deprecated; see Autoconf-based method above)
-The files <code>base/unix</code>*<b><tt>.mak</tt></b> are the makefiles 
+The files <code>base/unix</code>*<code>.mak</code> are the makefiles 
 for Unix platforms, and you choose one based on what compiler you use.  
 To build Ghostscript, however, you must use the simple command
-"<code>make</code>", which must find the file "<b><tt>makefile</tt></b>"
+"<code>make</code>", which must find the file "<code>makefile</code>"
 (or "<code>Makefile</code>").  If your system supports symbolic links,
 set up "<code>makefile</code>" like this.
 
@@ -1685,14 +1685,14 @@ to include in the build:
 </table></blockquote>
 
 <p>
-The <code>unix</code>*<b><tt>.mak</tt></b> files explicitly compile and
+The <code>unix</code>*<code>.mak</code> files explicitly compile and
 link the JPEG, PNG, and zlib libraries into the executable.  If your Unix
 system already includes the PNG and zlib libraries -- probably in
-<code>/usr/lib/libpng.</code>{<b><tt>a</tt></b>,<b><tt>so</tt></b>} and
-<code>/usr/lib/libz.</code>{<b><tt>a</tt></b>,<b><tt>so</tt></b>} -- and
+<code>/usr/lib/libpng.</code>{<code>a</code>,<code>so</code>} and
+<code>/usr/lib/libz.</code>{<code>a</code>,<code>so</code>} -- and
 you would rather use those copies, change the definition of
-<code>SHARE_LIBPNG</code> and <b><tt>SHARE_ZLIB</tt></b> from 0 to 1 in
-the relevant <code>unix</code>*<b><tt>.mak</tt></b> file before
+<code>SHARE_LIBPNG</code> and <code>SHARE_ZLIB</code> from 0 to 1 in
+the relevant <code>unix</code>*<code>.mak</code> file before
 compiling.  Note that if you do this, you will get non-debug versions of
 these libraries even if you selected <code>DEBUG</code> in the makefile.
 At the insistence of some users, we have also provided the ability to do
@@ -1737,7 +1737,7 @@ To build Ghostscript as a shared object with gcc
 </pre>
 <p>
 This will build <code>libgs.so</code> and two programs which use the 
-shared object, <code>gsx</code> which uses Gtk+ and <b><tt>gsc</tt></b> 
+shared object, <code>gsx</code> which uses Gtk+ and <code>gsc</code> 
 which does not.
 
 <p>
@@ -1806,7 +1806,7 @@ Ghostscript correctly with the <code>-O</code> option.
 float-to-integer conversions to compile incorrectly, rendering the
 executable unusable.
 
-<li>X11R5 may need "<code>#include &lt;stddef.h&gt;</code>" in <b><tt>x_.h</tt></b>.
+<li>X11R5 may need "<code>#include &lt;stddef.h&gt;</code>" in <code>x_.h</code>.
 
 <li>Also see regarding <a href="#System_V">System V</a> platforms.
 </ul>
@@ -1870,14 +1870,14 @@ the makefile is set to
 <li>On very old systems (circa gcc version 2.6.3), you may encounter an incompatibility
 in object formats (a.out vs. ELF) with the XFree86 library.
 Typically, <code>ld</code> complains that some X library is not found,
-or that many <code>Xlib</code> or <b><tt>Xt</tt></b> functions are not
+or that many <code>Xlib</code> or <code>Xt</code> functions are not
 found in the library (similar to the messages for omitting
-<code>SM</code> and <b><tt>ICE</tt></b> from <b><tt>XLIBS</tt></b>).  Or
+<code>SM</code> and <code>ICE</code> from <code>XLIBS</code>).  Or
 you get a message when you start Ghostscript that the program or the shared
 library is an unrecognized format.
 If this happens, edit your top-level makefile to add the switches
-"<code>-b i486-linuxaout</code>" to both <b><tt>CFLAGS</tt></b> and
-<code>LDFLAGS</code>, then "<b><tt>make clean</tt></b>" followed by
+"<code>-b i486-linuxaout</code>" to both <code>CFLAGS</code> and
+<code>LDFLAGS</code>, then "<code>make clean</code>" followed by
 "<code>make</code>").  If this doesn't help, or if other strange things
 happen, contact your Linux supplier or support resource.
 
@@ -1899,24 +1899,24 @@ upgrade (along with Y2K patches) from Apple.
 <code>unix-gcc.mak</code> and make the following changes:
 
 <ul>
-<li>In <code>unix-aux.mak</code> (and <b><tt>ugcclib.mak</tt></b>, if you
+<li>In <code>unix-aux.mak</code> (and <code>ugcclib.mak</code>, if you
 are using only the library) change the definition of <code>INCLUDE</code>
 to "<code>INCLUDE=/usr/include/bsd</code>";
 
 <li>in <code>unix-gcc.mak</code>:
 
 <ul>
-<li>change <code>CC=gcc</code> to <b><tt>CC=cc</tt></b>;
+<li>change <code>CC=gcc</code> to <code>CC=cc</code>;
 
 <li>change the definition of <code>STDLIBS</code> to only
 <code>-lm</code>;
 
-<li>change <code>SYNC=posync</code> to <b><tt>SYNC=nosync</tt></b>;
+<li>change <code>SYNC=posync</code> to <code>SYNC=nosync</code>;
 
-<li>add <code>-D_POSIX_SOURCE</code> to <b><tt>CFLAGS</tt></b> and remove
+<li>add <code>-D_POSIX_SOURCE</code> to <code>CFLAGS</code> and remove
 <code>-g</code>;
 
-<li>remove <code>-Wstrict-prototypes</code> from <b><tt>GCFLAGS</tt></b>,
+<li>remove <code>-Wstrict-prototypes</code> from <code>GCFLAGS</code>,
 and if you are using NeXTSTEP 3.3 (with gcc 2.5.8), also remove
 <code>-Wmissing-declarations</code>;
 </ul>
@@ -1941,7 +1941,7 @@ makefile definitions of <code>XINCLUDE</code> and
 Compile without -O.
 
 <li>The SCO Unix C compiler apparently can't handle the
-<code>P</code><em>n</em> macros in <b><tt>std.h</tt></b>.  If you get
+<code>P</code><em>n</em> macros in <code>std.h</code>.  If you get
 strange compilation errors on SCO Unix, ask SCO for a compiler fix.
 
 <li>Meanwhile, to use gcc with SCO ODT, see <code>unix-gcc.mak</code>
@@ -1952,31 +1952,31 @@ code that causes crashes on machines without hardware floating point.  Use
 a different compiler on these machines.
 
 <li>If you aren't using the X11 driver, you must add
-<code>-lsocket</code> to the value of <b><tt>EXTRALIBS</tt></b> to link
+<code>-lsocket</code> to the value of <code>EXTRALIBS</code> to link
 the date and time functions.
 
 <li>If you want to use direct frame buffer addressing instead of X Windows,
 include the relevant frame buffer devices (<code>$(DD)ega.dev</code>,
 <code>$(DD)vga.dev</code>, etc.) and change the definition of
-<code>EGAVGA</code> to <b><tt>$(EGAVGA_SCO)</tt></b> as indicated in
+<code>EGAVGA</code> to <code>$(EGAVGA_SCO)</code> as indicated in
 <code>devs.mak</code>.  <b>Note</b>: this works with SuperVGA displays
 only for 800x600x16 mode.
 
 <li>If the display looks "smeared", try recompiling
-<code>gdevpcfb.c</code> with <b><tt>-O0</tt></b>.
+<code>gdevpcfb.c</code> with <code>-O0</code>.
 
 <li>If Ghostscript crashes, use the <code>-q</code> switch or redirect
 console output to a file.
 
 <li>If your compiler accepts both the <code>-Xt</code> and
-<code>-Xa</code> switches, use <b><tt>-Xt</tt></b>.  Even though this
+<code>-Xa</code> switches, use <code>-Xt</code>.  Even though this
 causes the compiler to use incorrect rules for computing the result types
-of "<code>&lt;&lt;</code>" and "<b><tt>&gt;&gt;</tt></b>",
+of "<code>&lt;&lt;</code>" and "<code>&gt;&gt;</code>",
 <code>-Xa</code> enables optimizations that produce incorrect code.
 
 <li>For SCO ODT 2.0, in addition to <code>-D__SVR3</code> and
-<code>-DSYSV</code>, you need to specify <b><tt>-Dsco</tt></b>,
-<code>-DUSG</code>, and <b><tt>-DMALLOC_0_RETURNS_NULL</tt></b>.  For
+<code>-DSYSV</code>, you need to specify <code>-Dsco</code>,
+<code>-DUSG</code>, and <code>-DMALLOC_0_RETURNS_NULL</code>.  For
 SCO ODT, you need
 "<code>EXTRALIBS=-lX11&nbsp;-lsocket&nbsp;-lmalloc</code>", or maybe
 only <code>-lsocket</code> depending on the version), and for SCO ODT
@@ -1995,7 +1995,7 @@ only <code>-lsocket</code> depending on the version), and for SCO ODT
 <ul>
 <li>You may need to set <code>EXTRALIBS=-lnsl</code>.
 
-<li>Do <b><em>not</em></b> change <code>PLATFORM=unix_</code> to <b><tt>PLATFORM=sysv_</tt></b>.
+<li>Do <b><em>not</em></b> change <code>PLATFORM=unix_</code> to <code>PLATFORM=sysv_</code>.
 
 <li>On SVR4 Unix platforms with dynamic linking, you may need to define
 <code>XLIBDIR</code> as the name of the directory that holds the X
@@ -2006,19 +2006,19 @@ Windows libraries.  Do <b><em>not</em></b> prefix the name with
 <code>-DSVR4_0</code> in the makefile; do <b><em>not</em></b> set
 <code>-DSYSV</code>.  For SVR4.2 (or later) and Solaris 2.<em>n</em>
 systems, set only <code>-DSVR4</code> (<b><em>not</em></b>
-<code>-DSVR4_0</code> nor <b><tt>-DSYSV</tt></b>).
+<code>-DSVR4_0</code> nor <code>-DSYSV</code>).
 </ul>
 
 <h4><a name="System_V"></a>System V Unix platforms</h4>
 
 <ul>
 <li>If you are using a stock System V platform that lacks
-<code>rename</code> and <b><tt>gettimeofday</tt></b>, in the makefile
+<code>rename</code> and <code>gettimeofday</code>, in the makefile
 change "<code>PLATFORM=unix_</code>" to
 "<code>PLATFORM=sysv_</code>".
 
 <li>You will probably need to change the definition of
-<code>INSTALL</code> from "<b><tt>install</tt></b>" to
+<code>INSTALL</code> from "<code>install</code>" to
 "<code>/usr/ucb/install</code>".
 </ul>
 
@@ -2139,12 +2139,12 @@ Ghostscript releases work with compiler/dld.sl versions older than these.)
 
 <li>On HPUX 10.*, we don't know what combinations of compiler version and
 switches work.  It is reported that On HPUX 10.20, setting
-"<code>CC=c89</code>" and "<b><tt>CFLAGS=+O3&nbsp;$(XCFLAGS)</tt></b>"
+"<code>CC=c89</code>" and "<code>CFLAGS=+O3&nbsp;$(XCFLAGS)</code>"
 works, contradicting the information in the next paragraph, but this may be
 dependent on the specific compiler version.
 
 <li>In either HPUX version, you need to set
-"<code>CC=cc&nbsp;-Aa</code>" (or use <b><tt>-Ae</tt></b> if you
+"<code>CC=cc&nbsp;-Aa</code>" (or use <code>-Ae</code> if you
 prefer), and set
 "<code>CFLAGS=-D_HPUX_SOURCE&nbsp;-O&nbsp;$(XCFLAGS)</code>".  Higher
 levels of optimization than <code>-O</code> may work depending on your
@@ -2152,7 +2152,7 @@ compiler revision; some users have reported success with
 <code>+O3</code>, some have not.
 
 <li>Some users have reported needing <code>-DNOSYSTIME</code> and
-<code>-D_POSIX_SOURCE</code> in <b><tt>CFLAGS</tt></b>, but recent tests
+<code>-D_POSIX_SOURCE</code> in <code>CFLAGS</code>, but recent tests
 do not show these to be necessary.
 
 <li>If you use gcc, it's a good idea to have a recent release -- at the
@@ -2173,7 +2173,7 @@ CC=acc -knr<br>
 PLATFORM=sysv_</code><br>&nbsp;
 
 <li>You will probably need to change the value of <code>XLIBS</code> from
-"<code>XLIBS=Xt X11 Xext</code>" to "<b><tt>XLIBS=Xt_s X11_s Xext</tt></b>".
+"<code>XLIBS=Xt X11 Xext</code>" to "<code>XLIBS=Xt_s X11_s Xext</code>".
 </ul>
 
 <h4><a name="MIPS"></a>MIPS</h4>
@@ -2204,20 +2204,20 @@ See "<a href="#ATT_7040">AT&amp;T 7040 R3</a>".
 <li>Many versions of the AIX C compiler have bugs that have prevented
 Ghostscript from compiling and linking properly.  We believe that the
 current Ghostscript release works around these bugs, and that
-<code>unixansi.mak</code> with <b><tt>CC=cc</tt></b> should work.
+<code>unixansi.mak</code> with <code>CC=cc</code> should work.
 
 <li>You must also edit the makefile (<code>unixansi.mak</code>) to change
-<code>INSTALL</code> to <b><tt>/usr/ucb/install</tt></b>.
+<code>INSTALL</code> to <code>/usr/ucb/install</code>.
 
 <li>AIX doesn't use a separate library for multi-thread support: set
 <code>STDLIBS=-lm</code> in the makefile.
 
 <li>If <code>-DSYSV</code> produces a complaint about the functions
-<code>index</code> and <b><tt>rindex</tt></b> not being defined, try
+<code>index</code> and <code>rindex</code> not being defined, try
 removing it.
 
 <li>If the xlc 1.2.1 optimizer runs out of memory, you may need to add
-<code>-qmaxmem=4000</code> to <b><tt>CFLAGS</tt></b>.
+<code>-qmaxmem=4000</code> to <code>CFLAGS</code>.
 
 <li>A user reports that the AIX C compiler shipped with AIX 3.2.5 compiles
 Ghostscript only if invoked with "<code>c89&nbsp;-D_POSIX_SOURCE</code>"
@@ -2237,14 +2237,14 @@ possible.
 
 <li>The xlc 1.3.0.x compiler provided in AIX 3.2.5+ definitely will not
 compile Ghostscript correctly if <code>-O</code> is used on all files.
-A user reports that compiling <code>z</code>*<b><tt>.c</tt></b>,
-<code>gsmatrix.c</code>, <b><tt>gxstroke.c</tt></b> without
+A user reports that compiling <code>z</code>*<code>.c</code>,
+<code>gsmatrix.c</code>, <code>gxstroke.c</code> without
 <code>-O</code> is sufficient to produce a working executable:.
 
 <li>Some installations of AIX 3.2.5 have what appears to be an incorrect or
 inconsistent version of <code>libXt.a</code> in
 <code>/usr/lpp/X11/lib</code>.  If linking shows
-<code>XtShellStrings</code> and <b><tt>XtStrings</tt></b> as unresolved
+<code>XtShellStrings</code> and <code>XtStrings</code> as unresolved
 externals, set
 "<code>XLIBDIRS=-L/usr/lpp/X11/lib/R5&nbsp;-L/usr/lpp/X11/lib</code>"
 rather than just "<code>XLIBDIRS=-L/usr/lpp/X11/lib</code>".
@@ -2286,7 +2286,7 @@ option.
 <li>
 The SGI C compiler may produce warnings about "Undefined the ANSI standard
 library defined macro stdin/stdout/stderr". To suppress these warnings, add
-"<code>-woff 608</code>" to the definition of <b><tt>CFLAGS</tt></b>.
+"<code>-woff 608</code>" to the definition of <code>CFLAGS</code>.
 
 <li>
 The SGI C compiler shipped with Irix 6.1 and 6.2 will not compile
@@ -2301,7 +2301,7 @@ until you get a working binary:
 
 <ul>
 <li>
-Compile <code>idict.c</code> and <b><tt>isave.c</tt></b> separately
+Compile <code>idict.c</code> and <code>isave.c</code> separately
 without optimization after doing a normal compile; then relink.e.g.:
 
 <p>
@@ -2313,14 +2313,14 @@ Set <code>CFLAGS=</code> (no optimization).
 
 <li>
 Use only <code>-O2</code>.&nbsp;&nbsp; Compiler produces incorrect output
-with <code>-O3</code> or "<b><tt>-Ofast=ip32 -show</tt></b>".
+with <code>-O3</code> or "<code>-Ofast=ip32 -show</code>".
 
 <li>
 Irix 6.5.1m with MIPSpro compiler 7.2.1.1m, Irix 6.5.3m with MIPSpro
 compiler 7.2.1, and probably other 6.5x / 7.2x combinations require
 compiling with the <code>-o32</code> option. Compiling with the (default)
 <code>-n32</code> option produces non-working executables.
-<code>-O2</code> is OK (possibly except for <b><tt>idict.c</tt></b>), but
+<code>-O2</code> is OK (possibly except for <code>idict.c</code>), but
 not <code>-O3</code>.
 </ul>
 </ul>
@@ -2330,12 +2330,12 @@ not <code>-O3</code>.
 <ul>
 <li>The Sun unbundled C compiler (SC1.0) doesn't compile Ghostscript
 properly with the <code>-fast</code> option: Ghostscript core-dumps in
-<code>build_gs_font</code>.  With that compiler use <b><tt>-g</tt></b>,
+<code>build_gs_font</code>.  With that compiler use <code>-g</code>,
 or use gcc instead.
 
 <li>The Sun version of <code>dbx</code> often gives up with an error
 message when trying to load Ghostscript.  If this happens, use GNU
-<code>gdb</code> instead.  (<b><tt>gdb</tt></b> is more reliable than
+<code>gdb</code> instead.  (<code>gdb</code> is more reliable than
 <code>dbx</code> in other ways as well.)
 
 <li>A bug in some versions of <code>zlib</code> results in an undefined
@@ -2367,11 +2367,11 @@ SC1.0.  For gcc, try adding <code>-static</code> to
 Solaris 2.3 and later seem to require "<code>EXTRALIBS=-lnsl&nbsp;-lsocket&nbsp;-lposix4</code>".
 
 <li>For Solaris 2.6 (and possibly some other versions), if you set
-<code>SHARE_LIBPNG=1</code>, <b><tt>SHARE_ZLIB=1</tt></b>, or
+<code>SHARE_LIBPNG=1</code>, <code>SHARE_ZLIB=1</code>, or
 <code>SHARE_JPEG=1</code>, you may need to set
 
 <p>
-<code>XLDFLAGS=-R /usr/local/</code>xxx<b><tt>/lib:/usr/local/lib</tt></b>
+<code>XLDFLAGS=-R /usr/local/</code>xxx<code>/lib:/usr/local/lib</code>
 
 <p>
 using the full path names of the relevant directories.
@@ -2383,7 +2383,7 @@ for the X11 libraries rather than <code>/usr/local/X/include</code>.
 <code>/usr/openwin/lib/X11/fonts/Type1/outline</code>.
 
 <li>For Solaris 2.<code>n</code> in the makefile you must change
-the definition of <code>INSTALL</code> from "<b><tt>install&nbsp;-c</tt></b>" to
+the definition of <code>INSTALL</code> from "<code>install&nbsp;-c</code>" to
 "<code>/usr/ucb/install&nbsp;-c</code>".
 
 <li>You may need to set <code>XLIBDIR</code> to the directory that holds
@@ -2468,7 +2468,7 @@ edit this line to 'CO=-O2' (-O or -O1 do not work!).
 from the gs-directory.
 
 <li>One DLL and two EXEs will be produced in <code>gs/bin</code>:
-<code>gsdll2.dll</code> (the Ghostscript DLL), <b><tt>gsos2.exe</tt></b>
+<code>gsdll2.dll</code> (the Ghostscript DLL), <code>gsos2.exe</code>
 (the Ghostscript executable) and <code>gspmdrv.exe</code> (the
 Presentation Manager display driver).  All other newly generated files will
 be produced in <code>gs/obj</code>.
@@ -2492,14 +2492,14 @@ problem.
 DEC C runtime library versions 5.5 and newer have an <code>exit</code>
 function that is compatible with all other C systems, but some older ones
 don't.  If you get error messages from VMS when auxiliary programs such as
-<code>genarch</code> or <b><tt>echogs</tt></b> finish executing, find the
+<code>genarch</code> or <code>echogs</code> finish executing, find the
 line in stdpre.h that reads
 
 <blockquote><code>
 /*#define&nbsp;OLD_VMS_C*/
 </code></blockquote>
 
-and remove the <code>/*</code> and <b><tt>*/</tt></b>, changing it to
+and remove the <code>/*</code> and <code>*/</code>, changing it to
 
 <blockquote><code>
 #define&nbsp;OLD_VMS_C
@@ -2524,7 +2524,7 @@ Again, the <a href="Use.htm">usage documentation</a> tells how to do this.
 You can <a href="Fonts.htm#Precompiling">precompile any Type 1 font</a>
 into C, then compile and build it into Ghostscript, as described in the
 <a href="Fonts.htm">fonts documentation</a>.  If you do this, then add
-"<code>$(PSD)ccfonts.dev</code>" to <b><tt>FEATURE_DEVS</tt></b> in
+"<code>$(PSD)ccfonts.dev</code>" to <code>FEATURE_DEVS</code> in
 <code>OPENVMS.MAK</code>:
 
 <blockquote><code>
@@ -2556,11 +2556,11 @@ href="#MMK_MMS_VMS">below</a> for details.</em>
 
 <p>
 As of Ghostscript version 5.0 you can use GNU make -- with the file
-<code>OPENVMS.MAK</code> and some auxiliary <b><tt>.COM</tt></b> files
+<code>OPENVMS.MAK</code> and some auxiliary <code>.COM</code> files
 -- to build Ghostscript on OpenVMS.  Use the command:
 
 <blockquote>
-<code>make&nbsp;-fopenvms.mak&nbsp;"DECWINDOWS=</code><em>[</em><b><tt>1.2</tt></b><em>]</em><b><tt>"</tt></b>
+<code>make&nbsp;-fopenvms.mak&nbsp;"DECWINDOWS=</code><em>[</em><code>1.2</code><em>]</em><code>"</code>
 </blockquote>
 
 <p>
@@ -2590,14 +2590,14 @@ MMK is a free program largely compatible with MMS.
 
 <p>
 Building Ghostscript with MMK or MMS uses the file
-<code>OPENVMS.MMK</code> and some auxiliary <b><tt>.COM</tt></b> files.
+<code>OPENVMS.MMK</code> and some auxiliary <code>.COM</code> files.
 To build Ghostscript with MMK or MMS, use the command:
 
 <blockquote>
-<code>###/descrip=[.src]openvms.mmk/macro=("DECWINDOWS1_2=</code><em>{</em><b><tt>0</tt></b>,<b><tt>1</tt></b><em>}</em><b><tt>")</tt></b>
+<code>###/descrip=[.src]openvms.mmk/macro=("DECWINDOWS1_2=</code><em>{</em><code>0</code>,<code>1</code><em>}</em><code>")</code>
 </blockquote>
 
-where <code>###</code> is either <b><tt>mmk</tt></b> or <b><tt>mms</tt></b>.
+where <code>###</code> is either <code>mmk</code> or <code>mms</code>.
 
 <p>
 Specify <code>DECWINDOWS1_2=1</code> for DECWINDOWS 1.2,

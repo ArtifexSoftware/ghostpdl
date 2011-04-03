@@ -84,10 +84,10 @@ for details.
 
 <p>
 Most of the font files supplied with Ghostscript have the extension
-<code>.pfb</code>, and a few have <tt><b>.pfa</b></tt> or
+<code>.pfb</code>, and a few have <code>.pfa</code> or
 <code>.gsf</code>.  Each file defines one ordinary PostScript Type 1
 outline font which any PostScript language interpreter can use.  Files with
-<code>.pfa</code> or <tt><b>.pfb</b></tt> extensions are also compatible
+<code>.pfa</code> or <code>.pfb</code> extensions are also compatible
 with Adobe Type Manager (ATM) and with tools that don't include a full
 PostScript language interpreter; files with <code>.gsf</code> extension
 are incompatible with ATM and other tools. Ghostscript compiled with the
@@ -158,14 +158,14 @@ detail in the <a href="Hershey.htm">documentation on Hershey fonts</a>.
 	<td>Basic
 	<td>&nbsp;
 	<td><code>.afm</code>,
-	    <code>.pfb</code>,<br><b><tt>.pfm</tt></b> <tr valign=top> <td>&nbsp;
+	    <code>.pfb</code>,<br><code>.pfm</code> <tr valign=top> <td>&nbsp;
 	<td>&nbsp;
 	<td><code>ghostscript-fonts-other-#.##.tar.gz</code>
 	<td>&nbsp;
 	<td>Miscellaneous
 	<td>&nbsp;
 	<td><code>.afm</code>,
-	    <code>.gsf</code>,<br><b><tt>.pfa</tt></b>, <b><tt>.pfm</tt></b>
+	    <code>.gsf</code>,<br><code>.pfa</code>, <code>.pfm</code>
 
 </table>
 </blockquote>
@@ -421,7 +421,7 @@ arbitrarily transformed characters.  Consequently
 <blockquote>
 Ghostscript needs the scalable outlines of any font mentioned in a
 document, and loads them from the disk (<code>.pfa</code>,
-<code>.pfb</code>, or <tt><b>.gsf</b></tt>
+<code>.pfb</code>, or <code>.gsf</code>
 file) in the usual way, even if it uses the platform's font machinery to
 display the characters. In other words, Ghostscript must still be able to
 find its font files.
@@ -431,7 +431,7 @@ find its font files.
 To make matters worse, platforms use different names for their standard
 fonts.  For example, the Times Roman font, for which PostScript files use
 the name "<code>Times-Roman</code>", may be known as
-"<code>Times-Roman</code>", "<b><tt>Times&nbsp;Roman</tt></b>",
+"<code>Times-Roman</code>", "<code>Times&nbsp;Roman</code>",
 "<code>Tms&nbsp;Rmn</code>",
 "<code>Times&nbsp;New&nbsp;Roman</code>", or
 "<code>TimesNewRoman</code>".  The name may even be completely
@@ -476,7 +476,7 @@ with Ghostscript and defined earlier in the file.
 
 <p>
 In the PC world, Type 1 fonts are customarily given names ending in
-<code>.PFA</code> or <tt><b>.PFB</b></tt>.  Ghostscript can use these
+<code>.PFA</code> or <code>.PFB</code>.  Ghostscript can use these
 directly: you just need to make the entry in Fontmap.  If you want to use
 with Ghostscript a commercial Type 1 font (such as fonts obtained in
 conjunction with Adobe Type Manager), please read carefully the license that
@@ -600,7 +600,7 @@ San Jose, CA  95110-2704<br>
 The XUID is a Level 2 PostScript feature that serves the same function as
 the UniqueID, but is not limited to a single 24-bit integer.  The
 <code>bdftops</code> program creates XUIDs of the form
-"<code>[-X-&nbsp;0&nbsp;-U-]</code>" where "<tt><b>-X-</b></tt>" is the
+"<code>[-X-&nbsp;0&nbsp;-U-]</code>" where "<code>-X-</code>" is the
 organization XUID and "<code>-U-</code>" is the UniqueID.  (Aladdin
 Enterprises' organization XUID, which appears in a few places in various
 font-related files distributed with Ghostscript, is 107; do not use this for
@@ -636,7 +636,7 @@ Users without root access can add the Ghostscript font directories to the
 font search path using <code>xset</code>. Such a setting is transient
 and must be repeated each time the display server is reset or restarted,
 typically at login, so the call to <code>xset</code> should be added to
-the user's "<code>.xsession</code>" or "<b><tt>.xinitrc</tt></b>"
+the user's "<code>.xsession</code>" or "<code>.xinitrc</code>"
 startup script to make the fonts available at each login.
 
 <p>
@@ -726,7 +726,7 @@ signal from the console or from a display not using that font server!
 <p><a name="Xfree86_fontpath"></a>
 With the family of Xfree86 display servers, adding a new font directory
 permanently requires editing the "<code>/etc/XF86Config</code>" setup
-file to add a new "<code>FontPath</code>" to the "<b><tt>Files</tt></b>"
+file to add a new "<code>FontPath</code>" to the "<code>Files</code>"
 section:
 
 <blockquote>

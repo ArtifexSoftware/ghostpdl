@@ -71,7 +71,7 @@ for less generality.
 <p>
 The highest level of the library, which is the one that most clients will
 use, directly implements the PostScript graphics operators with procedures
-named <code>gs_XXX</code>, for instance <b><tt>gs_moveto</tt></b> and
+named <code>gs_XXX</code>, for instance <code>gs_moveto</code> and
 <code>gs_fill</code>.  Nearly all of these procedures take graphics
 state objects as their first arguments, such as
 
@@ -100,11 +100,11 @@ be used to implement the operator.
 There are slight differences in the operators that return multiple values,
 since C's provisions for this are awkward.  Also, the control structure for
 the operators involving callback procedures (<code>pathforall</code>,
-<code>image</code>, <b><tt>colorimage</tt></b>,
+<code>image</code>, <code>colorimage</code>,
 <code>imagemask</code>) is partly inverted: the client calls a procedure
 to set up an enumerator object, and then calls another procedure for each
 iteration.  The <code>...show</code> operators,
-<code>charpath</code>, and <b><tt>stringwidth</tt></b> also use an
+<code>charpath</code>, and <code>stringwidth</code> also use an
 inverted control structure.
 
 <blockquote><table cellpadding=0 cellspacing=0>
@@ -117,33 +117,33 @@ inverted control structure.
 <tr>	<td colspan=5><hr>
 <tr valign=top>	<td>Graphics state -- device-independent
 	<td>&nbsp;
-	<td><code>gscolor.h</code>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gscolor1.h</tt></b><br><b><tt>gscolor2.h</tt></b><br><b><tt>gscspace.h</tt></b><br><b><tt>gshsb.h</tt></b><br><b><tt>gsline.h</tt></b>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gsstate.h</tt></b>
+	<td><code>gscolor.h</code>(<code>gsstate.h</code>)<br><code>gscolor1.h</code><br><code>gscolor2.h</code><br><code>gscspace.h</code><br><code>gshsb.h</code><br><code>gsline.h</code>(<code>gsstate.h</code>)<br><code>gsstate.h</code>
 	<td>&nbsp;
 	<td>&nbsp;
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Graphics state -- device-dependent
 	<td>&nbsp;
-	<td><code>gscolor.h</code>(<b><tt>gsstate.h</tt></b>)<br><b><tt>gscolor1.h</tt></b><br><b><tt>gscolor2.h</tt></b><br><b><tt>gsht.h</tt></b>(<b><tt>gsht1.h</tt></b>,<b><tt>gsstate.h</tt></b>)<br><b><tt>gsht1.h</tt></b><br><b><tt>gsline.h</tt></b>(<b><tt>gsstate.h</tt></b>)
+	<td><code>gscolor.h</code>(<code>gsstate.h</code>)<br><code>gscolor1.h</code><br><code>gscolor2.h</code><br><code>gsht.h</code>(<code>gsht1.h</code>,<code>gsstate.h</code>)<br><code>gsht1.h</code><br><code>gsline.h</code>(<code>gsstate.h</code>)
 	<td>&nbsp;
 	<td>&nbsp;
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Coordinate system and matrix
 	<td>&nbsp;
-	<td><code>gscoord.h</code><br><b><tt>gsmatrix.h</tt></b>
+	<td><code>gscoord.h</code><br><code>gsmatrix.h</code>
 	<td>&nbsp;
-	<td><code>*matrix</code>, <b><tt>*identmatrix</tt></b>, <b><tt>*concatmatrix</tt></b>, <b><tt>*invertmatrix</tt></b>
+	<td><code>*matrix</code>, <code>*identmatrix</code>, <code>*concatmatrix</code>, <code>*invertmatrix</code>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Path construction
 	<td>&nbsp;
-	<td><code>gspath.h</code><br><b><tt>gspath2.h</tt></b>
+	<td><code>gspath.h</code><br><code>gspath2.h</code>
 	<td>&nbsp;
-	<td><code>*arct</code>, <b><tt>*pathforall</tt></b>, <b><tt>ustrokepath</tt></b>, <b><tt>uappend</tt></b>, <b><tt>upath</tt></b>, <b><tt>ucache</tt></b>
+	<td><code>*arct</code>, <code>*pathforall</code>, <code>ustrokepath</code>, <code>uappend</code>, <code>upath</code>, <code>ucache</code>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Painting
 	<td>&nbsp;
-	<td><code>gsimage.h</code><br><b><tt>gspaint.h</tt></b><br><b><tt>gspath2.h</tt></b>
+	<td><code>gsimage.h</code><br><code>gspaint.h</code><br><code>gspath2.h</code>
 	<td>&nbsp;
-	<td><code>*image</code>, <b><tt>*colorimage</tt></b>, <b><tt>*imagemask</tt></b>, <b><tt>ufill</tt></b>, <b><tt>ueofill</tt></b>, <b><tt>ustroke</tt></b>
+	<td><code>*image</code>, <code>*colorimage</code>, <code>*imagemask</code>, <code>ufill</code>, <code>ueofill</code>, <code>ustroke</code>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Form and pattern
 	<td>&nbsp;
@@ -155,13 +155,13 @@ inverted control structure.
 	<td>&nbsp;
 	<td><code>gsdevice.h</code>
 	<td>&nbsp;
-	<td><code>*showpage</code>, <b><tt>*set</tt></b>/<b><tt>currentpagedevice</tt></b>
+	<td><code>*showpage</code>, <code>*set</code>/<code>currentpagedevice</code>
 <tr>	<td>&nbsp;
 <tr valign=top>	<td>Character and font
 	<td>&nbsp;
-	<td><code>gschar.h</code><br><b><tt>gsfont.h</tt></b>
+	<td><code>gschar.h</code><br><code>gsfont.h</code>
 	<td>&nbsp;
-	<td>*(all the <code>show</code> operators), <b><tt>definefont</tt></b>, <b><tt>undefinefont</tt></b>, <b><tt>findfont</tt></b>, <b><tt>*scalefont</tt></b>, <b><tt>*makefont</tt></b>, <b><tt>selectfont</tt></b>, <b><tt>[Global]FontDirectory</tt></b>, <b><tt>Standard</tt></b>/<b><tt>ISOLatin1Encoding</tt></b>, <b><tt>findencoding</tt></b>
+	<td>*(all the <code>show</code> operators), <code>definefont</code>, <code>undefinefont</code>, <code>findfont</code>, <code>*scalefont</code>, <code>*makefont</code>, <code>selectfont</code>, <code>[Global]FontDirectory</code>, <code>Standard</code>/<code>ISOLatin1Encoding</code>, <code>findencoding</code>
 </table></blockquote>
 
 <p>
@@ -214,11 +214,11 @@ have different names.
 <dt><code>gs_image_enum_alloc(gsimage.h)</code>
 <dt><code>gs_image_init/next/cleanup(gsimage.h)</code>
 <dd>Provide an "enumeration style" interface to the equivalent of
-<code>image</code>, <b><tt>imagemask</tt></b>, and
-<code>colorimage</code>.  In the <b><tt>gs_image_t</tt></b>,
+<code>image</code>, <code>imagemask</code>, and
+<code>colorimage</code>.  In the <code>gs_image_t</code>,
 <code>ColorSpace</code> provides an explicit color space, rather than
 using the current color space in the graphics state;
-<code>ImageMask</code> distinguishes <b><tt>imagemask</tt></b> from
+<code>ImageMask</code> distinguishes <code>imagemask</code> from
 <code>[color]image</code>.
 </dl>
 
@@ -252,7 +252,7 @@ sections of the Manual:
 	<td>&nbsp;
 	<td><code>gsfont.h</code>
 	<td>&nbsp;
-	<td><code>cachestatus</code>, <b><tt>setcachelimit</tt></b>, <b><tt>*set/currentcacheparams</tt></b>
+	<td><code>cachestatus</code>, <code>setcachelimit</code>, <code>*set/currentcacheparams</code>
 <tr valign=top>	<td>Display PostScript
 	<td>&nbsp;
 	<td><code>gsstate.h</code>
@@ -308,7 +308,7 @@ using the color are two separate operations.
 	<td>&nbsp;
 	<td>The allocator to use for allocating the saved data for the
 	    <code>Pattern</code> color.  If this is
-	    <code>NULL</code>, <b><tt>gs_makepattern</tt></b> uses the
+	    <code>NULL</code>, <code>gs_makepattern</code> uses the
 	    same allocator that allocated the graphics state.  Library
 	    clients should probably always use <code>NULL</code>.
 
@@ -316,7 +316,7 @@ using the color are two separate operations.
 
 <p>
 The <code>gs_client_pattern</code> structure defined in
-<code>gscolor2.h</code> corresponds to the <b><tt>Pattern</tt></b>
+<code>gscolor2.h</code> corresponds to the <code>Pattern</code>
 dictionary that is the argument to the PostScript language
 <code>makepattern</code> operator.  This structure has one extra member,
 <code>void&nbsp;*client_data</code>, which is a place for clients to
@@ -340,12 +340,12 @@ rely on this.  The <code>PaintProc</code> can retrieve the
 <p>
 The normal way to set a <code>Pattern</code> color is to call
 <code>gs_setpattern</code> with the graphics state and with the
-<code>gs_client_color</code> returned by <b><tt>gs_makepattern</tt></b>.
+<code>gs_client_color</code> returned by <code>gs_makepattern</code>.
 After that, one can use <code>gs_setcolor</code> to set further
 <code>Pattern</code> colors (colored, or uncolored with the same
 underlying color space); the rules are the same as those in PostScript.
 Note that for <code>gs_setpattern</code>, the
-<code>paint.values</code> in the <b><tt>gs_client_color</tt></b> must be
+<code>paint.values</code> in the <code>gs_client_color</code> must be
 filled in for uncolored patterns; this corresponds to the additional
 arguments for the PostScript <code>setpattern</code> operator in the
 uncolored case.
@@ -362,14 +362,14 @@ simple <code>PaintProc.</code>
 Files named <code>gx*.c</code> implement the lower level of the graphics
 library.  The interfaces at the <code>gx</code> level are less stable,
 and expose more of the implementation detail, than those at the
-<code>gs</code> level: in particular, the <b><tt>gx</tt></b> interfaces
+<code>gs</code> level: in particular, the <code>gx</code> interfaces
 generally use device coordinates in an internal fixed-point representation,
 as opposed to the <code>gs</code> interfaces that use floating point
 user coordinates.  Named entities at this level begin with
 <code>gx_</code>.
 
 <p>
-Files named <code>gz*.c</code> and <b><tt>gz*.h</tt></b> are internal to
+Files named <code>gz*.c</code> and <code>gz*.h</code> are internal to
 the Ghostscript implementation, and are not designed to be called by
 clients.
 
@@ -756,8 +756,8 @@ the structure <code>vd_trace_interface</code>, explained in the table below.
 <p>
 The file <code>gslib.c</code> in the Ghostscript fileset is a complete
 example program that initializes the library and produces output using it;
-files named <code>*lib.mak</code> (such as <b><tt>ugcclib.mak</tt></b>
-and <code>bclib.mak</code>) are makefiles using <b><tt>gslib.c</tt></b>
+files named <code>*lib.mak</code> (such as <code>ugcclib.mak</code>
+and <code>bclib.mak</code>) are makefiles using <code>gslib.c</code>
 as the main program.  The following annotated excerpts from this file are
 intended to provide a roadmap for applications that call the library.
 

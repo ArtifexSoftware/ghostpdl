@@ -180,13 +180,13 @@ code = gsdll_init(gsdll_callback, hwnd, argc, argv);
 
 <p>
 <code>hwnd</code> is used as the parent window handle for any windows
-created by Ghostscript.  <code>hwnd</code> may be <b><tt>NULL</tt></b>
+created by Ghostscript.  <code>hwnd</code> may be <code>NULL</code>
 if the caller has no windows, but if it is <code>NULL</code>, you should
 avoid using devices which may open windows.
 
 <p>
 A return code of 0 (zero) indicates no errors, and the code may now call
-<code>gsdll_execute_begin()</code> or <b><tt>gsdll_exit()</tt></b>.  If
+<code>gsdll_execute_begin()</code> or <code>gsdll_exit()</code>.  If
 the return value is non-zero then <code>gsdll_exit()</code> must not be
 called.
 
@@ -255,7 +255,7 @@ must do this explicitly as shown in the example above.
 <p>
 When executing a string with <code>gsdll_execute_cont()</code>,
 <code>currentfile</code> is the input from
-<code>gsdll_execute_cont()</code>.  Reading from <b><tt>%stdin</tt></b>
+<code>gsdll_execute_cont()</code>.  Reading from <code>%stdin</code>
 uses the callback.
 
 <p>
@@ -285,7 +285,7 @@ of <code>gsdll_execute_cont()</code></a>.  After calling
 
 <ul>
 <li>Unload the DLL, either by terminating the application or by
-calling <code>DosFreeModule</code> (OS/2) or <b><tt>FreeLibrary</tt></b> (MS Windows).
+calling <code>DosFreeModule</code> (OS/2) or <code>FreeLibrary</code> (MS Windows).
 
 <li>Call <code>gsdll_init()</code> again to restart Ghostscript.
 </ul>
@@ -410,12 +410,12 @@ char *p;
 	<td>&nbsp;
 	<td>1
 	<td>&nbsp;
-	<td>get <code>count</code> characters to <b><tt>str</tt></b> from stdin, return number of characters read
+	<td>get <code>count</code> characters to <code>str</code> from stdin, return number of characters read
 <tr valign=top>	<td><code>GSDLL_STDOUT</code>
 	<td>&nbsp;
 	<td>2
 	<td>&nbsp;
-	<td>put <code>count</code> characters from <b><tt>str</tt></b>
+	<td>put <code>count</code> characters from <code>str</code>
 		to stdout, return number of characters written
 <tr valign=top>	<td><code>GSDLL_DEVICE</code>
 	<td>&nbsp;
@@ -439,8 +439,8 @@ char *p;
 	<td>6
 	<td>&nbsp;
 	<td>resize for device <code>str</code>:
-		LOWORD(<code>count</code>) is new <b><tt>xsize</tt></b>,
-		HIWORD(<code>count</code>) is new <b><tt>ysize</tt></b>
+		LOWORD(<code>count</code>) is new <code>xsize</code>,
+		HIWORD(<code>count</code>) is new <code>ysize</code>
 <tr valign=top>	<td><code>GSDLL_POLL</code>
 	<td>&nbsp;
 	<td>7
@@ -466,7 +466,7 @@ the DLL may be loaded by a text-only (non-PM) application.  The caller is
 notified via the <code>gsdll_callback()</code> when a new
 <code>os2dll</code> device is opened or closed
 (<code>GSDLL_DEVICE</code>), when the window should be redrawn
-(<code>GSDLL_SYNC</code> or <b><tt>GSDLL_PAGE</tt></b>) or when the
+(<code>GSDLL_SYNC</code> or <code>GSDLL_PAGE</code>) or when the
 bitmap size changes (<code>GSDLL_SIZE</code>).
 Note that more than one <code>os2dll</code> device may be opened.
 
@@ -556,9 +556,9 @@ APIRET rc;
 <p>
 The <code>mswindll</code> device is provided in the Ghostscript DLL for
 use by the caller.  The caller is notified via the
-<code>gsdll_callback()</code> when a new <b><tt>mswindll</tt></b> device
+<code>gsdll_callback()</code> when a new <code>mswindll</code> device
 is opened or closed (<code>GSDLL_DEVICE</code>), when the window should
-be redrawn (<code>GSDLL_SYNC</code> or <b><tt>GSDLL_PAGE</tt></b>) or
+be redrawn (<code>GSDLL_SYNC</code> or <code>GSDLL_PAGE</code>) or
 when the bitmap size changes (<code>GSDLL_SIZE</code>).  Note that more
 than one <code>mswindll</code> device may be opened.
 
@@ -595,7 +595,7 @@ Copy the <code>mswindll</code> palette to the clipboard.
 <blockquote>
 Display output from the <code>mswindll</code> device.  The caller should
 create a window and call <code>gsdll_draw()</code> in response to the
-<code>WM_PAINT</code> message.  The device context <b><tt>hdc</tt></b>
+<code>WM_PAINT</code> message.  The device context <code>hdc</code>
 must be for a device because <code>SetDIBitsToDevice()</code> is used.
 
 <blockquote>

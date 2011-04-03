@@ -115,7 +115,7 @@ normally included in the interpreter.
 
 <li>The CMYK color extensions listed in section A.1.4 of the Second Edition
 (including <code>colorimage</code>).  These facilities are available
-only if the <code>color</code>, <b><tt>dps</tt></b>, or
+only if the <code>color</code>, <code>dps</code>, or
 <code>level2</code> feature was selected when Ghostscript was built.
 
 <li>The Display PostScript extensions listed in section A.1.3 of the Second
@@ -133,14 +133,14 @@ available only if the <code>compfont</code> feature or the
 <code>ttfont</code> feature was selected when Ghostscript was built.
 
 <li>The PostScript Level 2 "filter" facilities except the
-<code>DCTEncode</code> and <b><tt>DCTDecode</tt></b> filters.  These
+<code>DCTEncode</code> and <code>DCTDecode</code> filters.  These
 facilities are available only if the <code>filter</code>,
-<code>dps</code>, or <b><tt>level2</tt></b> feature was selected when
+<code>dps</code>, or <code>level2</code> feature was selected when
 Ghostscript was built.
 
 <li>The PostScript Level 2 <code>DCTEncode</code> and
 <code>DCTDecode</code> filters.  These facilities are available only if
-the <code>dct</code> or <b><tt>level2</tt></b> feature was selected when
+the <code>dct</code> or <code>level2</code> feature was selected when
 Ghostscript was built.
 
 <li>All the other PostScript Level 2 operators and facilities listed in
@@ -166,10 +166,10 @@ LanguageLevel 3 facilities:
 <li>Settable <code>ProcessColorModel</code> for page devices, except for
 a very few special devices.
 
-<li><code>IODevice</code>s other than <b><tt>%stdin</tt></b>,
-<code>%stdout</code>, <b><tt>%stderr</tt></b>, <b><tt>%lineedit</tt></b>,
-<code>%statementedit</code>, <b><tt>%os%</tt></b>, and (if configured)
-<code>%pipe%</code> and <b><tt>%disk0%</tt></b> through <b><tt>%disk0%</tt></b>.
+<li><code>IODevice</code>s other than <code>%stdin</code>,
+<code>%stdout</code>, <code>%stderr</code>, <code>%lineedit</code>,
+<code>%statementedit</code>, <code>%os%</code>, and (if configured)
+<code>%pipe%</code> and <code>%disk0%</code> through <code>%disk0%</code>.
 </ul>
 
 <p>
@@ -472,7 +472,7 @@ accumulate only a coverage value.  Layers must be properly nested, i.e., the
 
 <p>
 Beginning and ending layers must nest properly with respect to
-<code>save</code> and <b><tt>restore</tt></b>: <b><tt>save</tt></b> and
+<code>save</code> and <code>restore</code>: <code>save</code> and
 <code>restore</code> do not save and restore the layer stack.  Currently,
 layers are not required to nest with respect to <code>gsave</code> and
 <code>grestore</code>, except that the device that is current in the
@@ -536,7 +536,7 @@ are the bounding box of the mask in the current user coordinate system.
 <dl>
 <dt><code>&lt;masknum&gt; .endtransparencymask -</code>
 <dd>Ends the current transparency mask, installing it as the current opacity
-(<code>masknum</code> = 0) or shape (<b><tt>masknum</tt></b> = 1) mask in
+(<code>masknum</code> = 0) or shape (<code>masknum</code> = 1) mask in
 the graphics state.
 </dl>
 
@@ -565,13 +565,13 @@ mask values.
 
 <li>A <code>Matte</code> entry may be present in one or both mask
 dictionaries, indicating premultiplication of the data values.  If both
-<code>MaskDict</code>s have a <b><tt>Matte</tt></b> entry and the values
+<code>MaskDict</code>s have a <code>Matte</code> entry and the values
 of the two <code>Matte</code> entries are different, a
 <code>rangecheck</code> error occurs.
 
-<li><code>InterleaveType</code> appears in the <b><tt>MaskDict</tt></b>s,
+<li><code>InterleaveType</code> appears in the <code>MaskDict</code>s,
 not the <code>DataDict</code>, because each mask has its own
-<code>InterleaveType</code>.  <b><tt>InterleaveType</tt></b> 2
+<code>InterleaveType</code>.  <code>InterleaveType</code> 2
 (interlaced scan lines) is not supported.
 
 </ul>
@@ -632,7 +632,7 @@ segment consists of an integral number of pattern repetitions.
 <dl>
 <dt><code>&lt;matrix&gt; .setdefaultmatrix -</code>
 <dd>Sets the default matrix that is returned by
-<code>defaultmatrix</code> and installed by <b><tt>initmatrix</tt></b>.
+<code>defaultmatrix</code> and installed by <code>initmatrix</code>.
 Ordinary programs should not use this operator.
 </dl>
 
@@ -662,7 +662,7 @@ to zero.
 <dd>Sets graphics state parameters that cause all filled and stroked
 regions to be "fattened" by the given amount relative to an algorithm that
 only paints pixels whose centers fall within the region to be painted.
-<code>dx</code> and <b><tt>dy</tt></b> are numbers between 0 and 0.5,
+<code>dx</code> and <code>dy</code> are numbers between 0 and 0.5,
 measured in device space.  The only two values that are likely to be useful
 are 0, which gives a pure center-of-pixel rule, and 0.5, which gives
 Adobe's any-part-of-pixel rule.  (0.5 is treated slightly specially in
@@ -679,7 +679,7 @@ order to create half-open pixels per Adobe's specification.)
 <dd>Sets a graphics state flag that determines whether attempts to set the
 current point outside the internally representable range should clamp the
 value to the largest representable value (true) or give a
-<code>limitcheck</code> error (false).  <b><tt>initgraphics</tt></b> sets
+<code>limitcheck</code> error (false).  <code>initgraphics</code> sets
 this flag to false, to match other PostScript implementations.
 </dl>
 
@@ -717,8 +717,8 @@ determined by the dash pattern.
 <dt><code>&lt;numarray&gt; .rectappend -</code>
 <dt><code>&lt;numstring&gt; .rectappend -</code>
 <dd>Appends a rectangle or rectangles to the current path, in the same
-manner as <code>rectfill</code>, <b><tt>rectclip</tt></b>, etc.  Defined
-only if the <code>dps</code> or <b><tt>level2</tt></b> option was
+manner as <code>rectfill</code>, <code>rectclip</code>, etc.  Defined
+only if the <code>dps</code> or <code>level2</code> option was
 selected when Ghostscript was built.
 </dl>
 
@@ -730,7 +730,7 @@ operator is similar to <code>upath</code>, except
 <ul>
 <li>array of arrays is used to overcome 64K-1 limit on the
 array lemgth.
-<li>no <code>ucache</code> or <b><tt>setbbox</tt></b> entries are generated.
+<li>no <code>ucache</code> or <code>setbbox</code> entries are generated.
 <li>operators are used instead of executable names.
 <li>there's no special handling of an empty path or trailing <code>moveto</code>.
 The saved path can be restored by <code>newpath { exec } forall</code>.
@@ -755,15 +755,15 @@ pattern).  The source and texture depend on the PostScript imaging
 operation:
 
 <ul>
-<li>For <code>fill</code> and <b><tt>stroke</tt></b>, the source is
+<li>For <code>fill</code> and <code>stroke</code>, the source is
 solid black, covering the region to be painted; the texture is the current
 PostScript color.
 
-<li>For <code>show</code> and <b><tt>imagemask</tt></b>, the source is
+<li>For <code>show</code> and <code>imagemask</code>, the source is
 solid black, covering the pixels to be painted; the texture is the current
 PostScript color.
 
-<li>For <code>image</code> and <b><tt>colorimage</tt></b>, the source is
+<li>For <code>image</code> and <code>colorimage</code>, the source is
 the image data; the texture depends on an optional Boolean parameter,
 <code>CombineWithColor</code>, in the image dictionary.  If
 <code>CombineWithColor</code> is false (the default), the texture is
@@ -854,15 +854,15 @@ p3x p3y <code>lineto</code>
 <p>
 If the CTM is well-behaved (consists only of reflection, scaling, and
 rotation by multiples of 90 degrees), this too creates a (simpler) path
-whose <code>pathbbox</code> is the <b><tt>bbox</tt></b> of the string.
+whose <code>pathbbox</code> is the <code>bbox</code> of the string.
 </dl>
 
 <dl>
 <dt><code>&lt;font&gt; &lt;charname|charcode&gt; &lt;charname&gt; &lt;charstring&gt; .type1execchar -</code>
 <dd>Does all the work for rendering a Type 1 outline.  This operator, like
-<code>setcharwidth</code> and <b><tt>setcachedevice</tt></b>, is valid
+<code>setcharwidth</code> and <code>setcachedevice</code>, is valid
 only in the context of a show operator -- that is, it must only be called
-from within a <code>BuildChar</code> or <b><tt>BuildGlyph</tt></b>
+from within a <code>BuildChar</code> or <code>BuildGlyph</code>
 procedure.
 </dl>
 
@@ -870,8 +870,8 @@ procedure.
 <dt><code>&lt;font&gt; &lt;charcode&gt; %Type1BuildChar -</code>
 <dd>This is not a new operator: rather, it is a name known specially to the
 interpreter.  Whenever the interpreter needs to render a character (during
-a ...<code>show</code>, <b><tt>stringwidth</tt></b>, or
-<code>charpath</code>), it looks up the name <b><tt>BuildChar</tt></b>
+a ...<code>show</code>, <code>stringwidth</code>, or
+<code>charpath</code>), it looks up the name <code>BuildChar</code>
 in the font dictionary to find a procedure to run.  If it does not find
 this name, and if the <code>FontType</code> is 1, the interpreter
 instead uses the value (looked up on the dictionary stack in the usual way)
@@ -915,9 +915,9 @@ but is available even in Level 1 configurations.
 <dl>
 <dt><code>&lt;dict&gt; &lt;key&gt; &lt;value&gt; .forceput - </code>
 <dd>Equivalent to <code>put</code>, but works even if
-<code>dict</code> is not writable, and (if <b><tt>dict</tt></b> is
+<code>dict</code> is not writable, and (if <code>dict</code> is
 <code>systemdict</code> or the current save level is 0) even if
-<code>dict</code> is in global VM and <b><tt>key</tt></b> and/or
+<code>dict</code> is in global VM and <code>key</code> and/or
 <code>value</code> is in local VM.  <strong>This operator should be used
 only initialization code, and only in executeonly procedures: it must not be
 accessible after initialization.</strong>
@@ -935,7 +935,7 @@ accessible after initialization.</strong>
 <dl>
 <dt><code>&lt;dict&gt; &lt;key&gt; .knownget &lt;value&gt; true</code>
 <dt><code>&lt;dict&gt; &lt;key&gt; .knownget false</code>
-<dd>Combines <code>known</code> and <b><tt>get</tt></b> in the
+<dd>Combines <code>known</code> and <code>get</code> in the
 obvious way.
 </dl>
 
@@ -1063,7 +1063,7 @@ implementation on this platform.  E.g., the temporary file might be named
 and dash: create the file in the standard temporary directory, but use
 the
 <code>&lt;prefix_string&gt;</code> as the first part of the file name.
-E.g., if <code>&lt;prefix_string&gt;</code> is <b><tt>xx</tt></b>, the
+E.g., if <code>&lt;prefix_string&gt;</code> is <code>xx</code>, the
 temporary file might be named <code>/tmp/xxa1234</code>.
 <p>
 <li>A string that is the beginning of an absolute file name: use the
@@ -1171,7 +1171,7 @@ deferred through -dDELAYBIND. Note that idiom recognition has no effect for the 
 binding because the value returned from <code>bind</code> is discarded.
 <p>
 Since v. 8.12 <code>.bindnow</code> undefines itself and restores standard definition of
-<code>bind</code> operator. In earlier versions after calling <b><tt>.bindnow</tt></b>,
+<code>bind</code> operator. In earlier versions after calling <code>.bindnow</code>,
 the postscript <code>bind</code> operator needs to be rebound to the internal implementation
 <code>.bind</code>, as in this fragment from the ps2ascii script:
 <blockquote><pre><tt>DELAYBIND {
@@ -1184,7 +1184,7 @@ This is necessary for correct behavior with later code that uses the <code>bind<
 
 <dl>
 <dt><code>&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; .execn ...</code>
-<dd>This executes <code>obj1</code> through <b><tt>objn</tt></b> in that
+<dd>This executes <code>obj1</code> through <code>objn</code> in that
 order, essentially equivalent to
 
 <blockquote><pre>
@@ -1309,7 +1309,7 @@ using <code>stopped</code> in order to report errors but continue processing.
 mode (see <a href="Use.htm#Safer"><b>-dSAFER</b></a>)
 <p>
 Since <b>SAFER</b> mode is implemented with userparameters and device parameters,
-it is possible to use <code>save</code> and <b><tt>restore</tt></b> before
+it is possible to use <code>save</code> and <code>restore</code> before
 and after <code>.setsafe</code> to return to <b>NOSAFER</b> mode, but care
 should be taken to ensure that the <i><tt>save</tt></i> object is not
 accessible to any procedures or file run in <b>SAFER</b> mode (see 
@@ -1331,7 +1331,7 @@ PermitFileReading list of paths.
 If Ghostscript is started with <code>-dNOSAFER</code> or 
 <code>-dDELAYSAFER</code>, this operator can be used to enter <b>SAFER</b>
 mode with the current set of <code>PermitFile...</code> user parameters
-in effect. Since <code>.setsafe</code> sets the <b><tt>PermitFile...</tt></b>
+in effect. Since <code>.setsafe</code> sets the <code>PermitFile...</code>
 user parameters to empty arrays, a script or job server that needs to
 enable certain paths for file Reading, Writing and/or Control can use this
 operator to perform the locking needed to enter <b>SAFER</b> mode.
@@ -1373,7 +1373,7 @@ collection as a performance improvement. Additional settings may be added in the
 </dl>
 
 <dl>
-<dt><code>.color_test</code> and <b><tt>.color_test_all</tt></b></dt>
+<dt><code>.color_test</code> and <code>.color_test_all</code></dt>
 <dd>These operators are used for the verification of device encode_color and
 decode_color routines. They are for internal use only. Their function
 can, and probably will, change as Artifex's requirements change.
@@ -1540,7 +1540,7 @@ method in such cases is to use the level 2 operator instead:
 <dl>
 <dt><code>&lt;mark&gt; &lt;name1&gt; &lt;value1&gt; ... &lt;namen&gt; &lt;valuen&gt; &lt;device&gt; putdeviceprops &lt;device&gt;</code>
 <dd>Sets properties of a device.  May cause <code>undefined</code>,
-<code>invalidaccess</code>, <b><tt>typecheck</tt></b>, <b><tt>rangecheck</tt></b>, or
+<code>invalidaccess</code>, <code>typecheck</code>, <code>rangecheck</code>, or
 <code>limitcheck</code> errors.
 </dl>
 
@@ -1563,7 +1563,7 @@ currently support:
 
 <ul>
 
-<li>the <code>EarlyChange</code> key in the <b><tt>LZWEncode</tt></b>
+<li>the <code>EarlyChange</code> key in the <code>LZWEncode</code>
 filter.
 
 </ul>
@@ -1591,7 +1591,7 @@ GIF file format.
 </dl>
 
 <p>
-For the <code>CCITTFaxEncode</code> and <b><tt>CCITTFaxDecode</tt></b>
+For the <code>CCITTFaxEncode</code> and <code>CCITTFaxDecode</code>
 filters:
 
 <dl>
@@ -1623,7 +1623,7 @@ See Adobe documentation for details.
 <dt><code>&lt;target&gt; &lt;seed_integer&gt; /eexecEncode filter &lt;file&gt;</code>
 <dd>Creates a filter for encrypting data into the encrypted format described
 in the Adobe Type 1 Font Format documentation.  The
-<code>seed_integer</code> must be 55665 for the <b><tt>eexec</tt></b>
+<code>seed_integer</code> must be 55665 for the <code>eexec</code>
 section of a font, or 4330 for a <code>CharString</code>.  Note that for
 the <code>eexec</code> section of a font, this filter produces binary
 output and does not include the initial 4 (or <code>lenIV</code>) garbage
@@ -1636,7 +1636,7 @@ bytes.
 <dd>Creates a filter for decrypting data encrypted as described in the Adobe
 Type 1 Font Format documentation.  The <code>seed_integer</code> must be
 55665 or 4330 as described just above.  PDF interpreters don't skip space characters
-after operator <code>eexec</code>.  Use <b><tt>keep_spaces = true</tt></b> for
+after operator <code>eexec</code>.  Use <code>keep_spaces = true</code> for
 decoding embedded PDF fonts.  Recognized dictionary keys are:
 
 <blockquote>
@@ -1717,7 +1717,7 @@ graphics format</a>.  Recognized keys are:
 
 <p>
 The <code>Predictor</code> is the PNG algorithm number + 10 for the
-<code>Encoding</code> filter; the <b><tt>Decoding</tt></b> filter
+<code>Encoding</code> filter; the <code>Decoding</code> filter
 ignores <code>Predictor</code>.  15 means the encoder attempts to
 optimize the choice of algorithm.  For more details see the PNG
 specification
@@ -1758,9 +1758,9 @@ filters will exist in compatible form, or at all, in future versions.
 <dt><code>&lt;target/source&gt; &lt;string&gt; ByteTranslateEncode/Decode filter &lt;file&gt;</code>
 <dd><code>string</code> must be a string of exactly 256 bytes.  Creates a
 filter that converts each input byte <em>b</em> to
-<code>string</code>[<em>b</em>].  Note that the <b><tt>Encode</tt></b>
+<code>string</code>[<em>b</em>].  Note that the <code>Encode</code>
 and <code>Decode</code> filters operate identically: the client must
-provide a <code>string</code> for the <b><tt>Decode</tt></b> filter that
+provide a <code>string</code> for the <code>Decode</code> filter that
 is the inverse mapping of the <code>string</code> for the
 <code>Encode</code> filter.
 </dl>
@@ -1813,7 +1813,7 @@ process.
 
 Ghostscript supports the concept of device parameters for all devices, not
 just page devices.  (For non-page devices, these are accessible through
-<code>getdeviceprops</code> and <b><tt>putdeviceprops</tt></b>, as
+<code>getdeviceprops</code> and <code>putdeviceprops</code>, as
 indicated above.)  Here are the currently defined parameters for all
 devices:
 
@@ -1882,7 +1882,7 @@ or the implementation.
 <dl>
 <dt><code>Colors, GrayValues, RedValues, GreenValues, BlueValues, ColorValues (usually read-only)</code>
 <dd>As for the <code>deviceinfo</code> operator of Display PostScript.
-<code>Red</code>, <b><tt>Green</tt></b>, <b><tt>Blue</tt></b>, and
+<code>Red</code>, <code>Green</code>, <code>Blue</code>, and
 <code>ColorValues</code> are only defined if
 <code>Colors</code>&nbsp;&gt;&nbsp;1.
 </dl>
@@ -1928,7 +1928,7 @@ In addition, the following are defined per Adobe's documentation for the
 <p>
 Some devices may only allow certain values for <code>HWResolution</code>
 and <code>PageSize</code>.  The null device ignores attempts to set
-<code>PageSize</code>; its size is always <b><tt>[0&nbsp;0]</tt></b>.
+<code>PageSize</code>; its size is always <code>[0&nbsp;0]</code>.
 
 <p>
 It should be noted that calling <tt>setpagedevice</tt> with one of the above keys may reset the effects of any <code>pdfmark</code> commands up to that point. In particular this is true of HWResolution, a behavior that differs from Adobe Distiller.
@@ -1954,7 +1954,7 @@ full page buffer may be somewhat larger than the bitmap size alone.
 <p>The buffer space is used to collect display list (clist) commands for the
 bands and then to consolidate those commands when writing the clist to the
 selected BAND_LIST_STORAGE device (memory or file) set when Ghostscript is compiled.
-<p>If <code>MaxBitmap</code> (above) forces banding mode, and if <b><tt>BufferSpace</tt></b>
+<p>If <code>MaxBitmap</code> (above) forces banding mode, and if <code>BufferSpace</code>
 is large enough, the display list (clist) will consist of a single band.
 <p>The  <code>BufferSpace</code> will determine the size of the 'consolidation'
 buffer (above) even if the <code>MaxBitmap</code> value is low enough to force
@@ -1971,7 +1971,7 @@ threads.
 <p>The number of threads should generally be set to the number of available
 processor cores for best throughput.
 <p>Note that each thread will allocate a band buffer (size determined by the
-<code>BufferSpace</code> or <b><tt>BandBufferSpace</tt></b> values) in addition to
+<code>BufferSpace</code> or <code>BandBufferSpace</code> values) in addition to
 the band buffer in the 'main' thread.
 </dl>
 
@@ -2005,13 +2005,13 @@ The following parameters are for use only by very specialized applications
 that separate band construction from band rasterization. <b>Improper use may
 cause unpredictable errors.</b>  In particular, if you only want to allocate
 more memory for banding, to increase band size and improve performance, use
-the <code>BufferSpace</code> parameter, not <b><tt>BandBufferSpace</tt></b>.
+the <code>BufferSpace</code> parameter, not <code>BandBufferSpace</code>.
 
 <dl>
 <dt><code>BandHeight &lt;integer&gt;</code>
 <dd>The height of bands when banding.  0 means use the largest band height
-that will fit within the <code>BandBufferSpace</code> (or <b><tt>BufferSpace</tt></b>,
-if <code>BandBufferSpace</code> is not specified). If <b><tt>BandHeight</tt></b>
+that will fit within the <code>BandBufferSpace</code> (or <code>BufferSpace</code>,
+if <code>BandBufferSpace</code> is not specified). If <code>BandHeight</code>
 is larger than the number of lines that will fit in the buffer, opening the device will fail.
 </dl>
 
@@ -2030,7 +2030,7 @@ use the same buffer size as for the interpretation pass.
 
 <p>
 Ghostscript supports the following parameter for
-<code>setpagedevice</code> and <b><tt>currentpagedevice</tt></b> that is
+<code>setpagedevice</code> and <code>currentpagedevice</code> that is
 not a device parameter per se:
 
 <dl>
@@ -2050,7 +2050,7 @@ Ghostscript supports the following non-standard user parameters:
 <dl>
 <dt><code>ProcessDSCComment &lt;procedure|null&gt;</code>
 <dd>If not null, this procedure is called whenever the scanner detects a DSC
-comment (comment beginning with <code>%%</code> or <b><tt>%!</tt></b>).
+comment (comment beginning with <code>%%</code> or <code>%!</code>).
 There are two operands, the file and the comment (minus any terminating
 EOL), which the procedure must consume.
 </dl>
@@ -2087,7 +2087,7 @@ This parameter is set <tt>true</tt> by the <code>.setsafe</code> and
 <dt><code>PermitFileControl &lt;array of strings&gt;</code>
 <dd>These parameters specify paths where file reading, writing and the
 'control' operations are permitted, respectively. File control
-operations are <code>deletefile</code> and <b><tt>renamefile</tt></b>.
+operations are <code>deletefile</code> and <code>renamefile</code>.
 For <code>renamefile</code>, the filename for the current filename
 must match one of the paths on the PermitFileControl list, and the
 new filename must be on <b>both</b> the PermitFileControl and the
@@ -2246,7 +2246,7 @@ Arrays are used when a single name may be mapped to various character codes -
 in this case Ghostscript tries all alternatives until a success.
 The name of the resource instance should
 reflect the character set for which it maps. For example,
-<code>/Unicode</code> <b><tt>/Decoding</tt></b> resource maps to
+<code>/Unicode</code> <code>/Decoding</code> resource maps to
 Unicode UTF-16.
 
 <p>
@@ -2267,7 +2267,7 @@ of the table in a comfortable form.
 <h3><a name="CIDDecodingResources"></a>CIDDecoding resources</h3>
 
 <p>
-<code>CIDDecoding</code> resources are similar to <b><tt>Decoding</tt></b>
+<code>CIDDecoding</code> resources are similar to <code>Decoding</code>
 resources, except they map Character Identifiers (CIDs) rather than glyph names.
 Another difference is that the native Ghostscript font renderer uses 
 <code>CIDDecoding</code> resources while emulate CID fonts with TrueType or OpenType fonts.

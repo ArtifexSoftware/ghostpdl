@@ -90,7 +90,7 @@
 <li><a href="#STC_print_modes">Print mode parameters</a>
 <ul>
 <li><a href="#STC_unidirectional"><code>Unidirectional</code></a>
-<li><a href="#STC_noweave"><code>Microweave</code>, <b><tt>noWeave</tt></b> and <b><tt>OutputCode=deltarow</tt></b></a>
+<li><a href="#STC_noweave"><code>Microweave</code>, <code>noWeave</code> and <code>OutputCode=deltarow</code></a>
 <li><a href="#STC_model"><code>Model</code></a>
 </ul>
 <li><a href="#STC_Pitfalls">Bugs and pitfalls</a>
@@ -210,7 +210,7 @@ and hp1600 was added by Martin Gerbershagen.
 The hp690 is supported through the hp670 device, the hp855, hp870 and the
 hp1100 through the hp850 device.  The driver needs no longer special
 switches to be invoked except <code>-sDEVICE=cdj850</code>,
-<code>-sDEVICE=CDJ890</code>, <b><tt>-sDEVICE=CDJ670</tt></b>, or
+<code>-sDEVICE=CDJ890</code>, <code>-sDEVICE=CDJ670</code>, or
 <code>-sDevice=CDJ1600</code>.  The following switches are supported.
 
 <blockquote><table cellpadding=0 cellspacing=0>
@@ -307,7 +307,7 @@ Since the printer itself is slow, it may help to set the process priority
 of the gs process to "regular" or even less. On a 486/100MHz this is still
 sufficient to maintain a continuous data flow.  Note to OS/2 users: simply
 put the gs window into the background or minimize it. Also make sure that
-<code>print01.sys</code> is invoked without the <b><tt>/irq</tt></b>
+<code>print01.sys</code> is invoked without the <code>/irq</code>
 switch (great speed improvement under Warp4).
 
 <p>
@@ -316,7 +316,7 @@ color-transfer function. If this appears to be too light for your business
 graphs, or for overhead transparencies, feel free to set
 <code>-dMasterGamma=1.7</code>.  Furthermore, you may tweak the gamma
 values independently by setting <code>-dGammaValC</code>,
-<code>-dGammaValM</code>, <b><tt>-dGammaValY</tt></b> or
+<code>-dGammaValM</code>, <code>-dGammaValY</code> or
 <code>-dGammaValK</code> (if not set, the values default to
 <code>MasterGamma</code>). This will only work when
 <code>-dMasterGamma</code> is set to a value greater than 1.0.
@@ -454,7 +454,7 @@ color-transfer function. If this appears to be too light for your business
 graphs, or for overhead transparencies, feel free to set
 <code>-dMasterGamma=1.7</code>.  Furthermore, you may tweak the gamma
 values independently by setting <code>-dGammaValC</code>,
-<code>-dGammaValM</code>, <b><tt>-dGammaValY</tt></b> or
+<code>-dGammaValM</code>, <code>-dGammaValY</code> or
 <code>-dGammaValK</code> (if not set, the values default to
 <code>MasterGamma</code>). This will only work when
 <code>-dMasterGamma</code> is set to a value greater than 1.0.
@@ -519,7 +519,7 @@ gs&nbsp;-sDEVICE=cDeskJet&nbsp;-dBitsPerPixel=16&nbsp;-dDepletion=1&nbsp;-dShing
 
 <p>
 <b>Note:</b> the old names <code>cDeskJet</code>,
-<code>cdjcolor</code> and <b><tt>cdjmono</tt></b> drivers have been
+<code>cdjcolor</code> and <code>cdjmono</code> drivers have been
 retained; however, their functionality duplicates that available using the
 drivers above (and <code>cDeskJet</code> is identical to
 <code>cdj500</code>).  That is, we can use
@@ -582,7 +582,7 @@ the default bits per pixel (bit depth) for the generic drivers.  If the
 symbol is undefined, the default is 24 bits per pixel.  It is, of course,
 still possible to specify the value from the command line as described
 below.  Note also that the <code>cDeskJet</code>,
-<code>cdjcolor</code> and <b><tt>cdjmono</tt></b> drivers are unaffected
+<code>cdjcolor</code> and <code>cdjmono</code> drivers are unaffected
 by setting this symbol, as their default settings are predefined to be 1, 3
 and 24 respectively.
 
@@ -781,7 +781,7 @@ actually damage the print head.
 
 <p>
 To summarise, you may lose a smidgin of (potential) text clarity using the
-550c drivers (<code>cdj550</code>, <b><tt>cdjcolor</tt></b>,
+550c drivers (<code>cdj550</code>, <code>cdjcolor</code>,
 <code>cdjmono</code> etc.), but other than that, they are the ones for
 the job.
 
@@ -1142,7 +1142,7 @@ be either incomplete or completely unprinted.
 <h4><a name="BJC_compile"></a>Makefile and compilation</h4>
 
 <p>
-Make sure the <code>bjc600</code> or <b><tt>bjc800</tt></b> devices are
+Make sure the <code>bjc600</code> or <code>bjc800</code> devices are
 in <a href="Make.htm#Features_and_devices"><code>DEVICE_DEVS</code> in
 the makefile</a>; that is, look in the makefile for your platform and add
 them if necessary -- they may already be there.  As of Ghostscript 5.10,
@@ -1173,7 +1173,7 @@ the Ghostscript command line (using the <code>-d</code> and
 <code>-s</code> switches or other predetermined switches if they have an
 effect on the driver) or using the PostScript Level 2
 <code>setpagedevice</code> operator if Ghostscript has been compiled
-with the <code>level2</code> or <b><tt>level3</tt></b> device (which it should
+with the <code>level2</code> or <code>level3</code> device (which it should
 <code>;-)</code>). There are <b>no</b> special-purpose operators such as
 one was able to find in Level 1 printers.
 
@@ -1301,7 +1301,7 @@ When both are present it means that the dithering of halftones is visible.
 Default choices are indicated by asterisk "*".
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=9 bgcolor="#CCCC00"><hr><font size="+1">Valid <code>Colors</code> values for<br>allowed <b><tt>BitsPerPixel</tt></b> values
+<tr><th colspan=9 bgcolor="#CCCC00"><hr><font size="+1">Valid <code>Colors</code> values for<br>allowed <code>BitsPerPixel</code> values
 </font><hr>
 <tr valign=bottom>
 	<th align=left>bpp
@@ -1392,7 +1392,7 @@ Default choices are indicated by asterisk "*".
 other one does not work in a <code>setpagedevice</code> call.  This
 means that if you want to change <code>BitsPerPixel</code> to a value
 whose valid <code>Colors</code> values do not include the actual
-<code>Colors</code> value, you must change <b><tt>Colors</tt></b> too.
+<code>Colors</code> value, you must change <code>Colors</code> too.
 </dl>
 
 <dl>
@@ -1410,7 +1410,7 @@ setting may induce a setting of the "other value"
 combinations with "V", default values with asterisk "*".
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=13 bgcolor="#CCCC00"><hr><font size="+1">Valid <code>BitsPerPixel</code> values<br>for allowed <b><tt>Colors</tt></b> values</font><hr>
+<tr><th colspan=13 bgcolor="#CCCC00"><hr><font size="+1">Valid <code>BitsPerPixel</code> values<br>for allowed <code>Colors</code> values</font><hr>
 <tr valign=top>	<td>&nbsp;
 	<td>&nbsp;
 	<td>&nbsp;
@@ -1482,7 +1482,7 @@ valid <code>BitsPerPixel</code> values don't include the actual
 <dl>
 <dt><code>ProcessColorModel</code> (symbol)
 <dd>A symbol taken from <code>/DeviceGray</code>,
-<code>/DeviceRGB</code> or <b><tt>/DeviceCMYK</tt></b> which can be used
+<code>/DeviceRGB</code> or <code>/DeviceCMYK</code> which can be used
 to select 1, 3 or 4 colors respectively.  Note that this parameter takes
 precedence over <code>Colors</code>, and that both affect the same
 variable of the driver.  (See <code>Colors</code> above for values
@@ -1507,10 +1507,10 @@ switch</a>.
 <dl>
 <dt><code>MediaType</code> (string)
 <dd>The media to print on, chosen from among "<code>PlainPaper</code>",
-"<code>CoatedPaper</code>", "<b><tt>TransparencyFilm</tt></b>",
-"<code>Envelope</code>", "<b><tt>Card</tt></b>" and
-"<code>Other</code>".  Default is "<b><tt>PlainPaper</tt></b>".  For
-"<code>Envelope</code>", "<b><tt>Card</tt></b>" or
+"<code>CoatedPaper</code>", "<code>TransparencyFilm</code>",
+"<code>Envelope</code>", "<code>Card</code>" and
+"<code>Other</code>".  Default is "<code>PlainPaper</code>".  For
+"<code>Envelope</code>", "<code>Card</code>" or
 "<code>Other</code>" the driver puts the printer into thick mode
 automatically regardless of the actual media weight.
 </dl>
@@ -1520,7 +1520,7 @@ automatically regardless of the actual media weight.
 <dd>The weight of the media in grams per square meter.  Null (the default)
 indicates that the weight is of no importance.  If the specified media
 weight is greater than 105 (that is, the value of the compilation default
-<code>BJC</code>???<b><tt>_MEDIAWEIGHT_THICKLIMIT</tt></b>) then the
+<code>BJC</code>???<code>_MEDIAWEIGHT_THICKLIMIT</code>) then the
 printer will be set to use thick paper.
 </dl>
 
@@ -1571,7 +1571,7 @@ printer will be set to use thick paper.
 <dl>
 <dt><code>DitheringType</code> (string)
 <dd>Dithering algorithm from between "<code>Floyd-Steinberg</code>" and
-"<code>None</code>". "<b><tt>None</tt></b>" is the default for 1/1 print
+"<code>None</code>". "<code>None</code>" is the default for 1/1 print
 mode, "<code>Floyd-Steinberg</code>" for other modes.  At the moment
 this parameter is read-only, though no error is generated if one tries to
 change it.  This parameter is not of much value at the moment and is here
@@ -1600,9 +1600,9 @@ results.
 </dl>
 
 <p>
-Note that the <code>MediaType</code> and <b><tt>ThickMedia</tt></b>
+Note that the <code>MediaType</code> and <code>ThickMedia</code>
 options will be replaced by the use of the device
-<code>InputAttributes</code> and <b><tt>OutputAttributes</tt></b> as
+<code>InputAttributes</code> and <code>OutputAttributes</code> as
 soon as possible.  Please note too that the print mode may be reset at the
 start of printing, not at the end.  This is the expected behaviour.  If you
 need to reset the printer to its default state, simply print a file that
@@ -1625,7 +1625,7 @@ sheets are stacked face up.
 <dd>In the form <b>M.</b><em>mm</em>pp, where <b>M</b> is the major
 version, <em>mm</em> the bjc driver's minor version, and pp the specific
 driver minor version (that is, <code>M.</code><em>mm</em> will always be
-the same for the <code>bjc600</code> and <b><tt>bjc800</tt></b>
+the same for the <code>bjc600</code> and <code>bjc800</code>
 drivers).
 </dl>
 
@@ -1654,10 +1654,10 @@ U.S. letter and ISO A4 paper.
 <h4><a name="BJC_PPD"></a>PostScript printer description (PPD) files</h4>
 
 <p>
-The files <code>CBJC600.PPD</code> and <b><tt>CBJC800.PPD</tt></b> (whose
+The files <code>CBJC600.PPD</code> and <code>CBJC800.PPD</code> (whose
 long names are, respectively, <code>Canon_BubbleJetColor_600.ppd</code>
 and <code>Canon_BubbleJetColor_800.ppd</code>) are PPD files to drive the
-features of the <code>bjc600</code> and <b><tt>bjc800</tt></b> drivers.
+features of the <code>bjc600</code> and <code>bjc800</code> drivers.
 They can be used, for example, on NextStep systems (presumably on OpenStep
 systems too) and on Unix systems with Adobe's TranScript and
 <code>pslpr</code> (not tested).  The files are not complete at the
@@ -1671,7 +1671,7 @@ options.
 <p>
 By default the PPD files are set for U.S. letter size paper, and they use a
 normalized transfer function.  If you choose to use A4 printing by default,
-you must replace "<code>Letter</code>" with "<b><tt>A4</tt></b>" in
+you must replace "<code>Letter</code>" with "<code>A4</code>" in
 these (noncontiguous) lines:
 
 <blockquote>
@@ -1776,7 +1776,7 @@ options or Ghostscript input.  For convenience a PostScript file is
 supplied for use as an initial input file.  Try the following command:
 
 <blockquote>
-<code>gs -sDEVICE=stcolor -r</code><b>{Xdpi}</b><b><tt>x</tt></b><b>{Ydpi}</b><b><tt> stcolor.ps</tt></b> <b>{YourFile.ps}</b>
+<code>gs -sDEVICE=stcolor -r</code><b>{Xdpi}</b><code>x</code><b>{Ydpi}</b><code> stcolor.ps</code> <b>{YourFile.ps}</b>
 </blockquote>
 
 <p>
@@ -1846,10 +1846,10 @@ somehow related to their use during the printing process:
 	<td>Floyd-Steinberg, monochrome
 <tr valign=top>	<td><code>fsrgb</code>
 	<td>&nbsp;
-	<td>Floyd-Steinberg, RGB process color model (almost identical to the <code>cdj550</code>/<b><tt>bjc</tt></b> algorithm)
+	<td>Floyd-Steinberg, RGB process color model (almost identical to the <code>cdj550</code>/<code>bjc</code> algorithm)
 <tr valign=top>	<td><code>fsx4</code>
 	<td>&nbsp;
-	<td>Floyd-Steinberg, CMYK process color model (shares code with <code>fsmono</code> and <b><tt>fsrgb</tt></b>, but is algorithmically really bad)
+	<td>Floyd-Steinberg, CMYK process color model (shares code with <code>fsmono</code> and <code>fsrgb</code>, but is algorithmically really bad)
 <tr valign=top>	<td><code>fscmyk</code>
 	<td>&nbsp;
 	<td>Floyd-Steinberg, CMYK process color model and proper modifications for CMYK
@@ -1878,7 +1878,7 @@ except for fs2, which always uses a constant initialization.)
 </dl>
 
 <dl>
-<dt><code>-dFlag1</code> ... <b><tt>-dFlag4</tt></b>
+<dt><code>-dFlag1</code> ... <code>-dFlag4</code>
 <dd>Available for future algorithms.
 </dl>
 
@@ -1894,11 +1894,11 @@ but I don't know reasonable values yet.
 </dl>
 
 <dl>
-<dt><code>-dCtransfer='{</code><em>float float ...</em><b><tt>}'</tt></b> or
-<dt><code>-dMtransfer=</code>..., <b><tt>-dY</tt></b>..., <b><tt>-dK</tt></b>... or
-<dt><code>-dRtransfer='{</code><em>float float ...</em><b><tt>}'</tt></b> or
-<dt><code>-dG</code>..., <b><tt>-dB</tt></b>... or
-<dt><code>-dKtransfer='{</code><em>float float ...</em><b><tt>}'</tt></b>
+<dt><code>-dCtransfer='{</code><em>float float ...</em><code>}'</code> or
+<dt><code>-dMtransfer=</code>..., <code>-dY</code>..., <code>-dK</code>... or
+<dt><code>-dRtransfer='{</code><em>float float ...</em><code>}'</code> or
+<dt><code>-dG</code>..., <code>-dB</code>... or
+<dt><code>-dKtransfer='{</code><em>float float ...</em><code>}'</code>
 <dd>Which you use depends on the algorithm, which may be either either
 CMYK, RGB or monochrome. The values are arrays of floats in the range from
 0 to 1.0, representing the visible color intensity for the device.  One may
@@ -1911,8 +1911,8 @@ better transfer arrays.
 </dl>
 
 <dl>
-<dt><code>-dKcoding='{</code><em>float...</em><b><tt>}'</tt></b>
-<dt><code>-dC</code>..., <b><tt>-dM</tt></b>... etc.
+<dt><code>-dKcoding='{</code><em>float...</em><code>}'</code>
+<dt><code>-dC</code>..., <code>-dM</code>... etc.
 <dd>Arrays between 0.0 and 1.0, controlling the internal coding of the
 color values.  Clever use of these arrays may yield further enhancements,
 but I have no experience yet.  (To be discontinued with version 2.x.)
@@ -1926,7 +1926,7 @@ no color).
 
 <dl>
 <dt><code>-sOutputCode=</code><em>{name}</em>
-<dd>Can be either "<code>plain</code>", "<b><tt>runlength</tt></b>" or
+<dd>Can be either "<code>plain</code>", "<code>runlength</code>" or
 "<code>deltarow</code>" and changes the ESC/P2 coding technique
 used by the driver. The default is to use runlength encoding.
 "<code>plain</code>" selects uncompressed encoding and generates
@@ -1978,7 +1978,7 @@ default.
 
 <p>
 ESC/P2 allows any resolutions to be valid in theory, but only
-<code>-r360x360</code> (the default) and <b><tt>-r720x720</tt></b> (not
+<code>-r360x360</code> (the default) and <code>-r720x720</code> (not
 on STC-IIs ? and st800) are known to work with most printers.
 
 <p>
@@ -2005,7 +2005,7 @@ on STC-IIs ? and st800) are known to work with most printers.
 	<td>&nbsp;
 	<td>1 , 8, 24
 	<td>&nbsp;
-	<td><code>noWeave</code>, <b><tt>Microweave</tt></b>
+	<td><code>noWeave</code>, <code>Microweave</code>
 	<td>&nbsp;
 	<td>15/2 <code>SoftWeave</code>
 <tr valign=top>	<td>180x360
@@ -2033,14 +2033,14 @@ on STC-IIs ? and st800) are known to work with most printers.
 	<td>&nbsp;
 	<td>1, 8, 24
 	<td>&nbsp;
-	<td><code>noWeave</code>, <b><tt>Microweave</tt></b>
+	<td><code>noWeave</code>, <code>Microweave</code>
 	<td>&nbsp;
 	<td>15/2 <code>SoftWeave</code>
 <tr valign=top>	<td>360x360
 	<td>&nbsp;
 	<td>1, 8, 24
 	<td>&nbsp;
-	<td><code>noWeave</code>, <b><tt>Microweave</tt></b>
+	<td><code>noWeave</code>, <code>Microweave</code>
 	<td>&nbsp;
 	<td>15/4 <code>SoftWeave</code>
 <tr valign=top>	<td>360x720
@@ -2075,7 +2075,7 @@ on STC-IIs ? and st800) are known to work with most printers.
 	<td>&nbsp;
 	<td>1
 	<td>&nbsp;
-	<td><code>noWeave</code>, <b><tt>Microweave</tt></b>
+	<td><code>noWeave</code>, <code>Microweave</code>
 	<td>&nbsp;
 	<td>15/8 <code>SoftWeave</code>
 </table></blockquote>
@@ -2195,7 +2195,7 @@ whatsoever.ps</code>
 <p>
 where "..." is the name of the desired algorithm.
 <code>stcolor.ps</code> was omitted for the gs-algorithms
-(<code>gsmono</code>, <b><tt>gsrgb</tt></b> and <b><tt>gscmyk</tt></b>),
+(<code>gsmono</code>, <code>gsrgb</code> and <code>gscmyk</code>),
 for which it is useless and would not allow the selection of
 "<code>gscmyk</code>".
 
@@ -2243,7 +2243,7 @@ brightness wrong: too light at 720dpi, too dark at 360dpi.
 <tr>	<td valign=top><code>hscmyk</code>
 <td>&nbsp;
 <td>Excellent. Slightly better than <code>fsrgb</code> and
-<code>fs2</code>. Better than <b><tt>fscmyk</tt></b> on
+<code>fs2</code>. Better than <code>fscmyk</code> on
 some images, almost the same on most.
 <tr>	<td valign=top><code>fscmyk</code>
 <td>&nbsp;
@@ -2384,7 +2384,7 @@ computation time when printing the data.
 <p>
 The driver supports different values for <code>ProcessColorModel</code>,
 which raises the need for different color adjustments.  Here
-"<code>CAM</code>" stands for "<b><tt>ColorAdjustMatrix</tt></b>".
+"<code>CAM</code>" stands for "<code>ColorAdjustMatrix</code>".
 
 <dl>
 <dt><code>DeviceGray</code> (three floats)
@@ -3196,8 +3196,8 @@ the paper.
 
 <p>
 The parameters "<code>Unidirectional</code>",
-"<code>Microweave</code>", "<b><tt>noWeave</tt></b>",
-"<code>OutputCode</code>", "<b><tt>Model</tt></b>" and the given
+"<code>Microweave</code>", "<code>noWeave</code>",
+"<code>OutputCode</code>", "<code>Model</code>" and the given
 resolution control the data generated for the printer.
 
 <h4><a name="STC_unidirectional"></a><code>Unidirectional</code></h4>
@@ -3209,13 +3209,13 @@ improve the quality.  I use this for printing transparencies, where fast
 head movement could smear the ink.
 
 <h4><a name="STC_noweave"></a><code>Microweave</code>,
-<code>noWeave</code> and <b><tt>OutputCode=deltarow</tt></b></h4>
+<code>noWeave</code> and <code>OutputCode=deltarow</code></h4>
 
 <p>
 The first are two booleans, which implies that four combinations are
 possible.  Actually only three exist (if you don't count for
-<code>deltarow</code>): <b><tt>Softweave</tt></b>,
-<code>Microweave</code>, and <b><tt>noWeave</tt></b>.  The first and
+<code>deltarow</code>): <code>Softweave</code>,
+<code>Microweave</code>, and <code>noWeave</code>.  The first and
 second are functionally identical, the difference being whether the driver
 or the printer does the job.
 
@@ -3250,7 +3250,7 @@ to <code>Softweave</code>.
 <p>
 Some ESC/P2 printers such as the Stylus 800 do not offer
 <code>Microweave</code> or the commands required to do
-<code>Softweave</code>.  Setting <b><tt>Model</tt></b> just changes the
+<code>Softweave</code>.  Setting <code>Model</code> just changes the
 defaults and omits some parts of the initialization sequence which are not
 compatible with the given printer model.  Currently only
 "<code>st800</code>" is supported besides the default
@@ -3259,7 +3259,7 @@ compatible with the given printer model.  Currently only
 <h3><a name="STC_Pitfalls"></a>Bugs and pitfalls</h3>
 
 <ul>
-<li>The given <code>?coding</code> and <b><tt>?transfer</tt></b> arrays
+<li>The given <code>?coding</code> and <code>?transfer</code> arrays
 should be strictly monotonic.
 
 <li>It is impossible to change <code>WHITE</code>: that's your paper.
@@ -3315,7 +3315,7 @@ gs -sDEVICE=stcolor -sPAPERSIZE=a4 stcolor.ps - &lt; file.ps
 it is the default, and implies that odd v=40/h=10/m=15 mode
 ("<code>ESC&nbsp;.&nbsp;1&nbsp;40&nbsp;10&nbsp;15</code>").
 
-<p>"<code>Microweave</code>" means "<b><tt>-dMicroweave</tt></b>",
+<p>"<code>Microweave</code>" means "<code>-dMicroweave</code>",
 equivalent to "<code>ESC&nbsp;.&nbsp;1&nbsp;10&nbsp;10&nbsp;1</code>",
 with full skip optimization and microweave activated.
 
@@ -3742,7 +3742,7 @@ The usage of this driver is quite simple.  The typical command line looks
 like this:
 
 <blockquote>
-<code>gs @</code>{MODEL}<b><tt>.upp -sOutputFile=</tt></b>{printable file}<b><tt> MyFile.ps -c quit</tt></b>
+<code>gs @</code>{MODEL}<code>.upp -sOutputFile=</code>{printable file}<code> MyFile.ps -c quit</code>
 </blockquote>
 
 <p>
@@ -4153,9 +4153,9 @@ the various Stylus Color models and some personal needs for HP and NEC
 drivers. Thus the Epson models are well represented among the distributed
 parameter files.  When this driver entered the beta test phase, three other
 drivers appreared on the scene that could be at least partially integrated
-into <code>uniprint</code>: <b><tt>cdj850</tt></b> by Uli Wortmann
+into <code>uniprint</code>: <code>cdj850</code> by Uli Wortmann
 (available at <a href="http://www.erdw.ethz.ch/~bonk/hp850/hp850.html">http://www.erdw.ethz.ch/~bonk/hp850/hp850.html</a>),
-<code>hpdj</code> by Martin Lottermoser, and <b><tt>bjc610</tt></b> by
+<code>hpdj</code> by Martin Lottermoser, and <code>bjc610</code> by
 Helmut Riegler.
 
 <p>
@@ -4170,10 +4170,10 @@ with version 1.68 of uniprint, BJC support is available. Work on the
 <h3><a name="Uni_background"></a>Notes on <code>uniprint</code>'s background</h3>
 
 <p>
-<code>uniprint</code> is actually an update of <b><tt>stcolor</tt></b>,
+<code>uniprint</code> is actually an update of <code>stcolor</code>,
 but much more versatile than its predecessor; <code>stcolor</code>, in
 its turn, started as a clone of the color DeskJet family of drivers
-(<code>cdj</code>*). Finally, <b><tt>cdj</tt></b>* can be considered an
+(<code>cdj</code>*). Finally, <code>cdj</code>* can be considered an
 addition of features to the simpler monochrome drivers of Ghostscript. This
 addition of features is useful to get an idea of the functionality of
 <code>uniprint</code>:
@@ -4286,21 +4286,21 @@ parameters.  Now a few notes about the parameters used in this example:
 href="Use.htm#Safer"><code>SAFER</code></a> are well-known Ghostscript
 parameters described in the <a href="Use.htm">usage documentation</a>.
 
-<li><code>upColorModel</code> is one of major <b><tt>uniprint</tt></b>
+<li><code>upColorModel</code> is one of major <code>uniprint</code>
 parameters: it selects the color mapping and in turn the PostScript color
-model.  It supports the devices <code>/DeviceGray</code>,  <b><tt>/DeviceRGBW</tt></b>, <b><tt>/DeviceRGB</tt></b>, <b><tt>/DeviceCMYK</tt></b>, and <b><tt>/DeviceCMYKgenerate</tt></b>.
+model.  It supports the devices <code>/DeviceGray</code>,  <code>/DeviceRGBW</code>, <code>/DeviceRGB</code>, <code>/DeviceCMYK</code>, and <code>/DeviceCMYKgenerate</code>.
 
 <li><code>upRendering</code> selects the (color) rendering, supporting
-the values <code>/ErrorDiffusion</code> and <b><tt>/FSCMYK32</tt></b>.
-<code>/ErrorDiffusion</code> is similar to <b><tt>fsmono</tt></b>,
-<code>fsrgb</code> and <b><tt>fsx4</tt></b> of <b><tt>stcolor</tt></b>,
+the values <code>/ErrorDiffusion</code> and <code>/FSCMYK32</code>.
+<code>/ErrorDiffusion</code> is similar to <code>fsmono</code>,
+<code>fsrgb</code> and <code>fsx4</code> of <code>stcolor</code>,
 while <code>/FSCMYK32</code> is (almost) identical to
-<code>fscmyk</code> and <b><tt>hscmyk</tt></b>, but is restricted to
+<code>fscmyk</code> and <code>hscmyk</code>, but is restricted to
 32-bit data and should be used in conjunction with
 <code>/DeviceCMYKgenerate</code>.
 
 <li><code>upOutputFormat</code> selects the output method, supporting the values
-<code>/SunRaster</code>, <b><tt>/Epson</tt></b>, <b><tt>/EscP2</tt></b>, <b><tt>/EscP2XY</tt></b>, and<b><tt>/Pcl</tt></b>.
+<code>/SunRaster</code>, <code>/Epson</code>, <code>/EscP2</code>, <code>/EscP2XY</code>, and<code>/Pcl</code>.
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=top>	<td><code>/SunRaster</code>
@@ -4466,9 +4466,9 @@ the commands to be adjusted are included in the BOP string).
 <li><code>upEndPageCommand</code> is the fixed termination sequence for
 each page, and of course there is an "<code>upEndJobCommand</code>" too.
 
-<li><code>upAbortCommand</code> is written if <b><tt>uniprint</tt></b>'s
+<li><code>upAbortCommand</code> is written if <code>uniprint</code>'s
 interrupt detection is enabled and a signal is caught.  It replaces
-"<code>upEndPageCommand</code>" and "<b><tt>upEndJobCommand</tt></b>",
+"<code>upEndPageCommand</code>" and "<code>upEndJobCommand</code>",
 thus allowing the indication of an aborted job.  (Ghostscript gets an error
 return from <code>uniprint</code> in this case, and abandons further
 processing.)

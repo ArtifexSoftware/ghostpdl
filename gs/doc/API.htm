@@ -110,7 +110,7 @@ by multiple applications at once.
 
 <p>
 The source for the executable is in <code>dw</code>*.* (Windows),
-<code>dp</code>*.* (OS/2) and  <b><tt>dx</tt></b>*.* (Linux).  
+<code>dp</code>*.* (OS/2) and  <code>dx</code>*.* (Linux).  
 See these source files for examples of how to use the DLL. A similar
 example for MacOS using the Carbon API is provided in <code>dm</code>*.*.
 
@@ -285,7 +285,7 @@ The caller_handle will be provided to callback functions.
 Destroy an instance of Ghostscript.
 Before you call this, Ghostscript must have finished.
 If Ghostscript has been initialised, you must call 
-<code>gsapi_exit</code> before <b><tt>gsapi_delete_instance</tt></b>.
+<code>gsapi_exit</code> before <code>gsapi_delete_instance</code>.
 </blockquote>
 
 
@@ -350,7 +350,7 @@ errors should be handled through the normal mechanisms within the
 interpreted code. If set to a negative value, the functions will return 
 an error code directly to the caller, bypassing the interpreted 
 language. The interpreted language's error handler is bypassed, regardless of 
-<code>user_errors</code> parameter, for the <b><tt>e_interrupt</tt></b> 
+<code>user_errors</code> parameter, for the <code>e_interrupt</code> 
 generated when <a href="#set_poll">the polling callback</a> returns a negative 
 value. A positive <code>user_errors</code> is treated the same as zero.
 <p>
@@ -380,7 +380,7 @@ This function is useful for debug clients only. Release clients must not call it
 <h3><a name="return_codes"></a>Return codes</h3>
 
 <p>
-The <code>gsapi_init_with_args</code>, <b><tt>gsapi_run_*</tt></b> and
+The <code>gsapi_init_with_args</code>, <code>gsapi_run_*</code> and
 <code>gsapi_exit</code> functions return an integer code.
 
 <p>

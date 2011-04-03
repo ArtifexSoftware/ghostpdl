@@ -51,7 +51,7 @@ Postscript Level 2.
 <p>
 <code>ps2ps2</code> is implemented as a very small command script (batch
 file) that invokes Ghostscript, selecting a special "output device" called
-<code>ps2write</code>.  In order to use <b><tt>ps2ps2</tt></b>, the
+<code>ps2write</code>.  In order to use <code>ps2ps2</code>, the
 <code>ps2write</code> device must be included in the makefile when
 Ghostscript was compiled; see the <a
 href="Make.htm#Features_and_devices">documentation on building
@@ -98,7 +98,7 @@ In particular this can happen with CID fonts, which are not Postscript Level 2 o
 In general these are converted to multiple instances of other font types)
 Therefore the page device parameter <code>PageSize</code>
 must match the target printer, and we recommend setting
-the <code>PageSize</code> entry of the <b><tt>Policies</tt></b>
+the <code>PageSize</code> entry of the <code>Policies</code>
 dictionary to 3, in order to provide correct page scaling
 in the Postscript interpreter when ps2write is invoked.
 </em>
@@ -199,7 +199,7 @@ Must be <em>false</em> if <code>-dSetPageSize=true</code>.
 to fit into the real page size. The rendering quality may be poor due to the scaling,
 especially for fonts which Ghostscript had converted into bitmaps 
 (see the <em>ps2write</em> device parameter <code>HaveTrueTypes</code>;
-See <a href="#Options">Options</a> about the <code>PageSize</code> entry of the <b><tt>Policies</tt></b>
+See <a href="#Options">Options</a> about the <code>PageSize</code> entry of the <code>Policies</code>
 dictionary while the conversion step). 
 Default value : <em>false</em>.
 Must be <em>false</em> if <code>-dSetPageSize=true</code> or <code>-dCenterPages=true</code>.

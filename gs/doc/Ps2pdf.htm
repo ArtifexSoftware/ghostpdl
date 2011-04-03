@@ -106,7 +106,7 @@ However, this may change in the future.  If you care about compatibility
 with a specific output level,use the
 <code>-dCompatibilityLevel=</code><em>1.x</em> switch in the command
 line, or one of the specific version aliases <code>ps2pdf12</code>, 
-<code>ps2pdf13</code>, or <b><tt>ps2pdf14</tt></b>.
+<code>ps2pdf13</code>, or <code>ps2pdf14</code>.
 
 </ul>
 
@@ -120,7 +120,7 @@ the script name.  You can still specify the output format by using
 
 <p>
 All of these scripts actually call a script named <code>ps2pdfwr</code>
-or <code>ps2pdfxx</code>.  The Unix <b><tt>ps2pdfwr</tt></b> script
+or <code>ps2pdfxx</code>.  The Unix <code>ps2pdfwr</code> script
 assumes that the Ghostscript executable is named <code>gs</code>; it is
 unlikely that you will need to change this.  The DOS and MS Windows
 <code>ps2pdfxx.bat</code> script uses the value of the
@@ -182,7 +182,7 @@ converted to bitmaps. The default internal resolution for pdfwrite is 720dpi.
 <dt><code>-dProcessColorModel=</code><em>device_color_space</em> <dd>Sets
 the color space to be used for device-dependent colors in the
 output. <em>device_color_space</em> may be <code>/DeviceGray</code>,
-<code>/DeviceRGB</code>, or <b><tt>/DeviceCMYK</tt></b>; the default
+<code>/DeviceRGB</code>, or <code>/DeviceCMYK</code>; the default
 value is <code>/DeviceRGB</code>.  Note that this does not affect images:
 see <a href="#Limitations">Limitations</a> below.
 
@@ -445,7 +445,7 @@ UUIDs, when several invokations of Ghostscript create
 several PDF documents within same clock quantum (tick).
 Mainly reserved for very fast computers and/or multhithreading applications,
 which may appear in future. If both <code>DocumentUUID</code>
-and <code>InstanceUUID</code> are specified, <b><tt>DocumentTimeSeq</tt></b> is ignored.
+and <code>InstanceUUID</code> are specified, <code>DocumentTimeSeq</code> is ignored.
 </dl>
 
 <dl>
@@ -670,11 +670,11 @@ name.
 
 <p>
 <a name="note_13">(note 13)</A>
-The arrays <code>AlwaysEmbed</code> and <b><tt>NeverEmbed</tt></b> and
+The arrays <code>AlwaysEmbed</code> and <code>NeverEmbed</code> and
 image parameter dictionaries <code>ColorACSImageDict</code>,
-<code>ColorACSImageDict</code>, <b><tt>ColorImageDict</tt></b>,
+<code>ColorACSImageDict</code>, <code>ColorImageDict</code>,
 
-<code>GrayACSImageDict</code>, <b><tt>GrayImageDict</tt></b>,
+<code>GrayACSImageDict</code>, <code>GrayImageDict</code>,
 <code>MonoImageDict</code> cannot be specified on the ps2pdf command line.
 To specify these, you must use PostScript, either by including it in the PostScript source
 or by passing the <code>-c</code> command-line parameter to ghostscript as described in <a href="#Limitations">Limitations</A> below.
@@ -943,12 +943,12 @@ switch, e.g., <code>ps2pdf&nbsp;-r300&nbsp;somefile.ps</code>.
 <p>
 <code>ps2pdf</code> ignores the PDF 1.3 (Acrobat 4.x) pdfmarks related to
 document content structure: <code>StRoleMap</code>,
-<code>StClassMap</code>, <b><tt>StPNE</tt></b>,
-<code>StBookmarkRoot</code>, <b><tt>StPush</tt></b>,
-<code>StPop</code>, <b><tt>StPopAll</tt></b>, <b><tt>StBMC</tt></b>,
-<code>StBDC</code>, <b><tt>EMC</tt></b>, <b><tt>StOBJ</tt></b>,
-<code>StAttr</code>, <b><tt>StStore</tt></b>, <b><tt>StRetrieve</tt></b>,
-<code>NamespacePush</code>, <b><tt>NamespacePop</tt></b>, and
+<code>StClassMap</code>, <code>StPNE</code>,
+<code>StBookmarkRoot</code>, <code>StPush</code>,
+<code>StPop</code>, <code>StPopAll</code>, <code>StBMC</code>,
+<code>StBDC</code>, <code>EMC</code>, <code>StOBJ</code>,
+<code>StAttr</code>, <code>StStore</code>, <code>StRetrieve</code>,
+<code>NamespacePush</code>, <code>NamespacePop</code>, and
 <code>NI</code>.  While this causes some structural information to be
 omitted from the output file, the displayed and printed output are normally
 not affected.
@@ -993,7 +993,7 @@ of the <tt>.setpdfwrite</tt> operator.
 <p>
 Distiller parameters should only be saved by <code>save</code> and
 restored by <code>restore</code>, but they are also saved by
-<code>gsave</code> and restored by <b><tt>grestore</tt></b>.
+<code>gsave</code> and restored by <code>grestore</code>.
 
 <p>
 Changing the value of the <code>CompressPages</code> parameter after any
@@ -1042,7 +1042,7 @@ output, especially if the input file involves pattern fills.
 <p>
 Many users report that the combination of <code>ps2pdf</code> with
 Acrobat Reader is superior to using a generic PostScript viewer
-(<code>psview</code> or <b><tt>ghostview</tt></b>), particularly for
+(<code>psview</code> or <code>ghostview</code>), particularly for
 documents with many pages where the navigational support in PDF files
 reduces the overhead involved in navigating conventional PostScript
 documents.

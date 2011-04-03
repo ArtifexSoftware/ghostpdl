@@ -88,7 +88,7 @@ you will want to change.
 <ul>
 
 <li>If you make any significant changes, please edit
-<code>base/gscdef.c</code> to change <b><tt>GS_PRODUCTFAMILY</tt></b> 
+<code>base/gscdef.c</code> to change <code>GS_PRODUCTFAMILY</code> 
 and <code>GS_PRODUCT</code> from "GPL Ghostscript" to something else,
 in order to avoid confusion with Artifex releases.
 
@@ -264,7 +264,7 @@ Update references to the date for release:
 line. That is, in parentheses after the <tt>VERSION X.YY</tt> heading,
 and in the copyright footer both the year and the release date.
 
-<li>In <code>psi/dwsetup.rc</code> and <b><tt>psi/winint.mak</tt></b>,
+<li>In <code>psi/dwsetup.rc</code> and <code>psi/winint.mak</code>,
 update the year in the embedded copyright notice.
 
 </ul>
@@ -303,15 +303,15 @@ This program compares the result of various greps against a check file,
 writing the results of grep on one output file and the differences from the
 check file on another.  See the source code for the default file names.  The
 important one is the check file,
-<code>toolbin/pre.chk</code>.  <b><tt>pre.tcl</tt></b> also verifies
+<code>toolbin/pre.chk</code>.  <code>pre.tcl</code> also verifies
 that the
 right information is in the following places:
 <ul>
-<li>release number in <code>man/*.1</code>, <b><tt>doc/*.htm</tt></b>,
-<code>version.mak</code>, <b><tt>doc/gs-vms.hlp</tt></b>,
+<li>release number in <code>man/*.1</code>, <code>doc/*.htm</code>,
+<code>version.mak</code>, <code>doc/gs-vms.hlp</code>,
 <code>Resource/Init/gs_init.ps</code>
-<li>revision date in <code>man/*.1</code>, <b><tt>doc/*.htm</tt></b>,
-<code>version.mak</code>, <b><tt>doc/gs-vms.hlp</tt></b>
+<li>revision date in <code>man/*.1</code>, <code>doc/*.htm</code>,
+<code>version.mak</code>, <code>doc/gs-vms.hlp</code>
 <li>copyright year (if necessary) in <code>gscdef.c</code>
 <li>third-party library version number in <code>*.mak</code>
 </ul>
@@ -397,7 +397,7 @@ Watch for crashes, unusual error messages, or anomalous displayed output.
 If there are any problems, start over from the beginning of the process.
 
 <p>
-Undo the <code>FEATURE_DEVS</code> and <b><tt>COMPILE_INITS</tt></b>
+Undo the <code>FEATURE_DEVS</code> and <code>COMPILE_INITS</code>
 edits.
 
 <p>
@@ -584,7 +584,7 @@ gs###
 
 <p>
 The <code>gs###.bat</code> script creates some necessary directories,
-sets up <code>PATH</code> and <b><tt>GS_LIB</tt></b> for testing, and
+sets up <code>PATH</code> and <code>GS_LIB</code> for testing, and
 makes the <code>gs#.##</code> directory current.
 
 <p>
@@ -614,7 +614,7 @@ Smoke test these executables too.
 
 <p>
 Building with the Watcom compiler doesn't work, because the
-<code>wmake</code> or <b><tt>wmakel</tt></b> program runs out of memory.
+<code>wmake</code> or <code>wmakel</code> program runs out of memory.
 However, if it did work, this is how to do it:
 
 <blockquote><pre>
@@ -682,7 +682,7 @@ Run the command <code>nmake archive</code>.  This builds the distribution
 archive <code>gsNNNw32.exe</code> and an ordinary zip file
 <code>gsNNNw32.zip</code> in the parent directory.
 If you do not have WinZip Self-Extractor, you can use
-<code>nmake zip</code> to make <b><tt>gsNNNw32.zip</tt></b> only. 
+<code>nmake zip</code> to make <code>gsNNNw32.zip</code> only. 
 
 <p>Starting with Ghostscript 9.x (Summer 2010), <code>nmake nsis</code> (msvc)
 or <code>make nsis</code> (Borland) builds an nsis-based installer
@@ -746,12 +746,12 @@ consistent with the values of and version numbers specifically listed in
 the makefiles.
 
 <blockquote><pre>
-<code>jpegsrc.v$$.tar.gz</code> -&gt; <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
-<code>libpng-$.$.$.tar.gz</code> -&gt; <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
-<code>zlib-$.$.$.tar.gz</code> -&gt; <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
-<code>jpegsr$$.zip</code> -&gt; <b><tt>../../3rdparty/jpegsr$$.zip</tt></b>
-<code>lpng$$$.zip</code> -&gt; <b><tt>../../3rdparty/lpng$$$.zip</tt></b>
-<code>zlib$$$.zip</code> -&gt; <b><tt>../../3rdparty/zlib$$$.zip</tt></b>
+<code>jpegsrc.v$$.tar.gz</code> -&gt; <code>../../3rdparty/jpegsrc.v$$.tar.gz</code>
+<code>libpng-$.$.$.tar.gz</code> -&gt; <code>../../3rdparty/libpng-$.$.$.tar.gz</code>
+<code>zlib-$.$.$.tar.gz</code> -&gt; <code>../../3rdparty/zlib-$.$.$.tar.gz</code>
+<code>jpegsr$$.zip</code> -&gt; <code>../../3rdparty/jpegsr$$.zip</code>
+<code>lpng$$$.zip</code> -&gt; <code>../../3rdparty/lpng$$$.zip</code>
+<code>zlib$$$.zip</code> -&gt; <code>../../3rdparty/zlib$$$.zip</code>
 </pre></blockquote>
 
 In any case, the names of the links in the distribution directory should reflect
@@ -761,8 +761,8 @@ the original name of the upstream file.
 number of the fonts:
 
 <blockquote><pre>
-<code>ghostscript-fonts-other-$.$.tar.gz</code> -&gt; <b><tt>../fonts/ghostscript-fonts-other-$.$.tar.gz</tt></b>
-<code>ghostscript-fonts-std-$.$.tar.gz</code> -&gt; <b><tt>../fonts/ghostscript-fonts-std-$.$.tar.gz</tt></b>
+<code>ghostscript-fonts-other-$.$.tar.gz</code> -&gt; <code>../fonts/ghostscript-fonts-other-$.$.tar.gz</code>
+<code>ghostscript-fonts-std-$.$.tar.gz</code> -&gt; <code>../fonts/ghostscript-fonts-std-$.$.tar.gz</code>
 </pre></blockquote>
 
 </ul>

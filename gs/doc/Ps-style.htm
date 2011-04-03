@@ -139,11 +139,11 @@ such as constant strings or dictionaries.
 During initialization, and occasionally afterwards, it may be necessary to
 store into a read-only dictionary, or to store a pointer to a dictionary in
 local VM into a dictionary in global VM.  The operators
-<code>.forceput</code> and <b><tt>.forceundef</tt></b> are available for
+<code>.forceput</code> and <code>.forceundef</code> are available for
 this purpose.  To make these operators inaccessible to ordinary programs,
 they are removed from <code>systemdict</code> at the end of
 initialization: system code that uses them should always use
-<code>bind</code> and <b><tt>odef</tt></b> (or
+<code>bind</code> and <code>odef</code> (or
 <code>executeonly</code>) to make uses of them inaccessible as well.
 
 <h3><a name="Standard_constructions"></a>Standard constructions</h3>
@@ -425,7 +425,7 @@ operators</h3>
 <dl>
 
 <dt><code>&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; .execn ...</code>
-<dd>This executes <code>obj1</code> through <b><tt>objn</tt></b> in that
+<dd>This executes <code>obj1</code> through <code>objn</code> in that
 order, essentially equivalent to
 
 <blockquote><pre>
@@ -438,7 +438,7 @@ except that it doesn't actually create the array.
 <dt><code>&lt;dict&gt; &lt;key&gt; <b>.knownget</b> &lt;value&gt; true</code>
 <dt><code>&lt;dict&gt; &lt;key&gt; <b>.knownget</b> false</code>
 
-<dd>This combines <code>known</code> and <b><tt>get</tt></b> in the
+<dd>This combines <code>known</code> and <code>get</code> in the
 obvious way.
 
 <dt><code>&lt;name&gt; &lt;proc&gt; odef -</code>
@@ -449,7 +449,7 @@ obvious way.
 the body of a procedure (like an operator, unlike a procedure), but what
 will actually be executed will be <code>proc</code>.  In addition, if the
 execution of <code>proc</code> is ended prematurely (by
-<code>stop</code>, including the <b><tt>stop</tt></b> that is normally
+<code>stop</code>, including the <code>stop</code> that is normally
 executed when an error occurs, or <code>exit</code>) and the operand and
 dictionary stacks are at least as deep as they were when the "operator" was
 invoked, the stacks will be cut back to their original depths before the

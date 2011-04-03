@@ -888,7 +888,7 @@ are summarized below:
 
 <dl>
 <dt><code>-r</code><em>number</em>
-<br><code>-r</code><em>number1</em><b><tt>x</tt></b><em>number2</em>
+<br><code>-r</code><em>number1</em><code>x</code><em>number2</em>
 <dd>Sets the resolution, in dpi. If the resolution is not specified,
 Ghostscript queries the IJS server to determine the preferred resolution.
 When the resolution is specified, it overrides the value (if any)
@@ -1266,7 +1266,7 @@ shows the <em>printer setup dialog</em> (<code>2</code>) or selects the
 
 <dt><code>/BitsPerPixel <em>integer</em></code></dt>
 <dd>Sets the device depth to the specified bits per pixel. Currently supported
-values are <code>1</code> (monochrome), <tt><b>4</b></tt> (CMYK with screening
+values are <code>1</code> (monochrome), <code>4</code> (CMYK with screening
 handled by Ghostscript) and <code>24</code> (True Color, dithering handled by
 the Windows printer driver; this option can produce huge print jobs).</dd>
 
@@ -1336,7 +1336,7 @@ they could be removed in a future version.
 If the Windows printer supports the duplex printing feature, then it will
 also be available through the <code>mswinpr2</code> device. You can query
 for this support through the <code>/Duplex</code> property of the
-<code>currentpagedevice</code>. If it returns <b><tt>null</tt></b>, then
+<code>currentpagedevice</code>. If it returns <code>null</code>, then
 the feature is not supported by the selected printer. Otherwise, <code>true</code>
 means that the printer is currently set up to print on both faces of the paper
 and <code>false</code> that it is not, but that it can.
@@ -1381,7 +1381,7 @@ shown here.
 <h3><a name="SPARC_install"></a>Installation</h3>
 
 <p>
-Add <code>sparc.dev</code> to <b><tt>DEVICE_DEVS</tt></b> and compile
+Add <code>sparc.dev</code> to <code>DEVICE_DEVS</code> and compile
 Ghostscript as described in the documentation on <a href="Make.htm">how to
 build Ghostscript</a>.  Afterwards you can use the following script as an
 example for printing after modifying it with the right pathnames --
@@ -1455,12 +1455,12 @@ assumes that carriage return-newline is needed, and not just carriage
 return.  These are all switch settings on the DMP, and I have configured
 them for 8-bit data and carriage return exclusively.  Ensure that the Unix
 printer daemon handles 8-bit (binary) data properly; in my SunOS 4.1.1
-<code>printcap</code> file the string "<b><tt>ms=pass8,-opost</tt></b>"
+<code>printcap</code> file the string "<code>ms=pass8,-opost</code>"
 works fine for this.
 
 <p>
 Finally, you can search <code>devdemp.c</code> for
-"<code>Init</code>" and "<b><tt>Reset</tt></b>" to find the strings that
+"<code>Init</code>" and "<code>Reset</code>" to find the strings that
 initialize the printer and reset things when finished, and change them to
 meet your needs.
 

@@ -125,14 +125,14 @@ to a small number of Ghostscript porters and implementors.
 	    "display string" operation.
 <tr>	<td valign=top><code>gx_xfont_procs</code>
 	<td>&nbsp;
-	<td valign=top><code>gsxfont.h</code>, <b><tt>gxxfont.h</tt></b>
+	<td valign=top><code>gsxfont.h</code>, <code>gxxfont.h</code>
 	<td>&nbsp;
 	<td valign=top>The xfont analogue of
 	    <code>gx_device_procs</code>, the type of the
 	    procedure record that defines an xfont implementation.
 <tr>	<td valign=top><code>gx_xfont</code>
 	<td>&nbsp;
-	<td valign=top><code>gsxfont.h</code>, <b><tt>gxxfont.h</tt></b>
+	<td valign=top><code>gsxfont.h</code>, <code>gxxfont.h</code>
 	<td>&nbsp;
 	<td valign=top>The gxfont analogue of <code>gx_device</code>,
 	    the type of the basic structure for an xfont.
@@ -163,9 +163,9 @@ success, or an appropriate negative error code for error conditions; these
 error codes are defined in <code>gserrors.h</code>.  The relevant ones
 are the same as for <a href="Drivers.htm">drivers</a>, and as with drivers,
 if an implementation procedure returns an error, it should use the
-<code>return_error</code> macro -- defined in <b><tt>gx.h</tt></b>,
+<code>return_error</code> macro -- defined in <code>gx.h</code>,
 which is automatically included by <code>gdevprn.h</code> but not by
-<code>gserrors.h</code> -- rather than a simple <b><tt>return</tt></b>
+<code>gserrors.h</code> -- rather than a simple <code>return</code>
 statement, for instance
 
 <blockquote>
@@ -192,7 +192,7 @@ Type 1 font.
 <p>
 Note that this is the only implementation procedure that does not take an
 xfont * as its first argument.  In fact, callers of
-<code>lookup_font</code> must use the <b><tt>get_xfont_device</tt></b>
+<code>lookup_font</code> must use the <code>get_xfont_device</code>
 driver procedure to get the correct device to pass as the first argument to
 <code>lookup_font</code>.
 </dl>
@@ -204,8 +204,8 @@ driver procedure to get the correct device to pass as the first argument to
 int&nbsp;encoding_index, gs_glyph&nbsp;glyph,
 gs_proc_glyph_name_t&nbsp;glyph_name))</code>
 <dd>Convert a character name to an xglyph code.  In the case of
-<code>glyphshow</code>, <b><tt>chr</tt></b> may be
-<code>gs_no_char</code>; for an ordinary <b><tt>show</tt></b> operation,
+<code>glyphshow</code>, <code>chr</code> may be
+<code>gs_no_char</code>; for an ordinary <code>show</code> operation,
 if the character code is invalid, <code>glyph</code> may be
 <code>gs_no_glyph</code>.
 </dl>
@@ -232,7 +232,7 @@ will check whether the target can handle this type of xfont directly (for
 instance by checking the target name), and if so, will render the character
 directly; otherwise, it will do what has to be done in the general case,
 namely, get a bitmap for the character and use the target's
-<code>copy_mono</code> operation.  If <b><tt>required</tt></b> is false,
+<code>copy_mono</code> operation.  If <code>required</code> is false,
 the procedure should return an error if the rendering operation would be
 expensive, since in this case Ghostscript has already cached the bitmap and
 metrics from a previous call with <code>required</code>=true.  If the
@@ -245,7 +245,7 @@ operation cannot be done, return 1.
 <dt><code>int (*release)(P2(gx_xfont&nbsp;*xf,
 const&nbsp;gs_memory_procs&nbsp;*mprocs))</code>
 <dd>Release any external resources associated with an xfont.  If
-<code>mprocs</code> is not <b><tt>NULL</tt></b>, also free any storage
+<code>mprocs</code> is not <code>NULL</code>, also free any storage
 allocated by <code>lookup_font</code> (including the xfont itself).
 </dl>
 

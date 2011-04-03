@@ -84,7 +84,7 @@
 <li><a href="#Parameters">Setting parameters</a>
 <li><a href="#Quiet">Suppress messages</a>
 </ul>
-<li><a href="#Parameter_switches">Parameter switches (<code>-d</code> and <b><tt>-s</tt></b>)</a>
+<li><a href="#Parameter_switches">Parameter switches (<code>-d</code> and <code>-s</code>)</a>
 <ul>
 <li><a href="#Rendering_parameters">Rendering parameters</a>
 <li><a href="#Page_parameters">Page parameters</a>
@@ -199,7 +199,7 @@ followed by a parameter. The most important are described in detail here. Please
 
 <p>
 You can get a brief help message by invoking Ghostscript with the
-<code>-h</code> or <b><tt>-?</tt></b> switch, like this:
+<code>-h</code> or <code>-?</code> switch, like this:
 
 <blockquote><pre>
 gs -h
@@ -290,7 +290,7 @@ balance resolution against printing speed.  To select the resolution on
 such a printer, use the <code>-r</code> switch:
 
 <blockquote>
-        <code>gs -sDEVICE=</code><em>printer</em><b><tt> -r</tt></b><em>XRES</em><b><tt>x</tt></b><em>YRES</em>
+        <code>gs -sDEVICE=</code><em>printer</em><code> -r</code><em>XRES</em><code>x</code><em>YRES</em>
 </blockquote>
 
 where <em>XRES</em> and <em>YRES</em> are the requested number of dots (or pixels) per inch. Where the two resolutions are same, as is the common case, you can simply use <tt>-r</tt><em>res</em>.
@@ -516,9 +516,9 @@ line.  However, one can also "pipe" input into Ghostscript from another
 program by using the special file name '<code>-</code>' which is interpreted as standard input. Examples:
 
 <blockquote>
-{<em>some program producing ps</em>} <code>| gs</code> [options] <b><tt>-</tt></b>
+{<em>some program producing ps</em>} <code>| gs</code> [options] <code>-</code>
 <br>
-<tt>zcat paper.ps.gz</tt> <code>| gs</code> <b><tt>-</tt></b>
+<tt>zcat paper.ps.gz</tt> <code>| gs</code> <code>-</code>
 </blockquote>
 
 <p>
@@ -803,7 +803,7 @@ functions to convert spot colors to the appropriate alternate color space.
 
 <p>
 When looking for initialization files (<code>gs_*.ps</code>,
-<code>pdf_*.ps</code>), font files, the <b><tt>Fontmap</tt></b> file,
+<code>pdf_*.ps</code>), font files, the <code>Fontmap</code> file,
 files named on the command line, and resource files, Ghostscript first tests whether the
 file name specifies an absolute path.
 
@@ -819,7 +819,7 @@ file name specifies an absolute path.
 <tr>    <td valign=top>MS Windows
         <td>&nbsp;
         <td>Have <code><u>:</u></code> as its second character, or
-                begin with <code><u>/</u></code>, <b><tt><u>\</u></tt></b>,
+                begin with <code><u>/</u></code>, <code><u>\</u></code>,
                 or <code><u>//servername/share/</u></code> ?
 <tr>    <td valign=top>VMS
         <td>&nbsp;
@@ -861,7 +861,7 @@ of backward compatibility.
 
 <p>
 Note that Ghostscript does not use this file searching algorithm for the
-<b><tt>run</tt></b> or <b><tt>file</tt></b> operators: for these operators, it
+<code>run</code> or <code>file</code> operators: for these operators, it
 simply opens the file with the name given.  To run a file using the searching
 algorithm, use <code>runlibfile</code> instead of <code>run</code>.
 
@@ -934,8 +934,8 @@ then for <code>c:/gs8.50/Resource/CMap/Identity-H</code>.
 To get a proper platform dependent syntax Ghostscript inserts
 the value of the system parameter
 <code>GenericResourcePathSep</code> (initially
-"<code>/</code>" on Unix and Windows, "<b><tt>:</tt></b>" on MacOS,
-"<code>.</code>" or "<b><tt>]</tt></b>" on OpenVMS).
+"<code>/</code>" on Unix and Windows, "<code>:</code>" on MacOS,
+"<code>.</code>" or "<code>]</code>" on OpenVMS).
 The string <code>../Resource</code> is replaced with a
 platform dependent equivalent.
 
@@ -969,7 +969,7 @@ end, so that they can be concatenated with the category name or font name.
 <p>
 Ghostscript has a slightly different way to find the file containing a font
 with a given name.  This rule uses not only the search path defined by
-<code>-I</code>, <b><tt>GS_LIB</tt></b>, and
+<code>-I</code>, <code>GS_LIB</code>, and
 <code>GS_LIB_DEFAULT</code> <a href="#Finding_files">as described
 above</a>, but also the directory that is the value of the
 <code>FontResourceDir</code> system parameter, and an additional list of
@@ -992,7 +992,7 @@ of steps.
 First, it looks up the font name in the combined Fontmaps.  If there is an
 entry for the desired font name, and the file named in the entry can be
 found in some directory on the general search path (defined by
-<code>-I</code>, <b><tt>GS_LIB</tt></b>, and
+<code>-I</code>, <code>GS_LIB</code>, and
 <code>GS_LIB_DEFAULT</code>), and the file is loaded successfully, and
 loading it defines a font of the desired name, that is the end of the
 process.
@@ -1047,7 +1047,7 @@ are found using a different method.
         <td>&nbsp;
         <td><code>-sFONTPATH=</code> switch
 <tr>    <td>&nbsp;
-<tr>    <td><code>GS_LIB</code> and <b><tt>GS_LIB_DEFAULT</tt></b>
+<tr>    <td><code>GS_LIB</code> and <code>GS_LIB_DEFAULT</code>
             environment variables
         <td>&nbsp;
         <td><code>GS_FONTPATH</code> environment variable
@@ -1147,7 +1147,7 @@ notes on systems marked with "*"):
 
 <p>
 <b>*</b> On SGI IRIX systems, you must use <code>Fontmap.SGI</code> in
-place of <code>Fontmap</code> or <b><tt>Fontmap.GS</tt></b>, because
+place of <code>Fontmap</code> or <code>Fontmap.GS</code>, because
 otherwise the entries in <code>Fontmap</code> will take precedence over
 the fonts in the FONTPATH directories.
 
@@ -1360,7 +1360,7 @@ The PDF specification requires CID font files to be embedded,
 however some documents omit them. As a workaround
 the PDF interpreter applies an additional substitution method when
 a requested CID font resource is not embedded and it is not available.
-It takes values of the keys <code>Registry</code> and <b><tt>Ordering</tt></b>
+It takes values of the keys <code>Registry</code> and <code>Ordering</code>
 from the <code>CIDFontSystem</code> dictionary,
 and concatenates them with a dash inserted.
 For example, if a PDF CID font resource specifies
@@ -1461,7 +1461,7 @@ especially for the searchability feature
 
 <p>
 You can change in which directory Ghostscript creates temporary files by
-setting the <code>TMPDIR</code> or <b><tt>TEMP</tt></b> environment
+setting the <code>TMPDIR</code> or <code>TEMP</code> environment
 variable to the name of the directory you want used.  Ghostscript currently
 doesn't do a very good job of deleting temporary files if it exits because
 of an error; you may have to delete them manually from time to time.
@@ -1515,7 +1515,7 @@ administrators
 interpreter, define <code>gs</code> as a foreign command:
 
 <blockquote>
-<code>$ gs == "$</code><em>disk</em><b><tt>:[</tt></b><em>directory</em><b><tt>]gs.exe</tt></b>"
+<code>$ gs == "$</code><em>disk</em><code>:[</code><em>directory</em><code>]gs.exe</code>"
 </blockquote>
 
 <p>
@@ -1547,7 +1547,7 @@ $ define gs_lib dua1:[ghostscript]
 <li>Defining the logical <code>GS_LIB</code>
 
 <blockquote>
-<code>$ define gs_lib</code> <em>disk</em><b><tt>:[</tt></b><em>directory</em><b><tt>]</tt></b>
+<code>$ define gs_lib</code> <em>disk</em><code>:[</code><em>directory</em><code>]</code>
 </blockquote>
 
 <p>
@@ -1815,9 +1815,9 @@ To set X resources, put them in a file (such as
 <code>~/.Xdefaults</code> on Unix) in a form like this:
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr><td><code>Ghostscript*geometry:</code><td><b><tt>&nbsp;&nbsp;</tt></b><td><b><tt>595x842-0+0</tt></b>
-<tr><td><code>Ghostscript*xResolution:</code><td><b><tt>&nbsp;</tt></b><td><b><tt>72</tt></b>
-<tr><td><code>Ghostscript*yResolution:</code><td><b><tt>&nbsp;</tt></b><td><b><tt>72</tt></b>
+<tr><td><code>Ghostscript*geometry:</code><td><code>&nbsp;&nbsp;</code><td><code>595x842-0+0</code>
+<tr><td><code>Ghostscript*xResolution:</code><td><code>&nbsp;</code><td><code>72</code>
+<tr><td><code>Ghostscript*yResolution:</code><td><code>&nbsp;</code><td><code>72</code>
 </table></blockquote>
 
 <p>
@@ -2010,7 +2010,7 @@ Ghostscript finishes executing the file, it exits back to the shell.
 
 <dl>
 <dt><code>-@</code> <em>filename arg1 ...</em>
-<dd>Does the same thing as <code>--</code> and <b><tt>-+</tt></b>, but
+<dd>Does the same thing as <code>--</code> and <code>-+</code>, but
 expands <code>@</code><em>filename</em> arguments.
 </dl>
 
@@ -2033,7 +2033,7 @@ However, '<tt>-</tt>' is equivalent on most systems.
 <br><code>-c</code> <em>string ...</em>
 <dd>Interprets arguments as PostScript code up to the next argument that
 begins with "<code>-</code>" followed by a non-digit, or with
-"<code>@</code>".  For example, if the file <b><tt>quit.ps</tt></b>
+"<code>@</code>".  For example, if the file <code>quit.ps</code>
 contains just the word "<code>quit</code>", then
 <code>-c&nbsp;quit</code> on the command line is equivalent to
 <code>quit.ps</code> there.  Each argument must be valid PostScript,
@@ -2052,7 +2052,7 @@ tokens for the <code>-c</code> switch.
 <dl>
 <dt><code>-f</code><em>filename</em>
 <dd>Execute the given file, even if its name begins with a
-"<code>-</code>" or "<b><tt>@</tt></b>".
+"<code>-</code>" or "<code>@</code>".
 </dl>
 
 <h4><a name="File_searching"></a>File searching</h4>
@@ -2091,8 +2091,8 @@ supplied directory is "<code>.</code>"). This is now the default.
 </dl>
 
 <dl>
-<dt><code>-D</code><em>name</em><b><tt>=</tt></b><em>token</em>
-<br><code>-d</code><em>name</em><b><tt>=</tt></b><em>token</em>
+<dt><code>-D</code><em>name</em><code>=</code><em>token</em>
+<br><code>-d</code><em>name</em><code>=</code><em>token</em>
 <dd>Define a name in systemdict with the given value.  The value must be
 a valid PostScript token (as defined by the <code>token</code> operator).
 If the token is a non-literal name, it must be true, false, or null.
@@ -2106,10 +2106,10 @@ interpreter initialization.
 </dl>
 
 <dl>
-<dt><code>-S</code><em>name</em><b><tt>=</tt></b><em>string</em>
-<br><code>-s</code><em>name</em><b><tt>=</tt></b><em>string</em>
+<dt><code>-S</code><em>name</em><code>=</code><em>string</em>
+<br><code>-s</code><em>name</em><code>=</code><em>string</em>
 <dd>Define a name in systemdict with a given string as value.  This is
-different from <code>-d</code>.  For example, <b><tt>-dXYZ=35</tt></b>
+different from <code>-d</code>.  For example, <code>-dXYZ=35</code>
 on the command line is equivalent to the program fragment
 
 <blockquote><code>
@@ -2126,13 +2126,13 @@ whereas <code>-sXYZ=35</code> is equivalent to
 
 <dl>
 <dt><code>-u</code><em>name</em>
-<dd>Un-define a name, cancelling <code>-d</code> or <b><tt>-s</tt></b>.
+<dd>Un-define a name, cancelling <code>-d</code> or <code>-s</code>.
 </dl>
 
 <p>
 Note that the initialization file <code>gs_init.ps</code> makes
 <code>systemdict</code> read-only, so the values of names defined with
-<code>-D</code>, <b><tt>-d</tt></b>, <b><tt>-S</tt></b>, and
+<code>-D</code>, <code>-d</code>, <code>-S</code>, and
 <code>-s</code> cannot be changed -- although, of course, they can be
 superseded by definitions in <code>userdict</code> or other dictionaries.
 However, device parameters set this way (<code>PageSize</code>,
@@ -2140,7 +2140,7 @@ However, device parameters set this way (<code>PageSize</code>,
 be changed by code in PostScript files.
 
 <dl>
-<dt><code>-g</code><em>number1</em><b><tt>x</tt></b><em>number2</em>
+<dt><code>-g</code><em>number1</em><code>x</code><em>number2</em>
 <dd>Equivalent to <code>-dDEVICEWIDTH=</code><em>number1</em> and
 <code>-dDEVICEHEIGHT=</code><em>number2</em>, specifying the device
 width and height in pixels for the benefit of devices such as X11 windows
@@ -2151,8 +2151,8 @@ see <code>-dFIXEDMEDIA</code> below.
 
 <dl>
 <dt><a name="Resolution_switch"></a><code>-r</code><em>number</em> (same
-as <code>-r</code><em>number</em><b><tt>x</tt></b><em>number</em>)
-<br><code>-r</code><em>number1</em><b><tt>x</tt></b><em>number2</em>
+as <code>-r</code><em>number</em><code>x</code><em>number</em>)
+<br><code>-r</code><em>number1</em><code>x</code><em>number2</em>
 <dd>Equivalent to <code>-dDEVICEXRESOLUTION=</code><em>number1</em> and
 <code>-dDEVICEYRESOLUTION=</code><em>number2</em>, specifying the device
 horizontal and vertical resolution in pixels per inch for the benefit of
@@ -2167,13 +2167,13 @@ devices such as printers that support multiple X and Y resolutions.
 equivalent of <a href="#dQUIET"><code>-dQUIET</code></a>.
 </dl>
 
-<h3><a name="Parameter_switches"></a>Parameter switches (<code>-d</code> and <b><tt>-s</tt></b>)</h3>
+<h3><a name="Parameter_switches"></a>Parameter switches (<code>-d</code> and <code>-s</code>)</h3>
 
 <p>
-As noted above, <code>-d</code> and <b><tt>-s</tt></b> define initial
+As noted above, <code>-d</code> and <code>-s</code> define initial
 values for PostScript names.  Some of these names are parameters that
 control the interpreter or the graphics engine.  You can also use
-<code>-d</code> or <b><tt>-s</tt></b> to define a value for any device
+<code>-d</code> or <code>-s</code> to define a value for any device
 parameter of the initial device (the one defined with
 <code>-sDEVICE=</code>, or the default device if this switch is not
 used).  For example, since the <code>ppmraw</code> device has a numeric
@@ -2188,7 +2188,7 @@ the default device and set the number of bits per component to 4 (log2(16)).
 <br>-dCOLORSCREEN=0
 <br>-dCOLORSCREEN=false</code>
 <dd>On high-resolution devices (at least 150 dpi resolution, or
-<code>-dDITHERPPI</code> specified), <b><tt>-dCOLORSCREEN</tt></b>
+<code>-dDITHERPPI</code> specified), <code>-dCOLORSCREEN</code>
 forces the use of separate halftone screens with different angles for CMYK
 or RGB if halftones are needed (this produces the best-quality output);
 <code>-dCOLORSCREEN=0</code> uses separate screens with the same
@@ -2212,7 +2212,7 @@ resolution in dots per inch.
 <dt><code>-dDOINTERPOLATE</code>
 <dd>Turns on image interpolation for all images, improving image quality for
 scaled images at the expense of speed.  Note that
-<code>-dNOINTERPOLATE</code> overrides <b><tt>-dDOINTERPOLATE</tt></b> if
+<code>-dNOINTERPOLATE</code> overrides <code>-dDOINTERPOLATE</code> if
 both are specified.
 </dl>
 
@@ -2270,7 +2270,7 @@ of CMYK documents to RGB.
 
 <dl>
 <dt><code>-dNOCIE</code>
-<dd>Substitutes <code>DeviceGray</code> for CIEBasedA, <b><tt>DeviceRGB</tt></b> for CIEBasedABC and CIEBasedDEF spaces and <b><tt>DeviceCMYK</tt></b>
+<dd>Substitutes <code>DeviceGray</code> for CIEBasedA, <code>DeviceRGB</code> for CIEBasedABC and CIEBasedDEF spaces and <code>DeviceCMYK</code>
 fpr CIEBasedDEFG color spaces.  Useful only on
 very slow systems where color accuracy is less important.
 </dl>
@@ -2278,9 +2278,9 @@ very slow systems where color accuracy is less important.
 <dl>
 <dt><code>-dNOSUBSTDEVICECOLORS</code>
 <dd>This switch prevents the substitution of the <code>ColorSpace</code>
-resources (<code>DefaultGray</code>, <b><tt>DefaultRGB</tt></b>, and
-<code>DefaultCMYK</code>) for the <b><tt>DeviceGray</tt></b>,
-<code>DeviceRGB</code>, and <b><tt>DeviceCMYK</tt></b> color spaces.
+resources (<code>DefaultGray</code>, <code>DefaultRGB</code>, and
+<code>DefaultCMYK</code>) for the <code>DeviceGray</code>,
+<code>DeviceRGB</code>, and <code>DeviceCMYK</code> color spaces.
 This switch is primarily useful for PDF creation using the <code>pdfwrite</code>
 device when retaining the color spaces from the original document is
 important.
@@ -2355,7 +2355,7 @@ automatically sets <code>-dFIXEDRESOLUTION</code>.
 <br>-dORIENT1=false</code>
 <dd>Defines the meaning of the 0 and 1 orientation values for the
 setpage[params] compatibility operators.  The default value of
-<code>ORIENT1</code> is true (set in <b><tt>gs_init.ps</tt></b>), which
+<code>ORIENT1</code> is true (set in <code>gs_init.ps</code>), which
 is the correct value for most files that use setpage[params] at all,
 namely, files produced by badly designed applications that "know" that the
 output will be printed on certain roll-media printers: these applications
@@ -2437,7 +2437,7 @@ the platforms with different fonts, for instance, during regression testing.
 </dl>
 
 <dl>
-<dt><code>-sFONTMAP=</code><em>filename1</em><b><tt>;</tt></b><em>filename2</em><b><tt>;</tt></b><em>...</em>
+<dt><code>-sFONTMAP=</code><em>filename1</em><code>;</code><em>filename2</em><code>;</code><em>...</em>
 <dd>Specifies alternate name or names for the Fontmap file.  Note that the
 names are separated by "<code>:</code>" on Unix systems, by
 "<code>;</code>" on MS Windows systems, and by
@@ -2445,7 +2445,7 @@ names are separated by "<code>:</code>" on Unix systems, by
 </dl>
 
 <dl>
-<dt><code>-sFONTPATH=</code><em>dir1</em><b><tt>;</tt></b><em>dir2</em><b><tt>;</tt></b><em>...</em>
+<dt><code>-sFONTPATH=</code><em>dir1</em><code>;</code><em>dir2</em><code>;</code><em>...</em>
 <dd>Specifies a list of directories that will be scanned when looking for
 fonts not found on the search path, overriding the environment variable
 <code>GS_FONTPATH</code>.
@@ -2499,7 +2499,7 @@ Due to the extended search method, Ghostscript uses <code>GenericResourceDir</co
 only as a default directory for resources being not installed.
 Therefore <code>GenericResourceDir</code> may be considered as a place
 where new resources to be installed. The default implementation of the function
-<code>ResourceFileName</code> uses <b><tt>GenericResourceDir</tt></b> when
+<code>ResourceFileName</code> uses <code>GenericResourceDir</code> when
 (1) it is an absolute path, or (2) the resource file is absent.
 The extended search method does not call <code>ResourceFileName</code> .
 <p>
@@ -2783,7 +2783,7 @@ for PostScript files or when the output device requests it
 <dt><code>-dJOBSERVER</code>
 <dd>Define <tt>\004 (^D)</tt> to start a new encapsulated job used for
 compatibility with Adobe PS Interpreters that ordinarily run under a job
-server. The <code>-dNOOUTERSAVE</code> switch is ignored if <b><tt>-dJOBSERVER</tt></b>
+server. The <code>-dNOOUTERSAVE</code> switch is ignored if <code>-dJOBSERVER</code>
 is specified since job servers <b>always</b> execute the input PostScript
 under a save level, although the <code>exitserver</code> operator can
 be used to escape from the encapsulated job and execute as if the
@@ -2801,7 +2801,7 @@ result (<tt>Error: /invalidrestore in --restore--</tt>).
 on stdin as it may on some PostScript printers that rely on TBCP (Tagged
 Binary Communication Protocol) to cause an out-of-band <tt>^D</tt> to
 signal EOF in a stream input data. This means that direct file actions
-on stdin such as <code>flushfile</code> and <b><tt>closefile</tt></b>
+on stdin such as <code>flushfile</code> and <code>closefile</code>
 will affect processing of data beyond the <tt>^D</tt> in the stream.
 </dl>
 
@@ -2832,7 +2832,7 @@ expected.
 </dl>
 
 <dl>
-<dt><code>-dNOSAFER</code> (equivalent to <b><tt>-dDELAYSAFER</tt></b>).
+<dt><code>-dNOSAFER</code> (equivalent to <code>-dDELAYSAFER</code>).
 <dd>This flag disables SAFER mode until the <code>.setsafe</code>
 procedure is run. This is intended for clients or scripts that cannot
 operate in SAFER mode. If Ghostscript is started with <code>-dNOSAFER</code>
@@ -2846,9 +2846,9 @@ run prior to running any PostScript file with unknown contents.</b>
 <a name="Safer"></a>
 <dl>
 <dt><code>-dSAFER</code>
-<dd>Disables the <code>deletefile</code> and <b><tt>renamefile</tt></b>
+<dd>Disables the <code>deletefile</code> and <code>renamefile</code>
 operators, and the ability to open piped commands (<code>%pipe%</code><em>cmd</em>)
-at all. Only <code>%stdout</code> and <b><tt>%stderr</tt></b> can be opened
+at all. Only <code>%stdout</code> and <code>%stderr</code> can be opened
 for writing.  Disables reading of files other than <code>%stdin</code>,
 those given as a command line argument, or those contained on one of the paths
 given by LIBPATH and FONTPATH and specified by the system params /FontResourceDir
@@ -2952,12 +2952,12 @@ patterns for pattern tiles larger than 200,000 bytes.
 <h2><a name="Environment_variables"></a>Summary of environment variables</h2>
 
 <dl>
-<dt><code>GS</code>, <b><tt>GSC</tt></b> (MS Windows only)
+<dt><code>GS</code>, <code>GSC</code> (MS Windows only)
 <dd>Specify the names of the Ghostscript executables.  <code>GS</code>
 brings up a new typein window and possibly a graphics window;
 <code>GSC</code> uses the DOS console.  If these are not set,
-<code>GS</code> defaults to <b><tt>gswin32</tt></b>, and
-<code>GSC</code> defaults to <b><tt>gswin32c</tt></b>.
+<code>GS</code> defaults to <code>gswin32</code>, and
+<code>GSC</code> defaults to <code>gswin32c</code>.
 </dl>
 
 <dl>
@@ -2981,16 +2981,16 @@ can't be found anywhere on the search path.
 <dd>Defines a list of command-line arguments to be processed before the
 ones actually specified on the command line.  For example, setting
 <code>GS_DEVICE</code> to XYZ is equivalent to setting
-<code>GS_OPTIONS</code> to <b><tt>-sDEVICE=XYZ</tt></b>.  The contents
+<code>GS_OPTIONS</code> to <code>-sDEVICE=XYZ</code>.  The contents
 of <code>GS_OPTIONS</code> are not limited to switches; they may include
 actual file names or even <a href="#Input_control">"@file" arguments</a>.
 
 </dl>
 
 <dl>
-<dt><a href="#Temp_files"><code>TEMP</code>, <b><tt>TMPDIR</tt></b></a>
+<dt><a href="#Temp_files"><code>TEMP</code>, <code>TMPDIR</code></a>
 <dd>Defines a directory name for temporary files.  If both
-<code>TEMP</code> and <b><tt>TMPDIR</tt></b> are defined,
+<code>TEMP</code> and <code>TMPDIR</code> are defined,
 <code>TMPDIR</code> takes precedence.
 </dl>
 
@@ -3038,7 +3038,7 @@ added a new switch:<code>-dDisableFAPI=true</code> to revert to the older
 behavior, just in case serious regression happens that cannot be resolved in a timely manner.</p>
 
 <p><p>
-The <code>-Z</code> and <b><tt>-T</tt></b> switches apply only
+The <code>-Z</code> and <code>-T</code> switches apply only
 if the interpreter was <a href="Make.htm#Debugging">built for a debugging
 configuration</a>.  In the table below, the first column is a debugging
 switch, the second is an equivalent switch (if any) and the third is its
@@ -3114,7 +3114,7 @@ usage.
             default (normally 64K).  <b><em>n</em></b> may be greater than
             64 only if <code>EXTEND_NAMES</code> was defined (in
             inameidx.h) when the interpreter was compiled .
-<tr>    <td valign=top><code>-Z</code><em>xxx</em><br><b><tt>-Z-</tt></b><em>xxx</em>
+<tr>    <td valign=top><code>-Z</code><em>xxx</em><br><code>-Z-</code><em>xxx</em>
         <td>&nbsp;
         <td>&nbsp;
         <td>&nbsp;
@@ -3214,7 +3214,7 @@ storage with a marker (a1, c1, and f1 respectively)
 </dl>
 
 <p>
-<tr>    <td valign=top><code>-T</code><em>xxx</em><br><b><tt>-T-</tt></b><em>xxx</em>
+<tr>    <td valign=top><code>-T</code><em>xxx</em><br><code>-T-</code><em>xxx</em>
         <td>&nbsp;
         <td>&nbsp;
         <td>&nbsp;
@@ -3417,9 +3417,9 @@ guide to international paper sizes can be found at
 
 <p>
 *<em>Note:</em> Initially the B paper sizes are the ISO sizes, e.g.,
-<code>b0</code> is the same as <b><tt>isob0</tt></b>.  Running the file
+<code>b0</code> is the same as <code>isob0</code>.  Running the file
 <code>lib/jispaper.ps</code> makes the B paper sizes be the JIS sizes,
-e.g., <code>b0</code> becomes the same as <b><tt>jisb0</tt></b>.
+e.g., <code>b0</code> becomes the same as <code>jisb0</code>.
 
 <hr>
 
@@ -3593,14 +3593,14 @@ Both bridges may run together.
 There are 2 ways to handle fonts with a third-party font renderer (FAPI).
 First, you can substitute
 any FAPI-handled font to a resident PostScript font, using special map files
-<code>FAPIfontmap</code> and <b><tt>FAPIcidfmap</tt></b>.
+<code>FAPIfontmap</code> and <code>FAPIcidfmap</code>.
 Second, you can redirect PostScript fonts to FAPI, setting
 entries in <code>FAPIconfig</code> file.
 
 <p>
-Names <code>FAPIfontmap</code>, <b><tt>FAPIcidfmap</tt></b>, <b><tt>FAPIconfig</tt></b>
+Names <code>FAPIfontmap</code>, <code>FAPIcidfmap</code>, <code>FAPIconfig</code>
 in this text actually are placeholders, which may be substituted with command line arguments :
-<code>-sFAPIfontmap=<em>name1</em></code> <b><tt>-sFAPIcidfmap=<em>name2</em></tt></b>
+<code>-sFAPIfontmap=<em>name1</em></code> <code>-sFAPIcidfmap=<em>name2</em></code>
 <code>-sFAPIconfig=<em>name3</em></code>.
 Ghostscript searches the specified file names as explained in
 <a href="#Finding_files">How Ghostscript finds files</a>.
@@ -3644,7 +3644,7 @@ The second element is a dictionary with entries :
 <tr>    <td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only <code>/UFST</code> and <b><tt>/FreeType</tt></b> are now allowed.
+            Only <code>/UFST</code> and <code>/FreeType</code> are now allowed.
 <tr>    <td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
@@ -3713,7 +3713,7 @@ but dictionaries must contain few different entries :
 <tr>    <td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only <code>/UFST</code> and <b><tt>/FreeType</tt></b> are now allowed.
+            Only <code>/UFST</code> and <code>/FreeType</code> are now allowed.
 <tr>    <td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
@@ -3756,7 +3756,7 @@ The control file <code>FAPIconfig</code> defines 4 entries :
         <td>List of PS font types to be handled with FAPI.
             This controls other fonts that ones listed in <code>FAPIfontmap</code>
             and <code>FAPIcidfmap</code> - such ones are PS fonts installed to
-            Ghostscript with <code>lib/fontmap</code> or with <b><tt>GS_FONTPATH</tt></b>,
+            Ghostscript with <code>lib/fontmap</code> or with <code>GS_FONTPATH</code>,
             or regular CID font resources. Unlisted font types will be
             rendered with the native Ghostscript font renderer.
             Only allowed values now are 1,9,11,42. Note that 9 and 11
@@ -3787,7 +3787,7 @@ In special cases you may need to customize the file <code>lib/xlatmap</code>. Fo
 Some UFST font collections need a path for finding an UFST plugin.
 If you run UFST with such font collection,
 you should run Ghostscript with a special command line argument
-<code>-sUFST_PlugIn=<em>path</em></code>, where <b><tt><em>path</em></tt></b> specifies
+<code>-sUFST_PlugIn=<em>path</em></code>, where <code><em>path</em></code> specifies
 a disk path to the UFST plugin file, which Monotype Imaging distributes
 in <em><code>ufst/fontdata/MTFONTS/PCL45/MT3/plug__xi.fco</code></em>.
 If UFST needs it and the
@@ -3798,9 +3798,9 @@ plugin file in the current directory.
 If you want to run UFST with resident UFST fonts only
 (and allow Ghostscript font renderer to handle fons, which may be downloaded or embedded into documents),
 you should run Ghostscript with these command line arguments :
-<code>-sFCOfontfile=<em>path1</em></code> <b><tt>-sFCOfontfile2=<em>path2</em></tt></b>
+<code>-sFCOfontfile=<em>path1</em></code> <code>-sFCOfontfile2=<em>path2</em></code>
 <code>-sUFST_PlugIn=<em>path3</em></code>
-<code>-sFAPIfontmap=<em>map-name</em></code> <b><tt>-sFAPIconfig=FAPIconfig-FCO</tt></b>
+<code>-sFAPIfontmap=<em>map-name</em></code> <code>-sFAPIconfig=FAPIconfig-FCO</code>
 where <code><em>path1</em></code> specifies
 a disk path to the main FCO file, <code><em>path2</em></code> specifies
 a disk path to the Wingdings FCO file, <code><em>path3</em></code>
@@ -3815,7 +3815,7 @@ because FCO doesn't emulate CID fonts.
 Some configurations of UFST need a path for finding symbol set files.
 If you compiled UFST with such configuration,
 you should run Ghostscript with a special command line argument
-<code>-sUFST_SSdir=<em>path</em></code>, where <b><tt><em>path</em></tt></b> specifies
+<code>-sUFST_SSdir=<em>path</em></code>, where <code><em>path</em></code> specifies
 a disk path to the UFST support directory, which Monotype Imagong distributes
 in <em><code>ufst/fontdata/SUPPORT</code></em>. If UFST needs it and the
 command line argument is not specified, Ghostscript prints a warning and searches

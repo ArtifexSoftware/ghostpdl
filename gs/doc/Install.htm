@@ -61,16 +61,16 @@ platform-specific.  See below for details.
 <li>Initialization files that Ghostscript reads in when it
 starts up; these are the same on all platforms.
 <ul>
-<li><code>gs_</code>*<b><tt>.ps</tt></b> unless Ghostscript was compiled
+<li><code>gs_</code>*<code>.ps</code> unless Ghostscript was compiled
 using the "compiled initialization files" option.  See the documentation of
 <a href="Psfiles.htm">PostScript files distributed with Ghostscript</a>.
 
-<li><code>pdf_</code>*<b><tt>.ps</tt></b> if Ghostscript was compiled
+<li><code>pdf_</code>*<code>.ps</code> if Ghostscript was compiled
 with the ability to interpret Adobe Portable Document Format (PDF) files,
 that is, <code>pdf.dev</code> was included in
 <code>FEATURE_DEVS</code> when Ghostscript was built.
 
-<li><code>Fontmap</code> and <b><tt>Fontmap.GS</tt></b> (or the
+<li><code>Fontmap</code> and <code>Fontmap.GS</code> (or the
 appropriate <code>Fontmap.</code><em>xxx</em> for your platform), unless
 you plan always to invoke Ghostscript with the <a
 href="Use.htm#FONTMAP_switch"><code>-dNOFONTMAP</code> switch</a>.
@@ -358,7 +358,7 @@ about <code>GS_LIB</code>).  Before you
 do this, please read carefully the license that accompanies the ATM fonts;
 we take no responsibility for any possible violations of such licenses.
 Similarly, if you have Adobe Type Basics, you may wish to replace
-<code>FONTMAP</code> with <b><tt>FONTMAP.ATB</tt></b>.  Finally, if you
+<code>FONTMAP</code> with <code>FONTMAP.ATB</code>.  Finally, if you
 have neither ATM nor ATB but you have Adobe Acrobat installed, you can use
 the Acrobat fonts in place of the ones provided with Ghostscript by adding
 the Acrobat fonts directory to <code>GS_FONTPATH</code> and removing
@@ -427,7 +427,7 @@ $ gs :== $gs_exe:gs.exe
 
 <p>
 If you have DECWindows/Motif installed, you may wish to replace the
-<code>FONTMAP.GS</code> file with <b><tt>FONTMAP.VMS</tt></b>.  Read the
+<code>FONTMAP.GS</code> file with <code>FONTMAP.VMS</code>.  Read the
 comment at the beginning of the latter file for more information.
 
 <hr>
@@ -456,7 +456,7 @@ You need these files to run Ghostscript on OS/2:
 <tr valign=top>	<td><code>GSDLL2.DLL</code>
 	<td>&nbsp;
 	<td>A dynamic link library that must be in the same directory as
-	    <code>GSOS2.EXE</code> or on the <b><tt>LIBPATH</tt></b>.
+	    <code>GSOS2.EXE</code> or on the <code>LIBPATH</code>.
 <tr valign=top>	<td><code>GSPMDRV.EXE</code>
 	<td>&nbsp;
 	<td>An "external driver" used by the <code>display</code>
@@ -468,7 +468,7 @@ You need these files to run Ghostscript on OS/2:
 </table></blockquote>
 
 <p>
-<code>GSOS2.EXE</code>, <b><tt>GSDLL2.DLL</tt></b> and
+<code>GSOS2.EXE</code>, <code>GSDLL2.DLL</code> and
 <code>GSPMDRV.EXE</code> are compiled using EMX/GCC 0.9d.  You must have
 the EMX DLLs on your <code>LIBPATH</code>; they are available in a
 package <code>emxrt.zip</code> from many places on the Internet.
@@ -518,7 +518,7 @@ and because of 1-plane to 4-plane conversion; it's better to use a
 bit-per-pixel bitmaps to be displayed incorrectly.
 
 <p>
-<code>GSOS2.EXE</code> and <b><tt>GSPMDRV.EXE</tt></b> will stay in
+<code>GSOS2.EXE</code> and <code>GSPMDRV.EXE</code> will stay in
 memory for the number of minutes specified in the environment variable
 <code>GS_LOAD</code>.
 
