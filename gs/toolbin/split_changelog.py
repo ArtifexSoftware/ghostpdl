@@ -80,7 +80,6 @@ class Entry:
 		file.write('</p>\n')
 		file.write('<blockquote>\n')
 		file.write('<pre>\n')
-		# todo: html-escape the msg lines
 		try:
 		  for line in self.data['msg']:
 			# skip the details unless wanted
