@@ -121,15 +121,15 @@ following lines:
 <blockquote>
 <pre># ------ The SMURF device ------ #
 
-smurf_=$(GLOBJ)joe.$(OBJ) $(GLOBJ)fred.$(OBJ)
-$(DD)smurf.dev: $(smurf_)
-        $(SETDEV) $(DD)smurf $(smurf_)
+smurf_=&#36;(GLOBJ)joe.&#36;(OBJ) &#36;(GLOBJ)fred.&#36;(OBJ)
+&#36;(DD)smurf.dev: &#36;(smurf_)
+        &#36;(SETDEV) &#36;(DD)smurf &#36;(smurf_)
 
-$(GLOBJ)joe.$(OBJ) : $(GLSRC)joe.c
-	$(GLCC) $(GLO_)joe.$(OBJ) $(C_) $(GLSRC)joe.c
+&#36;(GLOBJ)joe.&#36;(OBJ) : &#36;(GLSRC)joe.c
+	&#36;(GLCC) &#36;(GLO_)joe.&#36;(OBJ) &#36;(C_) &#36;(GLSRC)joe.c
 
-$(GLOBJ)fred.$(OBJ) : $(GLSRC)fred.c
-	$(GLCC) $(GLO_)fred.$(OBJ) $(C_) $(GLSRC)fred.c</pre>
+&#36;(GLOBJ)fred.&#36;(OBJ) : &#36;(GLSRC)fred.c
+	&#36;(GLCC) &#36;(GLO_)fred.&#36;(OBJ) &#36;(C_) &#36;(GLSRC)fred.c</pre>
 </blockquote>
 
 <p>
@@ -138,9 +138,9 @@ If the smurf driver also needs special libraries, for instance a library
 named "<code>gorf</code>", then the entry should look like this:
 
 <blockquote>
-<pre>$(DD)smurf.dev : $(smurf_)
-        $(SETDEV) $(DD)smurf $(smurf_)
-        $(ADDMOD) $(DD)smurf -lib gorf</pre>
+<pre>&#36;(DD)smurf.dev : &#36;(smurf_)
+        &#36;(SETDEV) &#36;(DD)smurf &#36;(smurf_)
+        &#36;(ADDMOD) &#36;(DD)smurf -lib gorf</pre>
 </blockquote>
 
 <p>
@@ -149,17 +149,17 @@ If, as will usually be the case, your driver is a printer driver (as
 look like this:
 
 <blockquote>
-<pre>$(DD)smurf.dev : $(smurf_) $(GLD)page.dev
-        $(SETPDEV) $(DD)smurf $(smurf_)</pre>
+<pre>&#36;(DD)smurf.dev : &#36;(smurf_) &#36;(GLD)page.dev
+        &#36;(SETPDEV) &#36;(DD)smurf &#36;(smurf_)</pre>
 </blockquote>
 
 <p>
 or
 
 <blockquote>
-<pre>$(DD)smurf.dev : $(smurf_) $(GLD)page.dev
-        $(SETPDEV) $(DD)smurf $(smurf_)
-        $(ADDMOD) $(DD)smurf -lib gorf</pre>
+<pre>&#36;(DD)smurf.dev : &#36;(smurf_) &#36;(GLD)page.dev
+        &#36;(SETPDEV) &#36;(DD)smurf &#36;(smurf_)
+        &#36;(ADDMOD) &#36;(DD)smurf -lib gorf</pre>
 </blockquote>
 
 <p>

@@ -917,7 +917,7 @@ Fixes bugs:
 rather than unity black generation and undercolor removal functions are
 required on black-and-white devices.  (gs_init.ps)
 	- A harmless internal error during initialization left bogus
-information in $error.  (gs_cidfn.ps)
+information in &#36;error.  (gs_cidfn.ps)
 	- startjob didn't clear the execution stack.  Fixing this required
 NON-BACKWARD-COMPATIBLE changes to the internal operators .instopped, .stop,
 and .stopped, which are not supposed to be used by any external code.
@@ -991,8 +991,8 @@ libraries.  (make.txt)
 Fixes bugs:
 	- An -include type42 was omitted from the level2 module description.
 (int.mak)
-	- A mention of $(ECHOGS) in the rule for sfile should have been
-$(ECHOGS_XE).  (lib.mak)
+	- A mention of &#36;(ECHOGS) in the rule for sfile should have been
+&#36;(ECHOGS_XE).  (lib.mak)
 	- The pcx2up sample device should have been put in devs.mak rather
 than lib.mak.  (devs.mak, lib.mak)
 	- scanchar.h and scantab.c belong in the library, not the
@@ -3647,7 +3647,7 @@ gdevmswn.c, gdevpm.c, gdevwpr2.c, gp_mswin.c)
 </pre><h3><a name="V4.02_Interpreter"></a>Interpreter</h3><pre>
 
 Fixes bugs:
-	- The value of /newerror in $error was true at the end of
+	- The value of /newerror in &#36;error was true at the end of
 initialization.  We now reset it after each internal use of stopped if
 necessary.  (gs_dps1.ps, gs_fform.ps, gs_fonts.ps, gs_init.ps, gs_pdf.ps,
 gs_res.ps, gs_type1.ps)
@@ -3685,7 +3685,7 @@ Fixes bugs:
 free license.  (pdf_*.ps)
 	- Some references to systemdict were affected if a user redefined
 the name /systemdict.  (pdf_font.ps)
-	- The value of /newerror in $error was true at the end of
+	- The value of /newerror in &#36;error was true at the end of
 initialization.  We now reset it after each internal use of stopped if
 necessary.  (pdf_main.ps)
 	- stdin redirection failed for PDF files even if the new stdin was

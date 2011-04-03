@@ -817,7 +817,7 @@ Documents the new stocht.ps file.  (doc/Psfiles.htm)
 Fixes problems:
 	- A missing dependency caused builds on certain platforms to fail.
 (int.mak)
-	- $(EXP) was missing before various utility invocations.  (int.mak)
+	- &#36;(EXP) was missing before various utility invocations.  (int.mak)
 	- VMS converts all unquoted arguments to lower case.  In order to
 work around this, we have added a platform-specific makefile macro Q, which
 is defined as a quote mark on VMS and as an empty string on all other
@@ -1510,9 +1510,9 @@ doc/New-user.htm, doc/Ps2pdf.htm, doc/Source.htm, doc/Use.htm)
 </pre><h3><a name="5.96_Procedures"></a>Procedures</h3><pre>
 
 Fixes problems:
-	- dctd.dev and dcte.dev were defined in $(PSD), but referenced in
-$(GLD).  (devs.mak, int.mak, lib.mak)
-	- pipe.dev was defined in $(GLD), but referenced in $(PSD).
+	- dctd.dev and dcte.dev were defined in &#36;(PSD), but referenced in
+&#36;(GLD).  (devs.mak, int.mak, lib.mak)
+	- pipe.dev was defined in &#36;(GLD), but referenced in &#36;(PSD).
 (bcwin32.mak, dvx-gcc.mak, msvc32.mak, unix-gcc.mak, unixansi.mak,
 unixtrad.mak)
 	- XLIBDIRS was included in the linker command even if none of the
@@ -1545,7 +1545,7 @@ portrait.  (lib/gsnup.ps)
 Adds a -link switch to genconf, to allow verbatim copying of commands into
 the linker command line.  (genconf.c)
 
-Edits files to add missing $Id lines and module summary comments, and to
+Edits files to add missing &#36;Id lines and module summary comments, and to
 delimit module summary comments from further material.  (dwinst.h,
 dwsetup.h, dwuninst.h, bench.c, dwuninst.cpp)
 
@@ -1560,7 +1560,7 @@ Fixes problems:
 	- Multiple Master Font instances weren't written out correctly.
 (gdevpsd1.c)
 
-Edits files to add missing $Id lines and module summary comments, and to
+Edits files to add missing &#36;Id lines and module summary comments, and to
 delimit module summary comments from further material.  (gdev8bcm.h,
 gdevht.h, gdevpccm.h, gdevpcl.h, gdevsvga.h, gdevx.h, gdev3852.c,
 gdev8510.c, gdevadmp.c, gdevcd8.c, gdevcif.c, gdevclj.c, gdevhl7x.c,
@@ -1575,7 +1575,7 @@ Fixes problems:
 by making it allocate and free a wrapper object, as the Windows wrapper
 does.  (gp_pthr.c)
 
-Edits files to add missing $Id lines and module summary comments, and to
+Edits files to add missing &#36;Id lines and module summary comments, and to
 delimit module summary comments from further material.  (dwimg.h, dwmain.h,
 gsdll.h, gp_msio.c, gp_mswin.c)
 
@@ -1647,7 +1647,7 @@ occur.  (iutil.c)
 	- Because of a typo, loading resources automatically from a file
 always failed.  (bug introduced in 5.94) (lib/gs_res.ps)
 
-Edits files to add missing $Id lines and module summary comments, and to
+Edits files to add missing &#36;Id lines and module summary comments, and to
 delimit module summary comments from further material.  (files.h, iastate.h,
 ibnum.h, ichar.h, ifilter.h, iimage.h, iimage2.h, iparam.h, isave.h,
 iscan.h, isstate.h, istream.h, iutil.h, opcheck.h, scanchar.h)
@@ -1656,7 +1656,7 @@ Adds a font similarity testing procedure for Type 1/2/4 fonts.  (zfont1.c)
 
 </pre><h3><a name="5.96_Streams"></a>Streams</h3><pre>
 
-Edits files to add missing $Id lines and module summary comments, and to
+Edits files to add missing &#36;Id lines and module summary comments, and to
 delimit module summary comments from further material.  (sbhc.h, sbtx.h,
 sbwbs.h, sdct.h, scfdgen.c, scfdtab.c, shcgen.h, siscale.h, sjpeg.h,
 slzwx.h, smtf.h, spdiffx.h, spngpx.h, srlx.h)
@@ -1693,7 +1693,7 @@ Changes the name of a variable from ppc to ppcr, because an Apple compiler
 inappropriately defines the name ppc when compiling on a PowerPC.
 (gxshade6.c)
 
-Edits files to add missing $Id lines and module summary comments, and to
+Edits files to add missing &#36;Id lines and module summary comments, and to
 delimit module summary comments from further material.  (gdevbbox.h,
 gscoord.h, gscpixel.h, gsfname.h, gsfont.h, gsimage.h, gslib.h, gsmdebug.h,
 gspaint.h, gspath.h, gspath2.h, gxalloc.h, gxclipm.h, gxclpage.h,
@@ -1793,7 +1793,7 @@ Fixes problems:
 	- FreeBSD uses a different name for the pthreads implementation.
 (lib.mak, unixansi.mak, unix-gcc.mak, unixtrad.mak)
 
-Encapsulates gsnogc.$(OBJ) in a gsnogc.dev module, to make it more sharable.
+Encapsulates gsnogc.&#36;(OBJ) in a gsnogc.dev module, to make it more sharable.
 (lib.mak)
 
 </pre><h3><a name="5.95_Utilities"></a>Utilities</h3><pre>
@@ -2258,7 +2258,7 @@ marker.  (This is quite an old bug.)  (zimage.c)
 	- On MS Windows and OS/2 systems, the wstdio pseudo-IODevice showed
 up as an instance of the IODevice resource category, causing problems.
 (lib/gs_res.ps, ziodev.c)
-	- errorinfo in $error was undefined, rather than null, initially and
+	- errorinfo in &#36;error was undefined, rather than null, initially and
 after errors that didn't set it deliberately.  (lib/gs_init.ps)
 	- The InkParams resource category was defined even in systems that
 didn't support in-RIP trapping.  (lib/gs_ll3.ps, lib/gs_res.ps,
@@ -4908,7 +4908,7 @@ Improves the font substitution mechanism slightly.  (lib/pdf_font.ps)
 
 Adds an error string to the stream state structure, which stream
 implementations can set when returning an error.  The motivation is to allow
-the PostScript interpreter to put this into $error.errorinfo.  (scommon.h,
+the PostScript interpreter to put this into &#36;error.errorinfo.  (scommon.h,
 stream.c)
 
 </pre><h3><a name="5.80_Library"></a>Library</h3><pre>
@@ -5149,8 +5149,8 @@ Notes that the MIPSpro 7.2.1.3m compiler produces incorrect output.
 </pre><h3><a name="5.72_Procedures"></a>Procedures</h3><pre>
 
 Fixes problems:
-	- The Unix install directory ($(gsdatadir)) and the Unix default
-search path ($(gsdatadir)/lib) weren't compatible.  (bug introduced since
+	- The Unix install directory (&#36;(gsdatadir)) and the Unix default
+search path (&#36;(gsdatadir)/lib) weren't compatible.  (bug introduced since
 5.50) (unixinst.mak)
 	- The compilation rule for echogs omitted a dependency and also
 failed to specify a directory for header files.  (unix-aux.mak)
@@ -6017,12 +6017,12 @@ is not available on all systems.  (unix-gcc.mak)
 	- There was a minor typo in the new MMK script.  (openvms.mmk)
 	- The MMK script redefines macros, which MMS does not allow.
 (openvms.mmk)
-	- The gcc version test used gcc rather than $(CC) for the compiler
+	- The gcc version test used gcc rather than &#36;(CC) for the compiler
 name.  (unix-gcc.mak)
 	- There was a minor typo in the pcx2up device makefile entry.
 (devs.mak)
 	- Some commands in the Unix install rules referenced sh rather than
-$(SHELL).  (unixinst.mak)
+&#36;(SHELL).  (unixinst.mak)
 
 Makes (dummy) in-RIP trapping an optional feature, and removes it from the
 default configuration.  (int.mak, lib.mak)
@@ -6507,7 +6507,7 @@ still broken.  (fonts/h*.ps)
 to the Bitstream fonts, rather than being aliases for /CharterBT-*.
 (lib/Fontmap.GS, lib/Fontmap.Sol, lib/Fontmap.Ult)
 
-Makes undefined fonts execute the SubstituteFont procedure in $error, per a
+Makes undefined fonts execute the SubstituteFont procedure in &#36;error, per a
 posting by Stephen Zisk of Adobe on pdf-prepress-l on 10/8/97.
 (lib/gs_fonts.ps)
 
@@ -7154,7 +7154,7 @@ Fixes problems:
 	- A cast discarded `const' needlessly.  (genconf.c)
 	- Upper-case echogs switches were getting converted to lower case
 on VMS.  (jpeg.mak)
-	- $(EXP) was missing before some invocations of executables.
+	- &#36;(EXP) was missing before some invocations of executables.
 (gs.mak, jpeg.mak, lib.mak)
 	- Some dependencies in the Unix install script were incorrect.
 (unixinst.mak)
@@ -7162,7 +7162,7 @@ on VMS.  (jpeg.mak)
 of files to be installed didn't work with some shells.  (unixinst.mak)
 	- The PC makefiles were out of date.  (bcwin32.mak, pcwin.mak,
 winint.mak, winlib.mak, dwmain.rc, gsdll32.rc)
-	- Some makefiles still used $(DEV) instead of dev.  (dvx-tail.mak,
+	- Some makefiles still used &#36;(DEV) instead of dev.  (dvx-tail.mak,
 msvclib.mak, openvms.mak, os2.mak, pcwin.mak, watclib.mak, winlib.mak)
 	- The DEVICE_DEVSn lists overflowed the DOS 120-character command
 line limit again.  We had to add DEVICE_DEVS16 through 20 to work around
@@ -7392,7 +7392,7 @@ Fixes problems:
 </pre><h3><a name="5.63_Procedures"></a>Procedures</h3><pre>
 
 Fixes problems:
-	- There was a $ in the makefile that wasn't quoted.  (unix-gcc.mak)
+	- There was a &#36; in the makefile that wasn't quoted.  (unix-gcc.mak)
 	- The name MAKEFILES has a special meaning in GNU make which only be
 disabled by using a directive that is a syntactic error for standard 'make'
 implementations.  We had to work around this by changing all occurrences of
@@ -7663,12 +7663,12 @@ code and makefiles are now in src/.
 directory to hold the final executable.
 	- Every .dev rule of the form
 		xxx.dev: &lt;list&gt;
-			$(SETyyy) xxx &lt;items&gt;
-			$(ADDMOD) xxx &lt;items&gt;
+			&#36;(SETyyy) xxx &lt;items&gt;
+			&#36;(ADDMOD) xxx &lt;items&gt;
 must be changed to
-		$(DD)xxx.dev: &lt;list&gt;
-			$(SETyyy) $(DD)xxx &lt;items&gt;
-			$(ADDMOD) $(DD)xxx &lt;items&gt;
+		&#36;(DD)xxx.dev: &lt;list&gt;
+			&#36;(SETyyy) &#36;(DD)xxx &lt;items&gt;
+			&#36;(ADDMOD) &#36;(DD)xxx &lt;items&gt;
 (DD for drivers, PSD for PostScript/PDF-interpreter features, GLD for
 graphics library features).  Every -include and -replace option in the
 makefiles rules, and every element of FEATURE_DEVS and DEVICE_DEVS*, must be
@@ -7679,7 +7679,7 @@ generated .dev files out of the top-level directory, and this was the only
 one we could make work.
 	- Top-level makefiles must define both MAKEFILE and MAKEFILES,
 the latter to include any subsidiary makefiles that define configuration
-parameters.  Dependencies on $(MAKEFILE) must be changed to $(MAKEFILES).
+parameters.  Dependencies on &#36;(MAKEFILE) must be changed to &#36;(MAKEFILES).
 	- Color space objects now must either be allocated with the
 gs_cspace_build_ procedures or initialized with the gs_cspace_init_
 procedures: building color spaces "by hand" is no longer allowed.
@@ -8032,7 +8032,7 @@ Notes problems with Watcom compilation.  (Make.htm)
 Fixes problems:
 	- On Unix systems, the documentation files didn't get installed by
 `make install'.  (unixinst.mak)
-	- $() was missing around MAKEFILE in a Windows makefile.
+	- &#36;() was missing around MAKEFILE in a Windows makefile.
 (msvc32.mak)
 	- The dfax drivers didn't include all the necessary files in the
 linker list.  (contrib.mak)
@@ -11243,7 +11243,7 @@ Documents -dSTRICT.  (use.txt)
 Fixes bugs:
 	- The definitions of MAKEFILE in several makefiles was incorrect.
 (dvx-gcc.mak, unix-cc.mak, unixansi.mak)
-	- The build rules for the gp_*.$(OBJ) files lacked a directory name,
+	- The build rules for the gp_*.&#36;(OBJ) files lacked a directory name,
 confusing most 'make' programs.  (*.mak)
 	- geninit didn't work, because the syntax of psfile_() entries in
 gconfig.h had changed.  (geninit.c)
@@ -11252,7 +11252,7 @@ preventing [gnu]make -j from working.  (lib.mak, int.mak)
 
 Adds an explicit directory name to more files in the makefiles.  (jpeg.mak,
 lib.mak) Added in this fileset:
-	.$(OBJ): jpeg.mak,  {dvx-tail,msvclib,openvms,os2,ugcclib,unixtail,
+	.&#36;(OBJ): jpeg.mak,  {dvx-tail,msvclib,openvms,os2,ugcclib,unixtail,
 		watc,watclib,winint,winlib}.mak
 	.dev:	jpeg.mak
 
@@ -11476,7 +11476,7 @@ makefile editing.  (*.mak) Done so far:
 (done)	.h	devs.mak gs.mak int.mak lib.mak zlib.mak
 		openvms.mak os2.mak ugcclib.mak unix-end.mak
 		unixtail.mak wctail.mak winint.mak winlib.mak
-	.$(OBJ): devs.mak int.mak (except ccfonts)
+	.&#36;(OBJ): devs.mak int.mak (except ccfonts)
 		lib.mak (except special compilations)
 		libpng.mak zlib.mak
 	.dev:	libpng.mak zlib.mak
@@ -11521,7 +11521,7 @@ with CC_* (except for CCA2K and CCAUX), and the O macro with O_; removes the
 CHANGE, required for the new arrangement of files into directories.  (*.mak)
 
 Replaces all occurrences of -Idir1 -Idir2 ... -Idirn in platform-generic
-makefiles with $(I_)dir1 $(II)dir2 ... $(_I)dirn, and defines these macros
+makefiles with &#36;(I_)dir1 &#36;(II)dir2 ... &#36;(_I)dirn, and defines these macros
 in platform-specific makefiles, in order to accommodate OpenVMS command
 syntax.  (*.mak)
 

@@ -883,7 +883,7 @@ of difference bitmaps (which page, bbox etc). htmldiff.pl now reads that
 metadata and outputs that into the file. Some javascript hackery is used to
 display the device coords of the point under the mouse pointer.
 
-Finally, if the $parallel option is set, htmldiff will fork jobs in parallel
+Finally, if the &#36;parallel option is set, htmldiff will fork jobs in parallel
 to try to make better use of multicore machines.
 
 
@@ -932,7 +932,7 @@ unchanged.
 <blockquote>
 <pre>
 Don't use operator 'execute' because it resets the /command attribute
-in $error dictionary. Use '.execute pop' instead. Keep 'execute' as an
+in &#36;error dictionary. Use '.execute pop' instead. Keep 'execute' as an
 operator for backward compatibility. Thanks to dakka.akka@gmail.com
 for analysis of the bug. Bug 691050.
 </pre>
@@ -1342,7 +1342,7 @@ does this.
 <pre>
 Revert c10520 which causes problems with the MSVC build.
 
-$(CC_) enforces 'ansi' C under msvc32.mak, disabling any Microsoft
+&#36;(CC_) enforces 'ansi' C under msvc32.mak, disabling any Microsoft
 extensions. This often causes problems with 3rd party libraries
 which try to take advantage of those extensions.
 
@@ -1494,7 +1494,7 @@ the two different configurations.
 2009-12-18T06:37:02.606724Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Derive the libtiff compiler line from $(CC_) instead of $(CC) so
+Derive the libtiff compiler line from &#36;(CC_) instead of &#36;(CC) so
 the common flag set is propagated.
 
 Without this, additional options, like XCFLAGS=-fPIC aren't used when
@@ -2170,7 +2170,7 @@ parameter, which if present, returns a specific regression result
 instead of the default json dashboard status. Current it only supports
 svn jobs, not custom runs submitted through the clusterpush script.
 
-Also cleans up the the paths to use a $clusteroot variable for the 
+Also cleans up the the paths to use a &#36;clusteroot variable for the 
 prefix.
 </pre>
 <p>[toolbin/localcluster/clustermonitor.cgi]</p>
@@ -7213,7 +7213,7 @@ Fix (pdfwrite) : Work aroung wrong numGlyphs.
 2009-04-18T22:07:42.659183Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Improve the documentation related to the %rom$ file system, searching when the
+Improve the documentation related to the %rom% file system, searching when the
 executable is built with COMPILE_INITS=1 (the current default on most platforms)
 and the (mostly deprecated) older methods for compiling Type 1 fonts and Halftone
 into threshold arrays.
@@ -8108,7 +8108,7 @@ Update freetype includes to the currently recommended scheme.
 2009-02-20T19:10:04.104225Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Check that gs_init.ps can be found at $(GenericResourceDir)Init/gs_init.ps
+Check that gs_init.ps can be found at &#36;(GenericResourceDir)Init/gs_init.ps
 Issue a warning if this file cannot be found. Bug 690289.
 
 </pre>
@@ -9070,7 +9070,7 @@ Escape significant characters when generating html changelog entries.
 2009-01-27T00:18:29.136711Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Remove $(GS_LIB)\Resource directory from the search path in the msvc 
+Remove &#36;(GS_LIB)\Resource directory from the search path in the msvc 
 build to shadowing the compiled in version.
 
 GS_LIB is set in the Windows registery by the installer, but it does not 
@@ -9081,7 +9081,7 @@ since the files weren't installed there, Ghostscript would error out in
 the initialization phase.
 
 Files like cidfmap and available fonts can still be overridden by 
-putting them in $(GS_LIB)\lib and $(GS_LIB)\fonts.
+putting them in &#36;(GS_LIB)\lib and &#36;(GS_LIB)\fonts.
 
 Patch from Russell Lang.
 </pre>
@@ -10670,7 +10670,7 @@ Update properties for cups driver files.
 2008-10-17T22:57:38.635737Z Till Kamppeter</strong></p>
 <blockquote>
 <pre>
-Use $(PDFTORASTER_XE) for path to compiled pdftoraster binary
+Use &#36;(PDFTORASTER_XE) for path to compiled pdftoraster binary
 </pre>
 <p>[cups/cups.mak]</p>
 </blockquote>
@@ -11131,7 +11131,7 @@ Use a portable path separator in gs.mak.
 2008-09-18T23:55:26.486186Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Remove a spurious $(_I) and add use portable $(D_)...$(_D) for defines
+Remove a spurious &#36;(_I) and add use portable &#36;(D_)...&#36;(_D) for defines
 as needed by the openvms build. Bug 690084.
 </pre>
 <p>[base/libpng.mak base/devs.mak]</p>
@@ -19211,7 +19211,7 @@ operation by using text rendering mode 2.
 2007-10-01T23:02:53.086636Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Have mkromfs use $(GS_INIT) instead of hard-coding gs_init.ps. It was
+Have mkromfs use &#36;(GS_INIT) instead of hard-coding gs_init.ps. It was
 intended that this be part of r8257.
 </pre>
 <p>[src/int.mak]</p>
@@ -21409,7 +21409,7 @@ Fix : Expanding gxcldev.h macros, part 1.
 2007-06-26T15:58:26.994368Z Till Kamppeter</strong></p>
 <blockquote>
 <pre>
-Replaced the $(install_prefix) from ESP Ghostscript by $(DESTDIR).
+Replaced the &#36;(install_prefix) from ESP Ghostscript by &#36;(DESTDIR).
 </pre>
 <p>[contrib/contrib.mak cups/cups.mak]</p>
 </blockquote>
@@ -23057,7 +23057,7 @@ Fix (shadings) : The decomposition limit must depend on resolution.
 2007-05-09T10:12:29.054433Z Till Kamppeter</strong></p>
 <blockquote>
 <pre>
-Protect expression "$Id$" against being replaced by SubVersion (bug #689093).
+Protect expression "&#36;Id: ... &#36;" against being replaced by SubVersion (bug #689093).
 </pre>
 <p>[doc/gsdoc.el]</p>
 </blockquote>
@@ -25582,7 +25582,7 @@ Fix CET 20-23-01 - undefine /deviceinfo from systemdict in gs_cet.ps
 2007-02-20T20:54:55.794850Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Reclassify 20-27-1 as AOK. Contents of $error is device-dependent.
+Reclassify 20-27-1 as AOK. Contents of &#36;error is device-dependent.
 </pre>
 <p>[doc/pscet_status.txt]</p>
 </blockquote>
@@ -26110,7 +26110,7 @@ Updates status to reflect r7672.
 <pre>
 Adds an error string and error object to the token scanner state, and an
 error object to interpreter contexts, to allow operators to set an arbitrary
-object as the "error object" ($error.command) for a PostScript error, and to
+object as the "error object" (&#36;error.command) for a PostScript error, and to
 allow the token scanner in particular to set special error objects for
 syntax errors.  Fixes PS3 CET 23-32-4; partially fixes 21-11-6 and 23-32-2.
 </pre>
@@ -29250,7 +29250,7 @@ Fix (shadings) : Improving radial gradients.
 2006-11-07T23:30:31.983202Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Prepend $(DESTDIR) to unix 'make install' paths for the convenience of 
+Prepend &#36;(DESTDIR) to unix 'make install' paths for the convenience of 
 packagers. This assumes make will substitute an empty string for 
 undefined makefile variable, but this is a widespread convention.
 Bug 688948.
@@ -29821,7 +29821,7 @@ Adobe algorithm would be necessary to make it match 100%.
 2006-10-25T17:01:48.042147Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Add a routine to create and store [/key any] array in $error.errorinfo for
+Add a routine to create and store [/key any] array in &#36;error.errorinfo for
 better conformance with Adobe PS interpreters. This routine will be called
 from many places that reports errors in dictionary parameters. Use the new
 routine to fix one case of error reporting in the inage operator.
@@ -32414,7 +32414,7 @@ Bug 688763.
 2006-07-01T15:08:30.368356Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Replace $Id lines inadvertently removed.
+Replace &#36;Id lines inadvertently removed.
 </pre>
 <p>[src/imain.c src/zfile.c]</p>
 </blockquote>
@@ -35518,7 +35518,7 @@ Fix (pdfwrite) : Propagate error code from s_DCTE_put_params (continued).
 2006-02-15T07:33:41.943841Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Enable $Id keyword substitution on the new luratech integration source 
+Enable &#36;Id keyword substitution on the new luratech integration source 
 files.
 </pre>
 <p>[src/sjbig2_luratech.h src/sjpx_luratech.h src/sjbig2_luratech.c src/ldf_jb2.mak src/lwf_jp2.mak src/sjpx_luratech.c]</p>
@@ -35539,7 +35539,7 @@ CVS style Id keyword lines. Bug 688554.
 <blockquote>
 <pre>
 Turn on keyword substitution. This is confusing, since the script also 
-outputs a $Id$ line for the makefile it generates, but doesn't cause
+outputs a &#36;Id: &#36; line for the makefile it generates, but doesn't cause
 problems in practice.
 </pre>
 <p>[toolbin/gen_ldf_jb2.py]</p>
@@ -53080,7 +53080,7 @@ stdint_h is not available. Works around bug 687007.</pre>
 <blockquote>
 <pre>
 Fix .gethalftone to prevent /undefinedresource or other error from being
-left in the $error dict. Seen with UnusualFontMatrix.ps when running under
+left in the &#36;error dict. Seen with UnusualFontMatrix.ps when running under
 startjob encapsulation.
 
 </pre>
@@ -53481,7 +53481,6 @@ value of <tt>gsapi_exit()</tt>.
 <h3><a name="8.12_changelog"></a>Changelog</h3>
 
 <!-- generated by split_changelog.py from the output of cvs2cl.pl -->
-<!-- $Id$ -->
 
 <p><strong><a name="2003-12-09_0637"></a>
 2003-12-09 06:37 Ray Johnston</strong></p>
@@ -56539,7 +56538,7 @@ Partial fix for 686816
 2003-08-12 14:13 ray</strong></p>
 <blockquote>
 <pre>
-Add the headers ($Id$ line and copyright notices).
+Add the headers (&#36;Id: &#36; line and copyright notices).
 </pre>
 <p>[toolbin/genfontmap.ps 1.2]</p>
 </blockquote>
@@ -58246,7 +58245,6 @@ documentation</a> for details of the new mechanism.
 <h3><a name="8.10_changelog"></a>Changelog</h3>
 
 <!-- generated by split_changelog.py from the output of cvs2cl.pl -->
-<!-- $Id$ -->
 
 <p><strong><a name="2003-05-21_0017"></a>
 2003-05-21 00:17 Ralph Giles</strong></p>
@@ -58562,7 +58560,7 @@ garbage on the operator stack. Fixes bug #686855.
 <p><strong><a name="2003-05-08_1832"></a>
 2003-05-08 18:32 Ralph Giles</strong></p>
 <blockquote><pre>
-Add the standard copyright banner and $Id line to the new changelog script.
+Add the standard copyright banner and &#36;Id line to the new changelog script.
 </pre></blockquote>
 
 <p><strong><a name="2003-05-08_1828"></a>
@@ -60179,7 +60177,7 @@ pdfwrite : Account GlyphNames2Unicode while creating ToUnicode CMaps for simple 
 <p><strong><a name="2003-02-12_0216"></a>
 2003-02-12 02:16 Ralph Giles</strong></p>
 <blockquote><pre>
-Initial implementation of the /JBIG2Decode filter. This adds a '$(PSD)jbig2.dev'
+Initial implementation of the /JBIG2Decode filter. This adds a '&#36;(PSD)jbig2.dev'
 FEATURE_DEV which links in the libjbig2dec decoder library. This version does
 not support the optional /JBIG2GLOBALS parameter for sharing information between
 page images. However, it is still useful as this parameter has been empty in

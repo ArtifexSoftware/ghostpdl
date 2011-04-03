@@ -353,7 +353,7 @@ Fix any problems and commit to svn.
 <p>
 Edit your top-level the Makefile to set
 <blockquote><pre>
-FEATURE_DEVS=$(FEATURE_DEVS_ALL)
+FEATURE_DEVS=&#36;(FEATURE_DEVS_ALL)
 COMPILE_INITS=1
 </pre></blockquote>
 
@@ -740,29 +740,29 @@ In that directory, store the following files:
 </pre></blockquote>
 
 <li>Third-party libraries, as links (upload these if not installed), where
-<code>$$$</code> et al. refer to the version number of the library, which
+<code>&#36;&#36;&#36;</code> et al. refer to the version number of the library, which
 should be the latest compatible release of the library and should be 
 consistent with the values of and version numbers specifically listed in
 the makefiles.
 
 <blockquote><pre>
-<code>jpegsrc.v$$.tar.gz</code> -&gt; <code>../../3rdparty/jpegsrc.v$$.tar.gz</code>
-<code>libpng-$.$.$.tar.gz</code> -&gt; <code>../../3rdparty/libpng-$.$.$.tar.gz</code>
-<code>zlib-$.$.$.tar.gz</code> -&gt; <code>../../3rdparty/zlib-$.$.$.tar.gz</code>
-<code>jpegsr$$.zip</code> -&gt; <code>../../3rdparty/jpegsr$$.zip</code>
-<code>lpng$$$.zip</code> -&gt; <code>../../3rdparty/lpng$$$.zip</code>
-<code>zlib$$$.zip</code> -&gt; <code>../../3rdparty/zlib$$$.zip</code>
+<code>jpegsrc.v&#36;&#36;.tar.gz</code> -&gt; <code>../../3rdparty/jpegsrc.v&#36;&#36;.tar.gz</code>
+<code>libpng-&#36;.&#36;.&#36;.tar.gz</code> -&gt; <code>../../3rdparty/libpng-&#36;.&#36;.&#36;.tar.gz</code>
+<code>zlib-&#36;.&#36;.&#36;.tar.gz</code> -&gt; <code>../../3rdparty/zlib-&#36;.&#36;.&#36;.tar.gz</code>
+<code>jpegsr&#36;&#36;.zip</code> -&gt; <code>../../3rdparty/jpegsr&#36;&#36;.zip</code>
+<code>lpng&#36;&#36;&#36;.zip</code> -&gt; <code>../../3rdparty/lpng&#36;&#36;&#36;.zip</code>
+<code>zlib&#36;&#36;&#36;.zip</code> -&gt; <code>../../3rdparty/zlib&#36;&#36;&#36;.zip</code>
 </pre></blockquote>
 
 In any case, the names of the links in the distribution directory should reflect
 the original name of the upstream file.
 
-<li>Fonts, where <code>$.$$</code> refers to the most recent version
+<li>Fonts, where <code>&#36;.&#36;&#36;</code> refers to the most recent version
 number of the fonts:
 
 <blockquote><pre>
-<code>ghostscript-fonts-other-$.$.tar.gz</code> -&gt; <code>../fonts/ghostscript-fonts-other-$.$.tar.gz</code>
-<code>ghostscript-fonts-std-$.$.tar.gz</code> -&gt; <code>../fonts/ghostscript-fonts-std-$.$.tar.gz</code>
+<code>ghostscript-fonts-other-&#36;.&#36;.tar.gz</code> -&gt; <code>../fonts/ghostscript-fonts-other-&#36;.&#36;.tar.gz</code>
+<code>ghostscript-fonts-std-&#36;.&#36;.tar.gz</code> -&gt; <code>../fonts/ghostscript-fonts-std-&#36;.&#36;.tar.gz</code>
 </pre></blockquote>
 
 </ul>

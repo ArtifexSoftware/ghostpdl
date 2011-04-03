@@ -6396,10 +6396,10 @@ geeting them included in the shared library X11.so). gsparamx.c is
 part of psdf and is usually included and available, and gdevemap.c is
 small enough to be inserted completely where it is used.
 
-gdevxcmp.c is addressed by building it with $(GLCCSHARED) and not with
-$(GLCC).
+gdevxcmp.c is addressed by building it with &#36;(GLCCSHARED) and not with
+&#36;(GLCC).
 
-In addition, $(CC_SHARED) is only used for object files, rather than
+In addition, &#36;(CC_SHARED) is only used for object files, rather than
 for linking, so DYNAMIC_CFLAGS is more appropiate here than
 DYNAMIC_LDLAGS.
 
@@ -8989,7 +8989,7 @@ which results in its being reverted in r10540 .
 ******************************
     Revert c10520 which causes problems with the MSVC build.
     
-    $(CC_) enforces 'ansi' C under msvc32.mak, disabling any Microsoft
+    &#36;(CC_) enforces 'ansi' C under msvc32.mak, disabling any Microsoft
     extensions. This often causes problems with 3rd party libraries
     which try to take advantage of those extensions.
     
@@ -11356,7 +11356,7 @@ adding comments about using globs not expandable by shell; bug 691229</pre>
 2010-04-05T17:24:12.188391Z Hin-Tak Leung</strong></p>
 <blockquote>
 <pre>
-adding escaped quotes around $0 in &quot;basename $0&quot; ; 2nd part of bug 691219</pre>
+adding escaped quotes around &#36;0 in &quot;basename &#36;0&quot; ; 2nd part of bug 691219</pre>
 <p>[lib/pdf2ps lib/eps2eps lib/pfbtopfa lib/ps2epsi lib/ps2pdfwr lib/ps2ps lib/dumphint lib/ps2ps2 lib/dvipdf lib/pdfopt]</p>
 </blockquote>
 
@@ -11364,7 +11364,7 @@ adding escaped quotes around $0 in &quot;basename $0&quot; ; 2nd part of bug 691
 2010-04-05T17:22:10.077618Z Hin-Tak Leung</strong></p>
 <blockquote>
 <pre>
-adding escaped quotes around $0 in &quot;dirname $0&quot; ; bug 691219</pre>
+adding escaped quotes around &#36;0 in &quot;dirname &#36;0&quot; ; bug 691219</pre>
 <p>[lib/printafm lib/eps2eps lib/pdf2dsc lib/gsbj lib/ps2epsi lib/gsdj lib/dumphint lib/gsnd lib/font2c lib/pdfopt lib/pdf2ps lib/ps2pdf lib/gslj lib/pfbtopfa lib/bdftops lib/ps2pdf12 lib/ps2pdf13 lib/ps2pdf14 lib/gslp lib/wftopfa lib/ps2pdfwr lib/ps2ps lib/pphs lib/pf2afm lib/gsdj500]</p>
 </blockquote>
 
@@ -12693,7 +12693,7 @@ didn't notice because other dependencies, which themselves link to
 the system freetype library on linux were providing definitions of
 the missing symbols. These are now included in our build.
 
-We now generate freetype.dev by copying freetype_$(SHARE_FT) within
+We now generate freetype.dev by copying freetype_&#36;(SHARE_FT) within
 freetype.mak, the same was this option is handled in the other third-
 party makefiles.
 
@@ -12945,7 +12945,7 @@ the trunk.
 <blockquote>
 <pre>
 Tiny tweaks to clusterpush.pl to make it work on windows. First, wrap the
-$HOME directory in additional quotes to allow for awkward windows users
+&#36;HOME directory in additional quotes to allow for awkward windows users
 with spaces in their names. Secondly, add a crude mapping for people whos
 windows names are not the same as the usernames. This can unquestionably
 be done more nicely, but the simple version will do for now.

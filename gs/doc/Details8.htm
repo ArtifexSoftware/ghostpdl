@@ -893,7 +893,7 @@ of difference bitmaps (which page, bbox etc). htmldiff.pl now reads that
 metadata and outputs that into the file. Some javascript hackery is used to
 display the device coords of the point under the mouse pointer.
 
-Finally, if the $parallel option is set, htmldiff will fork jobs in parallel
+Finally, if the &#36;parallel option is set, htmldiff will fork jobs in parallel
 to try to make better use of multicore machines.
 
 
@@ -942,7 +942,7 @@ unchanged.
 <blockquote>
 <pre>
 Don't use operator 'execute' because it resets the /command attribute
-in $error dictionary. Use '.execute pop' instead. Keep 'execute' as an
+in &#36;error dictionary. Use '.execute pop' instead. Keep 'execute' as an
 operator for backward compatibility. Thanks to dakka.akka@gmail.com
 for analysis of the bug. Bug 691050.
 </pre>
@@ -1356,7 +1356,7 @@ does this.
 <pre>
 Revert c10520 which causes problems with the MSVC build.
 
-$(CC_) enforces 'ansi' C under msvc32.mak, disabling any Microsoft
+&#36;(CC_) enforces 'ansi' C under msvc32.mak, disabling any Microsoft
 extensions. This often causes problems with 3rd party libraries
 which try to take advantage of those extensions.
 
@@ -1508,7 +1508,7 @@ the two different configurations.
 2009-12-18T06:37:02.606724Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Derive the libtiff compiler line from $(CC_) instead of $(CC) so
+Derive the libtiff compiler line from &#36;(CC_) instead of &#36;(CC) so
 the common flag set is propagated.
 
 Without this, additional options, like XCFLAGS=-fPIC aren't used when
@@ -1601,7 +1601,7 @@ I've swapped back to supplying the filenames on the command line and
 everything seems to be fine.
 
 If this presents a problem on platforms other than windows, simply
-edit the value of $redir as shown at the top of the file and redirection
+edit the value of &#36;redir as shown at the top of the file and redirection
 will be used. If this turns out to be necessary, it may be possible to
 automate this.
 
@@ -2353,7 +2353,7 @@ parameter, which if present, returns a specific regression result
 instead of the default json dashboard status. Current it only supports
 svn jobs, not custom runs submitted through the clusterpush script.
 
-Also cleans up the the paths to use a $clusteroot variable for the 
+Also cleans up the the paths to use a &#36;clusteroot variable for the 
 prefix.
 </pre>
 <p>[toolbin/localcluster/clustermonitor.cgi]</p>
@@ -2589,7 +2589,7 @@ array for the various devices. Bug 690954.
 Fix (FAPI) : segmentation violation with Multiple Master fonts
 
 Details
-When extracting the $Blend procedure from a Multiple Master font, if the procedure
+When extracting the &#36;Blend procedure from a Multiple Master font, if the procedure
 contained a name object, there was a typo which used an uninitialised variable
 instead of the extracted name element to convert the name to a string.
 
@@ -7828,7 +7828,7 @@ However, when manufacturing a type 1 font stream it did not account for the poss
 of a Multiple Master font (or instance of a MM font). This caused FreeType to generate
 an error when trying to process glyphs using MM operations.
 
-Extended the existing code to manufacture the WeightVector array, $Blend procedure,
+Extended the existing code to manufacture the WeightVector array, &#36;Blend procedure,
 BlendDesignMap array, BlendDesignPositions array and BlendAxisTypes array if present
 in the original font.
 
@@ -8753,7 +8753,7 @@ ref# leo2077.
 2009-04-18T22:07:42.659183Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Improve the documentation related to the %rom$ file system, searching when the
+Improve the documentation related to the %rom% file system, searching when the
 executable is built with COMPILE_INITS=1 (the current default on most platforms)
 and the (mostly deprecated) older methods for compiling Type 1 fonts and Halftone
 into threshold arrays.
@@ -9698,7 +9698,7 @@ Increase operand stack to 100000 elements and change stack overflow handling.
 
 DETAILS:
 Following Adobe implementation, copy only a few top elements of the stack
-to the corresponding element of the $error dictionary when the stack
+to the corresponding element of the &#36;error dictionary when the stack
 overflows. Adobe copies up to 500 top elements, we copy up to 65535. This
 feature enables Ghostscript to have maximum stack sizes larger than 65535.
 The maximum operand stack size is set to 100000 to match Adobe interpreters.
@@ -9986,7 +9986,7 @@ Details:
 In freetype2, the recommended method of including the headers is to
 include &lt;ft2build.h&gt;, depending on a -I line on the compiler's command
 line to select the particular location for this, usually something like
-$(INCLUDE_DIR)/freetype/
+&#36;(INCLUDE_DIR)/freetype/
 
 This header defines macros which expand to includes for particular
 features, depending on how the particular freetype instance being
@@ -10006,7 +10006,7 @@ feature, which seems not to be enabled by default.
 2009-02-20T19:10:04.104225Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Check that gs_init.ps can be found at $(GenericResourceDir)Init/gs_init.ps
+Check that gs_init.ps can be found at &#36;(GenericResourceDir)Init/gs_init.ps
 Issue a warning if this file cannot be found. Bug 690289.
 
 </pre>
@@ -11120,7 +11120,7 @@ Escape significant characters when generating html changelog entries.
 2009-01-27T00:18:29.136711Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Remove $(GS_LIB)\Resource directory from the search path in the msvc 
+Remove &#36;(GS_LIB)\Resource directory from the search path in the msvc 
 build to shadowing the compiled in version.
 
 GS_LIB is set in the Windows registery by the installer, but it does not 
@@ -11131,7 +11131,7 @@ since the files weren't installed there, Ghostscript would error out in
 the initialization phase.
 
 Files like cidfmap and available fonts can still be overridden by 
-putting them in $(GS_LIB)\lib and $(GS_LIB)\fonts.
+putting them in &#36;(GS_LIB)\lib and &#36;(GS_LIB)\fonts.
 
 Patch from Russell Lang.
 </pre>
@@ -11970,7 +11970,7 @@ DETAILS :
 Debugged on Vista x64 with running a 32 bits debug build of revision 9299 
 with this command line :
 
-..\..\gs-hd\bin\gswin32c.exe -IF:\AFPL\gs-hd\Resource\Init;f:\afpl\fonts -Z$?@ -r300 
+..\..\gs-hd\bin\gswin32c.exe -IF:\AFPL\gs-hd\Resource\Init;f:\afpl\fonts -Z&#36;?@ -r300 
        -dMaxBitmap=1000000  -dNOOUTERSAVE -sDEVICE=ppmraw -sOutputFile=out.ppm -dBATCH 
        -dNOPAUSE &quot;H:\AuxFiles\CompareFiles\084-01.ps&quot;  
 
@@ -13512,7 +13512,7 @@ Update properties for cups driver files.
 2008-10-17T22:57:38.635737Z Till Kamppeter</strong></p>
 <blockquote>
 <pre>
-Use $(PDFTORASTER_XE) for path to compiled pdftoraster binary
+Use &#36;(PDFTORASTER_XE) for path to compiled pdftoraster binary
 </pre>
 <p>[cups/cups.mak]</p>
 </blockquote>
@@ -14188,7 +14188,7 @@ Use a portable path separator in gs.mak.
 2008-09-18T23:55:26.486186Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Remove a spurious $(_I) and add use portable $(D_)...$(_D) for defines
+Remove a spurious &#36;(_I) and add use portable &#36;(D_)...&#36;(_D) for defines
 as needed by the openvms build. Bug 690084.
 </pre>
 <p>[base/libpng.mak base/devs.mak]</p>
@@ -20920,7 +20920,7 @@ here are to allow working with a PCL or XPS only build where the PS
 interpreter is not used/needed.
 
 I noticed that the default systemparam value for FontResourceDir isn't
-getting et to %rom$Resource/Font/ as it should, but GenericResourceDir
+getting et to %rom%Resource/Font/ as it should, but GenericResourceDir
 _is_ being initialized correctly to %rom%Resource/ which is _NOT_
 fixed by this commit.
 
@@ -26184,7 +26184,7 @@ resulting from charpath. There may be other possibilities.
 2007-10-01T23:02:53.086636Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Have mkromfs use $(GS_INIT) instead of hard-coding gs_init.ps. It was
+Have mkromfs use &#36;(GS_INIT) instead of hard-coding gs_init.ps. It was
 intended that this be part of r8257.
 </pre>
 <p>[src/int.mak]</p>
@@ -29560,7 +29560,7 @@ To be fixed in the next step.
 2007-06-26T15:58:26.994368Z Till Kamppeter</strong></p>
 <blockquote>
 <pre>
-Replaced the $(install_prefix) from ESP Ghostscript by $(DESTDIR).
+Replaced the &#36;(install_prefix) from ESP Ghostscript by &#36;(DESTDIR).
 </pre>
 <p>[contrib/contrib.mak cups/cups.mak]</p>
 </blockquote>
@@ -31736,7 +31736,7 @@ The quality degradation shouldn't be visible with a 300 dpi printer.
 2007-05-09T10:12:29.054433Z Till Kamppeter</strong></p>
 <blockquote>
 <pre>
-Protect expression "$Id$" against being replaced by SubVersion (bug #689093).
+Protect expression "&#36;Id: ... &#36;" against being replaced by SubVersion (bug #689093).
 </pre>
 <p>[doc/gsdoc.el]</p>
 </blockquote>
@@ -35306,7 +35306,7 @@ Fix CET 20-23-01 - undefine /deviceinfo from systemdict in gs_cet.ps
 2007-02-20T20:54:55.794850Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Reclassify 20-27-1 as AOK. Contents of $error is device-dependent.
+Reclassify 20-27-1 as AOK. Contents of &#36;error is device-dependent.
 </pre>
 <p>[doc/pscet_status.txt]</p>
 </blockquote>
@@ -36046,7 +36046,7 @@ Updates status to reflect r7672.
 <pre>
 Adds an error string and error object to the token scanner state, and an
 error object to interpreter contexts, to allow operators to set an arbitrary
-object as the "error object" ($error.command) for a PostScript error, and to
+object as the "error object" (&#36;error.command) for a PostScript error, and to
 allow the token scanner in particular to set special error objects for
 syntax errors.  Fixes PS3 CET 23-32-4; partially fixes 21-11-6 and 23-32-2.
 </pre>
@@ -40213,7 +40213,7 @@ DETAILS :
 2006-11-07T23:30:31.983202Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Prepend $(DESTDIR) to unix 'make install' paths for the convenience of 
+Prepend &#36;(DESTDIR) to unix 'make install' paths for the convenience of 
 packagers. This assumes make will substitute an empty string for 
 undefined makefile variable, but this is a widespread convention.
 Bug 688948.
@@ -40978,7 +40978,7 @@ Adobe algorithm would be necessary to make it match 100%.
 2006-10-25T17:01:48.042147Z Alex Cherepanov</strong></p>
 <blockquote>
 <pre>
-Add a routine to create and store [/key any] array in $error.errorinfo for
+Add a routine to create and store [/key any] array in &#36;error.errorinfo for
 better conformance with Adobe PS interpreters. This routine will be called
 from many places that reports errors in dictionary parameters. Use the new
 routine to fix one case of error reporting in the inage operator.
@@ -44646,7 +44646,7 @@ Bug 688763.
 2006-07-01T15:08:30.368356Z Ray Johnston</strong></p>
 <blockquote>
 <pre>
-Replace $Id lines inadvertently removed.
+Replace &#36;Id lines inadvertently removed.
 </pre>
 <p>[src/imain.c src/zfile.c]</p>
 </blockquote>
@@ -47616,7 +47616,7 @@ Work around a bug in GCC 2.96 for x86. Pre-load stack pages to avoid a SEGV.
 Bug 688574.
 
 DETAILS:
-It is well known that GCC 2.96 for x86 sometimes forgets to adjust $esp
+It is well known that GCC 2.96 for x86 sometimes forgets to adjust &#36;esp
 and leaves automatic variables at small distance below the stack pointer.
 Apparently, when the access to the automatic variable causes a page fault
 Linux sends a SEGV signal instead of committing the page if the access
@@ -49408,7 +49408,7 @@ None.
 2006-02-15T07:33:41.943841Z Ralph Giles</strong></p>
 <blockquote>
 <pre>
-Enable $Id keyword substitution on the new luratech integration source 
+Enable &#36;Id keyword substitution on the new luratech integration source 
 files.
 </pre>
 <p>[src/sjbig2_luratech.h src/sjpx_luratech.h src/sjbig2_luratech.c src/ldf_jb2.mak src/lwf_jp2.mak src/sjpx_luratech.c]</p>
@@ -49429,7 +49429,7 @@ CVS style Id keyword lines. Bug 688554.
 <blockquote>
 <pre>
 Turn on keyword substitution. This is confusing, since the script also 
-outputs a $Id$ line for the makefile it generates, but doesn't cause
+outputs a &#36;Id: &#36; line for the makefile it generates, but doesn't cause
 problems in practice.
 </pre>
 <p>[toolbin/gen_ldf_jb2.py]</p>
@@ -54384,7 +54384,7 @@ Fix (pdfwrite) : Handling transparency as a high level objects, part 12 (fix 2).
 DETAILS :
 
 The old code wrote a scratch data for the key /G of a soft mask dictionary,
-because the referent was freed earlier. Debugged with -Z?$@ SoftMaskDict.pdf .
+because the referent was freed earlier. Debugged with -Z?&#36;@ SoftMaskDict.pdf .
 
 EXPECTED DIFFERENCES :
 
@@ -57268,11 +57268,11 @@ DETAILS:
 The problem is an error in the file.  The file contains an Indexed color space:
  [ /Indexed /DeviceGray 255 (\000%Mr\r2[\300\320\303\000\b\f\021\026\034"\)UMB9
 \201%Ns\r2[\016\035,:\036-&lt;KYh=L[ix\207\\kz\210\227\246{\212\231\247\266\305
-\267\306\325\005\024"1@O$3AP_mCQ`o~\214bp\177\216\234\253\200\217\236\255\273
+\267\306\325\005\024"1@O&#36;3AP_mCQ`o~\214bp\177\216\234\253\200\217\236\255\273
 \312\256\275\314\332\351\n\031\(6ET\)8GUdsHWft\203gv\204\223\242\261\206\225
 \262\301\317\245\263\321\340_Ul[&lt;K\020=-iYM\\Lz\210x{\212\231\247\266\213\232
 \243\267\306\325\252\271\251\326\345\364\025\0363AP/CQ`o~Sbk\177\216\227r\200
-\217\236\255\273\221\237\256\275\314\332\257\276\310\334\352\371$8G4...) ]
+\217\236\255\273\221\237\256\275\314\332\257\276\310\334\352\371&#36;8G4...) ]
 
 The lookup table for this color space should contain 256 bytes.  Instead it
 contains 768 bytes (3 times the needed number of bytes).
@@ -57557,7 +57557,7 @@ Fix : A dangling pointer from pdf_image_enum.
 
 DETAILS :
 
-Bug 688156 "Reference to free object : pdfwrite -r72 -Z?$@ 035-07.ps".
+Bug 688156 "Reference to free object : pdfwrite -r72 -Z?&#36;@ 035-07.ps".
 
 After pdf_make_alt_stream pdf_image_enum::writer.binary[1].target left a pointer to
 a cos_object_t instance, which is later freed by pdf_choose_comprtession.
@@ -57565,7 +57565,7 @@ Thus it caused a dangling pointer. It was not harmful unless running with -Z? .
 
 EXPECTED DIFFERENCES :
 
-pdfwrite crashed with -Z?$@ :
+pdfwrite crashed with -Z?&#36;@ :
 035-07.ps.
 FIG3.eps</pre>
 <p>[src/gdevpdfj.c 1.46]</p>
@@ -57686,8 +57686,8 @@ Fix : A global restore was applied at save level 1.
 
 DETAILS :
 
-Bug 688157 "'invalidrestore' in pkmraw -r72 -Z?$@ tpc2.ps".
-Bug 688161 "A dangling pointer with pkmraw -r72 -Z?$@ -c false 0 startjob pop -f - &lt;113-01.ps".
+Bug 688157 "'invalidrestore' in pkmraw -r72 -Z?&#36;@ tpc2.ps".
+Bug 688161 "A dangling pointer with pkmraw -r72 -Z?&#36;@ -c false 0 startjob pop -f - &lt;113-01.ps".
 
 The last patch appears incorrect. This one fixes that.
 
@@ -57733,7 +57733,7 @@ Fix : A global restore was applied at save level 1.
 
 DETAILS :
 
-Bug 688157 "'invalidrestore' in pkmraw -r72 -Z?$@ tpc2.ps".
+Bug 688157 "'invalidrestore' in pkmraw -r72 -Z?&#36;@ tpc2.ps".
 
 With the last patch memory problems gone avay,
 but tpc2.ps failed with 'invalidrestore'.
@@ -57765,10 +57765,10 @@ Fix : Dangling pointers due to 'restore' left an internal save level.
 
 DETAILS :
 
-Bug 688153  "Reference to free object : ppmraw -r72 -Z?$@ Bug687489.ps"
+Bug 688153  "Reference to free object : ppmraw -r72 -Z?&#36;@ Bug687489.ps"
 
 Running :
-    gs sOutputFile=t.ppm sDEVICE=ppmraw -r72 -Z?$@ Bug687489.ps"
+    gs sOutputFile=t.ppm sDEVICE=ppmraw -r72 -Z?&#36;@ Bug687489.ps"
 got :
     Reference to free object 0xaf9e40(100), in chunk 0x3eca48!
 
@@ -57838,7 +57838,7 @@ Fix : Reference count for gx_clip_path::path_list was incorrect.
 
 DETAILS :
 
-Bug 688147 "Wrong reference count with ppmraw -Z?$@ -r72 257-01.ps".
+Bug 688147 "Wrong reference count with ppmraw -Z?&#36;@ -r72 257-01.ps".
 
 gx_cpath_assign_preserve didn't adjust the reference count.
 
@@ -57873,7 +57873,7 @@ Fix : A wrong allocator was used to release the glyph cache.
 
 DETAILS :
 
-Bug 688146 "heap corruption with ppmraw -r72 -Z?$@ 055-01.ps".
+Bug 688146 "heap corruption with ppmraw -r72 -Z?&#36;@ 055-01.ps".
 
 A structure was allocated in a non-stable memory and
 released to a stable memory.
@@ -63117,7 +63117,7 @@ DETAILS:
 
 Note that broken error handlers are fairly common, so running them in a
 .internalstopped context makes sense. The .internalstopped is used to
-avoid side effects such as modifying the $error dict contents.
+avoid side effects such as modifying the &#36;error dict contents.
 
 Also note that the -dJOBSERVER may often be needed to actually see the
 error message since this forces the use of the "standard" error reporting
@@ -65083,7 +65083,7 @@ Bug 687059 "Re-building a ready gswin32.exe".
 
 The old rule
 
- $(ld_tr) : $(gconfig_h)
+ &#36;(ld_tr) : &#36;(gconfig_h)
 
 wrongly established a dependence opposite to the file modification order.
 Diagnosed with inserting "echo xxxxxxxxxxx" after the rule above.
@@ -69924,7 +69924,7 @@ DETAILS:
 
 The autoconf build supports a --with-gs=&lt;name&gt; option for setting the
 name of the Ghostscript executable, which is stored in the makefiles as
-'$(GS)', but scripts such at ps2pdf that expect to make invoke
+'&#36;(GS)', but scripts such at ps2pdf that expect to make invoke
 Ghostscript made no use of this variable, causing version skew at best,
 complete failure of that popular utility at worst. We therefore now
 rewrite the hard-coded name each time we install the utility scripts.</pre>
@@ -88646,18 +88646,18 @@ stdint_h is not available. Works around bug 687007.</pre>
 <blockquote>
 <pre>
 Fix .gethalftone to prevent /undefinedresource or other error from being
-left in the $error dict. Seen with UnusualFontMatrix.ps when running under
+left in the &#36;error dict. Seen with UnusualFontMatrix.ps when running under
 startjob encapsulation.
 
 DETAILS:
 
 Internal procedures like .gethalftone that want to use stopped but don't
 propagate the error up should use .internalstopped since this doesn't
-set /newerror in $error.
+set /newerror in &#36;error.
 
 The file mentioned has a 'quit' following the showpage which when running
 under job encapsulation (false 0 startjob) is redefined to do 'stop'.
-This means that the /newerror flag in $error was being seen when the
+This means that the /newerror flag in &#36;error was being seen when the
 'stop' after the showpage was executed.</pre>
 <p>[lib/gs_init.ps 1.103]</p>
 </blockquote>
@@ -89321,7 +89321,6 @@ value of <tt>gsapi_exit()</tt>.
 <h3><a name="8.12_changelog"></a>Changelog</h3>
 
 <!-- generated by split_changelog.py from the output of cvs2cl.pl -->
-<!-- $Id$ -->
 
 <p><strong><a name="2003-12-09_0637"></a>
 2003-12-09 06:37 Ray Johnston</strong></p>
@@ -94795,7 +94794,6 @@ old behavior.
 <h3>Changelog</h3>
 
 <!-- generated by split_changelog.py from the output of cvs2cl.pl -->
-<!-- $Id$ -->
 
 <p><strong><a name="2003-08-16_1952"></a>
 2003-08-16 19:52 giles</strong></p>
@@ -95060,7 +95058,7 @@ Partial fix for 686816
 2003-08-12 14:13 ray</strong></p>
 <blockquote>
 <pre>
-Add the headers ($Id$ line and copyright notices).
+Add the headers (&#36;Id: &#36; line and copyright notices).
 </pre>
 <p>[toolbin/genfontmap.ps 1.2]</p>
 </blockquote>
@@ -95139,7 +95137,7 @@ Fix for Bug 686991  Memory leak in CET test file 12-07.ps.
 DETAILS:
 
 A pointer to a free object was found while running the CET with the
-memory allocation test switches (-Z@?$).  The free object was a color
+memory allocation test switches (-Z@?&#36;).  The free object was a color
 space and the pointer was inside a gs_image_enum_common structure.
 
 The situation occurs when an error is found in the data source for
@@ -97884,7 +97882,7 @@ garbage on the operator stack. Fixes bug #686855.
 <p><strong><a name="2003-05-08_1832"></a>
 2003-05-08 18:32 Ralph Giles</strong></p>
 <blockquote><pre>
-Add the standard copyright banner and $Id line to the new changelog script.
+Add the standard copyright banner and &#36;Id line to the new changelog script.
 </pre></blockquote>
 
 <p><strong><a name="2003-05-08_1828"></a>
@@ -101011,7 +101009,7 @@ SF bug #684120 tracks additional issues.
 <p><strong><a name="2003-02-12_0216"></a>
 2003-02-12 02:16 Ralph Giles</strong></p>
 <blockquote><pre>
-Initial implementation of the /JBIG2Decode filter. This adds a '$(PSD)jbig2.dev'
+Initial implementation of the /JBIG2Decode filter. This adds a '&#36;(PSD)jbig2.dev'
 FEATURE_DEV which links in the libjbig2dec decoder library. This version does
 not support the optional /JBIG2GLOBALS parameter for sharing information between
 page images. However, it is still useful as this parameter has been empty in

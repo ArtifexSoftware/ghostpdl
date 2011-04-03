@@ -403,24 +403,24 @@ a different location so adjust the following commands accordingly.
 <li>Enable access to the program and support files for all users with:
 
 <blockquote><pre>
-$ set file/prot=w:re DISK1:[DIR]GHOSTSCRIPT.dir
-$ set file/prot=w:re DISK1:[DIR.GHOSTSCRIPT...]*.*
+&#36; set file/prot=w:re DISK1:[DIR]GHOSTSCRIPT.dir
+&#36; set file/prot=w:re DISK1:[DIR.GHOSTSCRIPT...]*.*
 </pre></blockquote>
 
 <li>Optionally, add the Ghostscript help instructions to your system wide
 help file:
 
 <blockquote><pre>
-$ lib/help sys$help:HELPLIB.HLB DISK1:[DIR.GHOSTSCRIPT.DOC]GS-VMS.HLP
+&#36; lib/help sys&#36;help:HELPLIB.HLB DISK1:[DIR.GHOSTSCRIPT.DOC]GS-VMS.HLP
 </pre></blockquote>
 
 <li>Lastly, add the following lines to the appropriate system wide or user
 specific login script.
 
 <blockquote><pre>
-$ define gs_exe DISK1:[DIR.GHOSTSCRIPT.BIN]
-$ define gs_lib DISK1:[DIR.GHOSTSCRIPT.EXE]
-$ gs :== $gs_exe:gs.exe
+&#36; define gs_exe DISK1:[DIR.GHOSTSCRIPT.BIN]
+&#36; define gs_lib DISK1:[DIR.GHOSTSCRIPT.EXE]
+&#36; gs :== &#36;gs_exe:gs.exe
 </pre></blockquote>
 
 </ul>

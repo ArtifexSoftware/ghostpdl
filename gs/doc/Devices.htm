@@ -916,7 +916,7 @@ autoconf'ed builds. Others may need some makefile tweaking. First,
 make sure the IJS device is selected:
 
 <blockquote>
-DEVICE_DEVS2=$(DD)ijs.dev
+DEVICE_DEVS2=&#36;(DD)ijs.dev
 </blockquote>
 
 <p> Next, make sure that the path and execution type are set in
@@ -948,7 +948,7 @@ currently recommended for the faint of heart.</p>
 <p>You will need to add the following line to your makefile:
 
 <blockquote>
-DEVICE_DEVS2=$(DD)rinkj.dev
+DEVICE_DEVS2=&#36;(DD)rinkj.dev
 </blockquote>
 
 <p>Most of the configuration parameters, including resolution, choice
@@ -1084,7 +1084,7 @@ As of the 0.97 version, hpijs supports the following printer models:
 <p>You will need to add the following line to your makefile:
 
 <blockquote>
-DEVICE_DEVS2=$(DD)DJ630.dev $(DD)DJ6xx.dev $(DD)DJ6xxP.dev $(DD)DJ8xx.dev $(DD)DJ9xx.dev $(DD)DJ9xxVIP.dev $(DD)AP21xx.dev
+DEVICE_DEVS2=&#36;(DD)DJ630.dev &#36;(DD)DJ6xx.dev &#36;(DD)DJ6xxP.dev &#36;(DD)DJ8xx.dev &#36;(DD)DJ9xx.dev &#36;(DD)DJ9xxVIP.dev &#36;(DD)AP21xx.dev
 </blockquote>
 
 <p>
@@ -1390,11 +1390,11 @@ executable:
 <pre>outcmd1='/vol/local/lib/troff2/psxlate -r'
 outcmd2='<b><em>{GSPATH}</em></b> -sDEVICE=sparc -sOUTPUTFILE=/dev/lpvi0 -'
 
-if [ $# -eq 0 ]
+if [ &#36;# -eq 0 ]
 then
-  $outcmd1 | $outcmd2
+  &#36;outcmd1 | &#36;outcmd2
 else
-  cat $* | $outcmd1 | $outcmd2
+  cat &#36;* | &#36;outcmd1 | &#36;outcmd2
 fi
 </pre></blockquote>
 

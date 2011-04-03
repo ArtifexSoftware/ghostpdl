@@ -1125,7 +1125,7 @@ notes on systems marked with "*"):
         <td>&nbsp;
         <td valign=top>SunOS 4.x<br>(NeWSprint only)
         <td>&nbsp;
-        <td valign=top><code>newsprint_2.5/SUNWsteNP/reloc/$BASEDIR/NeWSprint/<br>&nbsp;&nbsp;&nbsp;&nbsp;small_openwin/lib/fonts</code>
+        <td valign=top><code>newsprint_2.5/SUNWsteNP/reloc/&#36;BASEDIR/NeWSprint/<br>&nbsp;&nbsp;&nbsp;&nbsp;small_openwin/lib/fonts</code>
 <tr>    <td>**
         <td>&nbsp;
         <td valign=top>SunOS 4.x
@@ -1140,7 +1140,7 @@ notes on systems marked with "*"):
         <td>&nbsp;
         <td valign=top>VMS
         <td>&nbsp;
-        <td><code>SYS$COMMON:[SYSFONT.XDPS.OUTLINE]</code>
+        <td><code>SYS&#36;COMMON:[SYSFONT.XDPS.OUTLINE]</code>
 </table>
 
 <hr align=left width="25%">
@@ -1515,7 +1515,7 @@ administrators
 interpreter, define <code>gs</code> as a foreign command:
 
 <blockquote>
-<code>$ gs == "$</code><em>disk</em><code>:[</code><em>directory</em><code>]gs.exe</code>"
+<code>&#36; gs == "&#36;</code><em>disk</em><code>:[</code><em>directory</em><code>]gs.exe</code>"
 </blockquote>
 
 <p>
@@ -1523,7 +1523,7 @@ where the "<em>disk</em>" and "<em>directory</em>" specify where
 the Ghostscript executable is located.  For instance,
 
 <blockquote><code>
-$ gs == "$dua1:[ghostscript]gs.exe"
+&#36; gs == "&#36;dua1:[ghostscript]gs.exe"
 </code></blockquote>
 
 <li>On VMS systems, the last character of each "directory" name indicates
@@ -1532,8 +1532,8 @@ ends with a colon "<code>:</code>", it is taken to refer to a logical
 device, for instance
 
 <blockquote><code>
-$ define ghostscript_device dua1:[ghostscript_510]<br>
-$ define gs_lib ghostscript_device:
+&#36; define ghostscript_device dua1:[ghostscript_510]<br>
+&#36; define gs_lib ghostscript_device:
 </code></blockquote>
 
 <p>
@@ -1541,13 +1541,13 @@ If the "directory" name ends with a closing square bracket
 "<code>]</code>", it is taken to refer to a real directory, for instance
 
 <blockquote><code>
-$ define gs_lib dua1:[ghostscript]
+&#36; define gs_lib dua1:[ghostscript]
 </code></blockquote>
 
 <li>Defining the logical <code>GS_LIB</code>
 
 <blockquote>
-<code>$ define gs_lib</code> <em>disk</em><code>:[</code><em>directory</em><code>]</code>
+<code>&#36; define gs_lib</code> <em>disk</em><code>:[</code><em>directory</em><code>]</code>
 </blockquote>
 
 <p>
@@ -1560,16 +1560,16 @@ library, which forces all unquoted command-line parameters to lower case.
 That is, with the command
 
 <blockquote><code>
-$ gs -Isys$login:
+&#36; gs -Isys&#36;login:
 </code></blockquote>
 
 <p>
-Ghostscript sees the switch as <code>-isys$login</code>,
+Ghostscript sees the switch as <code>-isys&#36;login</code>,
 which doesn't work.  To preserve the case of switches, quote them like
 this:
 
 <blockquote><code>
-$ gs "-Isys$login:"
+&#36; gs "-Isys&#36;login:"
 </code></blockquote>
 
 <li>If you write printer output to a file with
@@ -1589,7 +1589,7 @@ FTP, you probably need to do one of these two things after the transfer:
 <li>If the FTP transfer was in text (ASCII) mode:
 
 <blockquote>
-<code>$ convert/fdl=streamlf.fdl</code> input-file output-file
+<code>&#36; convert/fdl=streamlf.fdl</code> input-file output-file
 </blockquote>
 
 <p>
@@ -1608,7 +1608,7 @@ RECORD
 <li>If the FTP transfer was in binary mode:
 
 <blockquote><code>
-     $ set file/attribute=(rfm:stmlf)
+     &#36; set file/attribute=(rfm:stmlf)
 </code></blockquote>
 </ol>
 </ul>
@@ -1620,7 +1620,7 @@ If you are using on an X Windows display, you can set it up with the node
 name and network transport, for instance
 
 <blockquote><code>
-        $ set display/create/node="doof.city.com"/transport=tcpip
+        &#36; set display/create/node="doof.city.com"/transport=tcpip
 </code></blockquote>
 
 <p>
@@ -3199,7 +3199,7 @@ items for printing:
 These switches select debugging options other than what should be printed:
 
 <dl compact>
-<dt><code>$</code><dd>set unused parts of object references to
+<dt><code>&#36;</code><dd>set unused parts of object references to
 identifiable garbage values
 <dt><code>+</code><dd>use minimum-size stack blocks
 <dt><code>,</code><dd>don't use path-based banding

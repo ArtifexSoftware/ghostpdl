@@ -1560,7 +1560,7 @@ Bump version numbers after 7.30 release. (version.mak [1.52]: 2002/09/12
 09:52:20 giles)
 
   src/lib.mak
-    Updated the dependency list for gxclrast.$(OBJ).
+    Updated the dependency list for gxclrast.&#36;(OBJ).
 (lib.mak [1.98]: 2002/09/13 22:21:22 dan; checkin for Jan)
 
 Implements daily results databases for regression results as well as a new
@@ -1595,7 +1595,7 @@ device when handling DeviceN or Separation color spaces. (int.mak [1.84]:
 2002/10/04 23:43:38 dan)
 
   src/devs.mak
-    Updated dependency list for gdevscf.$(OBJ).
+    Updated dependency list for gdevscf.&#36;(OBJ).
   src/lib.mak
     Updated various dependency lists.
 (devs.mak [1.76], lib.mak [1.101]: 2002/10/08 00:49:48 dan; checkin
@@ -1685,7 +1685,7 @@ the logically inverted function: only if DOPS is defined will "PS" XObjects
 be rendered. We believe this is the more appropriate default. lib/gs_dps.ps
 lib/gs_img.ps src/gsdparams.c Modified the deviceinfo and image code to work
 around a potentially improperly set ColorValues parameter. src/devs.mak
-Updated dependency list for gdevscf.$(OBJ). src/gdevdflt.c 1. Added
+Updated dependency list for gdevscf.&#36;(OBJ). src/gdevdflt.c 1. Added
 initialization of the new color_info.opmode field to
 gx_device_fill_in_procs. 2. In get_decode_color, added special case handling
 for canonical 1-bit CMYK devices (e.g.: pkmraw). Previously the decode_color
@@ -2073,7 +2073,7 @@ Modified Files
     improperly set ColorValues parameter.
 
   src/devs.mak
-    Updated dependency list for gdevscf.$(OBJ).
+    Updated dependency list for gdevscf.&#36;(OBJ).
 
   src/gdevdflt.c
     1. Added initialization of the new color_info.opmode field to
@@ -2563,7 +2563,7 @@ discovered by Dan's test with the memory validation enabled.
      p2b-100.pdf.
 
 With these changes, we are able to run both the PS3 FTS and the full set
-of pdf regression files using the '-Z@$?' switch with no reported problems.
+of pdf regression files using the '-Z@&#36;?' switch with no reported problems.
 
 
                                                        Jan
@@ -2662,7 +2662,7 @@ Modified Files
     improperly set ColorValues parameter.
 
   src/devs.mak
-    Updated dependency list for gdevscf.$(OBJ).
+    Updated dependency list for gdevscf.&#36;(OBJ).
 
   src/gdevdflt.c
     1. Added initialization of the new color_info.opmode field to
@@ -3230,7 +3230,7 @@ binding to prevent this. Fixes SF bug #539239. Fix by Alex Cherepanov.
 that all DSC comments can be processed by the PDF writer. Fixes SourceForge
 bug #432040, DSC ignored when reading stdin. (iscan.c [1.11]: 2002/09/05
 08:28:48 ghostgum)
-	- Corrected the ID line. (Missing $ sign at the end.)
+	- Corrected the ID line. (Missing &#36; sign at the end.)
 (zcolor3.c [1.2]: 2002/09/06 18:42:16 dan)
 	- copy comment lines inside a procedure which require a scanner
 refill to the operand stack, not the execution stack. Fixes SourceForge bug
@@ -3892,8 +3892,8 @@ Sun Aug 18 08:00:00 2002 GMT        Henry Stiles    henrys@meerkat
           gxwts.c           Added stubs to support the new device color methods.
                             Also corrected a few minor compiler complaints.
         
-          lib.mak           Added targets for gsserial.$(OBJ) and
-                            gxdhtserial.$(OBJ). Also updated some dependency
+          lib.mak           Added targets for gsserial.&#36;(OBJ) and
+                            gxdhtserial.&#36;(OBJ). Also updated some dependency
                             lists.
         
         * zcolor.c [1.8] (+1 -2):
@@ -4147,7 +4147,7 @@ Thu Jul 25 08:00:00 2002 GMT        Henry Stiles    henrys@meerkat
         Modified files:
         
           src/devs.mak
-            Updated dependency list for gdevpsdu.$(OBJ).
+            Updated dependency list for gdevpsdu.&#36;(OBJ).
         
           src/gdevpdf.c
             Added the methods psdf_get_bits, psdf_get_bits_rectangle, and
@@ -5016,7 +5016,7 @@ Tue Jun  4 05:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             Also fixed a parity bug in the creation of the retain_mask.
         
           src/gsovrc.h
-            Fixed typo (/* $Id$Id: History7.htm,v 1.43 2005/10/07 18:35:12 ray Exp $ */).
+            Fixed typo (/* &#36;Id&#36; */).
         
           src/gxdcconv.c
             Modified color_rgb_to_cmyk to work if the imager state pointer
@@ -5028,7 +5028,7 @@ Tue Jun  4 05:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             map.
         
           src/lib.mak
-            Added the gxoprect.$(OBJ) target and included this as a dependency
+            Added the gxoprect.&#36;(OBJ) target and included this as a dependency
             in LIB4s. Also updated some other dependency lists.
         
         
@@ -5159,7 +5159,7 @@ Wed May 29 06:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             gx_color_index is used because it is known to be large enough.
         
           src/lib.mak
-            Updated dependency list for gsovrc.$(OBJ).
+            Updated dependency list for gsovrc.&#36;(OBJ).
         
         Notes:
         
@@ -7629,7 +7629,7 @@ Tue Jun  4 05:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             Also fixed a parity bug in the creation of the retain_mask.
         
           src/gsovrc.h
-            Fixed typo (/* $Id$Id: History7.htm,v 1.43 2005/10/07 18:35:12 ray Exp $ */).
+            Fixed typo (/* &#36;Id&#36; */).
         
           src/gxdcconv.c
             Modified color_rgb_to_cmyk to work if the imager state pointer
@@ -7641,7 +7641,7 @@ Tue Jun  4 05:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             map.
         
           src/lib.mak
-            Added the gxoprect.$(OBJ) target and included this as a dependency
+            Added the gxoprect.&#36;(OBJ) target and included this as a dependency
             in LIB4s. Also updated some other dependency lists.
         
         
@@ -7722,7 +7722,7 @@ Wed May 29 06:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             gx_color_index is used because it is known to be large enough.
         
           src/lib.mak
-            Updated dependency list for gsovrc.$(OBJ).
+            Updated dependency list for gsovrc.&#36;(OBJ).
         
         Notes:
         
@@ -9155,7 +9155,7 @@ unixinst.mak [1.26]: 2002/04/19 01:08:38 jack)
 	- Add PostScriptLevel3 as one of the Resources of the /Emulator
 category so that it shows up with "gs -h". Fixes SourceForge bug #549235.
 (int.mak [1.74]: 2002/04/26 20:51:24 ray)
-	- Removing the variable $(PSD) from lib.mak to allow graphics
+	- Removing the variable &#36;(PSD) from lib.mak to allow graphics
 library to build independently on GS. (lib.mak [1.77]: 2002/05/05 13:44:27
 igor)
 	- The GS lib would not build. This fix corrects two minor problems.
@@ -9167,7 +9167,7 @@ available the known encodings and glyph sets identified in src/gsccode.h.
 With this change, pdfwrite can now be used without a PostScript interpreter,
 and with fonts that do not implement the known_encode callback.
 (devs.mak [1.60], lib.mak [1.80]: 2002/05/12 22:38:08 lpd)
-	- The rule for building icc.o didn't depend on $(ECHOGS_XE), causing
+	- The rule for building icc.o didn't depend on &#36;(ECHOGS_XE), causing
 the build to possibly fail (depending on the order in which `make' built
 targets) if executed with empty output directories. (icclib.mak [1.7]:
 2002/06/05 19:55:04 lpd)
@@ -11189,7 +11189,7 @@ characters was a key or value in a pdfmark dictionary. Fixes SourceForge
 ftp://upload.sourceforge.net/incoming. (doc/Release.htm [1.44]: 2002/02/18
 02:47:59 giles)
 	- Check in corrected module after "admin -ko" change to prevent the
-$Id: lines from having the keyword replacement. This was broken for a LONG
+&#36;Id: lines from having the keyword replacement. This was broken for a LONG
 time. (doc/gsdoc.el [1.4]: 2002/02/22 19:08:29 ray)
 	- POSIX 2001 has obsoleted tail +128c. Document the new convention
 'tail -c +129' as an alternate. (doc/Use.htm [1.46]: 2002/03/28 21:28:06
@@ -11658,7 +11658,7 @@ heap for building gs_init.c with COMPILE_INITS=1. Source Forge bug "[ 526192
 	- Second attempt to fix COMPILE_INITS=1. This statically embeds all
 gs_*.ps files, xlatmap and FAPIconfig. Source Forge bug "[ 526192 ] Broken
 COMPILE_INITS". (int.mak [1.65]: 2002/03/07 10:52:06 igor)
-	- Definition for gsiodisk.$(OBJ) was multiply defined. Remove the
+	- Definition for gsiodisk.&#36;(OBJ) was multiply defined. Remove the
 one that is not dependent on the diskn.dev FEATURE. (lib.mak [1.66]:
 2002/03/15 06:25:13 ray)
 	- remove -fno-common from the standard gcc LDFLAGS. It is only
@@ -11948,7 +11948,7 @@ with a single Ghostscript instance. Documentation is in Language.htm.
 Addresses SourceForge bug #493344 for Artifex customer #411. (gs.mak [1.13],
 int.mak [1.66], lib.mak [1.65]: 2002/03/13 20:27:39 ray)
 
-Move definition of gsiodisk.$(OBJ) from int.mak to lib.mak as requested by
+Move definition of gsiodisk.&#36;(OBJ) from int.mak to lib.mak as requested by
 LPD. (int.mak [1.67], lib.mak [1.67]: 2002/03/15 18:21:17 ray)
 
 Bumps the next-release version number to 7.20 to leave additional room for
@@ -11995,7 +11995,7 @@ versions of postscript, is now extremely rare and the prohibition against
 SHARE_JPEG=1 may reasonably be removed. The autoconf build will prefer a
 local copy of the jpeg source, in which case the D_MAX_BLOCKS_IN_MCU patch
 will still be applied. If no such local copy is found, it will try to find a
-shared library on the system. For all unix builds, if $(JSRCDIR)/jmemsys.h
+shared library on the system. For all unix builds, if &#36;(JSRCDIR)/jmemsys.h
 cannot be found, we define DONT_HAVE_JMEMSYS_H and include our own versions
 of the libjpeg memory manager prototypes. The default allocator in the
 shared library is overridden by the ghostscript one at link-time. While this
@@ -13292,7 +13292,7 @@ versions of postscript, is now extremely rare and the prohibition against
 SHARE_JPEG=1 may reasonably be removed. The autoconf build will prefer a
 local copy of the jpeg source, in which case the D_MAX_BLOCKS_IN_MCU patch
 will still be applied. If no such local copy is found, it will try to find a
-shared library on the system. For all unix builds, if $(JSRCDIR)/jmemsys.h
+shared library on the system. For all unix builds, if &#36;(JSRCDIR)/jmemsys.h
 cannot be found, we define DONT_HAVE_JMEMSYS_H and include our own versions
 of the libjpeg memory manager prototypes. The default allocator in the
 shared library is overridden by the ghostscript one at link-time. While this
@@ -13920,7 +13920,7 @@ versions of postscript, is now extremely rare and the prohibition against
 SHARE_JPEG=1 may reasonably be removed. The autoconf build will prefer a
 local copy of the jpeg source, in which case the D_MAX_BLOCKS_IN_MCU patch
 will still be applied. If no such local copy is found, it will try to find a
-shared library on the system. For all unix builds, if $(JSRCDIR)/jmemsys.h
+shared library on the system. For all unix builds, if &#36;(JSRCDIR)/jmemsys.h
 cannot be found, we define DONT_HAVE_JMEMSYS_H and include our own versions
 of the libjpeg memory manager prototypes. The default allocator in the
 shared library is overridden by the ghostscript one at link-time. While this

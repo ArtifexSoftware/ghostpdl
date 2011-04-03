@@ -1975,9 +1975,9 @@ Fixes bugs:
 	- gs_pdfwr.ps and pdf2ps.1 weren't installed on Unix systems.
 (unix-end.mak)
 	- The pdf2ps shell script didn't accept any options.  (pdf2ps)
-	- The rule for srle.$(OBJ) incorrectly specified a dependency on
+	- The rule for srle.&#36;(OBJ) incorrectly specified a dependency on
 srld.c.  (lib.mak)
-	- The rule for command lists didn't include stream.$(OBJ).
+	- The rule for command lists didn't include stream.&#36;(OBJ).
 (lib.mak)
 	- The stack size for one configuration was set too small.
 (watclib.mak)
@@ -2702,7 +2702,7 @@ Fixes bugs:
 	- zlib.mak omitted some files in the encoding module dependencies.
 (zlib.mak)
 	- os2.mak referred to png.mak rather than libpng.mak.  (os2.mak)
-	- The png devices didn't include gdevpccm.$(OBJ) as a required file.
+	- The png devices didn't include gdevpccm.&#36;(OBJ) as a required file.
 (devs.mak)
 	- Some modules in lib.mak referred to stream.h, which was defined in
 int.mak.  (int.mak, lib.mak)
@@ -3568,7 +3568,7 @@ Fixes bugs:
 
 Fixes bugs:
 	- caption.ps wasn't installed properly.  (unix-end.mak)
-	- geninit depended on $(gconfig_h) in an improper way.  (geninit.c,
+	- geninit depended on &#36;(gconfig_h) in an improper way.  (geninit.c,
 int.mak, *.mak)
 	- One script lacked the #!/bin/sh header.  (gsdj500)
 
@@ -4092,7 +4092,7 @@ Notes linking problems with the Watcom 10.0 environment.  (make.doc)
 </pre><h3><a name="V3.46_Procedures"></a>Procedures</h3><pre>
 
 Fixes bugs:
-	- The rule for $(ccfonts).dev was wrong.  (gs.mak)
+	- The rule for &#36;(ccfonts).dev was wrong.  (gs.mak)
 
 Makes some additional filters into 'features'.  (devs.mak, gs.mak)
 
@@ -4286,7 +4286,7 @@ data, but does not require the caller's data area to be aligned.
 
 Fixes bugs:
 	- Many of the printer and file output drivers in devs.mak still
-included gdevprn.$(OBJ) in their dependencies.  (devs.mak)
+included gdevprn.&#36;(OBJ) in their dependencies.  (devs.mak)
 	- PDEVH was used before it was defined.  (devs.mak)
 	- GENCONF_XE was used before it was defined.  (unixhead.mak,
 unix-end.mak)
@@ -4440,8 +4440,8 @@ library.  See jpeg.mak for information on where to find this library.
 (jpeg/*, jpeg.mak, *.mak, modules.lis)
 
 Adds a definition of XEAUX to the makefiles to parallel CCAUX, primarily for
-cross-compilation environments.  All references to &lt;some-program&gt;$(XE) must
-be replaced by $(&lt;SOME-PROGRAM&gt;_XE), where some-program={$(GS), ansi2knr,
+cross-compilation environments.  All references to &lt;some-program&gt;&#36;(XE) must
+be replaced by &#36;(&lt;SOME-PROGRAM&gt;_XE), where some-program={&#36;(GS), ansi2knr,
 echogs, genarch, genconf, geninit}.  This is a NON-BACKWARD-COMPATIBLE
 CHANGE, required in order for the makefiles to work in cross-compiled
 environments.  (For non-cross-compiled environments, it currently doesn't
@@ -4452,14 +4452,14 @@ matter.)  (gs.mak, *.mak)
 Updates ps2ai.ps to version 2.13.  (ps2ai.ps)
 
 Changes all the utility shell scripts to include #!/bin/sh, to use exec, and
-to pass the original arguments using "$@".  (bdftops, font2c, gsbj, gsdj,
+to pass the original arguments using "&#36;@".  (bdftops, font2c, gsbj, gsdj,
 gslj, gslp, gsnd, wftopfa)
 
 </pre><h3><a name="V3.44_Drivers"></a>Drivers</h3><pre>
 
 Adds the requirement that all page-oriented devices (i.e., those that use
 gdevprn.h and implement the print_page procedure) include page.dev in their
-dependencies and use $(SETPDEV) rather than $(SETDEV) in their makefile rule
+dependencies and use &#36;(SETPDEV) rather than &#36;(SETDEV) in their makefile rule
 bodies.  THIS IS A NON-BACKWARD-COMPATIBLE CHANGE.  Without this change, the
 command list logic (over 25K of unnecessary object code) would have to be
 included in every configuration.  (gs.mak, devs.mak, echogs.c)
@@ -5101,8 +5101,8 @@ Fixes bugs:
 </pre><h3><a name="V3.38_Procedures"></a>Procedures</h3><pre>
 
 Fixes bugs:
-	- The man page extension in the Unix makefiles was still $(manext),
-not $(man1ext).  (unix-end.mak)
+	- The man page extension in the Unix makefiles was still &#36;(manext),
+not &#36;(man1ext).  (unix-end.mak)
 	- 'make clean' didn't remove gs_init.c.  (gs.mak)
 
 Restructures the makefiles to better separate the language interpreters from
@@ -7381,7 +7381,7 @@ variables properly.  (vms*.mak)
 (vms.mak)
 
 At the request of a Unix expert, changes all the Unix shell scripts to use
-exec gs ... "$@" rather than gs ... $*.  (gsnd, gsbj, gsdj, gslj, gslp)
+exec gs ... "&#36;@" rather than gs ... &#36;*.  (gsnd, gsbj, gsdj, gslj, gslp)
 
 Modifies the JPEG library so that it uses 4K less of the automatic data
 segment in 16-bit environments.  (bcwin.mak, jpeg.mak, sjpeg.c, sjpegerr.c)
@@ -7457,7 +7457,7 @@ Changes the implementation of color spaces so each one has its own
 setcolorspace procedure, defined in a new dictionary named
 colorspacedict.  (gs_lev2.ps, z*.c)
 
-Adds a new debugging switch, $, that always initializes all fields in a
+Adds a new debugging switch, &#36;, that always initializes all fields in a
 ref, in order to keep Purify happy.  (store.h)
 
 </pre><h3><a name="V3.20_Library"></a>Library</h3><pre>
@@ -7619,7 +7619,7 @@ Adds some text warning about making copies of the makefile.  (make.doc)
 </pre><h3><a name="V3.12_Procedures"></a>Procedures</h3><pre>
 
 Fixes bugs:
-	- There were a number of unnecessary dependencies on $(MAKEFILE) in
+	- There were a number of unnecessary dependencies on &#36;(MAKEFILE) in
 gs.mak, left over from before the existence of gconfigv.h.  (gs.mak)
 	- JPEGSRC was defined in gs.mak rather than in jpeg.mak.  (gs.mak,
 jpeg.mak)

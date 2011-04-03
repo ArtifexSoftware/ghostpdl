@@ -1131,7 +1131,7 @@ Every code file should start with comments containing
 <li>the name of the file in the form of an RCS Id:
 
 <blockquote><code>
-/* $<!-- -->Id: filename.ext $*/
+/* &#36;Id: filename.ext &#36;*/
 </code></blockquote>
 
 <p>
@@ -1157,7 +1157,7 @@ For each
 </code></blockquote>
 
 <p>
-make sure there is a dependency on <code>$(xxx_h)</code> in the
+make sure there is a dependency on <code>&#36;(xxx_h)</code> in the
 makefile.  If xxx ends with a "<code>_</code>", this rule still holds,
 so that if you code
 
@@ -1166,7 +1166,7 @@ so that if you code
 </code></blockquote>
 
 <p>
-the makefile must contain a dependency on "<code>$(math__h)</code>"
+the makefile must contain a dependency on "<code>&#36;(math__h)</code>"
 (note the two underscores "<code>__</code>").
 
 <p>

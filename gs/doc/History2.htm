@@ -368,7 +368,7 @@ values for the current time.
 to load gs_ccfnt.ps.
 	- memory_.h didn't note that System V Unix platforms need memmove.
 
-On Unix systems, changes the subdirectory of $datadir/ghostscript to just
+On Unix systems, changes the subdirectory of &#36;datadir/ghostscript to just
 be the version number (e.g., 2.9.10 rather than gs-2.9.9).
 
 </pre><h3><a name="V2.9.10b_Fonts"></a>Fonts</h3><pre>
@@ -812,8 +812,8 @@ and GNU Ghostscript.
 <pre>
 Fixes bugs:
 	- The compilation rules for the modules that call the IJG library
-used -Ijpeg rather than -I$(JPEGSRC).
-	- The rule for gslib.dev omitted echogs$(XE) as a prerequisite.
+used -Ijpeg rather than -I&#36;(JPEGSRC).
+	- The rule for gslib.dev omitted echogs&#36;(XE) as a prerequisite.
 
 Makes it possible to define the values of buildtime, copyright, revision,
 revisiondate, and serialnumber in the makefile.
@@ -858,13 +858,13 @@ aren't very many.
 Fixes bugs:
 	- The DV/X makefile used X11 rather than X for the X11 library name.
 	- The DV/X makefile incorrectly included the PC display drivers.
-	- The DV/X makefile omitted gp_dosfs.$(OBJ) from the list of
+	- The DV/X makefile omitted gp_dosfs.&#36;(OBJ) from the list of
 platform-specific files.
 	- The DV/X makefile used : rather than ; for separating directory
 names in GS_LIB_DEFAULT.
 	- x_.h omitted a needed alias for XtAppSetFallbackResources.
 	- The makefile entry for System V Unix systems didn't include
-gp_unifn.$(OBJ).
+gp_unifn.&#36;(OBJ).
 	- The comment before LDFLAGS in the gcc makefiles incorrectly
 suggested using the -x switch on Ultrix platforms.
 	- The forward declaration of quant_params in zfdct.c upset the Sun
@@ -892,7 +892,7 @@ gs_indexed_map, gs_client_pattern, gs_pattern_instance.
 referenced.
 *	- If a packed object caused an error, the error object could be set
 to garbage rather than the correct object.
-*	- Badly designed error handlers which use $error for temporary
+*	- Badly designed error handlers which use &#36;error for temporary
 storage could cause a dictfull error.
 	- Some compilers objected to the use of "dict" as a variable name
 in a scope where it was defined as a type.
@@ -988,7 +988,7 @@ Adds a user-contributed `man' page for the ps2epsi utility.
 </pre><h3><a name="V2.9.5b_Procedures"></a>Procedures</h3><pre>
 Fixes bugs:
 	- The IJG files didn't compile properly by themselves, because they
-didn't have $(AK) in their dependency list.
+didn't have &#36;(AK) in their dependency list.
 
 Changes back the handling of files named on the command line, so that they
 are first sought in the current directory, and if that fails, use the
@@ -1049,11 +1049,11 @@ Makes the color mapping for PC displays, PCX files, and GIF files identical
 
 </pre><h3><a name="V2.9.5b_Platforms"></a>Platforms</h3><pre>
 Fixes bugs:
-	- VMS used DISPLAY rather than DECW$DISPLAY to get the display name
+	- VMS used DISPLAY rather than DECW&#36;DISPLAY to get the display name
 if opening the display failed.
 	- Many minor bugs relating to OS/2 and Win32 were fixed.
 	- On Unix and DV/X platforms, the install script didn't mkdir
-$(gsdir), and didn't mkdir the intermediate directory for the man page.
+&#36;(gsdir), and didn't mkdir the intermediate directory for the man page.
 	- On BSD and UTek platforms, the declaration of memset in
 memory_.h, and the definition in gsmisc.c, conflicted with the ANSI
 declaration.
@@ -1281,8 +1281,8 @@ Fixes bugs:
 
 </pre><h3><a name="V2.9.3b_Procedures"></a>Procedures</h3><pre>
 Changes the installation directories for Unix and similar systems to put
-Ghostscript data in $(datadir)/ghostscript/gs-NN.NN.NN rather than directly
-in $(datadir)/ghostscript.  (Fonts still go in $(datadir)/ghostscript/fonts.)
+Ghostscript data in &#36;(datadir)/ghostscript/gs-NN.NN.NN rather than directly
+in &#36;(datadir)/ghostscript.  (Fonts still go in &#36;(datadir)/ghostscript/fonts.)
 
 </pre><h3><a name="V2.9.3b_Drivers"></a>Drivers</h3><pre>
 Fixes bugs:
@@ -2070,9 +2070,9 @@ Fixes bugs:
 	- The "HP XLFD extensions" to X11R5 are not specific to H-P
 platforms.
 	- The configuration generation script used rm rather than rm -f.
-	- gs.1 was installed in $(docdir) rather than $(mandir);
-$(mandir) wasn't defined.
-	- ansi2knr.1 was installed in $(docdir), which was
+	- gs.1 was installed in &#36;(docdir) rather than &#36;(mandir);
+&#36;(mandir) wasn't defined.
+	- ansi2knr.1 was installed in &#36;(docdir), which was
 inappropriate because ansi2knr itself wasn't installed anywhere.
 
 Moves documentation for versions 2.4.x and 2.5.x to history.doc.
@@ -2100,14 +2100,14 @@ Documents the use of WMAKEL rather than WMAKE with the Watcom compiler.
 
 </pre><h3><a name="V2.7b_Procedures"></a>Procedures</h3><pre>
 Fixes bugs:
-*	- The Unix install script used gs rather than $(GS) as the name of
+*	- The Unix install script used gs rather than &#36;(GS) as the name of
 the executable.
-*	- The Unix install script didn't copy gs_dbt_e.ps to $(gsdatadir).
+*	- The Unix install script didn't copy gs_dbt_e.ps to &#36;(gsdatadir).
 	- genconf.c used ps2 as a variable name; ps2 is a predefined
 preprocessor symbol in the VSC compiler used by IBM.
 	- @-expansion didn't interact properly with -- and -+.
-	- The Unix install script didn't copy COPYING to $(docdir),
-and copied README to $(gsdatadir) rather than $(docdir).
+	- The Unix install script didn't copy COPYING to &#36;(docdir),
+and copied README to &#36;(gsdatadir) rather than &#36;(docdir).
 	- ps2ascii used /bin/sh -f, which is an incorrect flag.
 
 Removes all uses and mentions of USG (a now-obsolete GNU convention)
@@ -2233,7 +2233,7 @@ Changes the LaserJet margins again.
 Fixes bugs:
 	- Platforms where stat doesn't return a st_blocks value
 computed the block count wrong.
-	- In gp_vms.c, the call on SYS$FILESCAN needed two uint *s
+	- In gp_vms.c, the call on SYS&#36;FILESCAN needed two uint *s
 rather than a long * and a struct *.
 *	- The VMS script files referenced IBSCAN instead of ISCAN2,
 and omitted GDEVXXF.
@@ -2754,7 +2754,7 @@ parameter, and changes the Hershey-Symbol font to use SymbolEncoding.
 
 </pre><h3><a name="V2.6_Drivers"></a>Drivers</h3><pre>
 Fixes bugs:
-	- The !@*&amp;^%#@$ PCL drivers *still* didn't do the right thing
+	- The !@*&amp;^%#@&#36; PCL drivers *still* didn't do the right thing
 about vertical spacing: the &lt;ESC&gt;*p+&lt;n&gt;Y command works on all PCL 3,
 4, and 5 printers *except* the LaserJet IIp.
 	- The cdj driver used recursive macros (height, t_margin,
@@ -3392,12 +3392,12 @@ recognized) for setting the output file or pipe for the default
 (printer) device.
 
 For Unix systems, changes the directories in GS_LIB_DEFAULT from
-`pwd` to $(gsdatadir), i.e., normally $(datadir)/ghostscript, where
+`pwd` to &#36;(gsdatadir), i.e., normally &#36;(datadir)/ghostscript, where
 datadir is normally /usr/local/lib.
 
 Adds a note in the header file to the effect that the X Windows
-driver expects to find header files in $(XINCLUDE)/X11, not in
-$(XINCLUDE).
+driver expects to find header files in &#36;(XINCLUDE)/X11, not in
+&#36;(XINCLUDE).
 
 Changes -q so it defines QUIET as true instead of null (so it can be
 used in the middle of the command line as well as at the beginning).
@@ -3435,7 +3435,7 @@ find the default font.
 Renames bchi, ncri, and puti as bchri, ncrri, and putri, to conform
 with the naming scheme for other fonts.
 
-Adds $(CCFLAGS) to the command line used for compiling fonts.
+Adds &#36;(CCFLAGS) to the command line used for compiling fonts.
 
 Converts the .pfa fonts (CharterBT, IBM Courier, and Utopia) to .gsf,
 by removing eexec encryption and also removing some mysterious
@@ -4806,7 +4806,7 @@ array.
 a 'memory leak'.
 	- / alone would skip following whitespace and gather following
 characters, rather than creating an empty name.
-	- ghost.ps left newerror defined as true in $error, which resulted
+	- ghost.ps left newerror defined as true in &#36;error, which resulted
 in an erroneous error report if a program executed a 'stop'.
 	- The definition of exitserver in serverdict didn't clear the
 stack.

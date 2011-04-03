@@ -3050,7 +3050,7 @@ makefile.  If <code>abc.h</code> #includes <code>def.h</code> and
 <code>xyz.h</code>, the definition must have the form
 
 <blockquote><pre>
-xyz_h=$(xxxSRCD)xyz.h $(def_h) $(xyz_h)
+xyz_h=&#36;(xxxSRCD)xyz.h &#36;(def_h) &#36;(xyz_h)
 </pre></blockquote>
 
 where <code>xxxSRCD</code> is the macro defining the relevant source
@@ -3065,8 +3065,8 @@ at the time of use.
 <code>lmn.h</code>, the rule must have approximately the form
 
 <blockquote><pre>
-$(xxxOBJD)abc.$(OBJ) : $(xxxSRCD)abc.c $(def_h) $(lmn_h)
-    $(xxCC) $(xxO_)abc.$(OBJ) $(C_) $(xxxSRCD)abc.c
+&#36;(xxxOBJD)abc.&#36;(OBJ) : &#36;(xxxSRCD)abc.c &#36;(def_h) &#36;(lmn_h)
+    &#36;(xxCC) &#36;(xxO_)abc.&#36;(OBJ) &#36;(C_) &#36;(xxxSRCD)abc.c
 </pre></blockquote>
 
 where <code>xxxSRCD</code> is as before; <code>xxxOBJD</code> is the
@@ -4758,36 +4758,36 @@ a special linker option. To provide it you need the following change to
 ***************
 *** 159,163 ****
   # Note that it must be followed by a space.
-  CT=/Od /Fd$(GLOBJDIR) $(NULL) $(CDCC) $(CPCH)
+  CT=/Od /Fd&#36;(GLOBJDIR) &#36;(NULL) &#36;(CDCC) &#36;(CPCH)
 ! LCT=/DEBUG /INCREMENTAL:YES
   COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
   COMPILE_WITH_FRAMES=    # no optimization when debugging
 --- 159,164 ----
   # Note that it must be followed by a space.
-  CT=/Od /Fd$(GLOBJDIR) $(NULL) $(CDCC) $(CPCH)
+  CT=/Od /Fd&#36;(GLOBJDIR) &#36;(NULL) &#36;(CDCC) &#36;(CPCH)
 ! # LCT=/DEBUG /INCREMENTAL:YES
 ! LCT=/DEBUG /PROFILE
   COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
   COMPILE_WITH_FRAMES=    # no optimization when debugging
 ***************
 *** 167,175 ****
-  !if $(DEBUGSYM)==0
+  !if &#36;(DEBUGSYM)==0
   CT=
 ! LCT=
   CMT=/MT
   !else
-  CT=/Zi /Fd$(GLOBJDIR) $(NULL)
+  CT=/Zi /Fd&#36;(GLOBJDIR) &#36;(NULL)
 ! LCT=/DEBUG
   CMT=/MTd
   !endif
 --- 168,178 ----
-  !if $(DEBUGSYM)==0
+  !if &#36;(DEBUGSYM)==0
   CT=
 ! # LCT=
 ! LCT=/PROFILE
   CMT=/MT
   !else
-  CT=/Zi /Fd$(GLOBJDIR) $(NULL)
+  CT=/Zi /Fd&#36;(GLOBJDIR) &#36;(NULL)
 ! # LCT=/DEBUG
 ! LCT=/DEBUG /PROFILE
   CMT=/MTd

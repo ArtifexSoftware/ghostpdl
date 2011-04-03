@@ -1873,9 +1873,9 @@ passed, and this is used in the named anchors within the html output.
 (toolbin/cvs2hist.py [1.6]: 2000/12/23 09:38:10 giles)
 
 Adds support for localized manpages to the make 'install' target. On unix
-the makefile will now intall any files with the $MAN1EXT extension it finds
+the makefile will now intall any files with the &#36;MAN1EXT extension it finds
 under locale subdirs of the man directory that are listed in the MAN_LCDIRS
-variable. The $man1dir is correspondingly removed from unix-gcc.mak. Also
+variable. The &#36;man1dir is correspondingly removed from unix-gcc.mak. Also
 adds separate targets: install-doc install-man install-examples
 install-libdata (unix-gcc.mak [1.9], unixinst.mak [1.15]: 2000/12/23
 10:10:37 giles)
@@ -3682,7 +3682,7 @@ doc/Use.htm [1.9], man/ps2ps.1 [1.6]: 2000/08/07 17:48:09 lpd)
 </pre><h2><a name="6.23 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
-	- $(GLGEN)/md5.h wasn't deleted after compilation. (lib.mak [1.26]:
+	- &#36;(GLGEN)/md5.h wasn't deleted after compilation. (lib.mak [1.26]:
 2000/07/09 23:19:59 lpd)
 	- TrueType font loading now requires the Adobe glyph list, but this
 dependency was missing from the makefile. (int.mak [1.26]: 2000/07/19
@@ -3690,7 +3690,7 @@ dependency was missing from the makefile. (int.mak [1.26]: 2000/07/19
 	- During compilation, GLSRCDIR was searched before GLGENDIR. (We're
 very surprised that this didn't cause detectable trouble before.)
 (lib.mak [1.27]: 2000/07/19 14:32:00 lpd)
-	- The dependency on gsparamx.$(OBJ) was incorrectly attached to
+	- The dependency on gsparamx.&#36;(OBJ) was incorrectly attached to
 pdfwrite.dev rather than psdf.dev. (devs.mak [1.30]: 2000/08/03 17:42:52
 lpd)
 	- 'pre' didn't work with dates in August or September (Tcl doesn't
@@ -5756,7 +5756,7 @@ Fixes problems:
 (msvccmd.mak [1.2]: 2000/03/31 05:06:53 lpd)
 	- MSVC versions before 5, not before 6, recognize /FPi87.
 (msvccmd.mak [1.3]: 2000/03/31 05:50:33 lpd)
-	- Removes some occurrences of $,I,d,: that shouldn't be substituted.
+	- Removes some occurrences of &#36;Id: that shouldn't be substituted.
 (toolbin/pre [1.2]: 2000/04/07 05:20:35 lpd)
 
 Increments the version number to 6.20, in anticipation of the next release.
@@ -6697,13 +6697,13 @@ doc/History6.htm [1.2], doc/News.htm [1.5]: 2000/03/18 04:13:40 lpd)
 </pre><h2><a name="6.01 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
-	- The terminating $ on the $Id: line in gsmalloc.c was missing, and
-dwuninst.rc lacked a $Id: line. (dwuninst.rc [1.2]: 2000/03/10 03:44:33 lpd)
+	- The terminating &#36; on the &#36;Id: line in gsmalloc.c was missing, and
+dwuninst.rc lacked a &#36;Id: line. (dwuninst.rc [1.2]: 2000/03/10 03:44:33 lpd)
 	- The %ram% IODevice was defined, but should not be (it represents a
 RAM-based file system, which Ghostscript does not provide). Fix: The type of
 the %null% IODevice was /FileSystem rather than /Special. (int.mak [1.2]:
 2000/03/10 07:02:07 lpd)
-	- The dependency list for coslwxl omitted a $(DD).
+	- The dependency list for coslwxl omitted a &#36;(DD).
 (contrib.mak [1.2]: 2000/03/10 07:30:54 lpd)
 	- The makefile still referred to a long-gone driver for the DEC
 LA70. (contrib.mak [1.3]: 2000/03/10 07:32:43 lpd)
@@ -7022,8 +7022,8 @@ InitializeAction, Mounted, Removable, Searchable, SearchOrder, and
 Writeable, or (meaningful) values for BlockSize, Free, and LogicalSize.
 Currently, the latter values are dummies. (gsiodev.c [1.2]: 2000/03/10
 03:43:06 lpd)
-	- The terminating $ on the $Id: line in gsmalloc.c was missing, and
-dwuninst.rc lacked a $Id: line. (gsmalloc.c [1.2]: 2000/03/10 03:44:33 lpd)
+	- The terminating &#36; on the &#36;Id: line in gsmalloc.c was missing, and
+dwuninst.rc lacked a &#36;Id: line. (gsmalloc.c [1.2]: 2000/03/10 03:44:33 lpd)
 	- RasterOps with source transparency = 0, texture transparency = 1
 didn't match the (very peculiar) H-P specification even if
 TRANSPARENCY_PER_H_P was defined. (gdevdrop.c [1.2], gdevmrop.h [1.2],

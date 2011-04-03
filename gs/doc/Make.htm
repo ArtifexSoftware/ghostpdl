@@ -588,7 +588,7 @@ the form
 For example, if the makefile has
 
 <blockquote><code>
-FEATURE_DEVS=$(PSD)level2.dev
+FEATURE_DEVS=&#36;(PSD)level2.dev
 </code></blockquote>
 
 <p>
@@ -596,16 +596,16 @@ indicating that only the PostScript Level 2 facilities should be included,
 you might make it
 
 <blockquote><code>
-FEATURE_DEVS=$(PSD)level2.dev $(PSD)pdf.dev
+FEATURE_DEVS=&#36;(PSD)level2.dev &#36;(PSD)pdf.dev
 </code></blockquote>
 
 <p>
 to add the ability to interpret PDF files.  (In fact,
 <code>FEATURE_DEVS</code> in the current Unix makefiles already includes
-<code>$(PSD)pdf.dev</code>.)  The Unix makefile also defines
+<code>&#36;(PSD)pdf.dev</code>.)  The Unix makefile also defines
 
 <blockquote><code>
-DEVICE_DEVS=$(DD)x11.dev
+DEVICE_DEVS=&#36;(DD)x11.dev
 </code></blockquote>
 
 <p>
@@ -629,8 +629,8 @@ select an output device</a> at run time using the
 you can't fit all the devices on a single line, you may add lines defining
 
 <blockquote>
-<code>DEVICE_DEVS1=$(DD)</code><em>{dev11}</em><code>.dev</code> ... <code>$(DD)</code><em>{dev1n}</em><code>.dev</code>
-<br><code>DEVICE_DEVS2=$(DD)</code><em>{dev21}</em><code>.dev</code> ... <code>$(DD)</code><em>{dev2n}</em><code>.dev</code>
+<code>DEVICE_DEVS1=&#36;(DD)</code><em>{dev11}</em><code>.dev</code> ... <code>&#36;(DD)</code><em>{dev1n}</em><code>.dev</code>
+<br><code>DEVICE_DEVS2=&#36;(DD)</code><em>{dev21}</em><code>.dev</code> ... <code>&#36;(DD)</code><em>{dev2n}</em><code>.dev</code>
 </blockquote>
 
 <p>
@@ -639,16 +639,16 @@ on some platforms they don't work.
 
 <p>
 Note that if you want to include a driver named <em>xxx</em>, you must put
-<code>$(DD)</code><em>xxx</em><code>.dev</code> in
+<code>&#36;(DD)</code><em>xxx</em><code>.dev</code> in
 <code>DEVICE_DEVS</code>*.  Similarly, if you want to include a feature
 related to the PostScript or PDF language interpreters (PostScript level
 1 .. 3, or other language features such as the ability to read EPSF files or
 TrueType font files), you must represent it as
-<code>$(PSD)</code><em>xxx</em><code>.dev</code>.  If you are linking
+<code>&#36;(PSD)</code><em>xxx</em><code>.dev</code>.  If you are linking
 only the graphics library -- not the language interpreter(s) -- with an
 application and want to include optional graphics library features such as
 CIE color, you represent them as
-<code>$(GLD)</code><em>xxx</em><code>.dev</code>.
+<code>&#36;(GLD)</code><em>xxx</em><code>.dev</code>.
 
 <h4><a name="Precompiled_data"></a>Precompiled run-time data</h4>
 
@@ -1162,7 +1162,7 @@ which are present and not likely to change.
   it is simpler to use a build batch command file rather than retyping the build 
   command line for each new project. Here is an example used by one of Artifex's 
   staff members. This file is one line:
-<blockquote><code> nmake -f psi/msvc32.mak DEVSTUDIO= DEBUG=1 TDEBUG=1 GS_LIB_DEFAULT="./lib/;./font;$(GSROOTDIR)/lib;$(AROOTDIR)/fonts" 
+<blockquote><code> nmake -f psi/msvc32.mak DEVSTUDIO= DEBUG=1 TDEBUG=1 GS_LIB_DEFAULT="./lib/;./font;&#36;(GSROOTDIR)/lib;&#36;(AROOTDIR)/fonts" 
   </code></blockquote>
 <p>Please note the double quotes around the value for <code>GS_LIB_DEFAULT</code>
   and the addition of <code>./lib;./fonts;</code> to its definition. This uses
@@ -1620,7 +1620,7 @@ I don't do "make install" until I've done
 <p>
 and verified that the famous tiger can be correctly displayed.  Also, the
 "make install" step is careful to first remove any existing
-<code>$(BINDIR)/gs</code>, then install a new gs there with a hard link
+<code>&#36;(BINDIR)/gs</code>, then install a new gs there with a hard link
 to gs-x.yz.
 
 <p>
@@ -1839,15 +1839,15 @@ use <code>gmake</code> instead.
 <li>For versions of Digital Unix before 4.0, set
 
 <p>
-<code>CFLAGS=-std -migrate -Olimit 1000 -g3 -O2 $(XCFLAGS)<br>
-LDFLAGS=-lots $(XLDFLAGS)</code>
+<code>CFLAGS=-std -migrate -Olimit 1000 -g3 -O2 &#36;(XCFLAGS)<br>
+LDFLAGS=-lots &#36;(XLDFLAGS)</code>
 
 <p>
 You may be able to omit <code>-g3</code>.  For later versions of Digital
 Unix, users have reported that the proper flags are
 
 <p>
-<code>CFLAGS=-std1 -Olimit 1000 -g3 -O2 $(XCFLAGS)</code>
+<code>CFLAGS=-std1 -Olimit 1000 -g3 -O2 &#36;(XCFLAGS)</code>
 
 <p>
 again, optionally omitting the <code>-g3</code>.
@@ -1956,9 +1956,9 @@ a different compiler on these machines.
 the date and time functions.
 
 <li>If you want to use direct frame buffer addressing instead of X Windows,
-include the relevant frame buffer devices (<code>$(DD)ega.dev</code>,
-<code>$(DD)vga.dev</code>, etc.) and change the definition of
-<code>EGAVGA</code> to <code>$(EGAVGA_SCO)</code> as indicated in
+include the relevant frame buffer devices (<code>&#36;(DD)ega.dev</code>,
+<code>&#36;(DD)vga.dev</code>, etc.) and change the definition of
+<code>EGAVGA</code> to <code>&#36;(EGAVGA_SCO)</code> as indicated in
 <code>devs.mak</code>.  <b>Note</b>: this works with SuperVGA displays
 only for 800x600x16 mode.
 
@@ -2082,7 +2082,7 @@ Segmentation violation" or a similar one, try compiling with the
 <li>You may wish to set
 
 <p>
-<code>GS_LIB_DEFAULT=$(gsdatadir):/usr/lib/DPS/outline/decwin:$(gsdatadir)/fonts</code>
+<code>GS_LIB_DEFAULT=&#36;(gsdatadir):/usr/lib/DPS/outline/decwin:&#36;(gsdatadir)/fonts</code>
 
 <p>
 in the makefile to add the Display PostScript font directory to the font
@@ -2098,11 +2098,11 @@ to make the optimizer allocate enough table space.
 
 <li>The Ultrix 4.4 C compiler compiles <code>gdevm1.c</code>
 incorrectly.  Insert the following line in the makefile rule for
-"<code>gdevm1.$(OBJ)</code>" (the body of the rule is empty in the
+"<code>gdevm1.&#36;(OBJ)</code>" (the body of the rule is empty in the
 standard distribution):
 
 <p>
-<code>$(CCC) -oldc gdevm1.c</code>
+<code>&#36;(CCC) -oldc gdevm1.c</code>
 </ul>
 
 <h4><a name="HP_RISC"></a>H-P RISC workstations</h4>
@@ -2139,14 +2139,14 @@ Ghostscript releases work with compiler/dld.sl versions older than these.)
 
 <li>On HPUX 10.*, we don't know what combinations of compiler version and
 switches work.  It is reported that On HPUX 10.20, setting
-"<code>CC=c89</code>" and "<code>CFLAGS=+O3&nbsp;$(XCFLAGS)</code>"
+"<code>CC=c89</code>" and "<code>CFLAGS=+O3&nbsp;&#36;(XCFLAGS)</code>"
 works, contradicting the information in the next paragraph, but this may be
 dependent on the specific compiler version.
 
 <li>In either HPUX version, you need to set
 "<code>CC=cc&nbsp;-Aa</code>" (or use <code>-Ae</code> if you
 prefer), and set
-"<code>CFLAGS=-D_HPUX_SOURCE&nbsp;-O&nbsp;$(XCFLAGS)</code>".  Higher
+"<code>CFLAGS=-D_HPUX_SOURCE&nbsp;-O&nbsp;&#36;(XCFLAGS)</code>".  Higher
 levels of optimization than <code>-O</code> may work depending on your
 compiler revision; some users have reported success with
 <code>+O3</code>, some have not.
@@ -2226,7 +2226,7 @@ user reports successful compilation using <code>unix-ansi.mak</code> and
 the command line
 
 <p>
-<code>make&nbsp;CC=c89&nbsp;XCFLAGS="-DOSY_AIX&nbsp;-D_ALL_SOURCE&nbsp;-qnoro&nbsp;-qmaxmem=3000&nbsp;-bfl"&nbsp;$*</code><br>&nbsp;
+<code>make&nbsp;CC=c89&nbsp;XCFLAGS="-DOSY_AIX&nbsp;-D_ALL_SOURCE&nbsp;-qnoro&nbsp;-qmaxmem=3000&nbsp;-bfl"&nbsp;&#36;*</code><br>&nbsp;
 
 <li>Apparently some (but not all) releases of the C library declare the
 <code>hypot</code> function: if the declaration in
@@ -2404,7 +2404,7 @@ V8) and <code>-dalign</code> for better performance.
 <li>You may wish to set
 
 <p>
-<code>GS_LIB_DEFAULT=$(gsdatadir):/usr/lib/DPS/outline/decwin:$(gsdatadir)/fonts</code>
+<code>GS_LIB_DEFAULT=&#36;(gsdatadir):/usr/lib/DPS/outline/decwin:&#36;(gsdatadir)/fonts</code>
 
 <p>
 in the makefile to add the Display PostScript font directory to the font
@@ -2432,7 +2432,7 @@ later) compiler and IBM <code>NMAKE.EXE</code> are required.
 
 <li>For gcc/emx versions 0.9c and later, the <code>LINK386</code>
 command must <b><em>include</em></b>
-"<code>$(COMPBASE)\lib\end.lib</code>"; version 0.9b requires
+"<code>&#36;(COMPBASE)\lib\end.lib</code>"; version 0.9b requires
 <b><em>omitting</em></b> it.  The current <code>os2.mak</code> file does
 include this file in the <code>LINK386</code> command, so if you are
 using 0.9b, delete this file reference before building.
@@ -2524,26 +2524,26 @@ Again, the <a href="Use.htm">usage documentation</a> tells how to do this.
 You can <a href="Fonts.htm#Precompiling">precompile any Type 1 font</a>
 into C, then compile and build it into Ghostscript, as described in the
 <a href="Fonts.htm">fonts documentation</a>.  If you do this, then add
-"<code>$(PSD)ccfonts.dev</code>" to <code>FEATURE_DEVS</code> in
+"<code>&#36;(PSD)ccfonts.dev</code>" to <code>FEATURE_DEVS</code> in
 <code>OPENVMS.MAK</code>:
 
 <blockquote><code>
-$&nbsp;FEATURE_DEVS&nbsp;=&nbsp;"$(PSD)psl3.dev&nbsp;$(PSD)pdf.dev&nbsp;$(PSD)dpsnext.dev&nbsp;$(PSD)ttfont.dev&nbsp;$(PSD)ccfonts.dev"
+&#36;&nbsp;FEATURE_DEVS&nbsp;=&nbsp;"&#36;(PSD)psl3.dev&nbsp;&#36;(PSD)pdf.dev&nbsp;&#36;(PSD)dpsnext.dev&nbsp;&#36;(PSD)ttfont.dev&nbsp;&#36;(PSD)ccfonts.dev"
 </code></blockquote>
 
 <p>
 Specify the font names with <code>ccfonts1</code>:
 
 <blockquote><code>
-$&nbsp;ccfonts1&nbsp;=&nbsp;"Courier&nbsp;Courier_Oblique&nbsp;Courier_Bold&nbsp;Courier_BoldOblique"
+&#36;&nbsp;ccfonts1&nbsp;=&nbsp;"Courier&nbsp;Courier_Oblique&nbsp;Courier_Bold&nbsp;Courier_BoldOblique"
 </code></blockquote>
 
 <p>
 If this makes the line too long, add another line of the same form, such as
 
 <blockquote><code>
-$&nbsp;ccfonts1&nbsp;=&nbsp;"Courier&nbsp;Courier_Oblique&nbsp;Courier_Bold&nbsp;Courier_BoldOblique"
-$&nbsp;ccfonts2&nbsp;=&nbsp;"Times_Roman&nbsp;Times_Italic&nbsp;Times_Bold&nbsp;Times_BoldItalic"
+&#36;&nbsp;ccfonts1&nbsp;=&nbsp;"Courier&nbsp;Courier_Oblique&nbsp;Courier_Bold&nbsp;Courier_BoldOblique"
+&#36;&nbsp;ccfonts2&nbsp;=&nbsp;"Times_Roman&nbsp;Times_Italic&nbsp;Times_Bold&nbsp;Times_BoldItalic"
 </code></blockquote>
 
 <h3><a name="GNU_make_VMS"></a>Building with GNU make on OpenVMS</h3>
@@ -2659,21 +2659,21 @@ Ghostscript 4.03.
 	<td>&nbsp;&nbsp;
 	<th align=left>Change to
 <tr>	<td colspan=3><hr>
-<tr valign=top>	<td><code>INSTALL = install -c<br>INSTALL_PROGRAM = $(INSTALL) -m 755<br>INSTALL_DATA = $(INSTALL) -m 644</code>
+<tr valign=top>	<td><code>INSTALL = install -c<br>INSTALL_PROGRAM = &#36;(INSTALL) -m 755<br>INSTALL_DATA = &#36;(INSTALL) -m 644</code>
 	<td>&nbsp;
-	<td><code>INSTALL = cp<br>INSTALL_PROGRAM = $(INSTALL)<br>INSTALL_DATA = $(INSTALL)</code>
+	<td><code>INSTALL = cp<br>INSTALL_PROGRAM = &#36;(INSTALL)<br>INSTALL_DATA = &#36;(INSTALL)</code>
 <tr>	<td colspan=3><hr>
-<tr valign=top>	<td><code>datadir = $(prefix)/share</code>
+<tr valign=top>	<td><code>datadir = &#36;(prefix)/share</code>
 	<td>&nbsp;
-	<td><code>datadir = $(prefix)/lib</code>
+	<td><code>datadir = &#36;(prefix)/lib</code>
 <tr>	<td colspan=3><hr>
 <tr valign=top>	<td><code>CFLAGS_STANDARD=-O</code>
 	<td>&nbsp;
 	<td><code>CFLAGS_STANDARD=-Otx -zp1 -mf</code>
 <tr>	<td colspan=3><hr>
-<tr valign=top>	<td><code>LDFLAGS=$(XLDFLAGS)</code>
+<tr valign=top>	<td><code>LDFLAGS=&#36;(XLDFLAGS)</code>
 	<td>&nbsp;
-	<td><code>LDFLAGS=-mf -N32k $(XLDFLAGS)</code>
+	<td><code>LDFLAGS=-mf -N32k &#36;(XLDFLAGS)</code>
 <tr>	<td colspan=3><hr>
 <tr valign=top>	<td><code>EXTRALIBS=</code>
 	<td>&nbsp;
@@ -2758,7 +2758,7 @@ to begin
 
 [ij-monops]
         ta=lpt1
-        co=/usr/local/bin/gs -q -sDEVICE=laserjet -sOutputFile=- -dNOPAUSE $(spfile) quit.ps | cat &gt; $(device)
+        co=/usr/local/bin/gs -q -sDEVICE=laserjet -sOutputFile=- -dNOPAUSE &#36;(spfile) quit.ps | cat &gt; &#36;(device)
 
 # Devices
 
