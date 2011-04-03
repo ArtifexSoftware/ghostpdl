@@ -445,7 +445,7 @@ typedef struct gx_device_color_info_s {
 
     /*
      * The number of bits of gx_color_index actually used. 
-     * This must be <= sizeof(gx_color_index), which is usually 64.
+     * This must be &lt;= sizeof(gx_color_index), which is usually 64.
      */
     byte depth;
 
@@ -517,8 +517,8 @@ typedef struct gx_device_color_info_s {
      *     comp_bits[i] = ( i == gray_index ? ceil(log2(max_gray + 1))
      *                                      : ceil(log2(max_color + 1)) )
      *
-     *     comp_mask[i] = (((gx_color_index)1 << comp_bits[i]) - 1)
-     *                       << comp_shift[i]
+     *     comp_mask[i] = (((gx_color_index)1 &lt;&lt; comp_bits[i]) - 1)
+     *                       &lt;&lt; comp_shift[i]
      *
      * (For current devices, it is almost always the case that
      * max_gray == max_color, if the color model contains both gray and
@@ -2045,7 +2045,7 @@ the <code>swap_axes</code> bit set. In this case the implementation must swap (t
 <dd>
 <b><em>Important note :</em></b> The implementation must not paint outside the
 clipping rectangle specified in the <code>fa</code> argument.
-If <code>fa->swap_axes</code> is true, the clipping rectangle is transposed.
+If <code>fa-&gt;swap_axes</code> is true, the clipping rectangle is transposed.
 <dd>
 See <code> gx_default_fill_linear_color_triangle </code>
 in <code>gdevddrw.c</code> as a sample code.
@@ -2138,7 +2138,7 @@ The color for the pixel <code>[i + k, j]</code> to be computed like this :
 <pre><code>
          (double)(c0[n] + (c0_f[n] + cg_num[n] * k) / cg_den) / (1 ^ 31 - 1)
 </code></pre>
-<dd>where <code>0 <= k <= w </code>, and <b><tt>n</tt></b> is a device color component index.
+<dd>where <code>0 &lt;= k &lt;= w </code>, and <b><tt>n</tt></b> is a device color component index.
 
 <dd>
 <b><em>Important note :</em></b> The <code>fa</code> argument may contain
@@ -2147,7 +2147,7 @@ the <code>swap_axes</code> bit set. In this case the implementation must swap (t
 <dd>
 <b><em>Important note :</em></b> The implementation must not paint outside the
 clipping rectangle specified in the <code>fa</code> argument.
-If <code>fa->swap_axes</code> is true, the clipping rectangle is transposed.
+If <code>fa-&gt;swap_axes</code> is true, the clipping rectangle is transposed.
 <dd>
 See <code> gx_default_fill_linear_color_scanline</code>
 in <code>gdevdsha.c</code> as a sample code.
@@ -2747,14 +2747,14 @@ virtual function <code>text_begin</code>. It should create a new instance of
 <code>gs_text_enum_t</code> in the heap (let its pointer be <b><tt>pte</tt></b>),
 and assign a special function to <code>gs_text_enum_t::procs.process</code>.
 The function will receive <code>pte</code>. It should take the top level font from
-<code>pte->orig_font</code>,
-and iterate with <code>font->procs.next_char_glyph(pte, ..., &amp;glyph)</code>.
+<code>pte-&gt;orig_font</code>,
+and iterate with <code>font-&gt;procs.next_char_glyph(pte, ..., &amp;glyph)</code>.
 The last argument receives a <code>gs_glyph</code> value, which encodes a
 <code>Postscript</code> character name or CID (and also stores it into
-<code>pte->returned.current_glyph</code>).
+<code>pte-&gt;returned.current_glyph</code>).
 Then obtain the current subfont with <code>gs_text_current_font(pte)</code>
 (it can differ from the font)
-and call <code>subfont->procs.decode_glyph(subfont, glyph)</code>.
+and call <code>subfont-&gt;procs.decode_glyph(subfont, glyph)</code>.
 The return value will be an <code>Unicode</code> code, or <b><tt>GS_NO_CHAR</tt></b>
 if the glyph can't be translated to Unicode.
 
@@ -3269,7 +3269,7 @@ select the appropriate rotation:
 <blockquote><code>
 my_put_params(gx_device *pdev, gs_param_list *plist) {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;my_device *dev = (my_device *)pdev;<br />
-&nbsp;&nbsp;&nbsp;&nbsp;int MediaSource = dev->myMediaSource;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;int MediaSource = dev-&gt;myMediaSource;<br />
 <br />
 &nbsp;&nbsp;&nbsp;&nbsp;code = param_read_int(plist, "%MediaSource", &amp;MediaSource);<br />
 <br />
@@ -3284,7 +3284,7 @@ my_put_params(gx_device *pdev, gs_param_list *plist) {<br />
 &nbsp;&nbsp;&nbsp;&nbsp;}<br />
 &nbsp;&nbsp;&nbsp;&nbsp;...call default put_params, which makes the change...<br />
 <br />
-&nbsp;&nbsp;&nbsp;&nbsp;dev->myMediaSource = MediaSource;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;dev-&gt;myMediaSource = MediaSource;<br />
 &nbsp;&nbsp;&nbsp;&nbsp;return 0;<br />
 }
 </code></blockquote>
@@ -3295,7 +3295,7 @@ snippet will simply override this request. To give manual setting
 through setpagedevice priority, don't change the LeadingEdge field in
 the device if its LEADINGEDGE_SET_MASK bit is set. In other words,
 simply enclose the above <tt>switch</tt> statement inside an <code>if
-(!(dev->LeadingEdge & LEADINGEDGE_SET_MASK) { ... }</code> statement.
+(!(dev-&gt;LeadingEdge &amp; LEADINGEDGE_SET_MASK) { ... }</code> statement.
 
 <!-- Note for doc maintainers: the following is much more of a -->
 <!-- discussion of the PS language than a device interface issue, but -->

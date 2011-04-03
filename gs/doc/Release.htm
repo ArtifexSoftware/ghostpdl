@@ -517,7 +517,7 @@ invoke autoconf to create the <tt>configure</tt> script.
 Also run <tt>make distclean</tt> in the <tt>jasper</tt> subdir to
 clean up any incidental config there. If you get a warning,
 for example if the build files think they need updating
-and not all the tools are available, be sure to run <tt>autoreconf && 
+and not all the tools are available, be sure to run <tt>autoreconf &amp;&amp; 
 make distclean</tt> to avoid version skew issues.
 You may also need to manually remove the <tt>autom4te.cache</tt> directory. 
 
@@ -594,7 +594,7 @@ Build with the Borland compiler:
 config bcwin32
 copy /y /b ..\gs\makefile
 erase obj\*.*
-make > bc.log
+make &gt; bc.log
 </pre></blockquote>
 
 <p>
@@ -606,7 +606,7 @@ Then build with the Microsoft compiler:
 config msvc32
 copy /y /b ..\gs\makefile
 erase obj\*.*
-nmake > msvc.log
+nmake &gt; msvc.log
 </pre></blockquote>
 
 <p>
@@ -621,7 +621,7 @@ However, if it did work, this is how to do it:
 config watcw32
 copy /y /b ..\gs\makefile
 erase obj\*.*
-wmake -u > watc.log
+wmake -u &gt; watc.log
 </pre></blockquote>
 
 <p>
@@ -746,12 +746,12 @@ consistent with the values of and version numbers specifically listed in
 the makefiles.
 
 <blockquote><pre>
-<code>jpegsrc.v$$.tar.gz</code> -> <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
-<code>libpng-$.$.$.tar.gz</code> -> <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
-<code>zlib-$.$.$.tar.gz</code> -> <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
-<code>jpegsr$$.zip</code> -> <b><tt>../../3rdparty/jpegsr$$.zip</tt></b>
-<code>lpng$$$.zip</code> -> <b><tt>../../3rdparty/lpng$$$.zip</tt></b>
-<code>zlib$$$.zip</code> -> <b><tt>../../3rdparty/zlib$$$.zip</tt></b>
+<code>jpegsrc.v$$.tar.gz</code> -&gt; <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
+<code>libpng-$.$.$.tar.gz</code> -&gt; <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
+<code>zlib-$.$.$.tar.gz</code> -&gt; <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
+<code>jpegsr$$.zip</code> -&gt; <b><tt>../../3rdparty/jpegsr$$.zip</tt></b>
+<code>lpng$$$.zip</code> -&gt; <b><tt>../../3rdparty/lpng$$$.zip</tt></b>
+<code>zlib$$$.zip</code> -&gt; <b><tt>../../3rdparty/zlib$$$.zip</tt></b>
 </pre></blockquote>
 
 In any case, the names of the links in the distribution directory should reflect
@@ -761,8 +761,8 @@ the original name of the upstream file.
 number of the fonts:
 
 <blockquote><pre>
-<code>ghostscript-fonts-other-$.$.tar.gz</code> -> <b><tt>../fonts/ghostscript-fonts-other-$.$.tar.gz</tt></b>
-<code>ghostscript-fonts-std-$.$.tar.gz</code> -> <b><tt>../fonts/ghostscript-fonts-std-$.$.tar.gz</tt></b>
+<code>ghostscript-fonts-other-$.$.tar.gz</code> -&gt; <b><tt>../fonts/ghostscript-fonts-other-$.$.tar.gz</tt></b>
+<code>ghostscript-fonts-std-$.$.tar.gz</code> -&gt; <b><tt>../fonts/ghostscript-fonts-std-$.$.tar.gz</tt></b>
 </pre></blockquote>
 
 </ul>

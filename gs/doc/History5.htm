@@ -2276,7 +2276,7 @@ needed to allow distinguishing between built-in and input-embedded fonts.
 lib/gs_type1.ps, zfont.c)
 
 Moves support for GNU readline from the main Ghostscript fileset to the
-GNU-specific fileset.  (unix-gcc.mak, int.mak, gp_gnrdl.c =>
+GNU-specific fileset.  (unix-gcc.mak, int.mak, gp_gnrdl.c =&gt;
 src/gnu/gp_gnrdl.c, gnu/src/gnudevs.mak)
 
 </pre><h3><a name="5.94_Streams"></a>Streams</h3><pre>
@@ -2778,7 +2778,7 @@ internally into multiple operations using different fonts.  (gdevpdfx.h,
 gdevpdff.c, gdevpdft.c)
 
 Implements the PUT pdfmark for the built-in objects (Catalog, DocInfo,
-Page<#>, ThisPage, PrevPage, NextPage).  This required deferring writing out
+Page&lt;#&gt;, ThisPage, PrevPage, NextPage).  This required deferring writing out
 page objects until the end of the document.  (lib/gs_pdfwr.ps, gdevpdfx.h,
 gdevpdf.c, gdevpdff.c, gdevpdfm.c, gdevpdfo.c, gdevpdfu.c)
 
@@ -2894,7 +2894,7 @@ device wasn't cleared, leading to an incorrect attempt to access it later.
 	- Some color space implementation procedures hadn't been updated to
 add 'const' to the color space argument.  (gscie.c)
 	- A constant had a signed/unsigned ambiguity on systems where
-sizeof(long) > 4.  (gsccode.h)
+sizeof(long) &gt; 4.  (gsccode.h)
 	- The font font_info procedure didn't provide for scaling.
 (gxfont.h)
 
@@ -3134,7 +3134,7 @@ to the stream level.  (devs.mak, gdevpdfx.h, gdevpstr.h [deleted], gdevps.c,
 gdevpsde.c, gdevpsdf.c, gdevpsdp.c, gdevpstr.c [deleted])
 
 Upgrades the PDF writer to handle TrueType fonts as well as Type 1.
-(gdevpdfx.h, gdevpsdf.h, gdevpdff.c, gdevpdft.c, gdevpsde.c => gdevpsd1.c,
+(gdevpdfx.h, gdevpsdf.h, gdevpdff.c, gdevpdft.c, gdevpsde.c =&gt; gdevpsd1.c,
 gdevpsdt.c)
 
 Starts to implement font subsetting in the PDF writer. (gdevpdfx.h,
@@ -3449,7 +3449,7 @@ of the PDF file.  (gdevpdfm.c, gdevpdfu.c)
 (gdevpdfx.h, gdevpdf.c, gdevpdfm.c, gdevpdfu.c)
 	- pdfmarks with /Action /GoTo incorrectly retained the Action key.
 (gdevpdfm.c)
-	- pdfmarks didn't substitute /Dest => /D or /File => /F correctly.
+	- pdfmarks didn't substitute /Dest =&gt; /D or /File =&gt; /F correctly.
 (gdevpdfm.c)
 
 Updates the PDF writer to use the new text API rather than the show
@@ -3673,7 +3673,7 @@ pipes, which are an open industry standard not supported by MS Windows.
 </pre><h3><a name="5.86_Fonts"></a>Fonts</h3><pre>
 
 Adds the ISO 8859-2 encoding to the stock of built-in encodings.
-(lib/gs_il2_e.ps, lib/gs_iso_e.ps => lib/gs_il1_e.ps)
+(lib/gs_il2_e.ps, lib/gs_iso_e.ps =&gt; lib/gs_il1_e.ps)
 
 </pre><h3><a name="5.86_Interpreter_PDF"></a>Interpreter (PDF)</h3><pre>
 
@@ -5104,7 +5104,7 @@ Works in progress:
 <li>	- spdiff.c is unfinished, partly wrong.
 <li>	- DeviceN support is in progress.  In gxcht.c,
 set_ht_colors_le_4
-and set_color_ht_gt_4 don't have any way to color-map >4 planes.
+and set_color_ht_gt_4 don't have any way to color-map &gt;4 planes.
 </ul>
 
 <h3><a name="5.72_Incompatible_changes"></a>Incompatible changes</h3><pre>
@@ -5346,7 +5346,7 @@ gxcht.c, gxclimag.c, gxcmap.c, gxicolor.c, gxctable.c, gxi12bit.c)
 Replaces small_exact_log2 by a procedure ilog2 that computes floor(log2(n)).
 (gxarith.h, gsmisc.c, gspaint.c, gxccman.c, gxclimag.c, gxclrect.c)
 
-Upgrades gsflip.c to handle >4 planes.  (gsbitops.h, gsflip.h, gsflip.c)
+Upgrades gsflip.c to handle &gt;4 planes.  (gsbitops.h, gsflip.h, gsflip.c)
 
 Speeds up getting and testing memory device prototypes a little.  (gdevmem.c)
 
@@ -5521,7 +5521,7 @@ to incorrect output in some obscure cases.  (gsciemap.c)
 when rendering adjacent images.  (gxipixel.c)
 	- Some symbols were multiply defined with -DNOPRIVATE.  (gsptype2.h)
 	- If a character was too large to be cached, it didn't use
-anti-aliasing, even if TextAlphaBits was >1.  (gspaint.c)
+anti-aliasing, even if TextAlphaBits was &gt;1.  (gspaint.c)
 
 Changes code slightly to remove warnings about signed/unsigned integer
 constants.  (gsccode.h, gsmisc.c, gxcht.c)
@@ -5671,7 +5671,7 @@ interaction with the user.  (gdevwpr2.c)
 Fixes problems:
 	- When TrueType support was present, the FONTPATH scanner didn't
 recognize TrueType fonts whose 'type' was "true" rather than the documented
-<00 01 00 00>.  (lib/gs_ttf.ps)
+&lt;00 01 00 00&gt;.  (lib/gs_ttf.ps)
 	- When DEBUG was set, loading a TrueType font could cause an
 /undefined error.  (lib/gs_ttf.ps)
 
@@ -5767,7 +5767,7 @@ Fixes problems:
 creating multiple contexts, causing memory corruption. (bug probably
 introduced in 5.68) (gsstate.c)
 	- If CIE joint caches were created because the reference count of
-the existing caches was >1, the new caches weren't initialized correctly.
+the existing caches was &gt;1, the new caches weren't initialized correctly.
 (bug introduced in 5.60, found by Ray Johnston.)  (gscie.c)
 	- If Margins are set so that part of the default clipping region
 lies outside the ((0,0),(width,height)) device coordinate space, the fast
@@ -6550,7 +6550,7 @@ zfont.c, zfont1.c, zfont2.c)
 
 Adds the ability to create (with .bytestring) and do a few operations
 (currently only length, put, putinterval) on byte arrays.  This is needed
-for implementing ReusableStringDecode filters with >64K bytes of data, and
+for implementing ReusableStringDecode filters with &gt;64K bytes of data, and
 for the LL3 halftone types.  (zgeneric.c, zstring.c)
 
 Implements HalftoneMode, and HalftoneTypes 6, 10, and 16.  To do this, we
@@ -7004,7 +7004,7 @@ subtractive-color devices.  (gxclrect.c)
 	- Memory devices didn't set enough option bits for the case where
 get_bits_rectangle had to do conversion.  (gdevmem.c)
 	- The TrueType font rasterizer didn't accept fonts whose 'type' was
-"true" rather than the documented <00 01 00 00>.  (gstype42.c)
+"true" rather than the documented &lt;00 01 00 00&lt;.  (gstype42.c)
 	- A bug in the Watcom compiler caused two conditional expressions to
 execute incorrectly.  (gstype42.c)
 	- When a page queue was freed, it attempted to free the page_info

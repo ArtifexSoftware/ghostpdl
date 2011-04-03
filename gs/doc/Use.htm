@@ -1338,9 +1338,9 @@ For example, if a PDF file asks for a font with the name
 in a cidfmap file because the #xx notation in names is a PDF-only
 encoding. Instead, try something like:
 <blockquote>
-<tt>&lt;82C68272835383568362834E&gt;cvn << /Path
+<tt>&lt;82C68272835383568362834E&gt;cvn &lt;&lt; /Path
 (C:/WINDOWS/Fonts/msmincho.ttc) /FileType /TrueType /SubfontID 0 /CSI
-[(Japan1) 3] >> ;</tt>
+[(Japan1) 3] &gt;&gt; ;</tt>
 </blockquote>
 Where <tt>&lt;82C68272835383568362834E&gt;</tt> is the same byte
 sequence converted to a hex string. This lets you specify a name
@@ -2590,7 +2590,7 @@ device directly, and may cause problems in combination with -dSAFER.
 Permission errors  can be avoided by adding the device to the permitted
 reading list before invoking safer mode. For example:
 <tt>gs -dTTYPAUSE -dDELAYSAFER
--c '<< /PermitFileReading [ (/dev/tty)] >>
+-c '&lt;&lt; /PermitFileReading [ (/dev/tty)] &gt;&gt;
 setuserparams .locksafe' -dSAFER</tt>
 </dl>
 
@@ -2793,7 +2793,7 @@ This also requires that the input be from stdin, otherwise an error will
 result (<tt>Error: /invalidrestore in --restore--</tt>).
 <p>Example usage is:
 <pre>
-    gs ... -dJOBSERVER - < inputfile.ps
+    gs ... -dJOBSERVER - &lt; inputfile.ps
                      -or-
     cat inputfile.ps | gs ... -dJOBSERVER -
 </pre>
@@ -3661,7 +3661,7 @@ The second element is a dictionary with entries :
 Example of a general FAPI font map record :
 <blockquote>
 <code>
-/FCO1        &lt&lt /Path (/AFPL/UFST/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__F.fco) /FontType 1 /FAPI /UFST &gt&gt ;
+/FCO1        &lt;&lt; /Path (/AFPL/UFST/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__F.fco) /FontType 1 /FAPI /UFST &gt;&gt; ;
 </code>
 </blockquote>
 
@@ -3730,7 +3730,7 @@ but dictionaries must contain few different entries :
 Example of FAPI CID font map record :
 <blockquote>
 <code>
-/HeiseiKakuGo-W5  &lt&lt /Path (/WIN2000/Fonts/PMINGLIU.TTF) /CIDFontType 0 /FAPI /UFST /CSI [(Japan1) 2] &gt&gt ;
+/HeiseiKakuGo-W5  &lt;&lt; /Path (/WIN2000/Fonts/PMINGLIU.TTF) /CIDFontType 0 /FAPI /UFST /CSI [(Japan1) 2] &gt;&gt; ;
 </code>
 </blockquote>
 

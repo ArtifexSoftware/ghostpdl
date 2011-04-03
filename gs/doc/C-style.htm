@@ -418,7 +418,7 @@ Restrictions:
 (<code>int_x&nbsp;=&nbsp;long_y</code>).
 
 <li>It's OK to use the address of a structure or array element
-(<code>&p->e</code>, <code>&a[i]</code>) locally, or pass it to a
+(<code>&amp;p-&gt;e</code>, <code>&amp;a[i]</code>) locally, or pass it to a
 procedure that won't store it, but don't store such an address in allocated
 storage unless you're very sure of what you're doing.
 
@@ -469,7 +469,7 @@ required.
 <code>return_error()</code> rather than plain <code>return</code>.
 However, if the program is simply propagating an error code generated
 elsewhere, as opposed to generating the error, use <code>return</code>
-(e.g., <code>if&nbsp;(code&nbsp;<&nbsp;0)&nbsp;return&nbsp;code</code>).
+(e.g., <code>if&nbsp;(code&nbsp;&lt;&nbsp;0)&nbsp;return&nbsp;code</code>).
 
 </ul>
 
@@ -531,7 +531,7 @@ Restrictions:
 <ul>
 
 <li>Only use library features that are documented in the established ANSI
-standard (e.g., Harbison & Steele's book).  Do not use procedures that are
+standard (e.g., Harbison &amp; Steele's book).  Do not use procedures that are
 "standards" promulgated by Microsoft (e.g., <code>stricmp</code>), or
 originate in BSD Unix (e.g., <code>strcasecmp</code>), or were added in
 later versions of the standard such as C 9X.
@@ -599,7 +599,7 @@ them as conceptually different types:
 <ul>
 <li>Initialize or set <code>bool</code> variables to <code>true</code>
 or <code>false</code>, not 0 or 1.
-<li>Use the Boolean operators <code>!</code>, <code>&&</code>,
+<li>Use the Boolean operators <code>!</code>, <code>&amp;&amp;</code>,
 and <code>||</code> only with Booleans.  Don't use the idiom
 <code>!!x</code> to create a Boolean that is true iff <code>x</code>
 != 0: use <code>x != 0</code>.
@@ -1395,25 +1395,25 @@ declared as <code>xxx_t&nbsp;*pxx</code>.
 structure definition of <code>xxx_t</code> includes a member defined as
 <code>const&nbsp;xxx_procs&nbsp;*procs</code> (always named
 <code>procs</code>).  The construct for calling the virtual procedure is
-<code>pxx->procs->virtu(pxx)</code>.
+<code>pxx-&gt;procs-&gt;virtu(pxx)</code>.
 
 <li>The procedures are defined in a structure of type
 <code>xxx_procs</code> as above.  The structure definition of
 <code>xxx_t</code> includes a member defined as
 <code>xxx_procs&nbsp;procs</code> (always named <code>procs</code>).
 The construct for calling the virtual procedure is
-<code>pxx->procs.virtu(pxx)</code>.
+<code>pxx-&gt;procs.virtu(pxx)</code>.
 
 <li>The procedures are not defined in a separate structure: each procedure
 is a separate member of <code>xxx_t</code>.  The construct for calling
-the virtual procedure is <code>pxx->virtu(pxx)</code>.
+the virtual procedure is <code>pxx-&gt;virtu(pxx)</code>.
 
 <li>The procedures are defined in a structure of type
 <code>xxx_procs</code> as above.  The structure definition of
 <code>xxx_t</code> includes a member defined as
 <code>xxx_procs&nbsp;procs[1]</code> (always named
 <code>procs</code>).  The construct for calling the virtual procedure is
-again <code>pxx->procs->virtu(pxx)</code>.
+again <code>pxx-&gt;procs-&gt;virtu(pxx)</code>.
 
 </ol>
 

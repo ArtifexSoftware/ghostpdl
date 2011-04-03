@@ -2432,7 +2432,7 @@ Modified files:
   gxcldev.h
     Added the macros cmd_depth_to_code and cmd_code_to_depth. These allow
     encoding/decoding of the color model depth parameter (bits/pixel) in
-    such a manner as to support depths up to 120 bits (depths > 15 bits
+    such a manner as to support depths up to 120 bits (depths &gt; 15 bits
     must be a multiple of 8).
 
   gxclbits.c
@@ -2670,7 +2670,7 @@ Modified Files
     2. In get_decode_color, added special case handling for canonical 1-bit
        CMYK devices (e.g.: pkmraw). Previously the decode_color method for
        this devices would default to gx_default_cmyk_decode_color, which
-       performed an CMYK ==> RGB ==> CMYK conversion. This conversion would
+       performed an CMYK ==&gt; RGB ==&gt; CMYK conversion. This conversion would
        defeat overprinting if gray object was placed on top of a colored
        region.
 
@@ -2708,7 +2708,7 @@ Modified Files
     (the third and fourth operands were reversed).
 
   src/gsimage.c
-    Modified gx_image_cleanup to check if penum->info field is null before
+    Modified gx_image_cleanup to check if penum-&gt;info field is null before
     calling gx_image_end. This avoids a crash associated that can occur if
     an image has zero height or width, as the image enumeration data structure
     will have been released in such cases before gs_image_cleanup is called.

@@ -403,8 +403,8 @@ more than 4 colorants by doing multiple passes. For each pass after the
 first one, the names of all of the separations need to be specified via 
 the SeparationColorNames parameter and the names of the desired separations 
 need to be specified via the SeparationOrder parameter. For instance, 
-add the following to the command line: <code>-c "<< /SeparationColorNames 
-[ /Name1 /Name2 ] /SeparationOrder [ /Name1 ] >> setpagedevice" -f</code>. 
+add the following to the command line: <code>-c "&lt;&lt; /SeparationColorNames 
+[ /Name1 /Name2 ] /SeparationOrder [ /Name1 ] &gt;&gt; setpagedevice" -f</code>. 
 This will produce a single separation file for the spot color called 'Name1'. 
 It is possible to create an overall CMYK composite for more than 4 colorants 
 by then adding together (via an external application like imagemagick) 
@@ -1320,7 +1320,7 @@ us /SelectedRange get ==    % displays the selected page range
 
 % other misc. information (don't rely on them)
 
-us /Color get ==            % 1 => monochrome output, 2 => color output
+us /Color get ==            % 1 =&gt; monochrome output, 2 =&gt; color output
 us /PrintCopies get ==      % displays the number of copies requested
 </pre></blockquote>
 
@@ -1511,7 +1511,7 @@ many files fill the whole page with white before drawing other objects.
 This can be changed by:
 
 <blockquote><code>
-<< /WhiteIsOpaque true >> setpagedevice
+&lt;&lt; /WhiteIsOpaque true &gt;&gt; setpagedevice
 </code></blockquote>
 
 <p>
@@ -1572,8 +1572,8 @@ device which supports spot colors.
 Spot colors need to be specified prior to opening the
 first page.
 This can be done via adding the
-following to the command line: <code>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
->> setpagedevice" -f</code>.
+following to the command line: <code>-c "&lt;&lt; /SeparationColorNames [ /Name1 /Name2 ]
+&gt;&gt; setpagedevice" -f</code>.
 
 <p>
 The <tt>spotcmyk</tt> device produces a binary data file (similar to the bitcmyk
@@ -1648,8 +1648,8 @@ DeviceCMYK process color model allows the <tt>xcfcmyk</tt> device to also
 support spot colors. Spot colors need to be specified prior to opening the
 first page.
 This can be done via adding the
-following to the command line: <code>-c "<< /SeparationColorNames [ /Name1 /Name2 ]
->> setpagedevice" -f</code>.
+following to the command line: <code>-c "&lt;&lt; /SeparationColorNames [ /Name1 /Name2 ]
+&gt;&gt; setpagedevice" -f</code>.
 
 <p>
 After a page is complete, the <tt>xcfcmyk</tt> converts the CMYK image data into

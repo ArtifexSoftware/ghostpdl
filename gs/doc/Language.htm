@@ -1339,10 +1339,10 @@ operator to perform the locking needed to enter <b>SAFER</b> mode.
 For example, to enable reading everywhere, but disallow writing and file
 control (deleting and renaming files), the following can be used:
 <pre>
-	{ << /PermitFileReading [ (*) ]
+	{ &lt;&lt; /PermitFileReading [ (*) ]
 	     /PermitFileWriting [ ]
 	     /PermitFileControl [ ]
-	  >> setuserparams
+	  &gt;&gt; setuserparams
 	  .locksafe
 	} stopped pop
 </pre>
@@ -1899,7 +1899,7 @@ Ghostscript also supports the following read-only parameter that is not a
 true device parameter:
 
 <dl>
-<dt><code>.EmbedFontObjects &lt;integer&gt</code>
+<dt><code>.EmbedFontObjects &lt;integer&gt;</code>
 <dd>If non-zero, indicates that the device may embed font objects (as
 opposed to bitmaps for individual characters) in the output.  The purpose of
 this parameter is to disable third-party font renderers for such devices.

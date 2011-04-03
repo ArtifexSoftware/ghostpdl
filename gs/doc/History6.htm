@@ -1606,7 +1606,7 @@ following the ID operator.
 corrected to ViewingOrientation.
 (Streams)
 	- All decoding filters that recognize an EOD in the source data
-must now have an init procedure that sets state->min_left = 1.
+must now have an init procedure that sets state-&gt;min_left = 1.
 (Library)
 	- The glyph_data, subr_data, and seac_data procedures in a Type 1
 font (gs_type1_data_procs), and the glyph_data procedure passed to
@@ -2911,7 +2911,7 @@ Fixes problems:
 	- The SrcPg entry in ANN pdfmarks was (effectively) ignored. (bug
 introduced between 5.50 and 6.01.) (gdevpdfm.c [1.5]: 2000/08/31 18:49:59
 lpd)
-	- When CompatibilityLevel < 1.4, transparency was ignored rather
+	- When CompatibilityLevel &lt; 1.4, transparency was ignored rather
 than being rendered explicitly. (gdevpdfg.c [1.9]: 2000/09/11 21:13:49 lpd)
 
 Works around the bug in Acrobat Reader (all versions) that apparently treats
@@ -3331,7 +3331,7 @@ gscsepr.c [1.5], gscspace.c [1.3], gscspace.h [1.3], gspcolor.c [1.3],
 gxcspace.h [1.3]: 2000/08/24 05:42:30 lpd)
 
 Changes the band list representation of mask images to allow
-BitsPerComponent > 1 (for soft masks). (gximage1.c [1.2]: 2000/08/24
+BitsPerComponent &gt; 1 (for soft masks). (gximage1.c [1.2]: 2000/08/24
 17:58:18 lpd)
 
 Adds Matte and has_Matte members to ImageType 1 images. These are only used
@@ -3778,7 +3778,7 @@ in 6.22) (lib/pdf_main.ps [1.10]: 2000/07/14 05:30:19 lpd)
 	- As a result of some recent changes to fix other problems, setting
 certain text state parameters (Tf, Ts, Tz) outside of text mode (BT/ET)
 caused an error. (lib/pdf_ops.ps [1.6]: 2000/07/19 15:57:54 lpd)
-	- Setting a singular text matrix (e.g., 0 0 0 0 <x> <y> Tm) caused
+	- Setting a singular text matrix (e.g., 0 0 0 0 &lt;x&gt; &lt;y&gt; Tm) caused
 an error. (lib/pdf_ops.ps [1.7]: 2000/08/04 16:08:05 lpd)
 
 </pre><h2><a name="6.23 Interpreter"></a>Interpreter</h2><pre>
@@ -3789,7 +3789,7 @@ convenience of users who don't read the documentation and which interfered
 with the operation of some code produced by the Adobe PS5 Windows driver.
 (lib/gs_init.ps [1.18]: 2000/07/09 22:34:30 lpd)
 	- A constant 1 should have been 1L, causing a warning on systems
-where sizeof(long) > sizeof(int). (zarith.c [1.3]: 2000/07/09 23:10:58 lpd)
+where sizeof(long) &gt; sizeof(int). (zarith.c [1.3]: 2000/07/09 23:10:58 lpd)
 	- The workaround for attempting to set a 4-element PageSize value in
 a page device sometimes caused an error. (bug introduced in 6.21)
 (lib/gs_setpd.ps [1.4]: 2000/07/10 12:48:54 lpd)
@@ -3818,7 +3818,7 @@ in PDF files to produce a rangecheck error. (lib/gs_ttf.ps [1.6]: 2000/07/19
 	- When NOPROMPT was set, no flush or flushpage occurred at the end
 of a page. (fix from an anonymous user on SourceForge)
 (lib/gs_init.ps [1.19]: 2000/07/20 01:40:50 lpd)
-	- Type 1 or Type 2 fonts with invalid LanguageGroup values < 0
+	- Type 1 or Type 2 fonts with invalid LanguageGroup values &lt; 0
 caused an error. (Such fonts are invalid, but some real fonts have garbage
 LanguageGroup values, and Adobe software doesn't give an error.)
 (zfont1.c [1.6]: 2000/07/24 18:08:38 lpd)
@@ -4266,7 +4266,7 @@ effect, and could cause a crash. (This is probably only a partial fix.)
 	- In the ATX drivers, the word count for compressed scan lines was
 written as 2 bytes rather than 1; the drivers wouldn't accept a page width
 greater than 2400 pixels. (gdevatx.c [1.4]: 2000/06/12 04:39:48 lpd)
-	- Works around a bug in the MSVC++ 5.0 compiler that treats (int <<
+	- Works around a bug in the MSVC++ 5.0 compiler that treats (int &lt;&lt;
 unsigned) as unsigned rather than int. (gdevcd8.c [1.2], gdevcdj.c [1.2],
 gdevdj9.c [1.3]: 2000/06/20 14:21:34 lpd)
 	- Uncolored Patterns used with a gray color produced incorrect PDF
@@ -4324,7 +4324,7 @@ devices). (gdevcfax.c [1.1]: 2000/06/06 06:38:31 lpd)
 Notes that the vgalib driver only suppotrs 16-color modes.
 (gdevvglb.c [1.2]: 2000/06/06 15:28:01 lpd)
 
-Adds some code contributed by Leon Bottou <leonb@research.att.com> that
+Adds some code contributed by Leon Bottou &lt;leonb@research.att.com&gt; that
 makes the X driver prefer TrueColor visuals. We aren't sure of the
 ramifications of this.... (gdevxini.c [1.6]: 2000/06/12 04:41:15 lpd)
 
@@ -4586,7 +4586,7 @@ print multiple copies of the same page on separate files if the OutputFile
 name included %d, and some drivers (such as the TIFF drivers) produced
 invalid output. (gdevprn.c [1.4]: 2000/06/05 02:04:26 lpd)
 	- 32-bit sample values in shading data didn't work, because some
-CPUs execute (1 << 32) as (1 << 0). (gxshade.c [1.3]: 2000/06/07 19:07:17
+CPUs execute (1 &lt;&lt; 32) as (1 &lt;&lt; 0). (gxshade.c [1.3]: 2000/06/07 19:07:17
 lpd)
 	- Type 1 fonts without eexec encryption still included the 4 eexec
 padding bytes. (bug probably introduced since 6.0) (gdevpsf1.c [1.4]:
@@ -5291,7 +5291,7 @@ Fixes problems:
 	- Automatic loading of fonts from resource files didn't work
 (usually caused an unmatchedmark or typecheck error).
 (lib/gs_fonts.ps [1.5], lib/gs_res.ps [1.9]: 2000/04/08 03:45:41 lpd)
-	- A -> should have been a . (only shows up on 64-bit systems).
+	- A -&gt; should have been a . (only shows up on 64-bit systems).
 (zfunc4.c [1.3]: 2000/04/09 20:04:00 lpd)
 	- the most recent 'fixes' for loading font resources caused all
 built-in fonts to be returned as null. (lib/gs_res.ps [1.10]: 2000/04/09
@@ -5397,7 +5397,7 @@ sread_subfile). (sfxfd.c [1.3]: 2000/04/10 02:41:48 lpd)
 target was a procedure, and closefile didn't actually close them. (This is a
 very old bug.) (stream.c [1.6]: 2000/04/18 05:50:15 lpd)
 	- The PixelDifference filters (Predictor = 2) weren't implemented
-for Colors > 4 and BitsPerComponent != 8, and they dropped trailing bytes if
+for Colors &gt; 4 and BitsPerComponent != 8, and they dropped trailing bytes if
 the length of the data wasn't an exact multiple of the pixel size.
 (spdiff.c [1.2]: 2000/04/22 03:55:22 lpd)
 
@@ -5429,7 +5429,7 @@ for Linux. (gdevpsf.h [1.3], gdevpsf2.c [1.6]: 2000/04/10 07:42:31 lpd)
 	- gsmisc.c didn't compile in DEBUG mode on systems with a
 non-standard prototype for the sqrt function. (gsmisc.c [1.3]: 2000/04/10
 16:00:31 lpd)
-	- One picky compiler complained about (1L << 31). (gsmisc.c [1.4]:
+	- One picky compiler complained about (1L &lt;&lt; 31). (gsmisc.c [1.4]:
 2000/04/10 17:21:41 lpd)
 	- putdeviceparams allowed a PageSize or .MediaSize value with the
 wrong number of elements to take effect. (gsdparam.c [1.2]: 2000/04/19
@@ -5567,7 +5567,7 @@ rather than a pointer to a const structure.
 <h2><a name="6.20 Documentation"></a>Documentation</h2><pre>
 
 Fixes problems:
-	- If log2_transfer_map_size > 8, identity transfer functions
+	- If log2_transfer_map_size &gt; 8, identity transfer functions
 returned garbage. The fix requires that if a client wants to set a transfer
 function to the identity mapping, it must call gx_set_identity_transfer
 rather than simply setting the procedure to gs_identity_transfer.
@@ -5798,7 +5798,7 @@ lpd)
 Updates dependencies to reflect today's batches of checked-in changes.
 (devs.mak [1.5], int.mak [1.7], lib.mak [1.6]: 2000/03/20 07:16:35 lpd)
 
-Updates the makefile for the renaming of gdevpsdf.c => gdevpsdu.c.
+Updates the makefile for the renaming of gdevpsdf.c =&gt; gdevpsdu.c.
 (devs.mak [1.6]: 2000/03/20 19:30:35 lpd)
 
 Starts to move support for CIDFontType 0 and 2 into C code, needed by the
@@ -6149,7 +6149,7 @@ returned garbage for the keys. (iparam.c [1.2]: 2000/03/19 15:13:13 lpd)
 PLRM3 says PostScript interpreters do not make this check, even though the
 PLRM2 says compatibility is required (!). (zfcmap.c [1.2]: 2000/03/19
 16:53:50 lpd)
-	- If log2_transfer_map_size > 8, identity transfer functions
+	- If log2_transfer_map_size &gt; 8, identity transfer functions
 returned garbage. The fix requires that if a client wants to set a transfer
 function to the identity mapping, it must call gx_set_identity_transfer
 rather than simply setting the procedure to gs_identity_transfer.
@@ -6297,7 +6297,7 @@ lpd)
 Changes Subr loading for CIDFontType 0 fonts from lazy to immediate, so that
 C code can be guaranteed access to the Subrs. (In every CIDFontType 0 font
 that we have seen, SubrCount is 5, so this has no significant time or space
-cost.) Also adds support for FDBytes > 1 in GlyphDirectory definitions.
+cost.) Also adds support for FDBytes &gt; 1 in GlyphDirectory definitions.
 (lib/gs_cidfn.ps [1.7]: 2000/03/21 20:06:44 lpd)
 
 Splits off the ReusableStreamDecode filter as a separate module, since
@@ -6372,7 +6372,7 @@ Fixes problems:
 	- s_add_filter didn't ensure enough buffering. This entailed moving
 the NullEncode/Decode filters to stream.[hc]. (sfilter.h [1.3],
 stream.c [1.3], stream.h [1.3]: 2000/03/19 03:15:02 lpd)
-	- When FPU_TYPE <= 0, the image interpolation code lost too much
+	- When FPU_TYPE &lt;= 0, the image interpolation code lost too much
 accuracy, producing color streaks in the output. (Fix by DanCoby.)
 (siscale.c [1.2]: 2000/03/29 20:34:45 lpd)
 	- Fixes a couple of typos in the recently checked-in image
@@ -6422,7 +6422,7 @@ gxfont42.h [1.2]: 2000/03/19 03:58:51 lpd)
 	- ImageType 4 images didn't give an error for out-of-range MaskColor
 values. The file also had an unnecessary #include. (gximage4.c [1.2]:
 2000/03/19 04:10:09 lpd)
-	- If log2_transfer_map_size > 8, identity transfer functions
+	- If log2_transfer_map_size &gt; 8, identity transfer functions
 returned garbage. The fix requires that if a client wants to set a transfer
 function to the identity mapping, it must call gx_set_identity_transfer
 rather than simply setting the procedure to gs_identity_transfer.
@@ -6837,7 +6837,7 @@ lpd)
 	- The mswinpr2 driver didn't handle setting BitsPerPixel to the same
 value when the device was already open, possibly causing an error on restore
 or grestore. (gdevwpr2.c [1.2]: 2000/03/10 04:26:07 lpd)
-	- When operating in buffered mode (MaxBitmap > 0), the X driver
+	- When operating in buffered mode (MaxBitmap &gt; 0), the X driver
 sometimes failed to copy all of the updated area to the screen.
 (gdevx.c [1.2], gdevx.h [1.2], gdevxini.c [1.2], gdevxxf.c [1.2]: 2000/03/10
 06:56:27 lpd)

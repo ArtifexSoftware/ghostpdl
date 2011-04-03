@@ -1013,7 +1013,7 @@ echo !include "base\bcwin32.mak" &gt;makefile
 
 <p>
 To run the <code>make</code> program, give the commmand (after issuing e.g.
-<code>set PATH=C:\Borland\BCC55\Bin;&percnt;PATH&percnt;</code> to set the appropriate <code>PATH</code>):
+<code>set PATH=C:\Borland\BCC55\Bin;%PATH%</code> to set the appropriate <code>PATH</code>):
 
 <blockquote><code>
 make
@@ -1895,7 +1895,7 @@ an issue on very old systems.
 <li>If you are using a NeXTSTEP version before 3.3, please get a no-cost
 upgrade (along with Y2K patches) from Apple.
 
-<li>If '<tt>./configure && make</tt>' fails, then for all NeXTSTEP systems, use 
+<li>If '<tt>./configure &amp;&amp; make</tt>' fails, then for all NeXTSTEP systems, use 
 <code>unix-gcc.mak</code> and make the following changes:
 
 <ul>

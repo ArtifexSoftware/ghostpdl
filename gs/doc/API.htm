@@ -261,7 +261,7 @@ typedef struct gsapi_revision_s {
 gsapi_revision_t r;
 
 if (gsapi_revision(&amp;r, sizeof(r)) == 0) {
-    if (r.revision < 650)
+    if (r.revision &lt; 650)
        printf("Need at least Ghostscript 6.50");
 }
 else {
@@ -337,7 +337,7 @@ are argv[1] to argv[argc-1].
 <blockquote>
 The <code>gsapi_run_*</code> functions are like 
 <code>gs_main_run_*</code> except that the error_object is omitted.
-If these functions return <= -100, either quit or a fatal
+If these functions return &lt;= -100, either quit or a fatal
 error has occured.  You must call <code>gsapi_exit()</code> next.
 The only exception is <code>gsapi_run_string_continue()</code>
 which will return <code>e_NeedInput</code> if all is well.
@@ -453,7 +453,7 @@ same directory as the example source.</p>
 <pre>
 /* Example of using GS DLL as a ps2pdf converter.  */
 
-#if defined(_WIN32) && !defined(_Windows)
+#if defined(_WIN32) &amp;&amp; !defined(_Windows)
 # define _Windows
 #endif
 #ifdef _Windows
@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
 <pre>
 /* Similar to command line gs */
 
-#if defined(_WIN32) && !defined(_Windows)
+#if defined(_WIN32) &amp;&amp; !defined(_Windows)
 # define _Windows
 #endif
 #ifdef _Windows
@@ -563,7 +563,7 @@ int main(int argc, char *argv[])
     int exit_code;
 
     code = gsapi_new_instance(&amp;minst, NULL);
-    if (code < 0)
+    if (code &lt; 0)
 	return 1;
     gsapi_set_stdio(minst, gsdll_stdin, gsdll_stdout, gsdll_stderr);
     code = gsapi_init_with_args(minst, argc, argv);
@@ -594,7 +594,7 @@ int main(int argc, char *argv[])
     int exit_code;
 
     code = gsapi_new_instance(&amp;minst, NULL);
-    if (code < 0)
+    if (code &lt; 0)
 	return 1;
     code = gsapi_init_with_args(minst, argc, argv);
 

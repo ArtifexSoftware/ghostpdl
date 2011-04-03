@@ -3772,8 +3772,8 @@ the object type.
 Reference counting is as fast as explicit freeing, but takes more space in
 the object.  It is most appropriate for relatively large objects which are
 referenced only from a small set of pointers.  Note that reference counting
-cannot free objects that are involved in a pointer cycle (e.g., A -> B -> C
--> A).
+cannot free objects that are involved in a pointer cycle (e.g., A -&gt; B -&gt; C
+-&gt; A).
 
 <dl>
 <dt>
@@ -4824,7 +4824,7 @@ PROFILE  /I %GS_HOME%\bin\gswin32c.pbi  %GS_COMMAND_LINE%
 If ERRORLEVEL 1 echo step 2 fails&amp;exit
 PREP /M %GS_HOME%\bin\gswin32c /OT xxx.pbt 
 If ERRORLEVEL 1 echo step 3 fails&amp;exit
-PLIST /ST xxx.pbt >profile.txt
+PLIST /ST xxx.pbt &gt;profile.txt
 If ERRORLEVEL 1 echo step 4 fails&amp;exit
 
 </tt></pre></blockquote>
