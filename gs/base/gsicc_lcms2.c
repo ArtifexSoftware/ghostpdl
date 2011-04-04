@@ -31,14 +31,13 @@ typedef struct gsicc_lcms2_link_s gsicc_lcms2_link_t;
 
 
 /* Only provide warning about issues in lcms if debug build */
-static int
+static void
 gscms_error(cmsContext       ContextID,
             cmsUInt32Number  error_code,
             const char      *error_text){
 #ifdef DEBUG
     gs_warn1("cmm error : %s",error_text);
 #endif
-    return(1);
 }
 
 /* Interface of littlecms memory alloc calls hooked into gs allocator.
@@ -183,7 +182,7 @@ gscms_transform_color_buffer(gsicc_link_t *icclink,
     int planar,numbytes,big_endian,hasalpha,k;
     unsigned char *inputpos, *outputpos;
     int numchannels;
-#if DUMP_BUFFER
+#if DUMP_CMS_BUFFER
     FILE *fid_in, *fid_out;
 #endif
     /* Although little CMS does  make assumptions about data types in its
@@ -280,7 +279,7 @@ gscms_transform_color(gsicc_link_t *icclink,
                              void **contextptr)
 {
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)icclink->link_handle;
-    cmsUInt32Number dwInputFormat,dwOutputFormat,curr_input,curr_output;
+    cmsUInt32Number dwInputFormat,dwOutputFormat;
 
     /* For a single color, we are going to use the link as it is
        with the exception of taking care of the word size. */
