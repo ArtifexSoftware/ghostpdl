@@ -68,5 +68,8 @@ int gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value,
 void gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle,
                     gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle,
                     gsicc_rendering_param_t *rendering_params);
+int gscms_get_input_channel_count(gcmmhprofile_t profile);
+int gscms_get_output_channel_count(gcmmhprofile_t profile);
+
 #endif
 
