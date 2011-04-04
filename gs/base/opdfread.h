@@ -3233,7 +3233,7 @@ const char *opdfread_ps [] = {
 "/DeviceRGB{[0 1 0 1 0 1]}def\n",
 "/DeviceCMYK{[0 1 0 1 0 1 0 1]}def\n",
 "/Indexed{\n",
-"dup/BitsPerComponent get 2 exch exp 1 sub[exch 0 exch]\n",
+"dup/BitsPerComponent get 1 exch bitshift 1 sub[exch 0 exch]\n",
 "}def\n",
 "/Separation{[0 1]}def\n",
 "/CIEBasedA{[0 1]/RangeA//GetColorSpaceRange exec}def\n",

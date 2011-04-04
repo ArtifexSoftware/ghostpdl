@@ -3842,7 +3842,7 @@ currentdict end readonly def
   /DeviceRGB { [0 1 0 1 0 1] } def
   /DeviceCMYK { [0 1 0 1 0 1 0 1] } def 
   /Indexed { 
-  dup /BitsPerComponent get 2 exch exp 1 sub [exch 0 exch] 
+  dup /BitsPerComponent get 1 exch bitshift 1 sub [exch 0 exch] 
   } def
   /Separation { [0 1] } def
   /CIEBasedA { [0 1]  /RangeA //GetColorSpaceRange exec } def
