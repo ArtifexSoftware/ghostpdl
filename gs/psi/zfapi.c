@@ -61,6 +61,7 @@
 #include "gdebug.h"
 #include "gsimage.h"
 #include "gxcldev.h"
+#include "gxdevmem.h"
 
 /* lifted from gxchar.c */
 static const uint MAX_TEMP_BITMAP_BITS = 80000;
@@ -1125,11 +1126,18 @@ static bool produce_outline_char (i_ctx_t *i_ctx_p, gs_show_enum *penum_s, gs_fo
     log2_scale->x = 0;
     log2_scale->y = 0;
     
+    /* Checking both gx_compute_text_oversampling() result, and abits (below) may seem redundant,
+     * and hopefully it will be soon, but for now, gx_compute_text_oversampling() could opt to
+     * "oversample" sufficiently small glyphs (fwiw, I don't think gx_compute_text_oversampling is
+     * working as intended in that respect), regardless of the device's anti-alias setting.
+     * This was an old, partial solution for dropouts in small glyphs.
+     */
     gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, abits, log2_scale);
     
     return (pgs->in_charpath || pbfont->PaintType != 0 ||
             (pgs->in_cachedevice != CACHE_DEVICE_CACHING && using_transparency_pattern ((gs_state *)penum_s->pis)) ||
-            (pgs->in_cachedevice != CACHE_DEVICE_CACHING && (log2_scale->x > 0 || log2_scale->y > 0)));
+            (pgs->in_cachedevice != CACHE_DEVICE_CACHING && (log2_scale->x > 0 || log2_scale->y > 0)) ||
+            (pgs->in_cachedevice != CACHE_DEVICE_CACHING && abits > 1));
 }
 
 static const FAPI_font ff_stub = {
