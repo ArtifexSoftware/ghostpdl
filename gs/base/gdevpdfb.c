@@ -257,12 +257,12 @@ pdf_copy_mono(gx_device_pdf *pdev,
     {
 	ulong nbytes = (ulong) ((w + 7) >> 3) * h;
 
-	in_line = nbytes < pdev->MaxInlineImageSize;
-	if (in_line)
-	    pdf_put_image_matrix(pdev, &image.ImageMatrix, 1.0);
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
+	in_line = nbytes < pdev->MaxInlineImageSize;
+	if (in_line)
+	    pdf_put_image_matrix(pdev, &image.ImageMatrix, 1.0);
 	pdf_image_writer_init(&writer);
 	code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, in_line);
 	if (code < 0)
