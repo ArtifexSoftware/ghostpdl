@@ -2303,7 +2303,8 @@ retry_oversampling:
             /* The PDF Reference says that we should use a CIDToGIDMap, but the PDF
              * interpreter converts this into a CIDMap (see pdf_font.ps, processCIDToGIDMap)
              */
-            if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name)) {
+            if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name) &&
+               (r_has_type(CIDMap, t_array) || r_has_type(CIDMap, t_string))) {
        
                if (r_has_type(CIDMap, t_array)) {
 
