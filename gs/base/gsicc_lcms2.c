@@ -13,10 +13,6 @@
 
 /* gsicc interface to littleCMS */
 
-#ifndef LCMS_USER_ALLOC
-#define LCMS_USER_ALLOC 1
-#endif
-
 #include "gsicc_cms.h"
 #include "gserror.h"
 #include "lcms2.h"
@@ -40,9 +36,7 @@ gscms_error(cmsContext       ContextID,
 #endif
 }
 
-/* Interface of littlecms memory alloc calls hooked into gs allocator.
-   For this to be used lcms is built with LCMS_USER_ALLOC.  See lcms.mak */
-void *_cmsMallocDefaultFn(cmsContext id, unsigned int size)
+void *gs_lcms2_malloc(cmsContext id, unsigned int size)
 {
     void *ptr;
 
@@ -53,7 +47,7 @@ void *_cmsMallocDefaultFn(cmsContext id, unsigned int size)
     return ptr;
 }
 
-void *_cmsReallocDefaultFn(cmsContext id, void *ptr, unsigned int size)
+void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
 {
     void *ptr2;
 
@@ -64,7 +58,7 @@ void *_cmsReallocDefaultFn(cmsContext id, void *ptr, unsigned int size)
     return ptr2;
 }
 
-void _cmsFreeDefaultFn(cmsContext id, void *ptr)
+void gs_lcms2_free(cmsContext id, void *ptr)
 {
     if (ptr != NULL) {
 #if DEBUG_LCMS_MEM
@@ -73,6 +67,22 @@ void _cmsFreeDefaultFn(cmsContext id, void *ptr)
         gs_free_object(gs_lib_ctx_get_non_gc_memory_t(), ptr, "lcms");
     }
 }
+
+static cmsPluginMemHandler gs_cms_memhandler =
+{
+    { 
+        cmsPluginMagicNumber, 
+        2000,  
+        cmsPluginMemHandlerSig, 
+        NULL 
+    }, 
+    gs_lcms2_malloc, 
+    gs_lcms2_free, 
+    gs_lcms2_realloc, 
+    NULL, 
+    NULL, 
+    NULL
+};
 
 /* Get the number of channels for the profile.
   Input count */
@@ -381,6 +391,7 @@ gscms_create(void **contextptr)
 {
     /* Set our own error handling function */
     cmsSetLogErrorHandler(gscms_error);
+    cmsPlugin(&gs_cms_memhandler);
 }
 
 /* Do any clean up when done with the CMS if needed */

@@ -752,7 +752,22 @@ cmsContext CMSEXPORT cmsGetTransformContextID(cmsHTRANSFORM hTransform)
     return xform -> ContextID;
 }
 
+// Grab the input/output formats
+cmsUInt32Number CMSEXPORT cmsGetTransformInputFormat(cmsHTRANSFORM hTransform)
+{
+    _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
 
+    if (xform == NULL) return 0;
+    return xform->InputFormat;
+}
+
+cmsUInt32Number CMSEXPORT cmsGetTransformOutputFormat(cmsHTRANSFORM hTransform)
+{
+    _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
+
+    if (xform == NULL) return 0;
+    return xform->OutputFormat;
+}
 
 // For backwards compatibility
 cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform, 
@@ -786,18 +801,4 @@ cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform,
     xform ->FromInput    = FromInput;
     xform ->ToOutput     = ToOutput;
     return TRUE;
-}
-
-CMSAPI cmsUInt32Number CMSEXPORT cmsGetTransformInputFormat(cmsHTRANSFORM hTransform)
-{
-    _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
-
-    return xform->InputFormat;
-}
-
-CMSAPI cmsUInt32Number CMSEXPORT cmsGetTransformOutputFormat(cmsHTRANSFORM hTransform)
-{
-    _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
-
-    return xform->OutputFormat;
 }

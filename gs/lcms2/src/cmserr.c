@@ -78,11 +78,15 @@ cmsBool   _cmsRegisterMemHandlerPlugin(cmsPluginBase* Plugin);
 
 // *********************************************************************************
 
-#ifdef LCMS_USER_ALLOC
-void* _cmsMallocDefaultFn(cmsContext ContextID, cmsUInt32Number size);
-void _cmsFreeDefaultFn(cmsContext ContextID, void *Ptr);
-void* _cmsReallocDefaultFn(cmsContext ContextID, void* Ptr, cmsUInt32Number size);
+#ifdef CMS_USER_ALLOC
+
+// The following 3 functions will be provided by the libraries environment
+#define _cmsMallocDefaultFn cmsMallocDefaultFn
+#define _cmsFreeDefaultFn cmsFreeDefaultFn
+#define _cmsReallocDefaultFn cmsReallocDefaultFn
+
 #else
+
 // This is the default memory allocation function. It does a very coarse 
 // check of amout of memory, just to prevent exploits
 static
