@@ -164,7 +164,7 @@ gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph
 	make_int(&n, cid);
     } else
 	name_index_ref(mem, glyph, &n);
-    if (dict_find(map, &n, &v) > 0) {
+     if (dict_find(map, &n, &v) > 0) {
 	if (r_has_type(v, t_string)) {
 	    int i, l = r_size(v);
 	    gs_char c = 0;
@@ -181,7 +181,7 @@ gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph
 
 /* Get Unicode UTF-16 code for a glyph. */
 gs_char 
-gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph)
+gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch)
 {
     font_data *pdata = pfont_data(font);
     const ref *UnicodeDecoding;
@@ -192,6 +192,30 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph)
 
 	if (c != GS_NO_CHAR)
 	    return c;
+	if (ch != -1) { /* -1 indicates a CIDFont */
+	    /* Its possible that we have a GlyphNames2Unicode dictionary
+	     * which contains integers and Unicode values, rather than names
+	     * and Unicode values. This happens if the input was PDF, the font
+	     * has a ToUnicode Cmap, but no Encoding. In this case we need to
+	     * use the character code as an index into the dictionary. Try that
+	     * now before we fall back to the UnicodeDecoding.
+	     */
+	    ref *v, n;
+	
+	    make_int(&n, ch);
+	    if (dict_find(&pdata->GlyphNames2Unicode, &n, &v) > 0) {
+		if (r_has_type(v, t_string)) {
+		    int i, l = r_size(v);
+		    gs_char c = 0;
+
+		    for (i = 0; i < l; i++)
+			c = (c << 8) | v->value.const_bytes[i];
+		    return c;
+		}
+		if (r_type(v) == t_integer)
+		    return v->value.intval;
+	    }
+	}
 	/* 
 	 * Fall through, because test.ps for SF bug #529103 requres 
 	 * to examine both tables. Due to that the Unicode Decoding resource 

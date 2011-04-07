@@ -78,7 +78,7 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 
     if (glyph == GS_NO_GLYPH)
 	return 0;
-    unicode = font->procs.decode_glyph((gs_font *)font, glyph);
+    unicode = font->procs.decode_glyph((gs_font *)font, glyph, ch);
     if (unicode == GS_NO_CHAR && gnstr != NULL && gnstr->size == 7) {
 	if (!memcmp(gnstr->data, "uni", 3)) {
 	    static const char *hexdigits = "0123456789ABCDEF";

@@ -230,7 +230,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_decode_glyph(proc)\
-  gs_char proc(gs_font *, gs_glyph)
+  gs_char proc(gs_font *, gs_glyph, int)
     font_proc_decode_glyph((*decode_glyph));
 
     /*

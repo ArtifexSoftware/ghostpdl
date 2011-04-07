@@ -78,7 +78,7 @@ int define_gs_font(i_ctx_t *, gs_font *);
 void get_font_name(const gs_memory_t *mem, ref *pfname, const ref *op);
 void copy_font_name(gs_font_name * pfstr, const ref * pfname);
 gs_glyph zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored);
-gs_char gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph);
+gs_char gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch);
 const ref *zfont_get_to_unicode_map(gs_font_dir *dir);
 void get_GlyphNames2Unicode(i_ctx_t *i_ctx_p, gs_font *pfont, ref *pdref);
 

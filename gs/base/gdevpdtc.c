@@ -500,7 +500,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
 		    if (code < 0)
 			return code;
 		    if (pdf_is_CID_font(subfont)) {
-			if (subfont->procs.decode_glyph((gs_font *)subfont, glyph) != GS_NO_CHAR) {
+			if (subfont->procs.decode_glyph((gs_font *)subfont, glyph, -1) != GS_NO_CHAR) {
 			    /* Since PScript5.dll creates GlyphNames2Unicode with character codes
 			       instead CIDs, and with the WinCharSetFFFF-H2 CMap
 		               character codes appears different than CIDs (Bug 687954),
