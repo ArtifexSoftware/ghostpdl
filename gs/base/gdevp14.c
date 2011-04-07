@@ -4564,6 +4564,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
 {
     if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
 	return 1;
+    if (dev_spec_op == gxdso_is_pdf14_device)
+	return 1;
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
@@ -6292,6 +6294,13 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 *pcdev = dev;
                 return code;  /* Note, this are NOT put in the clist */
                 break;
+            case PDF14_SET_BLEND_PARAMS:
+                /* If there is a change we go ahead and apply it to the target */    
+                code = pdf14_clist_update_params(pdev, pis, false, 
+                                                 &(pdf14pct->params));
+                *pcdev = dev;
+                return code;
+                break;
             default:
 		break;		/* Pass remaining ops to target */
 	}
@@ -6350,6 +6359,7 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_imager_state * pis
     gx_device * pcdev;
     int changed = 0;
     int code = 0;
+    gs_composite_t *pct_new = NULL;
 
     params.crop_blend_params = crop_blend_params;
 
@@ -6378,23 +6388,22 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_imager_state * pis
 	changed |= PDF14_SET_OVERPRINT_MODE;
 	params.overprint_mode = pdev->overprint_mode = pis->overprint_mode;
     }
-
-
-    /*
-     * Put parameters into a compositor parameter and then call the
-     * create_compositor.  This will pass the data through the clist
-     * to the PDF 1.4 transparency output device.  Note:  This action
-     * never creates a new PDF 1.4 compositor and it does not change
-     * the imager state.
-     */
+    if (crop_blend_params) {
+        params.ctm = group_params->ctm;
+        params.bbox = group_params->bbox;
+    }
+    params.changed = changed;
+    /* Avoid recursion when we have a PDF14_SET_BLEND_PARAMS forced and apply
+       now to the target.  Otherwise we send of te compositor action
+       to the pdf14 device at this time.  This is due to the fact that we
+       need to often perform this operation when we are already starting to
+       do a compositor action */
     if (changed != 0) {
-        if (crop_blend_params) {
-            params.ctm = group_params->ctm;
-            params.bbox = group_params->bbox;
-        }
-	params.changed = changed;
-	code = send_pdf14trans((gs_imager_state *)pis, (gx_device *)pdev,
-					&pcdev, &params, pis->memory);
+        code = gs_create_pdf14trans(&pct_new, &params, pis->memory);
+        if (code < 0) return code;
+        code = dev_proc(pdev->target, create_compositor)
+		    (pdev->target, &pcdev, pct_new, pis, pis->memory, NULL);
+        gs_free_object(pis->memory, pct_new, "pdf14_clist_update_params");
     }
     return code;
 }

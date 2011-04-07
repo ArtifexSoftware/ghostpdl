@@ -187,6 +187,13 @@ enum {
      */
     gxdso_is_std_cmyk_1bit,
 
+    /* gxdso_is_pdf14_device:
+     *     data = NULL
+     *     size = 0
+     * Returns 1 if the device is a pdf14 device .
+     */
+    gxdso_is_pdf14_device,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

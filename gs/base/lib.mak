@@ -915,7 +915,7 @@ $(GLOBJ)gsmatrix.$(OBJ) : $(GLSRC)gsmatrix.c $(GXERR) $(math__h) $(memory__h)\
 $(GLOBJ)gspaint.$(OBJ) : $(GLSRC)gspaint.c $(GXERR) $(math__h) $(gpcheck_h)\
  $(gsropt_h) $(gsfixed_h) $(gxmatrix_h) $(gspaint_h) $(gspath_h)\
  $(gzpath_h) $(gxpaint_h) $(gzstate_h) $(gxdevice_h) $(gxdevmem_h)\
- $(gzcpath_h) $(gxhldevc_h) $(gsutil_h)
+ $(gzcpath_h) $(gxhldevc_h) $(gsutil_h) $(gxdevsop_h)
 	$(GLCC) $(GLO_)gspaint.$(OBJ) $(C_) $(GLSRC)gspaint.c
 
 $(GLOBJ)gsparam.$(OBJ) : $(GLSRC)gsparam.c $(GXERR) $(memory__h) $(string__h)\

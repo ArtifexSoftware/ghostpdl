@@ -162,6 +162,8 @@ int gs_pop_pdf14trans_device(gs_state * pgs);
 
 void gs_trans_group_params_init(gs_transparency_group_params_t *ptgp);
 
+int gs_update_trans_marking_params(gs_state * pgs);
+
 int gs_begin_transparency_group(gs_state * pgs,
 				const gs_transparency_group_params_t *ptgp,
 				const gs_rect *pbbox);
