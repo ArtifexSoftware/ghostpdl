@@ -113,7 +113,7 @@ xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 }
 
 static gs_char
-xps_true_callback_decode_glyph(gs_font *pfont, gs_glyph glyph)
+xps_true_callback_decode_glyph(gs_font *pfont, gs_glyph glyph, int ch)
 {
     /* We should do a reverse cmap lookup here to match PS/PDF.
      * However, a complete rearchitecture of our text and font processing

@@ -440,7 +440,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
 extern gs_char last_char;
 /* Get the unicode valude for a glyph */
 static gs_char
-pl_decode_glyph(gs_font *font,  gs_glyph glyph)
+pl_decode_glyph(gs_font *font,  gs_glyph glyph, int ch)
 {	
     return last_char;
 }
