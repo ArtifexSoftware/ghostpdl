@@ -135,6 +135,8 @@ Interp_filter(double t)
 static int
 Interp_contrib_pixels(double scale)
 {
+    if (scale == 0.0)
+        return 1;
     return (int)(((float)Interp_support) / (scale >= 1.0 ? 1.0 : scale)
                  * 2 + 1.5);
 }
@@ -142,6 +144,8 @@ Interp_contrib_pixels(double scale)
 static int
 Mitchell_contrib_pixels(double scale)
 {
+    if (scale == 0.0)
+        return 1;
     return (int)(((float)Mitchell_support) / (scale >= 1.0 ? 1.0 : max(scale, Mitchell_min_scale))
                  * 2 + 1.5);
 }
