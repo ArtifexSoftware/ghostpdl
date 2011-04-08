@@ -619,6 +619,8 @@ x_set_buffer(gx_device_X * xdev)
 	    xdev->buffer = buffer;
 	    mdev->width = xdev->width;
 	    mdev->height = xdev->height;
+	    mdev->device_icc_profile = xdev->device_icc_profile;
+	    rc_increment(xdev->device_icc_profile);
 	    mdev->color_info = xdev->color_info;
 	    mdev->base = xdev->buffer;
 	    gdev_mem_open_scan_lines(mdev, xdev->height);
@@ -654,7 +656,6 @@ x_set_buffer(gx_device_X * xdev)
 	COPY_PROC(strip_tile_rectangle);
 	COPY_PROC(strip_copy_rop);
 	COPY_PROC(begin_typed_image);
-	COPY_PROC(create_compositor);
 	COPY_PROC(text_begin);
 #undef COPY_PROC
 	if (xdev->is_buffered) {
