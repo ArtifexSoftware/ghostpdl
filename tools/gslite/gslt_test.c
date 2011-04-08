@@ -1038,7 +1038,7 @@ test9_tt_encode_char(gs_font *p42, gs_char chr, gs_glyph not_used)
 }
 
 static gs_char
-test9_tt_decode_glyph(gs_font *p42, gs_glyph glyph)
+test9_tt_decode_glyph(gs_font *p42, gs_glyph glyph, int ch)
 {
     return GS_NO_CHAR;
 }
