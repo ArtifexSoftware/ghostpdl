@@ -672,6 +672,23 @@ def
   /Indexed  //DeviceGray def
 currentdict end readonly def
 
+/ICCBased-resolve {
+  PDFfile fileposition exch
+  dup dup 1 oget
+  mark exch { oforce } forall .dicttomark
+  dup dup //true resolvestream
+  /ReusableStreamDecode filter /DataSource exch put
+  1 exch put
+  exch PDFfile exch setfileposition
+  % Resolve alternate color space
+  dup 1 get			% Get colorspace dictionary
+  dup /Alternate .knownget {	% Check for alternate color space
+    oforce resolvecolorspace /Alternate exch put 	% resolve and replace
+  } { 
+    pop 			% remove colorspace dictionary
+  } ifelse
+} bdef
+
 /csrdict 13 dict begin 
   /DeviceGray { } bdef
   /DeviceRGB { } bdef
@@ -687,19 +704,7 @@ currentdict end readonly def
 
   /ICCBased {
     dup 1 get type /dicttype ne {	% don't resolve more than once
-    PDFfile fileposition exch
-    dup dup 1 oget
-    mark exch { oforce } forall .dicttomark
-    dup dup //true resolvestream
-    /ReusableStreamDecode filter /DataSource exch put
-    1 exch put
-    exch PDFfile exch setfileposition
-    % Resolve alternate color space
-    dup 1 get			% Get colorspace dictionary
-    dup /Alternate .knownget	% Check for alternate color space
-    { oforce resolvecolorspace /Alternate exch put }	% resolve and replace
-    { pop }			% remove colorspace dictionary
-    ifelse
+      //ICCBased-resolve exec
     } if
   } bdef
 
@@ -850,14 +855,22 @@ currentdict end readonly def
   } ifelse
 } bdef
 /resolvecolorspace {	% <cspace> resolvecolorspace <cspace'>
-  dup dup type /arraytype eq { 0 get } if
-  //csrdict exch .knownget
-  {
-    exec dup type /nametype ne { dup length 1 eq { 0 get } if } if
+  dup type /dicttype eq { dup /N known } { //false } ifelse {
+      (   **** ICCBased color space is a bare stream dictionary\n)
+      pdfformaterror
+      [ /ICCBased 3 -1 roll ]
+      //ICCBased-resolve exec
   } {
-    dup type /nametype eq { csresolve } { csset exch pop } ifelse
+    dup dup type /arraytype eq { 0 get } if
+    //csrdict exch .knownget  {
+      exec dup type /nametype ne { dup length 1 eq { 0 get } if } if
+    } {
+      dup type /nametype eq { csresolve } { csset exch pop } ifelse
+    } ifelse
   } ifelse
 } bdef
+
+currentdict /ICCBased-resolve undef
 
 /scresolve {	% <c0> ... scresolve <multi>
 		% We can't really make sc[n] and SC[N] work, because
