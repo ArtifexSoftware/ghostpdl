@@ -231,6 +231,13 @@ zgetuseciecolor(i_ctx_t * i_ctx_p)
     return 0;
 }
 
+/* Clean up when unwinding the stack on an error.  (No action needed.) */
+static int
+colour_cleanup(i_ctx_t *i_ctx_p)
+{
+    return 0;
+}
+
 /*
  *  <param1>  ...  <paramN>   setcolor   -
  *
@@ -3874,7 +3881,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 	    *stage = 3;
 	    *cont = 1;
 	    check_estack(5);
-	    push_mark_estack(es_other, 0);
+	    push_mark_estack(es_other, colour_cleanup);
 	    esp++;
 	    /* variable to hold index of the space we are dealing with */
 	    make_int(esp, 0);
@@ -6190,7 +6197,7 @@ zsetgray(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(5);
-    push_mark_estack(es_other, 0);
+    push_mark_estack(es_other, colour_cleanup);
     esp++;
     /* variable to hold base type (0 = gray) */
     make_int(esp, 0);
@@ -6229,7 +6236,7 @@ zsethsbcolor(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(5);
-    push_mark_estack(es_other, 0);
+    push_mark_estack(es_other, colour_cleanup);
     esp++;
     /* variable to hold base type (1 = RGB) */
     make_int(esp, 1);
@@ -6266,7 +6273,7 @@ zsetrgbcolor(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(5);
-    push_mark_estack(es_other, 0);
+    push_mark_estack(es_other, colour_cleanup);
     esp++;
     /* variable to hold base type (1 = RGB) */
     make_int(esp, 1);
@@ -6304,7 +6311,7 @@ zsetcmykcolor(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(5);
-    push_mark_estack(es_other, 0);
+    push_mark_estack(es_other, colour_cleanup);
     esp++;
     /* variable to hold base type (2 = CMYK) */
     make_int(esp, 2);
@@ -6409,7 +6416,7 @@ zcurrentgray(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(7);
-    push_mark_estack(es_other, 0);
+    push_mark_estack(es_other, colour_cleanup);
     esp++;
     /* variable to hold stack depth for tint transform */
     make_int(&esp[0], 0);
@@ -6444,7 +6451,7 @@ zcurrenthsbcolor(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(7);
-    push_mark_estack(es_other, 0);
+    push_mark_estack(es_other, colour_cleanup);
     esp++;
     /* variable to hold stack depth for tint transform */
     make_int(&esp[0], 0);
@@ -6475,7 +6482,7 @@ zcurrentrgbcolor(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(7);
-    push_mark_estack(es_other, 0);
+    push_mark_estack(es_other, colour_cleanup);
     esp++;
     /* variable to hold stack depth for tint transform */
     make_int(&esp[0], 0);
@@ -6506,7 +6513,7 @@ zcurrentcmykcolor(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will do the work */
     /* Make sure the exec stack has enough space */
     check_estack(7);
-    push_mark_estack(es_other, 0);
+    push_mark_estack(es_other, colour_cleanup);
     esp++;
     /* variable to hold stack depth for tint transform */
     make_int(&esp[0], 0);
