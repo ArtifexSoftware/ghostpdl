@@ -34,6 +34,7 @@ typedef unsigned short ushort;
 static void
 add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 
+#define CMYK_KONLY 0
 #define SAVEICCPROFILE 1
 #define HEADER_SIZE 128
 #define TAG_SIZE 12
@@ -1294,8 +1295,16 @@ create_xyz2cmyk(unsigned short *table_data, int mlut_size, int num_samples, ucrb
                 rgb_values[0] = xyz[0] * 1.96253 + xyz[1] * (-0.61068) + xyz[2] * (-0.34137);
                 rgb_values[1] = xyz[0] * (-0.97876) + xyz[1] * 1.91615 + xyz[2] * 0.03342;
                 rgb_values[2] = xyz[0] * 0.028693 + xyz[1] * (-0.14067) + xyz[2] * 1.34926;
+#if CMYK_KONLY
+                /* A strange case where the CMYK profile behaves like a monochrome device */
+                cmyk[3] = 1.0 - color_rgb_to_gray(rgb_values[0], rgb_values[1], rgb_values[2]);
+                cmyk[2] = 0.0;
+                cmyk[1] = 0.0;
+                cmyk[0] = 0.0;
+#else
                 /* Now RGB to CMYK */
                 color_rgb_to_cmyk(rgb_values[0], rgb_values[1], rgb_values[2], cmyk, ucr_data);
+#endif
                 /* Now store the CMYK value */                
                 for (jj = 0; jj < 4; jj++) {
                     if (cmyk[jj] < 0) cmyk[jj] = 0;
