@@ -1091,10 +1091,10 @@ color_rgb_to_cmyk(float r, float g, float b, float cmyk[4], ucrbg_t *ucr_data)
         if (b_int < 0) b_int = 0;
         if (k_int < 0) k_int = 0;
 
-        cmyk[0] = ucr_data->cyan[r_int];
-        cmyk[1] = ucr_data->magenta[g_int];
-        cmyk[2] = ucr_data->yellow[b_int];
-        cmyk[3] = ucr_data->black[k_int];
+        cmyk[0] = ucr_data->cyan[r_int]/255.0;
+        cmyk[1] = ucr_data->magenta[g_int]/255.0;
+        cmyk[2] = ucr_data->yellow[b_int]/255.0;
+        cmyk[3] = ucr_data->black[k_int]/255.0;
     }
 }
 
@@ -1287,13 +1287,9 @@ create_xyz2cmyk(unsigned short *table_data, int mlut_size, int num_samples, ucrb
             yval = (float) y / (float) (num_samples - 1);
             for (z = 0; z < num_samples; z++) {
                 zval = (float) z / (float) (num_samples - 1);
-                /* NO WHITE POINT RESCALE! */
-                /* xyz[0] = D50WhitePoint[0]*xval;
+                xyz[0] = D50WhitePoint[0]*xval;
                 xyz[1] = D50WhitePoint[1]*yval;
-                xyz[2] = D50WhitePoint[2]*zval; */
-                xyz[0] = xval;
-                xyz[1] = yval;
-                xyz[2] = zval;
+                xyz[2] = D50WhitePoint[2]*zval;
                 /* To RGB.  Using Inverse of AdobeRGB Mapping */
                 rgb_values[0] = xyz[0] * 1.96253 + xyz[1] * (-0.61068) + xyz[2] * (-0.34137);
                 rgb_values[1] = xyz[0] * (-0.97876) + xyz[1] * 1.91615 + xyz[2] * 0.03342;
