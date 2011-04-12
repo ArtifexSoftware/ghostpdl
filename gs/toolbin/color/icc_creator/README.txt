@@ -43,17 +43,10 @@ achieved by the user first creating a table of values that define the desired
 relationship between RGB and CMYK.  The data should be in tab delimited
 text form.  The range of values is 0 to 255 and an example set of data is given 
 in the file table_data.txt where we have a case that has no UCR or BG.
-
-If cpsi mode is on, then the mapping from RGB to CMYK is performed using
-
-
-
-else if cpsi mode is off, then the mapping from RGB to CMYK is performed using
-
-
-
-
-   
+Note that in this table of data, the UCR is explicit in the data by
+UCR_C = 255 - R - C
+UCR_M = 255 - G - M
+UCR_Y = 255 - B - Y
 
 Given the above mapping, the other mappings are implemented using:
 
