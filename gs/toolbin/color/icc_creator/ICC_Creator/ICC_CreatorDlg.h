@@ -15,6 +15,7 @@
 #pragma once
 
 #include "CIELAB.h"
+#include "icc_create.h"
 #include "afxwin.h"
 
 // CICC_CreatorDlg dialog
@@ -37,9 +38,12 @@ protected:
 
         int GetCIELAB(LPCTSTR lpszPathName);
         int GetNames(LPCTSTR lpszPathName);
+        int ParseData(char pszInFile[]);
         int CreateICC(void);
         cielab_t *m_cielab;
         colornames_t *m_colorant_names;
+        bool m_cpsi_mode;
+        ucrbg_t *m_ucr_bg_data;
 
         int m_num_colorant_names;
         int m_num_icc_colorants;
@@ -68,8 +72,6 @@ public:
     afx_msg void OnEnChangeEditthresh();
     CEdit m_graythreshold;
     float m_floatthreshold_gray;
-    float m_floatthreshold_rgb;
-    CEdit m_string_rgb_thresh;
-    afx_msg void OnEnChangeEditthreshrgb();
-    afx_msg void OnBnClickedRgbthresh();
+    afx_msg void OnBnClickedPstables();
+    afx_msg void OnBnClickedCheck1();
 };

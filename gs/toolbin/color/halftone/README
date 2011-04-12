@@ -18,7 +18,7 @@ target_angle: The desired screen angle in degrees. [default 0 degrees]
 
 size_of_supercell: The specified size of the supercell will impact the number of achievable levels.  If a small size is specified (example 1) the smallest periodic cell will be created, regardless of the setting for target_quantization_levels and it is possible that target_quantization_levels is not achieved.  size_of_supercell should not be set to something reasonably large to achieve a specified target_quantization_levels.  For example 64.  Work is underway to have this value optimally set based upon the desired number of gray levels.
 
-The output of the code is an 8 bit row ordered Width x Height threshold array that is periodic vertically and horizontally.  The size of the array is indicated in the output file name.  Example Screen_Dithered_WxH.raw.  
+The output of the code is an 8 bit row ordered Width x Height threshold array that is periodic vertically and horizontally.  The size of the array is indicated in the output file name.  Example Screen_Dithered_WxH.raw.
 
 If the -ps option is specified, the output will be a screen that can readily be brought into ghostscript.  For example
 gswin32c -r300 -dDisplayFormat=16#20102 -c "(Screen_20x10.ps) run sethalftone (examples/tiger.eps) run"
@@ -31,5 +31,5 @@ Currently the code is limited in a few features, which will be included in the n
 3) The code currently only creates 8 bit bi-level threshold arrays.  It is planned to enable the creation of 16 bit and multi-level threshold arrays.  Due to the manner in which the screens are created, this should be a simple task.
 4) Often it is desired to incorporate a tone reproduction curve (TRC) into the design of a screen.  While not currently supported, the plan is add that option into this code.
 5) Typically screens are designed off line and provided as a threshold array to most applications.  In postscript, it is possible that screens can be specified within the document with specific attributes including line frequency and dot shape.  This code needs significant optimization before it should be folded into the ghostscript code base for use in this manner.
+6) Minimum dot size handling.
 
- 

@@ -25,10 +25,18 @@ typedef enum {
     RGB2CMYK
 } link_t;
 
+typedef struct ucr_bg {   
+    unsigned char *cyan;
+    unsigned char *magenta;
+    unsigned char *yellow;
+    unsigned char *black;
+} ucrbg_t;
+
+
 int create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_colors, int num_samples, TCHAR FileName[]);
 int create_devicelink_profile(TCHAR FileName[],link_t link_type);
 int create_psrgb_profile(TCHAR FileName[]);
-int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab);
+int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab, bool cpsi_mode, ucrbg_t *ucr_data);
 int create_psgray_profile(TCHAR FileName[]);
 int  create_gray_threshold_profile(TCHAR FileName[], float threshold);
 int  create_rgb_threshold_profile(TCHAR FileName[], float threshold);

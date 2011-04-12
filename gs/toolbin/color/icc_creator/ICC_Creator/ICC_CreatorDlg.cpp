@@ -70,7 +70,6 @@ void CICC_CreatorDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialog::DoDataExchange(pDX);
     DDX_Control(pDX, IDC_EDITTHRESH, m_graythreshold);
-    DDX_Control(pDX, IDC_EDITTHRESHRGB, m_string_rgb_thresh);
 }
 
 BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
@@ -89,8 +88,8 @@ BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
         ON_BN_CLICKED(IDC_PSICC, &CICC_CreatorDlg::OnBnClickedPsicc)
         ON_BN_CLICKED(IDC_GRAYTHRESH, &CICC_CreatorDlg::OnBnClickedGraythresh)
         ON_EN_CHANGE(IDC_EDITTHRESH, &CICC_CreatorDlg::OnEnChangeEditthresh)
-        ON_EN_CHANGE(IDC_EDITTHRESHRGB, &CICC_CreatorDlg::OnEnChangeEditthreshrgb)
-        ON_BN_CLICKED(IDC_RGBTHRESH, &CICC_CreatorDlg::OnBnClickedRgbthresh)
+        ON_BN_CLICKED(IDC_PSTABLES, &CICC_CreatorDlg::OnBnClickedPstables)
+        ON_BN_CLICKED(IDC_CHECK1, &CICC_CreatorDlg::OnBnClickedCheck1)
 END_MESSAGE_MAP()
 
 
@@ -130,11 +129,11 @@ BOOL CICC_CreatorDlg::OnInitDialog()
         this->m_sample_rate = 0;
         this->m_cielab = NULL;
         this->m_colorant_names = NULL;  
+        this->m_cpsi_mode = false;
+        this->m_ucr_bg_data = NULL;
         this->SetDlgItemText(IDC_STATUS,_T("Ready."));
         this->m_floatthreshold_gray = 50;
         this->m_graythreshold.SetWindowText(_T("50"));
-        this->m_floatthreshold_rgb = 50;
-        this->m_string_rgb_thresh.SetWindowText(_T("50"));
 
         return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -312,8 +311,6 @@ void CICC_CreatorDlg::OnBnClickedIccProfile()
 
   
 }
-
-
 
 int CICC_CreatorDlg::GetCIELAB(LPCTSTR lpszPathName)
 {
@@ -620,7 +617,7 @@ void CICC_CreatorDlg::OnBnClickedPsicc()
     } 
     ofn.lpstrTitle	= _T("Save PS CMYK Profile");
     if (IDOK == GetSaveFileName(&ofn)) {
-        ok = create_pscmyk_profile(szFile, false);
+        ok = create_pscmyk_profile(szFile, false, this->m_cpsi_mode, this->m_ucr_bg_data);
         if (ok == 0)
             this->SetDlgItemText(IDC_STATUS,_T("Created PS CMYK Profile"));
     } 
@@ -681,50 +678,95 @@ void CICC_CreatorDlg::OnEnChangeEditthresh()
         }
 }
 
-void CICC_CreatorDlg::OnEnChangeEditthreshrgb()
-{
-    // TODO:  If this is a RICHEDIT control, the control will not
-    // send this notification unless you override the CDialog::OnInitDialog()
-    // function and call CRichEditCtrl().SetEventMask()
-    // with the ENM_CHANGE flag ORed into the mask.
+int CICC_CreatorDlg::ParseData(char pszInFile[]) {
 
-    // TODO:  Add your control notification handler code here
+    FILE *fid = NULL;
+    unsigned char num_read;
+    char header[256];
+    int r, g, b, c, m, y, k;
+    int j;
 
-    char str[25];
-    int data;
-
-    this->m_string_rgb_thresh.GetWindowText(str,24);
-    sscanf(str,"%f",&(this->m_floatthreshold_rgb));
-    if (this->m_floatthreshold_rgb < 0) {
-        this->m_floatthreshold_rgb = 0;
-        this->m_string_rgb_thresh.SetWindowText(_T("0"));
+    /* Allocate space for the data */
+    this->m_ucr_bg_data = (ucrbg_t*) malloc(sizeof(ucrbg_t));
+    if (this->m_ucr_bg_data == NULL) {
+        return -1;
     }
-    if (this->m_floatthreshold_rgb > 100) {
-        this->m_floatthreshold_rgb = 100;
-        this->m_string_rgb_thresh.SetWindowText(_T("100"));
+    this->m_ucr_bg_data->cyan = (unsigned char*) malloc(256);
+    this->m_ucr_bg_data->magenta = (unsigned char*) malloc(256);
+    this->m_ucr_bg_data->yellow = (unsigned char*) malloc(256);
+    this->m_ucr_bg_data->black = (unsigned char*) malloc(256);
+    if (this->m_ucr_bg_data->cyan == NULL ||
+        this->m_ucr_bg_data->magenta == NULL ||
+        this->m_ucr_bg_data->yellow == NULL ||
+        this->m_ucr_bg_data->black == NULL) {
+        return -1;
     }
+    fid = fopen(pszInFile, "r");
+    if (!fid) {
+        return -1;
+    }
+    /* First line */
+    fgets(&(header[0]),255,fid);
+    for (j = 0; j < 256; j++) {
+        num_read = fscanf(fid,"%d %d %d %d %d %d %d",&r, &g, &b, &c, &m, &y, &k);
+        if(num_read != 7) 
+            return -1;  
+        if (c > 255) c = 255;
+        if (c < 0) c = 0;
+        if (m > 255) m = 255;
+        if (m < 0) m = 0;
+        if (y > 255) y = 255;
+        if (y < 0) y = 0;
+        if (k > 255) k = 255;
+        if (k < 0) k = 0;
+        this->m_ucr_bg_data->cyan[j] = (unsigned char) c;
+        this->m_ucr_bg_data->magenta[j] = (unsigned char) m;
+        this->m_ucr_bg_data->yellow[j] = (unsigned char) y;
+        this->m_ucr_bg_data->black[j] = (unsigned char) k;
+    }
+    fclose(fid);
+    return(0);
 }
 
-void CICC_CreatorDlg::OnBnClickedRgbthresh()
+/* Load the table that can be used to define the relationships between 
+   RGB, Gray, CMYK */
+void CICC_CreatorDlg::OnBnClickedPstables()
 {
-    int ok;
+
+    int returnval;
     TCHAR szFile[MAX_PATH];
     ZeroMemory(szFile, MAX_PATH);
     OPENFILENAME ofn;
     ZeroMemory(&ofn, sizeof(OPENFILENAME));
-    ofn.lStructSize	= sizeof(OPENFILENAME);
-    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
-    ofn.hwndOwner	= this->m_hWnd;
-    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
-    ofn.lpstrTitle	= _T("Save RGB ICC Profile");
-    ofn.lpstrFile	= szFile;
-    ofn.nMaxFile	= MAX_PATH;
+    ofn.lStructSize = sizeof(OPENFILENAME);
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.hwndOwner = this->m_hWnd;
 
-    return;  /* This is disabled for now */
+    ofn.lpstrFilter = _T("Supported Files Types(*.txt)\0*.txt\0TXT Files (*.)\0*.TXT\0\0");
 
-    if (IDOK == GetSaveFileName(&ofn)) {
-         ok = create_rgb_threshold_profile(szFile, this->m_floatthreshold_rgb);
-        if (ok == 0)
-            this->SetDlgItemText(IDC_STATUS,_T("Created RGB Threshhold Profile"));
-    } 
+    ofn.lpstrTitle = _T("Load Table Data");
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = MAX_PATH;
+    if (IDOK == GetOpenFileName(&ofn)) {
+        returnval = ParseData(szFile);
+        if (returnval == 0) {
+            this->SetDlgItemText(IDC_STATUS,"Data Loaded OK");
+        } else {
+            this->SetDlgItemText(IDC_STATUS,"Data Load Failed!");
+            free(this->m_ucr_bg_data->cyan);
+            free(this->m_ucr_bg_data->magenta);
+            free(this->m_ucr_bg_data->yellow);
+            free(this->m_ucr_bg_data->black);
+            free(this->m_ucr_bg_data);
+            this->m_ucr_bg_data = NULL;
+        }
+    }
+}
+void CICC_CreatorDlg::OnBnClickedCheck1()
+{
+    if (this->m_cpsi_mode == true) {
+        this->m_cpsi_mode = false;
+    } else {
+        this->m_cpsi_mode = true;
+    }
 }

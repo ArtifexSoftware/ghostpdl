@@ -1026,7 +1026,7 @@ color_cmyk_to_gray(float c, float m, float y, float k)
 
 /* Convert CMYK to RGB. */
 void
-color_cmyk_to_rgb(float c, float m, float y, float k, float rgb[3])
+color_cmyk_to_rgb(float c, float m, float y, float k, float rgb[3], bool cpsi_mode)
 {
     float not_k;
 
@@ -1041,68 +1041,62 @@ color_cmyk_to_rgb(float c, float m, float y, float k, float rgb[3])
         return;
     }
     not_k = 1 - k;
-    rgb[0] = (c > not_k ? 0 : not_k - c);
-    rgb[1] = (m > not_k ? 0 : not_k - m);
-    rgb[2] = (y > not_k ? 0 : not_k - y);    
 
+    if (cpsi_mode) {
+        rgb[0] = (1.0 - c) * not_k;
+        rgb[1] = (1.0 - m) * not_k;
+        rgb[2] = (1.0 - y) * not_k;
+    } else {
+        rgb[0] = (c > not_k ? 0 : not_k - c);
+        rgb[1] = (m > not_k ? 0 : not_k - m);
+        rgb[2] = (y > not_k ? 0 : not_k - y);    
+    }
 }
 
 
 /* Convert RGB to CMYK. */
 /* Note that this involves black generation and undercolor removal.
-   Right now set up for no bg or ucr.  Just doing one minus composite.
-   Since this is for the soft mask, that should be OK. */
+   These are defined by a table ucr and bg table of data that is 
+   settable by the user.  The index into the K table is performed by 
+   */
 void
-color_rgb_to_cmyk(float r, float g, float b, float cmyk[4])
+color_rgb_to_cmyk(float r, float g, float b, float cmyk[4], ucrbg_t *ucr_data)
 {
     float c = 1 - r, m = 1 - g, y = 1 - b;
     float k = (c < m ? min(c, y) : min(m, y));
+    int r_int;
+    int g_int;
+    int b_int;
+    int k_int;
 
-    /*
-     * The default UCR and BG functions are pretty arbitrary,
-     * but they must agree with the ones in gs_init.ps.
-     */
-    float bg = 0;
-    float ucr = 0;
+    if (ucr_data == NULL) {
+        /* No ucr or bg */
+	cmyk[0] = c, cmyk[1] = m, cmyk[2] = y, cmyk[3] = 0;
+        return;
+    } else {
+        /* index and get the value */
 
-    if (ucr == 1)
-	cmyk[0] = cmyk[1] = cmyk[2] = 0;
-    else if (ucr == 0)
-	cmyk[0] = c, cmyk[1] = m, cmyk[2] = y;
-    else {
+        r_int = ROUND(r * 255.0);
+        g_int = ROUND(g * 255.0);
+        b_int = ROUND(b * 255.0);
+        k_int = ROUND(k * 255.0);
 
-#if 0
-	if (!gs_currentcpsimode(mem)) {
-	    /* C = max(0.0, min(1.0, 1 - R - UCR)), etc. */
-	    signed_frac not_ucr = (ucr < 0 ? frac_1 + ucr : frac_1);
+        if (r_int > 255) r_int = 255;
+        if (g_int > 255) g_int = 255;
+        if (b_int > 255) b_int = 255;
+        if (k_int > 255) k_int = 255;
 
-	    cmyk[0] = (c < ucr ? frac_0 : c > not_ucr ? frac_1 : c - ucr);
-	    cmyk[1] = (m < ucr ? frac_0 : m > not_ucr ? frac_1 : m - ucr);
-	    cmyk[2] = (y < ucr ? frac_0 : y > not_ucr ? frac_1 : y - ucr);
-	} else {
-	    /* Adobe CPSI method */
-	    /* C = max(0.0, min(1.0, 1 - R / (1 - UCR))), etc. */
-	    float denom = frac2float(frac_1 - ucr);		/* unscaled */
-	    float v;
+        if (r_int < 0) r_int = 0;
+        if (g_int < 0) g_int = 0;
+        if (b_int < 0) b_int = 0;
+        if (k_int < 0) k_int = 0;
 
-	    v = (float)frac_1 - r / denom;	/* unscaled */
-	    cmyk[0] =
-		(is_fneg(v) ? frac_0 : v >= (float)frac_1 ? frac_1 : (frac) v);
-	    v = (float)frac_1 - g / denom;	/* unscaled */
-	    cmyk[1] =
-		(is_fneg(v) ? frac_0 : v >= (float)frac_1 ? frac_1 : (frac) v);
-	    v = (float)frac_1 - b / denom;	/* unscaled */
-	    cmyk[2] =
-		(is_fneg(v) ? frac_0 : v >= (float)frac_1 ? frac_1 : (frac) v);
-	}
-
-#endif
-
+        cmyk[0] = ucr_data->cyan[r_int];
+        cmyk[1] = ucr_data->magenta[g_int];
+        cmyk[2] = ucr_data->yellow[b_int];
+        cmyk[3] = ucr_data->black[k_int];
     }
-    cmyk[3] = bg;
 }
-
-
 
 static void
 create_cmyk2gray(unsigned short *table_data, int mlut_size, int num_samples)
@@ -1182,7 +1176,7 @@ create_gray2rgb(unsigned short *table_data, int mlut_size, int num_samples)
 }
 
 static void
-create_cmyk2lab(unsigned short *table_data, int mlut_size, int num_samples)
+create_cmyk2lab(unsigned short *table_data, int mlut_size, int num_samples, bool cpsi_mode)
 {
     int c,m,y,k;
     float cyan,magenta,yellow,black;
@@ -1204,7 +1198,7 @@ create_cmyk2lab(unsigned short *table_data, int mlut_size, int num_samples)
                 yellow = (float) y / (float) (num_samples -1);
                 for (k = 0; k < num_samples; k++) {
                     black = (float) k / (float) (num_samples -1);
-                    color_cmyk_to_rgb(cyan, magenta, yellow, black, rgb_values);
+                    color_cmyk_to_rgb(cyan, magenta, yellow, black, rgb_values, cpsi_mode);
                     /* Now get that rgb value to CIEXYZ */
                     /* Now get that rgb value to CIEXYZ */
                     xyz[0] = rgb_values[0] * 0.60974 + rgb_values[1] * 0.20528 + rgb_values[2] * 0.14919;
@@ -1231,7 +1225,7 @@ create_cmyk2lab(unsigned short *table_data, int mlut_size, int num_samples)
 }
 
 static void
-create_cmyk2xyz(unsigned short *table_data, int mlut_size, int num_samples)
+create_cmyk2xyz(unsigned short *table_data, int mlut_size, int num_samples, bool cpsi_mode)
 {
     int c,m,y,k;
     float cyan,magenta,yellow,black;
@@ -1254,7 +1248,7 @@ create_cmyk2xyz(unsigned short *table_data, int mlut_size, int num_samples)
                 yellow = (float) y / (float) (num_samples - 1);
                 for (k = 0; k < num_samples; k++) {
                     black = (float) k / (float) (num_samples -1);
-                    color_cmyk_to_rgb(cyan, magenta, yellow, black, rgb_values);
+                    color_cmyk_to_rgb(cyan, magenta, yellow, black, rgb_values, cpsi_mode);
                     /* Now get that rgb value to CIEXYZ */
                     xyz[0] = rgb_values[0] * 0.60974 + rgb_values[1] * 0.20528 + rgb_values[2] * 0.14919;
                     xyz[1] = rgb_values[0] * 0.31111 + rgb_values[1] * 0.62567 + rgb_values[2] * 0.06322;
@@ -1277,7 +1271,7 @@ create_cmyk2xyz(unsigned short *table_data, int mlut_size, int num_samples)
 }
 
 static void
-create_xyz2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
+create_xyz2cmyk(unsigned short *table_data, int mlut_size, int num_samples, ucrbg_t *ucr_data)
 {
     int x,y,z,jj;
     float xval,yval,zval;
@@ -1293,15 +1287,19 @@ create_xyz2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
             yval = (float) y / (float) (num_samples - 1);
             for (z = 0; z < num_samples; z++) {
                 zval = (float) z / (float) (num_samples - 1);
-                xyz[0] = D50WhitePoint[0]*xval;
+                /* NO WHITE POINT RESCALE! */
+                /* xyz[0] = D50WhitePoint[0]*xval;
                 xyz[1] = D50WhitePoint[1]*yval;
-                xyz[2] = D50WhitePoint[2]*zval;
+                xyz[2] = D50WhitePoint[2]*zval; */
+                xyz[0] = xval;
+                xyz[1] = yval;
+                xyz[2] = zval;
                 /* To RGB.  Using Inverse of AdobeRGB Mapping */
                 rgb_values[0] = xyz[0] * 1.96253 + xyz[1] * (-0.61068) + xyz[2] * (-0.34137);
                 rgb_values[1] = xyz[0] * (-0.97876) + xyz[1] * 1.91615 + xyz[2] * 0.03342;
                 rgb_values[2] = xyz[0] * 0.028693 + xyz[1] * (-0.14067) + xyz[2] * 1.34926;
                 /* Now RGB to CMYK */
-                color_rgb_to_cmyk(rgb_values[0], rgb_values[1], rgb_values[2], cmyk);
+                color_rgb_to_cmyk(rgb_values[0], rgb_values[1], rgb_values[2], cmyk, ucr_data);
                 /* Now store the CMYK value */                
                 for (jj = 0; jj < 4; jj++) {
                     if (cmyk[jj] < 0) cmyk[jj] = 0;
@@ -1345,7 +1343,6 @@ create_lab2gray_special(unsigned short *table_data, int num_samples)
     int l,a,b;
     float lstar,astar,bstar;
     unsigned short *buffptr = table_data;
-    float rgb_values[3];
     float xyz[3], lab_value[3], gray_value;
 
     /* Step through the lab indices, convert to CIEXYZ
@@ -1372,7 +1369,7 @@ create_lab2gray_special(unsigned short *table_data, int num_samples)
 }
 
 static void
-create_lab2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
+create_lab2cmyk(unsigned short *table_data, int mlut_size, int num_samples, ucrbg_t *ucr_data)
 {
     int l,a,b,jj;
     float lstar,astar,bstar;
@@ -1399,7 +1396,7 @@ create_lab2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
                 rgb_values[1] = xyz[0] * (-0.97876) + xyz[1] * 1.91615 + xyz[2] * 0.03342;
                 rgb_values[2] = xyz[0] * 0.028693 + xyz[1] * (-0.14067) + xyz[2] * 1.34926;
                 /* Now RGB to CMYK */
-                color_rgb_to_cmyk(rgb_values[0], rgb_values[1], rgb_values[2], cmyk);
+                color_rgb_to_cmyk(rgb_values[0], rgb_values[1], rgb_values[2], cmyk, ucr_data);
                 /* Now store the CMYK value */                
                 for (jj = 0; jj < 4; jj++) {
                     if (cmyk[jj] < 0) cmyk[jj] = 0;
@@ -1411,7 +1408,7 @@ create_lab2cmyk(unsigned short *table_data, int mlut_size, int num_samples)
     }
 }
 
-int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab)
+int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab, bool cpsi_mode, ucrbg_t *ucr_data)
 {
     icProfile iccprofile;
     icHeader  *header = &(iccprofile.header);
@@ -1496,15 +1493,15 @@ int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab)
     /* Create the table data that we will stuff in */
     table_data_AtoB = (unsigned short*) malloc(mlut_size_atob*sizeof(unsigned short)*numout);
     if (pcs_islab) {
-        create_cmyk2lab(table_data_AtoB, mlut_size_atob, num_samples);
+        create_cmyk2lab(table_data_AtoB, mlut_size_atob, num_samples, cpsi_mode);
     } else {
-        create_cmyk2xyz(table_data_AtoB, mlut_size_atob, num_samples);
+        create_cmyk2xyz(table_data_AtoB, mlut_size_atob, num_samples, cpsi_mode);
     }
     table_data_BtoA = (unsigned short*) malloc(mlut_size_btoa*sizeof(unsigned short)*num_colors);
     if (pcs_islab) {
-        create_lab2cmyk(table_data_BtoA, mlut_size_btoa, num_samples); 
+        create_lab2cmyk(table_data_BtoA, mlut_size_btoa, num_samples, ucr_data); 
     } else {
-        create_xyz2cmyk(table_data_BtoA, mlut_size_atob, num_samples);
+        create_xyz2cmyk(table_data_BtoA, mlut_size_atob, num_samples, ucr_data);
     }
     /* Now the ATOB0 */
     add_tabledata(curr_ptr, (void*) table_data_AtoB, num_colors, num_samples, 1, 3, false);
@@ -1616,7 +1613,6 @@ int create_gray_threshold_profile(TCHAR FileName[], float threshhold)
     int numout = 3;     /* PCS number... */
     int num_colors = 1;  /* Gray colors */
     int num_samples = 2;    /* clut samples */
-    float encode_gamma;
     unsigned short *threshold_table;
     int midpoint;
     int mlut_size_btoa;
@@ -2282,10 +2278,6 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     int profile_size, last_tag, tag_location, tag_size;
     unsigned char *buffer,*curr_ptr;
     icS15Fixed16Number temp_XYZ[3];
-    float d50[3];
-    float *cam;
-    float *temp_matrix[9];
-    float lmn_vector[3],d50_cieA[3];
 
     profile_size = HEADER_SIZE;
     tag_list = (gsicc_tag*) malloc(sizeof(gsicc_tag)*num_tags);
