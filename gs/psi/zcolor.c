@@ -1486,6 +1486,20 @@ static int rgbbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
     os_ptr op = osp;
     float RGB[3], CMYK[4], Gray, UCR, BG;
     int i;
+    const gs_color_space *  pcs = gs_currentcolorspace(igs);
+
+    if (pcs->id == cs_DeviceGray_id) {
+	/* UGLY hack. Its possible for the graphics library to change the
+	 * colour space to DeviceGray (setcachedevice), but this does not
+	 * change the PostScript space. It can't, because the graphics library
+	 * doesn't know about the PostScript objects. If we get a current*
+	 * operation before the space has been restored, the colour space in
+	 * the graphics library and the PostScript stored space won't match.
+	 * If that happens then we need to pretend the PS colour space was
+	 * DeviceGray
+	 */
+	return(graybasecolor(i_ctx_p, space, base, stage, cont, stack_depth));
+    }
 
     switch (*stage) {
 	case 0:
@@ -1821,6 +1835,20 @@ static int cmykbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, in
     os_ptr op = osp;
     float CMYK[4], Gray, RGB[3];
     int i;
+    const gs_color_space *  pcs = gs_currentcolorspace(igs);
+
+    if (pcs->id == cs_DeviceGray_id) {
+	/* UGLY hack. Its possible for the graphics library to change the
+	 * colour space to DeviceGray (setcachedevice), but this does not
+	 * change the PostScript space. It can't, because the graphics library
+	 * doesn't know about the PostScript objects. If we get a current*
+	 * operation before the space has been restored, the colour space in
+	 * the graphics library and the PostScript stored space won't match.
+	 * If that happens then we need to pretend the PS colour space was
+	 * DeviceGray
+	 */
+	return(graybasecolor(i_ctx_p, space, base, stage, cont, stack_depth));
+    }
 
     *cont = 0;
     *stage = 0;
