@@ -20,15 +20,41 @@
 
 % usage: gs -dNODISPLAY -q -sFile=____.pdf [-dDumpMediaSizes] [-dDumpFontsUsed [-dShowEmbeddedFonts] ] toolbin/pdf_info.ps
 
+/showoptions {
+  (           where "options" are:) =
+  (           -dDumpMediaSizes=false    (default true) MediaBox and CropBox for each page) =
+  (           -dDumpFontsNeeded=false   (default true)Fonts used, but not embedded) =
+  (           -dDumpFontsUsed           List all fonts used) =
+  (           -dShowEmbeddedFonts       only meaningful with -dDumpFontsUsed) =
+  (\n          If no options are given, the default is -dDumpMediaSizes -dDumpFontsNeeded) =
+  () =
+  flush
+} bind def
+
+/DumpMediaSizes where { pop } { /DumpMediaSizes true def } ifelse
+/DumpFontsNeeded where { pop } { /DumpFontsNeeded true def } ifelse
+
+[ shellarguments
+  { counttomark 1 eq {
+      dup 0 get (-) 0 get ne { 
+	% File specified on the command line using:  -- toolbin/pdf_info.ps infile.pdf
+	/File exch def
+	false	% don't show usage
+      } {
+	true	% show usage and quit
+      } ifelse
+    } { true } ifelse
+    {
+      (\n*** Usage: gs [options] -- toolbin/pdf_info.ps infile.pdf  ***\n\n) print
+      showoptions
+      quit
+    } if
+  } if
+   
 /File where not {
   (\n   *** Missing input file name \(use -sFile=____.pdf\)\n) =
   (    usage: gs -dNODISPLAY -q -sFile=____.pdf [ options ] toolbin/pdf_info.ps\n) =
-  (           where "options" are:) =
-  (           -dDumpMediaSizes          MediaBox and CropBox for each page) =
-  (           -dDumpFontsUsed           List fonts used) =
-  (           -dShowEmbeddedFonts       only meaningful with -dDumpFontsUsed) =
-  () =
-  flush
+  showoptions
   quit
 } if
 pop			% discard the dict from where
@@ -38,7 +64,7 @@ pop			% discard the dict from where
 () =
 File dup (r) file runpdfbegin
 /PDFPageCount pdfpagecount def
-print ( has ) print PDFPageCount =print ( pages.) =
+(        ) print print ( has ) print PDFPageCount =print ( pages.\n) =
 flush
 
 % Print out the "Info" dictionary if present
@@ -54,7 +80,7 @@ Trailer /Info knownoget {
    dup /Trapped knownoget { (Trapped: ) print = flush } if
 } if	% if Info known
 
-systemdict /DumpMediaSizes known
+DumpMediaSizes
 {
 () =
 % Print out the Page Size info for each page.
@@ -65,15 +91,27 @@ systemdict /DumpMediaSizes known
       aload pop exch 4 1 roll exch sub 3 1 roll sub
       ( MediaBox: [ ) print =print ( ) print =print ( ]) print
     } if
-    /CropBox pget {
+    dup /CropBox pget {
       aload pop exch 4 1 roll exch sub 3 1 roll sub
       ( CropBox: [ ) print =print ( ) print =print ( ]) print
+    } if
+    dup /Rotate pget {
+       (    Rotate = ) print =print
+    } if
+    pageusestransparency {
+	(     Page uses transparency features) print
     } if
     () = flush
   } for
 } if
 
-
+% List of standard font names for use when we are showing the FontsNeeded
+/StdFontNames [
+ /Times-Roman /Helvetica /Courier /Symbol
+ /Times-Bold /Helvetica-Bold /Courier-Bold /ZapfDingbats
+ /Times-Italic /Helvetica-Oblique /Courier-Oblique
+ /Times-BoldItalic /Helvetica-BoldOblique /Courier-BoldOblique
+] def
 
 /getPDFfonts {	%	(filename) getPDFfonts array_of_font_names
   /FontsUsed 1000 dict def	% this will increase if needed
@@ -101,6 +139,14 @@ systemdict /DumpMediaSizes known
       } if
     } if 
   } for
+  % If DumpFontsUsed is not true, then remove the 'standard' fonts from the list
+  systemdict /DumpFontsUsed known not {
+    StdFontNames {
+      FontsUsed 1 index known { FontsUsed 1 index undef } if
+      pop
+    } forall
+  } if
+  
   % Now dump the FontsUsed dict into an array so we can sort it.
   [ FontsUsed { pop } forall ]
   { 100 string cvs exch 100 string cvs exch lt } .sort
@@ -110,8 +156,18 @@ systemdict /DumpFontsUsed known
 {
   (\nFont or CIDFont resources used:) =
   getPDFfonts { = } forall
-} if
+} {
+  DumpFontsNeeded {
+    getPDFfonts
+    dup length 0 gt {
+      (\nFonts Needed that are not embedded \(system fonts required\):) =
+      { (    ) print = } forall
+    } {
+      pop
+      (\nNo system fonts are needed.) =
+    } ifelse
+  } if 
+} ifelse
 
-() =
 
 quit
