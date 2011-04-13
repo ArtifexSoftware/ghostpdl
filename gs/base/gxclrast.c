@@ -2115,8 +2115,11 @@ idata:                  data_size = 0;
     gs_imager_state_release(&imager_state);
     gs_free_object(mem, data_bits, "clist_playback_band(data_bits)");
     if (target != orig_target) {
-        dev_proc(target, close_device)(target);
-        gs_free_object(target->memory, target, "gxclrast discard compositor");
+        rc_decrement_only(target, "gxclrast discard compositor");
+        if (target->rc.ref_count == 0) {
+            dev_proc(target, close_device)(target);
+            gs_free_object(target->memory, target, "gxclrast discard compositor");
+        }
         target = orig_target;
     }
     if (code < 0) {
@@ -2489,7 +2492,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
               (b & 8 ? " (indexed)" : ""),
               (b & 4 ? "(proc)" : ""));
     /* They all store the ICC information.  Even if it is NULL
-       it is used in the ICC case to avoid reading from the 
+       it is used in the ICC case to avoid reading from the
        serialized profile data which is stored elsewhere in the
        clist.  Hence we avoid jumping around in the file. */
     memcpy(&icc_information, cbp, sizeof(clist_icc_color_t));
