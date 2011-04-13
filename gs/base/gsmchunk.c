@@ -19,6 +19,7 @@
 #include "gsstype.h"
 #include "gserrors.h"
 #include "gsmchunk.h"
+#include "gxsync.h"
 
 /* Raw memory procedures */
 static gs_memory_proc_alloc_bytes(chunk_alloc_bytes_immovable);
@@ -107,6 +108,7 @@ typedef struct gs_memory_chunk_s {
 #ifdef DEBUG
     unsigned long sequence_counter;
     unsigned long max_used;
+    int	     in_use;		/* 0 for idle, 1 in alloc, -1 in free */
 #endif
 } gs_memory_chunk_t;
 
@@ -117,7 +119,7 @@ int				/* -ve error code or 0 */
 gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
 		      gs_memory_t * target )	/* base allocator */
 {
-    /* Use the non-GC allocator of the target. The chunk allocator is NOT GC safe */
+    /* Use the non-GC allocator of the target. */
     gs_memory_t *non_gc_target = target->non_gc_memory;
     gs_memory_chunk_t *cmem = NULL;
 
@@ -131,6 +133,7 @@ gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
     cmem->procs = chunk_procs;
     cmem->gs_lib_ctx = non_gc_target->gs_lib_ctx;
     cmem->non_gc_memory = (gs_memory_t *)cmem;	/* and are not subject to GC */
+    cmem->thread_safe_memory = non_gc_target->thread_safe_memory;
     cmem->target = non_gc_target;
     cmem->head_mo_chunk = NULL;
     cmem->head_so_chunk = NULL;
@@ -138,10 +141,10 @@ gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
 #ifdef DEBUG
     cmem->sequence_counter = 0;
     cmem->max_used = 0;
+    cmem->in_use = 0;		/* idle */
 #endif
 
     /* Init the chunk management values */
-
     *wrapped = (gs_memory_t *)cmem;
     return 0;
 }
@@ -176,6 +179,9 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
     int i;
 
     dprintf2("chunk_dump_memory: current used=%d, max_used=%d\n", cmem->used, cmem->max_used);
+    if (cmem->in_use != 0)
+	dprintf1("*** this memory allocator is not idle, used for: %s\n",
+		cmem->in_use < 0 ? "free" : "alloc");
     for (i=0; i<2; i++) {
 	current = head;
 	while ( current != NULL ) { 
@@ -198,7 +204,7 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
 
 /* Note that all of the data is 'immovable' and is opaque to the base allocator */
 /* thus even if it is a GC type of allocator, no GC functions will be applied   */
-/* All allocations are done in the non_gc_memory of the base */
+/* All allocations are done in the target */
 
 /* Procedures */
 
@@ -211,6 +217,11 @@ chunk_mem_node_free_all_remaining(gs_memory_chunk_t *cmem)
     chunk_mem_node_t *next;
     int i;
 
+#ifdef DEBUG
+    if (cmem->in_use != 0)
+	dprintf1("*** chunk_mem_node_free_all_remaining: this memory allocator is not idle, used for: %s\n",
+		cmem->in_use < 0 ? "free" : "alloc");
+#endif
     for (i=0; i<2; i++) {
 	current = head;
 	while ( current != NULL ) { 
@@ -230,6 +241,11 @@ chunk_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
     gs_memory_chunk_t * const cmem = (gs_memory_chunk_t *)mem;
     gs_memory_t * const target = cmem->target;
 
+#ifdef DEBUG
+    if (cmem->in_use != 0)
+	dprintf1("*** chunk_free_all: this memory allocator is not idle, used for: %s\n",
+		cmem->in_use < 0 ? "free" : "alloc");
+#endif
     /* Only free the structures and the allocator itself. */
     if (mem->stable_memory) {
 	if (mem->stable_memory != mem)
@@ -378,6 +394,12 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     bool rescan_free_list = false;
     bool is_multiple_object_size;
 
+#ifdef DEBUG
+    if (cmem->in_use != 0)
+	dprintf1("*** chunk_obj_alloc: this memory allocator is not idle, used for: %s\n",
+		cmem->in_use < 0 ? "free" : "alloc");
+    cmem->in_use = 1;	/* alloc */
+#endif
     newsize = round_up_to_align(size + sizeof(chunk_obj_node_t));	/* space we will need */
     is_multiple_object_size = ! IS_SINGLE_OBJ_SIZE(newsize);
     
@@ -394,6 +416,7 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
 #ifdef DEBUG
 	if (gs_debug_c('a'))
 	    dlprintf1("[a+]chunk_obj_alloc(chunk_mem_node_add)(%u) Failed.\n", size);
+	    cmem->in_use = 0;	/* idle */
 #endif
 	    return NULL;
 	}
@@ -410,6 +433,9 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     if (free_obj == NULL) {
 	dprintf2("largest_free value = %d is too large, cannot find room for size = %d\n",
 	    current->largest_free, newsize);
+#ifdef DEBUG
+	cmem->in_use = 0;	/* idle */
+#endif
 	return NULL;
     }
 
@@ -460,6 +486,7 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     if (gs_debug_c('A'))
 	dlprintf3("[a+]chunk_obj_alloc (%s)(%u) = 0x%lx: OK.\n",
 		  client_name_string(cname), size, (ulong) newobj);
+    cmem->in_use = 0; 	/* idle */
 #endif
     return (byte *)(newobj) + sizeof(chunk_obj_node_t);
 }
@@ -551,13 +578,14 @@ chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_
 static void
 chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
+    gs_memory_chunk_t * const cmem = (gs_memory_chunk_t *)mem;
+
     if (ptr == NULL ) 
 	return;
     {
 	/* back up to obj header */
 	chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
 	void (*finalize)(void *ptr) = obj->type->finalize;
-	gs_memory_chunk_t * const cmem = (gs_memory_chunk_t *)mem;
 	chunk_mem_node_t *current;
 	chunk_obj_node_t *free_obj, *prev_free;
 	chunk_obj_node_t *scan_obj, *prev_obj;
@@ -566,7 +594,12 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 
 	if ( finalize != NULL )
 	    finalize(ptr);
-
+#ifdef DEBUG
+	if (cmem->in_use != 0)
+	    dprintf1("*** chunk_obj_alloc: this memory allocator is not idle, used for: %s\n",
+		    cmem->in_use < 0 ? "free" : "alloc");
+	cmem->in_use = -1;	/* free */
+#endif
 	/* finalize may change the head_**_chunk doing free of stuff */
 	current = IS_SINGLE_OBJ_SIZE(freed_size) ?
 					cmem->head_so_chunk : cmem->head_mo_chunk;
@@ -600,12 +633,18 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	    if (current == NULL) {
 		/* Object not found in any chunk */
 		dprintf2("chunk_free_obj failed, object 0x%lx not in any chunk, size=%d\n", ((ulong)obj), obj->size);
+#ifdef DEBUG
+		cmem->in_use = 0; 	/* idle */
+#endif
 		return;
 	    }
 	}
 	/* For large objects, they were given their own chunk -- just remove the node */
 	if (IS_SINGLE_OBJ_SIZE(freed_size)) {
 	    chunk_mem_node_remove(cmem, current);
+#ifdef DEBUG
+	    cmem->in_use = 0; 	/* idle */
+#endif
 	    return;
 	}
 
@@ -620,6 +659,9 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	    /* Object not found in expected chunk */
 	    dprintf3("chunk_free_obj failed, object 0x%lx not in chunk at 0x%lx, size = %d\n",
 			    ((ulong)obj), ((ulong)current), current->size);
+#ifdef DEBUG
+	    cmem->in_use = 0; 	/* idle */
+#endif
 	    return;
 	}
 	/* link around the object being freed */
@@ -690,6 +732,9 @@ memset((byte *)(obj) + sizeof(chunk_obj_node_t), 0xf1, obj->size - sizeof(chunk_
 		    round_up_to_align(current->freelist->size + sizeof(chunk_mem_node_t)), current->size);
 	    chunk_mem_node_remove(cmem, current);
 	}
+#ifdef DEBUG
+	cmem->in_use = 0; 	/* idle */
+#endif
     }
 }
 
@@ -739,7 +784,6 @@ chunk_status(gs_memory_t * mem, gs_memory_status_t * pstat)
     pstat->used = cmem->used - tot_free;
 
     pstat->is_thread_safe = false;	/* this allocator does not have an internal mutex */
-
 }
 
 static gs_memory_t *

@@ -27,6 +27,7 @@
 #include "gxhttile.h"
 #include "gdevplnx.h"
 #include "gsmemory.h"
+#include "gsmemlok.h"
 #include "vdtrace.h"
 #include "gsicc_cache.h"
 /*
@@ -341,7 +342,8 @@ int
 clist_close_writer_and_init_reader(gx_device_clist *cldev)
 {
     gx_device_clist_reader * const crdev = &cldev->reader;
-    
+    gs_memory_t *base_mem = crdev->memory->thread_safe_memory;
+    gs_memory_status_t mem_status;
     int code = 0;
 
     /* Initialize for rendering if we haven't done so yet. */
@@ -353,7 +355,14 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
          /* Check for and get ICC profile table */
         code = clist_read_icctable(crdev);
         /* Allocate the icc cache for the clist reader */
-        crdev->icc_cache_cl = gsicc_cache_new(crdev->memory);
+	/* Since we may be rendering in multiple threads, make sure the memory */
+	/* is thread safe by using a known thread_safe memory allocator */
+	gs_memory_status(base_mem, &mem_status);
+        if (mem_status.is_thread_safe == false) {
+            return_error(gs_error_VMerror);
+        }
+
+	code = (crdev->icc_cache_cl = gsicc_cache_new(base_mem)) == NULL ? gs_error_VMerror : code;
     }
     return code;
 }

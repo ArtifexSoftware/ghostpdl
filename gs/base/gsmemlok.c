@@ -91,7 +91,9 @@ gs_memory_locked_init(
     lmem->procs = locked_procs;
     lmem->target = target;
     lmem->gs_lib_ctx = target->gs_lib_ctx;
-    lmem->non_gc_memory = (gs_memory_t *)lmem;
+    lmem->non_gc_memory = (gs_memory_t *)lmem;		/* WRONG: THIS IS QUESTIONABLE since this will not */
+							/* be non_gc_memory if the target was a GC memory  */
+    lmem->thread_safe_memory = (gs_memory_t *)lmem;	/* this allocator is thread safe */
 
     /* Allocate a monitor to serialize access to structures within */
     lmem->monitor = gx_monitor_alloc(target);

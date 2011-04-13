@@ -198,6 +198,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint chunk_size)
     iimem->procs = gs_ref_memory_procs;
     iimem->gs_lib_ctx = parent->gs_lib_ctx;
     iimem->non_gc_memory = parent;
+    iimem->thread_safe_memory = parent->thread_safe_memory;
     iimem->chunk_size = chunk_size;
     iimem->large_size = ((chunk_size / 4) & -obj_align_mod) + 1;
     iimem->is_controlled = false;
