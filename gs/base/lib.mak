@@ -2344,7 +2344,7 @@ $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gxdevice_h) $(gxcmap_h) $(gxdcconv_h) $(gxdcolor_h)\
  $(gxistate_h) $(gxdevmem_h) $(gxcpath_h) $(gximage_h)\
  $(gsicc_h) $(gsicc_cache_h) $(gsicc_cms_h) $(gxcie_h)\
- $(gscie_h) $(gxht_thresh_h)
+ $(gscie_h) $(gzht_h) $(gxht_thresh_h)
 	$(GLCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #

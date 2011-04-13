@@ -38,6 +38,7 @@
 #include "gsicc_cms.h"
 #include "gxcie.h"
 #include "gscie.h"
+#include "gzht.h"
 #include "gxht_thresh.h"
 
 
@@ -351,11 +352,26 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
 }
 
 static int
-image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int data_x,
+image_render_color_thresh(gx_image_enum *penum, const byte *buffer, int data_x,
 		   uint w, int h, gx_device * dev)
 {
+    int code;
+    int spp = penum->spp;
+    const byte *psrc_initial = buffer + data_x * spp;
+    const byte *psrc = psrc_initial;
+    int spp_cm = 0;
+    byte *psrc_cm = NULL, *psrc_cm_start = NULL, *psrc_decode = NULL;
+    byte *bufend = NULL;
 
-
+    if (h == 0)
+	return 0;
+    /* Get the buffer into the device color space */
+    code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm, 
+                                &psrc_cm_start, &psrc_decode, &bufend);
+    /* Data is now in the proper destination color space.  Now we want 
+       to go ahead and get the data into the proper spatial setting and then
+       threshold */
+ 
 return 0;
 }
 

@@ -32,7 +32,10 @@ void gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,
 void gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
                     ht_landscape_info_t ht_landscape, byte *halftone,
                     int data_length);
-
 int gxht_thresh_image_init(gx_image_enum *penum);
+int  gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,  
+                  fixed xrun, int dest_width, int dest_height,
+                  byte *thresh_align, byte *contone_align, int contone_stride, 
+                  gx_device * dev); 
 #endif /* gshtx_INCLUDED */
 
