@@ -1034,7 +1034,7 @@ pdf_convert_truetype_font(gx_device_pdf *pdev, pdf_resource_t *pres)
 
 	    if (code < 0)
 		return code;
-	    if (code == 256)
+	    if (code == 256 && pdfont->u.simple.BaseEncoding != ENCODING_INDEX_UNKNOWN)
 		return 0;
 	    {	/* The encoding have a difference - do convert. */
 		pdf_font_resource_t *pdfont0;
