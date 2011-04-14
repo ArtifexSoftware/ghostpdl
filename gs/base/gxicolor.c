@@ -160,7 +160,7 @@ gs_image_class_4_color(gx_image_enum * penum)
             || penum->posture == image_landscape) &&
             penum->image_parent_type == gs_image_type1) {
             code = gxht_thresh_image_init(penum);
-            if (code > 0) {
+            if (code == 0) {
                  return &image_render_color_thresh;
             }
         }
@@ -273,7 +273,8 @@ decode_row(const gx_image_enum *penum, const byte *psrc, int spp, byte *pdes,
 static int
 image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w, 
                      gx_device *dev, int *spp_cm_out, byte **psrc_cm, 
-                     byte **psrc_cm_start, byte **psrc_decode, byte **bufend)
+                     byte **psrc_cm_start, byte **psrc_decode, byte **bufend,
+                     bool planar_out)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
     const gs_imager_state *pis = penum->pis;
@@ -283,6 +284,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     gsicc_bufferdesc_t output_buff_desc;
     int num_pixels, spp_cm;
     int spp = penum->spp;
+    bool force_planar = false;
     
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
@@ -293,8 +295,14 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
         pcs = penum->pcs;
     }
     /* If the link is the identity, then we don't need to do any color 
-       conversions except for potentially a decode. */
-    if (penum->icc_link->is_identity && !need_decode) {
+       conversions except for potentially a decode.  Planar out is a special
+       case. For now we let the CMM do the reorg into planar.  We will want
+       to optimize this to do something special when we have the identity
+       transform for CM and going out to a planar CMYK device */
+    if (dev->device_icc_profile->num_comps != 1 && planar_out == true) { 
+        force_planar = true;
+    }
+    if (penum->icc_link->is_identity && !need_decode && !force_planar) {
         /* Fastest case.  No decode or CM needed */
         *psrc_cm = (unsigned char *) psrc;
         spp_cm = spp;
@@ -306,18 +314,24 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                                   "image_render_color_icc");
         *psrc_cm_start = *psrc_cm;
         *bufend = *psrc_cm +  w * spp_cm/spp;
-        if (penum->icc_link->is_identity) {
+        if (penum->icc_link->is_identity && !force_planar) {
             /* decode only. no CM.  This is slow but does not happen that often */
             decode_row(penum, psrc, spp, *psrc_cm, *bufend);    
         } else {
-            /* Set up the buffer descriptors. */
+            /* Set up the buffer descriptors. planar out always ends up here */
             num_pixels = w/spp;
             gsicc_init_buffer(&input_buff_desc, spp, 1,
                           false, false, false, 0, w,
                           1, num_pixels);
-            gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
-                          false, false, false, 0, num_pixels * spp_cm,
-                          1, num_pixels);
+            if (!force_planar) {
+                gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
+                              false, false, false, 0, num_pixels * spp_cm,
+                              1, num_pixels);
+            } else {
+                gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
+                              false, false, true, w/spp, w/spp,
+                              1, num_pixels);
+            }
             /* For now, just blast it all through the link. If we had a significant reduction 
                we will want to repack the data first and then do this.  That will be 
                an optimization shortly.  For now just allocate a new output
@@ -352,27 +366,209 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
 }
 
 static int
-image_render_color_thresh(gx_image_enum *penum, const byte *buffer, int data_x,
+image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 		   uint w, int h, gx_device * dev)
 {
+    gx_image_enum *penum = penum_orig; /* const within proc */
+    image_posture posture = penum->posture;
+    int vdi;  /* amounts to replicate */
+    fixed xrun = 0;
+    byte *contone_align, *thresh_align;
+    byte *devc_contone;
+    const byte *psrc = buffer + data_x;
+    int dest_width, dest_height, data_length;
+    gx_ht_order *d_order = &(penum->pis->dev_ht->components[0].corder);
+    int position, k;
+    int offset_bits = penum->ht_offset_bits;
+    int contone_stride = 0;  /* Not used in landscape case */
+    fixed scale_factor, offset;
+    int src_size;
+    bool flush_buff = false;
+    byte *psrc_temp;
+    int offset_contone;    /* to ensure 128 bit boundary */
+    int offset_threshold;  /* to ensure 128 bit boundary */
+    gx_dda_int_t dda_ht;
     int code;
-    int spp = penum->spp;
-    const byte *psrc_initial = buffer + data_x * spp;
-    const byte *psrc = psrc_initial;
     int spp_cm = 0;
     byte *psrc_cm = NULL, *psrc_cm_start = NULL, *psrc_decode = NULL;
     byte *bufend = NULL;
 
-    if (h == 0)
-	return 0;
-    /* Get the buffer into the device color space */
-    code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm, 
-                                &psrc_cm_start, &psrc_decode, &bufend);
+    if (h != 0) {
+        /* Get the buffer into the device color space */
+        code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm, 
+                                    &psrc_cm_start, &psrc_decode, &bufend,
+                                    true);
+    } else {
+        if (penum->ht_landscape.count == 0 || posture == image_portrait) {
+            return 0;
+        } else {
+            /* Need to flush the buffer */
+            offset_bits = penum->ht_landscape.count;
+            penum->ht_offset_bits = offset_bits;
+            penum->ht_landscape.offset_set = true;
+            flush_buff = true;
+        }
+    }
     /* Data is now in the proper destination color space.  Now we want 
        to go ahead and get the data into the proper spatial setting and then
-       threshold */
- 
-return 0;
+       threshold.  First get the data spatially sampled correctly */
+    src_size = (penum->rect.w - 1.0);
+    switch (posture) {
+        case image_portrait:
+            /* Figure out our offset in the contone and threshold data
+               buffers so that we ensure that we are on the 128bit
+               memory boundaries when we get offset_bits into the data. */
+            /* Can't do this earlier, as GC might move the buffers. */
+            offset_contone   = (- (((long)(psrc_cm)) +
+                                   penum->ht_offset_bits)) & 15;
+            offset_threshold = (- (((long)(penum->thresh_buffer)) +
+                                   penum->ht_offset_bits)) & 15;
+            xrun = dda_current(penum->dda.pixel0.x);
+            xrun = xrun - penum->adjust + (fixed_half - fixed_epsilon);
+            dest_width = fixed2int_var_rounded(any_abs(penum->x_extent.x));
+            if (penum->x_extent.x < 0)
+                xrun += penum->x_extent.x;
+            vdi = penum->hci;
+            data_length = dest_width;
+            dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
+            contone_stride = penum->line_size;
+            scale_factor = float2fixed_rounded((float) src_size / (float) (dest_width - 1));
+#ifdef DEBUG
+            /* Help in spotting problems */
+            memset(penum->ht_buffer,0x00, penum->ht_stride * vdi);
+#endif
+            break;
+        case image_landscape:
+        default:
+            /* Figure out our offset in the contone and threshold data buffers
+               so that we ensure that we are on the 128bit memory boundaries.
+               Can't do this earlier as GC may move the buffers.
+             */
+            offset_contone   = (-(long)(psrc_cm)) & 15;
+            offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
+            vdi = penum->wci;
+            dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
+            dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
+            data_length = dest_height;
+            scale_factor = float2fixed_rounded((float) src_size / (float) (dest_height - 1));
+            /* In the landscaped case, we want to accumulate multiple columns
+               of data before sending to the device.  We want to have a full
+               byte of HT data in one write.  This may not be possible at the
+               left or right and for those and for those we have so send partial
+               chunks */
+            /* Initialize our xstart and compute our partial bit chunk so
+               that we get in sync with the 1 bit mem device 16 bit positions
+               for the rest of the chunks */
+            if (penum->ht_landscape.count == 0) {
+                /* In the landscape case, the size depends upon
+                   if we are moving left to right or right to left with
+                   the image data.  This offset is to ensure that we  get
+                   aligned in our chunks along 16 bit boundaries */
+                penum->ht_landscape.offset_set = true;
+                if (penum->ht_landscape.index < 0) {
+                    penum->ht_landscape.xstart = penum->xci + vdi - 1;
+                    offset_bits = (penum->ht_landscape.xstart % 16) + 1;
+                } else {
+                    penum->ht_landscape.xstart = penum->xci;
+                    offset_bits = 16 - penum->xci % 16;
+                    if (offset_bits == 16) offset_bits = 0;
+                }
+                if (offset_bits == 0 || offset_bits == 16) {
+                    penum->ht_landscape.offset_set = false;
+                    penum->ht_offset_bits = 0;
+                } else {
+                    penum->ht_offset_bits = offset_bits;
+                }
+            }
+            break;
+    }
+    /* Get the pointers to our buffers */
+    contone_align = psrc_cm + offset_contone;
+    thresh_align = penum->thresh_buffer + offset_threshold;
+
+    if (flush_buff) goto flush;  /* All done */
+    /* Set up the dda.  We could move this out but the cost is pretty small */
+    dda_init(dda_ht, 0, src_size, data_length-1);
+    devc_contone = contone_align;
+    /* Do conversion to device resolution in quick small loops. */
+    switch (posture) {
+        case image_portrait:
+            if (penum->dst_width > 0) {
+                if (scale_factor == fixed_1) {
+                    memcpy(devc_contone, psrc_cm, data_length);
+                } else if (scale_factor == fixed_half) {
+                    psrc_temp = psrc_cm;
+                    for (k = 0; k < data_length; k+=2, devc_contone+=2,
+                         psrc_temp++) {
+                        *devc_contone = *(devc_contone+1) = *psrc_temp;
+                    }
+                } else {
+                    for (k = 0; k < data_length; k++, devc_contone++) {
+                        *devc_contone = psrc_cm[dda_ht.state.Q];
+                        dda_next(dda_ht);
+                    }
+                }
+            } else {
+                devc_contone += (data_length - 1);
+                for (k = 0; k < data_length; k++, devc_contone--) {
+                    *devc_contone = psrc_cm[dda_ht.state.Q];
+                    dda_next(dda_ht);
+                }
+            }
+            break;
+        case image_landscape:
+            /* We store the data at this point into a column. Depending
+               upon our landscape direction we may be going left to right
+               or right to left. */
+            if (penum->ht_landscape.flipy) {
+                position = penum->ht_landscape.curr_pos +
+                            16 * (data_length - 1);
+                for (k = 0; k < data_length; k++) {
+                    devc_contone[position] = psrc_cm[dda_ht.state.Q];
+                    position -= 16;
+                    dda_next(dda_ht);
+                }
+            } else {
+                position = penum->ht_landscape.curr_pos;
+                /* Code up special cases for when we have no scaling
+                   and 2x scaling which we will run into in 300 and
+                   600dpi devices and content */
+                if (scale_factor == fixed_1) {
+                    for (k = 0; k < data_length; k++) {
+                        devc_contone[position] = psrc_cm[k];
+                        position += 16;
+                    }
+                } else if (scale_factor == fixed_half) {
+                    for (k = 0; k < data_length; k+=2) {
+                        offset = fixed2int_rounded(scale_factor * k);
+                        devc_contone[position] =
+                            devc_contone[position + 16] = psrc_cm[offset];
+                        position += 32;
+                    }
+                } else {
+                    /* use dda */
+                    for (k = 0; k < data_length; k++) {
+                        devc_contone[position] = psrc_cm[dda_ht.state.Q];
+                        position += 16;
+                        dda_next(dda_ht);
+                    }
+                }
+            }
+            /* Store the width information and update our counts */
+            penum->ht_landscape.count += vdi;
+            penum->ht_landscape.widths[penum->ht_landscape.curr_pos] = vdi;
+            penum->ht_landscape.curr_pos += penum->ht_landscape.index;
+            penum->ht_landscape.num_contones++;
+            break;
+        default:
+            /* error not allowed */
+            break;
+    }
+    /* Apply threshold array to image data */
+flush:
+    code = gxht_thresh_plane(penum, d_order, xrun, dest_width, dest_height,
+                             thresh_align, contone_align, contone_stride, dev); 
+    return code;
 }
 
 /* Render a color image with 8 or fewer bits per sample using ICC profile. */
@@ -420,7 +616,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     if (h == 0)
 	return 0;
     code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm, 
-                                &psrc_cm_start, &psrc_decode, &bufend);
+                                &psrc_cm_start, &psrc_decode, &bufend, false);
     if (code < 0) return code;
     /* Needed for device N */
     memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
