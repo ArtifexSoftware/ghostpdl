@@ -834,93 +834,52 @@ pdfdict begin
    currentdict end
  } bind def
 
-% Look for [\r\n]%%EO from the current position of the file.
-% Return the position of %%EO if found or -1 .
-/findeof {  % <file> find_eof <file> <position>
-  -1 exch
-  {
-    dup bytesavailable 4 lt { exit } if
-    dup 0 (%%EO) /SubFileDecode filter flushfile
-    dup dup fileposition 5 sub setfileposition
-    dup 5 string readstring not { pop exit } if
-    dup (\r%%EO) eq exch (\n%%EO) eq or {
-      dup fileposition 4 sub
-      3 1 roll exch pop
-    } if
+% Look for the last (startxref) from the current position
+% of the file. Return the position after (startxref) if found or -1 .
+/find-startxref {  % <file> find_eof <file> <position>
+  -1
+  { 1 index dup  0 (startxref) /SubFileDecode filter flushfile
+    bytesavailable 9 lt { exit } if
+    pop dup fileposition 
   } loop
-  exch
 } bind def
 
-% Skip backward over the %%EOF at the end of the PDF file, and read
-% the preceding startxref line.  The PDF specification unambiguously
-% requires that the %%EOF appear on a line by itself, and that the
-% startxref and the following position value appear on separate lines;
-% however, some applications truncate the %%EOF to %%EO, and/or put the
-% startxref and the following value on the same line.
+% Search for the last 'startxfer' and read a following token, which
+% must be a number. Don't pay any attention to %%EOF because it's
+% often mangled.
 % There seems to be no limit on the amount of garbage that can be
 % appended to the PDF file. Current record (60K) belongs to
-% PDF-Out (v 2.0 - 35). We start the search for %%EO from the last 1024
+% PDF-Out (v 2.0 - 35). We start the search from the last 1024
 % bytes and continue from the beginning of the file.
 /findxref {		% - findxref <xrefpos>
   PDFfile dup dup dup 0 setfileposition bytesavailable
   dup /PDFfilelen exch def
 	% Find the last %%EOF string (within 1024 bytes)
   1024 sub PDFoffset .max
-  setfileposition findeof                  % search the last 1024 bytes
+  setfileposition find-startxref   % file pos|-1  % search the last 1024 bytes
   dup 0 le {
     pop
-    dup PDFoffset setfileposition findeof  % search from the beginnibg
+    dup PDFoffset setfileposition find-startxref  % search from the beginnibg
     dup 0 le {
-       (   **** Error: Cannot find a %%EOF marker anywhere in the file.\n)
+       (   **** Error: Cannot find a 'startxref' anywhere in the file.\n)
        pdfformaterror
        /findxref cvx /syntaxerror signalerror
     } if
   } if
-  dup 3 1 roll setfileposition
-        % Stack: eofpos
-	% Check for whether this is, in fact, a valid PDF file.
-  dup PDFfilelen exch sub dup dup 7 gt exch 5 lt or {
-    pop //true
-  } {
-    string PDFfile exch readstring pop
-    dup (%%EOF\n) eq exch dup (%%EOF\r) eq
-    exch dup (%%EOF\r\n) eq exch (%%EOF) eq or or or not
-  } ifelse {
-    (   **** Warning: File has a corrupted %%EOF marker, or garbage after %%EOF.\n)
-    pdfformaterror
-  } if
-  PDFfile exch setfileposition
-	% Now read the startxref and xref start position.
-  prevline token not { //null } if dup type /integertype eq {
-    exch pop cvi		% xref start position
-    exch PDFfile exch setfileposition
-    prevline dup (startxref) linene {
-      % startxref not on a line by itself.  We have found PDF from
-      % www.verypdf.com in which the startxref was on the same line as
-      % the end of trailer dictionary.  Check for this.  Note:  This
-      % violates the spec.
-      dup (startxref) search {
-	% found startxref - print warning
-	pop pop pop 			% clear strings from search
-        (   **** Warning: format of the startxref line in this file is invalid.\n)
-        pdfformaterror
-      } {				% no startxref - we have a problem.
+  2 copy setfileposition
+  pop token not { //null } if 
+  dup type /integertype ne {
+    (   **** Error: invalid token after startxref.\n)  pdfformaterror
         /findxref cvx /syntaxerror signalerror
-      } ifelse
-    } if
-    pop pop
-  } {	% else, this file has 'startxref #####' format
-    (startxref) ne { /findxref cvx /syntaxerror signalerror } if
-    cvi		% xref start position
-    (   **** Warning: format of the startxref line in this file is invalid.\n)
-    pdfformaterror
-    exch PDFfile exch setfileposition
-  } ifelse
+  } if
 } bind def
+
 /stderrfile (%stderr) (w) file def
+
 /stderrprint {                % <string> stderrprint -
   //stderrfile dup 3 -1 roll writestring flushfile
 } bind def
+
 /pdfformaterror {	% <string> pdfformaterror -
   stderrprint
   /Repaired //true store

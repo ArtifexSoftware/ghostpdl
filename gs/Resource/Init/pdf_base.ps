@@ -72,26 +72,6 @@ pdfdict begin
 % is also used to search for %PDF-, which needs 1024 characters.
 /pdfstring 1024 string def
 
-% Read the previous line of a file.  If we aren't at a line boundary,
-% read the line containing the current position.
-% Skip any blank lines.
-/prevline		% - prevline <startpos> <substring>
- { PDFfile fileposition dup () pdfstring
-   2 index 257 sub 0 .max PDFfile exch setfileposition
-    {		% Stack: initpos linepos line string
-      PDFfile fileposition
-      PDFfile 2 index readline pop
-      dup length 0 gt
-       { 3 2 roll 5 -2 roll pop pop 2 index }
-       { pop }
-      ifelse
-		% Stack: initpos linepos line string startpos
-      PDFfile fileposition 5 index ge { exit } if
-      pop
-    }
-   loop pop pop 3 -1 roll pop
- } bind def
-
 % Handle the PDF 1.2 #nn escape convention when reading from a file.
 % This should eventually be done in C.
 /.pdffixname {			% <execname> .pdffixname <execname'>
