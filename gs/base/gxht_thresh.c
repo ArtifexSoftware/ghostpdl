@@ -360,11 +360,19 @@ gxht_thresh_image_init(gx_image_enum *penum)
     int temp;
     int dev_width, max_height;
     int spp_out;
+    int k;
+    gx_ht_order *d_order;
 
     if (gx_device_must_halftone(penum->dev)) {
         if (penum->pis != NULL && penum->pis->dev_ht != NULL) {
-            gx_ht_order *d_order = &(penum->pis->dev_ht->components[0].corder);
-            code = gx_ht_construct_threshold(d_order, penum->dev, penum->pis, 0);
+            for (k = 0; k < penum->pis->dev_ht->num_comp; k++) {
+                d_order = &(penum->pis->dev_ht->components[k].corder);
+                code = gx_ht_construct_threshold(d_order, penum->dev, 
+                                                 penum->pis, k);
+                if (code < 0 ) {
+                    return gs_rethrow(code, "threshold creation failed");
+                }
+            }
         } else {
             return -1;
         }
@@ -463,10 +471,10 @@ gxht_thresh_image_init(gx_image_enum *penum)
         */
         penum->ht_offset_bits = (-fixed2int_var_pixround(ox)) & 15;
         if (penum->ht_offset_bits > 0) {
-            penum->ht_stride = ((7 + (dev_width + 4) * spp_out) / 8) +
+            penum->ht_stride = ((7 + (dev_width + 4)) / 8) +
                                 ARCH_SIZEOF_LONG;
         } else {
-            penum->ht_stride = ((7 + (dev_width + 2) * spp_out) / 8) +
+            penum->ht_stride = ((7 + (dev_width + 2)) / 8) +
                             ARCH_SIZEOF_LONG;
         }
         /* We want to figure out the maximum height that we may
@@ -475,7 +483,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
         max_height = (int) ceil(fixed2float(any_abs(penum->dst_height)) /
                                             (float) penum->Height);
         penum->ht_buffer = gs_alloc_bytes(penum->memory,
-                                          penum->ht_stride * max_height,
+                                          penum->ht_stride * max_height * spp_out,
                                           "gxht_thresh");
         /* We want to have 128 bit alignement for our contone and
            threshold strips so that we can use SSE operations
@@ -490,23 +498,23 @@ gxht_thresh_image_init(gx_image_enum *penum)
            are NOT aligned for the contone buffer.  After we offset
            by this remainder portion we should be 128 bit aligned.
            Also allow a 15 sample over run during the execution.  */
-        temp = (int) ceil((float) ((dev_width + 15.0) * spp_out + 15.0)/16.0);
+        temp = (int) ceil((float) ((dev_width + 15.0) + 15.0)/16.0);
         penum->line_size = temp * 16;  /* The stride */
-        penum->line = gs_alloc_bytes(penum->memory, penum->line_size, 
+        penum->line = gs_alloc_bytes(penum->memory, penum->line_size * spp_out, 
                                      "gxht_thresh");
         penum->thresh_buffer = gs_alloc_bytes(penum->memory, 
-                                              penum->line_size * max_height,
+                                              penum->line_size * max_height * spp_out,
                                               "gxht_thresh");
         if (penum->line == NULL || penum->thresh_buffer == NULL || 
             penum->ht_buffer == NULL) {
             return -1;
         } else {
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
-            memset(penum->line, 0, penum->line_size);
+            memset(penum->line, 0, penum->line_size * spp_out);
             memset(penum->ht_buffer, 0,
-                   penum->ht_stride * max_height);
+                   penum->ht_stride * max_height * spp_out);
             memset(penum->thresh_buffer, 0,
-                   penum->line_size * max_height);
+                   penum->line_size * max_height * spp_out);
 #endif
         }
     }

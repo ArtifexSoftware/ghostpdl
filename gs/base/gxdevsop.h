@@ -194,6 +194,13 @@ enum {
      */
     gxdso_is_pdf14_device,
 
+    /* gxdso_is_native_planar:
+     *      data = NULL
+     *      size = 0
+     * Returns 1 if the device's native format is planar
+     */
+     gxdso_is_native_planar,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

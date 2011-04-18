@@ -23,6 +23,7 @@
 #include "gdevppla.h"
 #include "gdevplib.h" /* Band donor functions */
 #include "gdevmem.h"
+#include "gxdevsop.h"
 
 /* This file defines 5 different devices:
  *
@@ -46,7 +47,12 @@
 #undef DEBUG_PRINT
 
 /* Define DEBUG_DUMP to dump the data to the output stream. */
-#undef DEBUG_DUMP
+#define DEBUG_DUMP
+
+/* Define HT_RAW_DUMP to store the output as a raw CMYK buffer with the
+   data size packed into the file name.  Photoshop does not handle pam 
+   cmyk properly so we resort to this for debugging */
+#define HT_RAW_DUMP
 
 /* Define SHORTSTOP_MEMCPY_ETC to enable braindead implementations of memcpy
  * and memset etc in this file. This serves to help profiling on some
@@ -247,6 +253,9 @@ static dev_proc_close_device(plib_close);
 static dev_proc_get_params(plib_get_params);
 static dev_proc_put_params(plib_put_params);
 
+static  dev_proc_dev_spec_op(plib_dev_spec_op);
+
+
 /* And of course we need our own print-page routines. */
 static dev_proc_print_page(plib_print_page);
 
@@ -312,7 +321,20 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
         NULL,   /* get_color_mapping_procs */\
         NULL,   /* get_color_comp_index */\
         p_map_rgb_color, /* encode_color */\
-        p_map_color_rgb /* decode_color */\
+        p_map_color_rgb, /* decode_color */\
+	NULL,   /* pattern_manage */\
+	NULL,   /* fill_rectangle_hl_color */\
+	NULL,   /* include_color_space */\
+	NULL,   /* fill_linear_color_scanline */\
+	NULL,   /* fill_linear_color_trapezoid */\
+	NULL,   /* fill_linear_color_triangle */\
+	NULL,	/* update spot */\
+        NULL,   /* DevN params */\
+        NULL,   /* fill page */\
+        NULL,   /* push_transparency_state */\
+        NULL,   /* pop_transparency_state */\
+        NULL,   /* put_image */\
+        plib_dev_spec_op  /* dev_spec_op */\
 }
 
 static const gx_device_procs plibm_procs =
@@ -432,7 +454,7 @@ static void dump_start(int w, int h, int num_comps, int log2bits,
     else if (dump_nc == 4) {
         if (log2bits == 0)
             fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
-                    "MAXVAL 1\nTUPLTYPE CMYK\nENDHDR\n", w, h);
+                    "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
         else
             fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
                     "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
@@ -475,10 +497,10 @@ static void dump_band(int y, FILE *dump_file)
                     byte K = *k++;
                     int s;
                     for (s=7; s>=0; s--) {
-                        fputc((C>>s)&1, dump_file);
-                        fputc((M>>s)&1, dump_file);
-                        fputc((Y>>s)&1, dump_file);
-                        fputc((K>>s)&1, dump_file);
+                        fputc(255*((C>>s)&1), dump_file);
+                        fputc(255*((M>>s)&1), dump_file);
+                        fputc(255*((Y>>s)&1), dump_file);
+                        fputc(255*((K>>s)&1), dump_file);
                         w--;
                         if (w == 0) break;
                     }
@@ -964,4 +986,13 @@ plibc_print_page(gx_device_printer * pdev, FILE * pstream)
     eprintf("plibc_print_page\n");
 #endif
     return plib_print_page_loop(pdev, 3, 4, pstream);
+}
+
+static int 
+plib_dev_spec_op(gx_device *pdev, int dev_spec_op,
+		  void *data, int size)
+{
+    if (dev_spec_op == gxdso_is_native_planar)
+	return 1;
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }

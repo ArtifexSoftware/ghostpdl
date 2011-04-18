@@ -919,6 +919,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_pattern_is_cpath_accum:
         case gxdso_pattern_handles_clip_path:
         case gxdso_is_pdf14_device:
+        case gxdso_is_native_planar:
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:
             return (pdev->procs.fill_path == gx_default_fill_path);
