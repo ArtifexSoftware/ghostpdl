@@ -396,6 +396,14 @@ if test x$with_libpaper != xno; then
     ])
 fi
 if test x$with_libpaper != xno; then
+    AC_CHECK_HEADER([paper.h], [with_libpaper=yes],
+    [
+        AC_MSG_WARN([disabling support for libpaper])
+        with_libpaper=no
+    ])
+fi
+
+if test x$with_libpaper != xno; then
     LIBS="$LIBS -lpaper"
     AC_DEFINE(USE_LIBPAPER, 1, [Using libpaper])
     CFLAGS="$CFLAGS -DUSE_LIBPAPER"
