@@ -404,8 +404,8 @@ pdfdict begin
        pop			% Stack: <err count> <obj#> <loc> <gen#> <tag>
        dup /n eq {		% xref line tag is /n
 	 pop			% pop dup of line tag
-         2 copy or 0 eq {
-           (   **** Warning: considering '0000000000 00000 n' as a free entry.\n)
+         1 index 0 eq {
+           (   **** Warning: considering '0000000000 XXXXX n' as a free entry.\n)
            pdfformaterror
          } {
            0 3 1 roll		% Set ObjectStream object number = 0
