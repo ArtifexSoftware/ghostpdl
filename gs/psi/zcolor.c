@@ -5537,6 +5537,8 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
 		if (code < 0)
 		    return code;
 		components = tempref->value.intval;
+		if (components > count_of(range))
+		    return_error(e_rangecheck);
 
 		/* Don't allow ICCBased spaces if NOCIE is true */
 		if (nocie->value.boolval) {

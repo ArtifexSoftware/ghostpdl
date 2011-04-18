@@ -30,6 +30,20 @@ end
 NOPSICC { (%END PSICC) .skipeof } if
 % Now set up ICC profile loading for PostScript %%BeginICCProfile sections.
 
+/cs-sig-dict <<
+  (XYZ ) 3
+  (Lab ) 3
+  (Luv ) 3
+  (YCbr) 3
+  (Yxy ) 3
+  (RGB ) 3
+  (GRAY) 1
+  (HSV ) 3
+  (HLS ) 3
+  (CMYK) 4
+  (CMY ) 3
+>> readonly def
+
 systemdict begin
 /.ProcessICCcomment { % file comment --  file comment
   dup
@@ -39,11 +53,8 @@ systemdict begin
 
     % load an ICC profile defined as comments (hex encoded).
     % Ends with %%End at the start of a line. Read the data into
-    % a bytestring to allow seeking. This string can be used as a
-    % seekable ReusableStreamDecode filter source by the ICC logic.
-    %
-    % Since .bigstring needs to know the size, we first read an array of
-    % strings each 64000 max length.
+    % an array of strings. This string can be used directly as a
+    % source for ReusableStreamDecode filter.
     %
     % stack: --file-- (%%BeginICCProfile: ...) 
     1 index 0 (%%EndICCProfile) /SubFileDecode filter
@@ -52,34 +63,35 @@ systemdict begin
         not { exit } if
       } loop
     ] exch closefile
-    0 1 index { length add } forall
-    .bigstring
-    exch 0 exch {
-      % stack: --file-- (%%BeginICCProfile: ...) --bytestring-- cur_index --string--
-      2 copy length add 	% calculate next string start point
-      3 1 roll 3 index 3 1 roll putinterval
-    } forall
-    pop				% discard length of bytestring
-    % make a seekable -file- out of the bytestring
+ 
+    % make a seekable -file- out of the string array
     mark /AsyncRead //true .dicttomark /ReusableStreamDecode filter
     % stack: --file-- (%%BeginICCProfile: ...) --icc_subfile-- 
-    /DeviceCMYK setcolorspace
-    << /DataSource 3 -1 roll
-       /N 4		% Try CMYK first
-    >> { .seticcspace } stopped {
-      /DeviceRGB setcolorspace
-      dup /N 3 put  { .seticcspace } stopped {
-        /DeviceGray setcolorspace
-        dup /N 1 put { .seticcspace } stopped {	% last choice
-          QUIET not { (   *** Unable to load ICC profile from PostScript DSC comments ***) = flush } if
-          pop
-        } if
+
+    dup 16 setfileposition
+    dup (1234) readstring pop
+    1 index 0 setfileposition
+           
+    //cs-sig-dict exch .knownget {   
+      3 dict begin
+      /Alternate {0 /DeviceGray 0 /DeviceRGB /DeviceCMYK } 2 index get def
+      /N exch def
+      /DataSource exch def
+      [/ICCBased currentdict]
+      end 
+      { setcolorspace } stopped {
+        pop
+        QUIET not { (   *** Unable to load ICC profile from PostScript DSC comments ***) = flush } if
       } if
-    } if
+    } {
+      pop
+    } ifelse
   } {
     pop % Not interested in this DSC comment
   } ifelse
 } bind def
+
+currentdict /cs-sig-dict undef
 
 % Merge ProcessICCcomment with existing handler
 /.ProcessICCcomment load /exec load
