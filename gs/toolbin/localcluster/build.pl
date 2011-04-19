@@ -22,6 +22,7 @@ my $lowres=0;
 my $highres=0;
 my %products;
 my $bmpcmp=0;
+my $bmpcmphead=0;
 my $local=0;
 my $filename="";
 my $bmpcmpOptions;
@@ -43,6 +44,12 @@ while ($t=shift) {
     $bmpcmp=1;
     $filename=shift;
     $filename.=".txt";
+    $bmpcmpOptions=shift;
+    $bmpcmpOptions="" if (!$bmpcmpOptions);
+  } elsif ($t eq "bmpcmphead") {
+    $bmpcmp=1;
+    $bmpcmphead=1;
+    $filename="email.txt";
     $bmpcmpOptions=shift;
     $bmpcmpOptions="" if (!$bmpcmpOptions);
   } elsif ($t eq "local") {
@@ -246,7 +253,7 @@ my %tests=(
     "pbmraw.75.0",
 #   "pbmraw.600.0",
     "pbmraw.600.1",
-    "pgmraw.75.0",
+#   "pgmraw.75.0",
 #   "pgmraw.600.0",
 #   "pgmraw.600.1",
     #"wtsimdi.75.0",
@@ -521,6 +528,8 @@ sub build($$$$$) {
       $cmd.=" ; $preCommand $cmd1a $cmd1b $cmd1c >>$logFilename 2>&1";
       if ($bmpcmp_icc_work) {
         $cmd1a =~ s|/gs/|/icc_work/|;
+      } elsif ($bmpcmphead) {
+        $cmd1a =~ s|/gs/|/head~1/|;
       } else {
         $cmd1a =~ s|/gs/|/head/|;
       }
@@ -582,6 +591,8 @@ sub build($$$$$) {
       $cmd.=" ; $preCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
       if ($bmpcmp_icc_work) {
         $cmd2a =~ s|/gs/|/icc_work/|;
+      } elsif ($bmpcmphead) {
+        $cmd2a =~ s|/gs/|/head~1/|;
       } else {
         $cmd2a =~ s|/gs/|/head/|;
       }
@@ -689,6 +700,8 @@ sub build($$$$$) {
       $cmd.=" ; $preCommand $cmd2a -sOutputFile='|gzip -1 -n >$outputFilename.gz' $cmd2c >>$logFilename 2>&1";
       if ($bmpcmp_icc_work) {
         $cmd2a =~ s|/gs/|/icc_work/|;
+      } elsif ($bmpcmphead) {
+        $cmd2a =~ s|/gs/|/head~1/|;
       } else {
         $cmd2a =~ s|/gs/|/head/|;
       }
@@ -774,6 +787,10 @@ if ($bmpcmp) {
     my $filename="";
     my @a=split ' ';
     $start=1 if (m/ran \d+ tests in \d+ seconds/);
+    if (m/The following \d+ regression file(s) had differences but matched at least once in the previous \d+ runs/ && $bmpcmphead != 0) {
+      $start=1;
+      $done=0;
+    }
     if ($start && scalar(@a)>=4) {  # horrible, horrible hack
       if (!$done) {
         if (m/^(.+)\.(pdf\.p.mraw\.\d+\.[01]) (\S+) pdfwrite / ||

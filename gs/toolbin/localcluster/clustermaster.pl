@@ -453,7 +453,11 @@ sub addToQueue($$) {
     `chmod -R +xr $usersDir/$user/ghostpdl`;
   }
 }
-        if ($product =~ m/bmpcmp/) {
+        if ($product =~ m/bmpcmphead/) {
+          $product =~ s/bmpcmphead//;
+          addToQueue($user,$product) if (length($product));
+          addToQueue($user,'bmpcmphead');
+        } elsif ($product =~ m/bmpcmp/) {
           $product =~ s/bmpcmp//;
           addToQueue($user,$product) if (length($product));
           addToQueue($user,'bmpcmp');
@@ -615,6 +619,7 @@ my $normalRegression=0;
 my $icc_workRegression=0;
 my $userRegression="";
 my $bmpcmp=0;
+my $bmpcmphead=0;
 my $mupdfRegression=0;
 my $updateBaseline=0;
 my $userName="";
@@ -813,6 +818,9 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
         my @a=split ' ',$product,2;
         if ($userName eq "mvrhel-disabled") {
           $product="bmpcmp_icc_work bmpcmp $userName";
+        } elsif ($product=~m/^bmpcmphead/) {
+          $product="bmpcmphead $userName";
+	  $bmpcmphead=1;
         } else {
           $product="bmpcmp $userName";
         }
@@ -839,11 +847,11 @@ if ($normalRegression==1 || $userRegression ne "" || $mupdfRegression==1 || $upd
       exit;
     }
 
-if ($bmpcmp) {
+    if ($bmpcmp) {
 # $maxTouchTime*=3;
 # $maxTransferTime*=3;
 
-`head -1000 jobs >jobs.tmp ; mv jobs.tmp jobs`;
+      `head -1000 jobs >jobs.tmp ; mv jobs.tmp jobs`;
         my $gs="";
         my $pcl="";
         my $xps="";
@@ -865,7 +873,7 @@ if ($bmpcmp) {
         }
 mydbg "done checking jobs, product=$product\n";
         `touch bmpcmp.tmp ; rm -fr bmpcmp.tmp ; mv bmpcmp bmpcmp.tmp ; mkdir bmpcmp ; rm -fr bmpcmp.tmp &`;
-}
+    }
 
     checkPID();
     foreach (keys %machines) {
@@ -897,6 +905,8 @@ mydbg "done checking jobs, product=$product\n";
         print F "mupdf\t$rev";
       } elsif ($updateBaseline) {
         print F "svn\thead\t$product";
+      } elsif ($bmpcmphead) {
+        print F "user\t$userName\t$product\tbmpcmphead\n";
       } elsif ($bmpcmp) {
         print F "user\t$userName\t$product\tbmpcmp\n";
       } else {
@@ -1354,24 +1364,24 @@ mydbg "now running ./compare.pl mupdf_current.tab mupdf_previous.tab $elapsedTim
 
     } elsif ($updateBaseline) {
     } elsif ($bmpcmp) {
-if (0) {
-open(F9,">bmpcmp/fuzzy.txt");
-my @logs=split ' ',$logs;
-foreach my $i (@logs) {
-  if (open(F8,"<$i")) {
-    my $name;
-    while (<F8>) {
-      chomp;
-       $name=$1 if(m/fuzzy (.+)/);
-       if (m/: (.+ max diff)/) {
-         print F9 "$name: $1\n";
-       }
-    }
-    close(F8);
-  }
-}
-close(F9);
-}
+      if (0) {
+        open(F9,">bmpcmp/fuzzy.txt");
+        my @logs=split ' ',$logs;
+        foreach my $i (@logs) {
+          if (open(F8,"<$i")) {
+            my $name;
+            while (<F8>) {
+              chomp;
+              $name=$1 if(m/fuzzy (.+)/);
+              if (m/: (.+ max diff)/) {
+                print F9 "$name: $1\n";
+              }
+            }
+            close(F8);
+          }
+        }
+        close(F9);
+      }
     } else {
       my @a=split ' ',$product;
       my $filter="cat current.tab";
@@ -1502,8 +1512,13 @@ mydbg("finished cachearchive.pl");
       `echo http://www.ghostscript.com/~regression/$userName >>bmpcmpResults.txt`;
       `echo >>bmpcmpResults.txt`;
 #     `cat bmpcmp/fuzzy.txt >>bmpcmpResults.txt`;
-      `mail $emails{$userName} -s \"bmpcmp finished\" <bmpcmpResults.txt`;
-      `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <bmpcmpResults.txt`;
+      if ($bmpcmphead) {
+        `mail $emails{$userName} -s \"bmpcmphead finished\" <bmpcmpResults.txt`;
+        `mail marcos.woehrmann\@artifex.com -s \"bmpcmphead finished\" <bmpcmpResults.txt`;
+      } else {
+        `mail $emails{$userName} -s \"bmpcmp finished\" <bmpcmpResults.txt`;
+        `mail marcos.woehrmann\@artifex.com -s \"bmpcmp finished\" <bmpcmpResults.txt`;
+      }
     }
   } elsif ($userRegression) {
     `echo >>$userName.txt`;

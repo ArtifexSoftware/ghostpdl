@@ -97,6 +97,8 @@ mkdir("icc_work");
 mkdir("icc_work/bin");
 mkdir("./head/");
 mkdir("./head/bin");
+mkdir("./head~1/");
+mkdir("./head~1/bin");
 
 if (0) {
   `rm *Raw*raw`;
@@ -685,6 +687,9 @@ if (!$abort) {
         }
 
         if ($revs || $local) {
+	  if (-e "./head/bin/gs") {
+            `cp -p ./head/bin/gs ./head~1/bin/.`;
+	  }
           `cp -p $gsBin/bin/gs ./head/bin/.`;
         }
       } else {
@@ -705,8 +710,8 @@ if (!$dontBuild) {
     if (-e "$gpdlSource/main/obj") {
       $compileFail.="pcl6 ";
     } else {
-#    $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; echo >>makepcl.out ;  nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
-    $cmd="cd $gpdlSource ; touch main/obj ; rm -fr main/obj ; touch makepcl.out ; rm -f makepcl.out ; nice ./autogen.sh \"CC=gcc -m$wordSize\" $configOption >makepcl.out 2>&1; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1 -j 12; echo >>makepcl.out ;  nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
+#   $cmd="cd $gpdlSource ; nice make pcl-clean ; touch makepcl.out ; rm -f makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >makepcl.out 2>&1 -j 12; echo >>makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
+    $cmd="cd $gpdlSource ; touch main/obj ; rm -fr main/obj ; touch makepcl.out ; rm -f makepcl.out ; nice ./autogen.sh \"CC=gcc -m$wordSize\" $configOption >makepcl.out 2>&1; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1 -j 12; echo >>makepcl.out ; nice make pcl \"CC=gcc -m$wordSize\" \"CCLD=gcc -m$wordSize\" >>makepcl.out 2>&1";
     print "$cmd\n" if ($verbose);
     `$cmd`;
     if (-e "$gpdlSource/main/obj/pcl6") {
@@ -717,6 +722,9 @@ if (!$dontBuild) {
         `cp -p $gsBin/bin/pcl6 ./icc_work/bin/.`;
       }
       if ($revs || $local) {
+	if (-e "./head/bin/pcl6") {
+          `cp -p ./head/bin/pcl6 ./head~1/bin/.`;
+	}
         `cp -p $gsBin/bin/pcl6 ./head/bin/.`;
       }
     } else {
@@ -749,6 +757,9 @@ if (!$dontBuild) {
         `cp -p $gsBin/bin/gxps ./icc_work/bin/.`;
       }
       if ($revs || $local) {
+        if (-e "./head/bin/gxps") {
+          `cp -p ./head/bin/gxps ./head~1/bin/.`;
+	}
         `cp -p $gsBin/bin/gxps ./head/bin/.`;
       }
     } else {
@@ -779,6 +790,9 @@ if (!$dontBuild) {
         `cp -p $gsBin/bin/gsvg ./icc_work/bin/.`;
       }
       if ($revs || $local) {
+	if (-e "./head/bin/gsvg") {
+          `cp -p ./head/bin/gsvg ./head~1/bin/.`;
+	}
         `cp -p $gsBin/bin/gsvg ./head/bin/.`;
       }
     } else {
@@ -812,6 +826,9 @@ if (!$dontBuild) {
         `cp -p $gsBin/bin/pspcl6 ./icc_work/bin/.`;
       }
       if ($revs || $local) {
+	if (-e "./head/bin/pspcl6") {
+          `cp -p ./head/bin/pspcl6 ./head~1/bin/.`;
+	}
         `cp -p $gsBin/bin/pspcl6 ./head/bin/.`;
       }
     } else {
